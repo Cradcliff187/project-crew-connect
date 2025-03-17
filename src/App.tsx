@@ -14,6 +14,7 @@ import Projects from "./pages/Projects";
 import Contacts from "./pages/Contacts";
 import TimeTracking from "./pages/TimeTracking";
 import Documents from "./pages/Documents";
+import Vendors from "./pages/Vendors";
 import NotFound from "./pages/NotFound";
 
 // Layout
@@ -44,6 +45,7 @@ const App = () => {
                     <Route path="/estimates" element={<Estimates />} />
                     <Route path="/projects" element={<Projects />} />
                     <Route path="/contacts" element={<Contacts />} />
+                    <Route path="/vendors" element={<Vendors />} />
                     <Route path="/time-tracking" element={<TimeTracking />} />
                     <Route path="/documents" element={<Documents />} />
                     <Route path="*" element={<NotFound />} />
