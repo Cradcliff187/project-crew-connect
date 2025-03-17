@@ -337,6 +337,7 @@ export type Database = {
       estimates: {
         Row: {
           approveddate: string | null
+          contingency_percentage: number | null
           contingencyamount: number | null
           created_at: string
           createdby: string | null
@@ -362,6 +363,7 @@ export type Database = {
         }
         Insert: {
           approveddate?: string | null
+          contingency_percentage?: number | null
           contingencyamount?: number | null
           created_at?: string
           createdby?: string | null
@@ -387,6 +389,7 @@ export type Database = {
         }
         Update: {
           approveddate?: string | null
+          contingency_percentage?: number | null
           contingencyamount?: number | null
           created_at?: string
           createdby?: string | null
@@ -951,6 +954,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_customer_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_estimate_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_project_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_subcontractor_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_vendor_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_next_possible_transitions: {
         Args: {
           entity_type_param: Database["public"]["Enums"]["entity_type"]
