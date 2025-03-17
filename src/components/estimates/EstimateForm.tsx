@@ -2,12 +2,10 @@
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -15,8 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import LocationFields from './components/LocationFields';
 import EstimateItemFields from './components/EstimateItemFields';
 import EstimateSummary from './components/EstimateSummary';
-import { estimateFormSchema, type EstimateFormValues, type EstimateItem } from './schemas/estimateFormSchema';
-import { calculateSubtotal } from './utils/estimateCalculations';
+import EstimateFormButtons from './components/EstimateFormButtons';
+import { useEstimateSubmit } from './hooks/useEstimateSubmit';
+import { estimateFormSchema, type EstimateFormValues } from './schemas/estimateFormSchema';
 
 interface EstimateFormProps {
   open: boolean;
@@ -24,9 +23,8 @@ interface EstimateFormProps {
 }
 
 const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const { toast } = useToast();
+  const { isSubmitting, submitEstimate } = useEstimateSubmit();
 
   // Initialize the form
   const form = useForm<EstimateFormValues>({
@@ -60,93 +58,17 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
         setClients(data || []);
       } catch (error) {
         console.error('Error fetching clients:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load clients. Please try again.",
-          variant: "destructive"
-        });
       }
     };
     
-    fetchClients();
-  }, [toast]);
+    if (open) {
+      fetchClients();
+    }
+  }, [open]);
 
   // Handle form submission
   const onSubmit = async (data: EstimateFormValues) => {
-    try {
-      setIsSubmitting(true);
-      
-      // Make sure items match the EstimateItem type for calculations
-      const typedItems: EstimateItem[] = data.items.map(item => ({
-        quantity: item.quantity,
-        unitPrice: item.unitPrice
-      }));
-      
-      // Calculate the total amount
-      const totalAmount = calculateSubtotal(typedItems);
-      const contingencyPercentage = parseFloat(data.contingency_percentage || '0');
-      
-      // Insert the estimate into the database
-      const { data: estimateData, error: estimateError } = await supabase
-        .from('estimates')
-        .insert({
-          projectname: data.project,
-          customerid: data.client,
-          customername: clients.find(c => c.id === data.client)?.name || '',
-          "job description": data.description, // Note the space in column name
-          estimateamount: totalAmount,
-          contingency_percentage: contingencyPercentage,
-          sitelocationaddress: data.location.address,
-          sitelocationcity: data.location.city,
-          sitelocationstate: data.location.state,
-          sitelocationzip: data.location.zip,
-          datecreated: new Date().toISOString(),
-          status: 'draft',
-          isactive: true
-        })
-        .select();
-
-      if (estimateError) throw estimateError;
-      
-      if (!estimateData || estimateData.length === 0) {
-        throw new Error('Failed to create estimate - no ID returned');
-      }
-      
-      const estimateId = estimateData[0].estimateid;
-
-      // Insert the estimate items
-      const estimateItems = data.items.map(item => ({
-        estimate_id: estimateId,
-        description: item.description,
-        quantity: parseFloat(item.quantity),
-        unit_price: parseFloat(item.unitPrice),
-        total_price: parseFloat(item.quantity) * parseFloat(item.unitPrice)
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('estimate_items')
-        .insert(estimateItems);
-
-      if (itemsError) throw itemsError;
-
-      // Show success message
-      toast({
-        title: "Success",
-        description: `Estimate ${estimateId} has been created.`,
-      });
-
-      // Close the form and reset
-      onClose();
-    } catch (error) {
-      console.error('Error creating estimate:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create estimate. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submitEstimate(data, clients, onClose);
   };
 
   return (
@@ -223,14 +145,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
 
             <EstimateSummary />
 
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-[#0485ea] hover:bg-[#0373ce]" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Estimate"}
-              </Button>
-            </div>
+            <EstimateFormButtons onCancel={onClose} isSubmitting={isSubmitting} />
           </form>
         </Form>
       </DialogContent>
