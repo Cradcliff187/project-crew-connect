@@ -11,10 +11,21 @@ export const useVendorSubmit = (onSuccess: () => void) => {
     setIsSubmitting(true);
     
     try {
-      // Using .upsert() method with the 'returning' option
+      // Generate a unique ID for the vendor
+      const { data: vendorIdData, error: vendorIdError } = await supabase
+        .rpc('generate_vendor_id');
+      
+      if (vendorIdError) {
+        throw vendorIdError;
+      }
+      
+      const vendorId = vendorIdData;
+      
+      // Now insert the vendor with the pre-generated ID
       const { data: vendor, error } = await supabase
         .from('vendors')
-        .insert([{
+        .insert({
+          vendorid: vendorId,
           vendorname: data.vendorname,
           email: data.email,
           phone: data.phone,
@@ -24,7 +35,7 @@ export const useVendorSubmit = (onSuccess: () => void) => {
           zip: data.zip,
           status: data.status,
           createdon: new Date().toISOString(),
-        }])
+        })
         .select();
       
       if (error) {
