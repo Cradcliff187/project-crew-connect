@@ -12,6 +12,7 @@ export const useEstimateSubmit = () => {
   const submitEstimate = async (data: EstimateFormValues, clients: { id: string; name: string }[], onSuccess: () => void) => {
     try {
       setIsSubmitting(true);
+      console.log("Submitting estimate with data:", data);
       
       // Make sure items match the EstimateItem type for calculations
       const typedItems: EstimateItem[] = data.items.map(item => ({
@@ -23,13 +24,16 @@ export const useEstimateSubmit = () => {
       const totalAmount = calculateSubtotal(typedItems);
       const contingencyPercentage = parseFloat(data.contingency_percentage || '0');
       
+      const clientName = clients.find(c => c.id === data.client)?.name || '';
+      console.log("Client name for the estimate:", clientName);
+      
       // Insert the estimate into the database
       const { data: estimateData, error: estimateError } = await supabase
         .from('estimates')
         .insert({
           customerid: data.client,
-          customername: clients.find(c => c.id === data.client)?.name || '',
-          "job description": data.description, // Note the space in column name
+          customername: clientName,
+          "job description": data.description,
           estimateamount: totalAmount,
           contingency_percentage: contingencyPercentage,
           sitelocationaddress: data.location.address,
@@ -39,17 +43,20 @@ export const useEstimateSubmit = () => {
           datecreated: new Date().toISOString(),
           status: 'draft',
           isactive: true,
-          // Field names that match what's in the database
           projectname: data.project
         })
         .select();
 
-      if (estimateError) throw estimateError;
+      if (estimateError) {
+        console.error("Error inserting estimate:", estimateError);
+        throw estimateError;
+      }
       
       if (!estimateData || estimateData.length === 0) {
         throw new Error('Failed to create estimate - no ID returned');
       }
       
+      console.log("Estimate created:", estimateData);
       const estimateId = estimateData[0].estimateid;
 
       // Insert the estimate items
@@ -61,11 +68,15 @@ export const useEstimateSubmit = () => {
         total_price: parseFloat(item.quantity) * parseFloat(item.unitPrice)
       }));
 
+      console.log("Inserting estimate items:", estimateItems);
       const { error: itemsError } = await supabase
         .from('estimate_items')
         .insert(estimateItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Error inserting estimate items:", itemsError);
+        throw itemsError;
+      }
 
       // Show success message
       toast({
