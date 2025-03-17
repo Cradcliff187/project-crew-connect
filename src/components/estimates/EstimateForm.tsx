@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Trash } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -67,7 +66,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
   });
 
   // Fetch clients when the form opens
-  useState(() => {
+  useEffect(() => {
     const fetchClients = async () => {
       try {
         const { data, error } = await supabase
@@ -89,7 +88,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     };
     
     fetchClients();
-  }, []);
+  }, [toast]);
 
   // Calculate the total estimate amount
   const calculateTotal = () => {
