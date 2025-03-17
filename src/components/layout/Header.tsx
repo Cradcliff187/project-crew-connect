@@ -36,7 +36,7 @@ const Header = () => {
         </Button>
         <img 
           src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" 
-          alt="AKC LLC Logo" 
+          alt="AKC Construction Logo" 
           className="h-6 w-auto ml-2 lg:hidden" 
         />
       </div>

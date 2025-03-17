@@ -24,7 +24,7 @@ const queryClient = new QueryClient();
 const App = () => {
   // Set document title
   useEffect(() => {
-    document.title = "AKC LLC - Construction Management";
+    document.title = "AKC Construction - Construction Management";
   }, []);
 
   return (

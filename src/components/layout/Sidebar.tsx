@@ -90,16 +90,16 @@ const Sidebar = () => {
             <div className="flex items-center">
               <img 
                 src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" 
-                alt="AKC LLC Logo" 
+                alt="AKC Construction Logo" 
                 className="h-8 w-auto mr-2" 
               />
-              <h1 className="text-lg font-semibold tracking-tight text-construction-700">AKC LLC</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-construction-700">AKC Construction</h1>
             </div>
           ) : (
             <div className="mx-auto">
               <img 
                 src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" 
-                alt="AKC LLC Logo" 
+                alt="AKC Construction Logo" 
                 className="h-8 w-auto" 
               />
             </div>
