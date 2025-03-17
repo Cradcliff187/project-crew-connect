@@ -28,6 +28,8 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
         return 'text-amber-700 bg-amber-50';
       case 'subcontractor':
         return 'text-purple-700 bg-purple-50';
+      case 'employee':
+        return 'text-[#0485ea] bg-blue-50';
       default:
         return 'text-gray-700 bg-gray-50';
     }
@@ -50,15 +52,22 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
             <h3 className="font-medium">{contact.name}</h3>
             <div className="flex items-center gap-1 text-sm mt-1 text-muted-foreground">
               <Building className="h-3 w-3" />
-              <span>{contact.company}</span>
+              <span>{contact.company || 'Internal'}</span>
             </div>
             <div className="flex gap-1 mt-1">
-              <p className="text-xs rounded-full bg-construction-50 inline-block px-2 py-0.5 text-construction-700">
-                {contact.role}
-              </p>
+              {contact.role && (
+                <p className="text-xs rounded-full bg-construction-50 inline-block px-2 py-0.5 text-construction-700">
+                  {contact.role}
+                </p>
+              )}
               <p className={`text-xs rounded-full px-2 py-0.5 capitalize ${getTypeColor(contact.type)}`}>
                 {contact.type}
               </p>
+              {contact.hourlyRate && (
+                <p className="text-xs rounded-full bg-green-50 inline-block px-2 py-0.5 text-green-700">
+                  ${contact.hourlyRate}/hr
+                </p>
+              )}
             </div>
           </div>
           
@@ -72,9 +81,23 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onView(contact)}>View details</DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(contact)}>Edit contact</DropdownMenuItem>
-              <DropdownMenuItem>View projects</DropdownMenuItem>
-              <DropdownMenuItem>View estimates</DropdownMenuItem>
+              {contact.type === 'supplier' && (
+                <DropdownMenuItem>View materials</DropdownMenuItem>
+              )}
+              {contact.type === 'subcontractor' && (
+                <DropdownMenuItem>Assign to project</DropdownMenuItem>
+              )}
+              {contact.type === 'employee' && (
+                <DropdownMenuItem>View timesheet</DropdownMenuItem>
+              )}
+              {['client', 'customer'].includes(contact.type) && (
+                <>
+                  <DropdownMenuItem>View projects</DropdownMenuItem>
+                  <DropdownMenuItem>View estimates</DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem>Send email</DropdownMenuItem>
+              <DropdownMenuItem>Schedule meeting</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-red-600"
@@ -95,15 +118,24 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
             <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
             <a href={`tel:${contact.phone}`} className="hover:text-[#0485ea]">{contact.phone}</a>
           </div>
-          <div className="flex items-start">
-            <MapPin className="h-4 w-4 mr-2 text-muted-foreground mt-0.5" />
-            <span className="text-muted-foreground">{contact.address}</span>
-          </div>
+          {contact.address && (
+            <div className="flex items-start">
+              <MapPin className="h-4 w-4 mr-2 text-muted-foreground mt-0.5" />
+              <span className="text-muted-foreground">{contact.address}</span>
+            </div>
+          )}
+          {contact.specialty && (
+            <div className="flex items-start mt-2">
+              <span className="text-muted-foreground">Specialty: {contact.specialty}</span>
+            </div>
+          )}
         </div>
       </div>
       
       <div className="px-5 py-3 bg-secondary/30 border-t border-border/50 flex justify-between items-center">
-        <span className="text-xs text-muted-foreground">Last contacted: {formatDate(contact.lastContact)}</span>
+        <span className="text-xs text-muted-foreground">
+          {contact.type === 'employee' ? 'Employee since:' : 'Last contacted:'} {formatDate(contact.lastContact)}
+        </span>
         <div className="space-x-1">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(contact)}>
             <Mail className="h-4 w-4" />

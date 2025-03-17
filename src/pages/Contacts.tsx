@@ -46,6 +46,8 @@ const contactsData = [
     phone: '(555) 234-5678',
     address: '910 Pine St, Anytown, CA 12345',
     type: 'subcontractor',
+    specialty: 'Electrical',
+    hourlyRate: '85',
     lastContact: '2023-10-05',
     notes: 'Reliable electrical contractor.'
   },
@@ -58,6 +60,8 @@ const contactsData = [
     phone: '(555) 345-6789',
     address: '1122 Maple Dr, Anytown, CA 12345',
     type: 'subcontractor',
+    specialty: 'Plumbing',
+    hourlyRate: '75',
     lastContact: '2023-10-02',
     notes: 'Available for emergency work.'
   },
@@ -82,6 +86,8 @@ const contactsData = [
     phone: '(555) 567-8901',
     address: '1516 Elm St, Anytown, CA 12345',
     type: 'subcontractor',
+    specialty: 'Concrete',
+    hourlyRate: '65',
     lastContact: '2023-09-25',
     notes: 'Specializes in decorative concrete work.'
   },
@@ -94,6 +100,8 @@ const contactsData = [
     phone: '(555) 678-9012',
     address: '1718 Birch Ave, Anytown, CA 12345',
     type: 'supplier',
+    specialty: 'Hardware',
+    materials: 'Nails, screws, fasteners, tools, and general hardware supplies',
     lastContact: '2023-09-20',
     notes: 'Offers contractor discounts.'
   },
@@ -106,8 +114,32 @@ const contactsData = [
     phone: '(555) 789-0123',
     address: '1920 Walnut St, Anytown, CA 12345',
     type: 'supplier',
+    specialty: 'Lumber',
+    materials: 'Dimensional lumber, plywood, OSB, treated wood products',
     lastContact: '2023-09-15',
     notes: 'Can source specialty woods.'
+  },
+  {
+    id: 'C-009',
+    name: 'Jennifer Parker',
+    role: 'Project Manager',
+    email: 'jennifer.parker@akcconstruction.com',
+    phone: '(555) 234-5677',
+    type: 'employee',
+    hourlyRate: '45',
+    lastContact: '2022-06-15',
+    notes: 'Handles commercial projects primarily.'
+  },
+  {
+    id: 'C-010',
+    name: 'Thomas Wright',
+    role: 'Senior Carpenter',
+    email: 'thomas.wright@akcconstruction.com',
+    phone: '(555) 987-3456',
+    type: 'employee',
+    hourlyRate: '38',
+    lastContact: '2021-03-10',
+    notes: 'Specialized in finish carpentry.'
   }
 ];
 
@@ -122,8 +154,9 @@ const Contacts = () => {
   const filteredContacts = contacts
     .filter(contact => 
       contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchQuery.toLowerCase())
+      (contact.company && contact.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (contact.specialty && contact.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .filter(contact => activeTab === 'all' || contact.type === activeTab);
   
@@ -176,7 +209,7 @@ const Contacts = () => {
           <div className="flex flex-col gap-2 mb-6 animate-in">
             <h1 className="text-3xl font-semibold tracking-tight">Contacts</h1>
             <p className="text-muted-foreground">
-              Manage your contacts, customers and business relationships
+              Manage your clients, customers, suppliers, subcontractors, and employees
             </p>
           </div>
           
@@ -216,6 +249,7 @@ const Contacts = () => {
               <TabsTrigger value="customer" className="px-4">Customers</TabsTrigger>
               <TabsTrigger value="supplier" className="px-4">Suppliers</TabsTrigger>
               <TabsTrigger value="subcontractor" className="px-4">Subcontractors</TabsTrigger>
+              <TabsTrigger value="employee" className="px-4">Employees</TabsTrigger>
             </TabsList>
           </Tabs>
           

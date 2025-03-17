@@ -37,9 +37,12 @@ const formSchema = z.object({
   }),
   company: z.string().optional(),
   role: z.string().optional(),
-  type: z.enum(['client', 'subcontractor', 'supplier', 'customer']),
+  type: z.enum(['client', 'subcontractor', 'supplier', 'customer', 'employee']),
   address: z.string().optional(),
   notes: z.string().optional(),
+  specialty: z.string().optional(),
+  hourlyRate: z.string().optional(),
+  materials: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -51,6 +54,8 @@ interface ContactFormProps {
 }
 
 const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
+  const [contactType, setContactType] = useState(initialData?.type || 'client');
+  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -62,11 +67,21 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
       type: initialData?.type || 'client',
       address: initialData?.address || '',
       notes: initialData?.notes || '',
+      specialty: initialData?.specialty || '',
+      hourlyRate: initialData?.hourlyRate || '',
+      materials: initialData?.materials || '',
     },
   });
 
   const handleSubmit = (data: FormData) => {
     onSubmit(data);
+  };
+  
+  const handleTypeChange = (value: string) => {
+    if (value === 'employee' || value === 'subcontractor' || value === 'supplier' || value === 'client' || value === 'customer') {
+      setContactType(value);
+      form.setValue('type', value);
+    }
   };
 
   return (
@@ -132,7 +147,10 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select 
+                      onValueChange={(value) => handleTypeChange(value)} 
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select contact type" />
@@ -140,9 +158,10 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="client">Client</SelectItem>
-                        <SelectItem value="subcontractor">Subcontractor</SelectItem>
-                        <SelectItem value="supplier">Supplier</SelectItem>
                         <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="supplier">Supplier</SelectItem>
+                        <SelectItem value="subcontractor">Subcontractor</SelectItem>
+                        <SelectItem value="employee">Employee</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -150,19 +169,21 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="company"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Company name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {contactType !== 'employee' && (
+                <FormField
+                  control={form.control}
+                  name="company"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Company name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
@@ -177,6 +198,53 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
                   </FormItem>
                 )}
               />
+
+              {(contactType === 'subcontractor' || contactType === 'employee') && (
+                <FormField
+                  control={form.control}
+                  name="hourlyRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hourly Rate ($)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00" 
+                          step="0.01" 
+                          min="0"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {(contactType === 'supplier' || contactType === 'subcontractor') && (
+                <FormField
+                  control={form.control}
+                  name="specialty"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {contactType === 'supplier' ? 'Supply Type' : 'Specialty'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder={
+                            contactType === 'supplier' 
+                              ? "e.g., Lumber, Electrical, Plumbing" 
+                              : "e.g., Framing, Electrical, Plumbing"
+                          } 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <FormField
@@ -192,6 +260,26 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
                 </FormItem>
               )}
             />
+
+            {contactType === 'supplier' && (
+              <FormField
+                control={form.control}
+                name="materials"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Materials/Products</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="List materials or products this supplier provides" 
+                        className="resize-none h-24"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
