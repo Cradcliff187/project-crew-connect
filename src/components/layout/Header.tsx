@@ -34,6 +34,11 @@ const Header = () => {
         <Button variant="ghost" size="icon" onClick={toggleSidebar}>
           <Menu className="h-5 w-5" />
         </Button>
+        <img 
+          src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" 
+          alt="AKC LLC Logo" 
+          className="h-6 w-auto ml-2 lg:hidden" 
+        />
       </div>
       
       <div className="hidden md:flex items-center w-full max-w-xs ml-auto mr-4">
@@ -97,8 +102,8 @@ const Header = () => {
           </DropdownMenuContent>
         </DropdownMenu>
         
-        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-construction-600 to-construction-800 flex items-center justify-center text-white">
-          <span className="font-medium text-sm">CM</span>
+        <div className="h-8 w-8 rounded-full bg-construction-600 flex items-center justify-center text-white">
+          <span className="font-medium text-sm">AK</span>
         </div>
       </div>
     </header>

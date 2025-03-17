@@ -88,14 +88,20 @@ const Sidebar = () => {
         <div className="flex h-16 items-center justify-between px-4 py-4">
           {isOpen ? (
             <div className="flex items-center">
-              <div className="h-7 w-7 rounded-md bg-construction-600 flex items-center justify-center text-white mr-2">
-                <span className="font-medium text-sm">CM</span>
-              </div>
-              <h1 className="text-lg font-semibold tracking-tight">ConstructCRM</h1>
+              <img 
+                src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" 
+                alt="AKC LLC Logo" 
+                className="h-8 w-auto mr-2" 
+              />
+              <h1 className="text-lg font-semibold tracking-tight text-construction-700">AKC LLC</h1>
             </div>
           ) : (
-            <div className="h-8 w-8 rounded-md bg-construction-600 flex items-center justify-center text-white mx-auto">
-              <span className="font-medium text-sm">CM</span>
+            <div className="mx-auto">
+              <img 
+                src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" 
+                alt="AKC LLC Logo" 
+                className="h-8 w-auto" 
+              />
             </div>
           )}
           <Button 
