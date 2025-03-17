@@ -14,35 +14,39 @@ const Vendors = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Fetch vendors from Supabase
-  useEffect(() => {
-    const fetchVendors = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('vendors')
-          .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon')
-          .order('createdon', { ascending: false });
-        
-        if (error) {
-          throw error;
-        }
-        
-        setVendors(data || []);
-      } catch (error: any) {
-        console.error('Error fetching vendors:', error);
-        setError(error.message);
-        toast({
-          title: 'Error fetching vendors',
-          description: error.message,
-          variant: 'destructive'
-        });
-      } finally {
-        setLoading(false);
+  const fetchVendors = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon')
+        .order('createdon', { ascending: false });
+      
+      if (error) {
+        throw error;
       }
-    };
-    
+      
+      setVendors(data || []);
+    } catch (error: any) {
+      console.error('Error fetching vendors:', error);
+      setError(error.message);
+      toast({
+        title: 'Error fetching vendors',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchVendors();
   }, []);
+
+  const handleVendorAdded = () => {
+    fetchVendors();
+  };
 
   return (
     <PageTransition>
@@ -53,6 +57,7 @@ const Vendors = () => {
           <VendorsHeader 
             searchQuery={searchQuery} 
             setSearchQuery={setSearchQuery} 
+            onVendorAdded={handleVendorAdded}
           />
           
           <VendorsTable 

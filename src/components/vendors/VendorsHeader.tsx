@@ -1,14 +1,19 @@
 
+import { useState } from 'react';
 import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import VendorDialog from './VendorDialog';
 
 interface VendorsHeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  onVendorAdded: () => void;
 }
 
-const VendorsHeader = ({ searchQuery, setSearchQuery }: VendorsHeaderProps) => {
+const VendorsHeader = ({ searchQuery, setSearchQuery, onVendorAdded }: VendorsHeaderProps) => {
+  const [showVendorDialog, setShowVendorDialog] = useState(false);
+  
   return (
     <>
       <div className="flex flex-col gap-2 mb-6 animate-in">
@@ -36,12 +41,23 @@ const VendorsHeader = ({ searchQuery, setSearchQuery }: VendorsHeaderProps) => {
             Filter
             <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
           </Button>
-          <Button size="sm" className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]">
+          <Button 
+            size="sm" 
+            className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]"
+            onClick={() => setShowVendorDialog(true)}
+          >
             <Plus className="h-4 w-4 mr-1" />
             New Vendor
           </Button>
         </div>
       </div>
+      
+      {/* Vendor Dialog */}
+      <VendorDialog 
+        open={showVendorDialog} 
+        onOpenChange={setShowVendorDialog} 
+        onVendorAdded={onVendorAdded} 
+      />
     </>
   );
 };

@@ -1,6 +1,6 @@
 
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, BarChart2, FileText, Briefcase, Users, Clock, ChevronLeft, Settings, FileUp } from 'lucide-react';
+import { Home, BarChart2, FileText, Briefcase, Users, Clock, ChevronLeft, Settings, FileUp, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -148,6 +148,13 @@ const Sidebar = () => {
               path="/contacts" 
               isActive={isActive("/contacts")}
               onClick={() => handleNavigate("/contacts")}
+            />
+            <NavItem 
+              icon={Package} 
+              label="Vendors" 
+              path="/vendors" 
+              isActive={isActive("/vendors")}
+              onClick={() => handleNavigate("/vendors")}
             />
             <NavItem 
               icon={Clock} 
