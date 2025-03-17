@@ -93,7 +93,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
           projectname: data.project,
           customerid: data.client,
           customername: clients.find(c => c.id === data.client)?.name || '',
-          job_description: data.description,
+          "job description": data.description, // Note the space in column name
           estimateamount: totalAmount,
           contingency_percentage: contingencyPercentage,
           sitelocationaddress: data.location.address,

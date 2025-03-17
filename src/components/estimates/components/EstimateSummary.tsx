@@ -1,8 +1,9 @@
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { Info } from 'lucide-react';
+import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { calculateSubtotal, calculateContingencyAmount, calculateGrandTotal } from '../utils/estimateCalculations';
@@ -10,17 +11,15 @@ import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema'
 
 const EstimateSummary = () => {
   const form = useFormContext<EstimateFormValues>();
-  
-  // Watch for changes in the items and contingency_percentage fields
   const items = useWatch({
     control: form.control,
-    name: "items",
+    name: 'items',
     defaultValue: []
   });
-  
+
   const contingencyPercentage = useWatch({
     control: form.control,
-    name: "contingency_percentage",
+    name: 'contingency_percentage',
     defaultValue: "0"
   });
 
@@ -36,59 +35,74 @@ const EstimateSummary = () => {
 
   return (
     <div className="mt-6 space-y-4">
-      <FormField
-        control={form.control}
-        name="contingency_percentage"
-        render={({ field }) => (
-          <FormItem>
-            <div className="flex items-center gap-2">
-              <FormLabel>Contingency Percentage</FormLabel>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full p-0">
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Add a percentage for unexpected costs</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+      <h3 className="text-lg font-medium">Estimate Summary</h3>
+      
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Subtotal:</span>
+              <span className="font-medium">${subtotal.toFixed(2)}</span>
             </div>
-            <FormControl>
-              <div className="flex items-center">
-                <Input
-                  type="number"
-                  placeholder="0"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  className="max-w-[120px]"
-                  {...field}
+            
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <FormField
+                  control={form.control}
+                  name="contingency_percentage"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormLabel className="text-sm text-gray-600 flex-shrink-0 m-0">
+                        Contingency:
+                      </FormLabel>
+                      <div className="flex items-center gap-1">
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            className="w-20 h-8"
+                            {...field}
+                          />
+                        </FormControl>
+                        <span>%</span>
+                      </div>
+                    </FormItem>
+                  )}
                 />
-                <span className="ml-2">%</span>
               </div>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <div className="bg-muted p-4 rounded-md space-y-2">
-        <div className="flex justify-between items-center text-sm">
-          <span>Subtotal:</span>
-          <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="font-medium">${contingencyAmount.toFixed(2)}</span>
+            </div>
+            
+            <div className="flex justify-between pt-2 border-t">
+              <span className="text-md font-semibold">Total:</span>
+              <span className="font-semibold">${grandTotal.toFixed(2)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <TooltipProvider>
+        <div className="flex justify-end">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="text-sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(grandTotal.toFixed(2));
+                }}
+              >
+                Copy Total
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Copy total amount to clipboard</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <span>Contingency Amount:</span>
-          <span>${contingencyAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-        </div>
-        <div className="flex justify-between items-center font-medium border-t pt-2 mt-2">
-          <span>Total Estimate Amount:</span>
-          <span>${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-        </div>
-      </div>
+      </TooltipProvider>
     </div>
   );
 };
