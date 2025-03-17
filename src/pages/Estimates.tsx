@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import Header from '@/components/layout/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EstimateDetails, { EstimateItem, EstimateRevision } from '@/components/estimates/EstimateDetails';
+import EstimateForm from '@/components/estimates/EstimateForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusType } from '@/types/common';
 
@@ -43,6 +45,7 @@ const Estimates = () => {
   const [selectedEstimate, setSelectedEstimate] = useState<EstimateType | null>(null);
   const [estimateItems, setEstimateItems] = useState<EstimateItem[]>([]);
   const [estimateRevisions, setEstimateRevisions] = useState<EstimateRevision[]>([]);
+  const [showNewEstimateForm, setShowNewEstimateForm] = useState(false);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -187,6 +190,15 @@ const Estimates = () => {
       year: 'numeric' 
     }).format(date);
   };
+
+  const handleCreateNewEstimate = () => {
+    setShowNewEstimateForm(true);
+  };
+
+  const handleCloseNewEstimateForm = () => {
+    setShowNewEstimateForm(false);
+    fetchEstimates(); // Refresh the list after creating a new estimate
+  };
   
   return (
     <PageTransition>
@@ -219,7 +231,11 @@ const Estimates = () => {
                 Filter
                 <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
               </Button>
-              <Button size="sm" className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0373ce]">
+              <Button 
+                size="sm" 
+                className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0373ce]"
+                onClick={handleCreateNewEstimate}
+              >
                 <Plus className="h-4 w-4 mr-1" />
                 New Estimate
               </Button>
@@ -312,6 +328,11 @@ const Estimates = () => {
           onClose={closeEstimateDetails}
         />
       )}
+
+      <EstimateForm 
+        open={showNewEstimateForm} 
+        onClose={handleCloseNewEstimateForm}
+      />
     </PageTransition>
   );
 };
