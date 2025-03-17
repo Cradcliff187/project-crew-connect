@@ -180,6 +180,91 @@ export type Database = {
         }
         Relationships: []
       }
+      estimate_items: {
+        Row: {
+          created_at: string
+          description: string
+          estimate_id: string
+          id: string
+          quantity: number
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          estimate_id: string
+          id?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          estimate_id?: string
+          id?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_estimate_items_estimateid"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["estimateid"]
+          },
+        ]
+      }
+      estimate_revisions: {
+        Row: {
+          amount: number | null
+          created_at: string
+          estimate_id: string
+          id: string
+          notes: string | null
+          revision_by: string | null
+          revision_date: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          estimate_id: string
+          id?: string
+          notes?: string | null
+          revision_by?: string | null
+          revision_date?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          estimate_id?: string
+          id?: string
+          notes?: string | null
+          revision_by?: string | null
+          revision_date?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_estimate_revisions_estimateid"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["estimateid"]
+          },
+        ]
+      }
       estimates: {
         Row: {
           approveddate: string | null

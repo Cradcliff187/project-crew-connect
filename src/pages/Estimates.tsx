@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,60 +14,159 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import StatusBadge from '@/components/ui/StatusBadge';
 import PageTransition from '@/components/layout/PageTransition';
 import Header from '@/components/layout/Header';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import EstimateDetails, { EstimateItem, EstimateRevision } from '@/components/estimates/EstimateDetails';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Sample data - In a real app, this would come from API calls
-const estimatesData = [
-  {
-    id: 'EST-1001',
-    client: 'Jackson Properties',
-    project: 'Office Renovation',
-    date: '2023-10-15',
-    amount: 45000,
-    status: 'pending' as const,
-    versions: 2
-  },
-  {
-    id: 'EST-1002',
-    client: 'Vanguard Development',
-    project: 'New Construction',
-    date: '2023-10-12',
-    amount: 72000,
-    status: 'draft' as const,
-    versions: 1
-  },
-  {
-    id: 'EST-1003',
-    client: 'Metro Builders',
-    project: 'Warehouse Extension',
-    date: '2023-10-10',
-    amount: 38500,
-    status: 'approved' as const,
-    versions: 3
-  },
-  {
-    id: 'EST-1004',
-    client: 'Highrise Inc.',
-    project: 'Skyline Tower',
-    date: '2023-10-08',
-    amount: 145000,
-    status: 'rejected' as const,
-    versions: 2
-  },
-  {
-    id: 'EST-1005',
-    client: 'Coastal Developments',
-    project: 'Beach Resort',
-    date: '2023-10-05',
-    amount: 87500,
-    status: 'approved' as const,
-    versions: 1
-  },
-];
+type EstimateType = {
+  id: string;
+  client: string;
+  project: string;
+  date: string;
+  amount: number;
+  status: string;
+  versions: number;
+  description?: string;
+  location?: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  };
+};
 
 const Estimates = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [estimates, setEstimates] = useState<EstimateType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedEstimate, setSelectedEstimate] = useState<EstimateType | null>(null);
+  const [estimateItems, setEstimateItems] = useState<EstimateItem[]>([]);
+  const [estimateRevisions, setEstimateRevisions] = useState<EstimateRevision[]>([]);
+  const { toast } = useToast();
   
-  const filteredEstimates = estimatesData.filter(estimate => 
+  useEffect(() => {
+    fetchEstimates();
+  }, []);
+  
+  const fetchEstimates = async () => {
+    try {
+      setLoading(true);
+      const { data: estimatesData, error } = await supabase
+        .from('estimates')
+        .select(`
+          estimateid,
+          customername,
+          projectname,
+          datecreated,
+          estimateamount,
+          status,
+          "job description",
+          sitelocationaddress,
+          sitelocationcity,
+          sitelocationstate,
+          sitelocationzip,
+          customerid,
+          projectid
+        `)
+        .order('datecreated', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Get revision counts for each estimate
+      const { data: revisionCounts, error: revisionsError } = await supabase
+        .from('estimate_revisions')
+        .select('estimate_id, count')
+        .group('estimate_id');
+
+      if (revisionsError) {
+        console.error('Error fetching revision counts:', revisionsError);
+      }
+
+      // Transform the data to match the expected format
+      const formattedEstimates = estimatesData.map(estimate => {
+        const revisionCount = revisionCounts?.find(r => r.estimate_id === estimate.estimateid)?.count || 0;
+        
+        return {
+          id: estimate.estimateid,
+          client: estimate.customername || 'Unknown Client',
+          project: estimate.projectname || 'Unnamed Project',
+          date: estimate.datecreated || new Date().toISOString(),
+          amount: Number(estimate.estimateamount) || 0,
+          status: estimate.status || 'draft',
+          versions: Number(revisionCount) + 1,
+          description: estimate["job description"],
+          location: {
+            address: estimate.sitelocationaddress,
+            city: estimate.sitelocationcity,
+            state: estimate.sitelocationstate,
+            zip: estimate.sitelocationzip
+          }
+        };
+      });
+
+      setEstimates(formattedEstimates);
+    } catch (error) {
+      console.error('Error fetching estimates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load estimates. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const fetchEstimateDetails = async (estimateId: string) => {
+    try {
+      // Fetch estimate items
+      const { data: items, error: itemsError } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('estimate_id', estimateId);
+      
+      if (itemsError) {
+        throw itemsError;
+      }
+      
+      // Fetch estimate revisions
+      const { data: revisions, error: revisionsError } = await supabase
+        .from('estimate_revisions')
+        .select('*')
+        .eq('estimate_id', estimateId)
+        .order('version', { ascending: false });
+      
+      if (revisionsError) {
+        throw revisionsError;
+      }
+      
+      setEstimateItems(items || []);
+      setEstimateRevisions(revisions || []);
+    } catch (error) {
+      console.error('Error fetching estimate details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load estimate details. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleViewEstimate = (estimate: EstimateType) => {
+    setSelectedEstimate(estimate);
+    fetchEstimateDetails(estimate.id);
+  };
+  
+  const closeEstimateDetails = () => {
+    setSelectedEstimate(null);
+    setEstimateItems([]);
+    setEstimateRevisions([]);
+  };
+  
+  const filteredEstimates = estimates.filter(estimate => 
     estimate.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
     estimate.project.toLowerCase().includes(searchQuery.toLowerCase()) ||
     estimate.id.toLowerCase().includes(searchQuery.toLowerCase())
@@ -113,14 +212,14 @@ const Estimates = () => {
                 Filter
                 <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
               </Button>
-              <Button size="sm" className="flex-1 md:flex-auto btn-premium">
+              <Button size="sm" className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0373ce]">
                 <Plus className="h-4 w-4 mr-1" />
                 New Estimate
               </Button>
             </div>
           </div>
           
-          <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+          <div className="bg-white border rounded-lg shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -135,41 +234,58 @@ const Estimates = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEstimates.map((estimate) => (
-                  <TableRow key={estimate.id}>
-                    <TableCell className="font-medium">{estimate.id}</TableCell>
-                    <TableCell>{estimate.client}</TableCell>
-                    <TableCell>{estimate.project}</TableCell>
-                    <TableCell>{formatDate(estimate.date)}</TableCell>
-                    <TableCell>${estimate.amount.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={estimate.status} />
-                    </TableCell>
-                    <TableCell>{estimate.versions}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View details</DropdownMenuItem>
-                          <DropdownMenuItem>Edit estimate</DropdownMenuItem>
-                          <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                          <DropdownMenuItem>Create new version</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>Convert to project</DropdownMenuItem>
-                          <DropdownMenuItem>Download PDF</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredEstimates.length === 0 && (
+                {loading ? (
+                  // Loading state with skeletons
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={`skeleton-${i}`}>
+                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-6" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredEstimates.length > 0 ? (
+                  // Show data if loaded and available
+                  filteredEstimates.map((estimate) => (
+                    <TableRow key={estimate.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewEstimate(estimate)}>
+                      <TableCell className="font-medium">{estimate.id}</TableCell>
+                      <TableCell>{estimate.client}</TableCell>
+                      <TableCell>{estimate.project}</TableCell>
+                      <TableCell>{formatDate(estimate.date)}</TableCell>
+                      <TableCell>${estimate.amount.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={estimate.status} />
+                      </TableCell>
+                      <TableCell>{estimate.versions}</TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewEstimate(estimate)}>View details</DropdownMenuItem>
+                            <DropdownMenuItem>Edit estimate</DropdownMenuItem>
+                            <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                            <DropdownMenuItem>Create new version</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>Convert to project</DropdownMenuItem>
+                            <DropdownMenuItem>Download PDF</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  // Empty state
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                       <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
@@ -182,6 +298,16 @@ const Estimates = () => {
           </div>
         </main>
       </div>
+      
+      {selectedEstimate && (
+        <EstimateDetails 
+          estimate={selectedEstimate}
+          items={estimateItems}
+          revisions={estimateRevisions}
+          open={!!selectedEstimate}
+          onClose={closeEstimateDetails}
+        />
+      )}
     </PageTransition>
   );
 };
