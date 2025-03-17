@@ -99,6 +99,87 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          created_at: string
+          document_id: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          storage_path: string
+          tags: string[] | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_id?: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          storage_path: string
+          tags?: string[] | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          entity_id?: string
+          entity_type?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          storage_path?: string
+          tags?: string[] | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
+      employees: {
+        Row: {
+          created_at: string
+          email: string | null
+          employee_id: string
+          first_name: string
+          hourly_rate: number | null
+          last_name: string
+          phone: string | null
+          role: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          employee_id?: string
+          first_name: string
+          hourly_rate?: number | null
+          last_name: string
+          phone?: string | null
+          role?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          employee_id?: string
+          first_name?: string
+          hourly_rate?: number | null
+          last_name?: string
+          phone?: string | null
+          role?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       estimates: {
         Row: {
           approveddate: string | null
@@ -189,6 +270,73 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["projectid"]
+          },
+        ]
+      }
+      maintenance_work_orders: {
+        Row: {
+          assigned_to: string | null
+          completed_date: string | null
+          created_at: string
+          customer_id: string | null
+          description: string | null
+          location_id: string | null
+          priority: string | null
+          scheduled_date: string | null
+          status: string | null
+          title: string
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_date?: string | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          location_id?: string | null
+          priority?: string | null
+          scheduled_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          work_order_id?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_date?: string | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          location_id?: string | null
+          priority?: string | null
+          scheduled_date?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_work_orders_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "maintenance_work_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["customerid"]
+          },
+          {
+            foreignKeyName: "maintenance_work_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "site_locations"
+            referencedColumns: ["location_id"]
           },
         ]
       }
@@ -326,6 +474,53 @@ export type Database = {
           {
             foreignKeyName: "fk_projects_customerid"
             columns: ["customerid"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["customerid"]
+          },
+        ]
+      }
+      site_locations: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          customer_id: string | null
+          is_active: boolean | null
+          location_id: string
+          location_name: string | null
+          state: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          customer_id?: string | null
+          is_active?: boolean | null
+          location_id?: string
+          location_name?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          customer_id?: string | null
+          is_active?: boolean | null
+          location_id?: string
+          location_name?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_locations_customer_id_fkey"
+            columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["customerid"]
@@ -500,6 +695,7 @@ export type Database = {
           starttime: string | null
           submittinguser: string | null
           timelogid: string
+          total_amount: number | null
           totalhours: string | null
           updated_at: string
         }
@@ -515,6 +711,7 @@ export type Database = {
           starttime?: string | null
           submittinguser?: string | null
           timelogid: string
+          total_amount?: number | null
           totalhours?: string | null
           updated_at?: string
         }
@@ -530,6 +727,7 @@ export type Database = {
           starttime?: string | null
           submittinguser?: string | null
           timelogid?: string
+          total_amount?: number | null
           totalhours?: string | null
           updated_at?: string
         }
@@ -645,9 +843,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_work_order_status_transition: {
+        Args: {
+          current_status: string
+          new_status: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      entity_type: "PROJECT" | "ESTIMATE" | "VENDOR" | "CUSTOMER"
+      entity_type: "PROJECT" | "ESTIMATE" | "VENDOR" | "CUSTOMER" | "WORK_ORDER"
     }
     CompositeTypes: {
       [_ in never]: never

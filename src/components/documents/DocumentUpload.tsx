@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   documentType: z.enum(['receipt', 'invoice']),
@@ -26,6 +28,8 @@ const formSchema = z.object({
   supplier: z.string().min(1, 'Supplier/subcontractor name is required'),
   projectId: z.string().optional(),
   notes: z.string().optional(),
+  entityType: z.enum(['PROJECT', 'CUSTOMER', 'ESTIMATE', 'WORK_ORDER']),
+  entityId: z.string().optional()
 });
 
 type DocumentUploadProps = {
@@ -38,6 +42,7 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,6 +52,8 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
       supplier: '',
       projectId: projectId || '',
       notes: '',
+      entityType: 'PROJECT',
+      entityId: projectId || '',
     },
   });
 
@@ -73,20 +80,54 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
     }
 
     setIsSubmitting(true);
+    setUploadProgress(0);
 
     try {
-      // In a real application, we would upload files to a server
-      // For demonstration, we'll simulate a successful upload
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Upload files to Supabase storage
+      const uploadResults = await Promise.all(
+        files.map(async (file) => {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+          const filePath = `${data.entityType}/${data.entityId || 'general'}/${fileName}`;
+          
+          const { data: uploadData, error } = await supabase.storage
+            .from('construction_documents')
+            .upload(filePath, file);
 
-      const uploadedData = {
-        ...data,
-        files: files.map(file => ({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-        })),
-      };
+          if (error) throw error;
+          
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('construction_documents')
+            .getPublicUrl(filePath);
+            
+          return {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            path: filePath,
+            url: publicUrl
+          };
+        })
+      );
+
+      // Record document metadata in documents table
+      for (const uploadResult of uploadResults) {
+        const { error: dbError } = await supabase
+          .from('documents')
+          .insert({
+            file_name: uploadResult.name,
+            file_type: uploadResult.type,
+            file_size: uploadResult.size,
+            storage_path: uploadResult.path,
+            entity_type: data.entityType,
+            entity_id: data.entityId || '',
+            uploaded_by: 'current_user', // In a real app, this would be the authenticated user
+            tags: [data.documentType, data.supplier.toLowerCase().replace(/\s+/g, '-')],
+          });
+
+        if (dbError) throw dbError;
+      }
 
       // Show success state
       setIsSuccess(true);
@@ -94,7 +135,10 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
       // After successful upload
       if (onSuccess) {
         setTimeout(() => {
-          onSuccess(uploadedData);
+          onSuccess({
+            ...data,
+            files: uploadResults,
+          });
         }, 1000);
       }
 
@@ -261,34 +305,46 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
               />
             </div>
 
-            {projectId ? (
-              <FormItem>
-                <FormLabel>Project</FormLabel>
-                <FormControl>
-                  <Input value={projectId} disabled />
-                </FormControl>
-                <FormDescription>
-                  This document will be associated with the current project
-                </FormDescription>
-              </FormItem>
-            ) : (
-              <FormField
-                control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project ID (Optional)</FormLabel>
+            <FormField
+              control={form.control}
+              name="entityType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Related To</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <Input placeholder="Enter project ID" {...field} />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select entity type" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormDescription>
-                      Associate this document with a project
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                    <SelectContent>
+                      <SelectItem value="PROJECT">Project</SelectItem>
+                      <SelectItem value="CUSTOMER">Customer</SelectItem>
+                      <SelectItem value="ESTIMATE">Estimate</SelectItem>
+                      <SelectItem value="WORK_ORDER">Work Order</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="entityId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ID (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder={`Enter ${form.watch('entityType').toLowerCase()} ID`} {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Associate this document with a specific {form.watch('entityType').toLowerCase()}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -323,7 +379,7 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
                   Cancel
                 </Button>
               )}
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="btn-premium">
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Upload Document
               </Button>

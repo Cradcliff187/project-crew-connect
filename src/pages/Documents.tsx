@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown, UploadCloud, Receipt, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,96 +17,126 @@ import Header from '@/components/layout/Header';
 import DocumentUpload from '@/components/documents/DocumentUpload';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
-// Sample data for demonstration
-const documentsData = [
-  {
-    id: 'DOC-1001',
-    fileName: 'lumber_receipt.pdf',
-    documentType: 'receipt',
-    supplier: 'ABC Lumber Co',
-    amount: 1250.75,
-    date: '2023-09-15',
-    projectId: 'PR-2001',
-    uploadedBy: 'John Doe',
-    uploadDate: '2023-09-16',
-    tags: ['materials', 'lumber']
-  },
-  {
-    id: 'DOC-1002',
-    fileName: 'electrical_invoice.pdf',
-    documentType: 'invoice',
-    supplier: 'Johnson Electric',
-    amount: 2800.00,
-    date: '2023-09-10',
-    projectId: 'PR-2001',
-    uploadedBy: 'Jane Smith',
-    uploadDate: '2023-09-11',
-    tags: ['services', 'electrical']
-  },
-  {
-    id: 'DOC-1003',
-    fileName: 'paint_supplies.jpg',
-    documentType: 'receipt',
-    supplier: 'ColorWorld Paints',
-    amount: 450.25,
-    date: '2023-09-20',
-    projectId: 'PR-2002',
-    uploadedBy: 'John Doe',
-    uploadDate: '2023-09-20',
-    tags: ['materials', 'paint']
-  },
-  {
-    id: 'DOC-1004',
-    fileName: 'plumbing_service.pdf',
-    documentType: 'invoice',
-    supplier: 'Quality Plumbing Inc',
-    amount: 1850.00,
-    date: '2023-09-25',
-    projectId: 'PR-2003',
-    uploadedBy: 'Jane Smith',
-    uploadDate: '2023-09-26',
-    tags: ['services', 'plumbing']
-  },
-  {
-    id: 'DOC-1005',
-    fileName: 'concrete_delivery.jpg',
-    documentType: 'receipt',
-    supplier: 'FastCrete Solutions',
-    amount: 3200.50,
-    date: '2023-09-18',
-    projectId: 'PR-2002',
-    uploadedBy: 'John Doe',
-    uploadDate: '2023-09-18',
-    tags: ['materials', 'concrete']
-  },
-];
+// Define the document type
+interface Document {
+  document_id: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  storage_path: string;
+  entity_type: string;
+  entity_id: string;
+  uploaded_by: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+  url?: string;
+}
 
 const Documents = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const filteredDocuments = documentsData.filter(doc => {
+  // Fetch documents on component mount
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const fetchDocuments = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Get public URLs for all documents
+      const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('construction_documents')
+          .getPublicUrl(doc.storage_path);
+        
+        return {
+          ...doc,
+          url: publicUrl
+        };
+      }));
+
+      setDocuments(docsWithUrls);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load documents. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteDocument = async (documentId: string, storagePath: string) => {
+    try {
+      // First delete the file from storage
+      const { error: storageError } = await supabase.storage
+        .from('construction_documents')
+        .remove([storagePath]);
+
+      if (storageError) throw storageError;
+
+      // Then delete the database record
+      const { error: dbError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('document_id', documentId);
+
+      if (dbError) throw dbError;
+
+      // Update the local state
+      setDocuments(documents.filter(doc => doc.document_id !== documentId));
+
+      toast({
+        title: "Success",
+        description: "Document deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete document. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const filteredDocuments = documents.filter(doc => {
     // Filter by search query
     const matchesSearch = 
-      doc.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.supplier.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.projectId.toLowerCase().includes(searchQuery.toLowerCase());
+      doc.file_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.entity_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.entity_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
     
-    // Filter by document type
+    // Filter by document type (tab)
     const matchesTab = 
       selectedTab === 'all' || 
-      (selectedTab === 'receipts' && doc.documentType === 'receipt') ||
-      (selectedTab === 'invoices' && doc.documentType === 'invoice');
+      (selectedTab === 'receipts' && doc.tags && doc.tags.includes('receipt')) ||
+      (selectedTab === 'invoices' && doc.tags && doc.tags.includes('invoice'));
     
     return matchesSearch && matchesTab;
   });
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
+    return new Intl.DateTimeFormatter('en-US', { 
       month: 'short', 
       day: 'numeric', 
       year: 'numeric' 
@@ -114,15 +144,28 @@ const Documents = () => {
   };
 
   const handleDocumentUploadSuccess = (data: any) => {
-    console.log('Document uploaded:', data);
     setIsDialogOpen(false);
-    // In a real app, we would update the state or trigger a refetch
+    fetchDocuments(); // Refresh the documents list
   };
   
-  const getDocumentTypeIcon = (type: string) => {
-    return type === 'receipt' ? 
-      <Receipt className="h-4 w-4 text-yellow-600" /> : 
-      <File className="h-4 w-4 text-blue-600" />;
+  const getDocumentTypeIcon = (doc: Document) => {
+    if (doc.tags && doc.tags.includes('receipt')) {
+      return <Receipt className="h-4 w-4 text-yellow-600" />;
+    } else if (doc.tags && doc.tags.includes('invoice')) {
+      return <File className="h-4 w-4 text-blue-600" />;
+    } else {
+      return <FileText className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getDocumentType = (doc: Document) => {
+    if (doc.tags && doc.tags.includes('receipt')) {
+      return 'Receipt';
+    } else if (doc.tags && doc.tags.includes('invoice')) {
+      return 'Invoice';
+    } else {
+      return 'Document';
+    }
   };
   
   return (
@@ -158,7 +201,7 @@ const Documents = () => {
               </Button>
               <Button 
                 size="sm" 
-                className="flex-1 md:flex-auto btn-premium"
+                className="flex-1 md:flex-auto btn-premium bg-[#0485ea] hover:bg-[#0485ea]/90 text-white"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <UploadCloud className="h-4 w-4 mr-1" />
@@ -187,63 +230,97 @@ const Documents = () => {
                 <TableRow>
                   <TableHead>Document</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Supplier/Subcontractor</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Project</TableHead>
+                  <TableHead>Related To</TableHead>
+                  <TableHead>Size</TableHead>
                   <TableHead>Uploaded</TableHead>
+                  <TableHead>Tags</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocuments.map((doc) => (
-                  <TableRow key={doc.id}>
-                    <TableCell>
-                      <div className="font-medium">{doc.fileName}</div>
-                      <div className="text-xs text-muted-foreground">{doc.id}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        {getDocumentTypeIcon(doc.documentType)}
-                        <span className="capitalize">{doc.documentType}</span>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
                       </div>
                     </TableCell>
-                    <TableCell>{doc.supplier}</TableCell>
-                    <TableCell>${doc.amount.toLocaleString()}</TableCell>
-                    <TableCell>{formatDate(doc.date)}</TableCell>
-                    <TableCell>{doc.projectId}</TableCell>
-                    <TableCell>
-                      <div>{formatDate(doc.uploadDate)}</div>
-                      <div className="text-xs text-muted-foreground">by {doc.uploadedBy}</div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View document</DropdownMenuItem>
-                          <DropdownMenuItem>Download</DropdownMenuItem>
-                          <DropdownMenuItem>Edit details</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>Move to project</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">Delete document</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
                   </TableRow>
-                ))}
-                {filteredDocuments.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                      <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-                      <p>No documents found. Upload your first document!</p>
-                    </TableCell>
-                  </TableRow>
+                ) : (
+                  <>
+                    {filteredDocuments.length > 0 ? (
+                      filteredDocuments.map((doc) => (
+                        <TableRow key={doc.document_id}>
+                          <TableCell>
+                            <div className="font-medium">{doc.file_name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              ID: {doc.document_id.substring(0, 8)}...
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {getDocumentTypeIcon(doc)}
+                              <span className="capitalize">{getDocumentType(doc)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{doc.entity_type}</div>
+                            <div className="text-xs text-muted-foreground">{doc.entity_id}</div>
+                          </TableCell>
+                          <TableCell>{Math.round(doc.file_size / 1024)} KB</TableCell>
+                          <TableCell>
+                            <div>{new Date(doc.created_at).toLocaleDateString()}</div>
+                            <div className="text-xs text-muted-foreground">by {doc.uploaded_by || 'Unknown'}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 flex-wrap">
+                              {doc.tags && doc.tags.map((tag, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                    View document
+                                  </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <a href={doc.url} download={doc.file_name}>
+                                    Download
+                                  </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => deleteDocument(doc.document_id, doc.storage_path)}
+                                  className="text-red-600"
+                                >
+                                  Delete document
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                          <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
+                          <p>No documents found. Upload your first document!</p>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>
