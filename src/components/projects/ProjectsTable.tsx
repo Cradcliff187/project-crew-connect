@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { StatusType } from '@/types/common';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -34,16 +35,17 @@ interface ProjectsTableProps {
 }
 
 // Map database status to StatusBadge component status
-export const mapStatusToStatusBadge = (status: string | null) => {
-  const statusMap: Record<string, "active" | "pending" | "completed" | "cancelled" | "unknown"> = {
+export const mapStatusToStatusBadge = (status: string | null): StatusType => {
+  const statusMap: Record<string, StatusType> = {
     "active": "active",
     "pending": "pending",
     "completed": "completed",
     "cancelled": "cancelled",
+    "unknown": "unknown",
     "new": "pending",
     "in_progress": "active",
-    "on_hold": "pending",
-    "archived": "cancelled"
+    "on_hold": "on-hold",
+    "archived": "inactive"
   };
   
   if (!status) return "unknown";

@@ -1,8 +1,8 @@
-
 import { BarChart3, Briefcase, FileText, Users, DollarSign, Clock, ArrowRight, TrendingUp, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { StatusType } from '@/types/common';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import PageTransition from '@/components/layout/PageTransition';
@@ -14,15 +14,15 @@ const Dashboard = () => {
 
   // Sample data - In a real app, this would come from API calls
   const projectsOverview = [
-    { name: 'Lakeside Project', progress: 68, status: 'active' as const },
-    { name: 'City Center Renovation', progress: 32, status: 'active' as const },
-    { name: 'Hillside Residence', progress: 100, status: 'completed' as const },
-    { name: 'Commercial Complex', progress: 15, status: 'on-hold' as const }
+    { name: 'Lakeside Project', progress: 68, status: 'active' as StatusType },
+    { name: 'City Center Renovation', progress: 32, status: 'active' as StatusType },
+    { name: 'Hillside Residence', progress: 100, status: 'completed' as StatusType },
+    { name: 'Commercial Complex', progress: 15, status: 'on-hold' as StatusType }
   ];
 
   const upcomingEstimates = [
-    { id: 'EST-1001', client: 'Jackson Properties', amount: 45000, status: 'pending' as const },
-    { id: 'EST-1002', client: 'Vanguard Development', amount: 72000, status: 'draft' as const },
+    { id: 'EST-1001', client: 'Jackson Properties', amount: 45000, status: 'pending' as StatusType },
+    { id: 'EST-1002', client: 'Vanguard Development', amount: 72000, status: 'draft' as StatusType },
   ];
 
   return (

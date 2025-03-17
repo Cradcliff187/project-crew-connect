@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Search, Users, Plus, Filter, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,15 +31,28 @@ export type Contact = {
   lastContact?: string;
   notes?: string;
   specialty?: string;
-  hourlyRate?: string | number;
+  hourlyRate?: string;
   materials?: string;
   rating?: number;
 };
 
-export type ContactFormData = Omit<Contact, 'id'> & {
-  name: string; // Make sure name is required
-  type: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee'; // Make sure type is required
+export type ContactFormData = {
+  name: string;
+  company?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  type: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee';
+  status?: string;
+  notes?: string;
+  specialty?: string;
   hourlyRate?: string;
+  materials?: string;
+  rating?: number;
 };
 
 // Function to fetch contacts from Supabase

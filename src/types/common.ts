@@ -10,4 +10,7 @@ export type StatusType =
   | 'qualified'
   | 'potential'
   | 'prospect'
-  | 'completed';
+  | 'completed'
+  | 'cancelled'
+  | 'unknown'
+  | 'on-hold';
