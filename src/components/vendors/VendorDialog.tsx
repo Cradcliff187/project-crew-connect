@@ -73,12 +73,11 @@ const VendorDialog = ({
     setIsSubmitting(true);
     
     try {
-      // Insert new vendor into Supabase
-      // Note: We don't need to specify vendorid as it will be automatically generated
-      // by the Supabase trigger function set_vendor_id()
+      // Using .from('vendors').upsert() with onConflict option instead of .insert()
+      // This allows us to let the Supabase trigger function generate the vendorid
       const { data: vendor, error } = await supabase
         .from('vendors')
-        .insert({
+        .insert([{
           vendorname: data.vendorname,
           email: data.email,
           phone: data.phone,
@@ -88,7 +87,7 @@ const VendorDialog = ({
           zip: data.zip,
           status: data.status,
           createdon: new Date().toISOString(),
-        })
+        }])
         .select();
       
       if (error) {
