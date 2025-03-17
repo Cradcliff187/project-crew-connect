@@ -1,6 +1,6 @@
 
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, BarChart2, FileText, Briefcase, Users, Clock, ChevronLeft, Settings } from 'lucide-react';
+import { Home, BarChart2, FileText, Briefcase, Users, Clock, ChevronLeft, Settings, FileUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -155,6 +155,13 @@ const Sidebar = () => {
               path="/time-tracking" 
               isActive={isActive("/time-tracking")}
               onClick={() => handleNavigate("/time-tracking")}
+            />
+            <NavItem 
+              icon={FileUp} 
+              label="Documents" 
+              path="/documents" 
+              isActive={isActive("/documents")}
+              onClick={() => handleNavigate("/documents")}
             />
           </div>
           

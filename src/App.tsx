@@ -13,6 +13,7 @@ import Estimates from "./pages/Estimates";
 import Projects from "./pages/Projects";
 import Contacts from "./pages/Contacts";
 import TimeTracking from "./pages/TimeTracking";
+import Documents from "./pages/Documents";
 import NotFound from "./pages/NotFound";
 
 // Layout
@@ -44,6 +45,7 @@ const App = () => {
                     <Route path="/projects" element={<Projects />} />
                     <Route path="/contacts" element={<Contacts />} />
                     <Route path="/time-tracking" element={<TimeTracking />} />
+                    <Route path="/documents" element={<Documents />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </AnimatePresence>
