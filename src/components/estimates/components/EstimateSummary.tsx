@@ -6,7 +6,7 @@ import { Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { calculateSubtotal, calculateContingencyAmount, calculateGrandTotal } from '../utils/estimateCalculations';
-import { EstimateFormValues } from '../schemas/estimateFormSchema';
+import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
 
 const EstimateSummary = () => {
   const form = useFormContext<EstimateFormValues>();
@@ -24,9 +24,15 @@ const EstimateSummary = () => {
     defaultValue: "0"
   });
 
-  const subtotal = calculateSubtotal(items);
-  const contingencyAmount = calculateContingencyAmount(items, contingencyPercentage);
-  const grandTotal = calculateGrandTotal(items, contingencyPercentage);
+  // Convert items to the expected type for calculations
+  const calculationItems: EstimateItem[] = items.map((item: any) => ({
+    quantity: item.quantity || '0',
+    unitPrice: item.unitPrice || '0'
+  }));
+
+  const subtotal = calculateSubtotal(calculationItems);
+  const contingencyAmount = calculateContingencyAmount(calculationItems, contingencyPercentage);
+  const grandTotal = calculateGrandTotal(calculationItems, contingencyPercentage);
 
   return (
     <div className="mt-6 space-y-4">

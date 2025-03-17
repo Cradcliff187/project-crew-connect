@@ -21,3 +21,9 @@ export const estimateFormSchema = z.object({
 });
 
 export type EstimateFormValues = z.infer<typeof estimateFormSchema>;
+
+// Define a type for calculation functions to ensure consistency
+export type EstimateItem = {
+  quantity: string;
+  unitPrice: string;
+};

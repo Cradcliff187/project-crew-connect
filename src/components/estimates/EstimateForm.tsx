@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import LocationFields from './components/LocationFields';
 import EstimateItemFields from './components/EstimateItemFields';
 import EstimateSummary from './components/EstimateSummary';
-import { estimateFormSchema, type EstimateFormValues } from './schemas/estimateFormSchema';
+import { estimateFormSchema, type EstimateFormValues, type EstimateItem } from './schemas/estimateFormSchema';
 import { calculateSubtotal } from './utils/estimateCalculations';
 
 interface EstimateFormProps {
@@ -76,8 +76,14 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     try {
       setIsSubmitting(true);
       
+      // Make sure items match the EstimateItem type for calculations
+      const typedItems: EstimateItem[] = data.items.map(item => ({
+        quantity: item.quantity,
+        unitPrice: item.unitPrice
+      }));
+      
       // Calculate the total amount
-      const totalAmount = calculateSubtotal(data.items);
+      const totalAmount = calculateSubtotal(typedItems);
       const contingencyPercentage = parseFloat(data.contingency_percentage || '0');
       
       // Insert the estimate into the database
@@ -87,7 +93,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
           projectname: data.project,
           customerid: data.client,
           customername: clients.find(c => c.id === data.client)?.name || '',
-          "job description": data.description,
+          job_description: data.description,
           estimateamount: totalAmount,
           contingency_percentage: contingencyPercentage,
           sitelocationaddress: data.location.address,
