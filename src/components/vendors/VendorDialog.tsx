@@ -74,6 +74,8 @@ const VendorDialog = ({
     
     try {
       // Insert new vendor into Supabase
+      // Note: We don't need to specify vendorid as it will be automatically generated
+      // by the Supabase trigger function set_vendor_id()
       const { data: vendor, error } = await supabase
         .from('vendors')
         .insert({
