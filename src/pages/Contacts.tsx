@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Search, Users, Plus, Filter, ChevronDown, Star } from 'lucide-react';
+import { Search, Users, Plus, Filter, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,299 +11,273 @@ import ContactForm from '@/components/contacts/ContactForm';
 import ContactDetail from '@/components/contacts/ContactDetail';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Sample data - In a real app, this would come from API calls
-const contactsData = [
-  {
-    id: 'C-001',
-    name: 'Michael Robertson',
-    company: 'Jackson Properties',
-    role: 'Project Manager',
-    email: 'michael@jacksonproperties.com',
-    phone: '(555) 123-4567',
-    address: '1234 Main St, Anytown, CA 12345',
-    type: 'client',
-    lastContact: '2023-10-12',
-    notes: 'Interested in commercial projects only.'
-  },
-  {
-    id: 'C-002',
-    name: 'Sarah Williams',
-    company: 'Vanguard Development',
-    role: 'CEO',
-    email: 'sarah@vanguarddev.com',
-    phone: '(555) 987-6543',
-    address: '5678 Oak Ave, Anytown, CA 12345',
-    type: 'customer',
-    lastContact: '2023-10-08',
-    notes: 'Has ongoing projects with us.'
-  },
-  {
-    id: 'C-003',
-    name: 'James Thompson',
-    company: 'Elite Electrical',
-    role: 'Owner',
-    email: 'james@eliteelectrical.com',
-    phone: '(555) 234-5678',
-    address: '910 Pine St, Anytown, CA 12345',
-    type: 'subcontractor',
-    specialty: 'Electrical',
-    hourlyRate: '85',
-    lastContact: '2023-10-05',
-    notes: 'Reliable electrical contractor.'
-  },
-  {
-    id: 'C-004',
-    name: 'Alex Martinez',
-    company: 'Quality Plumbing',
-    role: 'Lead Plumber',
-    email: 'alex@qualityplumbing.com',
-    phone: '(555) 345-6789',
-    address: '1122 Maple Dr, Anytown, CA 12345',
-    type: 'subcontractor',
-    specialty: 'Plumbing',
-    hourlyRate: '75',
-    lastContact: '2023-10-02',
-    notes: 'Available for emergency work.'
-  },
-  {
-    id: 'C-005',
-    name: 'Emma Davis',
-    company: 'Metro Builders',
-    role: 'Development Director',
-    email: 'emma@metrobuilders.com',
-    phone: '(555) 456-7890',
-    address: '1314 Cedar Blvd, Anytown, CA 12345',
-    type: 'customer',
-    lastContact: '2023-09-28',
-    notes: 'Repeat customer, interested in residential projects.'
-  },
-  {
-    id: 'C-006',
-    name: 'Robert Chen',
-    company: 'Precision Concrete',
-    role: 'Foreman',
-    email: 'robert@precisionconcrete.com',
-    phone: '(555) 567-8901',
-    address: '1516 Elm St, Anytown, CA 12345',
-    type: 'subcontractor',
-    specialty: 'Concrete',
-    hourlyRate: '65',
-    lastContact: '2023-09-25',
-    notes: 'Specializes in decorative concrete work.'
-  },
-  {
-    id: 'C-007',
-    name: 'Lisa Johnson',
-    company: 'Johnson Hardware Supplies',
-    role: 'Sales Manager',
-    email: 'lisa@johnsonhardware.com',
-    phone: '(555) 678-9012',
-    address: '1718 Birch Ave, Anytown, CA 12345',
-    type: 'supplier',
-    specialty: 'Hardware',
-    materials: 'Nails, screws, fasteners, tools, and general hardware supplies',
-    lastContact: '2023-09-20',
-    notes: 'Offers contractor discounts.'
-  },
-  {
-    id: 'C-008',
-    name: 'David Miller',
-    company: 'Miller Lumber Co',
-    role: 'Owner',
-    email: 'david@millerlumber.com',
-    phone: '(555) 789-0123',
-    address: '1920 Walnut St, Anytown, CA 12345',
-    type: 'supplier',
-    specialty: 'Lumber',
-    materials: 'Dimensional lumber, plywood, OSB, treated wood products',
-    lastContact: '2023-09-15',
-    notes: 'Can source specialty woods.'
-  },
-  {
-    id: 'C-009',
-    name: 'Jennifer Parker',
-    role: 'Project Manager',
-    email: 'jennifer.parker@akcconstruction.com',
-    phone: '(555) 234-5677',
-    type: 'employee',
-    hourlyRate: '45',
-    lastContact: '2022-06-15',
-    notes: 'Handles commercial projects primarily.'
-  },
-  {
-    id: 'C-010',
-    name: 'Thomas Wright',
-    role: 'Senior Carpenter',
-    email: 'thomas.wright@akcconstruction.com',
-    phone: '(555) 987-3456',
-    type: 'employee',
-    hourlyRate: '38',
-    lastContact: '2021-03-10',
-    notes: 'Specialized in finish carpentry.'
+// Define the contact type based on our database schema
+export type Contact = {
+  id: string;
+  name: string;
+  company?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  type: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee';
+  status?: string;
+  lastContact?: string;
+  notes?: string;
+  specialty?: string;
+  hourlyRate?: string | number;
+  materials?: string;
+  rating?: number;
+};
+
+// Function to fetch contacts from Supabase
+const fetchContacts = async (): Promise<Contact[]> => {
+  const { data, error } = await supabase
+    .from('contacts')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`Error fetching contacts: ${error.message}`);
   }
-];
+
+  // Transform the data to match our Contact type
+  return data.map(item => ({
+    id: item.id,
+    name: item.name,
+    company: item.company,
+    role: item.role,
+    email: item.email,
+    phone: item.phone,
+    address: item.address,
+    city: item.city,
+    state: item.state,
+    zip: item.zip,
+    type: item.contact_type,
+    status: item.status?.toUpperCase(),
+    lastContact: item.last_contact,
+    notes: item.notes,
+    specialty: item.specialty,
+    hourlyRate: item.hourly_rate?.toString(),
+    materials: item.materials,
+    rating: item.rating
+  }));
+};
 
 const Contacts = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [contacts, setContacts] = useState(contactsData);
   const [showForm, setShowForm] = useState(false);
-  const [editingContact, setEditingContact] = useState<any>(null);
-  const [selectedContact, setSelectedContact] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  
+  // Use React Query to fetch and cache contacts
+  const queryClient = useQueryClient();
+  const { data: contacts = [], isLoading, error } = useQuery({
+    queryKey: ['contacts'],
+    queryFn: fetchContacts
+  });
+  
+  // Mutation for adding a new contact
+  const addContactMutation = useMutation({
+    mutationFn: async (newContact: Omit<Contact, 'id'>) => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .insert({
+          name: newContact.name,
+          contact_type: newContact.type,
+          company: newContact.company,
+          role: newContact.role,
+          email: newContact.email,
+          phone: newContact.phone,
+          address: newContact.address,
+          city: newContact.city,
+          state: newContact.state,
+          zip: newContact.zip,
+          status: newContact.status?.toLowerCase(),
+          notes: newContact.notes,
+          specialty: newContact.specialty,
+          hourly_rate: newContact.hourlyRate ? parseFloat(newContact.hourlyRate.toString()) : null,
+          materials: newContact.materials,
+          rating: newContact.rating,
+          last_contact: new Date().toISOString()
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      toast({
+        title: "Contact Added",
+        description: "The contact has been added successfully."
+      });
+      setShowForm(false);
+    },
+    onError: (error) => {
+      console.error("Error adding contact:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add contact. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Mutation for updating a contact
+  const updateContactMutation = useMutation({
+    mutationFn: async (updatedContact: Contact) => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .update({
+          name: updatedContact.name,
+          contact_type: updatedContact.type,
+          company: updatedContact.company,
+          role: updatedContact.role,
+          email: updatedContact.email,
+          phone: updatedContact.phone,
+          address: updatedContact.address,
+          city: updatedContact.city,
+          state: updatedContact.state,
+          zip: updatedContact.zip,
+          status: updatedContact.status?.toLowerCase(),
+          notes: updatedContact.notes,
+          specialty: updatedContact.specialty,
+          hourly_rate: updatedContact.hourlyRate ? parseFloat(updatedContact.hourlyRate.toString()) : null,
+          materials: updatedContact.materials,
+          rating: updatedContact.rating,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', updatedContact.id)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      toast({
+        title: "Contact Updated",
+        description: "The contact has been updated successfully."
+      });
+      setEditingContact(null);
+    },
+    onError: (error) => {
+      console.error("Error updating contact:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update contact. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Mutation for deleting a contact
+  const deleteContactMutation = useMutation({
+    mutationFn: async (contactId: string) => {
+      const { error } = await supabase
+        .from('contacts')
+        .delete()
+        .eq('id', contactId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      toast({
+        title: "Contact Deleted",
+        description: "The contact has been removed."
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting contact:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete contact. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Mutation for updating status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ contactId, newStatus }: { contactId: string; newStatus: string }) => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .update({
+          status: newStatus.toLowerCase(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', contactId)
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      toast({
+        title: "Status Updated",
+        description: "The contact's status has been updated."
+      });
+    },
+    onError: (error) => {
+      console.error("Error updating status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
   
   // Filter contacts based on search query and active tab
   const filteredContacts = contacts
     .filter(contact => 
-      contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (contact.company && contact.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (contact.specialty && contact.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .filter(contact => activeTab === 'all' || contact.type === activeTab);
   
   // Function to handle adding a new contact
-  const handleAddContact = async (data: any) => {
-    try {
-      // In a real implementation, this would be an API call to store the contact
-      // For now, we'll just use the sample data approach
-      const newContact = {
-        ...data,
-        id: `C-${(contacts.length + 1).toString().padStart(3, '0')}`,
-        lastContact: new Date().toISOString()
-      };
-      
-      setContacts([newContact, ...contacts]);
-      setShowForm(false);
-      
-      toast({
-        title: "Contact Added",
-        description: `${newContact.name} has been added to your contacts.`
-      });
-
-      // Example of what a real implementation might look like using Supabase
-      /*
-      let table = '';
-      let payload = { ...data };
-      
-      // Determine which table to use based on contact type
-      switch (data.type) {
-        case 'client':
-        case 'customer':
-          table = 'customers';
-          payload = {
-            customername: data.name,
-            contactemail: data.email,
-            phone: data.phone,
-            address: data.address,
-            status: data.status,
-            notes: data.notes,
-            rating: data.rating
-          };
-          break;
-        case 'supplier':
-          table = 'vendors';
-          payload = {
-            vendorname: data.name,
-            email: data.email,
-            phone: data.phone,
-            address: data.address,
-            status: data.status,
-            notes: data.notes,
-            rating: data.rating
-          };
-          break;
-        case 'subcontractor':
-          table = 'subcontractors';
-          payload = {
-            subname: data.name,
-            contactemail: data.email,
-            phone: data.phone,
-            address: data.address,
-            status: data.status,
-            notes: data.notes,
-            rating: data.rating,
-            specialty: data.specialty
-          };
-          break;
-        case 'employee':
-          table = 'employees';
-          payload = {
-            first_name: data.name.split(' ')[0],
-            last_name: data.name.split(' ').slice(1).join(' '),
-            email: data.email,
-            phone: data.phone,
-            role: data.role,
-            hourly_rate: data.hourlyRate,
-            status: data.status
-          };
-          break;
-      }
-      
-      const { error } = await supabase.from(table).insert(payload);
-      
-      if (error) {
-        toast({
-          title: "Error",
-          description: `Failed to add contact: ${error.message}`,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Refresh contacts after adding
-      fetchContacts();
-      */
-    } catch (error) {
-      console.error("Error adding contact:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add contact",
-        variant: "destructive"
-      });
-    }
+  const handleAddContact = (data: Omit<Contact, 'id'>) => {
+    addContactMutation.mutate(data);
   };
   
   // Function to handle editing a contact
-  const handleEditContact = (data: any) => {
-    const updatedContacts = contacts.map(contact => 
-      contact.id === editingContact.id ? { ...contact, ...data } : contact
-    );
-    
-    setContacts(updatedContacts);
-    setEditingContact(null);
-    
-    toast({
-      title: "Contact Updated",
-      description: `${data.name}'s information has been updated.`
-    });
+  const handleEditContact = (data: Contact) => {
+    updateContactMutation.mutate(data);
   };
   
   // Function to handle deleting a contact
-  const handleDeleteContact = (contact: any) => {
-    const updatedContacts = contacts.filter(c => c.id !== contact.id);
-    setContacts(updatedContacts);
-    
-    toast({
-      title: "Contact Deleted",
-      description: `${contact.name} has been removed from your contacts.`
-    });
+  const handleDeleteContact = (contact: Contact) => {
+    deleteContactMutation.mutate(contact.id);
   };
 
   // Function to handle contact status transitions
-  const handleStatusChange = (contact: any, newStatus: string) => {
-    const updatedContacts = contacts.map(c => 
-      c.id === contact.id ? { ...c, status: newStatus } : c
-    );
-    
-    setContacts(updatedContacts);
-    
-    toast({
-      title: "Status Updated",
-      description: `${contact.name}'s status changed to ${newStatus}`
-    });
+  const handleStatusChange = (contact: Contact, newStatus: string) => {
+    updateStatusMutation.mutate({ contactId: contact.id, newStatus });
   };
+  
+  // Show error message if fetching contacts fails
+  if (error) {
+    toast({
+      title: "Error Loading Contacts",
+      description: "There was an error loading contacts. Please refresh the page.",
+      variant: "destructive"
+    });
+  }
   
   return (
     <PageTransition>
@@ -359,18 +333,34 @@ const Contacts = () => {
           </Tabs>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6 animate-in" style={{ animationDelay: '0.2s' }}>
-            {filteredContacts.map((contact) => (
-              <ContactCard 
-                key={contact.id} 
-                contact={contact} 
-                onView={(contact) => setSelectedContact(contact)}
-                onEdit={(contact) => setEditingContact(contact)}
-                onDelete={handleDeleteContact}
-                onStatusChange={handleStatusChange}
-              />
-            ))}
-            
-            {filteredContacts.length === 0 && (
+            {isLoading ? (
+              // Show loading state
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="premium-card h-[250px] animate-pulse">
+                  <div className="p-5 space-y-4">
+                    <div className="h-5 bg-gray-200 rounded w-2/3"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-full"></div>
+                      <div className="h-4 bg-gray-200 rounded w-full"></div>
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    </div>
+                  </div>
+                  <div className="px-5 py-3 bg-gray-50 border-t"></div>
+                </div>
+              ))
+            ) : filteredContacts.length > 0 ? (
+              filteredContacts.map((contact) => (
+                <ContactCard 
+                  key={contact.id} 
+                  contact={contact} 
+                  onView={(contact) => setSelectedContact(contact)}
+                  onEdit={(contact) => setEditingContact(contact)}
+                  onDelete={handleDeleteContact}
+                  onStatusChange={handleStatusChange}
+                />
+              ))
+            ) : (
               <div className="col-span-full flex flex-col items-center justify-center p-10 text-center">
                 <Users className="h-16 w-16 text-muted-foreground/30 mb-4" />
                 <h3 className="text-lg font-medium mb-1">No contacts found</h3>

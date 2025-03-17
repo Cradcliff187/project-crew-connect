@@ -51,6 +51,75 @@ export type Database = {
         }
         Relationships: []
       }
+      contacts: {
+        Row: {
+          address: string | null
+          city: string | null
+          company: string | null
+          contact_type: string
+          created_at: string
+          email: string | null
+          hourly_rate: number | null
+          id: string
+          last_contact: string | null
+          materials: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          rating: number | null
+          role: string | null
+          specialty: string | null
+          state: string | null
+          status: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          contact_type: string
+          created_at?: string
+          email?: string | null
+          hourly_rate?: number | null
+          id?: string
+          last_contact?: string | null
+          materials?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          rating?: number | null
+          role?: string | null
+          specialty?: string | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          contact_type?: string
+          created_at?: string
+          email?: string | null
+          hourly_rate?: number | null
+          id?: string
+          last_contact?: string | null
+          materials?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          rating?: number | null
+          role?: string | null
+          specialty?: string | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -937,7 +1006,13 @@ export type Database = {
       }
     }
     Enums: {
-      entity_type: "PROJECT" | "ESTIMATE" | "VENDOR" | "CUSTOMER" | "WORK_ORDER"
+      entity_type:
+        | "PROJECT"
+        | "ESTIMATE"
+        | "VENDOR"
+        | "CUSTOMER"
+        | "WORK_ORDER"
+        | "CONTACT"
     }
     CompositeTypes: {
       [_ in never]: never

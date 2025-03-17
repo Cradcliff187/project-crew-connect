@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -12,4 +13,17 @@ export function formatCurrency(amount: number | null | undefined): string {
     style: 'currency',
     currency: 'USD',
   }).format(amount);
+}
+
+// Format a date string to a readable format
+export function formatDate(dateString: string | Date | null | undefined): string {
+  if (!dateString) return 'N/A';
+  
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  }).format(date);
 }
