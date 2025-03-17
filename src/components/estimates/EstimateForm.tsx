@@ -1,8 +1,7 @@
+
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash, Info } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray } from 'react-hook-form';
-import * as z from 'zod';
+import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,28 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-// Define the form schema with validation
-const estimateFormSchema = z.object({
-  project: z.string().min(1, { message: "Project name is required" }),
-  client: z.string().min(1, { message: "Client is required" }),
-  description: z.string().optional(),
-  location: z.object({
-    address: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zip: z.string().optional(),
-  }),
-  contingency_percentage: z.string().optional(),
-  items: z.array(z.object({
-    description: z.string().min(1, { message: "Description is required" }),
-    quantity: z.string().min(1, { message: "Quantity is required" }),
-    unitPrice: z.string().min(1, { message: "Unit price is required" }),
-  })).min(1, { message: "At least one item is required" }),
-});
-
-type EstimateFormValues = z.infer<typeof estimateFormSchema>;
+// Import custom components and utilities
+import LocationFields from './components/LocationFields';
+import EstimateItemFields from './components/EstimateItemFields';
+import EstimateSummary from './components/EstimateSummary';
+import { estimateFormSchema, type EstimateFormValues } from './schemas/estimateFormSchema';
+import { calculateSubtotal } from './utils/estimateCalculations';
 
 interface EstimateFormProps {
   open: boolean;
@@ -62,12 +46,6 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     },
   });
 
-  // Set up the field array for dynamic estimate items
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items",
-  });
-
   // Fetch clients when the form opens
   useEffect(() => {
     const fetchClients = async () => {
@@ -93,35 +71,13 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     fetchClients();
   }, [toast]);
 
-  // Calculate the total estimate amount
-  const calculateTotal = () => {
-    const items = form.getValues('items');
-    return items.reduce((total, item) => {
-      const quantity = parseFloat(item.quantity) || 0;
-      const unitPrice = parseFloat(item.unitPrice) || 0;
-      return total + (quantity * unitPrice);
-    }, 0);
-  };
-
-  // Calculate contingency amount
-  const calculateContingency = () => {
-    const totalAmount = calculateTotal();
-    const contingencyPercentage = parseFloat(form.getValues('contingency_percentage')) || 0;
-    return (totalAmount * contingencyPercentage) / 100;
-  };
-
-  // Calculate grand total (estimate + contingency)
-  const calculateGrandTotal = () => {
-    return calculateTotal() + calculateContingency();
-  };
-
   // Handle form submission
   const onSubmit = async (data: EstimateFormValues) => {
     try {
       setIsSubmitting(true);
       
       // Calculate the total amount
-      const totalAmount = calculateTotal();
+      const totalAmount = calculateSubtotal(data.items);
       const contingencyPercentage = parseFloat(data.contingency_percentage || '0');
       
       // Insert the estimate into the database
@@ -255,203 +211,11 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
               )}
             />
 
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium">Location</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="location.address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter address" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <LocationFields />
 
-                <FormField
-                  control={form.control}
-                  name="location.city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter city" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <EstimateItemFields />
 
-                <FormField
-                  control={form.control}
-                  name="location.state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter state" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="location.zip"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ZIP Code</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter ZIP code" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Items</h3>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => append({ description: '', quantity: '1', unitPrice: '0' })}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Item
-                </Button>
-              </div>
-
-              {fields.map((field, index) => (
-                <div key={field.id} className="grid grid-cols-12 gap-2 items-start p-3 border rounded-md">
-                  <div className="col-span-12 md:col-span-6">
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.description`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description*</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter item description" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="col-span-6 md:col-span-2">
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.quantity`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Quantity*</FormLabel>
-                          <FormControl>
-                            <Input placeholder="0" type="number" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="col-span-6 md:col-span-3">
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.unitPrice`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Unit Price*</FormLabel>
-                          <FormControl>
-                            <Input placeholder="0.00" type="number" step="0.01" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="hidden md:flex md:col-span-1 items-end justify-end pb-1.5">
-                    {fields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => remove(index)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              <div className="mt-6 space-y-4">
-                <FormField
-                  control={form.control}
-                  name="contingency_percentage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-2">
-                        <FormLabel>Contingency Percentage</FormLabel>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full p-0">
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Add a percentage for unexpected costs</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                      <FormControl>
-                        <div className="flex items-center">
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            className="max-w-[120px]"
-                            {...field}
-                          />
-                          <span className="ml-2">%</span>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="bg-muted p-4 rounded-md space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Subtotal:</span>
-                    <span>${calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Contingency Amount:</span>
-                    <span>${calculateContingency().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between items-center font-medium border-t pt-2 mt-2">
-                    <span>Total Estimate Amount:</span>
-                    <span>${calculateGrandTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <EstimateSummary />
 
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
