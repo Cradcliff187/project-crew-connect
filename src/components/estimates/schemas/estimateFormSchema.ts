@@ -12,7 +12,7 @@ export const estimateFormSchema = z.object({
     state: z.string().optional(),
     zip: z.string().optional(),
   }),
-  contingency_percentage: z.string().optional(),
+  contingency_percentage: z.string().optional().default("0"),
   items: z.array(z.object({
     description: z.string().min(1, { message: "Description is required" }),
     quantity: z.string().min(1, { message: "Quantity is required" }),

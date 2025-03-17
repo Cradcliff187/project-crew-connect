@@ -22,6 +22,8 @@ export const useEstimateSubmit = () => {
       
       // Calculate the total amount
       const totalAmount = calculateSubtotal(typedItems);
+      
+      // Parse contingency percentage as a number (defaults to 0 if empty)
       const contingencyPercentage = parseFloat(data.contingency_percentage || '0');
       
       const clientName = clients.find(c => c.id === data.client)?.name || '';
@@ -32,25 +34,30 @@ export const useEstimateSubmit = () => {
       // the database will generate it via the set_estimate_id() trigger function
       const tempEstimateId = `EST-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
       
+      // Prepare the estimate data object with the proper field structure
+      const estimateData = {
+        estimateid: tempEstimateId, // Required for TypeScript but will be replaced by the trigger
+        customerid: data.client,
+        customername: clientName,
+        "job description": data.description,
+        estimateamount: totalAmount,
+        contingency_percentage: contingencyPercentage,
+        sitelocationaddress: data.location.address || '',
+        sitelocationcity: data.location.city || '',
+        sitelocationstate: data.location.state || '',
+        sitelocationzip: data.location.zip || '',
+        datecreated: new Date().toISOString(),
+        status: 'draft',
+        isactive: true,
+        projectname: data.project
+      };
+      
+      console.log("Submitting estimate data to Supabase:", estimateData);
+      
       // Insert the estimate into the database
-      const { data: estimateData, error: estimateError } = await supabase
+      const { data: insertedData, error: estimateError } = await supabase
         .from('estimates')
-        .insert({
-          estimateid: tempEstimateId, // Add the required field to satisfy TypeScript
-          customerid: data.client,
-          customername: clientName,
-          "job description": data.description,
-          estimateamount: totalAmount,
-          contingency_percentage: contingencyPercentage,
-          sitelocationaddress: data.location.address,
-          sitelocationcity: data.location.city,
-          sitelocationstate: data.location.state,
-          sitelocationzip: data.location.zip,
-          datecreated: new Date().toISOString(),
-          status: 'draft',
-          isactive: true,
-          projectname: data.project
-        })
+        .insert(estimateData)
         .select();
 
       if (estimateError) {
@@ -58,12 +65,12 @@ export const useEstimateSubmit = () => {
         throw estimateError;
       }
       
-      if (!estimateData || estimateData.length === 0) {
+      if (!insertedData || insertedData.length === 0) {
         throw new Error('Failed to create estimate - no ID returned');
       }
       
-      console.log("Estimate created:", estimateData);
-      const estimateId = estimateData[0].estimateid;
+      console.log("Estimate created:", insertedData);
+      const estimateId = insertedData[0].estimateid;
 
       // Insert the estimate items
       const estimateItems = data.items.map(item => ({
@@ -88,15 +95,22 @@ export const useEstimateSubmit = () => {
       toast({
         title: "Success",
         description: `Estimate ${estimateId} has been created.`,
+        variant: "success"
       });
 
       // Call the success callback
       onSuccess();
     } catch (error) {
       console.error('Error creating estimate:', error);
+      
+      // Provide a more informative error message when possible
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Failed to create estimate. Please try again.";
+        
       toast({
         title: "Error",
-        description: "Failed to create estimate. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
