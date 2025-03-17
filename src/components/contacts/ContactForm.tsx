@@ -79,7 +79,24 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
   });
 
   const handleSubmit = (data: FormData) => {
-    onSubmit(data);
+    // Ensure required fields for ContactFormData are present
+    const contactData: ContactFormData = {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      type: data.type,
+      company: data.company,
+      role: data.role,
+      status: data.status,
+      address: data.address,
+      notes: data.notes,
+      specialty: data.specialty,
+      hourlyRate: data.hourlyRate,
+      materials: data.materials,
+      rating: data.rating
+    };
+    
+    onSubmit(contactData);
   };
   
   const handleTypeChange = (value: string) => {
