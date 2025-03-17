@@ -1,7 +1,7 @@
 
 import { cn } from '@/lib/utils';
 
-type StatusType = 'draft' | 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'on-hold';
+type StatusType = 'draft' | 'pending' | 'approved' | 'rejected' | 'active' | 'completed' | 'on-hold' | 'unknown' | 'cancelled';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -52,6 +52,18 @@ const getStatusConfig = (status: StatusType) => {
         bg: 'bg-purple-100', 
         text: 'text-purple-700', 
         label: 'On Hold' 
+      };
+    case 'cancelled':
+      return { 
+        bg: 'bg-red-50', 
+        text: 'text-red-600', 
+        label: 'Cancelled' 
+      };
+    case 'unknown':
+      return { 
+        bg: 'bg-gray-100', 
+        text: 'text-gray-500', 
+        label: 'Unknown' 
       };
     default:
       return { 
