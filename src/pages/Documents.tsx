@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown, UploadCloud, Receipt, File } from 'lucide-react';
+import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown, UploadCloud, Receipt, File, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -19,6 +18,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Define the document type
 interface Document {
@@ -136,7 +136,7 @@ const Documents = () => {
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormatter('en-US', { 
+    return new Intl.DateTimeFormat('en-US', { 
       month: 'short', 
       day: 'numeric', 
       year: 'numeric' 
