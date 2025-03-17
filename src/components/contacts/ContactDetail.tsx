@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Mail, Phone, Calendar, MessageSquare, X, ArrowLeft, Send, Paperclip } from 'lucide-react';
 import { format } from 'date-fns';
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/popover';
 import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { StatusBadge } from '@/components/ui/status-badge';
+import StatusBadge from '@/components/ui/StatusBadge';
 import { Star } from '@/components/ui/star';
 import { ChevronDown } from '@/components/ui/chevron-down';
 

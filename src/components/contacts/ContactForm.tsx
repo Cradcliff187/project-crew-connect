@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,7 +50,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 interface ContactFormProps {
-  initialData?: Partial<FormData>;
+  initialData?: Partial<FormData & { id?: string }>;
   onSubmit: (data: FormData) => void;
   onCancel: () => void;
 }
@@ -110,7 +109,6 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
     }
   };
 
-  // Define status options based on contact type
   const getStatusOptions = () => {
     switch (contactType) {
       case 'client':
