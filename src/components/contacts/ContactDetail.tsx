@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Mail, Phone, Calendar, MessageSquare, X, ArrowLeft, Send, Paperclip } from 'lucide-react';
 import { format } from 'date-fns';
@@ -13,6 +12,10 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { toast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Star } from '@/components/ui/star';
+import { ChevronDown } from '@/components/ui/chevron-down';
 
 interface Conversation {
   id: string;
@@ -36,9 +39,10 @@ interface Appointment {
 interface ContactDetailProps {
   contact: any;
   onClose: () => void;
+  onStatusChange?: (contact: any, newStatus: string) => void;
 }
 
-const ContactDetail = ({ contact, onClose }: ContactDetailProps) => {
+const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps) => {
   const [activeTab, setActiveTab] = useState('conversations');
   const [conversations, setConversations] = useState<Conversation[]>([
     {
@@ -90,7 +94,6 @@ const ContactDetail = ({ contact, onClose }: ContactDetailProps) => {
       return;
     }
     
-    // In a real app, this would connect to an email API
     const newConversation: Conversation = {
       id: `conv-${Date.now()}`,
       date: new Date(),
@@ -119,7 +122,6 @@ const ContactDetail = ({ contact, onClose }: ContactDetailProps) => {
       return;
     }
     
-    // In a real app, this would integrate with Google Calendar API
     const appointment: Appointment = {
       id: `apt-${Date.now()}`,
       title: newAppointment.title || '',
@@ -143,6 +145,61 @@ const ContactDetail = ({ contact, onClose }: ContactDetailProps) => {
       title: "Appointment Created",
       description: "The appointment has been added to your calendar",
     });
+  };
+  
+  const getStatusOptions = () => {
+    const type = contact.type;
+    const currentStatus = contact.status;
+    
+    if (!currentStatus) return [];
+
+    if (type === 'client' || type === 'customer') {
+      switch (currentStatus) {
+        case 'PROSPECT':
+          return [{ value: 'ACTIVE', label: 'Convert to Active' }];
+        case 'ACTIVE':
+          return [{ value: 'INACTIVE', label: 'Mark as Inactive' }];
+        case 'INACTIVE':
+          return [{ value: 'ACTIVE', label: 'Reactivate' }];
+        default:
+          return [];
+      }
+    } else if (type === 'supplier') {
+      switch (currentStatus) {
+        case 'POTENTIAL':
+          return [{ value: 'APPROVED', label: 'Approve Vendor' }];
+        case 'APPROVED':
+          return [{ value: 'INACTIVE', label: 'Mark as Inactive' }];
+        case 'INACTIVE':
+          return [{ value: 'APPROVED', label: 'Reactivate' }];
+        default:
+          return [];
+      }
+    } else if (type === 'subcontractor') {
+      switch (currentStatus) {
+        case 'PENDING':
+          return [{ value: 'QUALIFIED', label: 'Mark as Qualified' }];
+        case 'QUALIFIED':
+          return [{ value: 'ACTIVE', label: 'Convert to Active' }];
+        case 'ACTIVE':
+          return [{ value: 'INACTIVE', label: 'Mark as Inactive' }];
+        case 'INACTIVE':
+          return [{ value: 'ACTIVE', label: 'Reactivate' }];
+        default:
+          return [];
+      }
+    } else if (type === 'employee') {
+      switch (currentStatus) {
+        case 'ACTIVE':
+          return [{ value: 'INACTIVE', label: 'Mark as Inactive' }];
+        case 'INACTIVE':
+          return [{ value: 'ACTIVE', label: 'Reactivate' }];
+        default:
+          return [];
+      }
+    }
+    
+    return [];
   };
   
   return (
@@ -183,6 +240,36 @@ const ContactDetail = ({ contact, onClose }: ContactDetailProps) => {
             <Calendar className="mr-1 h-4 w-4" />
             Schedule
           </Button>
+          
+          {contact.status && getStatusOptions().length > 0 && onStatusChange && (
+            <div className="ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    Status: <StatusBadge className="ml-2" status={contact.status.toLowerCase() as any} size="sm" />
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {getStatusOptions().map((option) => (
+                    <DropdownMenuItem 
+                      key={option.value}
+                      onClick={() => {
+                        if (onStatusChange) {
+                          onStatusChange(contact, option.value);
+                        }
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <StatusBadge status={option.value.toLowerCase() as any} size="sm" />
+                        <span className="ml-2">{option.label}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
       </div>
       
@@ -445,6 +532,27 @@ const ContactDetail = ({ contact, onClose }: ContactDetailProps) => {
                   <span className="text-muted-foreground w-24">Type:</span>
                   <span className="capitalize">{contact.type}</span>
                 </div>
+                <div className="flex items-center">
+                  <span className="text-muted-foreground w-24">Status:</span>
+                  {contact.status ? (
+                    <StatusBadge status={contact.status.toLowerCase() as any} />
+                  ) : (
+                    <span>Not set</span>
+                  )}
+                </div>
+                {contact.rating && (
+                  <div className="flex items-center">
+                    <span className="text-muted-foreground w-24">Rating:</span>
+                    <div className="flex">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`h-4 w-4 ${i < contact.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -459,6 +567,12 @@ const ContactDetail = ({ contact, onClose }: ContactDetailProps) => {
                   <span className="text-muted-foreground w-24">ID:</span>
                   <span className="text-muted-foreground">{contact.id}</span>
                 </div>
+                {contact.notes && (
+                  <div className="flex flex-col">
+                    <span className="text-muted-foreground mb-1">Notes:</span>
+                    <p className="bg-muted p-3 rounded-md text-sm">{contact.notes}</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

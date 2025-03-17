@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Search, Users, Plus, Filter, ChevronDown } from 'lucide-react';
+import { Search, Users, Plus, Filter, ChevronDown, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,7 @@ import ContactCard from '@/components/contacts/ContactCard';
 import ContactForm from '@/components/contacts/ContactForm';
 import ContactDetail from '@/components/contacts/ContactDetail';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Sample data - In a real app, this would come from API calls
 const contactsData = [
@@ -150,7 +151,9 @@ const Contacts = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState<any>(null);
   const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
+  // Filter contacts based on search query and active tab
   const filteredContacts = contacts
     .filter(contact => 
       contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -160,22 +163,109 @@ const Contacts = () => {
     )
     .filter(contact => activeTab === 'all' || contact.type === activeTab);
   
-  const handleAddContact = (data: any) => {
-    const newContact = {
-      ...data,
-      id: `C-${(contacts.length + 1).toString().padStart(3, '0')}`,
-      lastContact: new Date().toISOString()
-    };
-    
-    setContacts([newContact, ...contacts]);
-    setShowForm(false);
-    
-    toast({
-      title: "Contact Added",
-      description: `${newContact.name} has been added to your contacts.`
-    });
+  // Function to handle adding a new contact
+  const handleAddContact = async (data: any) => {
+    try {
+      // In a real implementation, this would be an API call to store the contact
+      // For now, we'll just use the sample data approach
+      const newContact = {
+        ...data,
+        id: `C-${(contacts.length + 1).toString().padStart(3, '0')}`,
+        lastContact: new Date().toISOString()
+      };
+      
+      setContacts([newContact, ...contacts]);
+      setShowForm(false);
+      
+      toast({
+        title: "Contact Added",
+        description: `${newContact.name} has been added to your contacts.`
+      });
+
+      // Example of what a real implementation might look like using Supabase
+      /*
+      let table = '';
+      let payload = { ...data };
+      
+      // Determine which table to use based on contact type
+      switch (data.type) {
+        case 'client':
+        case 'customer':
+          table = 'customers';
+          payload = {
+            customername: data.name,
+            contactemail: data.email,
+            phone: data.phone,
+            address: data.address,
+            status: data.status,
+            notes: data.notes,
+            rating: data.rating
+          };
+          break;
+        case 'supplier':
+          table = 'vendors';
+          payload = {
+            vendorname: data.name,
+            email: data.email,
+            phone: data.phone,
+            address: data.address,
+            status: data.status,
+            notes: data.notes,
+            rating: data.rating
+          };
+          break;
+        case 'subcontractor':
+          table = 'subcontractors';
+          payload = {
+            subname: data.name,
+            contactemail: data.email,
+            phone: data.phone,
+            address: data.address,
+            status: data.status,
+            notes: data.notes,
+            rating: data.rating,
+            specialty: data.specialty
+          };
+          break;
+        case 'employee':
+          table = 'employees';
+          payload = {
+            first_name: data.name.split(' ')[0],
+            last_name: data.name.split(' ').slice(1).join(' '),
+            email: data.email,
+            phone: data.phone,
+            role: data.role,
+            hourly_rate: data.hourlyRate,
+            status: data.status
+          };
+          break;
+      }
+      
+      const { error } = await supabase.from(table).insert(payload);
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: `Failed to add contact: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Refresh contacts after adding
+      fetchContacts();
+      */
+    } catch (error) {
+      console.error("Error adding contact:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add contact",
+        variant: "destructive"
+      });
+    }
   };
   
+  // Function to handle editing a contact
   const handleEditContact = (data: any) => {
     const updatedContacts = contacts.map(contact => 
       contact.id === editingContact.id ? { ...contact, ...data } : contact
@@ -190,6 +280,7 @@ const Contacts = () => {
     });
   };
   
+  // Function to handle deleting a contact
   const handleDeleteContact = (contact: any) => {
     const updatedContacts = contacts.filter(c => c.id !== contact.id);
     setContacts(updatedContacts);
@@ -197,6 +288,20 @@ const Contacts = () => {
     toast({
       title: "Contact Deleted",
       description: `${contact.name} has been removed from your contacts.`
+    });
+  };
+
+  // Function to handle contact status transitions
+  const handleStatusChange = (contact: any, newStatus: string) => {
+    const updatedContacts = contacts.map(c => 
+      c.id === contact.id ? { ...c, status: newStatus } : c
+    );
+    
+    setContacts(updatedContacts);
+    
+    toast({
+      title: "Status Updated",
+      description: `${contact.name}'s status changed to ${newStatus}`
     });
   };
   
@@ -261,6 +366,7 @@ const Contacts = () => {
                 onView={(contact) => setSelectedContact(contact)}
                 onEdit={(contact) => setEditingContact(contact)}
                 onDelete={handleDeleteContact}
+                onStatusChange={handleStatusChange}
               />
             ))}
             
@@ -300,6 +406,7 @@ const Contacts = () => {
           <ContactDetail 
             contact={selectedContact} 
             onClose={() => setSelectedContact(null)} 
+            onStatusChange={handleStatusChange}
           />
         )}
       </div>

@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import StatusBadge from '@/components/ui/StatusBadge';
 
 // Define form schema
 const formSchema = z.object({
@@ -38,11 +39,13 @@ const formSchema = z.object({
   company: z.string().optional(),
   role: z.string().optional(),
   type: z.enum(['client', 'subcontractor', 'supplier', 'customer', 'employee']),
+  status: z.string().optional(),
   address: z.string().optional(),
   notes: z.string().optional(),
   specialty: z.string().optional(),
   hourlyRate: z.string().optional(),
   materials: z.string().optional(),
+  rating: z.number().min(1).max(5).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -52,6 +55,22 @@ interface ContactFormProps {
   onSubmit: (data: FormData) => void;
   onCancel: () => void;
 }
+
+const getDefaultStatus = (type: string) => {
+  switch (type) {
+    case 'client':
+    case 'customer':
+      return 'PROSPECT';
+    case 'supplier':
+      return 'POTENTIAL';
+    case 'subcontractor':
+      return 'PENDING';
+    case 'employee':
+      return 'ACTIVE';
+    default:
+      return '';
+  }
+};
 
 const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
   const [contactType, setContactType] = useState(initialData?.type || 'client');
@@ -65,11 +84,13 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
       company: initialData?.company || '',
       role: initialData?.role || '',
       type: initialData?.type || 'client',
+      status: initialData?.status || getDefaultStatus(initialData?.type || 'client'),
       address: initialData?.address || '',
       notes: initialData?.notes || '',
       specialty: initialData?.specialty || '',
       hourlyRate: initialData?.hourlyRate || '',
       materials: initialData?.materials || '',
+      rating: initialData?.rating || undefined,
     },
   });
 
@@ -81,6 +102,44 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
     if (value === 'employee' || value === 'subcontractor' || value === 'supplier' || value === 'client' || value === 'customer') {
       setContactType(value);
       form.setValue('type', value);
+      
+      // Set default status when type changes (only if creating new contact)
+      if (!initialData?.id) {
+        form.setValue('status', getDefaultStatus(value));
+      }
+    }
+  };
+
+  // Define status options based on contact type
+  const getStatusOptions = () => {
+    switch (contactType) {
+      case 'client':
+      case 'customer':
+        return [
+          { value: 'PROSPECT', label: 'Prospect' },
+          { value: 'ACTIVE', label: 'Active' },
+          { value: 'INACTIVE', label: 'Inactive' }
+        ];
+      case 'supplier':
+        return [
+          { value: 'POTENTIAL', label: 'Potential' },
+          { value: 'APPROVED', label: 'Approved' },
+          { value: 'INACTIVE', label: 'Inactive' }
+        ];
+      case 'subcontractor':
+        return [
+          { value: 'PENDING', label: 'Pending' },
+          { value: 'QUALIFIED', label: 'Qualified' },
+          { value: 'ACTIVE', label: 'Active' },
+          { value: 'INACTIVE', label: 'Inactive' }
+        ];
+      case 'employee':
+        return [
+          { value: 'ACTIVE', label: 'Active' },
+          { value: 'INACTIVE', label: 'Inactive' }
+        ];
+      default:
+        return [];
     }
   };
 
@@ -169,6 +228,49 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status">
+                            {field.value && (
+                              <div className="flex items-center">
+                                <StatusBadge 
+                                  status={field.value.toLowerCase() as any} 
+                                  size="sm" 
+                                />
+                              </div>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {getStatusOptions().map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center">
+                              <StatusBadge 
+                                status={option.value.toLowerCase() as any} 
+                                size="sm" 
+                              />
+                              <span className="ml-2">{option.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {contactType !== 'employee' && (
                 <FormField
                   control={form.control}
@@ -245,6 +347,34 @@ const ContactForm = ({ initialData, onSubmit, onCancel }: ContactFormProps) => {
                   )}
                 />
               )}
+
+              <FormField
+                control={form.control}
+                name="rating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rating (1-5)</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        defaultValue={field.value?.toString()}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select rating" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">★ Poor</SelectItem>
+                          <SelectItem value="2">★★ Fair</SelectItem>
+                          <SelectItem value="3">★★★ Good</SelectItem>
+                          <SelectItem value="4">★★★★ Very Good</SelectItem>
+                          <SelectItem value="5">★★★★★ Excellent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField

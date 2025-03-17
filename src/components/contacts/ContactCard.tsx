@@ -1,5 +1,5 @@
 
-import { Building, Mail, Phone, MapPin, MoreHorizontal } from 'lucide-react';
+import { Building, Mail, Phone, MapPin, MoreHorizontal, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { 
@@ -7,17 +7,23 @@ import {
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu';
+import StatusBadge from '@/components/ui/StatusBadge';
 
 interface ContactCardProps {
   contact: any;
   onView: (contact: any) => void;
   onEdit: (contact: any) => void;
   onDelete: (contact: any) => void;
+  onStatusChange?: (contact: any, newStatus: string) => void;
 }
 
-const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) => {
+const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: ContactCardProps) => {
   const getTypeColor = (type: string) => {
     switch(type) {
       case 'client':
@@ -43,6 +49,62 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
       year: 'numeric' 
     }).format(date);
   };
+
+  // Status transition options based on contact type and current status
+  const getStatusOptions = () => {
+    const type = contact.type;
+    const currentStatus = contact.status;
+    
+    if (!currentStatus) return [];
+
+    if (type === 'client' || type === 'customer') {
+      switch (currentStatus) {
+        case 'PROSPECT':
+          return [{ value: 'ACTIVE', label: 'Convert to Active' }];
+        case 'ACTIVE':
+          return [{ value: 'INACTIVE', label: 'Mark as Inactive' }];
+        case 'INACTIVE':
+          return [{ value: 'ACTIVE', label: 'Reactivate' }];
+        default:
+          return [];
+      }
+    } else if (type === 'supplier') {
+      switch (currentStatus) {
+        case 'POTENTIAL':
+          return [{ value: 'APPROVED', label: 'Approve Vendor' }];
+        case 'APPROVED':
+          return [{ value: 'INACTIVE', label: 'Mark as Inactive' }];
+        case 'INACTIVE':
+          return [{ value: 'APPROVED', label: 'Reactivate' }];
+        default:
+          return [];
+      }
+    } else if (type === 'subcontractor') {
+      switch (currentStatus) {
+        case 'PENDING':
+          return [{ value: 'QUALIFIED', label: 'Mark as Qualified' }];
+        case 'QUALIFIED':
+          return [{ value: 'ACTIVE', label: 'Convert to Active' }];
+        case 'ACTIVE':
+          return [{ value: 'INACTIVE', label: 'Mark as Inactive' }];
+        case 'INACTIVE':
+          return [{ value: 'ACTIVE', label: 'Reactivate' }];
+        default:
+          return [];
+      }
+    } else if (type === 'employee') {
+      switch (currentStatus) {
+        case 'ACTIVE':
+          return [{ value: 'INACTIVE', label: 'Mark as Inactive' }];
+        case 'INACTIVE':
+          return [{ value: 'ACTIVE', label: 'Reactivate' }];
+        default:
+          return [];
+      }
+    }
+    
+    return [];
+  };
   
   return (
     <Card className="premium-card overflow-hidden">
@@ -54,7 +116,7 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
               <Building className="h-3 w-3" />
               <span>{contact.company || 'Internal'}</span>
             </div>
-            <div className="flex gap-1 mt-1">
+            <div className="flex flex-wrap gap-1 mt-1">
               {contact.role && (
                 <p className="text-xs rounded-full bg-construction-50 inline-block px-2 py-0.5 text-construction-700">
                   {contact.role}
@@ -63,6 +125,9 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
               <p className={`text-xs rounded-full px-2 py-0.5 capitalize ${getTypeColor(contact.type)}`}>
                 {contact.type}
               </p>
+              {contact.status && (
+                <StatusBadge size="sm" status={contact.status.toLowerCase() as any} />
+              )}
               {contact.hourlyRate && (
                 <p className="text-xs rounded-full bg-green-50 inline-block px-2 py-0.5 text-green-700">
                   ${contact.hourlyRate}/hr
@@ -81,6 +146,26 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onView(contact)}>View details</DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(contact)}>Edit contact</DropdownMenuItem>
+              
+              {/* Status change menu */}
+              {contact.status && getStatusOptions().length > 0 && onStatusChange && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>Change status</DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      {getStatusOptions().map((option) => (
+                        <DropdownMenuItem 
+                          key={option.value}
+                          onClick={() => onStatusChange(contact, option.value)}
+                        >
+                          {option.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+              )}
+              
               {contact.type === 'supplier' && (
                 <DropdownMenuItem>View materials</DropdownMenuItem>
               )}
@@ -127,6 +212,19 @@ const ContactCard = ({ contact, onView, onEdit, onDelete }: ContactCardProps) =>
           {contact.specialty && (
             <div className="flex items-start mt-2">
               <span className="text-muted-foreground">Specialty: {contact.specialty}</span>
+            </div>
+          )}
+          {contact.rating && (
+            <div className="flex items-center mt-2">
+              <span className="text-muted-foreground mr-1">Rating:</span>
+              <div className="flex">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star 
+                    key={i} 
+                    className={`h-3.5 w-3.5 ${i < contact.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
