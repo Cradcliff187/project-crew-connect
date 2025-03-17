@@ -32,6 +32,25 @@ interface Project {
   progress?: number;
 }
 
+// Map database status to StatusBadge component status
+const mapStatusToStatusBadge = (status: string | null) => {
+  const statusMap: Record<string, "active" | "pending" | "completed" | "cancelled" | "unknown"> = {
+    "active": "active",
+    "pending": "pending",
+    "completed": "completed",
+    "cancelled": "cancelled",
+    "new": "pending",
+    "in_progress": "active",
+    "on_hold": "pending",
+    "archived": "cancelled"
+  };
+  
+  if (!status) return "unknown";
+  
+  const lowercaseStatus = status.toLowerCase();
+  return statusMap[lowercaseStatus] || "unknown";
+};
+
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [projects, setProjects] = useState<Project[]>([]);
@@ -211,7 +230,7 @@ const Projects = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={project.status?.toLowerCase() || 'unknown'} />
+                        <StatusBadge status={mapStatusToStatusBadge(project.status)} />
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
