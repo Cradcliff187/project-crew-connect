@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,7 +77,6 @@ const Estimates = () => {
         throw error;
       }
 
-      // Get revision counts for each estimate
       const { data: revisionCountsData, error: revisionsError } = await supabase
         .from('estimate_revisions')
         .select('estimate_id, count', { count: 'exact' });
@@ -87,7 +85,6 @@ const Estimates = () => {
         console.error('Error fetching revision counts:', revisionsError);
       }
 
-      // Create a map of estimate_id to revision count
       const revisionCounts: Record<string, number> = {};
       if (revisionCountsData) {
         revisionCountsData.forEach((item) => {
@@ -95,7 +92,6 @@ const Estimates = () => {
         });
       }
 
-      // Transform the data to match the expected format
       const formattedEstimates = estimatesData.map(estimate => {
         const revisionCount = revisionCounts[estimate.estimateid] || 0;
         
@@ -132,7 +128,6 @@ const Estimates = () => {
   
   const fetchEstimateDetails = async (estimateId: string) => {
     try {
-      // Fetch estimate items
       const { data: items, error: itemsError } = await supabase
         .from('estimate_items')
         .select('*')
@@ -142,7 +137,6 @@ const Estimates = () => {
         throw itemsError;
       }
       
-      // Fetch estimate revisions
       const { data: revisions, error: revisionsError } = await supabase
         .from('estimate_revisions')
         .select('*')
@@ -174,6 +168,7 @@ const Estimates = () => {
     setSelectedEstimate(null);
     setEstimateItems([]);
     setEstimateRevisions([]);
+    fetchEstimates(); // Refresh the list when the dialog is closed
   };
   
   const filteredEstimates = estimates.filter(estimate => 

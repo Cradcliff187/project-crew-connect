@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -5,10 +6,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { StatusType } from '@/types/common';
+import { useEstimateToProject } from './hooks/useEstimateToProject';
+import { Loader2 } from 'lucide-react';
 
 export type EstimateItem = {
   id: string;
@@ -61,6 +65,7 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("details");
   const { toast } = useToast();
+  const { convertEstimateToProject, isConverting } = useEstimateToProject();
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -78,9 +83,24 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
     });
   };
 
+  const handleConvertToProject = async () => {
+    const newProject = await convertEstimateToProject(estimate);
+    if (newProject) {
+      toast({
+        title: "Project Created",
+        description: `Project ${newProject.projectid} has been created from this estimate.`,
+        variant: "default"
+      });
+      onClose(); // Close the dialog after successful conversion
+    }
+  };
+
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + Number(item.total_price), 0);
   };
+
+  // Check if the estimate can be converted to a project
+  const canConvert = estimate.status === 'draft' || estimate.status === 'sent';
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
@@ -96,6 +116,31 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
             {estimate.client} • {formatDate(estimate.date)}
           </DialogDescription>
         </DialogHeader>
+        
+        <div className="flex items-center justify-end space-x-2 mb-4">
+          <Button 
+            variant="outline" 
+            onClick={handleCopyEstimate}
+            size="sm"
+          >
+            Duplicate
+          </Button>
+          <Button
+            onClick={handleConvertToProject}
+            size="sm"
+            disabled={!canConvert || isConverting}
+            className="bg-[#0485ea] hover:bg-[#0373ce]"
+          >
+            {isConverting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                Converting...
+              </>
+            ) : (
+              'Convert to Project'
+            )}
+          </Button>
+        </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
           <TabsList className="grid grid-cols-4 mb-4">
