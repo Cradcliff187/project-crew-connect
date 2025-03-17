@@ -1,14 +1,23 @@
 
+import { useState } from 'react';
 import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import ProjectDialog from './ProjectDialog';
 
 interface ProjectsHeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  onProjectAdded: () => void;
 }
 
-const ProjectsHeader = ({ searchQuery, setSearchQuery }: ProjectsHeaderProps) => {
+const ProjectsHeader = ({ 
+  searchQuery, 
+  setSearchQuery,
+  onProjectAdded
+}: ProjectsHeaderProps) => {
+  const [showProjectDialog, setShowProjectDialog] = useState(false);
+  
   return (
     <>
       <div className="flex flex-col gap-2 mb-6 animate-in">
@@ -36,12 +45,22 @@ const ProjectsHeader = ({ searchQuery, setSearchQuery }: ProjectsHeaderProps) =>
             Filter
             <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
           </Button>
-          <Button size="sm" className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]">
+          <Button 
+            size="sm" 
+            className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]"
+            onClick={() => setShowProjectDialog(true)}
+          >
             <Plus className="h-4 w-4 mr-1" />
             New Project
           </Button>
         </div>
       </div>
+
+      <ProjectDialog 
+        open={showProjectDialog} 
+        onOpenChange={setShowProjectDialog}
+        onProjectAdded={onProjectAdded}
+      />
     </>
   );
 };

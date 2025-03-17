@@ -12,6 +12,12 @@ const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Function to trigger refresh of projects
+  const handleProjectAdded = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
   
   // Fetch projects from Supabase
   useEffect(() => {
@@ -51,7 +57,7 @@ const Projects = () => {
     };
     
     fetchProjects();
-  }, []);
+  }, [refreshTrigger]);
 
   return (
     <PageTransition>
@@ -61,7 +67,8 @@ const Projects = () => {
         <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
           <ProjectsHeader 
             searchQuery={searchQuery} 
-            setSearchQuery={setSearchQuery} 
+            setSearchQuery={setSearchQuery}
+            onProjectAdded={handleProjectAdded}
           />
           
           <ProjectsTable 
