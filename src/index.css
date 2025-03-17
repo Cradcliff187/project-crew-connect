@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 209 100% 38%;
+    --primary: 209 100% 47%; /* AKC LLC Bright Blue #0485ea */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 20% 96%;
@@ -33,11 +35,11 @@
     --input: 214 32% 91%;
     --ring: 209 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem; /* Slightly reduced for a more professional look */
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 209 100% 50%;
+    --sidebar-primary: 209 100% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 20% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
@@ -50,8 +52,12 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground font-opensans antialiased;
     font-feature-settings: "ss01", "ss02";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-montserrat font-bold;
   }
 }
 
@@ -73,8 +79,7 @@
   }
   
   .btn-premium {
-    @apply bg-gradient-to-r from-construction-600 to-construction-700 
-           hover:from-construction-700 hover:to-construction-800 
+    @apply bg-construction-600 hover:bg-construction-700 
            text-white shadow-md transition-all duration-300 transform 
            hover:shadow-lg active:scale-95;
   }
