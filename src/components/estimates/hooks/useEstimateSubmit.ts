@@ -95,7 +95,7 @@ export const useEstimateSubmit = () => {
       toast({
         title: "Success",
         description: `Estimate ${estimateId} has been created.`,
-        variant: "success"
+        variant: "default" // Changed from "success" to "default" since only "default" and "destructive" are available
       });
 
       // Call the success callback
