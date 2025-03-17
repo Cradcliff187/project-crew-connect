@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
+import { StatusType } from '@/types/common';
 
 export type EstimateItem = {
   id: string;
@@ -36,7 +36,7 @@ export type EstimateDetailsProps = {
     project: string;
     date: string;
     amount: number;
-    status: string;
+    status: StatusType | string;
     versions: number;
     location?: {
       address?: string;
@@ -90,7 +90,7 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
             <DialogTitle className="text-2xl">
               Estimate <span className="text-[#0485ea]">{estimate.id}</span>
             </DialogTitle>
-            <StatusBadge status={estimate.status} />
+            <StatusBadge status={estimate.status as StatusType} />
           </div>
           <DialogDescription>
             {estimate.client} • {formatDate(estimate.date)}

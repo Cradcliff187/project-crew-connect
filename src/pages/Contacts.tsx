@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Users, Plus, Filter, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,7 @@ import ContactDetail from '@/components/contacts/ContactDetail';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { StatusType } from '@/types/common';
 
 // Define the contact type based on our database schema
 export type Contact = {
@@ -26,13 +26,19 @@ export type Contact = {
   state?: string;
   zip?: string;
   type: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee';
-  status?: string;
+  status?: StatusType | string;
   lastContact?: string;
   notes?: string;
   specialty?: string;
   hourlyRate?: string | number;
   materials?: string;
   rating?: number;
+};
+
+export type ContactFormData = Omit<Contact, 'id'> & {
+  name: string; // Make sure name is required
+  type: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee'; // Make sure type is required
+  hourlyRate?: string;
 };
 
 // Function to fetch contacts from Supabase
@@ -58,7 +64,7 @@ const fetchContacts = async (): Promise<Contact[]> => {
     city: item.city,
     state: item.state,
     zip: item.zip,
-    type: item.contact_type,
+    type: item.contact_type as 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee',
     status: item.status?.toUpperCase(),
     lastContact: item.last_contact,
     notes: item.notes,
@@ -85,7 +91,7 @@ const Contacts = () => {
   
   // Mutation for adding a new contact
   const addContactMutation = useMutation({
-    mutationFn: async (newContact: Omit<Contact, 'id'>) => {
+    mutationFn: async (newContact: ContactFormData) => {
       const { data, error } = await supabase
         .from('contacts')
         .insert({
@@ -251,7 +257,7 @@ const Contacts = () => {
     .filter(contact => activeTab === 'all' || contact.type === activeTab);
   
   // Function to handle adding a new contact
-  const handleAddContact = (data: Omit<Contact, 'id'>) => {
+  const handleAddContact = (data: ContactFormData) => {
     addContactMutation.mutate(data);
   };
   

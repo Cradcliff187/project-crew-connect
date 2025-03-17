@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EstimateDetails, { EstimateItem, EstimateRevision } from '@/components/estimates/EstimateDetails';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatusType } from '@/types/common';
 
 type EstimateType = {
   id: string;
@@ -25,7 +25,7 @@ type EstimateType = {
   project: string;
   date: string;
   amount: number;
-  status: string;
+  status: StatusType | string;
   versions: number;
   description?: string;
   location?: {
@@ -76,18 +76,25 @@ const Estimates = () => {
       }
 
       // Get revision counts for each estimate
-      const { data: revisionCounts, error: revisionsError } = await supabase
+      const { data: revisionCountsData, error: revisionsError } = await supabase
         .from('estimate_revisions')
-        .select('estimate_id, count')
-        .group('estimate_id');
+        .select('estimate_id, count', { count: 'exact' });
 
       if (revisionsError) {
         console.error('Error fetching revision counts:', revisionsError);
       }
 
+      // Create a map of estimate_id to revision count
+      const revisionCounts: Record<string, number> = {};
+      if (revisionCountsData) {
+        revisionCountsData.forEach((item) => {
+          revisionCounts[item.estimate_id] = item.count || 0;
+        });
+      }
+
       // Transform the data to match the expected format
       const formattedEstimates = estimatesData.map(estimate => {
-        const revisionCount = revisionCounts?.find(r => r.estimate_id === estimate.estimateid)?.count || 0;
+        const revisionCount = revisionCounts[estimate.estimateid] || 0;
         
         return {
           id: estimate.estimateid,
@@ -235,7 +242,6 @@ const Estimates = () => {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  // Loading state with skeletons
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={`skeleton-${i}`}>
                       <TableCell><Skeleton className="h-5 w-24" /></TableCell>
@@ -249,7 +255,6 @@ const Estimates = () => {
                     </TableRow>
                   ))
                 ) : filteredEstimates.length > 0 ? (
-                  // Show data if loaded and available
                   filteredEstimates.map((estimate) => (
                     <TableRow key={estimate.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewEstimate(estimate)}>
                       <TableCell className="font-medium">{estimate.id}</TableCell>
@@ -258,7 +263,7 @@ const Estimates = () => {
                       <TableCell>{formatDate(estimate.date)}</TableCell>
                       <TableCell>${estimate.amount.toLocaleString()}</TableCell>
                       <TableCell>
-                        <StatusBadge status={estimate.status} />
+                        <StatusBadge status={estimate.status as StatusType} />
                       </TableCell>
                       <TableCell>{estimate.versions}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -285,7 +290,6 @@ const Estimates = () => {
                     </TableRow>
                   ))
                 ) : (
-                  // Empty state
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                       <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
