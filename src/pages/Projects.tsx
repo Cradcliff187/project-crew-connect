@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { Search, Briefcase, Plus, Filter, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Briefcase, Plus, Filter, MoreHorizontal, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -15,76 +15,78 @@ import { Progress } from '@/components/ui/progress';
 import StatusBadge from '@/components/ui/StatusBadge';
 import PageTransition from '@/components/layout/PageTransition';
 import Header from '@/components/layout/Header';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Sample data - In a real app, this would come from API calls
-const projectsData = [
-  {
-    id: 'PR-2001',
-    name: 'Lakeside Project',
-    client: 'Jackson Properties',
-    startDate: '2023-09-15',
-    endDate: '2023-12-15',
-    budget: 120000,
-    spent: 82000,
-    progress: 68,
-    status: 'active' as const
-  },
-  {
-    id: 'PR-2002',
-    name: 'City Center Renovation',
-    client: 'Metro Builders',
-    startDate: '2023-09-01',
-    endDate: '2024-01-30',
-    budget: 200000,
-    spent: 64000,
-    progress: 32,
-    status: 'active' as const
-  },
-  {
-    id: 'PR-2003',
-    name: 'Hillside Residence',
-    client: 'Private Client',
-    startDate: '2023-07-10',
-    endDate: '2023-10-10',
-    budget: 85000,
-    spent: 85000,
-    progress: 100,
-    status: 'completed' as const
-  },
-  {
-    id: 'PR-2004',
-    name: 'Commercial Complex',
-    client: 'Vanguard Development',
-    startDate: '2023-10-01',
-    endDate: '2024-05-30',
-    budget: 350000,
-    spent: 52500,
-    progress: 15,
-    status: 'on-hold' as const
-  },
-  {
-    id: 'PR-2005',
-    name: 'Beach Resort',
-    client: 'Coastal Developments',
-    startDate: '2023-08-20',
-    endDate: '2024-03-15',
-    budget: 250000,
-    spent: 110000,
-    progress: 44,
-    status: 'active' as const
-  },
-];
+// Define project type based on our database schema
+interface Project {
+  projectid: string;
+  projectname: string;
+  customername: string;
+  createdon: string;
+  status: string;
+  // Budget and financial fields to be added in future updates
+  budget?: number;
+  spent?: number;
+  progress?: number;
+}
 
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  const filteredProjects = projectsData.filter(project => 
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.id.toLowerCase().includes(searchQuery.toLowerCase())
+  // Fetch projects from Supabase
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('projectid, projectname, customername, customerid, status, createdon')
+          .order('createdon', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Transform data to match our UI requirements
+        const projectsWithDefaults = data.map(project => ({
+          ...project,
+          // Default values for fields not yet in database
+          budget: Math.floor(Math.random() * 200000) + 50000, // Temporary random budget
+          spent: Math.floor(Math.random() * 150000), // Temporary random spent amount
+          progress: Math.floor(Math.random() * 100), // Temporary random progress
+        }));
+        
+        setProjects(projectsWithDefaults);
+      } catch (error: any) {
+        console.error('Error fetching projects:', error);
+        setError(error.message);
+        toast({
+          title: 'Error fetching projects',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProjects();
+  }, []);
+  
+  // Filter projects based on search query
+  const filteredProjects = projects.filter(project => 
+    (project.projectname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (project.customername?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (project.projectid?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
   
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', { 
       month: 'short', 
@@ -124,7 +126,7 @@ const Projects = () => {
                 Filter
                 <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
               </Button>
-              <Button size="sm" className="flex-1 md:flex-auto btn-premium">
+              <Button size="sm" className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]">
                 <Plus className="h-4 w-4 mr-1" />
                 New Project
               </Button>
@@ -137,7 +139,7 @@ const Projects = () => {
                 <TableRow>
                   <TableHead>Project</TableHead>
                   <TableHead>Client</TableHead>
-                  <TableHead>Timeline</TableHead>
+                  <TableHead>Created</TableHead>
                   <TableHead>Budget</TableHead>
                   <TableHead>Progress</TableHead>
                   <TableHead>Status</TableHead>
@@ -145,59 +147,94 @@ const Projects = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell>
-                      <div className="font-medium">{project.name}</div>
-                      <div className="text-xs text-muted-foreground">{project.id}</div>
-                    </TableCell>
-                    <TableCell>{project.client}</TableCell>
-                    <TableCell>
-                      <div>{formatDate(project.startDate)}</div>
-                      <div>to {formatDate(project.endDate)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">${project.spent.toLocaleString()}</div>
-                      <div className="text-xs text-muted-foreground">of ${project.budget.toLocaleString()}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={project.progress} className="h-2 w-[100px]" />
-                        <span className="text-sm text-muted-foreground">{project.progress}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={project.status} />
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View details</DropdownMenuItem>
-                          <DropdownMenuItem>Edit project</DropdownMenuItem>
-                          <DropdownMenuItem>Schedule</DropdownMenuItem>
-                          <DropdownMenuItem>View time logs</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>Generate report</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">Archive project</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {loading ? (
+                  // Loading state - show skeleton rows
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <TableRow key={`skeleton-${index}`}>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-[120px]" />
+                          <Skeleton className="h-3 w-[80px]" />
+                        </div>
+                      </TableCell>
+                      <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Skeleton className="h-2 w-[100px]" />
+                          <Skeleton className="h-4 w-[30px]" />
+                        </div>
+                      </TableCell>
+                      <TableCell><Skeleton className="h-6 w-[80px] rounded-full" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-red-500">
+                      <p>Error loading projects: {error}</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={() => window.location.reload()}
+                      >
+                        Try Again
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-                {filteredProjects.length === 0 && (
+                ) : filteredProjects.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                       <Briefcase className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
                       <p>No projects found. Create your first project!</p>
                     </TableCell>
                   </TableRow>
+                ) : (
+                  filteredProjects.map((project) => (
+                    <TableRow key={project.projectid}>
+                      <TableCell>
+                        <div className="font-medium">{project.projectname || 'Unnamed Project'}</div>
+                        <div className="text-xs text-muted-foreground">{project.projectid}</div>
+                      </TableCell>
+                      <TableCell>{project.customername || 'No Client'}</TableCell>
+                      <TableCell>{formatDate(project.createdon)}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">${project.spent?.toLocaleString() || '0'}</div>
+                        <div className="text-xs text-muted-foreground">of ${project.budget?.toLocaleString() || '0'}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Progress value={project.progress || 0} className="h-2 w-[100px]" />
+                          <span className="text-sm text-muted-foreground">{project.progress || 0}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={project.status?.toLowerCase() || 'unknown'} />
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>View details</DropdownMenuItem>
+                            <DropdownMenuItem>Edit project</DropdownMenuItem>
+                            <DropdownMenuItem>Schedule</DropdownMenuItem>
+                            <DropdownMenuItem>View time logs</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>Generate report</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-600">Archive project</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
