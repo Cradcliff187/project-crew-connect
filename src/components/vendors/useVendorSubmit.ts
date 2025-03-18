@@ -9,6 +9,7 @@ export const useVendorSubmit = (onSuccess: () => void) => {
   
   const handleSubmit = async (data: VendorFormData) => {
     setIsSubmitting(true);
+    console.log('Submitting vendor data:', data);
     
     try {
       // Generate a unique ID for the vendor
@@ -16,10 +17,12 @@ export const useVendorSubmit = (onSuccess: () => void) => {
         .rpc('generate_vendor_id');
       
       if (vendorIdError) {
+        console.error('Error generating vendor ID:', vendorIdError);
         throw vendorIdError;
       }
       
       const vendorId = vendorIdData;
+      console.log('Generated vendor ID:', vendorId);
       
       // Now insert the vendor with the pre-generated ID
       const { data: vendor, error } = await supabase
@@ -39,8 +42,11 @@ export const useVendorSubmit = (onSuccess: () => void) => {
         .select();
       
       if (error) {
+        console.error('Error inserting vendor:', error);
         throw error;
       }
+      
+      console.log('Vendor created successfully:', vendor);
       
       toast({
         title: 'Vendor created successfully',
