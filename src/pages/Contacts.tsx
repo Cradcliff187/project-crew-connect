@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageTransition from '@/components/layout/PageTransition';
+import PageHeader from '@/components/layout/PageHeader';
 import ContactCard from '@/components/contacts/ContactCard';
 import ContactForm from '@/components/contacts/ContactForm';
 import ContactDetail from '@/components/contacts/ContactDetail';
@@ -286,14 +287,10 @@ const Contacts = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <div className="flex flex-col gap-2 mb-6 animate-in">
-          <h1 className="text-3xl font-semibold tracking-tight">Contacts</h1>
-          <p className="text-muted-foreground">
-            Manage your clients, customers, suppliers, subcontractors, and employees
-          </p>
-        </div>
-        
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 animate-in" style={{ animationDelay: '0.1s' }}>
+        <PageHeader
+          title="Contacts"
+          description="Manage your clients, customers, suppliers, subcontractors, and employees"
+        >
           <div className="relative w-full md:w-auto flex-1 max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
@@ -320,7 +317,7 @@ const Contacts = () => {
               Add Contact
             </Button>
           </div>
-        </div>
+        </PageHeader>
         
         <Tabs defaultValue="all" className="animate-in" style={{ animationDelay: '0.15s' }} onValueChange={setActiveTab}>
           <TabsList>

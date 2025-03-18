@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Search, Clock, Plus, Filter, MoreHorizontal, Calendar, ChevronDown, Play, Pause, Timer, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import PageTransition from '@/components/layout/PageTransition';
+import PageHeader from '@/components/layout/PageHeader';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 
 // Sample data - In a real app, this would come from API calls
@@ -101,12 +103,36 @@ const TimeTracking = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <div className="flex flex-col gap-2 mb-6 animate-in">
-          <h1 className="text-3xl font-semibold tracking-tight">Time Tracking</h1>
-          <p className="text-muted-foreground">
-            Log and manage time for employees and projects
-          </p>
-        </div>
+        <PageHeader
+          title="Time Tracking"
+          description="Log and manage time for employees and projects"
+        >
+          <div className="relative w-full md:w-auto flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input 
+              type="search" 
+              placeholder="Search entries..." 
+              className="pl-9 subtle-input rounded-md"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Filter className="h-4 w-4 mr-1" />
+              Filter
+              <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
+            </Button>
+            <Button 
+              size="sm" 
+              className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Entry
+            </Button>
+          </div>
+        </PageHeader>
         
         <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -246,30 +272,6 @@ const TimeTracking = () => {
                     Calendar View
                   </TabsTrigger>
                 </TabsList>
-                
-                <div className="flex items-center gap-2 mt-4 md:mt-0">
-                  <div className="relative w-full md:w-auto">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      type="search" 
-                      placeholder="Search entries..." 
-                      className="w-full md:w-[180px] pl-9 subtle-input rounded-md"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  
-                  <Button variant="outline" size="sm" className="flex items-center gap-1">
-                    <Filter className="h-4 w-4 mr-1" />
-                    Filter
-                    <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
-                  </Button>
-                  
-                  <Button size="sm" className="btn-premium">
-                    <Plus className="h-4 w-4 mr-1" />
-                    New Entry
-                  </Button>
-                </div>
               </div>
               
               <TabsContent value="list" className="mt-0">

@@ -1,8 +1,9 @@
 
 import { useState } from 'react';
-import { Hammer, Search, Plus, Tag } from 'lucide-react';
+import { Search, Plus, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PageHeader from '@/components/layout/PageHeader';
 import SubcontractorDialog from './SubcontractorDialog';
 import SpecialtyDialog from './SpecialtyDialog';
 
@@ -23,43 +24,43 @@ const SubcontractorsHeader = ({
   const [showSpecialtyDialog, setShowSpecialtyDialog] = useState(false);
   
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center space-x-2">
-          <Hammer className="h-6 w-6 text-[#0485ea]" />
-          <h1 className="text-2xl font-bold tracking-tight">Subcontractors</h1>
+    <>
+      <PageHeader
+        title="Subcontractors"
+        description="Manage your subcontractors and their specialties"
+      >
+        <div className="relative w-full md:w-auto flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search subcontractors..."
+            className="pl-9 subtle-input rounded-md"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         
-        <div className="mt-4 lg:mt-0 flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search subcontractors..."
-              className="w-full pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setShowSpecialtyDialog(true)}
-            className="border-[#0485ea] text-[#0485ea]"
+            className="flex items-center gap-1"
           >
-            <Tag className="mr-1 h-4 w-4" />
+            <Tag className="h-4 w-4 mr-1" />
             Specialties
           </Button>
           
           <Button
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
+            size="sm"
+            className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]"
             onClick={() => setShowAddDialog(true)}
           >
-            <Plus className="mr-1 h-4 w-4" />
+            <Plus className="h-4 w-4 mr-1" />
             Add Subcontractor
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
       <SubcontractorDialog
         open={showAddDialog}
@@ -72,7 +73,7 @@ const SubcontractorsHeader = ({
         onOpenChange={setShowSpecialtyDialog}
         onSpecialtyAdded={onSpecialtyAdded}
       />
-    </div>
+    </>
   );
 };
 

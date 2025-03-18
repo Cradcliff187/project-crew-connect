@@ -57,7 +57,7 @@ const Subcontractors = () => {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="flex flex-col min-h-full">
         <SubcontractorsHeader 
           searchQuery={searchQuery} 
           setSearchQuery={setSearchQuery} 
@@ -65,12 +65,14 @@ const Subcontractors = () => {
           onSpecialtyAdded={handleSpecialtyAdded}
         />
         
-        <SubcontractorsTable 
-          subcontractors={subcontractors}
-          loading={loading}
-          error={error}
-          searchQuery={searchQuery}
-        />
+        <div className="mt-6">
+          <SubcontractorsTable 
+            subcontractors={subcontractors}
+            loading={loading}
+            error={error}
+            searchQuery={searchQuery}
+          />
+        </div>
       </div>
     </PageTransition>
   );
