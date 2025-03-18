@@ -732,6 +732,115 @@ export type Database = {
           },
         ]
       }
+      project_budget_items: {
+        Row: {
+          actual_amount: number | null
+          category: string
+          created_at: string | null
+          description: string | null
+          estimated_amount: number
+          id: string
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_amount?: number | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          estimated_amount?: number
+          id?: string
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_amount?: number | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          estimated_amount?: number
+          id?: string
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_budget_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["projectid"]
+          },
+        ]
+      }
+      project_expenses: {
+        Row: {
+          amount: number
+          budget_item_id: string | null
+          created_at: string | null
+          description: string | null
+          document_id: string | null
+          expense_date: string | null
+          id: string
+          project_id: string
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          amount: number
+          budget_item_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          document_id?: string | null
+          expense_date?: string | null
+          id?: string
+          project_id: string
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          amount?: number
+          budget_item_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          document_id?: string | null
+          expense_date?: string | null
+          id?: string
+          project_id?: string
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_expenses_budget_item_id_fkey"
+            columns: ["budget_item_id"]
+            isOneToOne: false
+            referencedRelation: "project_budget_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_expenses_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "project_expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["projectid"]
+          },
+          {
+            foreignKeyName: "project_expenses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["vendorid"]
+          },
+        ]
+      }
       project_milestones: {
         Row: {
           created_at: string
@@ -807,9 +916,11 @@ export type Database = {
       }
       projects: {
         Row: {
+          budget_status: string | null
           created_at: string
           createdby: string | null
           createdon: string | null
+          current_expenses: number | null
           customerid: string | null
           customername: string | null
           docurl: string | null
@@ -829,12 +940,15 @@ export type Database = {
           sitelocationzip: string | null
           status: string | null
           subinvoicesfolderid: string | null
+          total_budget: number | null
           updated_at: string
         }
         Insert: {
+          budget_status?: string | null
           created_at?: string
           createdby?: string | null
           createdon?: string | null
+          current_expenses?: number | null
           customerid?: string | null
           customername?: string | null
           docurl?: string | null
@@ -854,12 +968,15 @@ export type Database = {
           sitelocationzip?: string | null
           status?: string | null
           subinvoicesfolderid?: string | null
+          total_budget?: number | null
           updated_at?: string
         }
         Update: {
+          budget_status?: string | null
           created_at?: string
           createdby?: string | null
           createdon?: string | null
+          current_expenses?: number | null
           customerid?: string | null
           customername?: string | null
           docurl?: string | null
@@ -879,6 +996,7 @@ export type Database = {
           sitelocationzip?: string | null
           status?: string | null
           subinvoicesfolderid?: string | null
+          total_budget?: number | null
           updated_at?: string
         }
         Relationships: [

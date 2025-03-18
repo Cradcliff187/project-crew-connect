@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Edit, MoreHorizontal, Trash } from 'lucide-react';
@@ -12,6 +13,7 @@ import { mapStatusToStatusBadge, formatDate } from './ProjectsTable';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ProjectMilestones from './milestones/ProjectMilestones';
 import ProjectProgress from './progress/ProjectProgress';
+import ProjectBudget from './budget/ProjectBudget';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProjectDetails {
@@ -26,6 +28,9 @@ interface ProjectDetails {
   sitelocationcity: string | null;
   sitelocationstate: string | null;
   sitelocationzip: string | null;
+  total_budget: number | null;
+  current_expenses: number | null;
+  budget_status: string | null;
 }
 
 const ProjectDetail = () => {
@@ -95,6 +100,17 @@ const ProjectDetail = () => {
         });
       }
     }
+  };
+  
+  // Format currency
+  const formatCurrency = (amount: number | null) => {
+    if (amount === null || amount === undefined) return '$0';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
   
   return (
@@ -191,11 +207,20 @@ const ProjectDetail = () => {
                 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Schedule</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Budget</CardTitle>
                   </CardHeader>
-                  <CardContent className="flex items-center">
-                    <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
-                    <span className="text-muted-foreground">No schedule set</span>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-lg font-semibold">{formatCurrency(project.total_budget)}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {project.current_expenses ? formatCurrency(project.current_expenses) + ' spent' : 'No expenses'}
+                        </div>
+                      </div>
+                      {project.budget_status && (
+                        <StatusBadge status={project.budget_status} />
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -217,6 +242,7 @@ const ProjectDetail = () => {
                 <TabsList className="mb-4">
                   <TabsTrigger value="progress">Progress</TabsTrigger>
                   <TabsTrigger value="milestones">Tasks & Milestones</TabsTrigger>
+                  <TabsTrigger value="budget">Budget</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="progress">
@@ -225,6 +251,10 @@ const ProjectDetail = () => {
                 
                 <TabsContent value="milestones">
                   <ProjectMilestones projectId={project.projectid} />
+                </TabsContent>
+                
+                <TabsContent value="budget">
+                  <ProjectBudget projectId={project.projectid} />
                 </TabsContent>
               </Tabs>
             </>

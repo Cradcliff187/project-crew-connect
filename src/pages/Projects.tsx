@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 const fetchProjects = async () => {
   const { data, error } = await supabase
     .from('projects')
-    .select('projectid, projectname, customername, customerid, status, createdon')
+    .select('projectid, projectname, customername, customerid, status, createdon, total_budget, current_expenses, budget_status')
     .order('createdon', { ascending: false });
   
   if (error) {
@@ -20,9 +20,9 @@ const fetchProjects = async () => {
   // Transform data to match our UI requirements
   return data.map(project => ({
     ...project,
-    // Default values for fields not yet in database
-    budget: Math.floor(Math.random() * 200000) + 50000, // Temporary random budget
-    spent: Math.floor(Math.random() * 150000), // Temporary random spent amount
+    // Default values for budget fields
+    budget: project.total_budget || 0,
+    spent: project.current_expenses || 0,
     progress: Math.floor(Math.random() * 100), // Temporary random progress
   }));
 };
