@@ -24,22 +24,11 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
 
   // Update sidebar state when screen size changes
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) { // lg breakpoint
-        setIsOpen(false);
-      } else {
-        setIsOpen(true);
-      }
-    };
-    
-    // Set initial state
-    handleResize();
-    
-    // Add event listener
-    window.addEventListener('resize', handleResize);
-    
-    // Cleanup
-    return () => window.removeEventListener('resize', handleResize);
+    if (isMobile) {
+      setIsOpen(false);
+    } else {
+      setIsOpen(true);
+    }
   }, [isMobile]);
 
   const toggleSidebar = () => {
