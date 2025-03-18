@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useBudgetIntegration } from '@/hooks/useBudgetIntegration';
 
 export const useEstimateToProject = () => {
   const [isConverting, setIsConverting] = useState(false);
   const { toast } = useToast();
+  const { createBudgetFromEstimate } = useBudgetIntegration();
 
   const convertEstimateToProject = async (estimate: {
     id: string;
@@ -58,7 +60,8 @@ export const useEstimateToProject = () => {
         sitelocationcity: estimate.location?.city || '',
         sitelocationstate: estimate.location?.state || '',
         sitelocationzip: estimate.location?.zip || '',
-        createdon: new Date().toISOString()
+        createdon: new Date().toISOString(),
+        total_budget: estimate.amount // Set initial budget from estimate amount
       };
 
       console.log("Creating new project with data:", projectData);
@@ -90,6 +93,9 @@ export const useEstimateToProject = () => {
         console.error("Error updating estimate with project ID:", updateError);
         throw updateError;
       }
+
+      // Create initial budget items from the estimate
+      await createBudgetFromEstimate(newProject[0].projectid, estimate.id);
 
       // Return the newly created project
       return newProject[0];
