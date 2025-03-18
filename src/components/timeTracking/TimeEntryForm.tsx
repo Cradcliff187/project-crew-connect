@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -855,4 +856,63 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                     : projects.find(p => p.id === confirmationData.entityId)?.title}
                 </div>
                 
-                <
+                <div className="text-muted-foreground">Date:</div>
+                <div className="font-medium">
+                  {format(confirmationData.workDate, "MMMM d, yyyy")}
+                </div>
+                
+                <div className="text-muted-foreground">Time:</div>
+                <div className="font-medium">
+                  {formatTimeRange(confirmationData.startTime, confirmationData.endTime)}
+                </div>
+                
+                <div className="text-muted-foreground">Duration:</div>
+                <div className="font-medium">
+                  {confirmationData.hoursWorked} hours
+                </div>
+                
+                {confirmationData.employeeId && employees.length > 0 && (
+                  <>
+                    <div className="text-muted-foreground">Employee:</div>
+                    <div className="font-medium">
+                      {employees.find(e => e.employee_id === confirmationData.employeeId)?.name}
+                    </div>
+                  </>
+                )}
+                
+                {confirmationData.notes && (
+                  <>
+                    <div className="text-muted-foreground">Notes:</div>
+                    <div className="font-medium">{confirmationData.notes}</div>
+                  </>
+                )}
+                
+                {selectedFiles.length > 0 && (
+                  <>
+                    <div className="text-muted-foreground">Receipts:</div>
+                    <div className="font-medium">{selectedFiles.length} file(s) attached</div>
+                  </>
+                )}
+              </div>
+              
+              <DialogFooter className="pt-4">
+                <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={confirmSubmit} 
+                  className="bg-[#0485ea] hover:bg-[#0375d1]"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Processing...' : 'Submit Time Entry'}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default TimeEntryForm;
