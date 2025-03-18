@@ -16,10 +16,13 @@ export interface Subcontractor {
   notes: string | null;
   // Additional vendor management fields
   insurance_expiration?: string | null;
+  insurance_provider?: string | null;
+  insurance_policy_number?: string | null;
   tax_id?: string | null;
   rating?: number | null;
   hourly_rate?: number | null;
   contract_on_file?: boolean;
+  contract_expiration?: string | null;
   preferred?: boolean;
   last_performance_review?: string | null;
   // Performance metrics
@@ -27,6 +30,7 @@ export interface Subcontractor {
   quality_score?: number | null;
   safety_incidents?: number | null;
   response_time_hours?: number | null;
+  total_completed_amount?: number | null;
 }
 
 export interface Specialty {
@@ -230,4 +234,29 @@ export const calculateVendorScore = (subcontractor: Subcontractor): number | nul
   
   // Normalize the score based on available metrics
   return Math.round(totalScore / weightSum);
+};
+
+// Format currency with dollar sign
+export const formatCurrency = (amount: number | null | undefined): string => {
+  if (amount === null || amount === undefined) return '$0.00';
+  return new Intl.NumberFormat('en-US', { 
+    style: 'currency', 
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2 
+  }).format(amount);
+};
+
+// Format a date or return 'N/A' if null
+export const formatDate = (date: string | null | undefined): string => {
+  if (!date) return 'N/A';
+  try {
+    return new Intl.DateTimeFormat('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    }).format(new Date(date));
+  } catch (error) {
+    return 'Invalid date';
+  }
 };

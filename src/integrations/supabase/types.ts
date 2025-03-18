@@ -1228,16 +1228,31 @@ export type Database = {
           address: string | null
           city: string | null
           contactemail: string | null
+          contract_expiration: string | null
+          contract_on_file: boolean | null
           created_at: string
+          hourly_rate: number | null
+          insurance_expiration: string | null
+          insurance_policy_number: string | null
+          insurance_provider: string | null
+          last_performance_review: string | null
           notes: string | null
+          on_time_percentage: number | null
           payment_terms: string | null
           phone: string | null
+          preferred: boolean | null
           qbvendortype: string | null
+          quality_score: number | null
+          rating: number | null
+          response_time_hours: number | null
+          safety_incidents: number | null
           specialty_ids: string[] | null
           state: string | null
           status: string | null
           subid: string
           subname: string | null
+          tax_id: string | null
+          total_completed_amount: number | null
           updated_at: string
           zip: string | null
         }
@@ -1245,16 +1260,31 @@ export type Database = {
           address?: string | null
           city?: string | null
           contactemail?: string | null
+          contract_expiration?: string | null
+          contract_on_file?: boolean | null
           created_at?: string
+          hourly_rate?: number | null
+          insurance_expiration?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          last_performance_review?: string | null
           notes?: string | null
+          on_time_percentage?: number | null
           payment_terms?: string | null
           phone?: string | null
+          preferred?: boolean | null
           qbvendortype?: string | null
+          quality_score?: number | null
+          rating?: number | null
+          response_time_hours?: number | null
+          safety_incidents?: number | null
           specialty_ids?: string[] | null
           state?: string | null
           status?: string | null
           subid: string
           subname?: string | null
+          tax_id?: string | null
+          total_completed_amount?: number | null
           updated_at?: string
           zip?: string | null
         }
@@ -1262,16 +1292,31 @@ export type Database = {
           address?: string | null
           city?: string | null
           contactemail?: string | null
+          contract_expiration?: string | null
+          contract_on_file?: boolean | null
           created_at?: string
+          hourly_rate?: number | null
+          insurance_expiration?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          last_performance_review?: string | null
           notes?: string | null
+          on_time_percentage?: number | null
           payment_terms?: string | null
           phone?: string | null
+          preferred?: boolean | null
           qbvendortype?: string | null
+          quality_score?: number | null
+          rating?: number | null
+          response_time_hours?: number | null
+          safety_incidents?: number | null
           specialty_ids?: string[] | null
           state?: string | null
           status?: string | null
           subid?: string
           subname?: string | null
+          tax_id?: string | null
+          total_completed_amount?: number | null
           updated_at?: string
           zip?: string | null
         }
@@ -1715,6 +1760,16 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_vendor_score: {
+        Args: {
+          p_rating: number
+          p_on_time_percentage: number
+          p_quality_score: number
+          p_safety_incidents: number
+          p_response_time_hours: number
+        }
+        Returns: number
+      }
       generate_customer_id: {
         Args: Record<PropertyKey, never>
         Returns: string

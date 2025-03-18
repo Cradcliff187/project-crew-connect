@@ -1,3 +1,4 @@
+
 import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import {
@@ -39,10 +40,13 @@ export interface SubcontractorFormData {
   notes?: string;
   // Additional vendor management fields
   insurance_expiration?: string | null;
+  insurance_provider?: string | null;
+  insurance_policy_number?: string | null;
   tax_id?: string | null;
   rating?: number | null;
   hourly_rate?: number | null;
   contract_on_file?: boolean;
+  contract_expiration?: string | null;
   preferred?: boolean;
   last_performance_review?: string | null;
   // Performance metrics
@@ -83,10 +87,13 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
       notes: initialData?.notes || '',
       // Additional vendor management fields
       insurance_expiration: initialData?.insurance_expiration || null,
+      insurance_provider: initialData?.insurance_provider || '',
+      insurance_policy_number: initialData?.insurance_policy_number || '',
       tax_id: initialData?.tax_id || '',
       rating: initialData?.rating || null,
       hourly_rate: initialData?.hourly_rate || null,
       contract_on_file: initialData?.contract_on_file || false,
+      contract_expiration: initialData?.contract_expiration || null,
       preferred: initialData?.preferred || false,
       last_performance_review: initialData?.last_performance_review || null,
       on_time_percentage: initialData?.on_time_percentage || null,
@@ -285,33 +292,12 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="contract_on_file"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Contract on File</FormLabel>
-                    <FormDescription>
-                      Check if a signed contract is on file
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
           </div>
         </div>
         
-        {/* Compliance/Performance Section */}
+        {/* Compliance/Insurance Section */}
         <div className="pt-4 border-t">
-          <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Compliance & Performance</h3>
+          <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Compliance & Insurance</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
@@ -353,6 +339,101 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
               )}
             />
             
+            <FormField
+              control={form.control}
+              name="insurance_provider"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Insurance Provider</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., State Farm, Hartford" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="insurance_policy_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Policy Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Insurance policy number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="contract_on_file"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Contract on File</FormLabel>
+                    <FormDescription>
+                      Check if a signed contract is on file
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="contract_expiration"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Contract Expiration Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={`w-full pl-3 text-left font-normal ${
+                            !field.value ? "text-muted-foreground" : ""
+                          }`}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+        
+        {/* Performance Section */}
+        <div className="pt-4 border-t">
+          <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Performance & Evaluation</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="rating"

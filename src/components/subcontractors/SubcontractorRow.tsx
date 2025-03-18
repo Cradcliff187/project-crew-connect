@@ -1,12 +1,18 @@
-
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Eye, Star, Clock, CheckCircle2 } from 'lucide-react';
-import { formatSubcontractorAddress, getPaymentTermsLabel, getRatingDisplay, Subcontractor } from './utils/subcontractorUtils';
+import { 
+  formatSubcontractorAddress, 
+  getPaymentTermsLabel, 
+  getRatingDisplay, 
+  Subcontractor,
+  calculateVendorScore
+} from './utils/subcontractorUtils';
 import { format } from 'date-fns';
 import InsuranceStatus from './InsuranceStatus';
+import VendorScoreBadge from './VendorScoreBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SubcontractorRowProps {
@@ -79,12 +85,18 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
     );
   };
   
+  // Calculate vendor score
+  const vendorScore = calculateVendorScore(subcontractor);
+  
   // Render vendor compliance status indicators
   const renderComplianceIndicators = () => {
     return (
-      <div className="flex gap-1">
+      <div className="flex gap-1 items-center">
         {/* Insurance Status */}
         <InsuranceStatus expirationDate={subcontractor.insurance_expiration} />
+        
+        {/* Vendor Score */}
+        <VendorScoreBadge score={vendorScore} />
         
         {/* Contract Status */}
         {subcontractor.contract_on_file && (

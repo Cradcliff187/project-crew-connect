@@ -31,12 +31,15 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             tax_id: data.tax_id,
             // Compliance info
             insurance_expiration: data.insurance_expiration,
+            insurance_provider: data.insurance_provider,
+            insurance_policy_number: data.insurance_policy_number,
             contract_on_file: data.contract_on_file,
+            contract_expiration: data.contract_expiration,
             // Performance info
             rating: data.rating,
             preferred: data.preferred,
             last_performance_review: data.last_performance_review,
-            // Performance metrics (if available from form)
+            // Performance metrics
             on_time_percentage: data.on_time_percentage,
             quality_score: data.quality_score,
             safety_incidents: data.safety_incidents,
@@ -86,12 +89,15 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             tax_id: data.tax_id,
             // Compliance info
             insurance_expiration: data.insurance_expiration,
+            insurance_provider: data.insurance_provider,
+            insurance_policy_number: data.insurance_policy_number,
             contract_on_file: data.contract_on_file,
+            contract_expiration: data.contract_expiration,
             // Performance info
             rating: data.rating,
             preferred: data.preferred,
             last_performance_review: data.last_performance_review,
-            // Performance metrics (if available from form)
+            // Performance metrics
             on_time_percentage: data.on_time_percentage,
             quality_score: data.quality_score,
             safety_incidents: data.safety_incidents,
