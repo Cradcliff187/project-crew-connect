@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(dateString: string) {
+export function formatDate(dateString: string | Date) {
   try {
     const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
     return format(date, 'MMM d, yyyy');
@@ -17,7 +17,7 @@ export function formatDate(dateString: string) {
   }
 }
 
-export function formatDateTime(dateString: string) {
+export function formatDateTime(dateString: string | Date) {
   try {
     const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
     return format(date, 'MMM d, yyyy h:mm a');

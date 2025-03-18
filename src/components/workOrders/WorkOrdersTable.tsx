@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/ui/StatusBadge';
 import { WorkOrder } from '@/types/workOrder';
 import WorkOrderEmptyState from './WorkOrderEmptyState';
 import WorkOrderLoadingState from './WorkOrderLoadingState';

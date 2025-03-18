@@ -5,6 +5,7 @@ import { FileText, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;
@@ -63,7 +64,7 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
             <DialogTitle>Upload Document</DialogTitle>
           </DialogHeader>
           <EnhancedDocumentUpload 
-            entityType={entityType} 
+            entityType={"WORK_ORDER" as EntityType}
             entityId={workOrderId}
             onSuccess={handleUploadSuccess}
             onCancel={() => setIsUploadOpen(false)}

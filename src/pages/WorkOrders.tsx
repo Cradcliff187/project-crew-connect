@@ -6,6 +6,7 @@ import PageTransition from '@/components/layout/PageTransition';
 import WorkOrdersHeader from '@/components/workOrders/WorkOrdersHeader';
 import WorkOrdersTable from '@/components/workOrders/WorkOrdersTable';
 import { WorkOrder } from '@/types/workOrder';
+import { StatusType } from '@/types/common';
 
 const WorkOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,7 +27,13 @@ const WorkOrders = () => {
         throw error;
       }
       
-      setWorkOrders(data || []);
+      // Cast the status to StatusType to satisfy TypeScript
+      const typedWorkOrders = data?.map(order => ({
+        ...order,
+        status: order.status as StatusType
+      })) || [];
+      
+      setWorkOrders(typedWorkOrders);
     } catch (error: any) {
       console.error('Error fetching work orders:', error);
       setError(error.message);

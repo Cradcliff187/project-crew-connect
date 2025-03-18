@@ -55,7 +55,7 @@ const mainNav = [
   },
   {
     title: "Work Orders",
-    href: "/WorkOrders",
+    href: "/workorders",
     icon: <ClipboardList className="h-5 w-5" />,
   },
   {
@@ -85,7 +85,7 @@ const mainNav = [
   },
 ];
 
-export function Sidebar({ className, items }: SidebarProps) {
+const Sidebar = ({ className, items }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
@@ -157,6 +157,6 @@ export function Sidebar({ className, items }: SidebarProps) {
       </div>
     </div>
   );
-}
+};
 
 export default Sidebar;
