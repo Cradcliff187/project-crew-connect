@@ -102,24 +102,9 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="flex items-center justify-start pl-4">
         <Link to="/" className="flex items-center space-x-2">
-          <img 
-            src="/akc-logo.png" 
-            alt="AKC LLC Logo"
-            className="h-8 w-auto"
-            onError={(e) => {
-              // Fallback if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.style.display = 'none';
-              const parentElement = target.parentElement;
-              if (parentElement) {
-                const fallbackDiv = document.createElement('div');
-                fallbackDiv.className = 'bg-construction-600 rounded-md p-1.5 flex items-center justify-center';
-                fallbackDiv.innerHTML = '<span class="text-white font-bold text-lg">AKC</span>';
-                parentElement.insertBefore(fallbackDiv, target);
-              }
-            }}
-          />
+          <div className="bg-construction-600 rounded-md p-1.5 flex items-center justify-center">
+            <span className="text-white font-bold text-lg">AKC</span>
+          </div>
           <span className="text-lg font-bold text-construction-600 font-montserrat">{siteConfig.name}</span>
         </Link>
       </SidebarHeader>
