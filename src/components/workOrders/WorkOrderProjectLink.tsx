@@ -53,13 +53,14 @@ const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({
           console.error('Error fetching work order link:', error);
         }
         
-        if (data) {
+        if (data && data[0]) {
+          const linkData = data[0];
           setExistingLink({
-            project_id: data.project_id,
-            budget_item_id: data.budget_item_id
+            project_id: linkData.project_id,
+            budget_item_id: linkData.budget_item_id
           });
-          setSelectedProject(data.project_id);
-          setSelectedBudgetItem(data.budget_item_id);
+          setSelectedProject(linkData.project_id);
+          setSelectedBudgetItem(linkData.budget_item_id);
         }
         
         // Also check if the work order has a project_id directly

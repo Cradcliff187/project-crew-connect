@@ -1,3 +1,4 @@
+
 export type StatusType = 
   | 'active' 
   | 'inactive' 
@@ -11,7 +12,14 @@ export type StatusType =
   | 'critical'
   | 'not_set'
   | 'converted'
-  | 'cancelled';
+  | 'cancelled'
+  | 'on-hold'
+  | 'qualified'
+  | 'unknown'
+  | 'potential'
+  | 'prospect'
+  | 'sent'
+  | 'rejected';
 
 export interface Option {
   label: string;

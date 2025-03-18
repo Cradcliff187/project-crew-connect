@@ -20,7 +20,7 @@ const Subcontractors = () => {
     try {
       const { data, error } = await supabase
         .from('subcontractors')
-        .select('subid, subname, contactemail, phone, address, city, state, zip, status, created_at, specialty_ids')
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) {

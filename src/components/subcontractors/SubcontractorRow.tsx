@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Subcontractor } from './utils/subcontractorUtils';
+import { Subcontractor, Specialty } from './utils/subcontractorUtils';
 import { StatusType } from '@/types/common';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { Edit, Eye, Trash, CheckCircle2, AlertTriangle, ClipboardList } from 'lucide-react';
@@ -12,10 +12,10 @@ import InsuranceStatus from './InsuranceStatus';
 
 interface SubcontractorRowProps {
   subcontractor: Subcontractor;
-  specialtyNames: Record<string, string>;
-  onEdit: (subcontractor: Subcontractor) => void;
-  onDelete: (subcontractor: Subcontractor) => void;
-  onView: (subcontractor: Subcontractor) => void;
+  specialties: Record<string, Specialty>;
+  onEdit?: (subcontractor: Subcontractor) => void;
+  onDelete?: (subcontractor: Subcontractor) => void;
+  onView?: (subcontractor: Subcontractor) => void;
 }
 
 export const mapStatusToStatusBadge = (status: string | null): StatusType => {
@@ -25,7 +25,7 @@ export const mapStatusToStatusBadge = (status: string | null): StatusType => {
     "QUALIFIED": "qualified",
     "VERIFIED": "qualified",
     "PENDING": "pending",
-    "REJECTED": "critical"
+    "REJECTED": "rejected"
   };
   
   if (!status) return "not_set";
@@ -35,10 +35,10 @@ export const mapStatusToStatusBadge = (status: string | null): StatusType => {
 
 const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
   subcontractor,
-  specialtyNames,
-  onEdit,
-  onDelete,
-  onView
+  specialties,
+  onEdit = () => {},
+  onDelete = () => {},
+  onView = () => {}
 }) => {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
@@ -58,7 +58,7 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
       <div className="flex flex-wrap gap-1">
         {subcontractor.specialty_ids.slice(0, 2).map(id => (
           <Badge key={id} variant="outline" className="text-xs">
-            {specialtyNames[id] || 'Unknown'}
+            {specialties[id]?.specialty || 'Unknown'}
           </Badge>
         ))}
         {subcontractor.specialty_ids.length > 2 && (
@@ -125,22 +125,23 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
         <div className="text-xs text-muted-foreground">{subcontractor.subid}</div>
       </TableCell>
       <TableCell>
+        {getSpecialtyLabels()}
+      </TableCell>
+      <TableCell>
         <div>{subcontractor.contactemail || 'No Email'}</div>
         <div className="text-xs text-muted-foreground">{subcontractor.phone || 'No Phone'}</div>
       </TableCell>
       <TableCell>
-        {getSpecialtyLabels()}
-      </TableCell>
-      <TableCell>
-        <div className="flex space-x-2 items-center">
-          <span>{getPaymentTermsLabel(subcontractor.payment_terms)}</span>
+        <div className="text-sm">
+          {subcontractor.city && subcontractor.state ? (
+            `${subcontractor.city}, ${subcontractor.state}`
+          ) : (
+            <span className="text-muted-foreground">No Location</span>
+          )}
         </div>
       </TableCell>
       <TableCell>
-        <InsuranceStatus 
-          expiryDate={subcontractor.insurance_expiry} 
-          isRequired={subcontractor.insurance_required ?? true} 
-        />
+        {formatDate(subcontractor.created_at)}
       </TableCell>
       <TableCell>
         <StatusBadge status={mapStatusToStatusBadge(subcontractor.status)} />

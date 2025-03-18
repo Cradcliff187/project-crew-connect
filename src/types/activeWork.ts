@@ -21,37 +21,55 @@ export interface WorkItem {
   poNumber?: string;
 }
 
-export const projectToWorkItem = (project: any): WorkItem => ({
-  id: project.projectid,
-  type: 'project',
-  title: project.projectname || 'Unnamed Project',
-  description: project.jobdescription,
-  customerId: project.customerid,
-  customerName: project.customername,
-  status: project.status?.toLowerCase() as StatusType || 'unknown',
-  dueDate: project.due_date,
-  createdAt: project.createdon,
-  location: project.sitelocationaddress 
-    ? `${project.sitelocationaddress}, ${project.sitelocationcity || ''} ${project.sitelocationstate || ''} ${project.sitelocationzip || ''}`.trim()
-    : undefined,
-  budget: project.budget,
-  spent: project.spent,
-  progress: project.progress
-});
+export const projectToWorkItem = (project: any): WorkItem => {
+  // First get the status with a default
+  const rawStatus = project.status?.toLowerCase() || '';
+  // Then map it to a valid StatusType
+  const status: StatusType = ['active', 'completed', 'pending', 'cancelled', 'on-hold'].includes(rawStatus) 
+    ? rawStatus as StatusType 
+    : 'not_set';
+    
+  return {
+    id: project.projectid,
+    type: 'project',
+    title: project.projectname || 'Unnamed Project',
+    description: project.jobdescription,
+    customerId: project.customerid,
+    customerName: project.customername,
+    status,
+    dueDate: project.due_date,
+    createdAt: project.createdon,
+    location: project.sitelocationaddress 
+      ? `${project.sitelocationaddress}, ${project.sitelocationcity || ''} ${project.sitelocationstate || ''} ${project.sitelocationzip || ''}`.trim()
+      : undefined,
+    budget: project.budget,
+    spent: project.spent,
+    progress: project.progress
+  };
+};
 
-export const workOrderToWorkItem = (workOrder: WorkOrder): WorkItem => ({
-  id: workOrder.work_order_id,
-  type: 'workOrder',
-  title: workOrder.title,
-  description: workOrder.description,
-  customerId: workOrder.customer_id,
-  customerName: '', // This would need to be fetched separately 
-  status: workOrder.status?.toLowerCase() as StatusType || 'unknown',
-  dueDate: workOrder.scheduled_date,
-  createdAt: workOrder.created_at,
-  location: workOrder.location_id?.toString(),
-  progress: workOrder.progress,
-  priority: workOrder.priority,
-  assignedTo: workOrder.assigned_to?.toString(),
-  poNumber: workOrder.po_number
-});
+export const workOrderToWorkItem = (workOrder: WorkOrder): WorkItem => {
+  // First get the status with a default
+  const rawStatus = workOrder.status?.toLowerCase() || '';
+  // Then map it to a valid StatusType
+  const status: StatusType = ['active', 'completed', 'pending', 'cancelled', 'on-hold'].includes(rawStatus) 
+    ? rawStatus as StatusType 
+    : 'not_set';
+    
+  return {
+    id: workOrder.work_order_id,
+    type: 'workOrder',
+    title: workOrder.title,
+    description: workOrder.description,
+    customerId: workOrder.customer_id,
+    customerName: '', // This would need to be fetched separately 
+    status,
+    dueDate: workOrder.scheduled_date,
+    createdAt: workOrder.created_at,
+    location: workOrder.location_id?.toString(),
+    progress: workOrder.progress,
+    priority: workOrder.priority,
+    assignedTo: workOrder.assigned_to?.toString(),
+    poNumber: workOrder.po_number
+  };
+};
