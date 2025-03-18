@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Search, Clock, Filter, Calendar, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import TimeEntryForm from '@/components/timeTracking/TimeEntryForm';
 import TimeTrackingTable from '@/components/timeTracking/TimeTrackingTable';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
-import { TimeEntry } from '@/types/workOrder';
+import { TimeEntry } from '@/types/timeTracking';
 
 const TimeTracking = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,7 +28,6 @@ const TimeTracking = () => {
     setIsLoading(true);
     
     try {
-      // Build the query based on the filter - using the view for fetching data
       let query = supabase
         .from('time_entries_migration_view')
         .select(`
@@ -50,7 +48,6 @@ const TimeTracking = () => {
         `)
         .order('date_worked', { ascending: false });
       
-      // Apply entity_type filter if needed
       if (filterType === 'work_orders') {
         query = query.eq('entity_type', 'work_order');
       } else if (filterType === 'projects') {
@@ -61,13 +58,11 @@ const TimeTracking = () => {
       
       if (error) throw error;
       
-      // Get entity names and employee details
       const enhancedEntries = await Promise.all((data || []).map(async (entry: any) => {
         let entityName = 'Unknown';
         let entityLocation = '';
         let employeeName = '';
         
-        // Get entity details
         if (entry.entity_type === 'work_order') {
           const { data: workOrder } = await supabase
             .from('maintenance_work_orders')
@@ -78,7 +73,6 @@ const TimeTracking = () => {
           if (workOrder) {
             entityName = workOrder.title;
             
-            // Get location details if available
             if (workOrder.location_id) {
               const { data: location } = await supabase
                 .from('site_locations')
@@ -93,7 +87,6 @@ const TimeTracking = () => {
             }
           }
         } else {
-          // Project
           const { data: project } = await supabase
             .from('projects')
             .select('projectname, sitelocationcity, sitelocationstate')
@@ -107,7 +100,6 @@ const TimeTracking = () => {
           }
         }
         
-        // Get employee details
         if (entry.employee_id) {
           const { data: employee } = await supabase
             .from('employees')
@@ -120,7 +112,6 @@ const TimeTracking = () => {
           }
         }
         
-        // Calculate cost if we have hours and rate
         const cost = entry.hours_worked && entry.employee_rate 
           ? entry.hours_worked * entry.employee_rate 
           : undefined;
@@ -134,7 +125,6 @@ const TimeTracking = () => {
         };
       }));
       
-      // Apply search filter if any
       let filteredEntries = enhancedEntries;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -161,7 +151,6 @@ const TimeTracking = () => {
   
   const handleDeleteEntry = async (id: string) => {
     try {
-      // Delete from the actual table, not the view
       const { error } = await supabase
         .from('time_entries')
         .delete()
@@ -174,7 +163,6 @@ const TimeTracking = () => {
         description: 'The time entry has been successfully deleted.',
       });
       
-      // Refresh the time entries
       fetchTimeEntries();
     } catch (error) {
       console.error('Error deleting time entry:', error);
@@ -190,22 +178,18 @@ const TimeTracking = () => {
     const entry = timeEntries.find(e => e.id === id);
     if (entry) {
       if (entry.entity_type === 'work_order') {
-        // Navigate to work order details
         console.log('View work order:', entry.entity_id);
       } else {
-        // Navigate to project details
         console.log('View project:', entry.entity_id);
       }
     }
   };
   
   const handleViewReceipts = (id: string) => {
-    // This will be implemented in the next step
     console.log('View receipts for:', id);
   };
   
   const handleFormSuccess = () => {
-    // Switch back to the list tab and refresh entries
     setActiveTab('list');
     fetchTimeEntries();
   };
@@ -227,7 +211,6 @@ const TimeTracking = () => {
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 if (e.target.value === '') {
-                  // Refresh entries when search is cleared
                   fetchTimeEntries();
                 }
               }}

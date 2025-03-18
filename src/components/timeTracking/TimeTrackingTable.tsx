@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowUp, ArrowDown, Calendar, Clock, Trash2, Eye, MoreHorizontal, FileText, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { TimeEntry } from '@/types/workOrder';
+import { TimeEntry } from '@/types/timeTracking';
 
 interface TimeTrackingTableProps {
   entries: TimeEntry[];
@@ -44,7 +43,6 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [entryToDelete, setEntryToDelete] = React.useState<string | null>(null);
 
-  // Apply sorting
   const sortedEntries = React.useMemo(() => {
     const sortableEntries = [...entries];
     
@@ -117,7 +115,6 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
       },
     ];
     
-    // Add receipt option if applicable
     if (entry.has_receipts && onViewReceipts) {
       actions[0].items.push({
         label: 'View receipt(s)',
@@ -234,7 +231,6 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
         </Table>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>

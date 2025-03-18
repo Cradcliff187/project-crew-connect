@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,7 +40,7 @@ import {
 } from '@/components/ui/hover-card';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { TimeEntryFormData } from '@/types/workOrder';
+import { TimeEntryFormData } from '@/types/timeTracking';
 
 interface WorkOrderOrProject {
   id: string;
@@ -250,7 +249,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         updated_at: new Date().toISOString()
       };
       
-      // Insert into the actual time_entries table, not the view
       const { data: insertedEntry, error } = await supabase
         .from('time_entries')
         .insert(timeEntry)
@@ -622,3 +620,4 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
 };
 
 export default TimeEntryForm;
+
