@@ -30,8 +30,9 @@ const Subcontractors = () => {
       // Ensure any null values are properly handled for new fields
       const processedData = data?.map(sub => ({
         ...sub,
+        // Handle new fields that might not exist in the database yet
         payment_terms: sub.payment_terms || null,
-        insurance_required: sub.insurance_required === null ? true : sub.insurance_required,
+        insurance_required: typeof sub.insurance_required === 'boolean' ? sub.insurance_required : true,
         insurance_expiry: sub.insurance_expiry || null,
         notes: sub.notes || null
       })) as Subcontractor[];
