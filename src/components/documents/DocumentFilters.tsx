@@ -4,6 +4,7 @@ import { Search, Filter, Check, X, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select, 
   SelectContent, 
@@ -20,7 +21,6 @@ import {
   DialogFooter,
   DialogClose
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Popover,
   PopoverContent,
@@ -41,7 +41,6 @@ interface FilterOptions {
     to?: Date;
   };
   sortBy?: string;
-  view: 'all' | 'expenses' | 'documents';
 }
 
 interface DocumentFiltersProps {
@@ -67,21 +66,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
     }
   }, [isDialogOpen, filters]);
 
-  const handleTabChange = (value: string) => {
-    const newFilters = { ...filters, view: value as 'all' | 'expenses' | 'documents' };
-    
-    // Auto-set expense filter based on tab
-    if (value === 'expenses') {
-      newFilters.isExpense = true;
-    } else if (value === 'documents') {
-      newFilters.isExpense = false;
-    } else {
-      newFilters.isExpense = undefined;
-    }
-    
-    onFilterChange(newFilters);
-  };
-
   const handleApplyFilters = () => {
     onFilterChange(tempFilters);
     setIsDialogOpen(false);
@@ -100,11 +84,14 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
       newFilters.entityType = undefined;
     } else if (filterKey === 'dateRange') {
       newFilters.dateRange = undefined;
+    } else if (filterKey === 'isExpense') {
+      newFilters.isExpense = undefined;
     }
     
     onFilterChange(newFilters);
   };
 
+  // Format date range for display
   const dateRangeText = filters.dateRange?.from && filters.dateRange?.to 
     ? `${formatDate(filters.dateRange.from)} - ${formatDate(filters.dateRange.to)}`
     : filters.dateRange?.from 
@@ -113,22 +100,15 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
         ? `Until ${formatDate(filters.dateRange.to)}`
         : undefined;
 
+  // Group entity types for better organization
+  const groupedEntityTypes = {
+    business: ['PROJECT', 'WORK_ORDER', 'ESTIMATE'],
+    people: ['CUSTOMER', 'VENDOR', 'SUBCONTRACTOR'],
+    financial: ['EXPENSE']
+  };
+
   return (
     <div className="space-y-4 w-full">
-      {/* Tabs for high-level filtering */}
-      <Tabs
-        defaultValue="all"
-        value={filters.view}
-        onValueChange={handleTabChange}
-        className="w-full"
-      >
-        <TabsList className="grid grid-cols-3 w-full">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
       <div className="flex flex-wrap items-center justify-between gap-2">
         {/* Search Bar */}
         <div className="relative flex-1 min-w-[200px]">
@@ -205,13 +185,43 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All entities</SelectItem>
-                      {entityTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
-                        </SelectItem>
-                      ))}
+                      
+                      {/* Business entities */}
+                      <SelectItem value="PROJECT">Projects</SelectItem>
+                      <SelectItem value="WORK_ORDER">Work Orders</SelectItem>
+                      <SelectItem value="ESTIMATE">Estimates</SelectItem>
+                      
+                      {/* People entities */}
+                      <SelectItem value="CUSTOMER">Customers</SelectItem>
+                      <SelectItem value="VENDOR">Vendors</SelectItem>
+                      <SelectItem value="SUBCONTRACTOR">Subcontractors</SelectItem>
+                      
+                      {/* Financial entities */}
+                      <SelectItem value="EXPENSE">Expenses</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                
+                {/* Expense Only Toggle */}
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="expense-only"
+                    checked={tempFilters.isExpense === true}
+                    onCheckedChange={(checked) => {
+                      handleTempFilterChange('isExpense', checked ? true : undefined);
+                    }}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="expense-only"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Show Expenses Only
+                    </label>
+                    <p className="text-sm text-muted-foreground">
+                      Only show documents marked as expenses
+                    </p>
+                  </div>
                 </div>
                 
                 {/* Date Range */}
@@ -264,6 +274,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                     ...filters,
                     category: undefined,
                     entityType: undefined,
+                    isExpense: undefined,
                     dateRange: undefined
                   });
                 }}>
@@ -313,6 +324,24 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                 size="icon" 
                 className="h-4 w-4 p-0 ml-1" 
                 onClick={() => handleRemoveFilter('entityType')}
+              >
+                <X className="h-3 w-3" />
+                <span className="sr-only">Remove</span>
+              </Button>
+            </Badge>
+          )}
+          
+          {filters.isExpense && (
+            <Badge 
+              variant="outline" 
+              className="flex items-center gap-1 bg-gray-50 px-2 py-1"
+            >
+              <span>Expenses only</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-4 w-4 p-0 ml-1" 
+                onClick={() => handleRemoveFilter('isExpense')}
               >
                 <X className="h-3 w-3" />
                 <span className="sr-only">Remove</span>

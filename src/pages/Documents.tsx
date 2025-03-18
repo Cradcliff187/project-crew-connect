@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,18 +37,15 @@ const DocumentsPage: React.FC = () => {
     entityType: undefined as EntityType | undefined,
     isExpense: undefined as boolean | undefined,
     dateRange: undefined as { from?: Date; to?: Date } | undefined,
-    sortBy: 'newest',
-    view: 'all' as 'all' | 'expenses' | 'documents'
+    sortBy: 'newest'
   });
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
     if (key === 'sortBy' && value === 'newest') return false;
     if (key === 'search' && !value) return false;
-    if (key === 'view' && value === 'all') return false;
-    if (key === 'isExpense' && value === undefined) return false;
-    if (key === 'dateRange' && !value) return false;
-    return value !== undefined;
+    if (value === undefined) return false;
+    return true;
   }).length;
 
   // Fetch documents on load and when filters change
@@ -198,8 +194,7 @@ const DocumentsPage: React.FC = () => {
       entityType: undefined,
       isExpense: undefined,
       dateRange: undefined,
-      sortBy: 'newest',
-      view: 'all'
+      sortBy: 'newest'
     });
   };
 
