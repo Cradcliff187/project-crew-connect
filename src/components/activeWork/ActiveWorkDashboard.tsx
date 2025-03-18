@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { CalendarClock, Clock, ChevronRight, Briefcase, Tools } from 'lucide-react';
+import { CalendarClock, Clock, ChevronRight, Briefcase, Wrench } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { mapStatusToStatusBadge } from '@/components/projects/ProjectsTable';
 import { WorkOrder } from '@/types/workOrder';
@@ -153,7 +152,7 @@ const ActiveWorkDashboard = ({
       {(workOrders.length > 0 || workOrdersLoading) && (
         <div>
           <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <Tools className="h-5 w-5 mr-2" />
+            <Wrench className="h-5 w-5 mr-2" />
             Work Orders
           </h3>
           
@@ -177,7 +176,7 @@ const ActiveWorkDashboard = ({
             ) : filteredWorkOrders.length === 0 ? (
               <Card className="col-span-full py-8">
                 <div className="text-center text-muted-foreground">
-                  <Tools className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                  <Wrench className="h-12 w-12 mx-auto mb-3 opacity-20" />
                   <p>No work orders found matching your search criteria</p>
                 </div>
               </Card>

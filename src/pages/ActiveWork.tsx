@@ -71,7 +71,8 @@ const ActiveWork = () => {
       // Cast the status to StatusType to satisfy TypeScript
       const typedWorkOrders = data?.map(order => ({
         ...order,
-        status: order.status as any
+        status: order.status as any,
+        progress: order.progress || 0 // Ensure progress has a default value
       })) || [];
       
       setWorkOrders(typedWorkOrders);
