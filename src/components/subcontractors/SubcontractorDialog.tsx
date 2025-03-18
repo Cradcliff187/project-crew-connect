@@ -9,7 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import SubcontractorForm, { SubcontractorFormData } from './SubcontractorForm';
+import SubcontractorForm from './SubcontractorForm';
+import { SubcontractorFormData } from './types/formTypes';
 import { useSubcontractorSubmit } from './useSubcontractorSubmit';
 import { Subcontractor } from './utils/subcontractorUtils';
 

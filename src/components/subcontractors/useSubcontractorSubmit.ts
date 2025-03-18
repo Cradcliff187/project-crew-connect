@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { SubcontractorFormData } from './SubcontractorForm';
+import { SubcontractorFormData } from './types/formTypes';
 
 export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
