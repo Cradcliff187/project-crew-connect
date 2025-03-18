@@ -15,6 +15,7 @@ import ProjectMilestones from './milestones/ProjectMilestones';
 import ProjectProgress from './progress/ProjectProgress';
 import ProjectBudget from './budget/ProjectBudget';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatusType } from '@/types/common';
 
 interface ProjectDetails {
   projectid: string;
@@ -218,7 +219,9 @@ const ProjectDetail = () => {
                         </div>
                       </div>
                       {project.budget_status && (
-                        <StatusBadge status={project.budget_status} />
+                        <StatusBadge 
+                          status={project.budget_status as StatusType} 
+                        />
                       )}
                     </div>
                   </CardContent>

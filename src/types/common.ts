@@ -23,4 +23,8 @@ export type StatusType =
   | 'PAID'
   | 'UNPAID'
   | 'PARTIAL'
-  | 'AWAITING_APPROVAL';
+  | 'AWAITING_APPROVAL'
+  | 'on_track'
+  | 'warning'
+  | 'critical'
+  | 'not_set';
