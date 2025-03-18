@@ -1,3 +1,4 @@
+
 export interface Subcontractor {
   subid: string;
   subname: string;
@@ -10,7 +11,7 @@ export interface Subcontractor {
   status: string | null;
   specialty_ids: string[];
   created_at: string;
-  // Keep only these fields from the enhanced vendor management
+  // Required vendor management fields
   payment_terms: string | null;
   notes: string | null;
 }

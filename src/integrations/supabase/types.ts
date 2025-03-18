@@ -1229,6 +1229,8 @@ export type Database = {
           city: string | null
           contactemail: string | null
           created_at: string
+          notes: string | null
+          payment_terms: string | null
           phone: string | null
           qbvendortype: string | null
           specialty_ids: string[] | null
@@ -1244,6 +1246,8 @@ export type Database = {
           city?: string | null
           contactemail?: string | null
           created_at?: string
+          notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
           qbvendortype?: string | null
           specialty_ids?: string[] | null
@@ -1259,6 +1263,8 @@ export type Database = {
           city?: string | null
           contactemail?: string | null
           created_at?: string
+          notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
           qbvendortype?: string | null
           specialty_ids?: string[] | null
