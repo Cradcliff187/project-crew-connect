@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn, formatTimeRange } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { TimeEntryFormData } from '@/types/timeTracking';
+import { toast } from '@/hooks/use-toast';
 
 import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
@@ -276,7 +276,5 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     </div>
   );
 };
-
-import { toast } from '@/hooks/use-toast';
 
 export default TimeEntryForm;

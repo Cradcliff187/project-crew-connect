@@ -12,13 +12,13 @@ import VendorForm from '../vendors/VendorForm';
 import { DocumentUploadFormValues } from './schemas/documentSchema';
 
 interface Vendor {
-  vendor_id: string;
-  vendor_name: string;
+  vendorid: string;
+  vendorname: string;
 }
 
 interface Subcontractor {
-  subcontractor_id: string;
-  business_name: string;
+  subid: string;
+  subname: string;
 }
 
 interface VendorSelectorProps {
@@ -48,8 +48,8 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
         // Fetch vendors
         const { data: vendors, error: vendorError } = await supabase
           .from('vendors')
-          .select('vendor_id, vendor_name')
-          .order('vendor_name');
+          .select('vendorid, vendorname')
+          .order('vendorname');
           
         if (vendorError) throw vendorError;
         setVendorOptions(vendors || []);
@@ -57,8 +57,8 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
         // Fetch subcontractors
         const { data: subcontractors, error: subError } = await supabase
           .from('subcontractors')
-          .select('subcontractor_id, business_name')
-          .order('business_name');
+          .select('subid, subname')
+          .order('subname');
           
         if (subError) throw subError;
         setSubcontractorOptions(subcontractors || []);
@@ -77,8 +77,8 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
     // Refresh the vendor list
     supabase
       .from('vendors')
-      .select('vendor_id, vendor_name')
-      .order('vendor_name')
+      .select('vendorid, vendorname')
+      .order('vendorname')
       .then(({ data }) => {
         if (data) setVendorOptions(data);
       });
@@ -149,14 +149,14 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
                 <SelectContent>
                   {vendorType === 'vendor' ? (
                     vendorOptions.map(vendor => (
-                      <SelectItem key={vendor.vendor_id} value={vendor.vendor_id}>
-                        {vendor.vendor_name}
+                      <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
+                        {vendor.vendorname}
                       </SelectItem>
                     ))
                   ) : (
                     subcontractorOptions.map(sub => (
-                      <SelectItem key={sub.subcontractor_id} value={sub.subcontractor_id}>
-                        {sub.business_name}
+                      <SelectItem key={sub.subid} value={sub.subid}>
+                        {sub.subname}
                       </SelectItem>
                     ))
                   )}
