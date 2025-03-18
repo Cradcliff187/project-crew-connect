@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Control, useWatch } from 'react-hook-form';
+import { Control, useWatch, useController } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
@@ -96,8 +96,12 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
               value={field.value} 
               onValueChange={(value) => {
                 field.onChange(value);
-                // Reset the vendor ID when changing type
-                control.setValue('metadata.vendorId', '');
+                // Reset the vendor ID when changing type - use field.onChange for the parent field
+                const vendorTypeController = useController({
+                  control,
+                  name: 'metadata.vendorId',
+                });
+                vendorTypeController.field.onChange('');
               }}
             >
               <SelectTrigger>
