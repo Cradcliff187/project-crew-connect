@@ -106,20 +106,20 @@ export function AppSidebar() {
           <div className="h-10 w-auto flex items-center">
             {logoError ? (
               // Fallback when logo fails to load - show AKC text with brand color
-              <div className="bg-[#0485ea] text-white rounded-md p-1.5 flex items-center justify-center h-8 w-8">
+              <div className="bg-sidebar-primary text-white rounded-md p-1.5 flex items-center justify-center h-8 w-8">
                 <span className="font-bold text-md">AKC</span>
               </div>
             ) : (
-              // Use the actual logo
+              // Use the correct path to the uploaded logo
               <img 
-                src="/akc-logo.png" 
+                src="/lovable-uploads/ae4fae18-0c27-4152-b996-2a5db2ec7e30.png" 
                 alt="AKC LLC Logo" 
                 className="h-10 w-auto"
                 onError={() => setLogoError(true)}
               />
             )}
           </div>
-          <span className="text-lg font-bold text-[#0485ea] font-montserrat">{siteConfig.name}</span>
+          <span className="text-lg font-bold text-sidebar-primary font-montserrat">{siteConfig.name}</span>
         </Link>
       </SidebarHeader>
       <SidebarSeparator />
