@@ -234,7 +234,7 @@ const getProjectIdFromWorkOrder = async (workOrderId: string): Promise<{ project
     
     // Check if data exists and has the expected format
     if (data && Array.isArray(data) && data.length > 0) {
-      // Extract the first item from the array and access properties correctly
+      // Extract the first item from the array and access properties
       const linkData = data[0];
       return {
         projectId: linkData.project_id,

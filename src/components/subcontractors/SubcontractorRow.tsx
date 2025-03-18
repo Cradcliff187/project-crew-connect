@@ -8,7 +8,6 @@ import { Subcontractor, Specialty } from './utils/subcontractorUtils';
 import { StatusType } from '@/types/common';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { Edit, Eye, Trash, ClipboardList } from 'lucide-react';
-import InsuranceStatus from './InsuranceStatus';
 
 interface SubcontractorRowProps {
   subcontractor: Subcontractor;

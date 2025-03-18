@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,11 +24,8 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             zip: data.zip,
             status: data.status,
             specialty_ids: data.specialty_ids,
-            // New fields
+            // Only keeping these fields
             payment_terms: data.payment_terms,
-            insurance_expiry: data.insurance_required && data.insurance_expiry 
-              ? data.insurance_expiry.toISOString() 
-              : null,
             notes: data.notes,
             updated_at: new Date().toISOString(),
           })
@@ -68,11 +64,8 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             zip: data.zip,
             status: data.status,
             specialty_ids: data.specialty_ids,
-            // New fields
+            // Only keeping these fields
             payment_terms: data.payment_terms,
-            insurance_expiry: data.insurance_required && data.insurance_expiry 
-              ? data.insurance_expiry.toISOString() 
-              : null,
             notes: data.notes,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

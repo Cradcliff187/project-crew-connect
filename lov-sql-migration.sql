@@ -1,9 +1,7 @@
 
--- Add payment terms, insurance tracking, and notes fields to the subcontractors table
+-- Add payment terms and notes fields to the subcontractors table
 ALTER TABLE public.subcontractors 
 ADD COLUMN payment_terms VARCHAR DEFAULT 'NET30',
-ADD COLUMN insurance_required BOOLEAN DEFAULT true,
-ADD COLUMN insurance_expiry TIMESTAMP WITH TIME ZONE,
 ADD COLUMN notes TEXT;
 
 -- Enhance the generate_subcontractor_id function to include better validation
