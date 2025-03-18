@@ -1,4 +1,3 @@
-
 export interface Subcontractor {
   subid: string;
   subname: string;
@@ -14,6 +13,14 @@ export interface Subcontractor {
   // Required vendor management fields
   payment_terms: string | null;
   notes: string | null;
+  // Additional vendor management fields
+  insurance_expiration?: string | null;
+  tax_id?: string | null;
+  rating?: number | null;
+  hourly_rate?: number | null;
+  contract_on_file?: boolean;
+  preferred?: boolean;
+  last_performance_review?: string | null;
 }
 
 export interface Specialty {
@@ -56,4 +63,49 @@ export const filterSubcontractors = (
     (sub.phone?.toLowerCase() || '').includes(query) ||
     (sub.subid?.toLowerCase() || '').includes(query)
   );
+};
+
+// Get payment terms display label
+export const getPaymentTermsLabel = (paymentTerms: string | null): string => {
+  switch(paymentTerms) {
+    case 'NET15':
+      return 'Net 15 Days';
+    case 'NET30':
+      return 'Net 30 Days';
+    case 'NET45':
+      return 'Net 45 Days';
+    case 'NET60':
+      return 'Net 60 Days';
+    case 'DUE_ON_RECEIPT':
+      return 'Due On Receipt';
+    default:
+      return paymentTerms || 'Not Specified';
+  }
+};
+
+// Get subcontractor rating display
+export const getRatingDisplay = (rating: number | null): string => {
+  if (rating === null) return 'Not Rated';
+  
+  const stars = '★'.repeat(Math.floor(rating));
+  const remainder = rating % 1;
+  const halfStar = remainder >= 0.5 ? '½' : '';
+  
+  return `${stars}${halfStar} (${rating})`;
+};
+
+// Calculate status based on performance metrics
+export const calculateStatusFromPerformance = (
+  onTimePercentage: number, 
+  qualityRating: number
+): string => {
+  if (onTimePercentage > 90 && qualityRating >= 4.5) {
+    return 'PREFERRED';
+  } else if (onTimePercentage > 75 && qualityRating >= 3.5) {
+    return 'QUALIFIED';
+  } else if (onTimePercentage > 60 && qualityRating >= 2.5) {
+    return 'ACTIVE';
+  } else {
+    return 'REVIEW_NEEDED';
+  }
 };

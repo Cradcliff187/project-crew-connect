@@ -1,3 +1,4 @@
+
 import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,6 +18,11 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import SpecialtyMultiSelect from './SpecialtyMultiSelect';
 
 // Define subcontractor form data type
@@ -32,6 +38,14 @@ export interface SubcontractorFormData {
   specialty_ids: string[];
   payment_terms?: string;
   notes?: string;
+  // Additional vendor management fields
+  insurance_expiration?: string | null;
+  tax_id?: string | null;
+  rating?: number | null;
+  hourly_rate?: number | null;
+  contract_on_file?: boolean;
+  preferred?: boolean;
+  last_performance_review?: string | null;
 }
 
 interface SubcontractorFormProps {
@@ -63,6 +77,14 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
       specialty_ids: initialData?.specialty_ids || [],
       payment_terms: initialData?.payment_terms || 'NET30',
       notes: initialData?.notes || '',
+      // Additional vendor management fields
+      insurance_expiration: initialData?.insurance_expiration || null,
+      tax_id: initialData?.tax_id || '',
+      rating: initialData?.rating || null,
+      hourly_rate: initialData?.hourly_rate || null,
+      contract_on_file: initialData?.contract_on_file || false,
+      preferred: initialData?.preferred || false,
+      last_performance_review: initialData?.last_performance_review || null,
     }
   });
 
@@ -188,33 +210,229 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="payment_terms"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Payment Terms</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select payment terms" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {paymentTermsOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Financial Section */}
+        <div className="pt-4 border-t">
+          <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Financial Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="payment_terms"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Terms</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value || 'NET30'}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment terms" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {paymentTermsOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="hourly_rate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Standard Hourly Rate ($)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="0.00" 
+                      step="0.01" 
+                      min="0"
+                      value={field.value || ''}
+                      onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="tax_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tax ID / EIN</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Tax identification number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="contract_on_file"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Contract on File</FormLabel>
+                    <FormDescription>
+                      Check if a signed contract is on file
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+        
+        {/* Compliance/Performance Section */}
+        <div className="pt-4 border-t">
+          <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Compliance & Performance</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="insurance_expiration"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Insurance Expiration Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={`w-full pl-3 text-left font-normal ${
+                            !field.value ? "text-muted-foreground" : ""
+                          }`}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="rating"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quality Rating (1-5)</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value ? Number(value) : null)}
+                    value={field.value?.toString() || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select rating" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Not Rated</SelectItem>
+                      <SelectItem value="1">1 - Poor</SelectItem>
+                      <SelectItem value="2">2 - Below Average</SelectItem>
+                      <SelectItem value="3">3 - Average</SelectItem>
+                      <SelectItem value="4">4 - Good</SelectItem>
+                      <SelectItem value="5">5 - Excellent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="last_performance_review"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Last Performance Review</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={`w-full pl-3 text-left font-normal ${
+                            !field.value ? "text-muted-foreground" : ""
+                          }`}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="preferred"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Preferred Vendor</FormLabel>
+                    <FormDescription>
+                      Mark as a preferred subcontractor
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
         
         <FormField
           control={form.control}
@@ -256,6 +474,7 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
                   <SelectItem value="INACTIVE">Inactive</SelectItem>
                   <SelectItem value="REJECTED">Rejected</SelectItem>
                   <SelectItem value="VERIFIED">Verified</SelectItem>
+                  <SelectItem value="PREFERRED">Preferred</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
