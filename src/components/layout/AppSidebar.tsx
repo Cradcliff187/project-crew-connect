@@ -90,6 +90,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mounted, setMounted] = React.useState(false);
+  const [logoError, setLogoError] = React.useState(false);
   
   // Mock session for now - in a real app, you'd use your authentication context
   const session = null;
@@ -102,24 +103,23 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="flex items-center justify-start pl-4">
         <Link to="/" className="flex items-center space-x-2">
-          {/* If logo is missing, show a placeholder with brand color */}
           <div className="h-8 w-auto flex items-center">
-            <img 
-              src="/akc-logo.png" 
-              alt="AKC LLC Logo" 
-              className="h-8 w-auto"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.parentElement!.innerHTML = `
-                  <div class="bg-construction-600 text-white rounded-md p-1.5 flex items-center justify-center h-8 w-8">
-                    <span class="font-bold text-md">AKC</span>
-                  </div>
-                `;
-              }}
-            />
+            {logoError ? (
+              // Fallback when logo fails to load - show AKC text with brand color
+              <div className="bg-[#0485ea] text-white rounded-md p-1.5 flex items-center justify-center h-8 w-8">
+                <span className="font-bold text-md">AKC</span>
+              </div>
+            ) : (
+              // Try to load the actual logo
+              <img 
+                src="/akc-logo.png" 
+                alt="AKC LLC Logo" 
+                className="h-8 w-auto"
+                onError={() => setLogoError(true)}
+              />
+            )}
           </div>
-          <span className="text-lg font-bold text-construction-600 font-montserrat">{siteConfig.name}</span>
+          <span className="text-lg font-bold text-[#0485ea] font-montserrat">{siteConfig.name}</span>
         </Link>
       </SidebarHeader>
       <SidebarSeparator />

@@ -36,15 +36,15 @@
  
     --radius: 0.5rem;
 
-    /* Updated sidebar colors to correctly use the construction color palette */
+    /* AKC Brand Blue sidebar colors - explicitly using #0485ea */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 213 94% 48%; /* Same as construction-600 - #0485ea */
+    --sidebar-primary: 213 94% 48%; /* AKC Brand Blue #0485ea */
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-muted: 213 94% 48%;
+    --sidebar-muted: 213 94% 48%; /* AKC Brand Blue #0485ea */
     --sidebar-muted-foreground: 215.4 16.3% 46.9%;
     --sidebar-accent: 213 84% 95%;
-    --sidebar-accent-foreground: 213 94% 48%;
+    --sidebar-accent-foreground: 213 94% 48%; /* AKC Brand Blue #0485ea */
     --sidebar-border: 214.3 31.8% 91.4%;
     --sidebar-ring: 213 94% 48% / 0.5;
   }
