@@ -19,7 +19,7 @@ export interface WorkOrder {
   labor_cost?: number;
   actual_hours?: number;
   time_estimate?: number;
-  progress?: number;
+  progress: number; // Added this property to fix the TypeScript errors
 }
 
 export interface WorkOrderTimelog {
