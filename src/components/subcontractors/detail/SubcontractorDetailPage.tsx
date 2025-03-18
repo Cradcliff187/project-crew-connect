@@ -39,6 +39,7 @@ const SubcontractorDetailPage = () => {
   } = useSubcontractorData(subcontractorId);
   
   const handleEdit = () => {
+    console.log('Opening edit dialog with data:', subcontractor);
     setEditDialogOpen(true);
   };
   
@@ -132,16 +133,14 @@ const SubcontractorDetailPage = () => {
           </div>
         </Card>
         
-        {/* Edit Subcontractor Dialog */}
-        {editDialogOpen && (
-          <SubcontractorDialog
-            open={editDialogOpen}
-            onOpenChange={setEditDialogOpen}
-            onSubcontractorAdded={handleSubcontractorUpdated}
-            initialData={subcontractor}
-            isEditing={true}
-          />
-        )}
+        {/* Edit Subcontractor Dialog - ALWAYS render the dialog but control visibility with open prop */}
+        <SubcontractorDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSubcontractorAdded={handleSubcontractorUpdated}
+          initialData={subcontractor}
+          isEditing={true}
+        />
       </div>
     </PageTransition>
   );

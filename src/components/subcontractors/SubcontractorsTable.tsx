@@ -134,16 +134,14 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
         </Table>
       </div>
       
-      {/* Edit Subcontractor Dialog */}
-      {selectedSubcontractor && (
-        <SubcontractorDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          onSubcontractorAdded={handleSubcontractorUpdated}
-          initialData={selectedSubcontractor}
-          isEditing={true}
-        />
-      )}
+      {/* Edit Subcontractor Dialog - ALWAYS render the dialog but control visibility with open prop */}
+      <SubcontractorDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSubcontractorAdded={handleSubcontractorUpdated}
+        initialData={selectedSubcontractor}
+        isEditing={true}
+      />
     </div>
   );
 };
