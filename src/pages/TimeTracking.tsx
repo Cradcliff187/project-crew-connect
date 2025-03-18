@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Search, Clock, Filter, Calendar, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ const TimeTracking = () => {
     setIsLoading(true);
     
     try {
-      // Build the query based on the filter
+      // Build the query based on the filter - using the view for fetching data
       let query = supabase
         .from('time_entries_migration_view')
         .select(`
@@ -160,8 +161,9 @@ const TimeTracking = () => {
   
   const handleDeleteEntry = async (id: string) => {
     try {
+      // Delete from the actual table, not the view
       const { error } = await supabase
-        .from('time_entries_migration_view')
+        .from('time_entries')
         .delete()
         .eq('id', id);
         

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -249,8 +250,9 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         updated_at: new Date().toISOString()
       };
       
+      // Insert into the actual time_entries table, not the view
       const { data: insertedEntry, error } = await supabase
-        .from('time_entries_migration_view')
+        .from('time_entries')
         .insert(timeEntry)
         .select('id')
         .single();
@@ -277,6 +279,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               file_type: file.type,
               file_size: file.size,
               storage_path: filePath,
+              uploaded_at: new Date().toISOString()
             });
             
           if (receiptError) throw receiptError;
