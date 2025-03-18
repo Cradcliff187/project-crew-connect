@@ -9,6 +9,7 @@ import Documents from './pages/Documents';
 import TimeTracking from './pages/TimeTracking';
 import NotFound from './pages/NotFound';
 import Vendors from './pages/Vendors';
+import Subcontractors from './pages/Subcontractors';
 import ProjectDetail from './components/projects/ProjectDetail';
 import ProjectEdit from './components/projects/ProjectEdit';
 import { SidebarProvider } from './components/layout/SidebarContext';
@@ -34,6 +35,7 @@ function App() {
               <Route path="/documents" element={<Documents />} />
               <Route path="/time-tracking" element={<TimeTracking />} />
               <Route path="/vendors" element={<Vendors />} />
+              <Route path="/subcontractors" element={<Subcontractors />} />
               <Route path="/404" element={<NotFound />} />
               <Route path="*" element={<Navigate to="/404" />} />
             </Route>

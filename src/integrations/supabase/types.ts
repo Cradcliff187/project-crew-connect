@@ -820,6 +820,100 @@ export type Database = {
         }
         Relationships: []
       }
+      subcontractor_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          document_id: string | null
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          payment_date: string | null
+          project_id: string | null
+          status: string
+          subcontractor_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          document_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          payment_date?: string | null
+          project_id?: string | null
+          status?: string
+          subcontractor_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          document_id?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          payment_date?: string | null
+          project_id?: string | null
+          status?: string
+          subcontractor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_document"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "fk_project"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["projectid"]
+          },
+          {
+            foreignKeyName: "fk_subcontractor"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["subid"]
+          },
+        ]
+      }
+      subcontractor_specialties: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          specialty: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          specialty: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          specialty?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subcontractors: {
         Row: {
           address: string | null
@@ -828,8 +922,10 @@ export type Database = {
           created_at: string
           phone: string | null
           qbvendortype: string | null
+          specialty_ids: string[] | null
           state: string | null
-          subid: string | null
+          status: string | null
+          subid: string
           subname: string | null
           updated_at: string
           zip: string | null
@@ -841,8 +937,10 @@ export type Database = {
           created_at?: string
           phone?: string | null
           qbvendortype?: string | null
+          specialty_ids?: string[] | null
           state?: string | null
-          subid?: string | null
+          status?: string | null
+          subid: string
           subname?: string | null
           updated_at?: string
           zip?: string | null
@@ -854,8 +952,10 @@ export type Database = {
           created_at?: string
           phone?: string | null
           qbvendortype?: string | null
+          specialty_ids?: string[] | null
           state?: string | null
-          subid?: string | null
+          status?: string | null
+          subid?: string
           subname?: string | null
           updated_at?: string
           zip?: string | null
