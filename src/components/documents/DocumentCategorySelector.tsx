@@ -43,14 +43,14 @@ const DocumentCategorySelector = ({ value, onChange, className }: DocumentCatego
           type="button"
           onClick={() => onChange(category)}
           className={cn(
-            "flex items-center p-2 border rounded-md transition-colors relative",
+            "flex items-center p-2 border rounded-md transition-colors relative overflow-hidden",
             value === category
               ? "border-[#0485ea] bg-[#0485ea]/5"
               : "border-border hover:border-[#0485ea]/50 hover:bg-[#0485ea]/5"
           )}
         >
-          <div className="mr-2">{getCategoryIcon(category)}</div>
-          <span>{getCategoryLabel(category)}</span>
+          <div className="mr-2 flex-shrink-0">{getCategoryIcon(category)}</div>
+          <span className="truncate text-sm">{getCategoryLabel(category)}</span>
           {value === category && (
             <Check className="h-4 w-4 absolute top-1 right-1 text-[#0485ea]" />
           )}
