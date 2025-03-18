@@ -72,8 +72,9 @@ export function calculateHoursWorked(startTime: string, endTime: string): number
     minutes += 60;
   }
   
+  // Handle overnight shifts
   if (hours < 0) {
-    hours += 24; // Handle overnight shifts
+    hours += 24;
   }
   
   return parseFloat((hours + (minutes / 60)).toFixed(2));
@@ -91,4 +92,26 @@ export function formatTimeRange(startTime: string, endTime: string): string {
   };
   
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+}
+
+// Format time from 24h to 12h with AM/PM
+export function formatTime(time: string): string {
+  if (!time) return '';
+  
+  const [hoursStr, minutesStr] = time.split(':');
+  const hours = parseInt(hoursStr, 10);
+  const minutes = minutesStr.padStart(2, '0');
+  
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 || 12;
+  
+  return `${hours12}:${minutes} ${period}`;
+}
+
+// Get a brief description of the time of day
+export function getTimeOfDayLabel(hours: number): string {
+  if (hours >= 5 && hours < 12) return 'Morning';
+  if (hours >= 12 && hours < 17) return 'Afternoon';
+  if (hours >= 17 && hours < 21) return 'Evening';
+  return 'Night';
 }

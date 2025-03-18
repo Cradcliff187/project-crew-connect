@@ -1,4 +1,3 @@
-
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
@@ -43,4 +42,13 @@ export interface TimeEntryReceipt {
   file_size?: number;
   storage_path: string;
   uploaded_at: string;
+}
+
+// Time grouping for better UX
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+
+export interface TimeOption {
+  value: string;      // 24h format value (e.g. "14:30")
+  display: string;    // 12h format display (e.g. "2:30 PM")
+  timeOfDay: TimeOfDay;
 }

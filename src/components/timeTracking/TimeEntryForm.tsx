@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Clock, Building, MapPin, Upload, FileText } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Building, MapPin, Upload, FileText, Timer } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -38,9 +40,15 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
-import { cn } from '@/lib/utils';
-import { TimeEntryFormData } from '@/types/timeTracking';
+import { cn, calculateHoursWorked, formatTimeRange } from '@/lib/utils';
+import { TimeEntryFormData, TimeOption, TimeOfDay } from '@/types/timeTracking';
 
 interface WorkOrderOrProject {
   id: string;
@@ -348,19 +356,93 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     ));
   };
   
-  const generateTimeOptions = () => {
-    const options = [];
+  // Format a 24h time string to 12h format with AM/PM
+  const formatTime = (time: string): string => {
+    if (!time) return '';
+    
+    const [hoursStr, minutesStr] = time.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const minutes = minutesStr.padStart(2, '0');
+    
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12;
+    
+    return `${hours12}:${minutes} ${period}`;
+  };
+  
+  // Determine time of day category
+  const getTimeOfDay = (hours: number): TimeOfDay => {
+    if (hours >= 5 && hours < 12) return 'morning';
+    if (hours >= 12 && hours < 17) return 'afternoon';
+    if (hours >= 17 && hours < 21) return 'evening';
+    return 'night';
+  };
+  
+  // Generate time options in 15-minute increments, grouped by time of day
+  const generateTimeOptions = (): TimeOption[] => {
+    const options: TimeOption[] = [];
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
         const formattedHour = hour.toString().padStart(2, '0');
         const formattedMinute = minute.toString().padStart(2, '0');
-        options.push(`${formattedHour}:${formattedMinute}`);
+        const value = `${formattedHour}:${formattedMinute}`;
+        const timeOfDay = getTimeOfDay(hour);
+        
+        options.push({
+          value,
+          display: formatTime(value),
+          timeOfDay
+        });
       }
     }
     return options;
   };
   
   const timeOptions = generateTimeOptions();
+  
+  // Get valid end times (must be after start time)
+  const getValidEndTimes = (): TimeOption[] => {
+    if (!startTime) return timeOptions;
+    
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const startTotalMinutes = (startHour * 60) + startMinute;
+    
+    return timeOptions.filter(option => {
+      const [endHour, endMinute] = option.value.split(':').map(Number);
+      const endTotalMinutes = (endHour * 60) + endMinute;
+      
+      // Allow overnight shifts (if end time is earlier than start time, assume it's the next day)
+      return endTotalMinutes > startTotalMinutes || endTotalMinutes < startTotalMinutes - 120;
+    });
+  };
+  
+  // Display time duration between start and end times
+  const getTimeDuration = (): string => {
+    if (!startTime || !endTime) return '';
+    
+    const hours = calculateHoursWorked(startTime, endTime);
+    const wholeHours = Math.floor(hours);
+    const minutes = Math.round((hours - wholeHours) * 60);
+    
+    if (wholeHours === 0) {
+      return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    } else if (minutes === 0) {
+      return `${wholeHours} hour${wholeHours !== 1 ? 's' : ''}`;
+    } else {
+      return `${wholeHours} hour${wholeHours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    }
+  };
+  
+  // Get color for time of day
+  const getTimeOfDayColor = (timeOfDay: TimeOfDay): string => {
+    switch (timeOfDay) {
+      case 'morning': return 'bg-blue-50 text-blue-800';
+      case 'afternoon': return 'bg-amber-50 text-amber-800';
+      case 'evening': return 'bg-purple-50 text-purple-800';
+      case 'night': return 'bg-slate-50 text-slate-800';
+      default: return '';
+    }
+  };
   
   return (
     <div className="space-y-4">
@@ -477,55 +559,230 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               </Popover>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Select
-                    value={form.watch('startTime')}
-                    onValueChange={(value) => form.setValue('startTime', value, { shouldValidate: true })}
-                  >
-                    <SelectTrigger id="startTime" className="w-full pl-9">
-                      <SelectValue placeholder="Select start time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions.map((time) => (
-                        <SelectItem key={`start-${time}`} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {form.formState.errors.startTime && (
-                  <p className="text-sm text-red-500">{form.formState.errors.startTime.message}</p>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label>Time Range</Label>
+                {startTime && endTime && (
+                  <div className="flex items-center text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
+                    <Timer className="h-3.5 w-3.5 mr-1" />
+                    <span>Duration: {getTimeDuration()}</span>
+                  </div>
                 )}
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="endTime">End Time</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Select
-                    value={form.watch('endTime')}
-                    onValueChange={(value) => form.setValue('endTime', value, { shouldValidate: true })}
-                  >
-                    <SelectTrigger id="endTime" className="w-full pl-9">
-                      <SelectValue placeholder="Select end time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions.map((time) => (
-                        <SelectItem key={`end-${time}`} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Select
+                      value={form.watch('startTime')}
+                      onValueChange={(value) => {
+                        form.setValue('startTime', value, { shouldValidate: true });
+                        
+                        // If end time is before start time, automatically set to start time + 1 hour
+                        if (endTime) {
+                          const [startHour, startMinute] = value.split(':').map(Number);
+                          const [endHour, endMinute] = endTime.split(':').map(Number);
+                          const startTotal = startHour * 60 + startMinute;
+                          const endTotal = endHour * 60 + endMinute;
+                          
+                          if (endTotal <= startTotal && endTotal > startTotal - 120) {
+                            let newEndHour = startHour + 1;
+                            if (newEndHour >= 24) newEndHour -= 24;
+                            const newEndTime = `${newEndHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+                            form.setValue('endTime', newEndTime, { shouldValidate: true });
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="startTime" className="w-full pl-9 bg-white">
+                        <SelectValue placeholder="Select start time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel className="text-xs font-medium text-blue-600">Morning (5 AM - 12 PM)</SelectLabel>
+                          {timeOptions
+                            .filter(time => time.timeOfDay === 'morning')
+                            .map((time) => (
+                              <SelectItem 
+                                key={`start-${time.value}`} 
+                                value={time.value}
+                                className="hover:bg-blue-50 transition-colors"
+                              >
+                                {time.display}
+                              </SelectItem>
+                            ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="text-xs font-medium text-amber-600 mt-2">Afternoon (12 PM - 5 PM)</SelectLabel>
+                          {timeOptions
+                            .filter(time => time.timeOfDay === 'afternoon')
+                            .map((time) => (
+                              <SelectItem 
+                                key={`start-${time.value}`} 
+                                value={time.value}
+                                className="hover:bg-amber-50 transition-colors"
+                              >
+                                {time.display}
+                              </SelectItem>
+                            ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="text-xs font-medium text-purple-600 mt-2">Evening (5 PM - 9 PM)</SelectLabel>
+                          {timeOptions
+                            .filter(time => time.timeOfDay === 'evening')
+                            .map((time) => (
+                              <SelectItem 
+                                key={`start-${time.value}`} 
+                                value={time.value}
+                                className="hover:bg-purple-50 transition-colors"
+                              >
+                                {time.display}
+                              </SelectItem>
+                            ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="text-xs font-medium text-slate-600 mt-2">Night (9 PM - 5 AM)</SelectLabel>
+                          {timeOptions
+                            .filter(time => time.timeOfDay === 'night')
+                            .map((time) => (
+                              <SelectItem 
+                                key={`start-${time.value}`} 
+                                value={time.value}
+                                className="hover:bg-slate-50 transition-colors"
+                              >
+                                {time.display}
+                              </SelectItem>
+                            ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {form.formState.errors.startTime && (
+                    <p className="text-sm text-red-500">{form.formState.errors.startTime.message}</p>
+                  )}
                 </div>
-                {form.formState.errors.endTime && (
-                  <p className="text-sm text-red-500">{form.formState.errors.endTime.message}</p>
-                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="endTime">End Time</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Select
+                      value={form.watch('endTime')}
+                      onValueChange={(value) => form.setValue('endTime', value, { shouldValidate: true })}
+                    >
+                      <SelectTrigger id="endTime" className="w-full pl-9 bg-white">
+                        <SelectValue placeholder="Select end time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel className="text-xs font-medium text-blue-600">Morning (5 AM - 12 PM)</SelectLabel>
+                          {getValidEndTimes()
+                            .filter(time => time.timeOfDay === 'morning')
+                            .map((time) => (
+                              <HoverCard key={`end-hover-${time.value}`}>
+                                <HoverCardTrigger asChild>
+                                  <SelectItem 
+                                    key={`end-${time.value}`} 
+                                    value={time.value}
+                                    className="hover:bg-blue-50 transition-colors"
+                                  >
+                                    {time.display}
+                                  </SelectItem>
+                                </HoverCardTrigger>
+                                {startTime && (
+                                  <HoverCardContent className="w-auto p-2">
+                                    <p className="text-xs">
+                                      Duration: {getTimeDuration()}
+                                    </p>
+                                  </HoverCardContent>
+                                )}
+                              </HoverCard>
+                            ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="text-xs font-medium text-amber-600 mt-2">Afternoon (12 PM - 5 PM)</SelectLabel>
+                          {getValidEndTimes()
+                            .filter(time => time.timeOfDay === 'afternoon')
+                            .map((time) => (
+                              <HoverCard key={`end-hover-${time.value}`}>
+                                <HoverCardTrigger asChild>
+                                  <SelectItem 
+                                    key={`end-${time.value}`} 
+                                    value={time.value}
+                                    className="hover:bg-amber-50 transition-colors"
+                                  >
+                                    {time.display}
+                                  </SelectItem>
+                                </HoverCardTrigger>
+                                {startTime && (
+                                  <HoverCardContent className="w-auto p-2">
+                                    <p className="text-xs">
+                                      Duration: {calculateHoursWorked(startTime, time.value).toFixed(2)} hours
+                                    </p>
+                                  </HoverCardContent>
+                                )}
+                              </HoverCard>
+                            ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="text-xs font-medium text-purple-600 mt-2">Evening (5 PM - 9 PM)</SelectLabel>
+                          {getValidEndTimes()
+                            .filter(time => time.timeOfDay === 'evening')
+                            .map((time) => (
+                              <HoverCard key={`end-hover-${time.value}`}>
+                                <HoverCardTrigger asChild>
+                                  <SelectItem 
+                                    key={`end-${time.value}`} 
+                                    value={time.value}
+                                    className="hover:bg-purple-50 transition-colors"
+                                  >
+                                    {time.display}
+                                  </SelectItem>
+                                </HoverCardTrigger>
+                                {startTime && (
+                                  <HoverCardContent className="w-auto p-2">
+                                    <p className="text-xs">
+                                      Duration: {calculateHoursWorked(startTime, time.value).toFixed(2)} hours
+                                    </p>
+                                  </HoverCardContent>
+                                )}
+                              </HoverCard>
+                            ))}
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="text-xs font-medium text-slate-600 mt-2">Night (9 PM - 5 AM)</SelectLabel>
+                          {getValidEndTimes()
+                            .filter(time => time.timeOfDay === 'night')
+                            .map((time) => (
+                              <HoverCard key={`end-hover-${time.value}`}>
+                                <HoverCardTrigger asChild>
+                                  <SelectItem 
+                                    key={`end-${time.value}`} 
+                                    value={time.value}
+                                    className="hover:bg-slate-50 transition-colors"
+                                  >
+                                    {time.display}
+                                  </SelectItem>
+                                </HoverCardTrigger>
+                                {startTime && (
+                                  <HoverCardContent className="w-auto p-2">
+                                    <p className="text-xs">
+                                      Duration: {calculateHoursWorked(startTime, time.value).toFixed(2)} hours
+                                    </p>
+                                  </HoverCardContent>
+                                )}
+                              </HoverCard>
+                            ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {form.formState.errors.endTime && (
+                    <p className="text-sm text-red-500">{form.formState.errors.endTime.message}</p>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -598,57 +855,4 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                     : projects.find(p => p.id === confirmationData.entityId)?.title}
                 </div>
                 
-                <div className="text-muted-foreground">Employee:</div>
-                <div className="font-medium">
-                  {confirmationData.employeeId
-                    ? employees.find(e => e.employee_id === confirmationData.employeeId)?.name
-                    : 'None selected'}
-                </div>
-                
-                <div className="text-muted-foreground">Date:</div>
-                <div className="font-medium">{format(confirmationData.workDate, 'MMMM d, yyyy')}</div>
-                
-                <div className="text-muted-foreground">Time:</div>
-                <div className="font-medium">
-                  {confirmationData.startTime} to {confirmationData.endTime}
-                </div>
-                
-                <div className="text-muted-foreground">Hours:</div>
-                <div className="font-medium">{confirmationData.hoursWorked}</div>
-                
-                {confirmationData.notes && (
-                  <>
-                    <div className="text-muted-foreground">Notes:</div>
-                    <div className="font-medium">{confirmationData.notes}</div>
-                  </>
-                )}
-                
-                {selectedFiles.length > 0 && (
-                  <>
-                    <div className="text-muted-foreground">Receipts:</div>
-                    <div className="font-medium">{selectedFiles.length} file(s) attached</div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-              Go Back
-            </Button>
-            <Button 
-              onClick={confirmSubmit}
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Submitting...' : 'Confirm & Submit'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default TimeEntryForm;
+                <
