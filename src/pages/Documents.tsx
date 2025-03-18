@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown, UploadCloud, Receipt, File, Loader2 } from 'lucide-react';
+import { Search, FileText, Plus, Filter, MoreHorizontal, ChevronDown, UploadCloud, Receipt, File, Loader2, FileImage, FileContract, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -13,28 +14,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import PageTransition from '@/components/layout/PageTransition';
 import Header from '@/components/layout/Header';
-import DocumentUpload from '@/components/documents/DocumentUpload';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-
-// Define the document type
-interface Document {
-  document_id: string;
-  file_name: string;
-  file_type: string;
-  file_size: number;
-  storage_path: string;
-  entity_type: string;
-  entity_id: string;
-  uploaded_by: string;
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-  url?: string;
-}
+import DocumentFilters, { DocumentFiltersState } from '@/components/documents/DocumentFilters';
+import { Document } from '@/components/documents/schemas/documentSchema';
+import { format, parseISO } from 'date-fns';
 
 const Documents = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +30,13 @@ const Documents = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState<DocumentFiltersState>({
+    search: '',
+    category: null,
+    entityType: null,
+    dateRange: null,
+    showExpensesOnly: false,
+  });
   
   // Fetch documents on component mount
   useEffect(() => {
@@ -116,31 +111,82 @@ const Documents = () => {
       });
     }
   };
+
+  const handleFilterChange = (newFilters: Partial<DocumentFiltersState>) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      ...newFilters
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      search: '',
+      category: null,
+      entityType: null,
+      dateRange: null,
+      showExpensesOnly: false,
+    });
+    setSearchQuery('');
+  };
+
+  // Count active filters for UI indicator
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.category) count++;
+    if (filters.entityType) count++;
+    if (filters.dateRange) count++;
+    if (filters.showExpensesOnly) count++;
+    if (searchQuery) count++;
+    return count;
+  };
   
   const filteredDocuments = documents.filter(doc => {
     // Filter by search query
     const matchesSearch = 
+      !searchQuery || 
       doc.file_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.entity_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.entity_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.entity_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.entity_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
     
     // Filter by document type (tab)
     const matchesTab = 
       selectedTab === 'all' || 
-      (selectedTab === 'receipts' && doc.tags && doc.tags.includes('receipt')) ||
-      (selectedTab === 'invoices' && doc.tags && doc.tags.includes('invoice'));
+      (selectedTab === 'receipts' && (doc.category === 'receipt' || (doc.tags && doc.tags.includes('receipt')))) ||
+      (selectedTab === 'invoices' && (doc.category === 'invoice' || (doc.tags && doc.tags.includes('invoice')))) ||
+      (selectedTab === 'estimates' && (doc.category === 'estimate' || (doc.tags && doc.tags.includes('estimate'))));
     
-    return matchesSearch && matchesTab;
+    // Filter by document category
+    const matchesCategory = !filters.category || 
+      doc.category === filters.category || 
+      (doc.tags && doc.tags.includes(filters.category));
+
+    // Filter by entity type
+    const matchesEntityType = !filters.entityType || doc.entity_type === filters.entityType;
+
+    // Filter by date range
+    const matchesDateRange = !filters.dateRange || !filters.dateRange.from || 
+      (doc.created_at && 
+        (parseISO(doc.created_at) >= filters.dateRange.from) && 
+        (!filters.dateRange.to || parseISO(doc.created_at) <= filters.dateRange.to));
+
+    // Filter by expense flag
+    const matchesExpenseFilter = !filters.showExpensesOnly || 
+      doc.is_expense === true || 
+      (doc.tags && doc.tags.includes('expense'));
+    
+    return matchesSearch && matchesTab && matchesCategory && matchesEntityType && matchesDateRange && matchesExpenseFilter;
   });
   
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    }).format(date);
+    try {
+      const date = new Date(dateString);
+      return format(date, 'MMM d, yyyy');
+    } catch (error) {
+      return dateString;
+    }
   };
 
   const handleDocumentUploadSuccess = (data: any) => {
@@ -149,23 +195,38 @@ const Documents = () => {
   };
   
   const getDocumentTypeIcon = (doc: Document) => {
-    if (doc.tags && doc.tags.includes('receipt')) {
-      return <Receipt className="h-4 w-4 text-yellow-600" />;
-    } else if (doc.tags && doc.tags.includes('invoice')) {
-      return <File className="h-4 w-4 text-blue-600" />;
-    } else {
-      return <FileText className="h-4 w-4 text-gray-600" />;
+    const category = doc.category || 
+      (doc.tags && doc.tags.find(tag => ['receipt', 'invoice', 'estimate', 'contract', 'photo'].includes(tag)));
+    
+    switch (category) {
+      case 'receipt':
+        return <Receipt className="h-4 w-4 text-amber-600" />;
+      case 'invoice':
+        return <FileText className="h-4 w-4 text-blue-600" />;
+      case 'estimate':
+        return <FileText className="h-4 w-4 text-emerald-600" />;
+      case 'contract':
+        return <FileContract className="h-4 w-4 text-purple-600" />;
+      case 'photo':
+        return <FileImage className="h-4 w-4 text-indigo-600" />;
+      default:
+        return <File className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getDocumentType = (doc: Document) => {
-    if (doc.tags && doc.tags.includes('receipt')) {
-      return 'Receipt';
-    } else if (doc.tags && doc.tags.includes('invoice')) {
-      return 'Invoice';
-    } else {
-      return 'Document';
+    const category = doc.category || 
+      (doc.tags && doc.tags.find(tag => ['receipt', 'invoice', 'estimate', 'contract', 'photo'].includes(tag)));
+    
+    if (category) {
+      return category.charAt(0).toUpperCase() + category.slice(1);
     }
+    return 'Document';
+  };
+  
+  const formatEntityType = (type: string) => {
+    if (!type) return '';
+    return type.charAt(0) + type.slice(1).toLowerCase();
   };
   
   return (
@@ -177,7 +238,7 @@ const Documents = () => {
           <div className="flex flex-col gap-2 mb-6 animate-in">
             <h1 className="text-3xl font-semibold tracking-tight">Documents</h1>
             <p className="text-muted-foreground">
-              Manage supplier receipts and subcontractor invoices
+              Manage invoices, receipts, estimates and other project documents
             </p>
           </div>
           
@@ -194,14 +255,9 @@ const Documents = () => {
             </div>
             
             <div className="flex items-center gap-2 w-full md:w-auto">
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
-                <Filter className="h-4 w-4 mr-1" />
-                Filter
-                <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
-              </Button>
               <Button 
                 size="sm" 
-                className="flex-1 md:flex-auto btn-premium bg-[#0485ea] hover:bg-[#0485ea]/90 text-white"
+                className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0485ea]/90 text-white"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <UploadCloud className="h-4 w-4 mr-1" />
@@ -210,17 +266,27 @@ const Documents = () => {
             </div>
           </div>
           
+          <div className="mb-4 animate-in" style={{ animationDelay: '0.15s' }}>
+            <DocumentFilters 
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onResetFilters={resetFilters}
+              activeFiltersCount={getActiveFiltersCount()}
+            />
+          </div>
+
           <Tabs 
             defaultValue="all" 
             value={selectedTab} 
             onValueChange={setSelectedTab}
-            className="animate-in"
+            className="animate-in mt-4"
             style={{ animationDelay: '0.15s' }}
           >
             <TabsList>
               <TabsTrigger value="all">All Documents</TabsTrigger>
               <TabsTrigger value="receipts">Receipts</TabsTrigger>
               <TabsTrigger value="invoices">Invoices</TabsTrigger>
+              <TabsTrigger value="estimates">Estimates</TabsTrigger>
             </TabsList>
           </Tabs>
           
@@ -231,7 +297,8 @@ const Documents = () => {
                   <TableHead>Document</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Related To</TableHead>
-                  <TableHead>Size</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Version</TableHead>
                   <TableHead>Uploaded</TableHead>
                   <TableHead>Tags</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
@@ -240,7 +307,7 @@ const Documents = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                       <div className="flex items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
                       </div>
@@ -254,7 +321,7 @@ const Documents = () => {
                           <TableCell>
                             <div className="font-medium">{doc.file_name}</div>
                             <div className="text-xs text-muted-foreground">
-                              ID: {doc.document_id.substring(0, 8)}...
+                              {doc.notes && <span className="italic">"{doc.notes.substring(0, 40)}{doc.notes.length > 40 ? '...' : ''}"</span>}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -264,12 +331,22 @@ const Documents = () => {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium">{doc.entity_type}</div>
+                            <div className="font-medium">{formatEntityType(doc.entity_type)}</div>
                             <div className="text-xs text-muted-foreground">{doc.entity_id}</div>
                           </TableCell>
-                          <TableCell>{Math.round(doc.file_size / 1024)} KB</TableCell>
                           <TableCell>
-                            <div>{new Date(doc.created_at).toLocaleDateString()}</div>
+                            {doc.amount ? (
+                              <div className="flex items-center">
+                                <DollarSign className="h-3 w-3 mr-1 text-green-600" />
+                                ${doc.amount.toFixed(2)}
+                              </div>
+                            ) : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {doc.version || "1"}
+                          </TableCell>
+                          <TableCell>
+                            <div>{formatDate(doc.created_at)}</div>
                             <div className="text-xs text-muted-foreground">by {doc.uploaded_by || 'Unknown'}</div>
                           </TableCell>
                           <TableCell>
@@ -279,6 +356,11 @@ const Documents = () => {
                                   {tag}
                                 </Badge>
                               ))}
+                              {doc.is_expense && (
+                                <Badge variant="default" className="text-xs bg-green-600">
+                                  Expense
+                                </Badge>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -314,7 +396,7 @@ const Documents = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                           <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
                           <p>No documents found. Upload your first document!</p>
                         </TableCell>
@@ -330,7 +412,7 @@ const Documents = () => {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md p-0">
-          <DocumentUpload 
+          <EnhancedDocumentUpload 
             onSuccess={handleDocumentUploadSuccess}
             onCancel={() => setIsDialogOpen(false)}
           />
@@ -341,3 +423,4 @@ const Documents = () => {
 };
 
 export default Documents;
+
