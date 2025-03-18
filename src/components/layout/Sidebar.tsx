@@ -29,10 +29,15 @@ const Sidebar = () => {
     { name: 'Documents', href: '/documents', icon: <FolderArchive className="h-5 w-5" /> },
   ];
 
+  // For debugging
+  useEffect(() => {
+    console.log('Sidebar isOpen state:', isOpen);
+  }, [isOpen]);
+
   return (
     <aside 
       className={cn(
-        "fixed inset-y-0 left-0 z-30 w-64 flex-none transform overflow-y-auto bg-[#0485ea] shadow-lg transition-transform duration-200 ease-in-out lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-30 w-64 flex-none transform overflow-y-auto bg-[#0485ea] shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}
     >

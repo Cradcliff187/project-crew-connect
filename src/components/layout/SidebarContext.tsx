@@ -32,14 +32,17 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
   }, [isMobile]);
 
   const toggleSidebar = () => {
+    console.log('Toggling sidebar. Current state:', isOpen);
     setIsOpen(prev => !prev);
   };
 
   const closeSidebar = () => {
+    console.log('Closing sidebar');
     setIsOpen(false);
   };
   
   const openSidebar = () => {
+    console.log('Opening sidebar');
     setIsOpen(true);
   };
 
