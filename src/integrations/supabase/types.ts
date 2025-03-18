@@ -1193,6 +1193,103 @@ export type Database = {
           },
         ]
       }
+      time_entries: {
+        Row: {
+          created_at: string
+          date_worked: string
+          employee_id: string | null
+          employee_rate: number | null
+          end_time: string
+          entity_id: string
+          entity_type: string
+          has_receipts: boolean | null
+          hours_worked: number
+          id: string
+          location_data: Json | null
+          notes: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_worked: string
+          employee_id?: string | null
+          employee_rate?: number | null
+          end_time: string
+          entity_id: string
+          entity_type: string
+          has_receipts?: boolean | null
+          hours_worked: number
+          id?: string
+          location_data?: Json | null
+          notes?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_worked?: string
+          employee_id?: string | null
+          employee_rate?: number | null
+          end_time?: string
+          entity_id?: string
+          entity_type?: string
+          has_receipts?: boolean | null
+          hours_worked?: number
+          id?: string
+          location_data?: Json | null
+          notes?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      time_entry_receipts: {
+        Row: {
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          storage_path: string
+          time_entry_id: string
+          uploaded_at: string
+        }
+        Insert: {
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          storage_path: string
+          time_entry_id: string
+          uploaded_at?: string
+        }
+        Update: {
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          storage_path?: string
+          time_entry_id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entry_receipts_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: false
+            referencedRelation: "time_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timelogs: {
         Row: {
           created_at: string

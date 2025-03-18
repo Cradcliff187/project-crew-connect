@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -98,7 +97,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   
-  // Calculate hours worked when start/end time changes
   useEffect(() => {
     if (startTime && endTime) {
       const [startHour, startMinute] = startTime.split(':').map(Number);
@@ -121,13 +119,11 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     }
   }, [startTime, endTime, form]);
   
-  // Load projects, work orders, and employees
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       
       try {
-        // Fetch work orders
         const { data: workOrdersData, error: workOrdersError } = await supabase
           .from('maintenance_work_orders')
           .select('work_order_id, title, description, status, customer_id, location_id')
@@ -135,7 +131,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         
         if (workOrdersError) throw workOrdersError;
         
-        // Fetch projects
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select('projectid, projectname, jobdescription, status, customerid, sitelocationaddress, sitelocationcity, sitelocationstate')
@@ -143,7 +138,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         
         if (projectsError) throw projectsError;
         
-        // Fetch employees
         const { data: employeesData, error: employeesError } = await supabase
           .from('employees')
           .select('employee_id, first_name, last_name, hourly_rate')
@@ -152,18 +146,14 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
           
         if (employeesError) throw employeesError;
         
-        // Format work orders
         const formattedWorkOrders = workOrdersData.map(wo => ({
           id: wo.work_order_id,
           title: wo.title,
           description: wo.description,
           status: wo.status,
-          // We would need to do a follow-up query to get location details
-          // For now, we'll use placeholders
           location: 'Location details will be fetched',
         }));
         
-        // Format projects
         const formattedProjects = projectsData.map(project => ({
           id: project.projectid,
           title: project.projectname,
@@ -175,7 +165,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
           location: [project.sitelocationcity, project.sitelocationstate].filter(Boolean).join(', '),
         }));
         
-        // Format employees
         const formattedEmployees = employeesData.map(emp => ({
           employee_id: emp.employee_id,
           name: `${emp.first_name} ${emp.last_name}`
@@ -185,7 +174,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         setProjects(formattedProjects);
         setEmployees(formattedEmployees);
         
-        // Set the first employee as selected by default if available
         if (formattedEmployees.length > 0 && !form.getValues('employeeId')) {
           form.setValue('employeeId', formattedEmployees[0].employee_id);
         }
@@ -233,10 +221,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     setIsLoading(true);
     
     try {
-      // Find selected employee info
       const selectedEmployee = employees.find(e => e.employee_id === confirmationData.employeeId);
       
-      // Get hourly rate for cost calculation
       let employeeRate = null;
       if (confirmationData.employeeId) {
         const { data: empData } = await supabase
@@ -248,7 +234,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         employeeRate = empData?.hourly_rate;
       }
       
-      // Prepare the time entry data
       const timeEntry = {
         entity_type: confirmationData.entityType,
         entity_id: confirmationData.entityId,
@@ -264,7 +249,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         updated_at: new Date().toISOString()
       };
       
-      // Insert the time entry using the view
       const { data: insertedEntry, error } = await supabase
         .from('time_entries_migration_view')
         .insert(timeEntry)
@@ -273,7 +257,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         
       if (error) throw error;
       
-      // Upload receipts if any
       if (selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
           const fileExt = file.name.split('.').pop();
@@ -286,12 +269,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
             
           if (uploadError) throw uploadError;
           
-          // Add receipt record - this will fail until we create the time_entry_receipts table
-          console.log('Would add receipt record for file:', filePath);
-          /* 
-          We would normally add a receipt record here, but since the time_entry_receipts
-          table doesn't exist yet in Supabase, we'll just log the info for now.
-          
           const { error: receiptError } = await supabase
             .from('time_entry_receipts')
             .insert({
@@ -303,7 +280,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
             });
             
           if (receiptError) throw receiptError;
-          */
         }
       }
       
@@ -312,7 +288,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         description: 'Your time entry has been successfully recorded.',
       });
       
-      // Reset form
       form.reset({
         entityType: 'work_order',
         workDate: new Date(),
@@ -325,9 +300,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
       setSelectedFiles([]);
       setShowConfirmDialog(false);
       
-      // Call the success callback
       onSuccess();
-      
     } catch (error: any) {
       console.error('Error submitting time entry:', error);
       toast({
@@ -382,7 +355,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         </CardHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)}>
           <CardContent className="space-y-6">
-            {/* Entity Type Selection */}
             <div className="space-y-2">
               <Label>What are you logging time for?</Label>
               <RadioGroup
@@ -403,7 +375,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               </RadioGroup>
             </div>
             
-            {/* Entity Selection */}
             <div className="space-y-2">
               <Label htmlFor="entity">
                 Select {entityType === 'work_order' ? 'Work Order' : 'Project'}
@@ -429,7 +400,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                 <p className="text-sm text-red-500 mt-1">{form.formState.errors.entityId.message}</p>
               )}
               
-              {/* Entity Details Preview */}
               {entityId && getSelectedEntityDetails() && (
                 <div className="mt-2 p-3 bg-muted rounded-md text-sm">
                   <div className="font-medium">{getSelectedEntityDetails()?.title}</div>
@@ -443,7 +413,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               )}
             </div>
             
-            {/* Employee Selection */}
             <div className="space-y-2">
               <Label htmlFor="employee">Employee</Label>
               <Select
@@ -463,7 +432,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               </Select>
             </div>
             
-            {/* Date Selection */}
             <div className="space-y-2">
               <Label>Date</Label>
               <Popover>
@@ -494,7 +462,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               </Popover>
             </div>
             
-            {/* Time Input */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startTime">Start Time</Label>
@@ -529,7 +496,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               </div>
             </div>
             
-            {/* Total Hours (Calculated) */}
             <div className="space-y-2">
               <Label htmlFor="hoursWorked">Total Hours</Label>
               <Input
@@ -542,7 +508,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
-            {/* Notes Field */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
@@ -553,7 +518,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
-            {/* Receipt Upload */}
             <div className="space-y-2">
               <Label>Add Receipts (Optional)</Label>
               <FileUpload
@@ -579,7 +543,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         </form>
       </Card>
       
-      {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
           <DialogHeader>
