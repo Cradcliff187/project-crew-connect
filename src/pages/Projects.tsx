@@ -5,58 +5,55 @@ import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/layout/PageTransition';
 import ProjectsHeader from '@/components/projects/ProjectsHeader';
 import ProjectsTable, { Project } from '@/components/projects/ProjectsTable';
+import { useQuery } from '@tanstack/react-query';
+
+const fetchProjects = async () => {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('projectid, projectname, customername, customerid, status, createdon')
+    .order('createdon', { ascending: false });
+  
+  if (error) {
+    throw error;
+  }
+  
+  // Transform data to match our UI requirements
+  return data.map(project => ({
+    ...project,
+    // Default values for fields not yet in database
+    budget: Math.floor(Math.random() * 200000) + 50000, // Temporary random budget
+    spent: Math.floor(Math.random() * 150000), // Temporary random spent amount
+    progress: Math.floor(Math.random() * 100), // Temporary random progress
+  }));
+};
 
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  const { 
+    data: projects = [], 
+    isLoading: loading, 
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey: ['projects'],
+    queryFn: fetchProjects,
+    onError: (error: any) => {
+      console.error('Error fetching projects:', error);
+      toast({
+        title: 'Error fetching projects',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const error = queryError ? (queryError as Error).message : null;
   
   // Function to trigger refresh of projects
   const handleProjectAdded = () => {
-    setRefreshTrigger(prev => prev + 1);
+    refetch();
   };
-  
-  // Fetch projects from Supabase
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('projectid, projectname, customername, customerid, status, createdon')
-          .order('createdon', { ascending: false });
-        
-        if (error) {
-          throw error;
-        }
-        
-        // Transform data to match our UI requirements
-        const projectsWithDefaults = data.map(project => ({
-          ...project,
-          // Default values for fields not yet in database
-          budget: Math.floor(Math.random() * 200000) + 50000, // Temporary random budget
-          spent: Math.floor(Math.random() * 150000), // Temporary random spent amount
-          progress: Math.floor(Math.random() * 100), // Temporary random progress
-        }));
-        
-        setProjects(projectsWithDefaults);
-      } catch (error: any) {
-        console.error('Error fetching projects:', error);
-        setError(error.message);
-        toast({
-          title: 'Error fetching projects',
-          description: error.message,
-          variant: 'destructive'
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProjects();
-  }, [refreshTrigger]);
 
   return (
     <PageTransition>

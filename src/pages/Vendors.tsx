@@ -1,50 +1,50 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import PageTransition from '@/components/layout/PageTransition';
 import VendorsHeader from '@/components/vendors/VendorsHeader';
 import VendorsTable, { Vendor } from '@/components/vendors/VendorsTable';
 
+const fetchVendors = async () => {
+  const { data, error } = await supabase
+    .from('vendors')
+    .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon')
+    .order('createdon', { ascending: false });
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data || [];
+};
+
 const Vendors = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
-  // Fetch vendors from Supabase
-  const fetchVendors = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon')
-        .order('createdon', { ascending: false });
-      
-      if (error) {
-        throw error;
-      }
-      
-      setVendors(data || []);
-    } catch (error: any) {
+  const { 
+    data: vendors = [], 
+    isLoading: loading, 
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: fetchVendors,
+    onError: (error: any) => {
       console.error('Error fetching vendors:', error);
-      setError(error.message);
       toast({
         title: 'Error fetching vendors',
         description: error.message,
         variant: 'destructive'
       });
-    } finally {
-      setLoading(false);
     }
-  };
-  
-  useEffect(() => {
-    fetchVendors();
-  }, []);
+  });
 
+  const error = queryError ? (queryError as Error).message : null;
+  
   const handleVendorAdded = () => {
-    fetchVendors();
+    refetch();
   };
 
   return (
