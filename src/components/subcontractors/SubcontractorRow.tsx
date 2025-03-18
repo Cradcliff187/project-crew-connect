@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import InsuranceStatus from './InsuranceStatus';
 import VendorScoreBadge from './VendorScoreBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useNavigate } from 'react-router-dom';
 
 interface SubcontractorRowProps {
   subcontractor: Subcontractor;
@@ -30,6 +31,8 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
   onDelete,
   onView
 }) => {
+  const navigate = useNavigate();
+  
   // Format created_at date
   const formatDate = (dateString: string) => {
     try {
@@ -37,6 +40,14 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
     } catch (error) {
       return 'Invalid date';
     }
+  };
+  
+  // Handle view click - Navigate to detail page
+  const handleViewClick = () => {
+    // Call the provided onView prop (for backward compatibility)
+    onView(subcontractor);
+    // Navigate to the detail page
+    navigate(`/subcontractors/${subcontractor.subid}`);
   };
   
   // Get status badge color
@@ -224,7 +235,7 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
       <TableCell>{getStatusBadge(subcontractor.status)}</TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end space-x-1">
-          <Button variant="ghost" size="icon" onClick={() => onView(subcontractor)}>
+          <Button variant="ghost" size="icon" onClick={handleViewClick}>
             <Eye className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" onClick={() => onEdit(subcontractor)}>
