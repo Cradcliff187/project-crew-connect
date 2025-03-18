@@ -13,4 +13,9 @@ export type StatusType =
   | 'completed'
   | 'cancelled'
   | 'unknown'
-  | 'on-hold';
+  | 'on-hold'
+  | 'NEW'
+  | 'IN_PROGRESS'
+  | 'SCHEDULED'
+  | 'COMPLETED'
+  | 'CANCELLED';

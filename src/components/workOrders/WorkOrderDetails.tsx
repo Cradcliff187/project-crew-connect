@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Clock, MapPin, User, Calendar, AlertCircle, DollarSign } from 'lucide-react';
+import { Clock, MapPin, User, Calendar, AlertCircle, DollarSign, FileText, Package } from 'lucide-react';
 import { WorkOrder } from '@/types/workOrder';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import {
@@ -28,12 +28,34 @@ interface StatusTransition {
   description: string;
 }
 
+interface CustomerDetails {
+  customername: string;
+  contactemail: string | null;
+  phone: string | null;
+}
+
+interface LocationDetails {
+  location_name: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+}
+
+interface EmployeeDetails {
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  email: string | null;
+}
+
 const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) => {
   const [loading, setLoading] = useState(false);
   const [statusTransitions, setStatusTransitions] = useState<StatusTransition[]>([]);
-  const [customerName, setCustomerName] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState<string | null>(null);
-  const [assigneeName, setAssigneeName] = useState<string | null>(null);
+  const [customerDetails, setCustomerDetails] = useState<CustomerDetails | null>(null);
+  const [locationDetails, setLocationDetails] = useState<LocationDetails | null>(null);
+  const [assigneeDetails, setAssigneeDetails] = useState<EmployeeDetails | null>(null);
+  const [relatedDocumentCount, setRelatedDocumentCount] = useState(0);
   
   useEffect(() => {
     const fetchRelatedData = async () => {
@@ -47,47 +69,62 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
         
         setStatusTransitions(transitionsData || []);
         
-        // Fetch customer name if customer_id exists
+        // Fetch customer details if customer_id exists
         if (workOrder.customer_id) {
-          const { data: customerData } = await supabase
+          const { data: customerData, error: customerError } = await supabase
             .from('customers')
-            .select('customername')
+            .select('customername, contactemail, phone')
             .eq('customerid', workOrder.customer_id)
             .single();
           
-          setCustomerName(customerData?.customername || null);
+          if (customerError) {
+            console.error('Error fetching customer details:', customerError);
+          } else {
+            setCustomerDetails(customerData);
+          }
         }
         
-        // Fetch location name if location_id exists
+        // Fetch location details if location_id exists
         if (workOrder.location_id) {
-          const { data: locationData } = await supabase
+          const { data: locationData, error: locationError } = await supabase
             .from('site_locations')
             .select('location_name, address, city, state, zip')
             .eq('location_id', workOrder.location_id)
             .single();
           
-          if (locationData) {
-            const addressParts = [
-              locationData.location_name,
-              locationData.address,
-              `${locationData.city}, ${locationData.state} ${locationData.zip}`
-            ].filter(Boolean);
-            
-            setLocationName(addressParts.join(' • '));
+          if (locationError) {
+            console.error('Error fetching location details:', locationError);
+          } else {
+            setLocationDetails(locationData);
           }
         }
         
-        // Fetch assignee name if assigned_to exists
+        // Fetch assignee details if assigned_to exists
         if (workOrder.assigned_to) {
-          const { data: employeeData } = await supabase
+          const { data: employeeData, error: employeeError } = await supabase
             .from('employees')
-            .select('first_name, last_name')
+            .select('first_name, last_name, phone, email')
             .eq('employee_id', workOrder.assigned_to)
             .single();
           
-          if (employeeData) {
-            setAssigneeName(`${employeeData.first_name} ${employeeData.last_name}`);
+          if (employeeError) {
+            console.error('Error fetching employee details:', employeeError);
+          } else {
+            setAssigneeDetails(employeeData);
           }
+        }
+        
+        // Count related documents
+        const { count, error: docError } = await supabase
+          .from('documents')
+          .select('document_id', { count: 'exact', head: true })
+          .eq('entity_id', workOrder.work_order_id)
+          .eq('entity_type', 'WORK_ORDER');
+          
+        if (docError) {
+          console.error('Error counting documents:', docError);
+        } else {
+          setRelatedDocumentCount(count || 0);
         }
       } catch (error) {
         console.error('Error fetching related data:', error);
@@ -110,6 +147,20 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
         throw error;
       }
       
+      // Log the activity
+      await supabase.from('activitylog').insert({
+        action: 'Status Change',
+        moduletype: 'WORK_ORDER',
+        referenceid: workOrder.work_order_id,
+        status: newStatus,
+        previousstatus: workOrder.status,
+        detailsjson: JSON.stringify({
+          title: workOrder.title,
+          from: workOrder.status,
+          to: newStatus
+        })
+      });
+      
       toast({
         title: 'Status Updated',
         description: `Work order status changed to ${newStatus.replace('_', ' ').toLowerCase()}.`,
@@ -126,6 +177,21 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Format the location details for display
+  const getFormattedLocation = () => {
+    if (!locationDetails) return 'No location assigned';
+    
+    const parts = [
+      locationDetails.location_name,
+      locationDetails.address,
+      locationDetails.city && locationDetails.state ? 
+        `${locationDetails.city}, ${locationDetails.state} ${locationDetails.zip || ''}`.trim() : 
+        null
+    ].filter(Boolean);
+    
+    return parts.join(' • ') || 'No address details';
   };
   
   return (
@@ -206,6 +272,16 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
                   </p>
                 </div>
               </div>
+              
+              <div className="flex items-start">
+                <FileText className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">Documents</p>
+                  <p className="text-sm text-muted-foreground">
+                    {relatedDocumentCount > 0 ? `${relatedDocumentCount} document${relatedDocumentCount !== 1 ? 's' : ''}` : 'No documents attached'}
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -213,32 +289,45 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              {customerName && (
+              {customerDetails && (
                 <div className="flex items-start">
                   <User className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
                   <div>
                     <p className="font-medium">Customer</p>
-                    <p className="text-sm text-muted-foreground">{customerName}</p>
+                    <p className="text-sm text-muted-foreground">{customerDetails.customername}</p>
+                    {customerDetails.contactemail && (
+                      <p className="text-xs text-muted-foreground">{customerDetails.contactemail}</p>
+                    )}
+                    {customerDetails.phone && (
+                      <p className="text-xs text-muted-foreground">{customerDetails.phone}</p>
+                    )}
                   </div>
                 </div>
               )}
               
-              {locationName && (
+              {locationDetails && (
                 <div className="flex items-start">
                   <MapPin className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
                   <div>
                     <p className="font-medium">Location</p>
-                    <p className="text-sm text-muted-foreground">{locationName}</p>
+                    <p className="text-sm text-muted-foreground">{getFormattedLocation()}</p>
                   </div>
                 </div>
               )}
               
-              {assigneeName && (
+              {assigneeDetails && (
                 <div className="flex items-start">
                   <User className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
                   <div>
                     <p className="font-medium">Assigned To</p>
-                    <p className="text-sm text-muted-foreground">{assigneeName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {`${assigneeDetails.first_name} ${assigneeDetails.last_name}`}
+                    </p>
+                    {(assigneeDetails.email || assigneeDetails.phone) && (
+                      <p className="text-xs text-muted-foreground">
+                        {assigneeDetails.email || assigneeDetails.phone}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -248,6 +337,11 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
                 <div>
                   <p className="font-medium">Created</p>
                   <p className="text-sm text-muted-foreground">{formatDate(workOrder.created_at)}</p>
+                  {workOrder.completed_date && (
+                    <p className="text-xs text-muted-foreground">
+                      Completed: {formatDate(workOrder.completed_date)}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
