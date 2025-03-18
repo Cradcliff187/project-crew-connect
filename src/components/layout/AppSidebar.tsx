@@ -102,11 +102,9 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="flex items-center justify-start pl-4">
         <Link to="/" className="flex items-center space-x-2">
-          <img
-            src="/akc-logo.png"
-            alt="AKC LLC Logo"
-            className="h-8 w-auto"
-          />
+          <div className="bg-construction-600 rounded-md p-1.5 flex items-center justify-center">
+            <span className="text-white font-bold text-lg">AKC</span>
+          </div>
           <span className="text-lg font-bold text-construction-600 font-montserrat">{siteConfig.name}</span>
         </Link>
       </SidebarHeader>
@@ -120,7 +118,7 @@ export function AppSidebar() {
                 isActive={location.pathname === item.href}
                 tooltip={item.title}
               >
-                <Link to={item.href}>
+                <Link to={item.href} className="text-sidebar-foreground hover:text-sidebar-accent-foreground">
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>
