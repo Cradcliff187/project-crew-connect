@@ -4,7 +4,8 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/layout/PageTransition';
 import SubcontractorsHeader from '@/components/subcontractors/SubcontractorsHeader';
-import SubcontractorsTable, { Subcontractor } from '@/components/subcontractors/SubcontractorsTable';
+import SubcontractorsTable from '@/components/subcontractors/SubcontractorsTable';
+import { Subcontractor } from '@/components/subcontractors/utils/subcontractorUtils';
 
 const Subcontractors = () => {
   const [searchQuery, setSearchQuery] = useState('');
