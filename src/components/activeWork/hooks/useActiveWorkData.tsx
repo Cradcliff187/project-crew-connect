@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { WorkItem, projectToWorkItem, workOrderToWorkItem } from '@/types/activeWork';
 
-export function useActiveWorkData() {
+export function useActiveWorkData(limit?: number) {
   // Fetch projects
   const { 
     data: projects = [], 
@@ -12,12 +12,22 @@ export function useActiveWorkData() {
     error: projectsError,
     refetch: refetchProjects
   } = useQuery({
-    queryKey: ['projects'],
+    queryKey: ['projects', { limit }],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('projects')
-        .select('projectid, projectname, customername, customerid, status, createdon')
-        .order('createdon', { ascending: false });
+        .select('projectid, projectname, customername, customerid, status, createdon, due_date')
+        
+      // If limit is provided, order by due_date and limit results
+      if (limit) {
+        query = query
+          .order('due_date', { ascending: true, nullsLast: true })
+          .limit(limit);
+      } else {
+        query = query.order('createdon', { ascending: false });
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
@@ -47,12 +57,22 @@ export function useActiveWorkData() {
     error: workOrdersError,
     refetch: refetchWorkOrders
   } = useQuery({
-    queryKey: ['workOrders'],
+    queryKey: ['workOrders', { limit }],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('maintenance_work_orders')
         .select('*')
-        .order('created_at', { ascending: false });
+      
+      // If limit is provided, order by scheduled_date and limit results
+      if (limit) {
+        query = query
+          .order('scheduled_date', { ascending: true, nullsLast: true })
+          .limit(limit);
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       

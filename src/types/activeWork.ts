@@ -1,52 +1,57 @@
 
 import { StatusType } from './common';
+import { WorkOrder } from './workOrder';
 
-// Common interface for both projects and work orders
 export interface WorkItem {
   id: string;
   type: 'project' | 'workOrder';
   title: string;
   description?: string;
-  status: StatusType;
   customerId?: string;
   customerName?: string;
-  createdAt: string;
-  progress: number;
+  status: StatusType;
+  dueDate?: string;
+  createdAt?: string;
+  location?: string;
   budget?: number;
   spent?: number;
+  progress?: number;
   priority?: string;
-  dueDate?: string;
-  poNumber?: string; // Specific to work orders
-  location?: string; // Specific to work orders
-  assignedTo?: string; // Specific to work orders
+  assignedTo?: string;
+  poNumber?: string;
 }
 
-// Helper functions to convert project and work order objects to WorkItem
 export const projectToWorkItem = (project: any): WorkItem => ({
   id: project.projectid,
   type: 'project',
   title: project.projectname || 'Unnamed Project',
-  status: project.status,
+  description: project.jobdescription,
   customerId: project.customerid,
   customerName: project.customername,
+  status: project.status?.toLowerCase() as StatusType || 'unknown',
+  dueDate: project.due_date,
   createdAt: project.createdon,
-  progress: project.progress || 0,
+  location: project.sitelocationaddress 
+    ? `${project.sitelocationaddress}, ${project.sitelocationcity || ''} ${project.sitelocationstate || ''} ${project.sitelocationzip || ''}`.trim()
+    : undefined,
   budget: project.budget,
-  spent: project.spent
+  spent: project.spent,
+  progress: project.progress
 });
 
-export const workOrderToWorkItem = (workOrder: any): WorkItem => ({
+export const workOrderToWorkItem = (workOrder: WorkOrder): WorkItem => ({
   id: workOrder.work_order_id,
   type: 'workOrder',
   title: workOrder.title,
   description: workOrder.description,
-  status: workOrder.status,
   customerId: workOrder.customer_id,
-  createdAt: workOrder.created_at,
-  progress: workOrder.progress,
-  poNumber: workOrder.po_number,
-  priority: workOrder.priority,
+  customerName: '', // This would need to be fetched separately 
+  status: workOrder.status?.toLowerCase() as StatusType || 'unknown',
   dueDate: workOrder.scheduled_date,
-  location: workOrder.location_id,
-  assignedTo: workOrder.assigned_to
+  createdAt: workOrder.created_at,
+  location: workOrder.location_id?.toString(),
+  progress: workOrder.progress,
+  priority: workOrder.priority,
+  assignedTo: workOrder.assigned_to?.toString(),
+  poNumber: workOrder.po_number
 });

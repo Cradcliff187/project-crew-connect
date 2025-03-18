@@ -53,6 +53,7 @@ export const useProjectSubmit = (onSuccess: () => void) => {
           customerid: customerId || null,
           jobdescription: data.jobDescription || '',
           status: data.status,
+          due_date: data.dueDate,
           sitelocationaddress: data.siteLocationSameAsCustomer ? null : data.siteLocation.address,
           sitelocationcity: data.siteLocationSameAsCustomer ? null : data.siteLocation.city,
           sitelocationstate: data.siteLocationSameAsCustomer ? null : data.siteLocation.state,

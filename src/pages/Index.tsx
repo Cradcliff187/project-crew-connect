@@ -1,4 +1,5 @@
-import { BarChart3, Briefcase, FileText, Users, DollarSign, Clock, ArrowRight, TrendingUp, CheckCircle } from 'lucide-react';
+
+import { BarChart3, Briefcase, FileText, Users, DollarSign, Clock, ArrowRight, TrendingUp, CheckCircle, Wrench, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -7,22 +8,59 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import PageTransition from '@/components/layout/PageTransition';
 import { useNavigate } from 'react-router-dom';
+import { useActiveWorkData } from '@/components/activeWork/hooks/useActiveWorkData';
+import { formatDate } from '@/lib/utils';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { projectItems, workOrderItems, projectsLoading, workOrdersLoading } = useActiveWorkData(5);
 
-  // Sample data - In a real app, this would come from API calls
-  const projectsOverview = [
-    { name: 'Lakeside Project', progress: 68, status: 'active' as StatusType },
-    { name: 'City Center Renovation', progress: 32, status: 'active' as StatusType },
-    { name: 'Hillside Residence', progress: 100, status: 'completed' as StatusType },
-    { name: 'Commercial Complex', progress: 15, status: 'on-hold' as StatusType }
-  ];
+  // Sample data for metrics - In a real app, this would come from API calls
+  const metrics = {
+    activeProjects: 12,
+    pendingEstimates: 7,
+    totalRevenue: "$1.2M",
+    activeContacts: 187
+  };
 
   const upcomingEstimates = [
     { id: 'EST-1001', client: 'Jackson Properties', amount: 45000, status: 'pending' as StatusType },
     { id: 'EST-1002', client: 'Vanguard Development', amount: 72000, status: 'draft' as StatusType },
   ];
+
+  const renderProjectItem = (project: any, index: number) => (
+    <div key={index} className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="font-medium">{project.title}</span>
+        <StatusBadge status={project.status} size="sm" />
+      </div>
+      <div className="flex space-x-2 text-sm text-muted-foreground">
+        <Calendar className="h-4 w-4" />
+        <span>{project.dueDate ? formatDate(project.dueDate) : 'No due date'}</span>
+      </div>
+      <div className="flex space-x-3 items-center">
+        <Progress value={project.progress} className="h-2" />
+        <span className="text-sm text-muted-foreground w-10">{project.progress}%</span>
+      </div>
+    </div>
+  );
+
+  const renderWorkOrderItem = (workOrder: any, index: number) => (
+    <div key={index} className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="font-medium">{workOrder.title}</span>
+        <StatusBadge status={workOrder.status} size="sm" />
+      </div>
+      <div className="flex space-x-2 text-sm text-muted-foreground">
+        <Calendar className="h-4 w-4" />
+        <span>{workOrder.dueDate ? formatDate(workOrder.dueDate) : 'Not scheduled'}</span>
+      </div>
+      <div className="flex space-x-3 items-center">
+        <Progress value={workOrder.progress} className="h-2" />
+        <span className="text-sm text-muted-foreground w-10">{workOrder.progress}%</span>
+      </div>
+    </div>
+  );
 
   return (
     <PageTransition>
@@ -41,7 +79,7 @@ const Dashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
-                  <h3 className="text-2xl font-bold mt-1">12</h3>
+                  <h3 className="text-2xl font-bold mt-1">{metrics.activeProjects}</h3>
                 </div>
                 <div className="h-10 w-10 bg-construction-50 rounded-full flex items-center justify-center text-construction-600">
                   <Briefcase className="h-5 w-5" />
@@ -60,7 +98,7 @@ const Dashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Pending Estimates</p>
-                  <h3 className="text-2xl font-bold mt-1">7</h3>
+                  <h3 className="text-2xl font-bold mt-1">{metrics.pendingEstimates}</h3>
                 </div>
                 <div className="h-10 w-10 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-600">
                   <FileText className="h-5 w-5" />
@@ -79,7 +117,7 @@ const Dashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                  <h3 className="text-2xl font-bold mt-1">$1.2M</h3>
+                  <h3 className="text-2xl font-bold mt-1">{metrics.totalRevenue}</h3>
                 </div>
                 <div className="h-10 w-10 bg-green-50 rounded-full flex items-center justify-center text-green-600">
                   <DollarSign className="h-5 w-5" />
@@ -98,7 +136,7 @@ const Dashboard = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Contacts</p>
-                  <h3 className="text-2xl font-bold mt-1">187</h3>
+                  <h3 className="text-2xl font-bold mt-1">{metrics.activeContacts}</h3>
                 </div>
                 <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
                   <Users className="h-5 w-5" />
@@ -115,16 +153,16 @@ const Dashboard = () => {
         
         {/* Main Dashboard Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in" style={{ animationDelay: '0.2s' }}>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Active Projects */}
             <DashboardCard
               title="Active Projects"
               icon={<Briefcase className="h-5 w-5" />}
-              className="h-full"
               footer={
                 <Button 
                   variant="ghost" 
                   className="w-full text-sm text-muted-foreground hover:text-foreground flex items-center justify-center"
-                  onClick={() => navigate('/projects')}
+                  onClick={() => navigate('/active-work?tab=projects')}
                 >
                   View All Projects
                   <ArrowRight className="h-4 w-4 ml-1" />
@@ -132,18 +170,67 @@ const Dashboard = () => {
               }
             >
               <div className="space-y-5">
-                {projectsOverview.map((project, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{project.name}</span>
-                      <StatusBadge status={project.status} size="sm" />
+                {projectsLoading ? (
+                  Array(5).fill(0).map((_, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between">
+                        <div className="h-5 bg-muted rounded w-1/3"></div>
+                        <div className="h-5 bg-muted rounded w-16"></div>
+                      </div>
+                      <div className="h-4 bg-muted rounded w-1/4"></div>
+                      <div className="flex space-x-3 items-center">
+                        <div className="h-2 bg-muted rounded w-full"></div>
+                        <div className="h-4 bg-muted rounded w-10"></div>
+                      </div>
                     </div>
-                    <div className="flex space-x-3 items-center">
-                      <Progress value={project.progress} className="h-2" />
-                      <span className="text-sm text-muted-foreground w-10">{project.progress}%</span>
-                    </div>
+                  ))
+                ) : projectItems.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <p>No active projects</p>
                   </div>
-                ))}
+                ) : (
+                  projectItems.map(renderProjectItem)
+                )}
+              </div>
+            </DashboardCard>
+
+            {/* Active Work Orders */}
+            <DashboardCard
+              title="Active Work Orders"
+              icon={<Wrench className="h-5 w-5" />}
+              footer={
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-sm text-muted-foreground hover:text-foreground flex items-center justify-center"
+                  onClick={() => navigate('/active-work?tab=workOrders')}
+                >
+                  View All Work Orders
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              }
+            >
+              <div className="space-y-5">
+                {workOrdersLoading ? (
+                  Array(5).fill(0).map((_, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between">
+                        <div className="h-5 bg-muted rounded w-1/3"></div>
+                        <div className="h-5 bg-muted rounded w-16"></div>
+                      </div>
+                      <div className="h-4 bg-muted rounded w-1/4"></div>
+                      <div className="flex space-x-3 items-center">
+                        <div className="h-2 bg-muted rounded w-full"></div>
+                        <div className="h-4 bg-muted rounded w-10"></div>
+                      </div>
+                    </div>
+                  ))
+                ) : workOrderItems.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <p>No active work orders</p>
+                  </div>
+                ) : (
+                  workOrderItems.map(renderWorkOrderItem)
+                )}
               </div>
             </DashboardCard>
           </div>

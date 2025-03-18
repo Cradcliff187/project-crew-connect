@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageTransition from '@/components/layout/PageTransition';
 import ActiveWorkTable from '@/components/activeWork/ActiveWorkTable';
@@ -9,9 +10,28 @@ import { useActiveWorkData } from '@/components/activeWork/hooks/useActiveWorkDa
 import { filterWorkItems } from '@/components/activeWork/utils/filterUtils';
 
 const ActiveWork = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'dashboard'>('table');
   const [activeTab, setActiveTab] = useState('all');
+
+  // Get tab from URL if present
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['all', 'projects', 'workOrders'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('tab', value);
+      return newParams;
+    });
+  };
 
   // Use the custom hook to fetch data
   const {
@@ -36,7 +56,7 @@ const ActiveWork = () => {
           setViewMode={setViewMode}
         />
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
           <TabsList>
             <TabsTrigger value="all">All Work</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>

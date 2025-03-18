@@ -671,6 +671,7 @@ export type Database = {
           customerid: string | null
           customername: string | null
           docurl: string | null
+          due_date: string | null
           estimatesfolderid: string | null
           folderid: string | null
           jobdescription: string | null
@@ -695,6 +696,7 @@ export type Database = {
           customerid?: string | null
           customername?: string | null
           docurl?: string | null
+          due_date?: string | null
           estimatesfolderid?: string | null
           folderid?: string | null
           jobdescription?: string | null
@@ -719,6 +721,7 @@ export type Database = {
           customerid?: string | null
           customername?: string | null
           docurl?: string | null
+          due_date?: string | null
           estimatesfolderid?: string | null
           folderid?: string | null
           jobdescription?: string | null

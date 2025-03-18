@@ -9,6 +9,7 @@ export const projectFormSchema = z.object({
   status: z.string().default('active'),
   estimateId: z.string().optional(),
   siteLocationSameAsCustomer: z.boolean().default(true),
+  dueDate: z.string().optional(),
   siteLocation: z.object({
     address: z.string().optional(),
     city: z.string().optional(),
