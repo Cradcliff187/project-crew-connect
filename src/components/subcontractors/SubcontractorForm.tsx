@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import {
@@ -46,6 +45,11 @@ export interface SubcontractorFormData {
   contract_on_file?: boolean;
   preferred?: boolean;
   last_performance_review?: string | null;
+  // Performance metrics
+  on_time_percentage?: number | null;
+  quality_score?: number | null;
+  safety_incidents?: number | null;
+  response_time_hours?: number | null;
 }
 
 interface SubcontractorFormProps {
@@ -85,6 +89,10 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
       contract_on_file: initialData?.contract_on_file || false,
       preferred: initialData?.preferred || false,
       last_performance_review: initialData?.last_performance_review || null,
+      on_time_percentage: initialData?.on_time_percentage || null,
+      quality_score: initialData?.quality_score || null,
+      safety_incidents: initialData?.safety_incidents || null,
+      response_time_hours: initialData?.response_time_hours || null,
     }
   });
 
@@ -336,6 +344,7 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
                         selected={field.value ? new Date(field.value) : undefined}
                         onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
                         initialFocus
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
@@ -403,6 +412,7 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
                         selected={field.value ? new Date(field.value) : undefined}
                         onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
                         initialFocus
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
@@ -433,6 +443,110 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
             />
           </div>
         </div>
+        
+        {/* Performance Metrics Section (for detailed performance tracking) */}
+        {isEditing && (
+          <div className="pt-4 border-t">
+            <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Performance Metrics</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="on_time_percentage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>On-Time Completion (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="e.g. 95" 
+                        min="0"
+                        max="100"
+                        value={field.value === null ? '' : field.value}
+                        onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Percentage of jobs completed on schedule
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="quality_score"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quality Score (0-100)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="e.g. 85" 
+                        min="0"
+                        max="100"
+                        value={field.value === null ? '' : field.value}
+                        onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Average quality score across all work
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="response_time_hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Avg. Response Time (hours)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="e.g. 4" 
+                        min="0"
+                        step="0.5"
+                        value={field.value === null ? '' : field.value}
+                        onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Average time to respond to inquiries
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="safety_incidents"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Safety Incidents</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="e.g. 0" 
+                        min="0"
+                        value={field.value === null ? '' : field.value}
+                        onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Number of safety incidents in the past year
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        )}
         
         <FormField
           control={form.control}
@@ -475,6 +589,7 @@ const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = fa
                   <SelectItem value="REJECTED">Rejected</SelectItem>
                   <SelectItem value="VERIFIED">Verified</SelectItem>
                   <SelectItem value="PREFERRED">Preferred</SelectItem>
+                  <SelectItem value="REVIEW_NEEDED">Review Needed</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

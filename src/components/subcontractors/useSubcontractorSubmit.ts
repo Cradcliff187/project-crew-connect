@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,8 +25,23 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             zip: data.zip,
             status: data.status,
             specialty_ids: data.specialty_ids,
-            // Only keeping these fields
+            // Financial info
             payment_terms: data.payment_terms,
+            hourly_rate: data.hourly_rate,
+            tax_id: data.tax_id,
+            // Compliance info
+            insurance_expiration: data.insurance_expiration,
+            contract_on_file: data.contract_on_file,
+            // Performance info
+            rating: data.rating,
+            preferred: data.preferred,
+            last_performance_review: data.last_performance_review,
+            // Performance metrics (if available from form)
+            on_time_percentage: data.on_time_percentage,
+            quality_score: data.quality_score,
+            safety_incidents: data.safety_incidents,
+            response_time_hours: data.response_time_hours,
+            // Notes
             notes: data.notes,
             updated_at: new Date().toISOString(),
           })
@@ -64,8 +80,23 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             zip: data.zip,
             status: data.status,
             specialty_ids: data.specialty_ids,
-            // Only keeping these fields
+            // Financial info
             payment_terms: data.payment_terms,
+            hourly_rate: data.hourly_rate,
+            tax_id: data.tax_id,
+            // Compliance info
+            insurance_expiration: data.insurance_expiration,
+            contract_on_file: data.contract_on_file,
+            // Performance info
+            rating: data.rating,
+            preferred: data.preferred,
+            last_performance_review: data.last_performance_review,
+            // Performance metrics (if available from form)
+            on_time_percentage: data.on_time_percentage,
+            quality_score: data.quality_score,
+            safety_incidents: data.safety_incidents,
+            response_time_hours: data.response_time_hours,
+            // Notes
             notes: data.notes,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

@@ -3,9 +3,11 @@ import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Eye, Star, ShieldCheck, Clock } from 'lucide-react';
-import { formatSubcontractorAddress, getPaymentTermsLabel, Subcontractor } from './utils/subcontractorUtils';
+import { Edit, Trash2, Eye, Star, Clock, CheckCircle2 } from 'lucide-react';
+import { formatSubcontractorAddress, getPaymentTermsLabel, getRatingDisplay, Subcontractor } from './utils/subcontractorUtils';
 import { format } from 'date-fns';
+import InsuranceStatus from './InsuranceStatus';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SubcontractorRowProps {
   subcontractor: Subcontractor;
@@ -50,6 +52,8 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
         return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Verified</Badge>;
       case 'PREFERRED':
         return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Preferred</Badge>;
+      case 'REVIEW_NEEDED':
+        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Review Needed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -79,42 +83,87 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
   const renderComplianceIndicators = () => {
     return (
       <div className="flex gap-1">
-        {subcontractor.insurance_expiration && (
-          <div className="inline-flex" title={`Insurance expires: ${formatDate(subcontractor.insurance_expiration)}`}>
-            <ShieldCheck className={`h-4 w-4 ${
-              new Date(subcontractor.insurance_expiration) > new Date() 
-                ? 'text-green-500' 
-                : 'text-red-500'
-            }`} />
-          </div>
-        )}
+        {/* Insurance Status */}
+        <InsuranceStatus expirationDate={subcontractor.insurance_expiration} />
         
+        {/* Contract Status */}
         {subcontractor.contract_on_file && (
-          <div className="inline-flex" title="Contract on file">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-500">
-              <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-              <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-              <path d="M9 17h6" />
-              <path d="M9 13h6" />
-            </svg>
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="inline-flex">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-500">
+                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                    <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+                    <path d="M9 17h6" />
+                    <path d="M9 13h6" />
+                  </svg>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Contract on file</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
         
+        {/* Preferred Vendor Status */}
         {subcontractor.preferred && (
-          <div className="inline-flex" title="Preferred vendor">
-            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="inline-flex">
+                  <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Preferred vendor</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
         
+        {/* Performance Review Status */}
         {subcontractor.last_performance_review && (
-          <div className="inline-flex" title={`Last review: ${formatDate(subcontractor.last_performance_review)}`}>
-            <Clock className={`h-4 w-4 ${
-              // If review is within the last 6 months
-              new Date(subcontractor.last_performance_review) > new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000) 
-                ? 'text-green-500' 
-                : 'text-amber-500'
-            }`} />
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="inline-flex">
+                  <Clock className={`h-4 w-4 ${
+                    // If review is within the last 6 months
+                    new Date(subcontractor.last_performance_review) > new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000) 
+                      ? 'text-green-500' 
+                      : 'text-amber-500'
+                  }`} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Last review: {formatDate(subcontractor.last_performance_review)}</p>
+                {new Date(subcontractor.last_performance_review) <= new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000) && 
+                  <p className="text-amber-400">Review overdue</p>
+                }
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        
+        {/* Performance Metrics */}
+        {subcontractor.on_time_percentage && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="inline-flex">
+                  <CheckCircle2 className={`h-4 w-4 ${
+                    subcontractor.on_time_percentage >= 90 ? 'text-green-500' :
+                    subcontractor.on_time_percentage >= 75 ? 'text-amber-500' : 'text-red-500'
+                  }`} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>On-time percentage: {subcontractor.on_time_percentage}%</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
     );
@@ -135,6 +184,9 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
         {subcontractor.phone && (
           <div className="text-sm">{subcontractor.phone}</div>
         )}
+        {subcontractor.tax_id && (
+          <div className="text-xs text-muted-foreground">Tax ID: {subcontractor.tax_id}</div>
+        )}
       </TableCell>
       <TableCell>
         <div className="text-sm whitespace-pre-line">
@@ -149,6 +201,11 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
         {subcontractor.hourly_rate && (
           <div className="text-xs text-muted-foreground">
             Rate: ${subcontractor.hourly_rate}/hr
+          </div>
+        )}
+        {subcontractor.rating && (
+          <div className="text-xs text-amber-500">
+            {getRatingDisplay(subcontractor.rating)}
           </div>
         )}
       </TableCell>

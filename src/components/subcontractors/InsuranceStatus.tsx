@@ -1,93 +1,73 @@
 
 import React from 'react';
-import { format, isPast, addDays } from 'date-fns';
-import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { Shield, ShieldAlert, ShieldCheck, ShieldQuestion } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getInsuranceStatusInfo } from './utils/subcontractorUtils';
 
 interface InsuranceStatusProps {
-  expiryDate: string | null;
-  isRequired: boolean;
+  expirationDate: string | null;
+  showText?: boolean;
+  showIcon?: boolean;
+  showTooltip?: boolean;
 }
 
-const InsuranceStatus: React.FC<InsuranceStatusProps> = ({ expiryDate, isRequired }) => {
-  if (!isRequired) {
-    return (
-      <Badge variant="outline" className="text-gray-500">
-        Not Required
-      </Badge>
-    );
+const InsuranceStatus: React.FC<InsuranceStatusProps> = ({ 
+  expirationDate, 
+  showText = false, 
+  showIcon = true, 
+  showTooltip = true 
+}) => {
+  const { status, color, urgency } = getInsuranceStatusInfo(expirationDate);
+  
+  const getIcon = () => {
+    switch (urgency) {
+      case 'critical':
+        return <ShieldAlert className={`h-4 w-4 ${color}`} />;
+      case 'warning':
+        return <Shield className={`h-4 w-4 ${color}`} />;
+      case 'valid':
+        return <ShieldCheck className={`h-4 w-4 ${color}`} />;
+      default:
+        return <ShieldQuestion className={`h-4 w-4 ${color}`} />;
+    }
+  };
+  
+  const content = (
+    <div className="flex items-center gap-1">
+      {showIcon && getIcon()}
+      {showText && <span className={`text-sm ${color}`}>{status}</span>}
+    </div>
+  );
+  
+  if (!showTooltip) {
+    return content;
   }
   
-  if (!expiryDate) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="destructive" className="flex items-center gap-1">
-              <XCircle className="h-3.5 w-3.5" />
-              Missing
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Insurance documentation required but not provided</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-  
-  const expiry = new Date(expiryDate);
-  const isExpired = isPast(expiry);
-  const isExpiringSoon = !isExpired && isPast(addDays(new Date(), -30));
-  
-  if (isExpired) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="destructive" className="flex items-center gap-1">
-              <XCircle className="h-3.5 w-3.5" />
-              Expired
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Expired on {format(expiry, 'MMM d, yyyy')}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-  
-  if (isExpiringSoon) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="secondary" className="flex items-center gap-1 bg-amber-500 text-white hover:bg-amber-600">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              Expiring Soon
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Expires on {format(expiry, 'MMM d, yyyy')}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
+  // Provide detailed tooltip content
+  const tooltipContent = (
+    <div className="text-sm">
+      <p className="font-semibold mb-1">Insurance Status: {status}</p>
+      {expirationDate && (
+        <p>Expiration date: {format(new Date(expirationDate), 'MMM d, yyyy')}</p>
+      )}
+      {urgency === 'critical' && (
+        <p className="mt-1 text-red-400">Insurance needs to be renewed immediately!</p>
+      )}
+      {urgency === 'warning' && (
+        <p className="mt-1 text-amber-400">Insurance renewal needed soon.</p>
+      )}
+    </div>
+  );
   
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant="outline" className="flex items-center gap-1 bg-green-100 text-green-800 hover:bg-green-200">
-            <CheckCircle className="h-3.5 w-3.5" />
-            Valid
-          </Badge>
+          {content}
         </TooltipTrigger>
         <TooltipContent>
-          <p>Valid until {format(expiry, 'MMM d, yyyy')}</p>
+          {tooltipContent}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
