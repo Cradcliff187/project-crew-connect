@@ -17,14 +17,26 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
     
     try {
       setLoading(true);
+      console.log('Fetching subcontractor with ID:', subcontractorId);
+      
       const { data, error } = await supabase
         .from('subcontractors')
         .select('*')
         .eq('subid', subcontractorId)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
+      if (!data) {
+        console.error('No subcontractor found with ID:', subcontractorId);
+        setSubcontractor(null);
+        return;
+      }
+      
+      console.log('Subcontractor data received:', data);
       setSubcontractor(data as Subcontractor);
       
       // Fetch specialties if the subcontractor has any
@@ -87,7 +99,7 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
         setProjects(uniqueProjects || []);
       }
 
-      // Safely try to fetch associated work orders - handle potential uuid vs string format issues
+      // Safely try to fetch associated work orders
       try {
         const { data: workOrdersData, error: workOrdersError } = await supabase
           .from('maintenance_work_orders')

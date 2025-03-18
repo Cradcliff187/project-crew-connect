@@ -79,7 +79,7 @@ const FinancialSection: React.FC<FormSectionProps> = ({ control }) => {
             <FormItem>
               <FormLabel>Tax ID / EIN</FormLabel>
               <FormControl>
-                <Input placeholder="Tax identification number" {...field} />
+                <Input placeholder="Tax identification number" {...field} value={field.value || ''} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -18,6 +18,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
         }
         
         console.log('Updating subcontractor with ID:', data.subid);
+        console.log('Update data:', data);
         
         // Update existing subcontractor
         const { error } = await supabase
@@ -61,6 +62,8 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           console.error('Error updating subcontractor:', error);
           throw error;
         }
+        
+        console.log('Subcontractor updated successfully');
         
         toast({
           title: 'Subcontractor updated successfully',

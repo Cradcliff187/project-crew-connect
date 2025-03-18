@@ -27,6 +27,8 @@ const SubcontractorDetailPage = () => {
   const { subcontractorId } = useParams<{ subcontractorId: string }>();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
+  console.log('SubcontractorDetailPage - Current subcontractorId:', subcontractorId);
+  
   // Use the custom hook to fetch subcontractor data
   const { 
     subcontractor, 

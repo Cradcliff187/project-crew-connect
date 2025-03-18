@@ -44,6 +44,7 @@ const SubcontractorDialog = ({
     // Ensure subid is passed for editing
     if (isEditing && initialData && 'subid' in initialData) {
       data.subid = initialData.subid;
+      console.log('Submitting form with subid:', data.subid);
     }
     
     console.log('Form submitted with data:', data);
