@@ -1,10 +1,13 @@
 
+import { useEffect, useState } from 'react';
 import { Hammer, MoreHorizontal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { StatusType } from '@/types/common';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -25,6 +28,12 @@ export interface Subcontractor {
   zip: string | null;
   status: string | null;
   created_at: string | null;
+  specialty_ids: string[] | null;
+}
+
+interface Specialty {
+  id: string;
+  specialty: string;
 }
 
 interface SubcontractorsTableProps {
@@ -60,6 +69,35 @@ export const formatDate = (dateString: string | null) => {
 };
 
 const SubcontractorsTable = ({ subcontractors, loading, error, searchQuery }: SubcontractorsTableProps) => {
+  const [specialties, setSpecialties] = useState<Record<string, Specialty>>({});
+  
+  // Fetch all specialties to display them by name
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('subcontractor_specialties')
+          .select('id, specialty');
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          const specialtiesMap: Record<string, Specialty> = {};
+          data.forEach(specialty => {
+            specialtiesMap[specialty.id] = specialty;
+          });
+          setSpecialties(specialtiesMap);
+        }
+      } catch (error) {
+        console.error('Error fetching specialties:', error);
+      }
+    };
+    
+    fetchSpecialties();
+  }, []);
+
   // Filter subcontractors based on search query
   const filteredSubcontractors = subcontractors.filter(sub => 
     (sub.subname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -67,12 +105,18 @@ const SubcontractorsTable = ({ subcontractors, loading, error, searchQuery }: Su
     (sub.subid?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
+  // Get specialty name by ID
+  const getSpecialtyName = (id: string) => {
+    return specialties[id]?.specialty || 'Unknown Specialty';
+  };
+
   return (
     <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Subcontractor</TableHead>
+            <TableHead>Specialties</TableHead>
             <TableHead>Contact</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Added</TableHead>
@@ -93,6 +137,7 @@ const SubcontractorsTable = ({ subcontractors, loading, error, searchQuery }: Su
                 </TableCell>
                 <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-[80px] rounded-full" /></TableCell>
                 <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
@@ -100,7 +145,7 @@ const SubcontractorsTable = ({ subcontractors, loading, error, searchQuery }: Su
             ))
           ) : error ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-6 text-red-500">
+              <TableCell colSpan={7} className="text-center py-6 text-red-500">
                 <p>Error loading subcontractors: {error}</p>
                 <Button 
                   variant="outline" 
@@ -114,7 +159,7 @@ const SubcontractorsTable = ({ subcontractors, loading, error, searchQuery }: Su
             </TableRow>
           ) : filteredSubcontractors.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                 <Hammer className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
                 <p>No subcontractors found. Add your first subcontractor!</p>
               </TableCell>
@@ -125,6 +170,19 @@ const SubcontractorsTable = ({ subcontractors, loading, error, searchQuery }: Su
                 <TableCell>
                   <div className="font-medium">{sub.subname || 'Unnamed Subcontractor'}</div>
                   <div className="text-xs text-muted-foreground">{sub.subid}</div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {sub.specialty_ids && sub.specialty_ids.length > 0 ? (
+                      sub.specialty_ids.map((specialtyId) => (
+                        <Badge key={specialtyId} variant="outline" className="bg-purple-50 text-purple-800 border-purple-200">
+                          {getSpecialtyName(specialtyId)}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No specialties</span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div>{sub.contactemail || 'No Email'}</div>

@@ -1,22 +1,26 @@
 
 import { useState } from 'react';
-import { Hammer, Search, Plus } from 'lucide-react';
+import { Hammer, Search, Plus, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SubcontractorDialog from './SubcontractorDialog';
+import SpecialtyDialog from './SpecialtyDialog';
 
 interface SubcontractorsHeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onSubcontractorAdded: () => void;
+  onSpecialtyAdded?: () => void;
 }
 
 const SubcontractorsHeader = ({
   searchQuery,
   setSearchQuery,
-  onSubcontractorAdded
+  onSubcontractorAdded,
+  onSpecialtyAdded = () => {}
 }: SubcontractorsHeaderProps) => {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showSpecialtyDialog, setShowSpecialtyDialog] = useState(false);
   
   return (
     <div className="space-y-4">
@@ -39,6 +43,15 @@ const SubcontractorsHeader = ({
           </div>
           
           <Button
+            variant="outline"
+            onClick={() => setShowSpecialtyDialog(true)}
+            className="border-[#0485ea] text-[#0485ea]"
+          >
+            <Tag className="mr-1 h-4 w-4" />
+            Specialties
+          </Button>
+          
+          <Button
             className="bg-[#0485ea] hover:bg-[#0375d1]"
             onClick={() => setShowAddDialog(true)}
           >
@@ -52,6 +65,12 @@ const SubcontractorsHeader = ({
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onSubcontractorAdded={onSubcontractorAdded}
+      />
+
+      <SpecialtyDialog
+        open={showSpecialtyDialog}
+        onOpenChange={setShowSpecialtyDialog}
+        onSpecialtyAdded={onSpecialtyAdded}
       />
     </div>
   );

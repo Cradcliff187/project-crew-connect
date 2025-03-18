@@ -11,6 +11,7 @@ const Subcontractors = () => {
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [specialtiesUpdated, setSpecialtiesUpdated] = useState(0);
   
   // Fetch subcontractors from Supabase
   const fetchSubcontractors = async () => {
@@ -18,7 +19,7 @@ const Subcontractors = () => {
     try {
       const { data, error } = await supabase
         .from('subcontractors')
-        .select('subid, subname, contactemail, phone, address, city, state, zip, status, created_at')
+        .select('subid, subname, contactemail, phone, address, city, state, zip, status, created_at, specialty_ids')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -47,6 +48,12 @@ const Subcontractors = () => {
     fetchSubcontractors();
   };
 
+  const handleSpecialtyAdded = () => {
+    // Increment the specialties update counter to trigger a refresh in components that use specialties
+    setSpecialtiesUpdated(prev => prev + 1);
+    // We don't need to refetch subcontractors here as the specialties are separate
+  };
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -54,6 +61,7 @@ const Subcontractors = () => {
           searchQuery={searchQuery} 
           setSearchQuery={setSearchQuery} 
           onSubcontractorAdded={handleSubcontractorAdded}
+          onSpecialtyAdded={handleSpecialtyAdded}
         />
         
         <SubcontractorsTable 

@@ -16,6 +16,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import SpecialtyMultiSelect from './SpecialtyMultiSelect';
 
 // Define subcontractor form data type
 export interface SubcontractorFormData {
@@ -27,6 +28,7 @@ export interface SubcontractorFormData {
   state: string;
   zip: string;
   status: string;
+  specialty_ids: string[];
 }
 
 interface SubcontractorFormProps {
@@ -45,6 +47,7 @@ const SubcontractorForm = ({ onSubmit, isSubmitting }: SubcontractorFormProps) =
       state: '',
       zip: '',
       status: 'PENDING',
+      specialty_ids: [],
     }
   });
   
@@ -152,6 +155,23 @@ const SubcontractorForm = ({ onSubmit, isSubmitting }: SubcontractorFormProps) =
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="specialty_ids"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Specialties</FormLabel>
+              <FormControl>
+                <SpecialtyMultiSelect
+                  selectedSpecialties={field.value}
+                  onChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <FormField
           control={form.control}

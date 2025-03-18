@@ -34,6 +34,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void) => {
           state: data.state,
           zip: data.zip,
           status: data.status,
+          specialty_ids: data.specialty_ids,
           created_at: new Date().toISOString(),
         })
         .select();
