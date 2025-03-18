@@ -1,37 +1,52 @@
 
+import { StatusType } from './common';
+
 export interface WorkOrder {
   work_order_id: string;
   title: string;
   description?: string;
+  status: StatusType;
+  priority?: string;
+  scheduled_date?: string;
   customer_id?: string;
   location_id?: string;
-  assigned_to?: string;
-  scheduled_date?: string;
-  completed_date?: string;
-  status: string;
-  priority: string;
-  time_estimate?: number;
-  actual_hours: number;
-  materials_cost: number;
-  total_cost: number;
-  progress: number;
-  po_number?: string;
   created_at: string;
-  updated_at: string;
+  completed_date?: string;
+  po_number?: string;
+  assigned_to?: string;
+  total_cost?: number;
+  materials_cost?: number;
+  labor_cost?: number;
+  actual_hours?: number;
+  time_estimate?: number;
+  progress: number;
 }
 
 export interface WorkOrderTimelog {
   id: string;
   work_order_id: string;
-  employee_id?: string;
+  employee_id: string | null;
   hours_worked: number;
   work_date: string;
-  notes?: string;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }
 
-// New unified TimeEntry interface for time_entries table
+export interface WorkOrderMaterial {
+  id: string;
+  work_order_id: string;
+  vendor_id: string | null;
+  material_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  receipt_document_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Time Entry Interfaces
 export interface TimeEntry {
   id: string;
   entity_type: 'work_order' | 'project';
@@ -75,17 +90,4 @@ export interface TimeEntryReceipt {
   file_size?: number;
   storage_path: string;
   uploaded_at: string;
-}
-
-export interface WorkOrderMaterial {
-  id: string;
-  work_order_id: string;
-  vendor_id: string | null;
-  material_name: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-  receipt_document_id: string | null;
-  created_at: string;
-  updated_at: string;
 }
