@@ -1,125 +1,97 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
+    --card-foreground: 222.2 84% 4.9%;
+ 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 209 100% 47%; /* AKC LLC Bright Blue #0485ea */
+    --primary: 213 94% 48%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-
-    --accent: 209 100% 96%;
-    --accent-foreground: 222 47% 11%;
-
-    --destructive: 0 84% 60%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 209 100% 50%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+ 
+    --radius: 0.5rem;
 
-    --radius: 0.5rem; /* Slightly reduced for a more professional look */
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 209 100% 47%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 209 100% 50%;
+    /* Sidebar colors derived from brand */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-muted: 213 94% 48%;
+    --sidebar-muted-foreground: 215.4 16.3% 46.9%;
+    --sidebar-accent: 213 84% 95%;
+    --sidebar-accent-foreground: 213 94% 48%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 213 94% 48% / 0.5;
   }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
 
+    /* Sidebar colors for dark mode */
+    --sidebar: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-muted: 213 94% 68%;
+    --sidebar-muted-foreground: 215 20.2% 65.1%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 213 94% 68% / 0.3;
+  }
+}
+ 
+@layer base {
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-opensans antialiased;
-    font-feature-settings: "ss01", "ss02";
+    @apply bg-background text-foreground;
   }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-montserrat font-bold;
-  }
-}
-
-@layer components {
-  .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-glass rounded-xl;
-  }
-  
-  .premium-card {
-    @apply bg-gradient-to-b from-white to-secondary/50 backdrop-blur-sm border border-border/50 shadow-card rounded-xl;
-  }
-  
-  .subtle-input {
-    @apply bg-secondary/50 border-border/50 focus:border-primary/30 focus:ring-1 focus:ring-primary/20;
-  }
-  
-  .text-balance {
-    text-wrap: balance;
-  }
-  
-  .btn-premium {
-    @apply bg-construction-600 hover:bg-construction-700 
-           text-white shadow-md transition-all duration-300 transform 
-           hover:shadow-lg active:scale-95;
-  }
-  
-  .animate-in {
-    animation: fadeIn 0.5s ease-out, slideIn 0.4s ease-out;
-  }
-}
-
-@layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Hide scrollbar for IE, Edge and Firefox */
-  .no-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-
-  .text-shadow-sm {
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-  
-  .shimmer {
-    @apply relative overflow-hidden;
-  }
-  
-  .shimmer::after {
-    @apply absolute top-0 -left-[100%] right-0 bottom-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer;
-    content: '';
-  }
-}
-
-#root {
-  max-width: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  overflow-x: hidden;
 }
