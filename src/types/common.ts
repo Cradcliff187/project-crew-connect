@@ -18,4 +18,9 @@ export type StatusType =
   | 'IN_PROGRESS'
   | 'SCHEDULED'
   | 'COMPLETED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'VERIFIED'
+  | 'PAID'
+  | 'UNPAID'
+  | 'PARTIAL'
+  | 'AWAITING_APPROVAL';
