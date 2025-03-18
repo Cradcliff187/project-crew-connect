@@ -12,6 +12,13 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
     
     try {
       if (isEditing) {
+        // Ensure subid is available for updating
+        if (!data.subid) {
+          throw new Error('Subcontractor ID is missing. Cannot update subcontractor.');
+        }
+        
+        console.log('Updating subcontractor with ID:', data.subid);
+        
         // Update existing subcontractor
         const { error } = await supabase
           .from('subcontractors')
@@ -48,9 +55,10 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             notes: data.notes,
             updated_at: new Date().toISOString(),
           })
-          .eq('subid', (data as any).subid);
+          .eq('subid', data.subid);
         
         if (error) {
+          console.error('Error updating subcontractor:', error);
           throw error;
         }
         

@@ -11,12 +11,13 @@ import {
 } from '@/components/ui/dialog';
 import SubcontractorForm, { SubcontractorFormData } from './SubcontractorForm';
 import { useSubcontractorSubmit } from './useSubcontractorSubmit';
+import { Subcontractor } from './utils/subcontractorUtils';
 
 interface SubcontractorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubcontractorAdded: () => void;
-  initialData?: Partial<SubcontractorFormData>;
+  initialData?: Partial<SubcontractorFormData> | Subcontractor;
   isEditing?: boolean;
 }
 
@@ -27,6 +28,10 @@ const SubcontractorDialog = ({
   initialData,
   isEditing = false
 }: SubcontractorDialogProps) => {
+  
+  // Log the initial data to help with debugging
+  console.log('SubcontractorDialog initialData:', initialData);
+  
   const handleSuccess = () => {
     onOpenChange(false); // Close dialog
     onSubcontractorAdded(); // Refresh subcontractors list
@@ -35,6 +40,12 @@ const SubcontractorDialog = ({
   const { isSubmitting, handleSubmit } = useSubcontractorSubmit(handleSuccess, isEditing);
   
   const onSubmit = async (data: SubcontractorFormData) => {
+    // Ensure subid is passed for editing
+    if (isEditing && initialData && 'subid' in initialData) {
+      data.subid = initialData.subid;
+    }
+    
+    console.log('Form submitted with data:', data);
     await handleSubmit(data);
   };
   

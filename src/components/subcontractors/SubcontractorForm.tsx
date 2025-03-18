@@ -27,6 +27,7 @@ import SpecialtyMultiSelect from './SpecialtyMultiSelect';
 
 // Define subcontractor form data type
 export interface SubcontractorFormData {
+  subid?: string; // Add subid field to support editing
   subname: string;
   contactemail: string;
   phone: string;
@@ -74,6 +75,7 @@ const paymentTermsOptions = [
 const SubcontractorForm = ({ onSubmit, isSubmitting, initialData, isEditing = false }: SubcontractorFormProps) => {
   const form = useForm<SubcontractorFormData>({
     defaultValues: {
+      subid: initialData?.subid || undefined, // Include subid from initialData
       subname: initialData?.subname || '',
       contactemail: initialData?.contactemail || '',
       phone: initialData?.phone || '',

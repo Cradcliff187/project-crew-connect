@@ -48,7 +48,19 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   const filteredSubcontractors = filterSubcontractors(subcontractors, searchQuery);
   
   const handleEditClick = (subcontractor: Subcontractor) => {
-    console.log('Edit subcontractor clicked:', subcontractor.subid);
+    console.log('Edit subcontractor clicked:', subcontractor);
+    
+    // Make sure we have a complete subcontractor object with all properties
+    if (!subcontractor.subid) {
+      console.error('Subcontractor is missing subid:', subcontractor);
+      toast({
+        title: "Error",
+        description: "Cannot edit subcontractor: Missing ID",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setSelectedSubcontractor(subcontractor);
     setEditDialogOpen(true);
   };
