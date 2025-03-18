@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, Phone, Mail, MapPin, Calendar, Clock, FileText, 
-  DollarSign, Shield, Star, AlertTriangle, Award
+  DollarSign, Shield, Star, AlertTriangle, Award, LayoutList, Briefcase
 } from 'lucide-react';
 import { Subcontractor, formatSubcontractorAddress, getPaymentTermsLabel, calculateVendorScore } from './utils/subcontractorUtils';
 import { toast } from '@/hooks/use-toast';
@@ -24,6 +24,9 @@ const SubcontractorDetail = () => {
   const [subcontractor, setSubcontractor] = useState<Subcontractor | null>(null);
   const [loading, setLoading] = useState(true);
   const [specialties, setSpecialties] = useState<Record<string, any>>({});
+  const [projects, setProjects] = useState<any[]>([]);
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [loadingAssociations, setLoadingAssociations] = useState(false);
   
   const fetchSubcontractor = async () => {
     if (!subcontractorId) return;
@@ -57,6 +60,9 @@ const SubcontractorDetail = () => {
         
         setSpecialties(specialtiesMap);
       }
+
+      // Fetch associated projects and work orders
+      await fetchAssociatedData(data?.subid);
     } catch (error: any) {
       console.error('Error fetching subcontractor:', error);
       toast({
@@ -66,6 +72,53 @@ const SubcontractorDetail = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAssociatedData = async (subId: string) => {
+    if (!subId) return;
+
+    setLoadingAssociations(true);
+    try {
+      // Fetch associated projects
+      // This would typically join subcontractor tables with projects through assignments
+      // We're using a simplified query for now
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('subinvoices')
+        .select('projectid, projectname')
+        .eq('subid', subId)
+        .order('created_at', { ascending: false });
+      
+      if (projectsError) throw projectsError;
+      
+      // Get unique projects by projectid
+      const uniqueProjects = projectsData?.reduce((acc: any[], current) => {
+        const x = acc.find(item => item.projectid === current.projectid);
+        if (!x) {
+          return acc.concat([current]);
+        } else {
+          return acc;
+        }
+      }, []);
+      
+      setProjects(uniqueProjects || []);
+
+      // Fetch associated work orders
+      // Assumes there's a relationship between work orders and subcontractors
+      const { data: workOrdersData, error: workOrdersError } = await supabase
+        .from('maintenance_work_orders')
+        .select('work_order_id, title, status')
+        .eq('assigned_to', subId)
+        .order('created_at', { ascending: false });
+      
+      if (workOrdersError) throw workOrdersError;
+      
+      setWorkOrders(workOrdersData || []);
+    } catch (error: any) {
+      console.error('Error fetching associated data:', error);
+      // We don't show a toast here to not disrupt the main flow
+    } finally {
+      setLoadingAssociations(false);
     }
   };
   
@@ -87,11 +140,10 @@ const SubcontractorDetail = () => {
   };
   
   const handleEdit = () => {
-    // This would be implemented to open the edit dialog or navigate to an edit page
-    toast({
-      title: 'Edit functionality',
-      description: 'Edit functionality would be implemented here',
-    });
+    if (subcontractor) {
+      // This will call the edit dialog from the parent component
+      navigate('/subcontractors', { state: { editSubcontractor: subcontractor } });
+    }
   };
   
   // Status badge styling
@@ -396,6 +448,82 @@ const SubcontractorDetail = () => {
                   <h3 className="text-lg font-medium">Specialties</h3>
                   <div>
                     {renderSpecialties()}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Associated Projects */}
+            {projects.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Associated Projects</h3>
+                  <div className="grid gap-2">
+                    {loadingAssociations ? (
+                      <Skeleton className="h-16 w-full" />
+                    ) : (
+                      projects.map((project) => (
+                        <Card key={project.projectid} className="p-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-2">
+                              <Briefcase className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">{project.projectname || 'Unnamed Project'}</div>
+                                <div className="text-xs text-muted-foreground">{project.projectid}</div>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/projects/${project.projectid}`)}
+                            >
+                              View Project
+                            </Button>
+                          </div>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Associated Work Orders */}
+            {workOrders.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Work Orders</h3>
+                  <div className="grid gap-2">
+                    {loadingAssociations ? (
+                      <Skeleton className="h-16 w-full" />
+                    ) : (
+                      workOrders.map((workOrder) => (
+                        <Card key={workOrder.work_order_id} className="p-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-2">
+                              <LayoutList className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">{workOrder.title}</div>
+                                <div className="flex items-center gap-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {workOrder.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/workorders/${workOrder.work_order_id}`)}
+                            >
+                              View Work Order
+                            </Button>
+                          </div>
+                        </Card>
+                      ))
+                    )}
                   </div>
                 </div>
               </>
