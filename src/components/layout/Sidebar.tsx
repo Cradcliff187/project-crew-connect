@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   FolderKanban,
@@ -10,8 +11,6 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-import { MainNavItem } from "@/types/nav";
-import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -24,14 +23,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { usePathname, useRouter } from "next/navigation";
-import Link from "next/link";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+
+// Site config
+const siteConfig = {
+  name: "AKC LLC"
+};
 
 interface SidebarProps {
   className?: string;
-  items?: MainNavItem[];
+  items?: any[];
 }
 
 const mainNav = [
@@ -42,12 +45,12 @@ const mainNav = [
   },
   {
     title: "Projects",
-    href: "/Projects",
+    href: "/projects",
     icon: <FolderKanban className="h-5 w-5" />,
   },
   {
     title: "Estimates",
-    href: "/Estimates",
+    href: "/estimates",
     icon: <FileSpreadsheet className="h-5 w-5" />,
   },
   {
@@ -57,36 +60,38 @@ const mainNav = [
   },
   {
     title: "Contacts",
-    href: "/Contacts",
+    href: "/contacts",
     icon: <Users className="h-5 w-5" />,
   },
   {
     title: "Vendors",
-    href: "/Vendors",
+    href: "/vendors",
     icon: <Store className="h-5 w-5" />,
   },
   {
     title: "Subcontractors",
-    href: "/Subcontractors",
+    href: "/subcontractors",
     icon: <HardHat className="h-5 w-5" />,
   },
   {
     title: "Time Tracking",
-    href: "/TimeTracking",
+    href: "/time-tracking",
     icon: <Clock className="h-5 w-5" />,
   },
   {
     title: "Documents",
-    href: "/Documents",
+    href: "/documents",
     icon: <FileText className="h-5 w-5" />,
   },
 ];
 
 export function Sidebar({ className, items }: SidebarProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { data: session } = useSession();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
+  
+  // Mock session for now - in a real app, you'd use your authentication context
+  const session = null;
 
   useEffect(() => {
     setMounted(true);
@@ -100,19 +105,18 @@ export function Sidebar({ className, items }: SidebarProps) {
       )}
     >
       <ScrollArea className="flex-1 space-y-4 px-3">
-        <Link href="/" className="flex items-center space-x-2 px-2">
-          {/* <Icons.logo className="h-6 w-6" /> */}
+        <Link to="/" className="flex items-center space-x-2 px-2">
           <span className="font-bold">{siteConfig.name}</span>
         </Link>
         <Separator />
         <div className="space-y-1">
           {mainNav.map((item) => (
-            <Link key={item.title} href={item.href}>
+            <Link key={item.title} to={item.href}>
               <Button
                 variant="ghost"
                 className={cn(
                   "w-full justify-start gap-2",
-                  pathname === item.href
+                  location.pathname === item.href
                     ? "bg-secondary text-foreground hover:bg-secondary/80"
                     : "hover:bg-secondary/50"
                 )}
@@ -140,13 +144,13 @@ export function Sidebar({ className, items }: SidebarProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" forceMount>
-              <DropdownMenuItem onClick={() => router.push('/Settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => signOut()}>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => console.log('Sign out')}>Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button variant="secondary" onClick={() => router.push('/login')}>
+          <Button variant="secondary" onClick={() => navigate('/login')}>
             Login
           </Button>
         )}
@@ -154,3 +158,5 @@ export function Sidebar({ className, items }: SidebarProps) {
     </div>
   );
 }
+
+export default Sidebar;
