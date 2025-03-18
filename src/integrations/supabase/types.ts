@@ -554,6 +554,79 @@ export type Database = {
           },
         ]
       }
+      project_milestones: {
+        Row: {
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          is_completed: boolean
+          projectid: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean
+          projectid: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean
+          projectid?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_projectid_fkey"
+            columns: ["projectid"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["projectid"]
+          },
+        ]
+      }
+      project_progress: {
+        Row: {
+          created_at: string
+          id: string
+          progress_percentage: number
+          projectid: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          progress_percentage?: number
+          projectid: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          progress_percentage?: number
+          projectid?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_progress_projectid_fkey"
+            columns: ["projectid"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["projectid"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string

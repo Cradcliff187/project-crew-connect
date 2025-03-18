@@ -54,7 +54,7 @@ const ProjectMilestones = ({ projectId }: ProjectMilestonesProps) => {
           .order('due_date', { ascending: true });
         
         if (error) throw error;
-        setMilestones(data || []);
+        setMilestones(data as ProjectMilestone[]);
       } catch (error: any) {
         console.error('Error fetching project milestones:', error);
         setError(error.message);
@@ -144,7 +144,7 @@ const ProjectMilestones = ({ projectId }: ProjectMilestonesProps) => {
           
         if (error) throw error;
         
-        setMilestones([...milestones, data[0]]);
+        setMilestones([...milestones, data[0] as ProjectMilestone]);
         
         toast({
           title: 'Milestone added',

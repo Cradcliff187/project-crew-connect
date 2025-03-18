@@ -39,7 +39,7 @@ const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
           .maybeSingle();
         
         if (error) throw error;
-        setProgressData(data);
+        setProgressData(data as ProgressData);
         setProgressValue(data?.progress_percentage || 0);
       } catch (error: any) {
         console.error('Error fetching project progress:', error);
