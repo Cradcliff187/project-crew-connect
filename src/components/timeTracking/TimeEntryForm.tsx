@@ -264,9 +264,9 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         updated_at: new Date().toISOString()
       };
       
-      // Insert the time entry
+      // Insert the time entry using the view
       const { data: insertedEntry, error } = await supabase
-        .from('time_entries')
+        .from('time_entries_migration_view')
         .insert(timeEntry)
         .select('id')
         .single();
@@ -286,7 +286,12 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
             
           if (uploadError) throw uploadError;
           
-          // Add receipt record
+          // Add receipt record - this will fail until we create the time_entry_receipts table
+          console.log('Would add receipt record for file:', filePath);
+          /* 
+          We would normally add a receipt record here, but since the time_entry_receipts
+          table doesn't exist yet in Supabase, we'll just log the info for now.
+          
           const { error: receiptError } = await supabase
             .from('time_entry_receipts')
             .insert({
@@ -298,6 +303,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
             });
             
           if (receiptError) throw receiptError;
+          */
         }
       }
       

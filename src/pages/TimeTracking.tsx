@@ -31,7 +31,7 @@ const TimeTracking = () => {
     try {
       // Build the query based on the filter
       let query = supabase
-        .from('time_entries')
+        .from('time_entries_migration_view')
         .select(`
           id,
           entity_type,
@@ -162,7 +162,7 @@ const TimeTracking = () => {
   const handleDeleteEntry = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('time_entries')
+        .from('time_entries_migration_view')
         .delete()
         .eq('id', id);
         
