@@ -31,6 +31,7 @@ export interface WorkOrderTimelog {
   updated_at: string;
 }
 
+// New unified TimeEntry interface for time_entries table
 export interface TimeEntry {
   id: string;
   entity_type: 'work_order' | 'project';
@@ -52,6 +53,7 @@ export interface TimeEntry {
   updated_at: string;
 }
 
+// Form data for creating/updating time entries
 export interface TimeEntryFormData {
   entity_type: 'work_order' | 'project';
   entity_id: string;
@@ -73,4 +75,17 @@ export interface TimeEntryReceipt {
   file_size?: number;
   storage_path: string;
   uploaded_at: string;
+}
+
+export interface WorkOrderMaterial {
+  id: string;
+  work_order_id: string;
+  vendor_id: string | null;
+  material_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  receipt_document_id: string | null;
+  created_at: string;
+  updated_at: string;
 }

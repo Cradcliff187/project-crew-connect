@@ -62,7 +62,7 @@ const TimeTracking = () => {
       if (error) throw error;
       
       // Get entity names and employee details
-      const enhancedEntries = await Promise.all((data || []).map(async (entry) => {
+      const enhancedEntries = await Promise.all((data || []).map(async (entry: any) => {
         let entityName = 'Unknown';
         let entityLocation = '';
         let employeeName = '';
@@ -138,7 +138,7 @@ const TimeTracking = () => {
       let filteredEntries = enhancedEntries;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        filteredEntries = enhancedEntries.filter(entry => 
+        filteredEntries = enhancedEntries.filter((entry: any) => 
           (entry.entity_name && entry.entity_name.toLowerCase().includes(query)) ||
           (entry.entity_location && entry.entity_location.toLowerCase().includes(query)) ||
           (entry.employee_name && entry.employee_name.toLowerCase().includes(query)) ||

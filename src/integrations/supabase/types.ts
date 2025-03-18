@@ -1414,7 +1414,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      time_entries_migration_view: {
+        Row: {
+          created_at: string | null
+          date_worked: string | null
+          employee_id: string | null
+          employee_rate: number | null
+          end_time: string | null
+          entity_id: string | null
+          entity_type: string | null
+          has_receipts: boolean | null
+          hours_worked: number | null
+          id: string | null
+          location_data: Json | null
+          notes: string | null
+          start_time: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_customer_id: {
