@@ -131,7 +131,7 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
         // Fetch documents
         const { data: documentsData, error: documentsError } = await supabase
           .from('documents')
-          .select('document_id, file_name, category, created_at, file_type')
+          .select('document_id, file_name, category, created_at, file_type, storage_path')
           .eq('entity_id', workOrder.work_order_id)
           .eq('entity_type', 'WORK_ORDER');
           
@@ -141,13 +141,17 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
           // Get public URLs for documents
           const enhancedDocuments = await Promise.all(
             (documentsData || []).map(async (doc) => {
-              const { data } = supabase.storage
-                .from('construction_documents')
-                .getPublicUrl(doc.storage_path || '');
+              let url = '';
+              if (doc.storage_path) {
+                const { data } = supabase.storage
+                  .from('construction_documents')
+                  .getPublicUrl(doc.storage_path);
+                url = data.publicUrl;
+              }
               
               return {
                 ...doc,
-                url: data.publicUrl
+                url
               };
             })
           );
@@ -549,3 +553,4 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
 };
 
 export default WorkOrderDetails;
+
