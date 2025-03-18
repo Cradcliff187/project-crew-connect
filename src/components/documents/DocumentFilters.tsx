@@ -239,9 +239,19 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                       <CalendarComponent
                         initialFocus
                         mode="range"
-                        selected={tempFilters.dateRange}
-                        onSelect={(range) => handleTempFilterChange('dateRange', range)}
+                        selected={{
+                          from: tempFilters.dateRange?.from || undefined,
+                          to: tempFilters.dateRange?.to || undefined
+                        }}
+                        onSelect={(range) => {
+                          if (!range) {
+                            handleTempFilterChange('dateRange', undefined);
+                          } else {
+                            handleTempFilterChange('dateRange', range);
+                          }
+                        }}
                         numberOfMonths={1}
+                        className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
