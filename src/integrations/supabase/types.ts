@@ -460,6 +460,7 @@ export type Database = {
           materials_cost: number | null
           po_number: string | null
           priority: string | null
+          progress: number
           scheduled_date: string | null
           status: string | null
           time_estimate: number | null
@@ -479,6 +480,7 @@ export type Database = {
           materials_cost?: number | null
           po_number?: string | null
           priority?: string | null
+          progress?: number
           scheduled_date?: string | null
           status?: string | null
           time_estimate?: number | null
@@ -498,6 +500,7 @@ export type Database = {
           materials_cost?: number | null
           po_number?: string | null
           priority?: string | null
+          progress?: number
           scheduled_date?: string | null
           status?: string | null
           time_estimate?: number | null

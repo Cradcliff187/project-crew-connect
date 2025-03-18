@@ -43,7 +43,7 @@ export const workOrderToWorkItem = (workOrder: any): WorkItem => ({
   status: workOrder.status,
   customerId: workOrder.customer_id,
   createdAt: workOrder.created_at,
-  progress: workOrder.progress || 0,
+  progress: workOrder.progress,
   poNumber: workOrder.po_number,
   priority: workOrder.priority,
   dueDate: workOrder.scheduled_date,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -69,8 +68,7 @@ const ActiveWork = () => {
       
       const typedWorkOrders = data?.map(order => ({
         ...order,
-        status: order.status as any,
-        progress: order.progress || 0
+        status: order.status as any
       })) || [];
       
       return typedWorkOrders;

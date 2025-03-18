@@ -30,8 +30,7 @@ const WorkOrders = () => {
       // Cast the status to StatusType to satisfy TypeScript
       const typedWorkOrders = data?.map(order => ({
         ...order,
-        status: order.status as StatusType,
-        progress: order.progress || 0
+        status: order.status as StatusType
       })) || [];
       
       setWorkOrders(typedWorkOrders);
