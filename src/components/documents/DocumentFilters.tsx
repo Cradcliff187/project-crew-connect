@@ -1,11 +1,9 @@
 
 import React from 'react';
-import { Search, Filter, FileText, Receipt, FileBox, Shield, FileImage, File } from 'lucide-react';
+import { Search, Filter, Check, X, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Card } from '@/components/ui/card';
 import { 
   Select, 
   SelectContent, 
@@ -13,14 +11,37 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn, formatDate } from '@/lib/utils';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { DocumentCategory, EntityType, entityTypes } from './schemas/documentSchema';
+import DocumentCategorySelector from './DocumentCategorySelector';
 
 interface FilterOptions {
   search: string;
   category?: DocumentCategory;
   entityType?: EntityType;
   isExpense?: boolean;
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
   sortBy?: string;
+  view: 'all' | 'expenses' | 'documents';
 }
 
 interface DocumentFiltersProps {
@@ -36,203 +57,290 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   onReset,
   activeFiltersCount
 }) => {
-  const handleCategoryChange = (value: string) => {
-    onFilterChange({ 
-      ...filters, 
-      category: value === 'all' ? undefined : value as DocumentCategory 
-    });
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [tempFilters, setTempFilters] = React.useState<FilterOptions>(filters);
+
+  // Reset temp filters when dialog opens
+  React.useEffect(() => {
+    if (isDialogOpen) {
+      setTempFilters(filters);
+    }
+  }, [isDialogOpen, filters]);
+
+  const handleTabChange = (value: string) => {
+    const newFilters = { ...filters, view: value as 'all' | 'expenses' | 'documents' };
+    
+    // Auto-set expense filter based on tab
+    if (value === 'expenses') {
+      newFilters.isExpense = true;
+    } else if (value === 'documents') {
+      newFilters.isExpense = false;
+    } else {
+      newFilters.isExpense = undefined;
+    }
+    
+    onFilterChange(newFilters);
   };
 
-  const handleEntityTypeChange = (value: string) => {
-    onFilterChange({ 
-      ...filters, 
-      entityType: value === 'all' ? undefined : value as EntityType 
-    });
+  const handleApplyFilters = () => {
+    onFilterChange(tempFilters);
+    setIsDialogOpen(false);
   };
 
-  const handleSortChange = (value: string) => {
-    onFilterChange({ ...filters, sortBy: value });
+  const handleTempFilterChange = (key: keyof FilterOptions, value: any) => {
+    setTempFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleExpenseFilterChange = (value: string) => {
-    onFilterChange({ 
-      ...filters, 
-      isExpense: value === 'all' ? undefined : value === 'yes' 
-    });
+  const handleRemoveFilter = (filterKey: keyof FilterOptions) => {
+    const newFilters = { ...filters };
+    
+    if (filterKey === 'category') {
+      newFilters.category = undefined;
+    } else if (filterKey === 'entityType') {
+      newFilters.entityType = undefined;
+    } else if (filterKey === 'dateRange') {
+      newFilters.dateRange = undefined;
+    }
+    
+    onFilterChange(newFilters);
   };
+
+  const dateRangeText = filters.dateRange?.from && filters.dateRange?.to 
+    ? `${formatDate(filters.dateRange.from)} - ${formatDate(filters.dateRange.to)}`
+    : filters.dateRange?.from 
+      ? `From ${formatDate(filters.dateRange.from)}`
+      : filters.dateRange?.to 
+        ? `Until ${formatDate(filters.dateRange.to)}`
+        : undefined;
 
   return (
-    <Card className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-[#0485ea]" />
-          <h3 className="font-medium text-[#0485ea]">Filter Documents</h3>
-          {activeFiltersCount > 0 && (
-            <Badge variant="secondary">{activeFiltersCount}</Badge>
-          )}
+    <div className="space-y-4 w-full">
+      {/* Tabs for high-level filtering */}
+      <Tabs
+        defaultValue="all"
+        value={filters.view}
+        onValueChange={handleTabChange}
+        className="w-full"
+      >
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* Search Bar */}
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search documents..."
+            className="pl-8"
+            value={filters.search}
+            onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
+          />
         </div>
-        {activeFiltersCount > 0 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onReset} 
-            className="h-8 text-sm"
+        
+        {/* Sort and Filter Buttons */}
+        <div className="flex items-center gap-2">
+          <Select
+            value={filters.sortBy || 'newest'}
+            onValueChange={(value) => onFilterChange({ ...filters, sortBy: value })}
           >
-            Clear All
-          </Button>
-        )}
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+              <SelectItem value="name_desc">Name (Z-A)</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Button 
+              onClick={() => setIsDialogOpen(true)} 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              <Filter className="h-4 w-4 text-[#0485ea]" />
+              <span>Filter</span>
+              {activeFiltersCount > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full">
+                  {activeFiltersCount}
+                </Badge>
+              )}
+            </Button>
+            
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Filter Documents</DialogTitle>
+                <DialogDescription>
+                  Apply filters to narrow down your document list
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                {/* Document Category */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Document Type</h4>
+                  <DocumentCategorySelector
+                    value={tempFilters.category || 'other'}
+                    onChange={(category) => handleTempFilterChange('category', category)}
+                  />
+                </div>
+                
+                {/* Entity Type */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Related To</h4>
+                  <Select
+                    value={tempFilters.entityType || 'all'}
+                    onValueChange={(value) => 
+                      handleTempFilterChange('entityType', value === 'all' ? undefined : value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All entities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All entities</SelectItem>
+                      {entityTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Date Range */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Date Range</h4>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {tempFilters.dateRange?.from || tempFilters.dateRange?.to ? (
+                          <span>
+                            {tempFilters.dateRange.from && formatDate(tempFilters.dateRange.from)}
+                            {tempFilters.dateRange.from && tempFilters.dateRange.to && " - "}
+                            {tempFilters.dateRange.to && formatDate(tempFilters.dateRange.to)}
+                          </span>
+                        ) : (
+                          <span>Pick a date range</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        initialFocus
+                        mode="range"
+                        selected={tempFilters.dateRange}
+                        onSelect={(range) => handleTempFilterChange('dateRange', range)}
+                        numberOfMonths={1}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              
+              <DialogFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => {
+                  setTempFilters({
+                    ...filters,
+                    category: undefined,
+                    entityType: undefined,
+                    dateRange: undefined
+                  });
+                }}>
+                  Reset Filters
+                </Button>
+                <Button 
+                  onClick={handleApplyFilters}
+                  className="bg-[#0485ea] hover:bg-[#0375d1]"
+                >
+                  Apply Filters
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
       
-      <Separator />
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Select
-          value={filters.category !== undefined ? filters.category : 'all'}
-          onValueChange={handleCategoryChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Document Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="invoice">
-              <div className="flex items-center">
-                <FileText className="h-4 w-4 mr-2" />
-                <span>Invoice</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="receipt">
-              <div className="flex items-center">
-                <Receipt className="h-4 w-4 mr-2" />
-                <span>Receipt</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="estimate">
-              <div className="flex items-center">
-                <FileText className="h-4 w-4 mr-2 text-blue-600" />
-                <span>Estimate</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="contract">
-              <div className="flex items-center">
-                <FileBox className="h-4 w-4 mr-2" />
-                <span>Contract</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="insurance">
-              <div className="flex items-center">
-                <Shield className="h-4 w-4 mr-2" />
-                <span>Insurance</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="certification">
-              <div className="flex items-center">
-                <Shield className="h-4 w-4 mr-2" />
-                <span>Certification</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="photo">
-              <div className="flex items-center">
-                <FileImage className="h-4 w-4 mr-2" />
-                <span>Photo</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="other">
-              <div className="flex items-center">
-                <File className="h-4 w-4 mr-2" />
-                <span>Other</span>
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select
-          value={filters.entityType !== undefined ? filters.entityType : 'all'}
-          onValueChange={handleEntityTypeChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Related To" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Entities</SelectItem>
-            {entityTypes.map((type) => (
-              <SelectItem key={type} value={type}>
-                {type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Select
-          value={filters.isExpense === undefined ? 'all' : filters.isExpense ? 'yes' : 'no'}
-          onValueChange={handleExpenseFilterChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Document Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Documents</SelectItem>
-            <SelectItem value="yes">Expenses Only</SelectItem>
-            <SelectItem value="no">Non-Expenses Only</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select
-          value={filters.sortBy || 'newest'}
-          onValueChange={handleSortChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sort By" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest First</SelectItem>
-            <SelectItem value="oldest">Oldest First</SelectItem>
-            <SelectItem value="name_asc">Name (A-Z)</SelectItem>
-            <SelectItem value="name_desc">Name (Z-A)</SelectItem>
-            <SelectItem value="size_asc">Size (Smallest)</SelectItem>
-            <SelectItem value="size_desc">Size (Largest)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
+      {/* Active Filters Display */}
       {activeFiltersCount > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
           {filters.category && (
-            <Badge variant="outline" className="flex items-center gap-1 bg-gray-50">
-              {filters.category}
-              <button 
-                className="ml-1 hover:bg-gray-200 rounded-full w-4 h-4 inline-flex items-center justify-center"
-                onClick={() => handleCategoryChange('all')}
+            <Badge 
+              variant="outline" 
+              className="flex items-center gap-1 bg-gray-50 px-2 py-1"
+            >
+              <span>Type: {filters.category}</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-4 w-4 p-0 ml-1" 
+                onClick={() => handleRemoveFilter('category')}
               >
-                ×
-              </button>
+                <X className="h-3 w-3" />
+                <span className="sr-only">Remove</span>
+              </Button>
             </Badge>
           )}
+          
           {filters.entityType && (
-            <Badge variant="outline" className="flex items-center gap-1 bg-gray-50">
-              {filters.entityType.replace('_', ' ').toLowerCase()}
-              <button 
-                className="ml-1 hover:bg-gray-200 rounded-full w-4 h-4 inline-flex items-center justify-center"
-                onClick={() => handleEntityTypeChange('all')}
+            <Badge 
+              variant="outline" 
+              className="flex items-center gap-1 bg-gray-50 px-2 py-1"
+            >
+              <span>Related to: {filters.entityType.replace('_', ' ').toLowerCase()}</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-4 w-4 p-0 ml-1" 
+                onClick={() => handleRemoveFilter('entityType')}
               >
-                ×
-              </button>
+                <X className="h-3 w-3" />
+                <span className="sr-only">Remove</span>
+              </Button>
             </Badge>
           )}
-          {filters.isExpense !== undefined && (
-            <Badge variant="outline" className="flex items-center gap-1 bg-gray-50">
-              {filters.isExpense ? 'Expenses Only' : 'Non-Expenses Only'}
-              <button 
-                className="ml-1 hover:bg-gray-200 rounded-full w-4 h-4 inline-flex items-center justify-center"
-                onClick={() => handleExpenseFilterChange('all')}
+          
+          {dateRangeText && (
+            <Badge 
+              variant="outline" 
+              className="flex items-center gap-1 bg-gray-50 px-2 py-1"
+            >
+              <span>Date: {dateRangeText}</span>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-4 w-4 p-0 ml-1" 
+                onClick={() => handleRemoveFilter('dateRange')}
               >
-                ×
-              </button>
+                <X className="h-3 w-3" />
+                <span className="sr-only">Remove</span>
+              </Button>
             </Badge>
+          )}
+          
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={onReset}
+            >
+              Clear all
+            </Button>
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 

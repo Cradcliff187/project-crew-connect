@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -6,7 +7,6 @@ import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Filter, Download, Trash2, Eye, MoreVertical } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -18,7 +18,6 @@ import {
 import { 
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger 
 } from "@/components/ui/sheet";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import DocumentFilters from '@/components/documents/DocumentFilters';
 import DocumentCard from '@/components/documents/DocumentCard';
@@ -28,7 +27,6 @@ import { formatDate } from '@/lib/utils';
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(!isMobile);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -39,13 +37,18 @@ const DocumentsPage: React.FC = () => {
     category: undefined as DocumentCategory | undefined,
     entityType: undefined as EntityType | undefined,
     isExpense: undefined as boolean | undefined,
-    sortBy: 'newest'
+    dateRange: undefined as { from?: Date; to?: Date } | undefined,
+    sortBy: 'newest',
+    view: 'all' as 'all' | 'expenses' | 'documents'
   });
 
   // Count active filters
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
     if (key === 'sortBy' && value === 'newest') return false;
     if (key === 'search' && !value) return false;
+    if (key === 'view' && value === 'all') return false;
+    if (key === 'isExpense' && value === undefined) return false;
+    if (key === 'dateRange' && !value) return false;
     return value !== undefined;
   }).length;
 
@@ -77,6 +80,18 @@ const DocumentsPage: React.FC = () => {
 
       if (filters.isExpense !== undefined) {
         query = query.eq('is_expense', filters.isExpense);
+      }
+      
+      // Apply date range filter if set
+      if (filters.dateRange?.from) {
+        query = query.gte('created_at', filters.dateRange.from.toISOString());
+      }
+      
+      if (filters.dateRange?.to) {
+        // Add one day to include the end date fully
+        const endDate = new Date(filters.dateRange.to);
+        endDate.setDate(endDate.getDate() + 1);
+        query = query.lt('created_at', endDate.toISOString());
       }
 
       // Apply sorting
@@ -182,7 +197,9 @@ const DocumentsPage: React.FC = () => {
       category: undefined,
       entityType: undefined,
       isExpense: undefined,
-      sortBy: 'newest'
+      dateRange: undefined,
+      sortBy: 'newest',
+      view: 'all'
     });
   };
 
@@ -195,237 +212,173 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({ ...filters, search: e.target.value });
-  };
-
   return (
     <PageTransition>
       <div className="container py-4 md:py-6 space-y-6">
-        {/* Header with Search and Upload button */}
+        {/* Header with title and Upload button */}
         <div className="flex justify-between items-center">
           <h1 className="text-xl md:text-2xl font-semibold text-[#0485ea]">Documents</h1>
-          <div className="flex items-center gap-2">
-            {!isMobile && (
-              <div className="relative w-64">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search documents..."
-                  className="pl-8"
-                  value={filters.search}
-                  onChange={handleSearchChange}
-                />
-              </div>
-            )}
-            {isMobile && (
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="top">
-                  <SheetHeader className="mb-4">
-                    <SheetTitle>Search Documents</SheetTitle>
-                  </SheetHeader>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search documents..."
-                      className="pl-8"
-                      value={filters.search}
-                      onChange={handleSearchChange}
-                    />
-                  </div>
-                </SheetContent>
-              </Sheet>
-            )}
-            {isMobile && (
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader className="mb-4">
-                    <SheetTitle>Filter Documents</SheetTitle>
-                  </SheetHeader>
-                  <DocumentFilters
-                    filters={filters}
-                    onFilterChange={handleFilterChange}
-                    onReset={handleResetFilters}
-                    activeFiltersCount={activeFiltersCount}
-                  />
-                </SheetContent>
-              </Sheet>
-            )}
-            <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-[#0485ea] hover:bg-[#0375d1]" size={isMobile ? "icon" : "default"}>
-                  <Plus className="h-4 w-4" />
-                  {!isMobile && <span>Add Document</span>}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className={isMobile ? "w-[95vw] max-w-[600px]" : "sm:max-w-[600px]"}>
-                <DialogHeader>
-                  <DialogTitle>Upload Document</DialogTitle>
-                  <DialogDescription>
-                    Upload and categorize a new document to your system.
-                  </DialogDescription>
-                </DialogHeader>
-                <EnhancedDocumentUpload 
-                  entityType="PROJECT" 
-                  onSuccess={handleUploadSuccess}
-                  onCancel={() => setIsUploadOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
-          </div>
+          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#0485ea] hover:bg-[#0375d1]" size={isMobile ? "icon" : "default"}>
+                <Plus className="h-4 w-4" />
+                {!isMobile && <span>Add Document</span>}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className={isMobile ? "w-[95vw] max-w-[600px]" : "sm:max-w-[600px]"}>
+              <DialogHeader>
+                <DialogTitle>Upload Document</DialogTitle>
+                <DialogDescription>
+                  Upload and categorize a new document to your system.
+                </DialogDescription>
+              </DialogHeader>
+              <EnhancedDocumentUpload 
+                entityType="PROJECT" 
+                onSuccess={handleUploadSuccess}
+                onCancel={() => setIsUploadOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Separator />
+        
+        {/* Unified Filter Area */}
+        <DocumentFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilters}
+          activeFiltersCount={activeFiltersCount}
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Filters Panel - Desktop Only */}
-          <div className="hidden lg:block">
-            <DocumentFilters
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onReset={handleResetFilters}
-              activeFiltersCount={activeFiltersCount}
-            />
-          </div>
-
-          {/* Documents Content Area */}
-          <div className="lg:col-span-3 space-y-4">
-            {loading ? (
-              // Loading state
-              <div className="flex flex-col gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-md"></div>
+        {/* Documents Content Area */}
+        <div className="space-y-4">
+          {loading ? (
+            // Loading state
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-md"></div>
+              ))}
+            </div>
+          ) : documents.length === 0 ? (
+            // Empty state
+            <div className="bg-white rounded-md shadow-sm border p-8 text-center">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <div className="p-3 rounded-full bg-[#0485ea]/10">
+                  <Filter className="h-10 w-10 text-[#0485ea]" />
+                </div>
+                <h3 className="text-lg font-semibold">No documents found</h3>
+                <p className="text-muted-foreground max-w-md">
+                  {activeFiltersCount > 0 
+                    ? "Try adjusting your filters or uploading new documents." 
+                    : "Upload your first document to get started."}
+                </p>
+                <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="mt-4 bg-[#0485ea] hover:bg-[#0375d1]">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Upload Document
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>Upload Document</DialogTitle>
+                      <DialogDescription>
+                        Upload a new document to your system.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <EnhancedDocumentUpload 
+                      entityType="PROJECT" 
+                      onSuccess={handleUploadSuccess}
+                      onCancel={() => setIsUploadOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Mobile Card View */}
+              <div className="md:hidden grid grid-cols-1 gap-3">
+                {documents.map((document) => (
+                  <DocumentCard
+                    key={document.document_id}
+                    document={document}
+                    onView={() => handleDocumentSelect(document)}
+                    onDelete={() => {
+                      setSelectedDocument(document);
+                      setIsDeleteOpen(true);
+                    }}
+                  />
                 ))}
               </div>
-            ) : documents.length === 0 ? (
-              // Empty state
-              <div className="bg-white rounded-md shadow-sm border p-8 text-center">
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <div className="p-3 rounded-full bg-[#0485ea]/10">
-                    <Filter className="h-10 w-10 text-[#0485ea]" />
-                  </div>
-                  <h3 className="text-lg font-semibold">No documents found</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    {activeFiltersCount > 0 
-                      ? "Try adjusting your filters or uploading new documents." 
-                      : "Upload your first document to get started."}
-                  </p>
-                  <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="mt-4 bg-[#0485ea] hover:bg-[#0375d1]">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Upload Document
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[600px]">
-                      <DialogHeader>
-                        <DialogTitle>Upload Document</DialogTitle>
-                        <DialogDescription>
-                          Upload a new document to your system.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <EnhancedDocumentUpload 
-                        entityType="PROJECT" 
-                        onSuccess={handleUploadSuccess}
-                        onCancel={() => setIsUploadOpen(false)}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Mobile Card View */}
-                <div className="md:hidden grid grid-cols-1 gap-3">
-                  {documents.map((document) => (
-                    <DocumentCard
-                      key={document.document_id}
-                      document={document}
-                      onView={() => handleDocumentSelect(document)}
-                      onDelete={() => {
-                        setSelectedDocument(document);
-                        setIsDeleteOpen(true);
-                      }}
-                    />
-                  ))}
-                </div>
 
-                {/* Desktop Table View */}
-                <div className="hidden md:block relative overflow-x-auto shadow-md sm:rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>File Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Entity</TableHead>
-                        <TableHead>Added</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+              {/* Desktop Table View */}
+              <div className="hidden md:block relative overflow-x-auto shadow-md sm:rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>File Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Entity</TableHead>
+                      <TableHead>Added</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.map((document) => (
+                      <TableRow key={document.document_id}>
+                        <TableCell className="font-medium">{document.file_name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {document.category || 'Other'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{document.entity_type.replace('_', ' ').toLowerCase()}</TableCell>
+                        <TableCell>{formatDate(document.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleDocumentSelect(document)}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  if (document.url) {
+                                    window.open(document.url, '_blank');
+                                  }
+                                }}
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Download
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setSelectedDocument(document);
+                                  setIsDeleteOpen(true);
+                                }}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {documents.map((document) => (
-                        <TableRow key={document.document_id}>
-                          <TableCell className="font-medium">{document.file_name}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {document.category || 'Other'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{document.entity_type.replace('_', ' ').toLowerCase()}</TableCell>
-                          <TableCell>{formatDate(document.created_at)}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleDocumentSelect(document)}>
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    if (document.url) {
-                                      window.open(document.url, '_blank');
-                                    }
-                                  }}
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  Download
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    setSelectedDocument(document);
-                                    setIsDeleteOpen(true);
-                                  }}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </>
-            )}
-          </div>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Document Detail Dialog */}
