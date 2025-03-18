@@ -3,14 +3,10 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { useSidebarContext } from './SidebarContext';
 
 const Layout = () => {
-  // We still use the existing context for compatibility
-  const { isOpen, toggleSidebar } = useSidebarContext();
-  
   return (
-    <SidebarProvider defaultOpen={isOpen} open={isOpen} onOpenChange={toggleSidebar}>
+    <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden">
         <AppSidebar />
         <SidebarInset className="flex flex-col">

@@ -38,7 +38,6 @@ export function AppSidebar() {
   return (
     <Sidebar 
       collapsible="offcanvas" 
-      data-sidebar="sidebar" 
       className="bg-[#0485ea] text-white"
     >
       <SidebarHeader className="p-4">
