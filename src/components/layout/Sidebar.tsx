@@ -39,7 +39,11 @@ const Sidebar = () => {
       <div className="flex h-full flex-col px-4 py-6">
         <div className="mb-8 flex items-center px-2">
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/akc-logo.png" alt="AKC LLC Logo" className="h-8 w-auto" />
+            <img 
+              src="/akc-logo.png" 
+              alt="AKC LLC Logo" 
+              className="h-8 w-auto bg-white rounded-sm p-1" 
+            />
             <span className="text-xl font-bold text-white">AKC LLC</span>
           </Link>
         </div>
