@@ -7,7 +7,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Subcontractor, Specialty } from './utils/subcontractorUtils';
 import { StatusType } from '@/types/common';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
-import { Edit, Eye, Trash, CheckCircle2, AlertTriangle, ClipboardList } from 'lucide-react';
+import { Edit, Eye, Trash, ClipboardList } from 'lucide-react';
 import InsuranceStatus from './InsuranceStatus';
 
 interface SubcontractorRowProps {
@@ -23,7 +23,7 @@ export const mapStatusToStatusBadge = (status: string | null): StatusType => {
     "ACTIVE": "active",
     "INACTIVE": "inactive",
     "QUALIFIED": "qualified",
-    "VERIFIED": "qualified",
+    "VERIFIED": "verified",
     "PENDING": "pending",
     "REJECTED": "rejected"
   };

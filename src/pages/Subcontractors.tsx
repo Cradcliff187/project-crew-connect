@@ -27,7 +27,16 @@ const Subcontractors = () => {
         throw error;
       }
       
-      setSubcontractors(data || []);
+      // Ensure any null values are properly handled for new fields
+      const processedData = data?.map(sub => ({
+        ...sub,
+        payment_terms: sub.payment_terms || null,
+        insurance_required: sub.insurance_required === null ? true : sub.insurance_required,
+        insurance_expiry: sub.insurance_expiry || null,
+        notes: sub.notes || null
+      })) as Subcontractor[];
+      
+      setSubcontractors(processedData || []);
     } catch (error: any) {
       console.error('Error fetching subcontractors:', error);
       setError(error.message);

@@ -25,9 +25,19 @@ export const projectToWorkItem = (project: any): WorkItem => {
   // First get the status with a default
   const rawStatus = project.status?.toLowerCase() || '';
   // Then map it to a valid StatusType
-  const status: StatusType = ['active', 'completed', 'pending', 'cancelled', 'on-hold'].includes(rawStatus) 
-    ? rawStatus as StatusType 
-    : 'not_set';
+  let status: StatusType;
+  
+  switch (rawStatus) {
+    case 'active':
+    case 'completed':
+    case 'pending':
+    case 'cancelled':
+    case 'on-hold':
+      status = rawStatus as StatusType;
+      break;
+    default:
+      status = 'not_set';
+  }
     
   return {
     id: project.projectid,
@@ -52,9 +62,19 @@ export const workOrderToWorkItem = (workOrder: WorkOrder): WorkItem => {
   // First get the status with a default
   const rawStatus = workOrder.status?.toLowerCase() || '';
   // Then map it to a valid StatusType
-  const status: StatusType = ['active', 'completed', 'pending', 'cancelled', 'on-hold'].includes(rawStatus) 
-    ? rawStatus as StatusType 
-    : 'not_set';
+  let status: StatusType;
+  
+  switch (rawStatus) {
+    case 'active':
+    case 'completed':
+    case 'pending':
+    case 'cancelled':
+    case 'on-hold':
+      status = rawStatus as StatusType;
+      break;
+    default:
+      status = 'not_set';
+  }
     
   return {
     id: workOrder.work_order_id,

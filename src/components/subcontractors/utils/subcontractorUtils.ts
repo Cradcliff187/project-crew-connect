@@ -21,6 +21,7 @@ export interface Subcontractor {
 export interface Specialty {
   id: string;
   specialty: string;
+  description?: string | null;
 }
 
 export const formatSubcontractorAddress = (subcontractor: Subcontractor): string => {

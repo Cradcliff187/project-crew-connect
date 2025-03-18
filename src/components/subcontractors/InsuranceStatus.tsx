@@ -64,7 +64,7 @@ const InsuranceStatus: React.FC<InsuranceStatusProps> = ({ expiryDate, isRequire
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge variant="outline" className="flex items-center gap-1 bg-amber-500 text-white hover:bg-amber-600">
+            <Badge variant="secondary" className="flex items-center gap-1 bg-amber-500 text-white hover:bg-amber-600">
               <AlertTriangle className="h-3.5 w-3.5" />
               Expiring Soon
             </Badge>

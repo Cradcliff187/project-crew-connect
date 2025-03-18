@@ -4,9 +4,10 @@ import { WorkOrder } from '@/types/workOrder';
 
 interface WorkOrderHeaderProps {
   workOrder: WorkOrder;
+  onUpdate?: () => void;
 }
 
-const WorkOrderHeader: React.FC<WorkOrderHeaderProps> = ({ workOrder }) => {
+const WorkOrderHeader: React.FC<WorkOrderHeaderProps> = ({ workOrder, onUpdate }) => {
   return (
     <div className="mb-6">
       <h1 className="text-2xl font-bold text-[#0485ea]">{workOrder.title}</h1>

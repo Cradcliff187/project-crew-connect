@@ -19,7 +19,8 @@ export type StatusType =
   | 'potential'
   | 'prospect'
   | 'sent'
-  | 'rejected';
+  | 'rejected'
+  | 'verified';
 
 export interface Option {
   label: string;

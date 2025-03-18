@@ -1,279 +1,176 @@
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useBudgetIntegration } from '@/hooks/useBudgetIntegration';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Link2, FileDigit, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { WorkOrderLinkDetail } from '@/types/workOrderLinks';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
-interface Project {
-  projectid: string;
-  projectname: string;
-}
-
-interface BudgetItem {
-  id: string;
-  category: string;
-  description: string;
+// Define the type for the RPC response
+interface WorkOrderProjectLinkResponse {
+  project_id: string;
+  budget_item_id: string;
 }
 
 interface WorkOrderProjectLinkProps {
   workOrderId: string;
-  onLinkComplete?: () => void;
+  onLinkComplete: () => void;
 }
 
-const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({ 
-  workOrderId,
-  onLinkComplete
-}) => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [selectedBudgetItem, setSelectedBudgetItem] = useState<string | null>(null);
-  const [existingLink, setExistingLink] = useState<WorkOrderLinkDetail | null>(null);
+const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({ workOrderId, onLinkComplete }) => {
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [budgetItemId, setBudgetItemId] = useState<string | null>(null);
+  const [hasLink, setHasLink] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  const { linkWorkOrderToProject, importWorkOrderCosts, isLoading } = useBudgetIntegration();
-
-  // Fetch existing link if any
+  const [isSaving, setIsSaving] = useState(false);
+  
   useEffect(() => {
-    const fetchExistingLink = async () => {
-      setLoading(true);
-      try {
-        // Instead of querying the table directly, we'll use a custom RPC function
-        // that's added to the database to avoid type issues
-        const { data, error } = await supabase
-          .rpc('get_work_order_project_link', { work_order_id: workOrderId });
-        
-        if (error && error.message !== 'No rows returned') {
-          console.error('Error fetching work order link:', error);
-        }
-        
-        if (data && data[0]) {
-          const linkData = data[0];
-          setExistingLink({
-            project_id: linkData.project_id,
-            budget_item_id: linkData.budget_item_id
-          });
-          setSelectedProject(linkData.project_id);
-          setSelectedBudgetItem(linkData.budget_item_id);
-        }
-        
-        // Also check if the work order has a project_id directly
-        const { data: workOrder, error: woError } = await supabase
-          .from('maintenance_work_orders')
-          .select('project_id')
-          .eq('work_order_id', workOrderId)
-          .single();
-        
-        if (woError && woError.message !== 'No rows returned') {
-          console.error('Error fetching work order:', woError);
-        }
-        
-        if (workOrder?.project_id && !selectedProject) {
-          setSelectedProject(workOrder.project_id);
-        }
-      } catch (error) {
-        console.error('Error in fetchExistingLink:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchExistingLink();
-  }, [workOrderId, selectedProject]);
-
-  // Fetch list of active projects
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('projectid, projectname')
-          .in('status', ['active', 'in_progress', 'on_track'])
-          .order('createdon', { ascending: false });
-        
-        if (error) throw error;
-        setProjects(data || []);
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load projects. Please try again.',
-          variant: 'destructive'
-        });
-      }
-    };
-    
-    fetchProjects();
-  }, []);
-
-  // Fetch budget items when a project is selected
-  useEffect(() => {
-    const fetchBudgetItems = async () => {
-      if (!selectedProject) {
-        setBudgetItems([]);
-        return;
-      }
+    fetchProjectLink();
+  }, [workOrderId]);
+  
+  const fetchProjectLink = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .rpc('get_work_order_project_link', { work_order_id: workOrderId }) as { 
+          data: WorkOrderProjectLinkResponse[] | null, 
+          error: any 
+        };
       
-      try {
-        const { data, error } = await supabase
-          .from('project_budget_items')
-          .select('id, category, description')
-          .eq('project_id', selectedProject)
-          .order('category', { ascending: true });
-        
-        if (error) throw error;
-        setBudgetItems(data || []);
-      } catch (error) {
-        console.error('Error fetching budget items:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load budget items. Please try again.',
-          variant: 'destructive'
-        });
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const linkData = data[0]; // Access the first item in the array
+        setCurrentProjectId(linkData.project_id);
+        setBudgetItemId(linkData.budget_item_id);
+        setHasLink(true);
       }
-    };
-    
-    fetchBudgetItems();
-  }, [selectedProject]);
-
-  const handleLinkProject = async () => {
-    if (!selectedProject) {
+    } catch (error: any) {
+      console.error('Error fetching project link:', error);
       toast({
-        title: 'Selection Required',
-        description: 'Please select a project to link this work order to.',
+        title: 'Error',
+        description: 'Failed to load project link information',
         variant: 'destructive'
       });
-      return;
-    }
-    
-    const success = await linkWorkOrderToProject(
-      workOrderId, 
-      selectedProject, 
-      selectedBudgetItem || undefined
-    );
-    
-    if (success && onLinkComplete) {
-      onLinkComplete();
+    } finally {
+      setLoading(false);
     }
   };
-
-  const handleImportCosts = async () => {
-    if (!selectedProject) {
+  
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.from('work_order_project_links').insert([
+        {
+          work_order_id: workOrderId,
+          project_id: currentProjectId,
+          budget_item_id: budgetItemId
+        }
+      ]);
+      
+      if (error) throw error;
+      
       toast({
-        title: 'Selection Required',
-        description: 'Please select a project to import costs to.',
+        title: 'Success',
+        description: 'Work order linked to project successfully!',
+        duration: 3000
+      });
+      
+      setHasLink(true);
+      onLinkComplete();
+    } catch (error: any) {
+      console.error('Error linking work order to project:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to link work order to project',
         variant: 'destructive'
       });
-      return;
-    }
-    
-    const success = await importWorkOrderCosts(workOrderId, selectedProject);
-    
-    if (success && onLinkComplete) {
-      onLinkComplete();
+    } finally {
+      setIsSaving(false);
     }
   };
-
-  if (loading) {
-    return <Skeleton className="h-48 w-full" />;
-  }
-
+  
+  const handleUpdate = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .rpc('link_work_order_to_project', {
+          p_work_order_id: workOrderId,
+          p_project_id: currentProjectId,
+          p_budget_item_id: budgetItemId
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Work order link updated successfully!',
+        duration: 3000
+      });
+      
+      onLinkComplete();
+    } catch (error: any) {
+      console.error('Error updating work order link:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update work order link',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center">
-          <Link2 className="mr-2 h-5 w-5 text-muted-foreground" />
-          Link to Project Budget
-        </CardTitle>
+        <CardTitle>Project Link</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {existingLink && (
-          <div className="bg-blue-50 p-3 rounded-md text-sm flex items-start mb-4">
-            <FileDigit className="h-5 w-5 mr-2 text-blue-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-blue-700">This work order is linked to a project</p>
-              <p className="text-blue-600">Changes here will update the existing link</p>
+      <CardContent>
+        {loading ? (
+          <p>Loading project link...</p>
+        ) : (
+          <>
+            {hasLink ? (
+              <p className="text-sm text-muted-foreground">
+                This work order is linked to project <span className="font-semibold">{currentProjectId}</span>
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This work order is not currently linked to a project.
+              </p>
+            )}
+            
+            <div className="mt-4 space-y-2">
+              <div>
+                <label className="text-sm text-muted-foreground block">Project ID:</label>
+                <Input
+                  type="text"
+                  value={currentProjectId || ''}
+                  onChange={(e) => setCurrentProjectId(e.target.value)}
+                  placeholder="Enter Project ID"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground block">Budget Item ID:</label>
+                <Input
+                  type="text"
+                  value={budgetItemId || ''}
+                  onChange={(e) => setBudgetItemId(e.target.value)}
+                  placeholder="Enter Budget Item ID"
+                />
+              </div>
             </div>
-          </div>
-        )}
-        
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Project</label>
-          <Select 
-            value={selectedProject || undefined} 
-            onValueChange={setSelectedProject}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a project" />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((project) => (
-                <SelectItem key={project.projectid} value={project.projectid}>
-                  {project.projectname}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {selectedProject && budgetItems.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Budget Category (Optional)</label>
-            <Select 
-              value={selectedBudgetItem || undefined} 
-              onValueChange={setSelectedBudgetItem}
+            
+            <Button 
+              className="mt-4 w-full bg-[#0485ea] hover:bg-[#0375d1]"
+              onClick={hasLink ? handleUpdate : handleSave}
+              disabled={isSaving}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a budget category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">None (General)</SelectItem>
-                {budgetItems.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.category}: {item.description.substring(0, 30)}{item.description.length > 30 ? '...' : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        
-        {selectedProject && budgetItems.length === 0 && (
-          <div className="bg-amber-50 p-3 rounded-md text-sm flex items-start">
-            <AlertTriangle className="h-5 w-5 mr-2 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-amber-700">No budget items found</p>
-              <p className="text-amber-600">This project has no budget items defined. The work order will be linked to the project but not to a specific budget category.</p>
-            </div>
-          </div>
+              {isSaving ? 'Saving...' : hasLink ? 'Update Link' : 'Create Link'}
+            </Button>
+          </>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button 
-          variant="outline" 
-          onClick={handleLinkProject}
-          disabled={isLoading || !selectedProject}
-        >
-          <Link2 className="mr-2 h-4 w-4" />
-          {existingLink ? 'Update Link' : 'Link to Project'}
-        </Button>
-        
-        <Button 
-          variant="default"
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-          onClick={handleImportCosts}
-          disabled={isLoading || !selectedProject}
-        >
-          <FileDigit className="mr-2 h-4 w-4" />
-          Import Costs to Budget
-        </Button>
-      </CardFooter>
     </Card>
   );
 };
