@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowUp, ArrowDown, Calendar, Clock, Trash2, Eye, MoreHorizontal, FileText } from 'lucide-react';
+import { ArrowUp, ArrowDown, Calendar, Clock, Trash2, Eye, MoreHorizontal, FileText, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDate, formatCurrency } from '@/lib/utils';
@@ -18,43 +18,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
-interface TimeEntry {
-  id: string;
-  entityType: 'work_order' | 'project';
-  entityId: string;
-  entityName: string;
-  entityLocation?: string;
-  dateWorked: string;
-  startTime: string;
-  endTime: string;
-  hoursWorked: number;
-  notes?: string;
-  employee?: {
-    id: string;
-    name: string;
-    hourlyRate?: number;
-  };
-  cost?: number;
-  hasReceipts?: boolean;
-}
+import { TimeEntry } from '@/types/workOrder';
 
 interface TimeTrackingTableProps {
   entries: TimeEntry[];
   onDelete: (id: string) => void;
   onView: (id: string) => void;
+  onViewReceipts?: (id: string) => void;
 }
 
 const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({ 
   entries,
   onDelete,
-  onView
+  onView,
+  onViewReceipts
 }) => {
   const [sortConfig, setSortConfig] = React.useState<{
     key: keyof TimeEntry;
     direction: 'ascending' | 'descending';
   }>({
-    key: 'dateWorked',
+    key: 'date_worked',
     direction: 'descending',
   });
   
@@ -112,20 +95,14 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
   };
 
   const getTimeEntryActions = (entry: TimeEntry): ActionGroup[] => {
-    return [
+    const actions: ActionGroup[] = [
       {
         items: [
           {
             label: 'View details',
             icon: <Eye className="h-4 w-4" />,
             onClick: () => onView(entry.id),
-          },
-          {
-            label: 'View receipt(s)',
-            icon: <FileText className="h-4 w-4" />,
-            onClick: () => console.log('View receipts for', entry.id),
-            disabled: !entry.hasReceipts,
-          },
+          }
         ],
       },
       {
@@ -139,6 +116,17 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
         ],
       },
     ];
+    
+    // Add receipt option if applicable
+    if (entry.has_receipts && onViewReceipts) {
+      actions[0].items.push({
+        label: 'View receipt(s)',
+        icon: <FileText className="h-4 w-4" />,
+        onClick: () => onViewReceipts(entry.id),
+      });
+    }
+    
+    return actions;
   };
 
   return (
@@ -149,20 +137,20 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
             <TableRow>
               <TableHead 
                 className="cursor-pointer" 
-                onClick={() => handleSort('dateWorked')}
+                onClick={() => handleSort('date_worked')}
               >
                 <div className="flex items-center">
-                  Date {getSortIcon('dateWorked')}
+                  Date {getSortIcon('date_worked')}
                 </div>
               </TableHead>
               <TableHead>Entity</TableHead>
               <TableHead>Time</TableHead>
               <TableHead 
                 className="cursor-pointer" 
-                onClick={() => handleSort('hoursWorked')}
+                onClick={() => handleSort('hours_worked')}
               >
                 <div className="flex items-center">
-                  Hours {getSortIcon('hoursWorked')}
+                  Hours {getSortIcon('hours_worked')}
                 </div>
               </TableHead>
               <TableHead>Notes</TableHead>
@@ -176,33 +164,34 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
                   <TableCell>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <div>{formatDate(entry.dateWorked)}</div>
+                      <div>{formatDate(entry.date_worked)}</div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <HoverCard>
                       <HoverCardTrigger asChild>
                         <div className="cursor-help">
-                          <div className="font-medium">{entry.entityName}</div>
+                          <div className="font-medium">{entry.entity_name}</div>
                           <div className="text-xs text-muted-foreground capitalize">
-                            {entry.entityType.replace('_', ' ')}
+                            {entry.entity_type.replace('_', ' ')}
                           </div>
                         </div>
                       </HoverCardTrigger>
                       <HoverCardContent className="w-80">
                         <div className="space-y-2">
-                          <h4 className="font-medium">{entry.entityName}</h4>
-                          {entry.entityLocation && (
-                            <div className="text-sm text-muted-foreground">
-                              Location: {entry.entityLocation}
+                          <h4 className="font-medium">{entry.entity_name}</h4>
+                          {entry.entity_location && (
+                            <div className="text-sm flex items-center text-muted-foreground">
+                              <MapPin className="h-3.5 w-3.5 mr-1" />
+                              {entry.entity_location}
                             </div>
                           )}
-                          {entry.employee && (
+                          {entry.employee_name && (
                             <div className="text-sm">
-                              Employee: {entry.employee.name}
-                              {entry.employee.hourlyRate && (
+                              Employee: {entry.employee_name}
+                              {entry.employee_rate && (
                                 <span className="text-muted-foreground ml-1">
-                                  (${entry.employee.hourlyRate}/hr)
+                                  (${entry.employee_rate}/hr)
                                 </span>
                               )}
                             </div>
@@ -219,10 +208,10 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
                   <TableCell>
                     <div className="flex items-center">
                       <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <div>{entry.startTime} - {entry.endTime}</div>
+                      <div>{entry.start_time} - {entry.end_time}</div>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{entry.hoursWorked}</TableCell>
+                  <TableCell className="font-medium">{entry.hours_worked}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     {entry.notes || '-'}
                   </TableCell>

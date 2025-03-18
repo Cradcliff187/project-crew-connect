@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Search, Clock, Filter, ChevronDown, Calendar } from 'lucide-react';
+import { Search, Clock, Filter, Calendar, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,12 +12,13 @@ import TimeEntryForm from '@/components/timeTracking/TimeEntryForm';
 import TimeTrackingTable from '@/components/timeTracking/TimeTrackingTable';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
+import { TimeEntry } from '@/types/workOrder';
 
 const TimeTracking = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('list');
   const [filterType, setFilterType] = useState<string>('all');
-  const [timeEntries, setTimeEntries] = useState<any[]>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -28,99 +29,123 @@ const TimeTracking = () => {
     setIsLoading(true);
     
     try {
-      // Fetch work order time logs
-      const { data: workOrderLogs, error: woError } = await supabase
-        .from('work_order_time_logs')
+      // Build the query based on the filter
+      let query = supabase
+        .from('time_entries')
         .select(`
           id,
-          work_order_id,
-          employee_id,
+          entity_type,
+          entity_id,
+          date_worked,
+          start_time,
+          end_time,
           hours_worked,
-          work_date,
+          employee_id,
+          employee_rate,
           notes,
-          maintenance_work_orders(title, status)
+          has_receipts,
+          created_at,
+          updated_at
         `)
-        .order('work_date', { ascending: false });
+        .order('date_worked', { ascending: false });
       
-      if (woError) throw woError;
-      
-      // Fetch project time logs (timelogs)
-      const { data: projectLogs, error: projError } = await supabase
-        .from('timelogs')
-        .select(`
-          timelogid,
-          projectid,
-          dateworked,
-          starttime,
-          endtime,
-          totalhours,
-          submittinguser,
-          foruseremail,
-          "employee hourly rate",
-          projects(projectname, status, sitelocationcity, sitelocationstate)
-        `)
-        .order('dateworked', { ascending: false });
-      
-      if (projError) throw projError;
-      
-      // Format work order logs
-      const formattedWorkOrderLogs = (workOrderLogs || []).map(log => ({
-        id: log.id,
-        entityType: 'work_order',
-        entityId: log.work_order_id,
-        entityName: log.maintenance_work_orders?.title || 'Unknown Work Order',
-        dateWorked: log.work_date,
-        startTime: '09:00', // Default since we don't have this in the table
-        endTime: '17:00', // Default since we don't have this in the table
-        hoursWorked: log.hours_worked,
-        notes: log.notes,
-        hasReceipts: false, // We would need to check documents table
-        employee: {
-          id: log.employee_id,
-          name: 'Employee Name', // We would need to join with employees table
-        }
-      }));
-      
-      // Format project logs
-      const formattedProjectLogs = (projectLogs || []).map(log => ({
-        id: log.timelogid,
-        entityType: 'project',
-        entityId: log.projectid,
-        entityName: log.projects?.projectname || 'Unknown Project',
-        entityLocation: [log.projects?.sitelocationcity, log.projects?.sitelocationstate].filter(Boolean).join(', '),
-        dateWorked: log.dateworked,
-        startTime: log.starttime || '09:00',
-        endTime: log.endtime || '17:00',
-        hoursWorked: parseFloat(log.totalhours) || 0,
-        employee: {
-          id: log.submittinguser,
-          name: log.foruseremail?.split('@')[0] || 'Unknown',
-          hourlyRate: log["employee hourly rate"] ? parseFloat(log["employee hourly rate"]) : undefined,
-        },
-        cost: log["employee hourly rate"] && log.totalhours ? 
-          parseFloat(log["employee hourly rate"]) * parseFloat(log.totalhours) : undefined,
-      }));
-      
-      // Combined and filter entries
-      let combinedEntries = [...formattedWorkOrderLogs, ...formattedProjectLogs];
-      
+      // Apply entity_type filter if needed
       if (filterType === 'work_orders') {
-        combinedEntries = formattedWorkOrderLogs;
+        query = query.eq('entity_type', 'work_order');
       } else if (filterType === 'projects') {
-        combinedEntries = formattedProjectLogs;
+        query = query.eq('entity_type', 'project');
       }
       
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      // Get entity names and employee details
+      const enhancedEntries = await Promise.all((data || []).map(async (entry) => {
+        let entityName = 'Unknown';
+        let entityLocation = '';
+        let employeeName = '';
+        
+        // Get entity details
+        if (entry.entity_type === 'work_order') {
+          const { data: workOrder } = await supabase
+            .from('maintenance_work_orders')
+            .select('title, location_id')
+            .eq('work_order_id', entry.entity_id)
+            .single();
+          
+          if (workOrder) {
+            entityName = workOrder.title;
+            
+            // Get location details if available
+            if (workOrder.location_id) {
+              const { data: location } = await supabase
+                .from('site_locations')
+                .select('location_name, city, state')
+                .eq('location_id', workOrder.location_id)
+                .single();
+              
+              if (location) {
+                entityLocation = location.location_name || 
+                  [location.city, location.state].filter(Boolean).join(', ');
+              }
+            }
+          }
+        } else {
+          // Project
+          const { data: project } = await supabase
+            .from('projects')
+            .select('projectname, sitelocationcity, sitelocationstate')
+            .eq('projectid', entry.entity_id)
+            .single();
+          
+          if (project) {
+            entityName = project.projectname || `Project ${entry.entity_id}`;
+            entityLocation = [project.sitelocationcity, project.sitelocationstate]
+              .filter(Boolean).join(', ');
+          }
+        }
+        
+        // Get employee details
+        if (entry.employee_id) {
+          const { data: employee } = await supabase
+            .from('employees')
+            .select('first_name, last_name')
+            .eq('employee_id', entry.employee_id)
+            .single();
+          
+          if (employee) {
+            employeeName = `${employee.first_name} ${employee.last_name}`;
+          }
+        }
+        
+        // Calculate cost if we have hours and rate
+        const cost = entry.hours_worked && entry.employee_rate 
+          ? entry.hours_worked * entry.employee_rate 
+          : undefined;
+        
+        return {
+          ...entry,
+          entity_name: entityName,
+          entity_location: entityLocation || undefined,
+          employee_name: employeeName || undefined,
+          cost
+        };
+      }));
+      
       // Apply search filter if any
+      let filteredEntries = enhancedEntries;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        combinedEntries = combinedEntries.filter(entry => 
-          entry.entityName.toLowerCase().includes(query) ||
-          (entry.employee?.name && entry.employee.name.toLowerCase().includes(query)) ||
+        filteredEntries = enhancedEntries.filter(entry => 
+          entry.entity_name.toLowerCase().includes(query) ||
+          (entry.entity_location && entry.entity_location.toLowerCase().includes(query)) ||
+          (entry.employee_name && entry.employee_name.toLowerCase().includes(query)) ||
           (entry.notes && entry.notes.toLowerCase().includes(query))
         );
       }
       
-      setTimeEntries(combinedEntries);
+      setTimeEntries(filteredEntries);
     } catch (error) {
       console.error('Error fetching time entries:', error);
       toast({
@@ -134,27 +159,13 @@ const TimeTracking = () => {
   };
   
   const handleDeleteEntry = async (id: string) => {
-    // Find the entry to determine its type
-    const entry = timeEntries.find(e => e.id === id);
-    
-    if (!entry) return;
-    
     try {
-      if (entry.entityType === 'work_order') {
-        const { error } = await supabase
-          .from('work_order_time_logs')
-          .delete()
-          .eq('id', id);
-          
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('timelogs')
-          .delete()
-          .eq('timelogid', id);
-          
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from('time_entries')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
       
       toast({
         title: 'Time entry deleted',
@@ -176,14 +187,25 @@ const TimeTracking = () => {
   const handleViewEntry = (id: string) => {
     const entry = timeEntries.find(e => e.id === id);
     if (entry) {
-      if (entry.entityType === 'work_order') {
+      if (entry.entity_type === 'work_order') {
         // Navigate to work order details
-        console.log('View work order:', entry.entityId);
+        console.log('View work order:', entry.entity_id);
       } else {
         // Navigate to project details
-        console.log('View project:', entry.entityId);
+        console.log('View project:', entry.entity_id);
       }
     }
+  };
+  
+  const handleViewReceipts = (id: string) => {
+    // This will be implemented in the next step
+    console.log('View receipts for:', id);
+  };
+  
+  const handleFormSuccess = () => {
+    // Switch back to the list tab and refresh entries
+    setActiveTab('list');
+    fetchTimeEntries();
   };
   
   return (
@@ -230,6 +252,11 @@ const TimeTracking = () => {
                 <SelectItem value="projects">Projects Only</SelectItem>
               </SelectContent>
             </Select>
+            
+            <Button variant="outline" size="sm" className="hidden md:flex">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </div>
         </PageHeader>
         
@@ -249,15 +276,22 @@ const TimeTracking = () => {
             </div>
             
             <TabsContent value="list" className="mt-0">
-              <TimeTrackingTable 
-                entries={timeEntries}
-                onDelete={handleDeleteEntry}
-                onView={handleViewEntry}
-              />
+              {isLoading ? (
+                <div className="flex items-center justify-center h-40">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0485ea]"></div>
+                </div>
+              ) : (
+                <TimeTrackingTable 
+                  entries={timeEntries}
+                  onDelete={handleDeleteEntry}
+                  onView={handleViewEntry}
+                  onViewReceipts={handleViewReceipts}
+                />
+              )}
             </TabsContent>
             
             <TabsContent value="new" className="mt-0">
-              <TimeEntryForm />
+              <TimeEntryForm onSuccess={handleFormSuccess} />
             </TabsContent>
           </Tabs>
         </main>
