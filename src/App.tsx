@@ -15,6 +15,7 @@ import ProjectEdit from './components/projects/ProjectEdit';
 import Layout from './components/layout/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WorkOrders from './pages/WorkOrders';
+import ActiveWork from './pages/ActiveWork';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ function App() {
             <Route path="/vendors" element={<Vendors />} />
             <Route path="/subcontractors" element={<Subcontractors />} />
             <Route path="/workorders" element={<WorkOrders />} />
+            <Route path="/active-work" element={<ActiveWork />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" />} />
           </Route>

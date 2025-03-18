@@ -17,6 +17,7 @@ export interface WorkOrder {
   actual_hours: number | null;
   materials_cost: number | null;
   total_cost: number | null;
+  progress: number | null;
   created_at: string;
   updated_at: string;
 }

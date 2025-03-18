@@ -9,7 +9,8 @@ import {
   WorkOrderContactCard,
   WorkOrderDescription,
   WorkOrderDocumentsList,
-  WorkOrderCostSummary
+  WorkOrderCostSummary,
+  WorkOrderProgressCard
 } from './details';
 
 interface WorkOrderDetailsProps {
@@ -45,6 +46,11 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
           </div>
           
           <WorkOrderDescription description={workOrder.description} />
+          
+          <WorkOrderProgressCard 
+            workOrder={workOrder} 
+            onProgressUpdate={onStatusChange} 
+          />
         </TabsContent>
         
         <TabsContent value="documents">
