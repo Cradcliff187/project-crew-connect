@@ -1,4 +1,4 @@
-
+import { useNavigate } from 'react-router-dom';
 import { Briefcase, MoreHorizontal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -65,12 +65,23 @@ export const formatDate = (dateString: string | null) => {
 };
 
 const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableProps) => {
+  const navigate = useNavigate();
+  
   // Filter projects based on search query
   const filteredProjects = projects.filter(project => 
     (project.projectname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (project.customername?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (project.projectid?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
+  
+  const handleViewDetails = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
+  };
+  
+  const handleEditProject = (projectId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click from triggering
+    navigate(`/projects/${projectId}/edit`);
+  };
 
   return (
     <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
@@ -111,6 +122,7 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
               </TableRow>
             ))
           ) : error ? (
+            // Error state
             <TableRow>
               <TableCell colSpan={7} className="text-center py-6 text-red-500">
                 <p>Error loading projects: {error}</p>
@@ -125,6 +137,7 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
               </TableCell>
             </TableRow>
           ) : filteredProjects.length === 0 ? (
+            // Empty state
             <TableRow>
               <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                 <Briefcase className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
@@ -133,9 +146,13 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
             </TableRow>
           ) : (
             filteredProjects.map((project) => (
-              <TableRow key={project.projectid}>
+              <TableRow 
+                key={project.projectid}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleViewDetails(project.projectid)}
+              >
                 <TableCell>
-                  <div className="font-medium">{project.projectname || 'Unnamed Project'}</div>
+                  <div className="font-medium text-[#0485ea]">{project.projectname || 'Unnamed Project'}</div>
                   <div className="text-xs text-muted-foreground">{project.projectid}</div>
                 </TableCell>
                 <TableCell>{project.customername || 'No Client'}</TableCell>
@@ -153,7 +170,7 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
                 <TableCell>
                   <StatusBadge status={mapStatusToStatusBadge(project.status)} />
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -162,8 +179,12 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>View details</DropdownMenuItem>
-                      <DropdownMenuItem>Edit project</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewDetails(project.projectid)}>
+                        View details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleEditProject(project.projectid, e)}>
+                        Edit project
+                      </DropdownMenuItem>
                       <DropdownMenuItem>Schedule</DropdownMenuItem>
                       <DropdownMenuItem>View time logs</DropdownMenuItem>
                       <DropdownMenuSeparator />

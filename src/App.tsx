@@ -1,63 +1,35 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import './App.css';
+import Index from './pages/Index';
+import Projects from './pages/Projects';
+import Estimates from './pages/Estimates';
+import Contacts from './pages/Contacts';
+import Documents from './pages/Documents';
+import TimeTracking from './pages/TimeTracking';
+import NotFound from './pages/NotFound';
+import Vendors from './pages/Vendors';
+import ProjectDetail from './components/projects/ProjectDetail';
+import ProjectEdit from './components/projects/ProjectEdit';
 
-// Pages
-import Index from "./pages/Index";
-import Estimates from "./pages/Estimates";
-import Projects from "./pages/Projects";
-import Contacts from "./pages/Contacts";
-import TimeTracking from "./pages/TimeTracking";
-import Documents from "./pages/Documents";
-import Vendors from "./pages/Vendors";
-import NotFound from "./pages/NotFound";
-
-// Layout
-import { SidebarProvider } from "./components/layout/SidebarContext";
-import Sidebar from "./components/layout/Sidebar";
-
-const queryClient = new QueryClient();
-
-const App = () => {
-  // Set document title
-  useEffect(() => {
-    document.title = "AKC Construction - Construction Management";
-  }, []);
-
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <SidebarProvider>
-            <div className="flex h-screen w-full overflow-hidden">
-              <Sidebar />
-              <div className="flex-1 overflow-y-auto">
-                <AnimatePresence mode="wait">
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/estimates" element={<Estimates />} />
-                    <Route path="/projects" element={<Projects />} />
-                    <Route path="/contacts" element={<Contacts />} />
-                    <Route path="/vendors" element={<Vendors />} />
-                    <Route path="/time-tracking" element={<TimeTracking />} />
-                    <Route path="/documents" element={<Documents />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </AnimatePresence>
-              </div>
-            </div>
-          </SidebarProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:projectId" element={<ProjectDetail />} />
+        <Route path="/projects/:projectId/edit" element={<ProjectEdit />} />
+        <Route path="/estimates" element={<Estimates />} />
+        <Route path="/contacts" element={<Contacts />} />
+        <Route path="/documents" element={<Documents />} />
+        <Route path="/time-tracking" element={<TimeTracking />} />
+        <Route path="/vendors" element={<Vendors />} />
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/404" />} />
+      </Routes>
+    </BrowserRouter>
   );
-};
+}
 
 export default App;
