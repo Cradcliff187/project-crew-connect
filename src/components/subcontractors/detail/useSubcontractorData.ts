@@ -37,7 +37,14 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
       }
       
       console.log('Subcontractor data received:', data);
-      setSubcontractor(data as Subcontractor);
+      
+      // Ensure subid is a string
+      const processedData = {
+        ...data,
+        subid: String(data.subid)
+      };
+      
+      setSubcontractor(processedData as Subcontractor);
       
       // Fetch specialties if the subcontractor has any
       if (data?.specialty_ids && data.specialty_ids.length > 0) {

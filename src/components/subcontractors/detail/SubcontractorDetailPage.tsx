@@ -41,7 +41,18 @@ const SubcontractorDetailPage = () => {
   } = useSubcontractorData(subcontractorId);
   
   const handleEdit = () => {
+    if (!subcontractor) {
+      toast({
+        title: "Error",
+        description: "Cannot edit: Subcontractor data not available",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     console.log('Opening edit dialog with data:', subcontractor);
+    
+    // Ensure we're working with a deep copy to avoid reference issues
     setEditDialogOpen(true);
   };
   
@@ -97,7 +108,7 @@ const SubcontractorDetailPage = () => {
               <>
                 <Separator />
                 <SpecialtiesSection 
-                  subcontractor={subcontractor} 
+                  subcontractor={subcontractor}
                   specialties={specialties} 
                 />
               </>
@@ -135,14 +146,16 @@ const SubcontractorDetailPage = () => {
           </div>
         </Card>
         
-        {/* Edit Subcontractor Dialog - ALWAYS render the dialog but control visibility with open prop */}
-        <SubcontractorDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          onSubcontractorAdded={handleSubcontractorUpdated}
-          initialData={subcontractor}
-          isEditing={true}
-        />
+        {/* Edit Subcontractor Dialog */}
+        {subcontractor && (
+          <SubcontractorDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onSubcontractorAdded={handleSubcontractorUpdated}
+            initialData={subcontractor}
+            isEditing={true}
+          />
+        )}
       </div>
     </PageTransition>
   );

@@ -24,35 +24,42 @@ const SubcontractorForm = ({
   initialData, 
   isEditing = false 
 }: SubcontractorFormProps) => {
+  
+  // Ensure initialData.subid is a string if it exists
+  const formattedInitialData = initialData ? {
+    ...initialData,
+    subid: initialData.subid ? String(initialData.subid) : undefined
+  } : undefined;
+  
   const form = useForm<SubcontractorFormData>({
     defaultValues: {
-      subid: initialData?.subid || undefined,
-      subname: initialData?.subname || '',
-      contactemail: initialData?.contactemail || '',
-      phone: initialData?.phone || '',
-      address: initialData?.address || '',
-      city: initialData?.city || '',
-      state: initialData?.state || '',
-      zip: initialData?.zip || '',
-      status: initialData?.status || 'PENDING',
-      specialty_ids: initialData?.specialty_ids || [],
-      payment_terms: initialData?.payment_terms || 'NET30',
-      notes: initialData?.notes || '',
+      subid: formattedInitialData?.subid || undefined,
+      subname: formattedInitialData?.subname || '',
+      contactemail: formattedInitialData?.contactemail || '',
+      phone: formattedInitialData?.phone || '',
+      address: formattedInitialData?.address || '',
+      city: formattedInitialData?.city || '',
+      state: formattedInitialData?.state || '',
+      zip: formattedInitialData?.zip || '',
+      status: formattedInitialData?.status || 'PENDING',
+      specialty_ids: formattedInitialData?.specialty_ids || [],
+      payment_terms: formattedInitialData?.payment_terms || 'NET30',
+      notes: formattedInitialData?.notes || '',
       // Additional vendor management fields
-      insurance_expiration: initialData?.insurance_expiration || null,
-      insurance_provider: initialData?.insurance_provider || '',
-      insurance_policy_number: initialData?.insurance_policy_number || '',
-      tax_id: initialData?.tax_id || '',
-      rating: initialData?.rating || null,
-      hourly_rate: initialData?.hourly_rate || null,
-      contract_on_file: initialData?.contract_on_file || false,
-      contract_expiration: initialData?.contract_expiration || null,
-      preferred: initialData?.preferred || false,
-      last_performance_review: initialData?.last_performance_review || null,
-      on_time_percentage: initialData?.on_time_percentage || null,
-      quality_score: initialData?.quality_score || null,
-      safety_incidents: initialData?.safety_incidents || null,
-      response_time_hours: initialData?.response_time_hours || null,
+      insurance_expiration: formattedInitialData?.insurance_expiration || null,
+      insurance_provider: formattedInitialData?.insurance_provider || '',
+      insurance_policy_number: formattedInitialData?.insurance_policy_number || '',
+      tax_id: formattedInitialData?.tax_id || '',
+      rating: formattedInitialData?.rating || null,
+      hourly_rate: formattedInitialData?.hourly_rate || null,
+      contract_on_file: formattedInitialData?.contract_on_file || false,
+      contract_expiration: formattedInitialData?.contract_expiration || null,
+      preferred: formattedInitialData?.preferred || false,
+      last_performance_review: formattedInitialData?.last_performance_review || null,
+      on_time_percentage: formattedInitialData?.on_time_percentage || null,
+      quality_score: formattedInitialData?.quality_score || null,
+      safety_incidents: formattedInitialData?.safety_incidents || null,
+      response_time_hours: formattedInitialData?.response_time_hours || null,
     }
   });
 
