@@ -1,4 +1,3 @@
-
 import {
   LayoutDashboard,
   FolderKanban,
@@ -11,6 +10,8 @@ import {
   ClipboardList,
 } from "lucide-react";
 
+import { MainNavItem } from "@/types/nav";
+import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -23,10 +24,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useNavigate } from "react-router-dom";
-import { siteConfig } from "@/config/site";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { MainNavItem } from "@/types/nav";
+import { useSession, signOut } from "next-auth/react";
 
 interface SidebarProps {
   className?: string;
@@ -82,7 +83,9 @@ const mainNav = [
 ];
 
 export function Sidebar({ className, items }: SidebarProps) {
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -97,33 +100,53 @@ export function Sidebar({ className, items }: SidebarProps) {
       )}
     >
       <ScrollArea className="flex-1 space-y-4 px-3">
-        <div onClick={() => navigate("/")} className="flex items-center space-x-2 px-2 cursor-pointer">
+        <Link href="/" className="flex items-center space-x-2 px-2">
+          {/* <Icons.logo className="h-6 w-6" /> */}
           <span className="font-bold">{siteConfig.name}</span>
-        </div>
+        </Link>
         <Separator />
         <div className="space-y-1">
           {mainNav.map((item) => (
-            <Button
-              key={item.title}
-              variant="ghost"
-              className={cn(
-                "w-full justify-start gap-2",
-                window.location.pathname === item.href
-                  ? "bg-secondary text-foreground hover:bg-secondary/80"
-                  : "hover:bg-secondary/50"
-              )}
-              onClick={() => navigate(item.href)}
-            >
-              {item.icon}
-              <span>{item.title}</span>
-            </Button>
+            <Link key={item.title} href={item.href}>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start gap-2",
+                  pathname === item.href
+                    ? "bg-secondary text-foreground hover:bg-secondary/80"
+                    : "hover:bg-secondary/50"
+                )}
+              >
+                {item.icon}
+                <span>{item.title}</span>
+              </Button>
+            </Link>
           ))}
         </div>
       </ScrollArea>
       <div className="flex flex-col space-y-1 p-3">
         <Separator />
-        {mounted && (
-          <Button variant="secondary" onClick={() => navigate('/login')}>
+        {mounted && session ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex h-8 w-full items-center justify-between rounded-md">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={session?.user?.image ?? ""} />
+                    <AvatarFallback>{session?.user?.name?.[0]}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-left">{session?.user?.name}</span>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" forceMount>
+              <DropdownMenuItem onClick={() => router.push('/Settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => signOut()}>Log out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="secondary" onClick={() => router.push('/login')}>
             Login
           </Button>
         )}

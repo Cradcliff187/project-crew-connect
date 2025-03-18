@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import StatusBadge from '@/components/ui/StatusBadge';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Clock, MapPin, User, Calendar, AlertCircle, DollarSign } from 'lucide-react';

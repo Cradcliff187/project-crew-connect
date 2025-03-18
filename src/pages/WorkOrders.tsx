@@ -6,7 +6,6 @@ import PageTransition from '@/components/layout/PageTransition';
 import WorkOrdersHeader from '@/components/workOrders/WorkOrdersHeader';
 import WorkOrdersTable from '@/components/workOrders/WorkOrdersTable';
 import { WorkOrder } from '@/types/workOrder';
-import { StatusType } from '@/types/common';
 
 const WorkOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,13 +26,7 @@ const WorkOrders = () => {
         throw error;
       }
       
-      // Ensure the data conforms to WorkOrder type
-      const typedWorkOrders: WorkOrder[] = data?.map(item => ({
-        ...item,
-        status: item.status as StatusType
-      })) || [];
-      
-      setWorkOrders(typedWorkOrders);
+      setWorkOrders(data || []);
     } catch (error: any) {
       console.error('Error fetching work orders:', error);
       setError(error.message);
