@@ -35,12 +35,8 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   
   // Process specialties into a map for easy lookup
   useEffect(() => {
-    if (specialties && specialties.length > 0) {
-      const map: Record<string, any> = {};
-      specialties.forEach(specialty => {
-        map[specialty.id] = specialty;
-      });
-      setSpecialtyMap(map);
+    if (specialties && Object.keys(specialties).length > 0) {
+      setSpecialtyMap(specialties);
     }
   }, [specialties]);
   
@@ -74,12 +70,12 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   
   // Show error state if there's an error
   if (error || specialtiesError) {
-    return <SubcontractorErrorState message={error || specialtiesError || 'An error occurred'} />;
+    return <SubcontractorErrorState error={error || specialtiesError || 'An error occurred'} />;
   }
   
   // Show empty state if no subcontractors
   if (!filteredSubcontractors || filteredSubcontractors.length === 0) {
-    return <SubcontractorEmptyState searchQuery={searchQuery} />;
+    return <SubcontractorEmptyState />;
   }
   
   return (
