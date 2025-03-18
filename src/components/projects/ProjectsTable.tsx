@@ -1,18 +1,13 @@
+
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MoreHorizontal } from 'lucide-react';
+import { Briefcase, Eye, Edit, Calendar, Clock, FileText, Archive } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { StatusType } from '@/types/common';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 // Define project type based on our database schema
 export interface Project {
@@ -81,6 +76,54 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
   const handleEditProject = (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row click from triggering
     navigate(`/projects/${projectId}/edit`);
+  };
+  
+  const getProjectActions = (project: Project): ActionGroup[] => {
+    return [
+      {
+        items: [
+          {
+            label: 'View details',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: (e) => handleViewDetails(project.projectid)
+          },
+          {
+            label: 'Edit project',
+            icon: <Edit className="w-4 h-4" />,
+            onClick: (e) => handleEditProject(project.projectid, e)
+          },
+          {
+            label: 'Schedule',
+            icon: <Calendar className="w-4 h-4" />,
+            onClick: (e) => console.log('Schedule project', project.projectid)
+          },
+          {
+            label: 'View time logs',
+            icon: <Clock className="w-4 h-4" />,
+            onClick: (e) => console.log('View time logs', project.projectid)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Generate report',
+            icon: <FileText className="w-4 h-4" />,
+            onClick: (e) => console.log('Generate report', project.projectid)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Archive project',
+            icon: <Archive className="w-4 h-4" />,
+            onClick: (e) => console.log('Archive project', project.projectid),
+            className: 'text-red-600'
+          }
+        ]
+      }
+    ];
   };
 
   return (
@@ -171,28 +214,7 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
                   <StatusBadge status={mapStatusToStatusBadge(project.status)} />
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(project.projectid)}>
-                        View details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => handleEditProject(project.projectid, e)}>
-                        Edit project
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>Schedule</DropdownMenuItem>
-                      <DropdownMenuItem>View time logs</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Generate report</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600">Archive project</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ActionMenu groups={getProjectActions(project)} />
                 </TableCell>
               </TableRow>
             ))

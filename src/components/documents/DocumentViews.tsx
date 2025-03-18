@@ -3,16 +3,11 @@ import React from 'react';
 import { Document } from './schemas/documentSchema';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Download, Eye, MoreVertical, Trash2 } from 'lucide-react';
+import { Download, Eye, Filter, Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
 import DocumentCard from './DocumentCard';
 import { formatDate } from '@/lib/utils';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface DocumentViewsProps {
   documents: Document[];
@@ -66,6 +61,39 @@ export const DocumentViews = ({
     );
   }
   
+  const getDocumentActions = (document: Document): ActionGroup[] => {
+    return [
+      {
+        items: [
+          {
+            label: 'View',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: (e) => onView(document)
+          },
+          {
+            label: 'Download',
+            icon: <Download className="w-4 h-4" />,
+            onClick: (e) => {
+              if (document.url) {
+                window.open(document.url, '_blank');
+              }
+            }
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Delete',
+            icon: <Trash2 className="w-4 h-4" />,
+            onClick: (e) => onDelete(document),
+            className: 'text-destructive'
+          }
+        ]
+      }
+    ];
+  };
+  
   return (
     <>
       {/* Mobile Card View */}
@@ -104,37 +132,7 @@ export const DocumentViews = ({
                 <TableCell>{document.entity_type.replace('_', ' ').toLowerCase()}</TableCell>
                 <TableCell>{formatDate(document.created_at)}</TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onView(document)}>
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          if (document.url) {
-                            window.open(document.url, '_blank');
-                          }
-                        }}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => onDelete(document)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ActionMenu groups={getDocumentActions(document)} />
                 </TableCell>
               </TableRow>
             ))}
@@ -144,7 +142,5 @@ export const DocumentViews = ({
     </>
   );
 };
-
-import { Filter, Plus } from 'lucide-react';
 
 export default DocumentViews;

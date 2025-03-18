@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Wrench, MoreHorizontal, CalendarClock } from 'lucide-react';
+import { Briefcase, Wrench, Eye, Edit, Clock, FileText, Archive, CalendarClock } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -11,13 +10,7 @@ import { WorkItem } from '@/types/activeWork';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import WorkOrderDetailDialog from '@/components/workOrders/WorkOrderDetailDialog';
 import { WorkOrder } from '@/types/workOrder';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface ActiveWorkTableProps {
   items: WorkItem[];
@@ -121,13 +114,11 @@ const ActiveWorkTable = ({
     if (item.type === 'project') {
       navigate(`/projects/${item.id}`);
     } else {
-      // Find the original work order to show in the dialog
       const originalWorkOrder = items
         .filter(i => i.type === 'workOrder')
         .find(i => i.id === item.id);
       
       if (originalWorkOrder) {
-        // Convert from WorkItem back to WorkOrder format
         const workOrder: any = {
           work_order_id: originalWorkOrder.id,
           title: originalWorkOrder.title,
@@ -146,6 +137,112 @@ const ActiveWorkTable = ({
         setSelectedWorkOrder(workOrder as WorkOrder);
         setDetailOpen(true);
       }
+    }
+  };
+  
+  const getItemActions = (item: WorkItem): ActionGroup[] => {
+    if (item.type === 'project') {
+      return [
+        {
+          items: [
+            {
+              label: 'View details',
+              icon: <Eye className="w-4 h-4" />,
+              onClick: (e) => handleViewDetails(item)
+            },
+            {
+              label: 'Edit project',
+              icon: <Edit className="w-4 h-4" />,
+              onClick: (e) => navigate(`/projects/${item.id}/edit`)
+            },
+            {
+              label: 'Add time log',
+              icon: <Clock className="w-4 h-4" />,
+              onClick: (e) => console.log('Add time log to project', item.id)
+            },
+            {
+              label: 'Add document',
+              icon: <FileText className="w-4 h-4" />,
+              onClick: (e) => console.log('Add document to project', item.id)
+            }
+          ]
+        },
+        {
+          items: [
+            {
+              label: 'Update status',
+              icon: <Wrench className="w-4 h-4" />,
+              onClick: (e) => console.log('Update project status', item.id)
+            },
+            {
+              label: 'Update progress',
+              icon: <Wrench className="w-4 h-4" />,
+              onClick: (e) => console.log('Update project progress', item.id)
+            }
+          ]
+        },
+        {
+          items: [
+            {
+              label: 'Archive project',
+              icon: <Archive className="w-4 h-4" />,
+              onClick: (e) => console.log('Archive project', item.id),
+              className: 'text-red-600'
+            }
+          ]
+        }
+      ];
+    } else {
+      return [
+        {
+          items: [
+            {
+              label: 'View details',
+              icon: <Eye className="w-4 h-4" />,
+              onClick: (e) => handleViewDetails(item)
+            },
+            {
+              label: 'Edit work order',
+              icon: <Edit className="w-4 h-4" />,
+              onClick: (e) => console.log('Edit work order', item.id)
+            },
+            {
+              label: 'Add time log',
+              icon: <Clock className="w-4 h-4" />,
+              onClick: (e) => console.log('Add time log to work order', item.id)
+            },
+            {
+              label: 'Add document',
+              icon: <FileText className="w-4 h-4" />,
+              onClick: (e) => console.log('Add document to work order', item.id)
+            }
+          ]
+        },
+        {
+          items: [
+            {
+              label: 'Update status',
+              icon: <Wrench className="w-4 h-4" />,
+              onClick: (e) => console.log('Update work order status', item.id)
+            },
+            {
+              label: 'Update progress',
+              icon: <Wrench className="w-4 h-4" />,
+              onClick: (e) => console.log('Update work order progress', item.id)
+            }
+          ]
+        },
+        {
+          items: [
+            {
+              label: 'Archive work order',
+              icon: <Archive className="w-4 h-4" />,
+              onClick: (e) => console.log('Archive work order', item.id),
+              className: 'text-red-600'
+            }
+          ]
+        }
+      ];
     }
   };
   
@@ -213,31 +310,7 @@ const ActiveWorkTable = ({
                 </div>
               </TableCell>
               <TableCell onClick={(e) => e.stopPropagation()}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Open menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleViewDetails(item)}>
-                      View details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      {item.type === 'project' ? 'Edit project' : 'Edit work order'}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>Add time log</DropdownMenuItem>
-                    <DropdownMenuItem>Add document</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Update status</DropdownMenuItem>
-                    <DropdownMenuItem>Update progress</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">
-                      {item.type === 'project' ? 'Archive project' : 'Archive work order'}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ActionMenu groups={getItemActions(item)} />
               </TableCell>
             </TableRow>
           ))}

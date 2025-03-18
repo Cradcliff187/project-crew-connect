@@ -1,14 +1,11 @@
 
 import React from 'react';
-import { FileText, FileImage, File, MoreVertical, Eye, Download, Trash2 } from 'lucide-react';
+import { FileText, FileImage, File, Eye, Download, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
 import { Document } from './schemas/documentSchema';
 import { formatDate } from '@/lib/utils';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface DocumentCardProps {
   document: Document;
@@ -35,6 +32,39 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onView, onDelete 
     }
   };
 
+  const getDocumentActions = (): ActionGroup[] => {
+    return [
+      {
+        items: [
+          {
+            label: 'View',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: (e) => onView()
+          },
+          {
+            label: 'Download',
+            icon: <Download className="w-4 h-4" />,
+            onClick: (e) => {
+              if (document.url) {
+                window.open(document.url, '_blank');
+              }
+            }
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Delete',
+            icon: <Trash2 className="w-4 h-4" />,
+            onClick: (e) => onDelete(),
+            className: 'text-destructive'
+          }
+        ]
+      }
+    ];
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardContent className="p-0">
@@ -59,36 +89,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onView, onDelete 
             )}
           </div>
           <div className="ml-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onView}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  View
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => {
-                    if (document.url) {
-                      window.open(document.url, '_blank');
-                    }
-                  }}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={onDelete}
-                  className="text-destructive"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ActionMenu groups={getDocumentActions()} />
           </div>
         </div>
       </CardContent>

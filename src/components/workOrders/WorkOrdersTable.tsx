@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, MoreHorizontal } from 'lucide-react';
+import { Wrench, Eye, Edit, Calendar, Clock, FileText, Archive } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -13,13 +13,7 @@ import WorkOrderLoadingState from './WorkOrderLoadingState';
 import WorkOrderErrorState from './WorkOrderErrorState';
 import WorkOrderDetailDialog from './WorkOrderDetailDialog';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
@@ -66,6 +60,54 @@ const WorkOrdersTable = ({
   const handleViewDetails = (workOrder: WorkOrder) => {
     setSelectedWorkOrder(workOrder);
     setDetailOpen(true);
+  };
+  
+  const getWorkOrderActions = (workOrder: WorkOrder): ActionGroup[] => {
+    return [
+      {
+        items: [
+          {
+            label: 'View details',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: (e) => handleViewDetails(workOrder)
+          },
+          {
+            label: 'Edit work order',
+            icon: <Edit className="w-4 h-4" />,
+            onClick: (e) => console.log('Edit work order', workOrder.work_order_id)
+          },
+          {
+            label: 'Schedule',
+            icon: <Calendar className="w-4 h-4" />,
+            onClick: (e) => console.log('Schedule work order', workOrder.work_order_id)
+          },
+          {
+            label: 'Add time log',
+            icon: <Clock className="w-4 h-4" />,
+            onClick: (e) => console.log('Add time log', workOrder.work_order_id)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Generate report',
+            icon: <FileText className="w-4 h-4" />,
+            onClick: (e) => console.log('Generate report', workOrder.work_order_id)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Archive work order',
+            icon: <Archive className="w-4 h-4" />,
+            onClick: (e) => console.log('Archive work order', workOrder.work_order_id),
+            className: 'text-red-600'
+          }
+        ]
+      }
+    ];
   };
 
   return (
@@ -114,26 +156,7 @@ const WorkOrdersTable = ({
                 </TableCell>
                 <TableCell>{workOrder.scheduled_date ? formatDate(workOrder.scheduled_date) : 'Not scheduled'}</TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(workOrder)}>
-                        View details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>Edit work order</DropdownMenuItem>
-                      <DropdownMenuItem>Schedule</DropdownMenuItem>
-                      <DropdownMenuItem>Add time log</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Generate report</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600">Archive work order</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ActionMenu groups={getWorkOrderActions(workOrder)} />
                 </TableCell>
               </TableRow>
             ))}

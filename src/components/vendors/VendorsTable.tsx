@@ -1,17 +1,10 @@
-
-import { Package, MoreHorizontal } from 'lucide-react';
+import { Package, Eye, Edit, History, ListTree, Archive } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { StatusType } from '@/types/common';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 // Define vendor type based on our database schema
 export interface Vendor {
@@ -69,6 +62,49 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
     (vendor.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (vendor.vendorid?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
+  
+  const getVendorActions = (vendor: Vendor): ActionGroup[] => {
+    return [
+      {
+        items: [
+          {
+            label: 'View details',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: (e) => console.log('View vendor details', vendor.vendorid)
+          },
+          {
+            label: 'Edit vendor',
+            icon: <Edit className="w-4 h-4" />,
+            onClick: (e) => console.log('Edit vendor', vendor.vendorid)
+          },
+          {
+            label: 'Order history',
+            icon: <History className="w-4 h-4" />,
+            onClick: (e) => console.log('Order history', vendor.vendorid)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Material catalog',
+            icon: <ListTree className="w-4 h-4" />,
+            onClick: (e) => console.log('Material catalog', vendor.vendorid)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Deactivate vendor',
+            icon: <Archive className="w-4 h-4" />,
+            onClick: (e) => console.log('Deactivate vendor', vendor.vendorid),
+            className: 'text-red-600'
+          }
+        ]
+      }
+    ];
+  };
 
   return (
     <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
@@ -85,7 +121,6 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
         </TableHeader>
         <TableBody>
           {loading ? (
-            // Loading state - show skeleton rows
             Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={`skeleton-${index}`}>
                 <TableCell>
@@ -145,23 +180,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
                   <StatusBadge status={mapStatusToStatusBadge(vendor.status)} />
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>View details</DropdownMenuItem>
-                      <DropdownMenuItem>Edit vendor</DropdownMenuItem>
-                      <DropdownMenuItem>Order history</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Material catalog</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600">Deactivate vendor</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ActionMenu groups={getVendorActions(vendor)} />
                 </TableCell>
               </TableRow>
             ))

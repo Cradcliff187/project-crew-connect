@@ -1,18 +1,11 @@
 
-import { useState } from 'react';
-import { FileText, MoreHorizontal } from 'lucide-react';
+import { FileText, Plus, Eye, Edit, Copy, ArrowRight, Download, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { StatusType } from '@/types/common';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 export type EstimateType = {
   id: string;
@@ -51,6 +44,59 @@ const EstimatesTable = ({
     estimate.project.toLowerCase().includes(searchQuery.toLowerCase()) ||
     estimate.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  const getEstimateActions = (estimate: EstimateType): ActionGroup[] => {
+    return [
+      {
+        items: [
+          {
+            label: 'View details',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: (e) => onViewEstimate(estimate)
+          },
+          {
+            label: 'Edit estimate',
+            icon: <Edit className="w-4 h-4" />,
+            onClick: (e) => console.log('Edit estimate', estimate.id)
+          },
+          {
+            label: 'Duplicate',
+            icon: <Copy className="w-4 h-4" />,
+            onClick: (e) => console.log('Duplicate estimate', estimate.id)
+          },
+          {
+            label: 'Create new version',
+            icon: <Plus className="w-4 h-4" />,
+            onClick: (e) => console.log('Create new version', estimate.id)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Convert to project',
+            icon: <ArrowRight className="w-4 h-4" />,
+            onClick: (e) => console.log('Convert to project', estimate.id)
+          },
+          {
+            label: 'Download PDF',
+            icon: <Download className="w-4 h-4" />,
+            onClick: (e) => console.log('Download PDF', estimate.id)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Delete',
+            icon: <Trash2 className="w-4 h-4" />,
+            onClick: (e) => console.log('Delete estimate', estimate.id),
+            className: 'text-red-600'
+          }
+        ]
+      }
+    ];
+  };
 
   return (
     <div className="bg-white border rounded-lg shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
@@ -94,25 +140,7 @@ const EstimatesTable = ({
                 </TableCell>
                 <TableCell>{estimate.versions}</TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onViewEstimate(estimate)}>View details</DropdownMenuItem>
-                      <DropdownMenuItem>Edit estimate</DropdownMenuItem>
-                      <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem>Create new version</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Convert to project</DropdownMenuItem>
-                      <DropdownMenuItem>Download PDF</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <ActionMenu groups={getEstimateActions(estimate)} />
                 </TableCell>
               </TableRow>
             ))
