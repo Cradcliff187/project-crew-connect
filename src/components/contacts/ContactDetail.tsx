@@ -1,7 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Calendar } from 'lucide-react';
+import { 
+  MessageSquare, 
+  Calendar, 
+  ClipboardList, 
+  Users, 
+  BarChart4,
+  Link
+} from 'lucide-react';
 
 // Import refactored components
 import ContactDetailHeader from './detail/ContactDetailHeader';
@@ -9,6 +16,14 @@ import ContactActionButtons from './detail/ContactActionButtons';
 import ConversationSection, { Conversation } from './detail/ConversationSection';
 import ScheduleSection, { Appointment } from './detail/ScheduleSection';
 import ContactInfoSection from './detail/ContactInfoSection';
+import RelationshipsSection from './detail/RelationshipsSection';
+import InteractionsSection from './detail/InteractionsSection';
+import PerformanceSection from './detail/PerformanceSection';
+
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { updateContactStatus } from './detail/util/contactTransitions';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ContactDetailProps {
   contact: any;
@@ -17,7 +32,7 @@ interface ContactDetailProps {
 }
 
 const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps) => {
-  const [activeTab, setActiveTab] = useState('conversations');
+  const [activeTab, setActiveTab] = useState('interactions');
   const [conversations, setConversations] = useState<Conversation[]>([
     {
       id: '1',
@@ -48,6 +63,36 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
       contactId: contact.id
     }
   ]);
+
+  const queryClient = useQueryClient();
+  
+  // Handle status changes from any component
+  const handleStatusChange = async (newStatus: string) => {
+    const success = await updateContactStatus(contact.id, newStatus);
+    
+    if (success) {
+      // Update contact locally
+      contact.status = newStatus;
+      
+      // Notify parent component
+      if (onStatusChange) {
+        onStatusChange(contact, newStatus);
+      }
+      
+      // Refresh contacts data
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      
+      toast({
+        title: "Status Updated",
+        description: `Contact status has been updated to ${newStatus}.`
+      });
+    }
+  };
+
+  const handleInteractionAdded = () => {
+    // Refresh the contact data
+    queryClient.invalidateQueries({ queryKey: ['contacts'] });
+  };
   
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden">
@@ -59,46 +104,66 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
       
       <ContactActionButtons 
         contact={contact} 
-        onStatusChange={onStatusChange} 
+        onStatusChange={handleStatusChange} 
         onSchedule={() => {
           setActiveTab('schedule');
         }} 
       />
       
       <Tabs 
-        defaultValue="conversations" 
+        defaultValue="interactions" 
         className="flex-1 flex flex-col overflow-hidden"
         value={activeTab}
         onValueChange={setActiveTab}
       >
         <div className="px-2 border-b">
           <TabsList className="w-full flex justify-start">
-            <TabsTrigger value="conversations" className="flex-1">
+            <TabsTrigger value="interactions" className="flex-1">
               <MessageSquare className="mr-1 h-4 w-4" />
-              Conversations
+              Interactions
             </TabsTrigger>
             <TabsTrigger value="schedule" className="flex-1">
               <Calendar className="mr-1 h-4 w-4" />
               Schedule
             </TabsTrigger>
+            <TabsTrigger value="relationships" className="flex-1 hidden md:flex">
+              <Users className="mr-1 h-4 w-4" />
+              Relationships
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="flex-1 hidden md:flex">
+              <BarChart4 className="mr-1 h-4 w-4" />
+              Performance
+            </TabsTrigger>
             <TabsTrigger value="details" className="flex-1">
+              <ClipboardList className="mr-1 h-4 w-4" />
               Details
             </TabsTrigger>
           </TabsList>
         </div>
         
-        <TabsContent value="conversations" className="flex-1 flex flex-col p-0 overflow-hidden">
-          <ConversationSection 
-            conversations={conversations} 
-            setConversations={setConversations} 
+        <TabsContent value="interactions" className="flex-1 overflow-y-auto p-4">
+          <InteractionsSection 
+            contact={contact}
+            onInteractionAdded={handleInteractionAdded}
           />
         </TabsContent>
         
-        <TabsContent value="schedule" className="flex-1 overflow-y-auto p-0">
+        <TabsContent value="schedule" className="flex-1 overflow-y-auto p-4">
           <ScheduleSection 
             appointments={appointments} 
             setAppointments={setAppointments} 
             contactId={contact.id} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="relationships" className="flex-1 overflow-y-auto p-4">
+          <RelationshipsSection contact={contact} />
+        </TabsContent>
+        
+        <TabsContent value="performance" className="flex-1 overflow-y-auto p-4">
+          <PerformanceSection 
+            contact={contact}
+            onMetricAdded={() => queryClient.invalidateQueries({ queryKey: ['contacts'] })}
           />
         </TabsContent>
         
