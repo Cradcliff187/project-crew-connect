@@ -29,30 +29,22 @@ const Sidebar = () => {
     { name: 'Documents', href: '/documents', icon: <FolderArchive className="h-5 w-5" /> },
   ];
 
-  // For debugging
-  useEffect(() => {
-    console.log('Sidebar isOpen state:', isOpen);
-  }, [isOpen]);
-
   return (
     <aside 
       className={cn(
-        "fixed inset-y-0 left-0 z-30 w-64 flex-none transform overflow-y-auto bg-[#0485ea] shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-30 w-64 flex-none transform overflow-y-auto bg-[#0485ea] shadow-lg transition-transform duration-200 ease-in-out lg:static lg:translate-x-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}
     >
       <div className="flex h-full flex-col px-4 py-6">
         <div className="mb-8 flex items-center px-2">
           <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/akc-logo.png" 
-              alt="AKC LLC Logo" 
-              className="h-8 w-auto bg-white rounded-sm p-1" 
-            />
+            <img src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" alt="AKC LLC Logo" className="h-8 w-auto" />
             <span className="text-xl font-bold text-white">AKC LLC</span>
           </Link>
         </div>
         
+        {/* Navigation items */}
         <nav className="space-y-1 flex-1">
           {navigationItems.map((item) => (
             <Link
