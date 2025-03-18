@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,7 +18,6 @@ const ActiveWork = () => {
   const [viewMode, setViewMode] = useState<'table' | 'dashboard'>('table');
   const [activeTab, setActiveTab] = useState('all');
   
-  // Fetch projects
   const { 
     data: projects = [], 
     isLoading: projectsLoading, 
@@ -35,13 +33,11 @@ const ActiveWork = () => {
       
       if (error) throw error;
       
-      // Transform data to match our UI requirements
       return data.map(project => ({
         ...project,
-        // Default values for fields not yet in database
-        budget: Math.floor(Math.random() * 200000) + 50000, // Temporary random budget
-        spent: Math.floor(Math.random() * 150000), // Temporary random spent amount
-        progress: Math.floor(Math.random() * 100), // Temporary random progress
+        budget: Math.floor(Math.random() * 200000) + 50000,
+        spent: Math.floor(Math.random() * 150000),
+        progress: Math.floor(Math.random() * 100)
       }));
     },
     meta: {
@@ -51,7 +47,6 @@ const ActiveWork = () => {
     }
   });
 
-  // Fetch work orders
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [workOrdersLoading, setWorkOrdersLoading] = useState(true);
   const [workOrdersError, setWorkOrdersError] = useState<string | null>(null);
@@ -68,11 +63,10 @@ const ActiveWork = () => {
         throw error;
       }
       
-      // Cast the status to StatusType to satisfy TypeScript
       const typedWorkOrders = data?.map(order => ({
         ...order,
         status: order.status as any,
-        progress: order.progress || 0 // Ensure progress has a default value
+        progress: order.progress || 0
       })) || [];
       
       setWorkOrders(typedWorkOrders);
@@ -93,7 +87,6 @@ const ActiveWork = () => {
     fetchWorkOrders();
   }, []);
 
-  // Handle any errors from the project query
   useEffect(() => {
     if (projectsError) {
       toast({
