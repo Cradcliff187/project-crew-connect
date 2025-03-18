@@ -11,23 +11,29 @@ import NotFound from './pages/NotFound';
 import Vendors from './pages/Vendors';
 import ProjectDetail from './components/projects/ProjectDetail';
 import ProjectEdit from './components/projects/ProjectEdit';
+import { SidebarProvider } from './components/layout/SidebarContext';
+import Layout from './components/layout/Layout';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/projects/:projectId" element={<ProjectDetail />} />
-        <Route path="/projects/:projectId/edit" element={<ProjectEdit />} />
-        <Route path="/estimates" element={<Estimates />} />
-        <Route path="/contacts" element={<Contacts />} />
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/time-tracking" element={<TimeTracking />} />
-        <Route path="/vendors" element={<Vendors />} />
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*" element={<Navigate to="/404" />} />
-      </Routes>
+      <SidebarProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:projectId" element={<ProjectDetail />} />
+            <Route path="/projects/:projectId/edit" element={<ProjectEdit />} />
+            <Route path="/estimates" element={<Estimates />} />
+            <Route path="/contacts" element={<Contacts />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/time-tracking" element={<TimeTracking />} />
+            <Route path="/vendors" element={<Vendors />} />
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/404" />} />
+          </Route>
+        </Routes>
+      </SidebarProvider>
     </BrowserRouter>
   );
 }
