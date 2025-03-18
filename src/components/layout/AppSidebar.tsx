@@ -118,7 +118,7 @@ export function AppSidebar() {
               />
             )}
           </div>
-          <span className="text-lg font-bold text-[#0485ea] font-montserrat">{siteConfig.name}</span>
+          {/* Site name text removed */}
         </Link>
       </SidebarHeader>
       <SidebarSeparator />
