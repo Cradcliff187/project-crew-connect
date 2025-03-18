@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +19,17 @@ const timeEntryFormSchema = z.object({
 
 export type TimeEntryFormValues = z.infer<typeof timeEntryFormSchema>;
 
+const defaultFormValues: TimeEntryFormValues = {
+  entityType: 'work_order',
+  entityId: '',
+  workDate: new Date(),
+  startTime: '',
+  endTime: '',
+  hoursWorked: 0,
+  notes: '',
+  employeeId: '',
+};
+
 export function useTimeEntryForm(onSuccess: () => void) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -28,18 +38,9 @@ export function useTimeEntryForm(onSuccess: () => void) {
   
   const form = useForm<TimeEntryFormValues>({
     resolver: zodResolver(timeEntryFormSchema),
-    defaultValues: {
-      entityType: 'work_order',
-      workDate: new Date(),
-      startTime: '',
-      endTime: '',
-      hoursWorked: 0,
-      notes: '',
-      employeeId: '',
-    },
+    defaultValues: defaultFormValues,
   });
   
-  // Watch for start time and end time changes to calculate hours worked
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   
@@ -118,7 +119,6 @@ export function useTimeEntryForm(onSuccess: () => void) {
         
       if (error) throw error;
       
-      // Handle file uploads if any
       if (selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
           const fileExt = file.name.split('.').pop();
@@ -151,23 +151,20 @@ export function useTimeEntryForm(onSuccess: () => void) {
         description: 'Your time entry has been successfully recorded.',
       });
       
-      // Fix for the TypeScript error: ensure all required properties are provided
-      // when resetting the form
       form.reset({
-        entityType: 'work_order', // Make sure this is not optional
-        entityId: '',             // Provide a default value
-        workDate: new Date(),     // Provide a default value
-        startTime: '',            // Provide a default value
-        endTime: '',              // Provide a default value
-        hoursWorked: 0,           // Provide a default value
+        entityType: 'work_order',
+        entityId: '',
+        workDate: new Date(),
+        startTime: '',
+        endTime: '',
+        hoursWorked: 0,
         notes: '',
-        employeeId: form.getValues('employeeId'), // Keep the current employee
+        employeeId: form.getValues('employeeId') || '',
       });
       
       setSelectedFiles([]);
       setShowConfirmDialog(false);
       
-      // Call the success callback
       onSuccess();
     } catch (error: any) {
       console.error('Error submitting time entry:', error);

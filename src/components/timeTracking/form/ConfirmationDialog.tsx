@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { formatTimeRange } from '@/lib/utils';
@@ -11,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { TimeEntryFormValues } from '../hooks/useTimeEntryForm';
 
 interface WorkOrderOrProject {
   id: string;
@@ -23,21 +23,10 @@ interface WorkOrderOrProject {
   status?: string;
 }
 
-interface FormValues {
-  entityType: 'work_order' | 'project';
-  entityId: string;
-  workDate: Date;
-  startTime: string;
-  endTime: string;
-  hoursWorked: number;
-  notes?: string;
-  employeeId?: string;
-}
-
 interface ConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  confirmationData: FormValues | null;
+  confirmationData: TimeEntryFormValues | null;
   employees: { employee_id: string; name: string; }[];
   entityType: 'work_order' | 'project';
   workOrders: WorkOrderOrProject[];
