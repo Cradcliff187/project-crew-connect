@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/layout/PageTransition';
@@ -7,56 +7,60 @@ import WorkOrdersHeader from '@/components/workOrders/WorkOrdersHeader';
 import WorkOrdersTable from '@/components/workOrders/WorkOrdersTable';
 import { WorkOrder } from '@/types/workOrder';
 import { StatusType } from '@/types/common';
+import { useQuery } from '@tanstack/react-query';
+
+const fetchWorkOrders = async () => {
+  const { data, error } = await supabase
+    .from('maintenance_work_orders')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    throw error;
+  }
+  
+  // Cast the status to StatusType to satisfy TypeScript
+  const typedWorkOrders = data?.map(order => ({
+    ...order,
+    status: order.status as StatusType
+  })) || [];
+  
+  return typedWorkOrders;
+};
 
 const WorkOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
-  // Fetch work orders from Supabase
-  const fetchWorkOrders = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('maintenance_work_orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        throw error;
+  const { 
+    data: workOrders = [], 
+    isLoading: loading, 
+    error: queryError,
+    refetch
+  } = useQuery({
+    queryKey: ['workOrders'],
+    queryFn: fetchWorkOrders,
+    meta: {
+      onError: (error: any) => {
+        console.error('Error fetching work orders:', error);
+        toast({
+          title: 'Error fetching work orders',
+          description: error.message,
+          variant: 'destructive'
+        });
       }
-      
-      // Cast the status to StatusType to satisfy TypeScript
-      const typedWorkOrders = data?.map(order => ({
-        ...order,
-        status: order.status as StatusType
-      })) || [];
-      
-      setWorkOrders(typedWorkOrders);
-    } catch (error: any) {
-      console.error('Error fetching work orders:', error);
-      setError(error.message);
-      toast({
-        title: 'Error fetching work orders',
-        description: error.message,
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+  });
+
+  const error = queryError ? (queryError as Error).message : null;
   
-  useEffect(() => {
-    fetchWorkOrders();
-  }, []);
-
+  // Function to trigger refresh of work orders
   const handleWorkOrderAdded = () => {
-    fetchWorkOrders();
+    refetch();
   };
 
-  const handleStatusChange = async () => {
-    fetchWorkOrders();
+  // Function to handle status changes
+  const handleStatusChange = () => {
+    refetch();
   };
 
   return (
