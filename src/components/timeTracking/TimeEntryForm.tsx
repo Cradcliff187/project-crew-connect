@@ -472,6 +472,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                     id="startTime"
                     type="time"
                     className="pl-9"
+                    step="900"
                     {...form.register('startTime')}
                   />
                 </div>
@@ -488,6 +489,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                     id="endTime"
                     type="time"
                     className="pl-9"
+                    step="900"
                     {...form.register('endTime')}
                   />
                 </div>
@@ -620,4 +622,3 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
 };
 
 export default TimeEntryForm;
-
