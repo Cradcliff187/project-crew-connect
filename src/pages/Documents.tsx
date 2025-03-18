@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -196,30 +195,79 @@ const DocumentsPage: React.FC = () => {
     });
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilters({ ...filters, search: e.target.value });
+  };
+
   return (
     <PageTransition>
       <div className="container py-4 md:py-6 space-y-6">
-        {/* Desktop Header */}
-        <div className="hidden md:flex justify-between items-center">
-          <h1 className="text-2xl font-semibold text-[#0485ea]">Documents</h1>
+        {/* Header with Search and Upload button */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl md:text-2xl font-semibold text-[#0485ea]">Documents</h1>
           <div className="flex items-center gap-2">
-            <div className="relative w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search documents..."
-                className="pl-8"
-                value={filters.search}
-                onChange={(e) => handleFilterChange({...filters, search: e.target.value})}
-              />
-            </div>
+            {!isMobile && (
+              <div className="relative w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search documents..."
+                  className="pl-8"
+                  value={filters.search}
+                  onChange={handleSearchChange}
+                />
+              </div>
+            )}
+            {isMobile && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="top">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle>Search Documents</SheetTitle>
+                  </SheetHeader>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search documents..."
+                      className="pl-8"
+                      value={filters.search}
+                      onChange={handleSearchChange}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
+            {isMobile && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader className="mb-4">
+                    <SheetTitle>Filter Documents</SheetTitle>
+                  </SheetHeader>
+                  <DocumentFilters
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    onReset={handleResetFilters}
+                    activeFiltersCount={activeFiltersCount}
+                  />
+                </SheetContent>
+              </Sheet>
+            )}
             <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#0485ea] hover:bg-[#0375d1]">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Document
+                <Button className="bg-[#0485ea] hover:bg-[#0375d1]" size={isMobile ? "icon" : "default"}>
+                  <Plus className="h-4 w-4" />
+                  {!isMobile && <span>Add Document</span>}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className={isMobile ? "w-[95vw] max-w-[600px]" : "sm:max-w-[600px]"}>
                 <DialogHeader>
                   <DialogTitle>Upload Document</DialogTitle>
                   <DialogDescription>
@@ -236,141 +284,17 @@ const DocumentsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Header */}
-        <div className="flex md:hidden justify-between items-center">
-          <h1 className="text-xl font-semibold text-[#0485ea]">Documents</h1>
-          <div className="flex items-center gap-2">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="top">
-                <SheetHeader className="mb-4">
-                  <SheetTitle>Search Documents</SheetTitle>
-                </SheetHeader>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search documents..."
-                    className="pl-8"
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange({...filters, search: e.target.value})}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader className="mb-4">
-                  <SheetTitle>Filter Documents</SheetTitle>
-                </SheetHeader>
-                <DocumentFilters
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  onReset={handleResetFilters}
-                  activeFiltersCount={activeFiltersCount}
-                />
-              </SheetContent>
-            </Sheet>
-            <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-[#0485ea] hover:bg-[#0375d1]" size="icon">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[95vw] max-w-[600px]">
-                <DialogHeader>
-                  <DialogTitle>Upload Document</DialogTitle>
-                  <DialogDescription>
-                    Upload a new document to your system.
-                  </DialogDescription>
-                </DialogHeader>
-                <EnhancedDocumentUpload 
-                  entityType="PROJECT" 
-                  onSuccess={handleUploadSuccess}
-                  onCancel={() => setIsUploadOpen(false)}
-                />
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
         <Separator />
 
-        {/* Active Filters Pills (Desktop) */}
-        {activeFiltersCount > 0 && (
-          <div className="hidden md:flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-muted-foreground">Active filters:</span>
-            {filters.category && (
-              <Badge variant="secondary" className="flex gap-1 items-center">
-                Category: {filters.category}
-                <button onClick={() => handleFilterChange({...filters, category: undefined})}>
-                  ×
-                </button>
-              </Badge>
-            )}
-            {filters.entityType && (
-              <Badge variant="secondary" className="flex gap-1 items-center">
-                Entity: {filters.entityType.replace('_', ' ').toLowerCase()}
-                <button onClick={() => handleFilterChange({...filters, entityType: undefined})}>
-                  ×
-                </button>
-              </Badge>
-            )}
-            {filters.isExpense !== undefined && (
-              <Badge variant="secondary" className="flex gap-1 items-center">
-                {filters.isExpense ? 'Expenses Only' : 'Non-Expenses Only'}
-                <button onClick={() => handleFilterChange({...filters, isExpense: undefined})}>
-                  ×
-                </button>
-              </Badge>
-            )}
-            {activeFiltersCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
-                Clear All
-              </Button>
-            )}
-          </div>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Desktop Filters Panel */}
+          {/* Filters Panel - Desktop Only */}
           <div className="hidden lg:block">
-            <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-              <div className="bg-white rounded-md shadow-sm border p-4 space-y-4">
-                <CollapsibleTrigger asChild>
-                  <div className="flex justify-between items-center cursor-pointer">
-                    <div className="flex items-center space-x-2">
-                      <Filter className="h-4 w-4" />
-                      <h3 className="font-medium">Filters</h3>
-                      {activeFiltersCount > 0 && (
-                        <Badge variant="secondary">{activeFiltersCount}</Badge>
-                      )}
-                    </div>
-                    {isFiltersOpen ? (
-                      <Button variant="ghost" size="sm">Hide</Button>
-                    ) : (
-                      <Button variant="ghost" size="sm">Show</Button>
-                    )}
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4">
-                  <DocumentFilters
-                    filters={filters}
-                    onFilterChange={handleFilterChange}
-                    onReset={handleResetFilters}
-                    activeFiltersCount={activeFiltersCount}
-                  />
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
+            <DocumentFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={handleResetFilters}
+              activeFiltersCount={activeFiltersCount}
+            />
           </div>
 
           {/* Documents Content Area */}

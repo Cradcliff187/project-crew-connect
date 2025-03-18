@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Card } from '@/components/ui/card';
 import { 
   Select, 
   SelectContent, 
@@ -35,21 +36,17 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   onReset,
   activeFiltersCount
 }) => {
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilterChange({ ...filters, search: e.target.value });
-  };
-
   const handleCategoryChange = (value: string) => {
     onFilterChange({ 
       ...filters, 
-      category: value as DocumentCategory 
+      category: value === 'all' ? undefined : value as DocumentCategory 
     });
   };
 
   const handleEntityTypeChange = (value: string) => {
     onFilterChange({ 
       ...filters, 
-      entityType: value as EntityType 
+      entityType: value === 'all' ? undefined : value as EntityType 
     });
   };
 
@@ -64,66 +61,37 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
     });
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'invoice':
-        return <FileText className="h-4 w-4 mr-2" />;
-      case 'receipt':
-        return <Receipt className="h-4 w-4 mr-2" />;
-      case 'contract':
-        return <FileBox className="h-4 w-4 mr-2" />;
-      case 'insurance':
-      case 'certification':
-        return <Shield className="h-4 w-4 mr-2" />;
-      case 'photo':
-        return <FileImage className="h-4 w-4 mr-2" />;
-      default:
-        return <File className="h-4 w-4 mr-2" />;
-    }
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search documents..."
-          className="pl-8"
-          value={filters.search}
-          onChange={handleSearchChange}
-        />
-      </div>
-      
-      <div className="flex items-center">
-        <div className="flex items-center text-sm text-muted-foreground mr-2">
-          <Filter className="h-4 w-4 mr-1" />
-          <span>Filters</span>
+    <Card className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-[#0485ea]" />
+          <h3 className="font-medium text-[#0485ea]">Filter Documents</h3>
+          {activeFiltersCount > 0 && (
+            <Badge variant="secondary">{activeFiltersCount}</Badge>
+          )}
         </div>
-        
         {activeFiltersCount > 0 && (
-          <>
-            <Badge variant="secondary" className="mr-2">
-              {activeFiltersCount}
-            </Badge>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={onReset} 
-              className="h-8 text-sm"
-            >
-              Reset
-            </Button>
-          </>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onReset} 
+            className="h-8 text-sm"
+          >
+            Clear All
+          </Button>
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+      <Separator />
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Select
-          value={filters.category || ''}
+          value={filters.category !== undefined ? filters.category : 'all'}
           onValueChange={handleCategoryChange}
         >
           <SelectTrigger>
-            <SelectValue placeholder="All Categories" />
+            <SelectValue placeholder="Document Category" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
@@ -179,11 +147,11 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
         </Select>
         
         <Select
-          value={filters.entityType || ''}
+          value={filters.entityType !== undefined ? filters.entityType : 'all'}
           onValueChange={handleEntityTypeChange}
         >
           <SelectTrigger>
-            <SelectValue placeholder="All Entities" />
+            <SelectValue placeholder="Related To" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Entities</SelectItem>
@@ -200,7 +168,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
           onValueChange={handleExpenseFilterChange}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Expense Documents" />
+            <SelectValue placeholder="Document Type" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Documents</SelectItem>
@@ -227,8 +195,44 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
         </Select>
       </div>
       
-      <Separator />
-    </div>
+      {activeFiltersCount > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {filters.category && (
+            <Badge variant="outline" className="flex items-center gap-1 bg-gray-50">
+              {filters.category}
+              <button 
+                className="ml-1 hover:bg-gray-200 rounded-full w-4 h-4 inline-flex items-center justify-center"
+                onClick={() => handleCategoryChange('all')}
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          {filters.entityType && (
+            <Badge variant="outline" className="flex items-center gap-1 bg-gray-50">
+              {filters.entityType.replace('_', ' ').toLowerCase()}
+              <button 
+                className="ml-1 hover:bg-gray-200 rounded-full w-4 h-4 inline-flex items-center justify-center"
+                onClick={() => handleEntityTypeChange('all')}
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+          {filters.isExpense !== undefined && (
+            <Badge variant="outline" className="flex items-center gap-1 bg-gray-50">
+              {filters.isExpense ? 'Expenses Only' : 'Non-Expenses Only'}
+              <button 
+                className="ml-1 hover:bg-gray-200 rounded-full w-4 h-4 inline-flex items-center justify-center"
+                onClick={() => handleExpenseFilterChange('all')}
+              >
+                ×
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
+    </Card>
   );
 };
 
