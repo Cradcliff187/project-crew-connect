@@ -1,27 +1,75 @@
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { MoreHorizontal } from 'lucide-react';
+import { Eye, Edit, History, FileText, Archive, Tool } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { Subcontractor, Specialty, mapStatusToStatusBadge, formatDate } from './utils/subcontractorUtils';
 
 interface SubcontractorRowProps {
   subcontractor: Subcontractor;
   specialties: Record<string, Specialty>;
+  onView?: (subcontractor: Subcontractor) => void;
+  onEdit?: (subcontractor: Subcontractor) => void;
 }
 
-const SubcontractorRow = ({ subcontractor: sub, specialties }: SubcontractorRowProps) => {
+const SubcontractorRow = ({ 
+  subcontractor: sub, 
+  specialties, 
+  onView = () => {}, 
+  onEdit = () => {} 
+}: SubcontractorRowProps) => {
   // Get specialty name by ID
   const getSpecialtyName = (id: string) => {
     return specialties[id]?.specialty || 'Unknown Specialty';
+  };
+  
+  const getSubcontractorActions = (): ActionGroup[] => {
+    return [
+      {
+        items: [
+          {
+            label: 'View details',
+            icon: <Eye className="w-4 h-4" />,
+            onClick: () => onView(sub)
+          },
+          {
+            label: 'Edit subcontractor',
+            icon: <Edit className="w-4 h-4" />,
+            onClick: () => onEdit(sub)
+          },
+          {
+            label: 'Work history',
+            icon: <History className="w-4 h-4" />,
+            onClick: () => console.log('View work history', sub.subid)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Specialties',
+            icon: <Tool className="w-4 h-4" />,
+            onClick: () => console.log('Manage specialties', sub.subid)
+          },
+          {
+            label: 'Insurance info',
+            icon: <FileText className="w-4 h-4" />,
+            onClick: () => console.log('View insurance info', sub.subid)
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Deactivate',
+            icon: <Archive className="w-4 h-4" />,
+            onClick: () => console.log('Deactivate subcontractor', sub.subid),
+            className: 'text-red-600'
+          }
+        ]
+      }
+    ];
   };
   
   return (
@@ -59,24 +107,7 @@ const SubcontractorRow = ({ subcontractor: sub, specialties }: SubcontractorRowP
         <StatusBadge status={mapStatusToStatusBadge(sub.status)} />
       </TableCell>
       <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>View details</DropdownMenuItem>
-            <DropdownMenuItem>Edit subcontractor</DropdownMenuItem>
-            <DropdownMenuItem>Work history</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Specialties</DropdownMenuItem>
-            <DropdownMenuItem>Insurance info</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">Deactivate</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ActionMenu groups={getSubcontractorActions()} size="sm" />
       </TableCell>
     </TableRow>
   );

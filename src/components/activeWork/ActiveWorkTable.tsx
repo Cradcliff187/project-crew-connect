@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Wrench, Eye, Edit, Clock, FileText, Archive, CalendarClock } from 'lucide-react';
+import { Briefcase, Wrench, Eye, Edit, Clock, FileText, Archive, CalendarClock, Plus } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -154,7 +154,11 @@ const ActiveWorkTable = ({
               label: 'Edit project',
               icon: <Edit className="w-4 h-4" />,
               onClick: (e) => navigate(`/projects/${item.id}/edit`)
-            },
+            }
+          ]
+        },
+        {
+          items: [
             {
               label: 'Add time log',
               icon: <Clock className="w-4 h-4" />,
@@ -171,12 +175,12 @@ const ActiveWorkTable = ({
           items: [
             {
               label: 'Update status',
-              icon: <Wrench className="w-4 h-4" />,
+              icon: <Edit className="w-4 h-4" />,
               onClick: (e) => console.log('Update project status', item.id)
             },
             {
               label: 'Update progress',
-              icon: <Wrench className="w-4 h-4" />,
+              icon: <Edit className="w-4 h-4" />,
               onClick: (e) => console.log('Update project progress', item.id)
             }
           ]
@@ -205,7 +209,11 @@ const ActiveWorkTable = ({
               label: 'Edit work order',
               icon: <Edit className="w-4 h-4" />,
               onClick: (e) => console.log('Edit work order', item.id)
-            },
+            }
+          ]
+        },
+        {
+          items: [
             {
               label: 'Add time log',
               icon: <Clock className="w-4 h-4" />,
@@ -222,12 +230,12 @@ const ActiveWorkTable = ({
           items: [
             {
               label: 'Update status',
-              icon: <Wrench className="w-4 h-4" />,
+              icon: <Edit className="w-4 h-4" />,
               onClick: (e) => console.log('Update work order status', item.id)
             },
             {
               label: 'Update progress',
-              icon: <Wrench className="w-4 h-4" />,
+              icon: <Edit className="w-4 h-4" />,
               onClick: (e) => console.log('Update work order progress', item.id)
             }
           ]
@@ -310,7 +318,7 @@ const ActiveWorkTable = ({
                 </div>
               </TableCell>
               <TableCell onClick={(e) => e.stopPropagation()}>
-                <ActionMenu groups={getItemActions(item)} />
+                <ActionMenu groups={getItemActions(item)} size="sm" />
               </TableCell>
             </TableRow>
           ))}

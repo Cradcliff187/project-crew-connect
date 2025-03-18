@@ -1,19 +1,9 @@
 
-import { Building, Mail, Phone, MapPin, MoreHorizontal, Star } from 'lucide-react';
+import { Building, Mail, Phone, MapPin, Star, Eye, Edit, Trash2, Send, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent
-} from '@/components/ui/dropdown-menu';
 import StatusBadge from '@/components/ui/StatusBadge';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface ContactCardProps {
   contact: any;
@@ -105,6 +95,115 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
     
     return [];
   };
+
+  // Define action groups for the contact based on type
+  const getContactActions = (): ActionGroup[] => {
+    const primaryActions: ActionGroup = {
+      items: [
+        {
+          label: 'View details',
+          icon: <Eye className="h-4 w-4" />,
+          onClick: () => onView(contact)
+        },
+        {
+          label: 'Edit contact',
+          icon: <Edit className="h-4 w-4" />,
+          onClick: () => onEdit(contact)
+        }
+      ]
+    };
+
+    // Type-specific actions
+    const typeSpecificActions: ActionGroup = {
+      items: []
+    };
+
+    if (contact.type === 'supplier') {
+      typeSpecificActions.items.push({
+        label: 'View materials',
+        icon: <Eye className="h-4 w-4" />,
+        onClick: () => console.log('View materials')
+      });
+    } else if (contact.type === 'subcontractor') {
+      typeSpecificActions.items.push({
+        label: 'Assign to project',
+        icon: <Send className="h-4 w-4" />,
+        onClick: () => console.log('Assign to project')
+      });
+    } else if (contact.type === 'employee') {
+      typeSpecificActions.items.push({
+        label: 'View timesheet',
+        icon: <Clock className="h-4 w-4" />,
+        onClick: () => console.log('View timesheet')
+      });
+    } else if (['client', 'customer'].includes(contact.type)) {
+      typeSpecificActions.items.push(
+        {
+          label: 'View projects',
+          icon: <Eye className="h-4 w-4" />,
+          onClick: () => console.log('View projects')
+        },
+        {
+          label: 'View estimates',
+          icon: <Eye className="h-4 w-4" />,
+          onClick: () => console.log('View estimates')
+        }
+      );
+    }
+
+    // Communication actions
+    const communicationActions: ActionGroup = {
+      items: [
+        {
+          label: 'Send email',
+          icon: <Mail className="h-4 w-4" />,
+          onClick: () => console.log('Send email')
+        },
+        {
+          label: 'Schedule meeting',
+          icon: <CalendarClock className="h-4 w-4" />,
+          onClick: () => console.log('Schedule meeting')
+        }
+      ]
+    };
+
+    // Status actions (if available)
+    const statusOptions = getStatusOptions();
+    const statusActions: ActionGroup = {
+      items: statusOptions.map(option => ({
+        label: option.label,
+        onClick: () => onStatusChange && onStatusChange(contact, option.value)
+      }))
+    };
+
+    // Destructive actions
+    const destructiveActions: ActionGroup = {
+      items: [
+        {
+          label: 'Delete',
+          icon: <Trash2 className="h-4 w-4" />,
+          onClick: () => onDelete(contact),
+          className: 'text-red-600'
+        }
+      ]
+    };
+
+    const groups: ActionGroup[] = [primaryActions];
+
+    if (typeSpecificActions.items.length > 0) {
+      groups.push(typeSpecificActions);
+    }
+
+    groups.push(communicationActions);
+
+    if (statusActions.items.length > 0 && onStatusChange) {
+      groups.push(statusActions);
+    }
+
+    groups.push(destructiveActions);
+
+    return groups;
+  };
   
   return (
     <Card className="premium-card overflow-hidden">
@@ -136,62 +235,7 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
             </div>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onView(contact)}>View details</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(contact)}>Edit contact</DropdownMenuItem>
-              
-              {/* Status change menu */}
-              {contact.status && getStatusOptions().length > 0 && onStatusChange && (
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>Change status</DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      {getStatusOptions().map((option) => (
-                        <DropdownMenuItem 
-                          key={option.value}
-                          onClick={() => onStatusChange(contact, option.value)}
-                        >
-                          {option.label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-              )}
-              
-              {contact.type === 'supplier' && (
-                <DropdownMenuItem>View materials</DropdownMenuItem>
-              )}
-              {contact.type === 'subcontractor' && (
-                <DropdownMenuItem>Assign to project</DropdownMenuItem>
-              )}
-              {contact.type === 'employee' && (
-                <DropdownMenuItem>View timesheet</DropdownMenuItem>
-              )}
-              {['client', 'customer'].includes(contact.type) && (
-                <>
-                  <DropdownMenuItem>View projects</DropdownMenuItem>
-                  <DropdownMenuItem>View estimates</DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuItem>Send email</DropdownMenuItem>
-              <DropdownMenuItem>Schedule meeting</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-red-600"
-                onClick={() => onDelete(contact)}
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ActionMenu groups={getContactActions()} />
         </div>
         
         <div className="mt-4 space-y-2 text-sm">
@@ -235,7 +279,7 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
           {contact.type === 'employee' ? 'Employee since:' : 'Last contacted:'} {formatDate(contact.lastContact)}
         </span>
         <div className="space-x-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(contact)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <Mail className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8">

@@ -15,23 +15,41 @@ export interface ActionItem {
   onClick: (e: React.MouseEvent) => void;
   icon?: React.ReactNode;
   className?: string;
+  disabled?: boolean;
 }
 
 export interface ActionGroup {
   items: ActionItem[];
+  label?: string;
 }
 
 interface ActionMenuProps {
   groups: ActionGroup[];
   align?: 'start' | 'center' | 'end';
+  size?: 'default' | 'sm';
+  variant?: 'ghost' | 'outline';
+  triggerClassName?: string;
 }
 
-const ActionMenu = ({ groups, align = 'end' }: ActionMenuProps) => {
+const ActionMenu = ({ 
+  groups, 
+  align = 'end', 
+  size = 'default',
+  variant = 'ghost',
+  triggerClassName 
+}: ActionMenuProps) => {
+  const buttonSize = size === 'default' ? 'icon' : 'icon-sm';
+  const buttonClasses = size === 'default' ? 'h-8 w-8' : 'h-6 w-6';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button 
+          variant={variant} 
+          size={buttonSize as any} 
+          className={`${buttonClasses} ${triggerClassName || ''}`}
+        >
+          <MoreHorizontal className={size === 'default' ? 'h-4 w-4' : 'h-3.5 w-3.5'} />
           <span className="sr-only">Open menu</span>
         </Button>
       </DropdownMenuTrigger>
@@ -47,6 +65,7 @@ const ActionMenu = ({ groups, align = 'end' }: ActionMenuProps) => {
                   item.onClick(e);
                 }}
                 className={item.className}
+                disabled={item.disabled}
               >
                 {item.icon && <span className="mr-2">{item.icon}</span>}
                 {item.label}

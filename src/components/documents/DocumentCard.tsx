@@ -39,12 +39,12 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onView, onDelete 
           {
             label: 'View',
             icon: <Eye className="w-4 h-4" />,
-            onClick: (e) => onView()
+            onClick: () => onView()
           },
           {
             label: 'Download',
             icon: <Download className="w-4 h-4" />,
-            onClick: (e) => {
+            onClick: () => {
               if (document.url) {
                 window.open(document.url, '_blank');
               }
@@ -57,7 +57,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onView, onDelete 
           {
             label: 'Delete',
             icon: <Trash2 className="w-4 h-4" />,
-            onClick: (e) => onDelete(),
+            onClick: () => onDelete(),
             className: 'text-destructive'
           }
         ]
@@ -89,7 +89,10 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onView, onDelete 
             )}
           </div>
           <div className="ml-2">
-            <ActionMenu groups={getDocumentActions()} />
+            <ActionMenu 
+              groups={getDocumentActions()} 
+              size="sm"
+            />
           </div>
         </div>
       </CardContent>

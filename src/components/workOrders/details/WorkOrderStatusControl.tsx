@@ -1,5 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Edit } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -11,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { WorkOrder } from '@/types/workOrder';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface StatusTransition {
   to_status: string;
@@ -27,8 +29,8 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   const [loading, setLoading] = useState(false);
   const [statusTransitions, setStatusTransitions] = useState<StatusTransition[]>([]);
 
-  // Fetch possible status transitions on component mount
-  useState(() => {
+  // Fetch possible status transitions when component mounts
+  useEffect(() => {
     const fetchTransitions = async () => {
       try {
         const { data: transitionsData } = await supabase
@@ -44,7 +46,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
     };
     
     fetchTransitions();
-  });
+  }, [workOrder.status]);
 
   const handleStatusChange = async (newStatus: string) => {
     setLoading(true);
@@ -91,6 +93,19 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
     }
   };
 
+  const getStatusActions = (): ActionGroup[] => {
+    return [
+      {
+        items: statusTransitions.map((transition) => ({
+          label: transition.label,
+          icon: <Edit className="w-4 h-4" />,
+          onClick: () => handleStatusChange(transition.to_status),
+          disabled: loading
+        }))
+      }
+    ];
+  };
+
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center">
@@ -99,18 +114,33 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       </div>
       
       {statusTransitions.length > 0 && (
-        <Select onValueChange={handleStatusChange} disabled={loading}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Change status" />
-          </SelectTrigger>
-          <SelectContent>
-            {statusTransitions.map((transition) => (
-              <SelectItem key={transition.to_status} value={transition.to_status}>
-                {transition.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <>
+          {/* Mobile and simplified view */}
+          <div className="md:hidden">
+            <ActionMenu 
+              groups={getStatusActions()} 
+              size="sm" 
+              variant="outline"
+              triggerClassName="bg-muted/50 border border-input"
+            />
+          </div>
+          
+          {/* Desktop view with Select component */}
+          <div className="hidden md:block">
+            <Select onValueChange={handleStatusChange} disabled={loading}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Change status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusTransitions.map((transition) => (
+                  <SelectItem key={transition.to_status} value={transition.to_status}>
+                    {transition.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </>
       )}
     </div>
   );
