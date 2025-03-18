@@ -11,6 +11,8 @@ import {
   Clock,
   FileText,
   ClipboardList,
+  Briefcase,
+  Wrench,
 } from "lucide-react";
 
 import {
@@ -43,6 +45,11 @@ const mainNav = [
     title: "Dashboard",
     href: "/",
     icon: <LayoutDashboard className="h-5 w-5" />,
+  },
+  {
+    title: "Active Work",
+    href: "/active-work",
+    icon: <Briefcase className="h-5 w-5" />,
   },
   {
     title: "Projects",

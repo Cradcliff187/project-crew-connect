@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,17 +8,20 @@ import PageTransition from '@/components/layout/PageTransition';
 import PageHeader from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, ChevronDown, List, LayoutGrid } from 'lucide-react';
-import ProjectsTable from '@/components/projects/ProjectsTable';
-import WorkOrdersTable from '@/components/workOrders/WorkOrdersTable';
-import { WorkOrder } from '@/types/workOrder';
+import { Search, Filter, ChevronDown, List, LayoutGrid, CalendarClock, Clock, Briefcase, Wrench } from 'lucide-react';
+import ActiveWorkTable from '@/components/activeWork/ActiveWorkTable';
 import ActiveWorkDashboard from '@/components/activeWork/ActiveWorkDashboard';
+import { WorkItem, projectToWorkItem, workOrderToWorkItem } from '@/types/activeWork';
+import { WorkOrder } from '@/types/workOrder';
 
 const ActiveWork = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'dashboard'>('table');
   const [activeTab, setActiveTab] = useState('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'projects' | 'workOrders'>('all');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   
+  // Fetch projects
   const { 
     data: projects = [], 
     isLoading: projectsLoading, 
@@ -47,21 +51,21 @@ const ActiveWork = () => {
     }
   });
 
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [workOrdersLoading, setWorkOrdersLoading] = useState(true);
-  const [workOrdersError, setWorkOrdersError] = useState<string | null>(null);
-  
-  const fetchWorkOrders = async () => {
-    setWorkOrdersLoading(true);
-    try {
+  // Fetch work orders
+  const { 
+    data: workOrders = [], 
+    isLoading: workOrdersLoading, 
+    error: workOrdersError,
+    refetch: refetchWorkOrders
+  } = useQuery({
+    queryKey: ['workOrders'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('maintenance_work_orders')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
       const typedWorkOrders = data?.map(order => ({
         ...order,
@@ -70,23 +74,19 @@ const ActiveWork = () => {
         time_estimate: order.time_estimate || null
       })) || [];
       
-      setWorkOrders(typedWorkOrders);
-    } catch (error: any) {
-      console.error('Error fetching work orders:', error);
-      setWorkOrdersError(error.message);
-      toast({
-        title: 'Error fetching work orders',
-        description: error.message,
-        variant: 'destructive'
-      });
-    } finally {
-      setWorkOrdersLoading(false);
+      return typedWorkOrders;
+    },
+    meta: {
+      onError: (error: any) => {
+        console.error('Error fetching work orders:', error);
+        toast({
+          title: 'Error fetching work orders',
+          description: error.message,
+          variant: 'destructive'
+        });
+      }
     }
-  };
-  
-  useEffect(() => {
-    fetchWorkOrders();
-  }, []);
+  });
 
   useEffect(() => {
     if (projectsError) {
@@ -98,7 +98,43 @@ const ActiveWork = () => {
     }
   }, [projectsError]);
 
-  const projectsErrorMessage = projectsError ? (projectsError as Error).message : null;
+  // Convert projects and work orders to unified WorkItem format
+  const projectItems: WorkItem[] = projects.map(projectToWorkItem);
+  const workOrderItems: WorkItem[] = workOrders.map(workOrderToWorkItem);
+
+  // Combine and filter items based on current tab
+  const getFilteredItems = () => {
+    let items: WorkItem[] = [];
+    
+    if (activeTab === 'all' || activeTab === 'projects') {
+      items = [...items, ...projectItems];
+    }
+    
+    if (activeTab === 'all' || activeTab === 'workOrders') {
+      items = [...items, ...workOrderItems];
+    }
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      items = items.filter(item => {
+        const titleMatch = item.title.toLowerCase().includes(query);
+        const customerMatch = item.customerName?.toLowerCase().includes(query) || false;
+        const idMatch = item.id.toLowerCase().includes(query);
+        const poMatch = item.type === 'workOrder' && item.poNumber?.toLowerCase().includes(query);
+        
+        return titleMatch || customerMatch || idMatch || (poMatch || false);
+      });
+    }
+    
+    return items;
+  };
+
+  const filteredItems = getFilteredItems();
+  
+  const handleWorkOrderChange = () => {
+    refetchWorkOrders();
+  };
 
   return (
     <PageTransition>
@@ -111,7 +147,7 @@ const ActiveWork = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
               type="search" 
-              placeholder="Search all work..." 
+              placeholder="Search by name, client, ID or PO#..." 
               className="pl-9 subtle-input rounded-md"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -154,54 +190,23 @@ const ActiveWork = () => {
           </TabsList>
           
           {viewMode === 'table' ? (
-            <>
-              <TabsContent value="all" className="space-y-6">
-                <h3 className="text-lg font-semibold mt-4">Projects</h3>
-                <ProjectsTable 
-                  projects={projects}
-                  loading={projectsLoading}
-                  error={projectsErrorMessage}
-                  searchQuery={searchQuery}
-                />
-                
-                <h3 className="text-lg font-semibold mt-6">Work Orders</h3>
-                <WorkOrdersTable 
-                  workOrders={workOrders}
-                  loading={workOrdersLoading}
-                  error={workOrdersError}
-                  searchQuery={searchQuery}
-                  onStatusChange={fetchWorkOrders}
-                />
-              </TabsContent>
-              
-              <TabsContent value="projects">
-                <ProjectsTable 
-                  projects={projects}
-                  loading={projectsLoading}
-                  error={projectsErrorMessage}
-                  searchQuery={searchQuery}
-                />
-              </TabsContent>
-              
-              <TabsContent value="workOrders">
-                <WorkOrdersTable 
-                  workOrders={workOrders}
-                  loading={workOrdersLoading}
-                  error={workOrdersError}
-                  searchQuery={searchQuery}
-                  onStatusChange={fetchWorkOrders}
-                />
-              </TabsContent>
-            </>
+            <TabsContent value={activeTab} className="space-y-6">
+              <ActiveWorkTable 
+                items={filteredItems}
+                loading={projectsLoading || workOrdersLoading}
+                projectsError={projectsError ? (projectsError as Error).message : null}
+                workOrdersError={workOrdersError ? (workOrdersError as Error).message : null}
+                onWorkOrderChange={handleWorkOrderChange}
+              />
+            </TabsContent>
           ) : (
-            <TabsContent value={activeTab}>
+            <TabsContent value={activeTab} className="pt-4">
               <ActiveWorkDashboard 
-                projects={activeTab === 'workOrders' ? [] : projects}
-                workOrders={activeTab === 'projects' ? [] : workOrders}
+                items={filteredItems}
                 projectsLoading={projectsLoading}
                 workOrdersLoading={workOrdersLoading}
                 searchQuery={searchQuery}
-                onWorkOrderChange={fetchWorkOrders}
+                onWorkOrderChange={handleWorkOrderChange}
               />
             </TabsContent>
           )}
