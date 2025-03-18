@@ -5,13 +5,15 @@ import {
   MailIcon, 
   PhoneIcon, 
   FileIcon, 
-  UserCheckIcon 
+  UserCheckIcon,
+  MoreHorizontalIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StatusDropdown from './StatusDropdown';
 import { getStatusOptions } from './util/statusTransitions';
 import TypeTransitionDialog from './TypeTransitionDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface ContactActionButtonsProps {
   contact: any;
@@ -34,6 +36,45 @@ const ContactActionButtons = ({
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
   
+  // Main action groups for desktop view
+  const getContactActionItems = (): ActionGroup[] => {
+    return [
+      {
+        items: [
+          {
+            label: 'Change Type',
+            icon: <UserCheckIcon className="h-4 w-4" />,
+            onClick: () => setTypeDialogOpen(true)
+          },
+          {
+            label: 'Schedule',
+            icon: <CalendarIcon className="h-4 w-4" />,
+            onClick: () => onSchedule && onSchedule()
+          }
+        ]
+      },
+      {
+        items: [
+          {
+            label: 'Email',
+            icon: <MailIcon className="h-4 w-4" />,
+            onClick: () => window.open(`mailto:${contact.email}`)
+          },
+          {
+            label: 'Call',
+            icon: <PhoneIcon className="h-4 w-4" />,
+            onClick: () => window.open(`tel:${contact.phone}`)
+          },
+          {
+            label: 'Documents',
+            icon: <FileIcon className="h-4 w-4" />,
+            onClick: () => console.log('Open documents')
+          }
+        ]
+      }
+    ];
+  };
+  
   return (
     <div className="border-b">
       <div className="container py-2 flex flex-wrap gap-2 justify-start items-center">
@@ -43,34 +84,46 @@ const ContactActionButtons = ({
           statusOptions={statusOptions}
         />
         
-        <Button size="sm" variant="outline" onClick={() => setTypeDialogOpen(true)}>
-          <UserCheckIcon className="h-4 w-4 mr-1" />
-          Change Type
-        </Button>
+        {/* Show main buttons on larger screens */}
+        <div className="hidden sm:flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setTypeDialogOpen(true)}>
+            <UserCheckIcon className="h-4 w-4 mr-1" />
+            Change Type
+          </Button>
+          
+          <Button size="sm" variant="outline" onClick={onSchedule}>
+            <CalendarIcon className="h-4 w-4 mr-1" />
+            Schedule
+          </Button>
+          
+          <Button size="sm" variant="outline" asChild>
+            <a href={`mailto:${contact.email}`}>
+              <MailIcon className="h-4 w-4 mr-1" />
+              Email
+            </a>
+          </Button>
+          
+          <Button size="sm" variant="outline" asChild>
+            <a href={`tel:${contact.phone}`}>
+              <PhoneIcon className="h-4 w-4 mr-1" />
+              Call
+            </a>
+          </Button>
+          
+          <Button size="sm" variant="outline">
+            <FileIcon className="h-4 w-4 mr-1" />
+            Documents
+          </Button>
+        </div>
         
-        <Button size="sm" variant="outline" onClick={onSchedule}>
-          <CalendarIcon className="h-4 w-4 mr-1" />
-          Schedule
-        </Button>
-        
-        <Button size="sm" variant="outline" asChild>
-          <a href={`mailto:${contact.email}`}>
-            <MailIcon className="h-4 w-4 mr-1" />
-            Email
-          </a>
-        </Button>
-        
-        <Button size="sm" variant="outline" asChild>
-          <a href={`tel:${contact.phone}`}>
-            <PhoneIcon className="h-4 w-4 mr-1" />
-            Call
-          </a>
-        </Button>
-        
-        <Button size="sm" variant="outline">
-          <FileIcon className="h-4 w-4 mr-1" />
-          Documents
-        </Button>
+        {/* ActionMenu for mobile-friendly access to all options */}
+        <div className="sm:hidden ml-auto">
+          <ActionMenu 
+            groups={getContactActionItems()} 
+            variant="outline" 
+            size="sm" 
+          />
+        </div>
       </div>
 
       <TypeTransitionDialog

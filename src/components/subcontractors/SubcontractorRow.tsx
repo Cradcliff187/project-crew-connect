@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Eye, Star, Clock, CheckCircle2 } from 'lucide-react';
 import { 
   formatSubcontractorAddress, 
@@ -15,6 +15,7 @@ import InsuranceStatus from './InsuranceStatus';
 import VendorScoreBadge from './VendorScoreBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface SubcontractorRowProps {
   subcontractor: Subcontractor;
@@ -192,6 +193,55 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
     );
   };
 
+  // Get action menu groups - similar pattern to Vendors and Contacts
+  const getSubcontractorActions = (): ActionGroup[] => {
+    return [
+      {
+        // Primary actions
+        items: [
+          {
+            label: 'View details',
+            icon: <Eye className="h-4 w-4" />,
+            onClick: () => handleViewClick()
+          },
+          {
+            label: 'Edit subcontractor',
+            icon: <Edit className="h-4 w-4" />,
+            onClick: () => onEdit(subcontractor)
+          }
+        ]
+      },
+      {
+        // Subcontractor specific actions
+        items: [
+          {
+            label: 'Assign to project',
+            icon: <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>,
+            onClick: () => console.log('Assign to project')
+          },
+          {
+            label: 'Schedule performance review',
+            icon: <Clock className="h-4 w-4" />,
+            onClick: () => console.log('Schedule performance review')
+          }
+        ]
+      },
+      {
+        // Destructive actions
+        items: [
+          {
+            label: 'Delete subcontractor',
+            icon: <Trash2 className="h-4 w-4" />,
+            onClick: () => onDelete(subcontractor),
+            className: 'text-red-600'
+          }
+        ]
+      }
+    ];
+  };
+
   return (
     <TableRow>
       <TableCell>
@@ -233,17 +283,9 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
         )}
       </TableCell>
       <TableCell>{getStatusBadge(subcontractor.status)}</TableCell>
-      <TableCell className="text-right">
-        <div className="flex justify-end space-x-1">
-          <Button variant="ghost" size="icon" onClick={handleViewClick}>
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => onEdit(subcontractor)}>
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => onDelete(subcontractor)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+      <TableCell>
+        <div className="flex justify-end">
+          <ActionMenu groups={getSubcontractorActions()} />
         </div>
       </TableCell>
     </TableRow>
