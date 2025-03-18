@@ -1,113 +1,152 @@
 
+import React from 'react';
+import { format } from 'date-fns';
+import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, History, FileText, Archive, Wrench } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { TableCell, TableRow } from '@/components/ui/table';
+import { Subcontractor } from './utils/subcontractorUtils';
+import { StatusType } from '@/types/common';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
-import { Subcontractor, Specialty, mapStatusToStatusBadge, formatDate } from './utils/subcontractorUtils';
+import { Edit, Eye, Trash, CheckCircle2, AlertTriangle, ClipboardList } from 'lucide-react';
+import InsuranceStatus from './InsuranceStatus';
 
 interface SubcontractorRowProps {
   subcontractor: Subcontractor;
-  specialties: Record<string, Specialty>;
-  onView?: (subcontractor: Subcontractor) => void;
-  onEdit?: (subcontractor: Subcontractor) => void;
+  specialtyNames: Record<string, string>;
+  onEdit: (subcontractor: Subcontractor) => void;
+  onDelete: (subcontractor: Subcontractor) => void;
+  onView: (subcontractor: Subcontractor) => void;
 }
 
-const SubcontractorRow = ({ 
-  subcontractor: sub, 
-  specialties, 
-  onView = () => {}, 
-  onEdit = () => {} 
-}: SubcontractorRowProps) => {
-  // Get specialty name by ID
-  const getSpecialtyName = (id: string) => {
-    return specialties[id]?.specialty || 'Unknown Specialty';
+export const mapStatusToStatusBadge = (status: string | null): StatusType => {
+  const statusMap: Record<string, StatusType> = {
+    "ACTIVE": "active",
+    "INACTIVE": "inactive",
+    "QUALIFIED": "qualified",
+    "VERIFIED": "qualified",
+    "PENDING": "pending",
+    "REJECTED": "critical"
   };
   
-  const getSubcontractorActions = (): ActionGroup[] => {
-    return [
-      {
-        items: [
-          {
-            label: 'View details',
-            icon: <Eye className="w-4 h-4" />,
-            onClick: () => onView(sub)
-          },
-          {
-            label: 'Edit subcontractor',
-            icon: <Edit className="w-4 h-4" />,
-            onClick: () => onEdit(sub)
-          },
-          {
-            label: 'Work history',
-            icon: <History className="w-4 h-4" />,
-            onClick: () => console.log('View work history', sub.subid)
-          }
-        ]
-      },
-      {
-        items: [
-          {
-            label: 'Specialties',
-            icon: <Wrench className="w-4 h-4" />,
-            onClick: () => console.log('Manage specialties', sub.subid)
-          },
-          {
-            label: 'Insurance info',
-            icon: <FileText className="w-4 h-4" />,
-            onClick: () => console.log('View insurance info', sub.subid)
-          }
-        ]
-      },
-      {
-        items: [
-          {
-            label: 'Deactivate',
-            icon: <Archive className="w-4 h-4" />,
-            onClick: () => console.log('Deactivate subcontractor', sub.subid),
-            className: 'text-red-600'
-          }
-        ]
-      }
-    ];
+  if (!status) return "not_set";
+  
+  return statusMap[status] || "not_set";
+};
+
+const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
+  subcontractor,
+  specialtyNames,
+  onEdit,
+  onDelete,
+  onView
+}) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (e) {
+      return 'Invalid date';
+    }
   };
   
+  const getSpecialtyLabels = () => {
+    if (!subcontractor.specialty_ids || subcontractor.specialty_ids.length === 0) {
+      return <span className="text-muted-foreground italic">None specified</span>;
+    }
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {subcontractor.specialty_ids.slice(0, 2).map(id => (
+          <Badge key={id} variant="outline" className="text-xs">
+            {specialtyNames[id] || 'Unknown'}
+          </Badge>
+        ))}
+        {subcontractor.specialty_ids.length > 2 && (
+          <Badge variant="outline" className="text-xs">
+            +{subcontractor.specialty_ids.length - 2} more
+          </Badge>
+        )}
+      </div>
+    );
+  };
+  
+  const getPaymentTermsLabel = (terms: string | null) => {
+    const termsMap: Record<string, string> = {
+      "NET15": "Net 15",
+      "NET30": "Net 30",
+      "NET45": "Net 45",
+      "NET60": "Net 60",
+      "DUE_ON_RECEIPT": "Due on Receipt"
+    };
+    
+    return termsMap[terms || "NET30"] || "Net 30";
+  };
+  
+  const subcontractorActions: ActionGroup[] = [
+    {
+      items: [
+        {
+          label: 'View Details',
+          icon: <Eye className="h-4 w-4" />,
+          onClick: () => onView(subcontractor)
+        },
+        {
+          label: 'Edit Subcontractor',
+          icon: <Edit className="h-4 w-4" />,
+          onClick: () => onEdit(subcontractor)
+        }
+      ]
+    },
+    {
+      items: [
+        {
+          label: 'View Assignments',
+          icon: <ClipboardList className="h-4 w-4" />,
+          onClick: () => console.log('View assignments', subcontractor.subid)
+        }
+      ]
+    },
+    {
+      items: [
+        {
+          label: 'Delete Subcontractor',
+          icon: <Trash className="h-4 w-4" />,
+          onClick: () => onDelete(subcontractor),
+          className: 'text-red-600'
+        }
+      ]
+    }
+  ];
+
   return (
-    <TableRow key={sub.subid}>
+    <TableRow>
       <TableCell>
-        <div className="font-medium">{sub.subname || 'Unnamed Subcontractor'}</div>
-        <div className="text-xs text-muted-foreground">{sub.subid}</div>
+        <div className="font-medium">{subcontractor.subname}</div>
+        <div className="text-xs text-muted-foreground">{subcontractor.subid}</div>
       </TableCell>
       <TableCell>
-        <div className="flex flex-wrap gap-1">
-          {sub.specialty_ids && sub.specialty_ids.length > 0 ? (
-            sub.specialty_ids.map((specialtyId) => (
-              <Badge key={specialtyId} variant="outline" className="bg-purple-50 text-purple-800 border-purple-200">
-                {getSpecialtyName(specialtyId)}
-              </Badge>
-            ))
-          ) : (
-            <span className="text-muted-foreground text-sm">No specialties</span>
-          )}
+        <div>{subcontractor.contactemail || 'No Email'}</div>
+        <div className="text-xs text-muted-foreground">{subcontractor.phone || 'No Phone'}</div>
+      </TableCell>
+      <TableCell>
+        {getSpecialtyLabels()}
+      </TableCell>
+      <TableCell>
+        <div className="flex space-x-2 items-center">
+          <span>{getPaymentTermsLabel(subcontractor.payment_terms)}</span>
         </div>
       </TableCell>
       <TableCell>
-        <div>{sub.contactemail || 'No Email'}</div>
-        <div className="text-xs text-muted-foreground">{sub.phone || 'No Phone'}</div>
+        <InsuranceStatus 
+          expiryDate={subcontractor.insurance_expiry} 
+          isRequired={subcontractor.insurance_required ?? true} 
+        />
       </TableCell>
       <TableCell>
-        {sub.city && sub.state ? (
-          <div>{sub.city}, {sub.state}</div>
-        ) : (
-          <div className="text-muted-foreground">No Location</div>
-        )}
+        <StatusBadge status={mapStatusToStatusBadge(subcontractor.status)} />
       </TableCell>
-      <TableCell>{formatDate(sub.created_at)}</TableCell>
-      <TableCell>
-        <StatusBadge status={mapStatusToStatusBadge(sub.status)} />
-      </TableCell>
-      <TableCell>
-        <ActionMenu groups={getSubcontractorActions()} size="sm" />
+      <TableCell className="text-right">
+        <ActionMenu groups={subcontractorActions} />
       </TableCell>
     </TableRow>
   );

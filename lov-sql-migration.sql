@@ -1,5 +1,12 @@
 
--- Function to get a work order's project link
+-- Add payment terms, insurance tracking, and notes fields to the subcontractors table
+ALTER TABLE public.subcontractors 
+ADD COLUMN payment_terms VARCHAR DEFAULT 'NET30',
+ADD COLUMN insurance_required BOOLEAN DEFAULT true,
+ADD COLUMN insurance_expiry TIMESTAMP WITH TIME ZONE,
+ADD COLUMN notes TEXT;
+
+-- Enhance the generate_subcontractor_id function to include better validation
 CREATE OR REPLACE FUNCTION public.get_work_order_project_link(work_order_id UUID)
 RETURNS TABLE (
   project_id TEXT,

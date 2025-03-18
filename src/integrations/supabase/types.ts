@@ -1747,6 +1747,23 @@ export type Database = {
         }
         Returns: string
       }
+      get_work_order_project_link: {
+        Args: {
+          work_order_id: string
+        }
+        Returns: {
+          project_id: string
+          budget_item_id: string
+        }[]
+      }
+      link_work_order_to_project: {
+        Args: {
+          p_work_order_id: string
+          p_project_id: string
+          p_budget_item_id: string
+        }
+        Returns: boolean
+      }
       validate_customers_status_transition: {
         Args: {
           current_status: string
