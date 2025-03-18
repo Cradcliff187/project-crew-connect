@@ -48,6 +48,7 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   const filteredSubcontractors = filterSubcontractors(subcontractors, searchQuery);
   
   const handleEditClick = (subcontractor: Subcontractor) => {
+    console.log('Edit subcontractor clicked:', subcontractor.subid);
     setSelectedSubcontractor(subcontractor);
     setEditDialogOpen(true);
   };

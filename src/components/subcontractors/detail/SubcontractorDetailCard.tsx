@@ -12,7 +12,7 @@ const SubcontractorDetailCard = ({ subcontractor }: SubcontractorDetailCardProps
     <CardHeader>
       <div className="flex justify-between items-start">
         <div>
-          <CardTitle className="text-2xl">{subcontractor.subname}</CardTitle>
+          <CardTitle className="text-2xl text-[#0485ea]">{subcontractor.subname}</CardTitle>
           <CardDescription className="mt-1">{subcontractor.subid}</CardDescription>
         </div>
       </div>
