@@ -86,26 +86,53 @@ const RelationshipsSection = ({ contact }: RelationshipsSectionProps) => {
         if (error) throw error;
         
         // Map the database contacts to our Contact interface
-        const mappedContacts = (contactsData || []).map(c => ({
-          id: c.id,
-          name: c.name,
-          company: c.company,
-          role: c.role,
-          email: c.email,
-          phone: c.phone,
-          address: c.address,
-          city: c.city,
-          state: c.state,
-          zip: c.zip,
-          type: c.contact_type,
-          status: c.status?.toUpperCase(),
-          lastContact: c.last_contact,
-          notes: c.notes,
-          specialty: c.specialty,
-          hourlyRate: c.hourly_rate?.toString(),
-          materials: c.materials,
-          rating: c.rating
-        }));
+        // Make sure to type-cast contact_type to the proper union type
+        const mappedContacts = (contactsData || []).map(c => {
+          // Ensure we're converting contact_type to a valid type value
+          let validType: "client" | "customer" | "supplier" | "subcontractor" | "employee";
+          
+          switch(c.contact_type) {
+            case 'client':
+              validType = 'client';
+              break;
+            case 'customer':
+              validType = 'customer';
+              break;
+            case 'supplier':
+              validType = 'supplier';
+              break;
+            case 'subcontractor':
+              validType = 'subcontractor';
+              break;
+            case 'employee':
+              validType = 'employee';
+              break;
+            default:
+              // Default to client if unknown type
+              validType = 'client';
+          }
+          
+          return {
+            id: c.id,
+            name: c.name,
+            company: c.company,
+            role: c.role,
+            email: c.email,
+            phone: c.phone,
+            address: c.address,
+            city: c.city,
+            state: c.state,
+            zip: c.zip,
+            type: validType,
+            status: c.status?.toUpperCase(),
+            lastContact: c.last_contact,
+            notes: c.notes,
+            specialty: c.specialty,
+            hourlyRate: c.hourly_rate?.toString(),
+            materials: c.materials,
+            rating: c.rating
+          };
+        });
         
         setRelatedContacts(mappedContacts);
       } catch (error) {
@@ -325,6 +352,37 @@ const RelationshipsSection = ({ contact }: RelationshipsSectionProps) => {
       </Dialog>
     </div>
   );
+  
+  // Implementation of handler functions
+  function handleSubmit(values: z.infer<typeof formSchema>) {
+    addContactRelationship(
+      contact.id,
+      values.relatedContactId,
+      values.relationshipType,
+      values.notes
+    ).then(() => {
+      setShowAddDialog(false);
+      form.reset();
+      setRefreshTrigger(prev => prev + 1);
+    }).catch(error => {
+      console.error("Error adding relationship:", error);
+    });
+  }
+
+  function handleDelete(relationshipId: string) {
+    if (confirm("Are you sure you want to remove this relationship?")) {
+      removeContactRelationship(relationshipId).then(success => {
+        if (success) {
+          setRefreshTrigger(prev => prev + 1);
+        }
+      });
+    }
+  }
+
+  function getRelatedContactName(contactId: string) {
+    const relatedContact = relatedContacts.find(c => c.id === contactId);
+    return relatedContact ? relatedContact.name : 'Unknown Contact';
+  }
 };
 
 export default RelationshipsSection;
