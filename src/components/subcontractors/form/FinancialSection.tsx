@@ -63,7 +63,7 @@ const FinancialSection: React.FC<FormSectionProps> = ({ control }) => {
                   placeholder="0.00" 
                   step="0.01" 
                   min="0"
-                  value={field.value || ''}
+                  value={field.value === null ? '' : field.value}
                   onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
                 />
               </FormControl>
