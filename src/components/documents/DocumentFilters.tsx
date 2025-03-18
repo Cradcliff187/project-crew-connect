@@ -1,126 +1,233 @@
 
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
-import { CalendarIcon, ChevronDown } from 'lucide-react';
-import { documentCategories, EntityType, entityTypes } from './schemas/documentSchema';
+import { Search, Filter, FileText, Receipt, FileBox, Shield, FileImage, File } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { DocumentCategory, EntityType, entityTypes } from './schemas/documentSchema';
 
-export interface DocumentFiltersState {
+interface FilterOptions {
   search: string;
-  category: string | null;
-  entityType: EntityType | null;
-  dateRange: DateRange | null;
-  showExpensesOnly: boolean;
+  category?: DocumentCategory;
+  entityType?: EntityType;
+  isExpense?: boolean;
+  sortBy?: string;
 }
 
 interface DocumentFiltersProps {
-  filters: DocumentFiltersState;
-  onFilterChange: (filters: Partial<DocumentFiltersState>) => void;
-  onResetFilters: () => void;
+  filters: FilterOptions;
+  onFilterChange: (filters: FilterOptions) => void;
+  onReset: () => void;
   activeFiltersCount: number;
 }
 
-const DocumentFilters = ({ 
-  filters, 
-  onFilterChange, 
-  onResetFilters,
-  activeFiltersCount 
-}: DocumentFiltersProps) => {
+const DocumentFilters: React.FC<DocumentFiltersProps> = ({
+  filters,
+  onFilterChange,
+  onReset,
+  activeFiltersCount
+}) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange({ ...filters, search: e.target.value });
+  };
+
+  const handleCategoryChange = (value: string) => {
+    onFilterChange({ 
+      ...filters, 
+      category: value as DocumentCategory 
+    });
+  };
+
+  const handleEntityTypeChange = (value: string) => {
+    onFilterChange({ 
+      ...filters, 
+      entityType: value as EntityType 
+    });
+  };
+
+  const handleSortChange = (value: string) => {
+    onFilterChange({ ...filters, sortBy: value });
+  };
+
+  const handleExpenseFilterChange = (value: string) => {
+    onFilterChange({ 
+      ...filters, 
+      isExpense: value === 'all' ? undefined : value === 'yes' 
+    });
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'invoice':
+        return <FileText className="h-4 w-4 mr-2" />;
+      case 'receipt':
+        return <Receipt className="h-4 w-4 mr-2" />;
+      case 'contract':
+        return <FileBox className="h-4 w-4 mr-2" />;
+      case 'insurance':
+      case 'certification':
+        return <Shield className="h-4 w-4 mr-2" />;
+      case 'photo':
+        return <FileImage className="h-4 w-4 mr-2" />;
+      default:
+        return <File className="h-4 w-4 mr-2" />;
+    }
+  };
+
   return (
-    <div className="flex flex-wrap gap-2">
-      <Select
-        value={filters.category || ""}
-        onValueChange={(value) => onFilterChange({ category: value || null })}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Document Type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="">All Types</SelectItem>
-          {documentCategories.map((category) => (
-            <SelectItem key={category} value={category}>
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select
-        value={filters.entityType || ""}
-        onValueChange={(value) => onFilterChange({ entityType: value as EntityType || null })}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Related To" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="">All Relations</SelectItem>
-          {entityTypes.map((type) => (
-            <SelectItem key={type} value={type}>
-              {type.charAt(0) + type.slice(1).toLowerCase()}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {filters.dateRange?.from ? (
-              filters.dateRange.to ? (
-                <>
-                  {format(filters.dateRange.from, "LLL dd, y")} -{" "}
-                  {format(filters.dateRange.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(filters.dateRange.from, "LLL dd, y")
-              )
-            ) : (
-              <span>Date Range</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={filters.dateRange?.from}
-            selected={filters.dateRange || undefined}
-            onSelect={(range) => onFilterChange({ dateRange: range })}
-            numberOfMonths={2}
-          />
-          <div className="p-2 border-t border-border">
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search documents..."
+          className="pl-8"
+          value={filters.search}
+          onChange={handleSearchChange}
+        />
+      </div>
+      
+      <div className="flex items-center">
+        <div className="flex items-center text-sm text-muted-foreground mr-2">
+          <Filter className="h-4 w-4 mr-1" />
+          <span>Filters</span>
+        </div>
+        
+        {activeFiltersCount > 0 && (
+          <>
+            <Badge variant="secondary" className="mr-2">
+              {activeFiltersCount}
+            </Badge>
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => onFilterChange({ dateRange: null })}
-              className="w-full"
+              onClick={onReset} 
+              className="h-8 text-sm"
             >
-              Clear Date Range
+              Reset
             </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-
-      <Button 
-        variant="outline" 
-        className={filters.showExpensesOnly ? "bg-[#0485ea]/10 border-[#0485ea]" : ""}
-        onClick={() => onFilterChange({ showExpensesOnly: !filters.showExpensesOnly })}
-      >
-        Expenses Only
-      </Button>
-
-      {activeFiltersCount > 0 && (
-        <Button variant="ghost" onClick={onResetFilters} size="sm">
-          Clear Filters
-          <Badge className="ml-2 bg-[#0485ea]">{activeFiltersCount}</Badge>
-        </Button>
-      )}
+          </>
+        )}
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <Select
+          value={filters.category || ''}
+          onValueChange={handleCategoryChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="invoice">
+              <div className="flex items-center">
+                <FileText className="h-4 w-4 mr-2" />
+                <span>Invoice</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="receipt">
+              <div className="flex items-center">
+                <Receipt className="h-4 w-4 mr-2" />
+                <span>Receipt</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="estimate">
+              <div className="flex items-center">
+                <FileText className="h-4 w-4 mr-2 text-blue-600" />
+                <span>Estimate</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="contract">
+              <div className="flex items-center">
+                <FileBox className="h-4 w-4 mr-2" />
+                <span>Contract</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="insurance">
+              <div className="flex items-center">
+                <Shield className="h-4 w-4 mr-2" />
+                <span>Insurance</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="certification">
+              <div className="flex items-center">
+                <Shield className="h-4 w-4 mr-2" />
+                <span>Certification</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="photo">
+              <div className="flex items-center">
+                <FileImage className="h-4 w-4 mr-2" />
+                <span>Photo</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="other">
+              <div className="flex items-center">
+                <File className="h-4 w-4 mr-2" />
+                <span>Other</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <Select
+          value={filters.entityType || ''}
+          onValueChange={handleEntityTypeChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="All Entities" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Entities</SelectItem>
+            {entityTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <Select
+          value={filters.isExpense === undefined ? 'all' : filters.isExpense ? 'yes' : 'no'}
+          onValueChange={handleExpenseFilterChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Expense Documents" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Documents</SelectItem>
+            <SelectItem value="yes">Expenses Only</SelectItem>
+            <SelectItem value="no">Non-Expenses Only</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <Select
+          value={filters.sortBy || 'newest'}
+          onValueChange={handleSortChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sort By" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest First</SelectItem>
+            <SelectItem value="oldest">Oldest First</SelectItem>
+            <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+            <SelectItem value="name_desc">Name (Z-A)</SelectItem>
+            <SelectItem value="size_asc">Size (Smallest)</SelectItem>
+            <SelectItem value="size_desc">Size (Largest)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <Separator />
     </div>
   );
 };

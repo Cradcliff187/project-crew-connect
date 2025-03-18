@@ -170,43 +170,61 @@ export type Database = {
       }
       documents: {
         Row: {
+          amount: number | null
+          category: string | null
           created_at: string
           document_id: string
           entity_id: string
           entity_type: string
+          expense_date: string | null
           file_name: string
           file_size: number | null
           file_type: string | null
+          is_expense: boolean | null
+          notes: string | null
           storage_path: string
           tags: string[] | null
           updated_at: string
           uploaded_by: string | null
+          version: number | null
         }
         Insert: {
+          amount?: number | null
+          category?: string | null
           created_at?: string
           document_id?: string
           entity_id: string
           entity_type: string
+          expense_date?: string | null
           file_name: string
           file_size?: number | null
           file_type?: string | null
+          is_expense?: boolean | null
+          notes?: string | null
           storage_path: string
           tags?: string[] | null
           updated_at?: string
           uploaded_by?: string | null
+          version?: number | null
         }
         Update: {
+          amount?: number | null
+          category?: string | null
           created_at?: string
           document_id?: string
           entity_id?: string
           entity_type?: string
+          expense_date?: string | null
           file_name?: string
           file_size?: number | null
           file_type?: string | null
+          is_expense?: boolean | null
+          notes?: string | null
           storage_path?: string
           tags?: string[] | null
           updated_at?: string
           uploaded_by?: string | null
+          version?: number | null
         }
         Relationships: []
       }

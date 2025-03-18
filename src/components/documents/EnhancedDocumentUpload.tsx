@@ -1,43 +1,47 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FileUpload } from '@/components/ui/file-upload';
-import { Loader2, CheckCircle } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DocumentCategorySelector } from './DocumentCategorySelector';
-import { DocumentMetadata, DocumentUploadFormValues, documentUploadSchema, EntityType } from './schemas/documentSchema';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { format } from 'date-fns';
+import { CalendarIcon, Upload } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import DocumentCategorySelector from './DocumentCategorySelector';
 import MobileDocumentCapture from './MobileDocumentCapture';
 import ExpenseForm from './ExpenseForm';
+import { cn } from '@/lib/utils';
+import { 
+  DocumentUploadFormValues, 
+  documentUploadSchema, 
+  EntityType 
+} from './schemas/documentSchema';
 
 interface EnhancedDocumentUploadProps {
-  projectId?: string;
-  workOrderId?: string;
-  entityType?: EntityType;
+  entityType: EntityType;
   entityId?: string;
-  onSuccess?: (data: any) => void;
+  onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export default function EnhancedDocumentUpload({
-  projectId,
-  workOrderId,
-  entityType = "PROJECT",
+const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
+  entityType,
   entityId,
   onSuccess,
   onCancel
-}: EnhancedDocumentUploadProps) {
-  const [files, setFiles] = useState<File[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState("document");
+}) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('file');
+  const [previewURL, setPreviewURL] = useState<string | null>(null);
 
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
@@ -46,311 +50,279 @@ export default function EnhancedDocumentUpload({
       metadata: {
         category: 'other',
         entityType: entityType,
-        entityId: entityId || projectId || workOrderId || '',
+        entityId: entityId || '',
         version: 1,
         tags: [],
         isExpense: false
       }
-    },
+    }
   });
 
-  const handleFilesSelected = (newFiles: File[]) => {
-    setFiles(newFiles);
-    form.setValue('files', newFiles);
-  };
+  const watchIsExpense = form.watch('metadata.isExpense');
+  const watchFiles = form.watch('files');
 
-  const handleFileClear = (fileIndex: number) => {
-    const updatedFiles = files.filter((_, index) => index !== fileIndex);
-    setFiles(updatedFiles);
-    form.setValue('files', updatedFiles);
-  };
-
-  const handleExpenseSubmit = (expenseData: any) => {
-    form.setValue('metadata.amount', parseFloat(expenseData.amount));
-    form.setValue('metadata.expenseDate', expenseData.date);
-    form.setValue('metadata.isExpense', expenseData.isExpense);
-    form.setValue('metadata.notes', expenseData.notes);
-    // Add expense category as a tag
-    const tags = form.getValues('metadata.tags');
-    form.setValue('metadata.tags', [...tags, expenseData.category]);
+  const handleFileSelect = (files: File[]) => {
+    form.setValue('files', files);
     
-    setActiveTab("document");
+    // Create preview URL for the first image if it's an image
+    if (files.length > 0 && files[0].type.startsWith('image/')) {
+      const previewUrl = URL.createObjectURL(files[0]);
+      setPreviewURL(previewUrl);
+    } else {
+      setPreviewURL(null);
+    }
+  };
+
+  const handleMobileCapture = (file: File) => {
+    handleFileSelect([file]);
+    setActiveTab('file');
   };
 
   const onSubmit = async (data: DocumentUploadFormValues) => {
-    if (data.files.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please upload at least one document",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
     try {
-      // Upload files to Supabase storage
-      const uploadResults = await Promise.all(
-        data.files.map(async (file) => {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-          const filePath = `${data.metadata.entityType}/${data.metadata.entityId || 'general'}/${fileName}`;
-          
-          const { data: uploadData, error } = await supabase.storage
-            .from('construction_documents')
-            .upload(filePath, file);
-
-          if (error) throw error;
-          
-          // Get public URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(filePath);
-            
-          return {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            path: filePath,
-            url: publicUrl
-          };
-        })
-      );
-
-      // Prepare tags array including the category
-      const documentTags = [
-        data.metadata.category,
-        ...(data.metadata.tags || [])
-      ];
-
-      // Record document metadata in documents table
-      for (const uploadResult of uploadResults) {
-        const documentData = {
-          file_name: uploadResult.name,
-          file_type: uploadResult.type,
-          file_size: uploadResult.size,
-          storage_path: uploadResult.path,
-          entity_type: data.metadata.entityType,
-          entity_id: data.metadata.entityId || '',
-          category: data.metadata.category,
-          amount: data.metadata.amount,
-          expense_date: data.metadata.expenseDate ? data.metadata.expenseDate.toISOString() : null,
-          version: data.metadata.version,
-          is_expense: data.metadata.isExpense,
-          notes: data.metadata.notes,
-          uploaded_by: 'current_user', // In a real app with auth, this would be the authenticated user
-          tags: documentTags,
-        };
-
-        const { error: dbError } = await supabase
-          .from('documents')
-          .insert(documentData);
-
-        if (dbError) throw dbError;
-      }
-
-      // Show success state
-      setIsSuccess(true);
+      setIsUploading(true);
       
-      // After successful upload
-      if (onSuccess) {
-        setTimeout(() => {
-          onSuccess({
-            ...data,
-            files: uploadResults,
-          });
-        }, 1000);
+      const { files, metadata } = data;
+      const file = files[0]; // We're handling one file at a time for now
+      
+      // Create a unique file name using timestamp and original name
+      const timestamp = new Date().getTime();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const filePath = `${entityType.toLowerCase()}/${entityId || 'general'}/${fileName}`;
+      
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('construction_documents')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        throw uploadError;
       }
-
+      
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('construction_documents')
+        .getPublicUrl(filePath);
+        
+      // Now insert document metadata to Supabase
+      const { error: insertError } = await supabase
+        .from('documents')
+        .insert({
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          storage_path: filePath,
+          entity_type: metadata.entityType,
+          entity_id: metadata.entityId || null,
+          tags: metadata.tags,
+          // Additional metadata fields
+          category: metadata.category,
+          amount: metadata.amount,
+          expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
+          version: metadata.version,
+          is_expense: metadata.isExpense,
+          notes: metadata.notes,
+        });
+        
+      if (insertError) {
+        throw insertError;
+      }
+      
       toast({
-        title: "Success",
-        description: `Document(s) uploaded successfully`,
+        title: "Document uploaded successfully",
+        description: "Your document has been uploaded and indexed."
       });
-    } catch (error) {
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+      // Reset form
+      form.reset();
+      setPreviewURL(null);
+      
+    } catch (error: any) {
       console.error('Upload error:', error);
       toast({
-        title: "Error",
-        description: "Failed to upload document. Please try again.",
-        variant: "destructive",
+        title: "Upload failed",
+        description: error.message || "There was an error uploading your document.",
+        variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
-  if (isSuccess) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardContent className="pt-6 text-center">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <CardTitle>Upload Complete!</CardTitle>
-          <CardDescription className="mt-2">
-            Your document has been successfully uploaded
-          </CardDescription>
-          <Button 
-            onClick={() => {
-              setFiles([]);
-              setIsSuccess(false);
-              form.reset();
-            }} 
-            className="mt-6"
-          >
-            Upload Another
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Upload Document</CardTitle>
         <CardDescription>
-          Upload invoices, receipts, estimates, or other project documents
+          Upload and categorize documents for your projects, invoices, and more.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="document">Document Details</TabsTrigger>
-            <TabsTrigger value="expense">Expense Details</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="document">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mx-6 grid grid-cols-2">
+          <TabsTrigger value="file">File Upload</TabsTrigger>
+          <TabsTrigger value="mobile">Mobile Capture</TabsTrigger>
+        </TabsList>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-6 pt-4">
+              <TabsContent value="file" className="space-y-4 mt-0">
+                <FormField
+                  control={form.control}
+                  name="files"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Document File</FormLabel>
+                      <FormControl>
+                        <div className="flex flex-col items-center justify-center w-full">
+                          <label
+                            htmlFor="dropzone-file"
+                            className={cn(
+                              "flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
+                              watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
+                            )}
+                          >
+                            {previewURL ? (
+                              <div className="w-full h-full p-2 flex items-center justify-center">
+                                <img
+                                  src={previewURL}
+                                  alt="Preview"
+                                  className="max-h-full max-w-full object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <Upload className="w-10 h-10 mb-3 text-gray-400" />
+                                <p className="mb-2 text-sm text-gray-500">
+                                  <span className="font-semibold">Click to upload</span> or drag and drop
+                                </p>
+                                <p className="text-xs text-gray-500">PDF, PNG, JPG, or other document formats</p>
+                                {watchFiles.length > 0 && (
+                                  <p className="mt-2 text-sm text-[#0485ea] font-medium">
+                                    {watchFiles[0].name}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            <input
+                              id="dropzone-file"
+                              type="file"
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = e.target.files;
+                                if (files && files.length > 0) {
+                                  handleFileSelect([files[0]]);
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+              
+              <TabsContent value="mobile" className="space-y-4 mt-0">
+                <MobileDocumentCapture onCapture={handleMobileCapture} />
+              </TabsContent>
+              
+              <Separator />
+              
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="metadata.category"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Document Type</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel>Document Category</FormLabel>
                       <FormControl>
-                        <DocumentCategorySelector 
-                          value={field.value} 
-                          onChange={field.onChange} 
+                        <DocumentCategorySelector
+                          value={field.value}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="metadata.entityType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Related To</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select entity type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="PROJECT">Project</SelectItem>
-                            <SelectItem value="CUSTOMER">Customer</SelectItem>
-                            <SelectItem value="ESTIMATE">Estimate</SelectItem>
-                            <SelectItem value="WORK_ORDER">Work Order</SelectItem>
-                            <SelectItem value="VENDOR">Supplier</SelectItem>
-                            <SelectItem value="SUBCONTRACTOR">Subcontractor</SelectItem>
-                            <SelectItem value="EXPENSE">Expense</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="metadata.entityId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ID (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder={`Enter ${form.watch('metadata.entityType').toLowerCase()} ID`} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
+                
                 <FormField
                   control={form.control}
-                  name="metadata.version"
+                  name="metadata.isExpense"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Version</FormLabel>
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Expense Document
+                        </FormLabel>
+                        <FormDescription>
+                          Mark this document as an expense record (invoice, receipt, etc.)
+                        </FormDescription>
+                      </div>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
-
+                
+                {watchIsExpense && (
+                  <ExpenseForm control={form.control} />
+                )}
+                
                 <FormField
                   control={form.control}
                   name="metadata.notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Notes (Optional)</FormLabel>
+                      <FormLabel>Notes</FormLabel>
                       <FormControl>
-                        <Input placeholder="Add any additional notes" {...field} />
+                        <Textarea
+                          placeholder="Add any relevant notes about this document..."
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <div className="space-y-2">
-                  <FormLabel>Upload Documents</FormLabel>
-                  <div className="space-y-2">
-                    <MobileDocumentCapture onCapture={handleFilesSelected} />
-                    
-                    <FileUpload
-                      onFilesSelected={handleFilesSelected}
-                      onFileClear={handleFileClear}
-                      selectedFiles={files}
-                      allowCamera={true}
-                      allowMultiple={true}
-                      acceptedFileTypes="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
-                      dropzoneText="Drag documents here or click to upload"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 justify-end">
-                  {onCancel && (
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                      Cancel
-                    </Button>
-                  )}
-                  <Button type="submit" disabled={isSubmitting || files.length === 0} className="btn-premium">
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Upload Document
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </TabsContent>
-          
-          <TabsContent value="expense">
-            <ExpenseForm onSubmit={handleExpenseSubmit} />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
+              </div>
+            </CardContent>
+            
+            <CardFooter className="flex justify-between">
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                >
+                  Cancel
+                </Button>
+              )}
+              <Button
+                type="submit" 
+                className="bg-[#0485ea] hover:bg-[#0375d1]"
+                disabled={isUploading || watchFiles.length === 0}
+              >
+                {isUploading ? "Uploading..." : "Upload Document"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Tabs>
     </Card>
   );
-}
+};
+
+export default EnhancedDocumentUpload;

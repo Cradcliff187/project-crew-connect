@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check, FileText, Receipt, FileContract, Shield, FileImage, File } from 'lucide-react';
+import { Check, FileText, Receipt, FileBox, Shield, FileImage, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DocumentCategory, documentCategories } from './schemas/documentSchema';
 
@@ -20,7 +20,7 @@ const DocumentCategorySelector = ({ value, onChange, className }: DocumentCatego
       case 'estimate':
         return <FileText className="h-5 w-5 text-blue-600" />;
       case 'contract':
-        return <FileContract className="h-5 w-5" />;
+        return <FileBox className="h-5 w-5" />;
       case 'insurance':
       case 'certification':
         return <Shield className="h-5 w-5" />;

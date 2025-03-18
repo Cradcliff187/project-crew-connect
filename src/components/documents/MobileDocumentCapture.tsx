@@ -1,116 +1,149 @@
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import { Camera, Image, Undo, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Camera, Upload, X, Check } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { toast } from '@/hooks/use-toast';
+import { useMobile } from '@/hooks/use-mobile';
 
 interface MobileDocumentCaptureProps {
-  onCapture: (files: File[]) => void;
+  onCapture: (file: File) => void;
 }
 
-const MobileDocumentCapture = ({ onCapture }: MobileDocumentCaptureProps) => {
-  const isMobile = useIsMobile();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [capturedFile, setCapturedFile] = useState<File | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+const MobileDocumentCapture: React.FC<MobileDocumentCaptureProps> = ({ onCapture }) => {
+  const isMobile = useMobile();
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>('');
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
-  const handleCapture = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      setFileName(file.name);
+      const imageUrl = URL.createObjectURL(file);
+      setCapturedImage(imageUrl);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setCapturedFile(file);
-      
-      // Create a preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      
-      // Open the preview dialog
-      setIsDialogOpen(true);
+  const handleGallerySelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      setFileName(file.name);
+      const imageUrl = URL.createObjectURL(file);
+      setCapturedImage(imageUrl);
     }
   };
 
-  const handleConfirm = () => {
-    if (capturedFile) {
-      onCapture([capturedFile]);
-      setIsDialogOpen(false);
-      setPreview(null);
-      setCapturedFile(null);
-      toast({
-        title: "Success",
-        description: "Document captured successfully",
-      });
+  const handleSubmit = () => {
+    if (capturedImage && (cameraRef.current?.files?.length || galleryRef.current?.files?.length)) {
+      const files = cameraRef.current?.files || galleryRef.current?.files;
+      if (files && files.length > 0) {
+        onCapture(files[0]);
+      }
     }
   };
 
-  const handleCancel = () => {
-    setIsDialogOpen(false);
-    setPreview(null);
-    setCapturedFile(null);
+  const handleReset = () => {
+    setCapturedImage(null);
+    setFileName('');
+    if (cameraRef.current) cameraRef.current.value = '';
+    if (galleryRef.current) galleryRef.current.value = '';
   };
 
-  if (!isMobile) return null;
+  if (!isMobile) {
+    return (
+      <div className="text-center p-4 border border-dashed rounded-md">
+        <p className="text-sm text-muted-foreground">
+          This feature is optimized for mobile devices. Please use the File Upload tab on desktop.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <Button 
-        type="button" 
-        variant="outline" 
-        onClick={handleCapture} 
-        className="flex items-center gap-2"
-      >
-        <Camera className="h-4 w-4" />
-        <span>Take Photo</span>
-      </Button>
-
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFileChange}
-      />
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Document Preview</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center space-y-4">
-            {preview && (
-              <div className="relative w-full max-h-[40vh] overflow-hidden rounded-md">
-                <img 
-                  src={preview} 
-                  alt="Captured document" 
-                  className="w-full h-auto object-contain"
-                />
-              </div>
-            )}
-            <div className="flex space-x-2 w-full">
-              <Button variant="outline" className="flex-1" onClick={handleCancel}>
-                <X className="h-4 w-4 mr-2" />
-                Retake
-              </Button>
-              <Button className="flex-1" onClick={handleConfirm}>
-                <Check className="h-4 w-4 mr-2" />
-                Use Photo
-              </Button>
-            </div>
+    <div className="space-y-4">
+      {capturedImage ? (
+        <div className="space-y-4">
+          <div className="border rounded-md overflow-hidden">
+            <img 
+              src={capturedImage} 
+              alt="Captured" 
+              className="w-full h-auto max-h-[300px] object-contain"
+            />
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          
+          <p className="text-sm text-center text-muted-foreground">
+            {fileName}
+          </p>
+          
+          <div className="flex justify-center space-x-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="flex-1"
+              onClick={handleReset}
+            >
+              <Undo className="h-4 w-4 mr-2" />
+              Retake
+            </Button>
+            <Button 
+              type="button" 
+              className="flex-1 bg-[#0485ea] hover:bg-[#0375d1]"
+              onClick={handleSubmit}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Use Image
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-32 flex flex-col items-center justify-center space-y-2"
+              onClick={() => cameraRef.current?.click()}
+            >
+              <Camera className="h-8 w-8" />
+              <span>Take Photo</span>
+            </Button>
+            
+            <Button
+              type="button"
+              variant="outline"
+              className="h-32 flex flex-col items-center justify-center space-y-2"
+              onClick={() => galleryRef.current?.click()}
+            >
+              <Image className="h-8 w-8" />
+              <span>Upload from Gallery</span>
+            </Button>
+          </div>
+          
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleCameraCapture}
+          />
+          
+          <input
+            ref={galleryRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleGallerySelect}
+          />
+          
+          <p className="text-xs text-center text-muted-foreground">
+            Capture receipts, invoices, and other documents with your camera.
+          </p>
+        </div>
+      )}
+    </div>
   );
 };
 
