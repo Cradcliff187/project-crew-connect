@@ -111,7 +111,7 @@ export function AppSidebar() {
               </div>
             ) : (
               <img 
-                src="/lovable-uploads/ae4fae18-0c27-4152-b996-2a5db2ec7e30.png" 
+                src="/lovable-uploads/bf868b68-9712-4cb9-a4f1-8f5b284a2521.png" 
                 alt="AKC LLC Logo" 
                 className="h-10 w-auto"
                 onError={() => setLogoError(true)}
