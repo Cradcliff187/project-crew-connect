@@ -24,7 +24,11 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
 
   // Update sidebar state when mobile status changes
   useEffect(() => {
-    setIsOpen(!isMobile);
+    if (isMobile) {
+      setIsOpen(false);
+    } else {
+      setIsOpen(true);
+    }
   }, [isMobile]);
 
   const toggleSidebar = () => {
