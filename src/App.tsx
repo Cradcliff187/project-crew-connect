@@ -12,7 +12,7 @@ import Vendors from './pages/Vendors';
 import Subcontractors from './pages/Subcontractors';
 import ProjectDetail from './components/projects/ProjectDetail';
 import ProjectEdit from './components/projects/ProjectEdit';
-import { SidebarProvider } from './components/layout/SidebarContext';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import Layout from './components/layout/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WorkOrders from './pages/WorkOrders';
