@@ -9,6 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
 
 export interface ActionItem {
   label: string;
@@ -16,6 +21,7 @@ export interface ActionItem {
   icon?: React.ReactNode;
   className?: string;
   disabled?: boolean;
+  hoverContent?: React.ReactNode;
 }
 
 export interface ActionGroup {
@@ -58,18 +64,39 @@ const ActionMenu = ({
           <React.Fragment key={`group-${groupIndex}`}>
             {groupIndex > 0 && <DropdownMenuSeparator />}
             {group.items.map((item, itemIndex) => (
-              <DropdownMenuItem
-                key={`item-${groupIndex}-${itemIndex}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  item.onClick(e);
-                }}
-                className={item.className}
-                disabled={item.disabled}
-              >
-                {item.icon && <span className="mr-2">{item.icon}</span>}
-                {item.label}
-              </DropdownMenuItem>
+              item.hoverContent ? (
+                <HoverCard key={`item-${groupIndex}-${itemIndex}`}>
+                  <HoverCardTrigger asChild>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        item.onClick(e);
+                      }}
+                      className={item.className}
+                      disabled={item.disabled}
+                    >
+                      {item.icon && <span className="mr-2">{item.icon}</span>}
+                      {item.label}
+                    </DropdownMenuItem>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80 p-4">
+                    {item.hoverContent}
+                  </HoverCardContent>
+                </HoverCard>
+              ) : (
+                <DropdownMenuItem
+                  key={`item-${groupIndex}-${itemIndex}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    item.onClick(e);
+                  }}
+                  className={item.className}
+                  disabled={item.disabled}
+                >
+                  {item.icon && <span className="mr-2">{item.icon}</span>}
+                  {item.label}
+                </DropdownMenuItem>
+              )
             ))}
           </React.Fragment>
         ))}
