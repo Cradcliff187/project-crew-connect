@@ -31,6 +31,11 @@ export function useActiveWorkData() {
     meta: {
       onError: (error: any) => {
         console.error('Error fetching projects:', error);
+        toast({
+          title: 'Error fetching projects',
+          description: error.message,
+          variant: 'destructive'
+        });
       }
     }
   });
