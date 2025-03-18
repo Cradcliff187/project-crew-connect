@@ -6,12 +6,14 @@ interface SidebarContextProps {
   isOpen: boolean;
   toggleSidebar: () => void;
   closeSidebar: () => void;
+  openSidebar: () => void;
 }
 
 const SidebarContext = createContext<SidebarContextProps>({
   isOpen: true,
   toggleSidebar: () => {},
   closeSidebar: () => {},
+  openSidebar: () => {},
 });
 
 export const useSidebarContext = () => useContext(SidebarContext);
@@ -20,8 +22,13 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(!isMobile);
 
+  // Update sidebar state when screen size changes
   useEffect(() => {
-    setIsOpen(!isMobile);
+    if (isMobile) {
+      setIsOpen(false);
+    } else {
+      setIsOpen(true);
+    }
   }, [isMobile]);
 
   const toggleSidebar = () => {
@@ -29,13 +36,15 @@ export const SidebarProvider = ({ children }: { children: React.ReactNode }) => 
   };
 
   const closeSidebar = () => {
-    if (isMobile) {
-      setIsOpen(false);
-    }
+    setIsOpen(false);
+  };
+  
+  const openSidebar = () => {
+    setIsOpen(true);
   };
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggleSidebar, closeSidebar }}>
+    <SidebarContext.Provider value={{ isOpen, toggleSidebar, closeSidebar, openSidebar }}>
       {children}
     </SidebarContext.Provider>
   );

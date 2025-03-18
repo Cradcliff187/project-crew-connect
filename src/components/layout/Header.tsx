@@ -10,10 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSidebarContext } from '@/components/layout/SidebarContext';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const { toggleSidebar } = useSidebarContext();
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -30,18 +32,25 @@ const Header = () => {
         scrolled ? 'bg-background/80 backdrop-blur-sm border-b border-border/40' : 'bg-transparent'
       }`}
     >
-      <div className="flex items-center lg:hidden">
-        <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-muted-foreground hover:text-foreground">
+      <div className="flex items-center">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleSidebar} 
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Toggle sidebar"
+        >
           <Menu className="h-5 w-5" />
         </Button>
         <img 
           src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" 
           alt="AKC Construction Logo" 
-          className="h-5 w-auto ml-2 lg:hidden" 
+          className="h-5 w-auto ml-2 cursor-pointer"
+          onClick={() => navigate('/')}  
         />
       </div>
       
-      <div className="hidden md:flex items-center w-full max-w-xs ml-auto mr-4">
+      <div className="hidden md:flex items-center w-full max-w-xs mx-auto">
         <div className="relative w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input 

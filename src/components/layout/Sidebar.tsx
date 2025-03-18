@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { useSidebarContext } from './SidebarContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const NavItem = ({ 
   icon: Icon, 
@@ -21,20 +22,10 @@ const NavItem = ({
   onClick?: () => void;
 }) => {
   const { isOpen } = useSidebarContext();
+  const isMobile = useIsMobile();
   
-  return isOpen ? (
-    <Button
-      variant={isActive ? "default" : "ghost"}
-      className={cn(
-        "w-full justify-start px-3 py-6",
-        isActive && "bg-construction-50 text-construction-700 hover:text-construction-800 hover:bg-construction-100"
-      )}
-      onClick={onClick}
-    >
-      <Icon className="mr-2 h-5 w-5" />
-      <span>{label}</span>
-    </Button>
-  ) : (
+  // On mobile, always show full labels when sidebar is open
+  return (!isMobile && !isOpen) ? (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
         <Button
@@ -54,6 +45,18 @@ const NavItem = ({
         {label}
       </TooltipContent>
     </Tooltip>
+  ) : (
+    <Button
+      variant={isActive ? "default" : "ghost"}
+      className={cn(
+        "w-full justify-start px-3 py-2",
+        isActive && "bg-construction-50 text-construction-700 hover:text-construction-800 hover:bg-construction-100"
+      )}
+      onClick={onClick}
+    >
+      <Icon className="mr-2 h-5 w-5" />
+      <span>{label}</span>
+    </Button>
   );
 };
 
@@ -61,20 +64,23 @@ const Sidebar = () => {
   const { isOpen, toggleSidebar, closeSidebar } = useSidebarContext();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   const isActive = (path: string) => location.pathname === path;
   
   const handleNavigate = (path: string) => {
     navigate(path);
-    closeSidebar();
+    if (isMobile) {
+      closeSidebar();
+    }
   };
   
   return (
     <>
       {/* Mobile overlay */}
-      {isOpen && (
+      {isOpen && isMobile && (
         <div 
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
           onClick={closeSidebar}
         />
       )}
@@ -82,7 +88,8 @@ const Sidebar = () => {
       <aside 
         className={cn(
           "fixed top-0 left-0 z-50 flex h-full flex-col border-r bg-card transition-all duration-300 ease-in-out lg:relative lg:z-0", 
-          isOpen ? "w-64" : "w-[60px]"
+          isOpen ? "w-64" : "w-0 lg:w-[60px]",
+          isMobile && !isOpen && "w-0"
         )}
       >
         <div className="flex h-16 items-center justify-between px-4 py-4">
@@ -93,7 +100,7 @@ const Sidebar = () => {
                 alt="AKC Construction Logo" 
                 className="h-8 w-auto mr-2" 
               />
-              <h1 className="text-lg font-semibold tracking-tight text-construction-700">AKC Construction</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-construction-700">AKC LLC</h1>
             </div>
           ) : (
             <div className="mx-auto">
@@ -120,7 +127,7 @@ const Sidebar = () => {
         </div>
         
         <div className="flex-1 overflow-auto no-scrollbar">
-          <div className="space-y-1 px-2 py-3">
+          <div className="space-y-1 px-2 py-2">
             <NavItem 
               icon={Home} 
               label="Dashboard" 
@@ -139,7 +146,7 @@ const Sidebar = () => {
               icon={Briefcase} 
               label="Projects" 
               path="/projects" 
-              isActive={isActive("/projects")}
+              isActive={isActive("/projects") || location.pathname.startsWith("/projects/")}
               onClick={() => handleNavigate("/projects")}
             />
             <NavItem 
@@ -174,7 +181,7 @@ const Sidebar = () => {
           
           <Separator className={cn(isOpen ? "mx-4" : "mx-0 w-full")} />
           
-          <div className="space-y-1 px-2 py-3">
+          <div className="space-y-1 px-2 py-2">
             <NavItem 
               icon={BarChart2} 
               label="Reports" 
