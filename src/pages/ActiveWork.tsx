@@ -70,8 +70,7 @@ const ActiveWork = () => {
       const typedWorkOrders = data?.map(order => ({
         ...order,
         status: order.status as any,
-        progress: order.progress || 0,
-        time_estimate: order.time_estimate || null
+        progress: order.progress || 0
       })) || [];
       
       return typedWorkOrders;

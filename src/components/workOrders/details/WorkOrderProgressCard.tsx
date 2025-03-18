@@ -17,7 +17,7 @@ interface WorkOrderProgressCardProps {
 
 const WorkOrderProgressCard = ({ workOrder, onProgressUpdate }: WorkOrderProgressCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [progressValue, setProgressValue] = useState(workOrder.progress || 0);
+  const [progressValue, setProgressValue] = useState(workOrder.progress);
   const [loading, setLoading] = useState(false);
   
   const handleSaveProgress = async () => {
@@ -50,7 +50,7 @@ const WorkOrderProgressCard = ({ workOrder, onProgressUpdate }: WorkOrderProgres
   };
   
   const handleCancelEdit = () => {
-    setProgressValue(workOrder.progress || 0);
+    setProgressValue(workOrder.progress);
     setIsEditing(false);
   };
   
