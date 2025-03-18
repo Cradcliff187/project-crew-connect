@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link2, FileDigit, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { WorkOrderLinkDetail } from '@/types/workOrderLinks';
 
 interface Project {
   projectid: string;
@@ -33,10 +34,7 @@ const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [selectedBudgetItem, setSelectedBudgetItem] = useState<string | null>(null);
-  const [existingLink, setExistingLink] = useState<{
-    project_id: string;
-    budget_item_id: string | null;
-  } | null>(null);
+  const [existingLink, setExistingLink] = useState<WorkOrderLinkDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   const { linkWorkOrderToProject, importWorkOrderCosts, isLoading } = useBudgetIntegration();
@@ -46,21 +44,22 @@ const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({
     const fetchExistingLink = async () => {
       setLoading(true);
       try {
-        // Check if this work order is already linked to a project
-        const { data: linkData, error: linkError } = await supabase
-          .from('work_order_project_links')
-          .select('project_id, budget_item_id')
-          .eq('work_order_id', workOrderId)
-          .single();
+        // Instead of querying the table directly, we'll use a custom RPC function
+        // that's added to the database to avoid type issues
+        const { data, error } = await supabase
+          .rpc('get_work_order_project_link', { work_order_id: workOrderId });
         
-        if (linkError && linkError.code !== 'PGRST116') {
-          console.error('Error fetching work order link:', linkError);
+        if (error && error.message !== 'No rows returned') {
+          console.error('Error fetching work order link:', error);
         }
         
-        if (linkData) {
-          setExistingLink(linkData);
-          setSelectedProject(linkData.project_id);
-          setSelectedBudgetItem(linkData.budget_item_id);
+        if (data) {
+          setExistingLink({
+            project_id: data.project_id,
+            budget_item_id: data.budget_item_id
+          });
+          setSelectedProject(data.project_id);
+          setSelectedBudgetItem(data.budget_item_id);
         }
         
         // Also check if the work order has a project_id directly
@@ -70,7 +69,7 @@ const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({
           .eq('work_order_id', workOrderId)
           .single();
         
-        if (woError) {
+        if (woError && woError.message !== 'No rows returned') {
           console.error('Error fetching work order:', woError);
         }
         
@@ -85,7 +84,7 @@ const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({
     };
     
     fetchExistingLink();
-  }, [workOrderId]);
+  }, [workOrderId, selectedProject]);
 
   // Fetch list of active projects
   useEffect(() => {

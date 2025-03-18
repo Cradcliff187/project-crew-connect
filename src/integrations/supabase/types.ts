@@ -603,6 +603,7 @@ export type Database = {
           po_number: string | null
           priority: string | null
           progress: number
+          project_id: string | null
           scheduled_date: string | null
           status: string | null
           time_estimate: number | null
@@ -623,6 +624,7 @@ export type Database = {
           po_number?: string | null
           priority?: string | null
           progress?: number
+          project_id?: string | null
           scheduled_date?: string | null
           status?: string | null
           time_estimate?: number | null
@@ -643,6 +645,7 @@ export type Database = {
           po_number?: string | null
           priority?: string | null
           progress?: number
+          project_id?: string | null
           scheduled_date?: string | null
           status?: string | null
           time_estimate?: number | null
@@ -672,6 +675,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "site_locations"
             referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "maintenance_work_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["projectid"]
           },
         ]
       }
@@ -1572,6 +1582,55 @@ export type Database = {
           },
           {
             foreignKeyName: "work_order_materials_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_work_orders"
+            referencedColumns: ["work_order_id"]
+          },
+        ]
+      }
+      work_order_project_links: {
+        Row: {
+          budget_item_id: string | null
+          created_at: string
+          id: string
+          project_id: string
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          budget_item_id?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          updated_at?: string
+          work_order_id: string
+        }
+        Update: {
+          budget_item_id?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_project_links_budget_item_id_fkey"
+            columns: ["budget_item_id"]
+            isOneToOne: false
+            referencedRelation: "project_budget_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_project_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["projectid"]
+          },
+          {
+            foreignKeyName: "work_order_project_links_work_order_id_fkey"
             columns: ["work_order_id"]
             isOneToOne: false
             referencedRelation: "maintenance_work_orders"

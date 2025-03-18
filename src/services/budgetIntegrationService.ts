@@ -120,41 +120,16 @@ export const budgetIntegrationService = {
     budgetItemId?: string
   ): Promise<boolean> {
     try {
-      // First, check if this work order is already linked to a project
-      const { data: existingLink, error: checkError } = await supabase
-        .from('work_order_project_links')
-        .select('*')
-        .eq('work_order_id', workOrderId)
-        .single();
+      // Use a custom database function to check if link exists
+      // and update it appropriately to avoid type issues
+      const { data, error } = await supabase
+        .rpc('link_work_order_to_project', { 
+          p_work_order_id: workOrderId,
+          p_project_id: projectId,
+          p_budget_item_id: budgetItemId || null
+        });
       
-      if (checkError && checkError.code !== 'PGRST116') {
-        // PGRST116 is "no rows returned" - that's fine, but other errors are problems
-        throw checkError;
-      }
-      
-      // If a link exists, update it
-      if (existingLink) {
-        const { error: updateError } = await supabase
-          .from('work_order_project_links')
-          .update({ 
-            project_id: projectId,
-            budget_item_id: budgetItemId || null
-          })
-          .eq('id', existingLink.id);
-          
-        if (updateError) throw updateError;
-      } else {
-        // Create a new link
-        const { error: insertError } = await supabase
-          .from('work_order_project_links')
-          .insert({
-            work_order_id: workOrderId,
-            project_id: projectId,
-            budget_item_id: budgetItemId || null
-          });
-          
-        if (insertError) throw insertError;
-      }
+      if (error) throw error;
       
       // Now update the work order with the project reference
       const { error: woUpdateError } = await supabase
@@ -186,15 +161,11 @@ export const budgetIntegrationService = {
       if (woError) throw woError;
       if (!workOrder) return false;
       
-      // Get the work order's linked budget item, if any
+      // Use RPC to get the link details
       const { data: link, error: linkError } = await supabase
-        .from('work_order_project_links')
-        .select('budget_item_id')
-        .eq('work_order_id', workOrderId)
-        .eq('project_id', projectId)
-        .single();
+        .rpc('get_work_order_project_link', { work_order_id: workOrderId });
       
-      if (linkError && linkError.code !== 'PGRST116') throw linkError;
+      if (linkError && linkError.message !== 'No rows returned') throw linkError;
       
       // Get budget items for this project to find appropriate categories
       const { data: budgetItems, error: biError } = await supabase
@@ -305,7 +276,7 @@ export const budgetIntegrationService = {
         .select(`
           amount, 
           budget_item_id,
-          budget_item:budget_item_id(category)
+          project_budget_items!inner(category)
         `)
         .eq('project_id', projectId);
       
@@ -315,7 +286,8 @@ export const budgetIntegrationService = {
       const categorizedCosts: Record<string, number> = {};
       
       (expenses || []).forEach(expense => {
-        const category = expense.budget_item?.category || 'uncategorized';
+        // Safe access with type checking
+        const category = expense.project_budget_items?.category || 'uncategorized';
         
         if (!categorizedCosts[category]) {
           categorizedCosts[category] = 0;

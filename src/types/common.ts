@@ -1,30 +1,19 @@
-
 export type StatusType = 
-  | 'draft' 
-  | 'sent' 
-  | 'approved' 
-  | 'rejected'
-  | 'pending'
-  | 'active'
-  | 'inactive'
-  | 'qualified'
-  | 'potential'
-  | 'prospect'
+  | 'active' 
+  | 'inactive' 
+  | 'pending' 
+  | 'draft'
+  | 'approved'
   | 'completed'
-  | 'cancelled'
-  | 'unknown'
-  | 'on-hold'
-  | 'NEW'
-  | 'IN_PROGRESS'
-  | 'SCHEDULED'
-  | 'COMPLETED'
-  | 'CANCELLED'
-  | 'VERIFIED'
-  | 'PAID'
-  | 'UNPAID'
-  | 'PARTIAL'
-  | 'AWAITING_APPROVAL'
   | 'on_track'
+  | 'in_progress'
   | 'warning'
   | 'critical'
-  | 'not_set';
+  | 'not_set'
+  | 'converted'
+  | 'cancelled';
+
+export interface Option {
+  label: string;
+  value: string;
+}
