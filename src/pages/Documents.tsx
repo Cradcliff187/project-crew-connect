@@ -56,7 +56,7 @@ const DocumentsPage: React.FC = () => {
 
   return (
     <PageTransition>
-      <div className="container py-10">
+      <div className="container py-6">
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-2xl font-semibold">Documents</h1>
           <div className="space-x-2">

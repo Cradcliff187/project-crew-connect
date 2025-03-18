@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Search, Clock, Plus, Filter, MoreHorizontal, Calendar, ChevronDown, Play, Pause, Timer, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import PageTransition from '@/components/layout/PageTransition';
 import DashboardCard from '@/components/dashboard/DashboardCard';
-import Header from '@/components/layout/Header';
 
 // Sample data - In a real app, this would come from API calls
 const timeEntriesData = [
@@ -102,17 +100,15 @@ const TimeTracking = () => {
   
   return (
     <PageTransition>
-      <div className="flex flex-col min-h-screen">
-        <Header />
+      <div className="flex flex-col min-h-full">
+        <div className="flex flex-col gap-2 mb-6 animate-in">
+          <h1 className="text-3xl font-semibold tracking-tight">Time Tracking</h1>
+          <p className="text-muted-foreground">
+            Log and manage time for employees and projects
+          </p>
+        </div>
         
         <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
-          <div className="flex flex-col gap-2 mb-6 animate-in">
-            <h1 className="text-3xl font-semibold tracking-tight">Time Tracking</h1>
-            <p className="text-muted-foreground">
-              Log and manage time for employees and projects
-            </p>
-          </div>
-          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2 animate-in" style={{ animationDelay: '0.1s' }}>
               <DashboardCard

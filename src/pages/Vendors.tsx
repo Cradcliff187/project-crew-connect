@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/layout/PageTransition';
-import Header from '@/components/layout/Header';
 import VendorsHeader from '@/components/vendors/VendorsHeader';
 import VendorsTable, { Vendor } from '@/components/vendors/VendorsTable';
 
@@ -50,23 +49,19 @@ const Vendors = () => {
 
   return (
     <PageTransition>
-      <div className="flex flex-col min-h-screen">
-        <Header />
+      <div className="flex flex-col min-h-full">
+        <VendorsHeader 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery} 
+          onVendorAdded={handleVendorAdded}
+        />
         
-        <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
-          <VendorsHeader 
-            searchQuery={searchQuery} 
-            setSearchQuery={setSearchQuery} 
-            onVendorAdded={handleVendorAdded}
-          />
-          
-          <VendorsTable 
-            vendors={vendors}
-            loading={loading}
-            error={error}
-            searchQuery={searchQuery}
-          />
-        </main>
+        <VendorsTable 
+          vendors={vendors}
+          loading={loading}
+          error={error}
+          searchQuery={searchQuery}
+        />
       </div>
     </PageTransition>
   );

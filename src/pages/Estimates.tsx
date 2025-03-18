@@ -197,7 +197,7 @@ const Estimates = () => {
   
   return (
     <PageTransition>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-full">
         <Header />
         
         <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
