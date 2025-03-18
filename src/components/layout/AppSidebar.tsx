@@ -107,7 +107,9 @@ export function AppSidebar() {
             alt="AKC LLC Logo"
             className="h-8 w-auto"
           />
-          <span className="text-lg font-bold text-[#0485ea]">{siteConfig.name}</span>
+          <span className="text-lg font-bold text-construction-600">
+            {siteConfig.name}
+          </span>
         </Link>
       </SidebarHeader>
       <SidebarSeparator />
