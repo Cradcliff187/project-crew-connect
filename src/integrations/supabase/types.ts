@@ -450,44 +450,59 @@ export type Database = {
       }
       maintenance_work_orders: {
         Row: {
+          actual_hours: number | null
           assigned_to: string | null
           completed_date: string | null
           created_at: string
           customer_id: string | null
           description: string | null
           location_id: string | null
+          materials_cost: number | null
+          po_number: string | null
           priority: string | null
           scheduled_date: string | null
           status: string | null
+          time_estimate: number | null
           title: string
+          total_cost: number | null
           updated_at: string
           work_order_id: string
         }
         Insert: {
+          actual_hours?: number | null
           assigned_to?: string | null
           completed_date?: string | null
           created_at?: string
           customer_id?: string | null
           description?: string | null
           location_id?: string | null
+          materials_cost?: number | null
+          po_number?: string | null
           priority?: string | null
           scheduled_date?: string | null
           status?: string | null
+          time_estimate?: number | null
           title: string
+          total_cost?: number | null
           updated_at?: string
           work_order_id?: string
         }
         Update: {
+          actual_hours?: number | null
           assigned_to?: string | null
           completed_date?: string | null
           created_at?: string
           customer_id?: string | null
           description?: string | null
           location_id?: string | null
+          materials_cost?: number | null
+          po_number?: string | null
           priority?: string | null
           scheduled_date?: string | null
           status?: string | null
+          time_estimate?: number | null
           title?: string
+          total_cost?: number | null
           updated_at?: string
           work_order_id?: string
         }
@@ -1139,6 +1154,115 @@ export type Database = {
           zip?: string | null
         }
         Relationships: []
+      }
+      work_order_materials: {
+        Row: {
+          created_at: string | null
+          id: string
+          material_name: string
+          quantity: number
+          receipt_document_id: string | null
+          total_price: number
+          unit_price: number
+          updated_at: string | null
+          vendor_id: string | null
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          material_name: string
+          quantity: number
+          receipt_document_id?: string | null
+          total_price: number
+          unit_price: number
+          updated_at?: string | null
+          vendor_id?: string | null
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          material_name?: string
+          quantity?: number
+          receipt_document_id?: string | null
+          total_price?: number
+          unit_price?: number
+          updated_at?: string | null
+          vendor_id?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_materials_receipt_document_id_fkey"
+            columns: ["receipt_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "work_order_materials_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["vendorid"]
+          },
+          {
+            foreignKeyName: "work_order_materials_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_work_orders"
+            referencedColumns: ["work_order_id"]
+          },
+        ]
+      }
+      work_order_time_logs: {
+        Row: {
+          created_at: string | null
+          employee_id: string | null
+          hours_worked: number
+          id: string
+          notes: string | null
+          updated_at: string | null
+          work_date: string | null
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          employee_id?: string | null
+          hours_worked: number
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          work_date?: string | null
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string | null
+          employee_id?: string | null
+          hours_worked?: number
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          work_date?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_time_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "work_order_time_logs_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_work_orders"
+            referencedColumns: ["work_order_id"]
+          },
+        ]
       }
     }
     Views: {

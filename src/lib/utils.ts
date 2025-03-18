@@ -1,29 +1,38 @@
 
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { format, parseISO } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number | null | undefined): string {
+export function formatDate(dateString: string) {
+  try {
+    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    return format(date, 'MMM d, yyyy');
+  } catch (error) {
+    console.error("Date parsing error:", error);
+    return 'Invalid date';
+  }
+}
+
+export function formatDateTime(dateString: string) {
+  try {
+    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    return format(date, 'MMM d, yyyy h:mm a');
+  } catch (error) {
+    console.error("Date parsing error:", error);
+    return 'Invalid date';
+  }
+}
+
+export function formatCurrency(amount: number | null | undefined) {
   if (amount === null || amount === undefined) return '$0.00';
   
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
+    minimumFractionDigits: 2
   }).format(amount);
-}
-
-// Format a date string to a readable format
-export function formatDate(dateString: string | Date | null | undefined): string {
-  if (!dateString) return 'N/A';
-  
-  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-  
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(date);
 }

@@ -1,78 +1,156 @@
+import {
+  LayoutDashboard,
+  FolderKanban,
+  FileSpreadsheet,
+  Users,
+  Store,
+  HardHat,
+  Clock,
+  FileText,
+  ClipboardList,
+} from "lucide-react";
 
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Users, Briefcase, FileText, Clock, User2, Building2, Hammer, LayoutDashboard, FolderArchive } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useSidebarContext } from './SidebarContext';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { MainNavItem } from "@/types/nav";
+import { siteConfig } from "@/config/site";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 
-const Sidebar = () => {
-  const location = useLocation();
-  const { isOpen, closeSidebar } = useSidebarContext();
-  const isMobile = useIsMobile();
-  
-  // Close sidebar when navigating on mobile
+interface SidebarProps {
+  className?: string;
+  items?: MainNavItem[];
+}
+
+const mainNav = [
+  {
+    title: "Dashboard",
+    href: "/",
+    icon: <LayoutDashboard className="h-5 w-5" />,
+  },
+  {
+    title: "Projects",
+    href: "/Projects",
+    icon: <FolderKanban className="h-5 w-5" />,
+  },
+  {
+    title: "Estimates",
+    href: "/Estimates",
+    icon: <FileSpreadsheet className="h-5 w-5" />,
+  },
+  {
+    title: "Work Orders",
+    href: "/WorkOrders",
+    icon: <ClipboardList className="h-5 w-5" />,
+  },
+  {
+    title: "Contacts",
+    href: "/Contacts",
+    icon: <Users className="h-5 w-5" />,
+  },
+  {
+    title: "Vendors",
+    href: "/Vendors",
+    icon: <Store className="h-5 w-5" />,
+  },
+  {
+    title: "Subcontractors",
+    href: "/Subcontractors",
+    icon: <HardHat className="h-5 w-5" />,
+  },
+  {
+    title: "Time Tracking",
+    href: "/TimeTracking",
+    icon: <Clock className="h-5 w-5" />,
+  },
+  {
+    title: "Documents",
+    href: "/Documents",
+    icon: <FileText className="h-5 w-5" />,
+  },
+];
+
+export function Sidebar({ className, items }: SidebarProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    if (isMobile) {
-      closeSidebar();
-    }
-  }, [location.pathname, isMobile, closeSidebar]);
-
-  const navigationItems = [
-    { name: 'Dashboard', href: '/', icon: <LayoutDashboard className="h-5 w-5" /> },
-    { name: 'Projects', href: '/projects', icon: <Briefcase className="h-5 w-5" /> },
-    { name: 'Estimates', href: '/estimates', icon: <FileText className="h-5 w-5" /> },
-    { name: 'Time Tracking', href: '/time-tracking', icon: <Clock className="h-5 w-5" /> },
-    { name: 'Contacts', href: '/contacts', icon: <Users className="h-5 w-5" /> },
-    { name: 'Subcontractors', href: '/subcontractors', icon: <Hammer className="h-5 w-5" /> },
-    { name: 'Vendors', href: '/vendors', icon: <Building2 className="h-5 w-5" /> },
-    { name: 'Documents', href: '/documents', icon: <FolderArchive className="h-5 w-5" /> },
-  ];
+    setMounted(true);
+  }, []);
 
   return (
-    <aside 
+    <div
       className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 flex-none transform overflow-y-auto bg-[#0485ea] shadow-lg transition-transform duration-200 ease-in-out",
-        isOpen ? "translate-x-0" : "-translate-x-full"
+        "flex h-full w-[280px] flex-col border-r bg-background py-4",
+        className
       )}
     >
-      <div className="flex h-full flex-col px-4 py-6">
-        <div className="mb-8 flex items-center px-2">
-          <Link to="/" className="flex items-center space-x-2">
-            <img src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" alt="AKC LLC Logo" className="h-8 w-auto" />
-            <span className="text-xl font-bold text-white">AKC LLC</span>
-          </Link>
-        </div>
-        
-        {/* Navigation items */}
-        <nav className="space-y-1 flex-1">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                location.pathname === item.href || 
-                (item.href !== '/' && location.pathname.startsWith(item.href))
-                  ? "bg-white/20 text-white"
-                  : "text-white/90 hover:bg-white/10 hover:text-white"
-              )}
-            >
-              <span className="mr-3">{item.icon}</span>
-              <span>{item.name}</span>
+      <ScrollArea className="flex-1 space-y-4 px-3">
+        <Link href="/" className="flex items-center space-x-2 px-2">
+          {/* <Icons.logo className="h-6 w-6" /> */}
+          <span className="font-bold">{siteConfig.name}</span>
+        </Link>
+        <Separator />
+        <div className="space-y-1">
+          {mainNav.map((item) => (
+            <Link key={item.title} href={item.href}>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start gap-2",
+                  pathname === item.href
+                    ? "bg-secondary text-foreground hover:bg-secondary/80"
+                    : "hover:bg-secondary/50"
+                )}
+              >
+                {item.icon}
+                <span>{item.title}</span>
+              </Button>
             </Link>
           ))}
-        </nav>
-        
-        <div className="mt-6 pt-6 border-t border-white/20">
-          <div className="px-3 py-2 flex items-center text-sm font-medium text-white/80">
-            <User2 className="mr-3 h-5 w-5" />
-            <span>Admin User</span>
-          </div>
         </div>
+      </ScrollArea>
+      <div className="flex flex-col space-y-1 p-3">
+        <Separator />
+        {mounted && session ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex h-8 w-full items-center justify-between rounded-md">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={session?.user?.image ?? ""} />
+                    <AvatarFallback>{session?.user?.name?.[0]}</AvatarFallback>
+                  </Avatar>
+                  <span className="text-left">{session?.user?.name}</span>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" forceMount>
+              <DropdownMenuItem onClick={() => router.push('/Settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => signOut()}>Log out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="secondary" onClick={() => router.push('/login')}>
+            Login
+          </Button>
+        )}
       </div>
-    </aside>
+    </div>
   );
-};
-
-export default Sidebar;
+}
