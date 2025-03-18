@@ -2,14 +2,14 @@
 import React, { useRef, useState } from 'react';
 import { Camera, Image, Undo, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MobileDocumentCaptureProps {
   onCapture: (file: File) => void;
 }
 
 const MobileDocumentCapture: React.FC<MobileDocumentCaptureProps> = ({ onCapture }) => {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const cameraRef = useRef<HTMLInputElement>(null);

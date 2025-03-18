@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { PageTransition } from "@/components/layout/PageTransition";
+import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Filter, Download, Trash2, Eye, FileText, Receipt, FileBox, Shield, FileImage, File } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -9,7 +10,7 @@ import { DialogTrigger, DialogTitle, DialogDescription, DialogHeader, DialogFoot
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DocumentFilters } from "@/components/documents/DocumentFilters";
+import DocumentFilters from "@/components/documents/DocumentFilters";
 
 // Define document model for frontend use
 export interface Document {
