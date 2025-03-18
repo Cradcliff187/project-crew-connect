@@ -1,15 +1,14 @@
-
 import React, { useRef, useState } from 'react';
 import { Camera, Image, Undo, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useDeviceCapabilities } from '@/hooks/use-mobile';
 
 interface MobileDocumentCaptureProps {
   onCapture: (file: File) => void;
 }
 
 const MobileDocumentCapture: React.FC<MobileDocumentCaptureProps> = ({ onCapture }) => {
-  const isMobile = useIsMobile();
+  const { isMobile, hasCamera } = useDeviceCapabilities();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -100,20 +99,22 @@ const MobileDocumentCapture: React.FC<MobileDocumentCaptureProps> = ({ onCapture
       ) : (
         <div className="flex flex-col space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-32 flex flex-col items-center justify-center space-y-2"
-              onClick={() => cameraRef.current?.click()}
-            >
-              <Camera className="h-8 w-8" />
-              <span>Take Photo</span>
-            </Button>
+            {hasCamera && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-32 flex flex-col items-center justify-center space-y-2"
+                onClick={() => cameraRef.current?.click()}
+              >
+                <Camera className="h-8 w-8" />
+                <span>Take Photo</span>
+              </Button>
+            )}
             
             <Button
               type="button"
               variant="outline"
-              className="h-32 flex flex-col items-center justify-center space-y-2"
+              className={`h-32 flex flex-col items-center justify-center space-y-2 ${!hasCamera ? 'col-span-2' : ''}`}
               onClick={() => galleryRef.current?.click()}
             >
               <Image className="h-8 w-8" />
@@ -139,7 +140,9 @@ const MobileDocumentCapture: React.FC<MobileDocumentCaptureProps> = ({ onCapture
           />
           
           <p className="text-xs text-center text-muted-foreground">
-            Capture receipts, invoices, and other documents with your camera.
+            {hasCamera 
+              ? "Capture receipts, invoices, and other documents with your camera."
+              : "Upload receipts, invoices, and other documents from your device."}
           </p>
         </div>
       )}

@@ -1,9 +1,8 @@
-
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Upload, Camera, File, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useDeviceCapabilities } from "@/hooks/use-mobile";
 
 interface FileUploadProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onFilesSelected: (files: File[]) => void;
@@ -30,7 +29,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     dropzoneText = "Drag files here or click to upload",
     ...props
   }, ref) => {
-    const isMobile = useIsMobile();
+    const { isMobile, hasCamera } = useDeviceCapabilities();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = React.useState(false);
     const [errors, setErrors] = React.useState<string[]>([]);
@@ -46,13 +45,11 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
       setErrors([]);
       const newErrors: string[] = [];
       const validFiles = files.filter(file => {
-        // Check file size
         if (file.size > maxFileSize * 1024 * 1024) {
           newErrors.push(`${file.name} exceeds maximum size of ${maxFileSize}MB`);
           return false;
         }
         
-        // Check file type
         const fileType = file.type.toLowerCase();
         const acceptedTypes = acceptedFileTypes.split(',');
         const isValidType = acceptedTypes.some(type => {
@@ -78,7 +75,6 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
         onFilesSelected(validFiles);
       }
       
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -160,7 +156,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
           </div>
         )}
 
-        {allowCamera && isMobile && (
+        {allowCamera && isMobile && hasCamera && (
           <Button 
             type="button" 
             variant="outline" 
@@ -175,7 +171,6 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
         <input
           type="file"
           ref={(e) => {
-            // Assign to user-provided ref if available
             if (typeof ref === 'function') {
               ref(e);
             } else if (ref) {
