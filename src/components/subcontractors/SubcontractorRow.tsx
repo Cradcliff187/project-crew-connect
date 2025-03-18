@@ -31,7 +31,6 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
   
   // Handle view click - Navigate to detail page
   const handleViewClick = (e: React.MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     // Call the provided onView prop (for backward compatibility)
     onView(subcontractor);
@@ -41,16 +40,19 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
 
   // Handle edit click
   const handleEditClick = (e: React.MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     onEdit(subcontractor);
   };
 
   // Handle delete click
   const handleDeleteClick = (e: React.MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     onDelete(subcontractor);
+  };
+
+  // Handle row click
+  const handleRowClick = () => {
+    navigate(`/subcontractors/${subcontractor.subid}`);
   };
 
   // Get action menu groups
@@ -98,7 +100,7 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
   };
 
   return (
-    <TableRow onClick={handleViewClick} className="cursor-pointer hover:bg-muted/50">
+    <TableRow onClick={handleRowClick} className="cursor-pointer hover:bg-muted/50">
       <TableCell>
         <SubcontractorInfo subcontractor={subcontractor} />
       </TableCell>

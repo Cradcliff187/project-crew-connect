@@ -64,40 +64,44 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
 
     setLoadingAssociations(true);
     try {
-      // Fetch associated projects
-      // This would typically join subcontractor tables with projects through assignments
-      // We're using a simplified query for now
+      // Fetch associated projects - safely fetch by string ID
       const { data: projectsData, error: projectsError } = await supabase
         .from('subinvoices')
         .select('projectid, projectname')
         .eq('subid', subId)
         .order('created_at', { ascending: false });
       
-      if (projectsError) throw projectsError;
-      
-      // Get unique projects by projectid
-      const uniqueProjects = projectsData?.reduce((acc: any[], current) => {
-        const x = acc.find(item => item.projectid === current.projectid);
-        if (!x) {
-          return acc.concat([current]);
-        } else {
-          return acc;
-        }
-      }, []);
-      
-      setProjects(uniqueProjects || []);
+      if (projectsError) {
+        console.error('Error fetching project data:', projectsError);
+      } else {
+        // Get unique projects by projectid
+        const uniqueProjects = projectsData?.reduce((acc: any[], current) => {
+          const x = acc.find(item => item.projectid === current.projectid);
+          if (!x) {
+            return acc.concat([current]);
+          } else {
+            return acc;
+          }
+        }, []);
+        
+        setProjects(uniqueProjects || []);
+      }
 
-      // Fetch associated work orders
-      // Assumes there's a relationship between work orders and subcontractors
-      const { data: workOrdersData, error: workOrdersError } = await supabase
-        .from('maintenance_work_orders')
-        .select('work_order_id, title, status')
-        .eq('assigned_to', subId)
-        .order('created_at', { ascending: false });
-      
-      if (workOrdersError) throw workOrdersError;
-      
-      setWorkOrders(workOrdersData || []);
+      // Safely try to fetch associated work orders - handle potential uuid vs string format issues
+      try {
+        const { data: workOrdersData, error: workOrdersError } = await supabase
+          .from('maintenance_work_orders')
+          .select('work_order_id, title, status')
+          .eq('assigned_to', subId)
+          .order('created_at', { ascending: false });
+        
+        if (!workOrdersError) {
+          setWorkOrders(workOrdersData || []);
+        }
+      } catch (workOrderError) {
+        console.error('Error fetching work orders:', workOrderError);
+        // Don't throw error for work orders - just log it
+      }
     } catch (error: any) {
       console.error('Error fetching associated data:', error);
       // We don't show a toast here to not disrupt the main flow

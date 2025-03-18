@@ -63,12 +63,14 @@ const ActionMenu = ({
         {groups.map((group, groupIndex) => (
           <React.Fragment key={`group-${groupIndex}`}>
             {groupIndex > 0 && <DropdownMenuSeparator />}
-            {group.items.map((item, itemIndex) => (
-              item.hoverContent ? (
-                <HoverCard key={`item-${groupIndex}-${itemIndex}`}>
+            {group.items.map((item, itemIndex) => {
+              // Create a unique key for each item
+              const itemKey = `item-${groupIndex}-${itemIndex}`;
+              
+              return item.hoverContent ? (
+                <HoverCard key={itemKey}>
                   <HoverCardTrigger asChild>
                     <DropdownMenuItem
-                      key={`trigger-${groupIndex}-${itemIndex}`}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -87,7 +89,7 @@ const ActionMenu = ({
                 </HoverCard>
               ) : (
                 <DropdownMenuItem
-                  key={`item-${groupIndex}-${itemIndex}`}
+                  key={itemKey}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -99,8 +101,8 @@ const ActionMenu = ({
                   {item.icon && <span className="mr-2">{item.icon}</span>}
                   {item.label}
                 </DropdownMenuItem>
-              )
-            ))}
+              );
+            })}
           </React.Fragment>
         ))}
       </DropdownMenuContent>

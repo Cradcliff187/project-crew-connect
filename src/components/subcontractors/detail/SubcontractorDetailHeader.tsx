@@ -41,7 +41,12 @@ const SubcontractorDetailHeader = ({ subcontractor, loading, onEdit }: Subcontra
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Subcontractors
       </Button>
-      <Button onClick={handleEdit}>Edit Subcontractor</Button>
+      <Button 
+        onClick={handleEdit} 
+        className="bg-[#0485ea] hover:bg-[#0375d1] text-white"
+      >
+        Edit Subcontractor
+      </Button>
     </div>
   );
 };

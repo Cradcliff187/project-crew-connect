@@ -9,6 +9,8 @@ import SubcontractorErrorState from './SubcontractorErrorState';
 import { useSpecialties } from './hooks/useSpecialties';
 import { Subcontractor, filterSubcontractors } from './utils/subcontractorUtils';
 import SubcontractorDialog from './SubcontractorDialog';
+import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface SubcontractorsTableProps {
   subcontractors: Subcontractor[];
@@ -23,6 +25,8 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   error,
   searchQuery
 }) => {
+  const navigate = useNavigate();
+  
   // Get specialties
   const { specialties, loading: loadingSpecialties, error: specialtiesError } = useSpecialties();
   
@@ -51,16 +55,25 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   const handleDeleteClick = (subcontractor: Subcontractor) => {
     console.log('Delete subcontractor', subcontractor.subid);
     // Would implement delete functionality here
+    toast({
+      title: "Not implemented",
+      description: "Delete functionality is not implemented yet",
+      variant: "destructive"
+    });
   };
   
   const handleViewClick = (subcontractor: Subcontractor) => {
     console.log('View subcontractor', subcontractor.subid);
-    // Would implement view functionality here
+    navigate(`/subcontractors/${subcontractor.subid}`);
   };
   
   const handleSubcontractorUpdated = () => {
     // This would be used to refresh the subcontractors list
-    console.log('Subcontractor updated');
+    toast({
+      title: "Subcontractor updated",
+      description: "The subcontractor has been updated successfully"
+    });
+    window.location.reload(); // Simple reload to refresh data
   };
   
   // Show loading state if any data is still loading
