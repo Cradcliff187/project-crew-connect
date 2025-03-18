@@ -102,12 +102,23 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="flex items-center justify-start pl-4">
         <Link to="/" className="flex items-center space-x-2">
-          {/* Use the actual AKC logo image */}
-          <img 
-            src="/akc-logo.png" 
-            alt="AKC LLC Logo" 
-            className="h-8 w-auto"
-          />
+          {/* If logo is missing, show a placeholder with brand color */}
+          <div className="h-8 w-auto flex items-center">
+            <img 
+              src="/akc-logo.png" 
+              alt="AKC LLC Logo" 
+              className="h-8 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.parentElement!.innerHTML = `
+                  <div class="bg-construction-600 text-white rounded-md p-1.5 flex items-center justify-center h-8 w-8">
+                    <span class="font-bold text-md">AKC</span>
+                  </div>
+                `;
+              }}
+            />
+          </div>
           <span className="text-lg font-bold text-construction-600 font-montserrat">{siteConfig.name}</span>
         </Link>
       </SidebarHeader>

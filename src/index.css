@@ -36,10 +36,10 @@
  
     --radius: 0.5rem;
 
-    /* Sidebar colors - explicitly using the AKC brand blue (#0485ea) values */
+    /* Updated sidebar colors to correctly use the construction color palette */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 213 94% 48%;
+    --sidebar-primary: 213 94% 48%; /* Same as construction-600 - #0485ea */
     --sidebar-primary-foreground: 210 40% 98%;
     --sidebar-muted: 213 94% 48%;
     --sidebar-muted-foreground: 215.4 16.3% 46.9%;
