@@ -90,7 +90,7 @@ const updateContactRating = async (contactId: string): Promise<void> => {
     if (error) throw error;
     
     if (data && data.length > 0) {
-      const totalScore = data.reduce((sum, item) => sum + (item.score || 0), 0);
+      const totalScore = data.reduce((sum, item) => sum + (Number(item.score) || 0), 0);
       const averageScore = Math.round(totalScore / data.length);
       
       // Update the contact's rating

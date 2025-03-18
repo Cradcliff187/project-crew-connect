@@ -51,6 +51,148 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_interactions: {
+        Row: {
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          duration_minutes: number | null
+          id: string
+          interaction_date: string
+          interaction_type: string
+          notes: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          interaction_date?: string
+          interaction_type: string
+          notes?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          interaction_date?: string
+          interaction_type?: string
+          notes?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_interactions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_performance_metrics: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          metric_date: string
+          metric_type: string
+          notes: string | null
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          metric_date?: string
+          metric_type: string
+          notes?: string | null
+          score: number
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          metric_date?: string
+          metric_type?: string
+          notes?: string | null
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_performance_metrics_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_relationships: {
+        Row: {
+          created_at: string
+          from_contact_id: string
+          id: string
+          notes: string | null
+          relationship_type: string
+          to_contact_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_contact_id: string
+          id?: string
+          notes?: string | null
+          relationship_type: string
+          to_contact_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_contact_id?: string
+          id?: string
+          notes?: string | null
+          relationship_type?: string
+          to_contact_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_relationships_from_contact_id_fkey"
+            columns: ["from_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_relationships_to_contact_id_fkey"
+            columns: ["to_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           address: string | null

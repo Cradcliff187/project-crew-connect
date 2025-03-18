@@ -84,7 +84,30 @@ const RelationshipsSection = ({ contact }: RelationshipsSectionProps) => {
           .neq('id', contact.id);
         
         if (error) throw error;
-        setRelatedContacts(contactsData || []);
+        
+        // Map the database contacts to our Contact interface
+        const mappedContacts = (contactsData || []).map(c => ({
+          id: c.id,
+          name: c.name,
+          company: c.company,
+          role: c.role,
+          email: c.email,
+          phone: c.phone,
+          address: c.address,
+          city: c.city,
+          state: c.state,
+          zip: c.zip,
+          type: c.contact_type,
+          status: c.status?.toUpperCase(),
+          lastContact: c.last_contact,
+          notes: c.notes,
+          specialty: c.specialty,
+          hourlyRate: c.hourly_rate?.toString(),
+          materials: c.materials,
+          rating: c.rating
+        }));
+        
+        setRelatedContacts(mappedContacts);
       } catch (error) {
         console.error("Error loading relationships:", error);
       } finally {

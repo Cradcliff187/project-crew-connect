@@ -29,6 +29,7 @@ export const fetchContactRelationships = async (contactId: string): Promise<Cont
       throw fromError || toError;
     }
     
+    // Combine both sets of relationships
     return [...(fromRelationships || []), ...(toRelationships || [])];
   } catch (error: any) {
     console.error("Error fetching contact relationships:", error);
