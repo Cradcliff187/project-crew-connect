@@ -348,6 +348,20 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     ));
   };
   
+  const generateTimeOptions = () => {
+    const options = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 15) {
+        const formattedHour = hour.toString().padStart(2, '0');
+        const formattedMinute = minute.toString().padStart(2, '0');
+        options.push(`${formattedHour}:${formattedMinute}`);
+      }
+    }
+    return options;
+  };
+  
+  const timeOptions = generateTimeOptions();
+  
   return (
     <div className="space-y-4">
       <Card>
@@ -468,13 +482,21 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                 <Label htmlFor="startTime">Start Time</Label>
                 <div className="relative">
                   <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="startTime"
-                    type="time"
-                    className="pl-9"
-                    step="900"
-                    {...form.register('startTime')}
-                  />
+                  <Select
+                    value={form.watch('startTime')}
+                    onValueChange={(value) => form.setValue('startTime', value, { shouldValidate: true })}
+                  >
+                    <SelectTrigger id="startTime" className="w-full pl-9">
+                      <SelectValue placeholder="Select start time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions.map((time) => (
+                        <SelectItem key={`start-${time}`} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {form.formState.errors.startTime && (
                   <p className="text-sm text-red-500">{form.formState.errors.startTime.message}</p>
@@ -485,13 +507,21 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                 <Label htmlFor="endTime">End Time</Label>
                 <div className="relative">
                   <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="endTime"
-                    type="time"
-                    className="pl-9"
-                    step="900"
-                    {...form.register('endTime')}
-                  />
+                  <Select
+                    value={form.watch('endTime')}
+                    onValueChange={(value) => form.setValue('endTime', value, { shouldValidate: true })}
+                  >
+                    <SelectTrigger id="endTime" className="w-full pl-9">
+                      <SelectValue placeholder="Select end time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions.map((time) => (
+                        <SelectItem key={`end-${time}`} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {form.formState.errors.endTime && (
                   <p className="text-sm text-red-500">{form.formState.errors.endTime.message}</p>
