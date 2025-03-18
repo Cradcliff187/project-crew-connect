@@ -1,4 +1,3 @@
-
 import { Building, Mail, Phone, MapPin, Star, Eye, Edit, Trash2, Send, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -40,7 +39,6 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
     }).format(date);
   };
 
-  // Status transition options based on contact type and current status
   const getStatusOptions = () => {
     const type = contact.type;
     const currentStatus = contact.status;
@@ -96,7 +94,6 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
     return [];
   };
 
-  // Define action groups for the contact based on type
   const getContactActions = (): ActionGroup[] => {
     const primaryActions: ActionGroup = {
       items: [
@@ -113,7 +110,6 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
       ]
     };
 
-    // Type-specific actions
     const typeSpecificActions: ActionGroup = {
       items: []
     };
@@ -133,7 +129,7 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
     } else if (contact.type === 'employee') {
       typeSpecificActions.items.push({
         label: 'View timesheet',
-        icon: <Clock className="h-4 w-4" />,
+        icon: <CalendarClock className="h-4 w-4" />,
         onClick: () => console.log('View timesheet')
       });
     } else if (['client', 'customer'].includes(contact.type)) {
@@ -151,7 +147,6 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
       );
     }
 
-    // Communication actions
     const communicationActions: ActionGroup = {
       items: [
         {
@@ -167,7 +162,6 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
       ]
     };
 
-    // Status actions (if available)
     const statusOptions = getStatusOptions();
     const statusActions: ActionGroup = {
       items: statusOptions.map(option => ({
@@ -176,7 +170,6 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
       }))
     };
 
-    // Destructive actions
     const destructiveActions: ActionGroup = {
       items: [
         {

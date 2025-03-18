@@ -1,6 +1,6 @@
 
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, History, FileText, Archive, Tool } from 'lucide-react';
+import { Eye, Edit, History, FileText, Archive, Wrench } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
@@ -49,7 +49,7 @@ const SubcontractorRow = ({
         items: [
           {
             label: 'Specialties',
-            icon: <Tool className="w-4 h-4" />,
+            icon: <Wrench className="w-4 h-4" />,
             onClick: () => console.log('Manage specialties', sub.subid)
           },
           {
