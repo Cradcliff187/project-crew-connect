@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Bell, Search, Menu } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,11 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSidebarContext } from '@/components/layout/SidebarContext';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
-  const { toggleSidebar } = useSidebarContext();
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   
@@ -33,15 +31,7 @@ const Header = () => {
       }`}
     >
       <div className="flex items-center">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={toggleSidebar} 
-          className="text-muted-foreground hover:text-foreground"
-          aria-label="Toggle sidebar"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
       </div>
       
       <div className="hidden md:flex items-center w-full max-w-xs mx-auto">

@@ -1,26 +1,26 @@
 
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
-import Sidebar from './Sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { AppSidebar } from './AppSidebar';
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useSidebarContext } from './SidebarContext';
 
 const Layout = () => {
-  const isMobile = useIsMobile();
-  const { isOpen } = useSidebarContext();
+  // We still use the existing context for compatibility
+  const { isOpen, toggleSidebar } = useSidebarContext();
   
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      <Sidebar />
-      <div className={`flex flex-col flex-1 w-full overflow-hidden transition-all duration-300 ${
-        isOpen && !isMobile ? 'ml-0 lg:ml-64' : 'ml-0'
-      }`}>
-        <Header />
-        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
-          <Outlet />
-        </main>
+    <SidebarProvider defaultOpen={isOpen} open={isOpen} onOpenChange={toggleSidebar}>
+      <div className="flex h-screen w-full overflow-hidden">
+        <AppSidebar />
+        <SidebarInset className="flex flex-col">
+          <Header />
+          <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
+            <Outlet />
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
