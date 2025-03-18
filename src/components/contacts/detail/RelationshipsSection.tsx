@@ -352,37 +352,6 @@ const RelationshipsSection = ({ contact }: RelationshipsSectionProps) => {
       </Dialog>
     </div>
   );
-  
-  // Implementation of handler functions
-  function handleSubmit(values: z.infer<typeof formSchema>) {
-    addContactRelationship(
-      contact.id,
-      values.relatedContactId,
-      values.relationshipType,
-      values.notes
-    ).then(() => {
-      setShowAddDialog(false);
-      form.reset();
-      setRefreshTrigger(prev => prev + 1);
-    }).catch(error => {
-      console.error("Error adding relationship:", error);
-    });
-  }
-
-  function handleDelete(relationshipId: string) {
-    if (confirm("Are you sure you want to remove this relationship?")) {
-      removeContactRelationship(relationshipId).then(success => {
-        if (success) {
-          setRefreshTrigger(prev => prev + 1);
-        }
-      });
-    }
-  }
-
-  function getRelatedContactName(contactId: string) {
-    const relatedContact = relatedContacts.find(c => c.id === contactId);
-    return relatedContact ? relatedContact.name : 'Unknown Contact';
-  }
 };
 
 export default RelationshipsSection;
