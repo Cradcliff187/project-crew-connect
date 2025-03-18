@@ -44,6 +44,7 @@ const TimeTracking = () => {
           employee_rate,
           notes,
           has_receipts,
+          location_data,
           created_at,
           updated_at
         `)
@@ -72,7 +73,7 @@ const TimeTracking = () => {
             .from('maintenance_work_orders')
             .select('title, location_id')
             .eq('work_order_id', entry.entity_id)
-            .single();
+            .maybeSingle();
           
           if (workOrder) {
             entityName = workOrder.title;
@@ -83,7 +84,7 @@ const TimeTracking = () => {
                 .from('site_locations')
                 .select('location_name, city, state')
                 .eq('location_id', workOrder.location_id)
-                .single();
+                .maybeSingle();
               
               if (location) {
                 entityLocation = location.location_name || 
@@ -97,7 +98,7 @@ const TimeTracking = () => {
             .from('projects')
             .select('projectname, sitelocationcity, sitelocationstate')
             .eq('projectid', entry.entity_id)
-            .single();
+            .maybeSingle();
           
           if (project) {
             entityName = project.projectname || `Project ${entry.entity_id}`;
@@ -112,7 +113,7 @@ const TimeTracking = () => {
             .from('employees')
             .select('first_name, last_name')
             .eq('employee_id', entry.employee_id)
-            .single();
+            .maybeSingle();
           
           if (employee) {
             employeeName = `${employee.first_name} ${employee.last_name}`;
@@ -138,7 +139,7 @@ const TimeTracking = () => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         filteredEntries = enhancedEntries.filter(entry => 
-          entry.entity_name.toLowerCase().includes(query) ||
+          (entry.entity_name && entry.entity_name.toLowerCase().includes(query)) ||
           (entry.entity_location && entry.entity_location.toLowerCase().includes(query)) ||
           (entry.employee_name && entry.employee_name.toLowerCase().includes(query)) ||
           (entry.notes && entry.notes.toLowerCase().includes(query))

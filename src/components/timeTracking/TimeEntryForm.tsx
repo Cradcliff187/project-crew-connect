@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/hover-card';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { TimeEntryFormData } from '@/types/workOrder';
 
 interface WorkOrderOrProject {
   id: string;
@@ -53,6 +54,10 @@ interface WorkOrderOrProject {
   status?: string;
 }
 
+interface TimeEntryFormProps {
+  onSuccess: () => void;
+}
+
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
   entityId: z.string().min(1, "Please select a work order or project"),
@@ -61,19 +66,21 @@ const timeEntryFormSchema = z.object({
   endTime: z.string().min(1, "End time is required"),
   hoursWorked: z.number().min(0.01, "Hours must be greater than 0"),
   notes: z.string().optional(),
+  employeeId: z.string().optional(),
 });
 
-type TimeEntryFormValues = z.infer<typeof timeEntryFormSchema>;
+type FormValues = z.infer<typeof timeEntryFormSchema>;
 
-const TimeEntryForm = () => {
+const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [projects, setProjects] = useState<WorkOrderOrProject[]>([]);
   const [workOrders, setWorkOrders] = useState<WorkOrderOrProject[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [confirmationData, setConfirmationData] = useState<TimeEntryFormValues | null>(null);
+  const [confirmationData, setConfirmationData] = useState<FormValues | null>(null);
+  const [employees, setEmployees] = useState<{ employee_id: string, name: string }[]>([]);
   
-  const form = useForm<TimeEntryFormValues>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(timeEntryFormSchema),
     defaultValues: {
       entityType: 'work_order',
@@ -82,6 +89,7 @@ const TimeEntryForm = () => {
       endTime: '',
       hoursWorked: 0,
       notes: '',
+      employeeId: '',
     },
   });
   
@@ -113,7 +121,7 @@ const TimeEntryForm = () => {
     }
   }, [startTime, endTime, form]);
   
-  // Load projects and work orders
+  // Load projects, work orders, and employees
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -134,6 +142,15 @@ const TimeEntryForm = () => {
           .order('created_at', { ascending: false });
         
         if (projectsError) throw projectsError;
+        
+        // Fetch employees
+        const { data: employeesData, error: employeesError } = await supabase
+          .from('employees')
+          .select('employee_id, first_name, last_name, hourly_rate')
+          .eq('status', 'ACTIVE')
+          .order('last_name', { ascending: true });
+          
+        if (employeesError) throw employeesError;
         
         // Format work orders
         const formattedWorkOrders = workOrdersData.map(wo => ({
@@ -158,8 +175,20 @@ const TimeEntryForm = () => {
           location: [project.sitelocationcity, project.sitelocationstate].filter(Boolean).join(', '),
         }));
         
+        // Format employees
+        const formattedEmployees = employeesData.map(emp => ({
+          employee_id: emp.employee_id,
+          name: `${emp.first_name} ${emp.last_name}`
+        }));
+        
         setWorkOrders(formattedWorkOrders);
         setProjects(formattedProjects);
+        setEmployees(formattedEmployees);
+        
+        // Set the first employee as selected by default if available
+        if (formattedEmployees.length > 0 && !form.getValues('employeeId')) {
+          form.setValue('employeeId', formattedEmployees[0].employee_id);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -173,7 +202,7 @@ const TimeEntryForm = () => {
     };
     
     fetchData();
-  }, []);
+  }, [form]);
   
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
@@ -193,7 +222,7 @@ const TimeEntryForm = () => {
     }
   };
   
-  const handleSubmit = (data: TimeEntryFormValues) => {
+  const handleSubmit = (data: FormValues) => {
     setConfirmationData(data);
     setShowConfirmDialog(true);
   };
@@ -204,44 +233,52 @@ const TimeEntryForm = () => {
     setIsLoading(true);
     
     try {
-      const timeEntry = {
-        [entityType === 'work_order' ? 'work_order_id' : 'projectid']: confirmationData.entityId,
-        hours_worked: confirmationData.hoursWorked,
-        work_date: format(confirmationData.workDate, 'yyyy-MM-dd'),
-        start_time: confirmationData.startTime,
-        end_time: confirmationData.endTime,
-        notes: confirmationData.notes,
-        created_at: new Date().toISOString(),
-      };
+      // Find selected employee info
+      const selectedEmployee = employees.find(e => e.employee_id === confirmationData.employeeId);
       
-      if (entityType === 'work_order') {
-        const { error } = await supabase
-          .from('work_order_time_logs')
-          .insert(timeEntry);
-          
-        if (error) throw error;
-      } else {
-        // For projects, we use the timelogs table
-        const { error } = await supabase
-          .from('timelogs')
-          .insert({
-            projectid: confirmationData.entityId,
-            dateworked: format(confirmationData.workDate, 'yyyy-MM-dd'),
-            starttime: confirmationData.startTime,
-            endtime: confirmationData.endTime,
-            totalhours: confirmationData.hoursWorked.toString(),
-            // Additional fields would need to be set based on your requirements
-          });
-          
-        if (error) throw error;
+      // Get hourly rate for cost calculation
+      let employeeRate = null;
+      if (confirmationData.employeeId) {
+        const { data: empData } = await supabase
+          .from('employees')
+          .select('hourly_rate')
+          .eq('employee_id', confirmationData.employeeId)
+          .maybeSingle();
+        
+        employeeRate = empData?.hourly_rate;
       }
       
+      // Prepare the time entry data
+      const timeEntry = {
+        entity_type: confirmationData.entityType,
+        entity_id: confirmationData.entityId,
+        date_worked: format(confirmationData.workDate, 'yyyy-MM-dd'),
+        start_time: confirmationData.startTime,
+        end_time: confirmationData.endTime,
+        hours_worked: confirmationData.hoursWorked,
+        employee_id: confirmationData.employeeId || null,
+        employee_rate: employeeRate,
+        notes: confirmationData.notes,
+        has_receipts: selectedFiles.length > 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Insert the time entry
+      const { data: insertedEntry, error } = await supabase
+        .from('time_entries')
+        .insert(timeEntry)
+        .select('id')
+        .single();
+        
+      if (error) throw error;
+      
       // Upload receipts if any
-      if (selectedFiles.length > 0) {
+      if (selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-          const filePath = `receipts/${entityType}/${confirmationData.entityId}/${fileName}`;
+          const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
           
           const { error: uploadError } = await supabase.storage
             .from('construction_documents')
@@ -249,26 +286,18 @@ const TimeEntryForm = () => {
             
           if (uploadError) throw uploadError;
           
-          // Link document to the entity
-          const { data: { publicUrl } } = supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(filePath);
-            
-          const { error: documentError } = await supabase
-            .from('documents')
+          // Add receipt record
+          const { error: receiptError } = await supabase
+            .from('time_entry_receipts')
             .insert({
+              time_entry_id: insertedEntry.id,
               file_name: file.name,
               file_type: file.type,
               file_size: file.size,
               storage_path: filePath,
-              entity_type: entityType.toUpperCase(),
-              entity_id: confirmationData.entityId,
-              category: 'receipt',
-              notes: `Receipt for work on ${format(confirmationData.workDate, 'MMMM d, yyyy')}`,
-              is_expense: true,
             });
             
-          if (documentError) throw documentError;
+          if (receiptError) throw receiptError;
         }
       }
       
@@ -285,9 +314,13 @@ const TimeEntryForm = () => {
         endTime: '',
         hoursWorked: 0,
         notes: '',
+        employeeId: employees.length > 0 ? employees[0].employee_id : undefined,
       });
       setSelectedFiles([]);
       setShowConfirmDialog(false);
+      
+      // Call the success callback
+      onSuccess();
       
     } catch (error: any) {
       console.error('Error submitting time entry:', error);
@@ -402,6 +435,26 @@ const TimeEntryForm = () => {
                   )}
                 </div>
               )}
+            </div>
+            
+            {/* Employee Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="employee">Employee</Label>
+              <Select
+                value={form.watch('employeeId')}
+                onValueChange={(value) => form.setValue('employeeId', value, { shouldValidate: true })}
+              >
+                <SelectTrigger id="employee" className="w-full">
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map(employee => (
+                    <SelectItem key={employee.employee_id} value={employee.employee_id}>
+                      {employee.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {/* Date Selection */}
@@ -543,6 +596,13 @@ const TimeEntryForm = () => {
                     : projects.find(p => p.id === confirmationData.entityId)?.title}
                 </div>
                 
+                <div className="text-muted-foreground">Employee:</div>
+                <div className="font-medium">
+                  {confirmationData.employeeId
+                    ? employees.find(e => e.employee_id === confirmationData.employeeId)?.name
+                    : 'None selected'}
+                </div>
+                
                 <div className="text-muted-foreground">Date:</div>
                 <div className="font-medium">{format(confirmationData.workDate, 'MMMM d, yyyy')}</div>
                 
@@ -567,16 +627,6 @@ const TimeEntryForm = () => {
                     <div className="font-medium">{selectedFiles.length} file(s) attached</div>
                   </>
                 )}
-              </div>
-              
-              <div className="bg-muted p-3 rounded-md">
-                <div className="text-sm text-muted-foreground mb-1">Cost Calculation:</div>
-                <div className="font-medium">
-                  {confirmationData.hoursWorked} hours @ $XX.XX/hr = $XXX.XX
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  (Hourly rate based on your employee profile)
-                </div>
               </div>
             </div>
           )}

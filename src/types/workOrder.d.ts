@@ -35,7 +35,7 @@ export interface TimeEntry {
   id: string;
   entity_type: 'work_order' | 'project';
   entity_id: string;
-  entity_name: string;
+  entity_name?: string;
   entity_location?: string;
   date_worked: string;
   start_time: string;
