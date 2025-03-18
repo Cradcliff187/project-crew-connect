@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +20,8 @@ import MobileDocumentCapture from './MobileDocumentCapture';
 import ExpenseForm from './ExpenseForm';
 import VendorSelector from './VendorSelector';
 import { cn } from '@/lib/utils';
+import { FileUpload } from '@/components/ui/file-upload';
+import { useIsMobile, useDeviceCapabilities } from '@/hooks/use-mobile';
 import { 
   DocumentUploadFormValues, 
   documentUploadSchema, 
@@ -46,6 +47,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   const [activeTab, setActiveTab] = useState('file');
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
+  const { isMobile, hasCamera } = useDeviceCapabilities();
 
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
@@ -195,180 +197,211 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
         </CardDescription>
       </CardHeader>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mx-6 grid grid-cols-2">
-          <TabsTrigger value="file">File Upload</TabsTrigger>
-          <TabsTrigger value="mobile">Mobile Capture</TabsTrigger>
-        </TabsList>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-6 pt-4">
-              <TabsContent value="file" className="space-y-4 mt-0">
-                <FormField
-                  control={form.control}
-                  name="files"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Document File</FormLabel>
-                      <FormControl>
-                        <div className="flex flex-col items-center justify-center w-full">
-                          <label
-                            htmlFor="dropzone-file"
-                            className={cn(
-                              "flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
-                              watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
-                            )}
-                          >
-                            {previewURL ? (
-                              <div className="w-full h-full p-2 flex items-center justify-center">
-                                <img
-                                  src={previewURL}
-                                  alt="Preview"
-                                  className="max-h-full max-w-full object-contain"
-                                />
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <Upload className="w-10 h-10 mb-3 text-gray-400" />
-                                <p className="mb-2 text-sm text-gray-500">
-                                  <span className="font-semibold">Click to upload</span> or drag and drop
-                                </p>
-                                <p className="text-xs text-gray-500">PDF, PNG, JPG, or other document formats</p>
-                                {watchFiles.length > 0 && (
-                                  <p className="mt-2 text-sm text-[#0485ea] font-medium">
-                                    {watchFiles.length > 1 
-                                      ? `${watchFiles.length} files selected` 
-                                      : watchFiles[0].name}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                            <input
-                              id="dropzone-file"
-                              type="file"
-                              className="hidden"
-                              multiple={true}
-                              onChange={(e) => {
-                                const files = e.target.files;
-                                if (files && files.length > 0) {
-                                  handleFileSelect(Array.from(files));
-                                }
-                              }}
-                            />
-                          </label>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-              
-              <TabsContent value="mobile" className="space-y-4 mt-0">
-                <MobileDocumentCapture onCapture={handleMobileCapture} />
-              </TabsContent>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                {!isReceiptUpload && (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-6 pt-4">
+            {isMobile ? (
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid grid-cols-2">
+                  <TabsTrigger value="file">File Upload</TabsTrigger>
+                  <TabsTrigger value="mobile">Mobile Capture</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="file" className="space-y-4 mt-0">
                   <FormField
                     control={form.control}
-                    name="metadata.category"
+                    name="files"
                     render={({ field }) => (
-                      <FormItem className="space-y-1">
-                        <FormLabel>Document Category</FormLabel>
+                      <FormItem>
+                        <FormLabel>Document File</FormLabel>
                         <FormControl>
-                          <DocumentCategorySelector
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
+                          <div className="flex flex-col items-center justify-center w-full">
+                            <label
+                              htmlFor="dropzone-file"
+                              className={cn(
+                                "flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
+                                watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
+                              )}
+                            >
+                              {previewURL ? (
+                                <div className="w-full h-full p-2 flex items-center justify-center">
+                                  <img
+                                    src={previewURL}
+                                    alt="Preview"
+                                    className="max-h-full max-w-full object-contain"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                  <Upload className="w-10 h-10 mb-3 text-gray-400" />
+                                  <p className="mb-2 text-sm text-gray-500">
+                                    <span className="font-semibold">Click to upload</span> or drag and drop
+                                  </p>
+                                  <p className="text-xs text-gray-500">PDF, PNG, JPG, or other document formats</p>
+                                  {watchFiles.length > 0 && (
+                                    <p className="mt-2 text-sm text-[#0485ea] font-medium">
+                                      {watchFiles.length > 1 
+                                        ? `${watchFiles.length} files selected` 
+                                        : watchFiles[0].name}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              <input
+                                id="dropzone-file"
+                                type="file"
+                                className="hidden"
+                                multiple={true}
+                                onChange={(e) => {
+                                  const files = e.target.files;
+                                  if (files && files.length > 0) {
+                                    handleFileSelect(Array.from(files));
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
+                </TabsContent>
                 
-                {!isReceiptUpload && (
-                  <FormField
-                    control={form.control}
-                    name="metadata.isExpense"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            Expense Document
-                          </FormLabel>
-                          <FormDescription>
-                            Mark this document as an expense record (invoice, receipt, etc.)
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                <TabsContent value="mobile" className="space-y-4 mt-0">
+                  <MobileDocumentCapture onCapture={handleMobileCapture} />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              // Desktop version - simplified without tabs
+              <FormField
+                control={form.control}
+                name="files"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Document File</FormLabel>
+                    <FormControl>
+                      <FileUpload
+                        onFilesSelected={handleFileSelect}
+                        selectedFiles={watchFiles}
+                        onFileClear={(index) => {
+                          const newFiles = [...watchFiles];
+                          newFiles.splice(index, 1);
+                          handleFileSelect(newFiles);
+                        }}
+                        acceptedFileTypes="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        maxFileSize={10}
+                        dropzoneText={isReceiptUpload 
+                          ? "Upload receipt files" 
+                          : "Upload document files"}
+                        allowCamera={false} // Explicitly disable camera on desktop
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-                
-                {showVendorSelector && (
-                  <VendorSelector 
-                    control={form.control} 
-                    watchVendorType={watchVendorType} 
-                  />
-                )}
-                
-                {(watchIsExpense || isReceiptUpload) && (
-                  <ExpenseForm control={form.control} />
-                )}
-                
+              />
+            )}
+            
+            <Separator />
+            
+            <div className="space-y-4">
+              {!isReceiptUpload && (
                 <FormField
                   control={form.control}
-                  name="metadata.notes"
+                  name="metadata.category"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes</FormLabel>
+                    <FormItem className="space-y-1">
+                      <FormLabel>Document Category</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder={isReceiptUpload 
-                            ? "Add any details about this receipt..." 
-                            : "Add any relevant notes about this document..."}
-                          {...field}
+                        <DocumentCategorySelector
+                          value={field.value}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-            </CardContent>
-            
-            <CardFooter className="flex justify-between">
-              {onCancel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                >
-                  Cancel
-                </Button>
               )}
+              
+              {!isReceiptUpload && (
+                <FormField
+                  control={form.control}
+                  name="metadata.isExpense"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Expense Document
+                        </FormLabel>
+                        <FormDescription>
+                          Mark this document as an expense record (invoice, receipt, etc.)
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              {showVendorSelector && (
+                <VendorSelector 
+                  control={form.control} 
+                  watchVendorType={watchVendorType} 
+                />
+              )}
+              
+              {(watchIsExpense || isReceiptUpload) && (
+                <ExpenseForm control={form.control} />
+              )}
+              
+              <FormField
+                control={form.control}
+                name="metadata.notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={isReceiptUpload 
+                          ? "Add any details about this receipt..." 
+                          : "Add any relevant notes about this document..."}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex justify-between">
+            {onCancel && (
               <Button
-                type="submit" 
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-                disabled={isUploading || watchFiles.length === 0}
+                type="button"
+                variant="outline"
+                onClick={onCancel}
               >
-                {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
+                Cancel
               </Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </Tabs>
+            )}
+            <Button
+              type="submit" 
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
+              disabled={isUploading || watchFiles.length === 0}
+            >
+              {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 };
