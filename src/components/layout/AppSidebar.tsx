@@ -103,18 +103,18 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="flex items-center justify-start pl-4">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="h-8 w-auto flex items-center">
+          <div className="h-10 w-auto flex items-center">
             {logoError ? (
               // Fallback when logo fails to load - show AKC text with brand color
               <div className="bg-[#0485ea] text-white rounded-md p-1.5 flex items-center justify-center h-8 w-8">
                 <span className="font-bold text-md">AKC</span>
               </div>
             ) : (
-              // Try to load the actual logo
+              // Use the actual logo
               <img 
                 src="/akc-logo.png" 
                 alt="AKC LLC Logo" 
-                className="h-8 w-auto"
+                className="h-10 w-auto"
                 onError={() => setLogoError(true)}
               />
             )}
