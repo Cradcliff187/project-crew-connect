@@ -30,8 +30,8 @@ const Subcontractors = () => {
       // Ensure any null values are properly handled for new fields
       const processedData = data?.map(sub => ({
         ...sub,
-        // Handle new fields that might not exist in the database yet
-        payment_terms: sub.payment_terms || null,
+        // Set default values for fields that might not exist in the database yet
+        payment_terms: sub.payment_terms || "NET30",
         notes: sub.notes || null
       })) as Subcontractor[];
       

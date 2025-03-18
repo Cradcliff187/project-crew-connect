@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { budgetIntegrationService } from '@/services/budgetIntegrationService';
+import * as budgetIntegrationService from '@/services/budgetIntegrationService';
 import { toast } from '@/hooks/use-toast';
 
 export const useBudgetIntegration = () => {
@@ -41,7 +41,7 @@ export const useBudgetIntegration = () => {
   const linkWorkOrderToProject = async (workOrderId: string, projectId: string, budgetItemId?: string) => {
     setIsLoading(true);
     try {
-      const success = await budgetIntegrationService.linkWorkOrderToProjectBudget(
+      const success = await budgetIntegrationService.linkWorkOrderToProject(
         workOrderId, 
         projectId, 
         budgetItemId
