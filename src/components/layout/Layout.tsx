@@ -16,7 +16,7 @@ const Layout = () => {
       <div 
         className={cn(
           "flex flex-col flex-1 w-full overflow-hidden transition-all duration-200 ease-in-out",
-          isOpen && !isMobile ? "lg:ml-64" : ""
+          isOpen && !isMobile ? "ml-64" : ""
         )}
       >
         <Header />
