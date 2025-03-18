@@ -126,7 +126,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             <SelectItem value="invoice">
               <div className="flex items-center">
                 <FileText className="h-4 w-4 mr-2" />
@@ -186,7 +186,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
             <SelectValue placeholder="All Entities" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Entities</SelectItem>
+            <SelectItem value="all">All Entities</SelectItem>
             {entityTypes.map((type) => (
               <SelectItem key={type} value={type}>
                 {type.charAt(0) + type.slice(1).toLowerCase().replace('_', ' ')}
