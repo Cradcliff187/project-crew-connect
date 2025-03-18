@@ -7,9 +7,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(dateString: string) {
+export function formatDate(dateInput: string | Date) {
   try {
-    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
     return format(date, 'MMM d, yyyy');
   } catch (error) {
     console.error("Date parsing error:", error);
@@ -17,9 +17,9 @@ export function formatDate(dateString: string) {
   }
 }
 
-export function formatDateTime(dateString: string) {
+export function formatDateTime(dateInput: string | Date) {
   try {
-    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
     return format(date, 'MMM d, yyyy h:mm a');
   } catch (error) {
     console.error("Date parsing error:", error);

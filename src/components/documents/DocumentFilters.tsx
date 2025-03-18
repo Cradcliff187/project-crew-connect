@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Search, Filter, Check, X, Calendar } from 'lucide-react';
+import { Search, Filter, X, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,7 +58,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [tempFilters, setTempFilters] = React.useState<FilterOptions>(filters);
 
-  // Reset temp filters when dialog opens
   React.useEffect(() => {
     if (isDialogOpen) {
       setTempFilters(filters);
@@ -91,7 +89,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
     onFilterChange(newFilters);
   };
 
-  // Format date range for display
   const dateRangeText = filters.dateRange?.from && filters.dateRange?.to 
     ? `${formatDate(filters.dateRange.from)} - ${formatDate(filters.dateRange.to)}`
     : filters.dateRange?.from 
@@ -100,7 +97,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
         ? `Until ${formatDate(filters.dateRange.to)}`
         : undefined;
 
-  // Group entity types for better organization
   const groupedEntityTypes = {
     business: ['PROJECT', 'WORK_ORDER', 'ESTIMATE'],
     people: ['CUSTOMER', 'VENDOR', 'SUBCONTRACTOR'],
@@ -110,7 +106,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   return (
     <div className="space-y-4 w-full">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {/* Search Bar */}
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -121,7 +116,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
           />
         </div>
         
-        {/* Sort and Filter Buttons */}
         <div className="flex items-center gap-2">
           <Select
             value={filters.sortBy || 'newest'}
@@ -162,7 +156,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
               </DialogHeader>
               
               <div className="space-y-4 py-4">
-                {/* Document Category */}
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Document Type</h4>
                   <DocumentCategorySelector
@@ -171,7 +164,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                   />
                 </div>
                 
-                {/* Entity Type */}
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Related To</h4>
                   <Select
@@ -186,23 +178,19 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                     <SelectContent>
                       <SelectItem value="all">All entities</SelectItem>
                       
-                      {/* Business entities */}
                       <SelectItem value="PROJECT">Projects</SelectItem>
                       <SelectItem value="WORK_ORDER">Work Orders</SelectItem>
                       <SelectItem value="ESTIMATE">Estimates</SelectItem>
                       
-                      {/* People entities */}
                       <SelectItem value="CUSTOMER">Customers</SelectItem>
                       <SelectItem value="VENDOR">Vendors</SelectItem>
                       <SelectItem value="SUBCONTRACTOR">Subcontractors</SelectItem>
                       
-                      {/* Financial entities */}
                       <SelectItem value="EXPENSE">Expenses</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
-                {/* Expense Only Toggle */}
                 <div className="flex items-start space-x-2">
                   <Checkbox
                     id="expense-only"
@@ -224,7 +212,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                   </div>
                 </div>
                 
-                {/* Date Range */}
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Date Range</h4>
                   <Popover>
@@ -292,7 +279,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
         </div>
       </div>
       
-      {/* Active Filters Display */}
       {activeFiltersCount > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
           {filters.category && (

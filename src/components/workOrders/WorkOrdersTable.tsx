@@ -1,14 +1,15 @@
 
 import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useNavigate } from 'react-router-dom';
+import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { WorkOrder } from '@/types/workOrder';
+import StatusBadge from '@/components/ui/StatusBadge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import WorkOrderDetailDialog from './WorkOrderDetailDialog';
 import WorkOrderEmptyState from './WorkOrderEmptyState';
 import WorkOrderLoadingState from './WorkOrderLoadingState';
 import WorkOrderErrorState from './WorkOrderErrorState';
-import WorkOrderDetailDialog from './WorkOrderDetailDialog';
-import { formatDate } from '@/lib/utils';
+import { WorkOrder } from '@/types/workOrder';
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
@@ -18,26 +19,25 @@ interface WorkOrdersTableProps {
   onStatusChange: () => void;
 }
 
-const WorkOrdersTable = ({ 
-  workOrders, 
-  loading, 
-  error, 
-  searchQuery,
-  onStatusChange
-}: WorkOrdersTableProps) => {
+const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChange }: WorkOrdersTableProps) => {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const navigate = useNavigate();
   
   // Filter work orders based on search query
-  const filteredWorkOrders = workOrders.filter(workOrder => {
+  const filteredWorkOrders = workOrders.filter(wo => {
     const searchLower = searchQuery.toLowerCase();
     return (
-      workOrder.title.toLowerCase().includes(searchLower) ||
-      (workOrder.description?.toLowerCase() || '').includes(searchLower) ||
-      (workOrder.po_number?.toLowerCase() || '').includes(searchLower) ||
-      workOrder.status.toLowerCase().includes(searchLower)
+      wo.title.toLowerCase().includes(searchLower) ||
+      (wo.description && wo.description.toLowerCase().includes(searchLower)) ||
+      (wo.po_number && wo.po_number.toLowerCase().includes(searchLower))
     );
   });
+  
+  const handleRowClick = (workOrder: WorkOrder) => {
+    setSelectedWorkOrder(workOrder);
+    setIsDialogOpen(true);
+  };
   
   if (loading) {
     return <WorkOrderLoadingState />;
@@ -51,61 +51,78 @@ const WorkOrdersTable = ({
     return <WorkOrderEmptyState />;
   }
   
-  const handleViewDetails = (workOrder: WorkOrder) => {
-    setSelectedWorkOrder(workOrder);
-    setDetailOpen(true);
-  };
-
   return (
-    <>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Work Order</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Customer</TableHead>
+            <TableHead>Date Created</TableHead>
+            <TableHead>Priority</TableHead>
+            <TableHead>PO #</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredWorkOrders.length === 0 ? (
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>PO Number</TableHead>
-              <TableHead>Scheduled</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                No work orders found matching your search.
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredWorkOrders.map((workOrder) => (
-              <TableRow key={workOrder.work_order_id}>
+          ) : (
+            filteredWorkOrders.map((workOrder) => (
+              <TableRow 
+                key={workOrder.work_order_id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleRowClick(workOrder)}
+              >
                 <TableCell className="font-medium">{workOrder.title}</TableCell>
                 <TableCell>
-                  <StatusBadge status={workOrder.status} />
+                  <StatusBadge status={workOrder.status} size="sm" />
                 </TableCell>
-                <TableCell className="capitalize">{workOrder.priority?.toLowerCase() || 'Medium'}</TableCell>
-                <TableCell>{workOrder.po_number || '-'}</TableCell>
-                <TableCell>{workOrder.scheduled_date ? formatDate(workOrder.scheduled_date) : 'Not scheduled'}</TableCell>
-                <TableCell>{formatDate(workOrder.created_at)}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-muted-foreground">
+                  {workOrder.customer_id ? 'Customer' : 'No Customer'}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatDate(workOrder.created_at)}
+                </TableCell>
+                <TableCell className="text-muted-foreground capitalize">
+                  {workOrder.priority || 'Medium'}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {workOrder.po_number || '-'}
+                </TableCell>
+                <TableCell>
                   <Button 
-                    variant="ghost" 
+                    variant="outline" 
                     size="sm"
-                    onClick={() => handleViewDetails(workOrder)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Change to correct path if this exists
+                      navigate(`/WorkOrders/${workOrder.work_order_id}/edit`);
+                    }}
                   >
-                    View
+                    Edit
                   </Button>
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
+            ))
+          )}
+        </TableBody>
+      </Table>
+      
       {selectedWorkOrder && (
-        <WorkOrderDetailDialog
-          workOrder={selectedWorkOrder}
-          open={detailOpen}
-          onOpenChange={setDetailOpen}
+        <WorkOrderDetailDialog 
+          workOrder={selectedWorkOrder} 
+          open={isDialogOpen} 
+          onOpenChange={setIsDialogOpen}
           onStatusChange={onStatusChange}
         />
       )}
-    </>
+    </div>
   );
 };
 
