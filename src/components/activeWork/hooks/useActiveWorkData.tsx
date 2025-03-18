@@ -21,7 +21,7 @@ export function useActiveWorkData(limit?: number) {
       // If limit is provided, order by due_date and limit results
       if (limit) {
         query = query
-          .order('due_date', { ascending: true, nullsLast: true })
+          .order('due_date', { ascending: true, nullsFirst: false })
           .limit(limit);
       } else {
         query = query.order('createdon', { ascending: false });
@@ -66,7 +66,7 @@ export function useActiveWorkData(limit?: number) {
       // If limit is provided, order by scheduled_date and limit results
       if (limit) {
         query = query
-          .order('scheduled_date', { ascending: true, nullsLast: true })
+          .order('scheduled_date', { ascending: true, nullsFirst: false })
           .limit(limit);
       } else {
         query = query.order('created_at', { ascending: false });
