@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import DocumentCategorySelector from './DocumentCategorySelector';
 import MobileDocumentCapture from './MobileDocumentCapture';
 import ExpenseForm from './ExpenseForm';
+import VendorSelector from './VendorSelector';
 import { cn } from '@/lib/utils';
 import { 
   DocumentUploadFormValues, 
@@ -31,35 +32,58 @@ interface EnhancedDocumentUploadProps {
   entityId?: string;
   onSuccess?: () => void;
   onCancel?: () => void;
+  isReceiptUpload?: boolean;
 }
 
 const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   entityType,
   entityId,
   onSuccess,
-  onCancel
+  onCancel,
+  isReceiptUpload = false
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('file');
   const [previewURL, setPreviewURL] = useState<string | null>(null);
+  const [showVendorSelector, setShowVendorSelector] = useState(false);
 
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
       files: [],
       metadata: {
-        category: 'other',
+        category: isReceiptUpload ? 'receipt' : 'other',
         entityType: entityType,
         entityId: entityId || '',
         version: 1,
         tags: [],
-        isExpense: false
+        isExpense: isReceiptUpload ? true : false,
+        vendorId: '',
+        vendorType: 'vendor'
       }
     }
   });
 
+  // Pre-configure for receipt upload if needed
+  useEffect(() => {
+    if (isReceiptUpload) {
+      form.setValue('metadata.category', 'receipt');
+      form.setValue('metadata.isExpense', true);
+      setShowVendorSelector(true);
+    }
+  }, [isReceiptUpload, form]);
+
   const watchIsExpense = form.watch('metadata.isExpense');
+  const watchVendorType = form.watch('metadata.vendorType');
   const watchFiles = form.watch('files');
+  const watchCategory = form.watch('metadata.category');
+
+  // Auto-show vendor selector when receipt category is selected
+  useEffect(() => {
+    if (watchCategory === 'receipt' || watchCategory === 'invoice') {
+      setShowVendorSelector(true);
+    }
+  }, [watchCategory]);
 
   const handleFileSelect = (files: File[]) => {
     form.setValue('files', files);
@@ -83,55 +107,61 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       setIsUploading(true);
       
       const { files, metadata } = data;
-      const file = files[0]; // We're handling one file at a time for now
       
-      // Create a unique file name using timestamp and original name
-      const timestamp = new Date().getTime();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      const filePath = `${entityType.toLowerCase()}/${entityId || 'general'}/${fileName}`;
-      
-      // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('construction_documents')
-        .upload(filePath, file);
+      // We'll handle multiple files if they're provided
+      for (const file of files) {
+        // Create a unique file name using timestamp and original name
+        const timestamp = new Date().getTime();
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+        const filePath = `${entityType.toLowerCase()}/${entityId || 'general'}/${fileName}`;
         
-      if (uploadError) {
-        throw uploadError;
-      }
-      
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(filePath);
+        // Upload file to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from('construction_documents')
+          .upload(filePath, file);
+          
+        if (uploadError) {
+          throw uploadError;
+        }
         
-      // Now insert document metadata to Supabase
-      const { error: insertError } = await supabase
-        .from('documents')
-        .insert({
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          storage_path: filePath,
-          entity_type: metadata.entityType,
-          entity_id: metadata.entityId || null,
-          tags: metadata.tags,
-          // Additional metadata fields
-          category: metadata.category,
-          amount: metadata.amount,
-          expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
-          version: metadata.version,
-          is_expense: metadata.isExpense,
-          notes: metadata.notes,
-        });
-        
-      if (insertError) {
-        throw insertError;
+        // Get public URL for the uploaded file
+        const { data: { publicUrl } } = supabase.storage
+          .from('construction_documents')
+          .getPublicUrl(filePath);
+          
+        // Now insert document metadata to Supabase
+        const { error: insertError } = await supabase
+          .from('documents')
+          .insert({
+            file_name: file.name,
+            file_type: file.type,
+            file_size: file.size,
+            storage_path: filePath,
+            entity_type: metadata.entityType,
+            entity_id: metadata.entityId || null,
+            tags: metadata.tags,
+            // Additional metadata fields
+            category: metadata.category,
+            amount: metadata.amount,
+            expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
+            version: metadata.version,
+            is_expense: metadata.isExpense,
+            notes: metadata.notes,
+            vendor_id: metadata.vendorId || null,
+            vendor_type: metadata.vendorType || null,
+          });
+          
+        if (insertError) {
+          throw insertError;
+        }
       }
       
       toast({
-        title: "Document uploaded successfully",
-        description: "Your document has been uploaded and indexed."
+        title: isReceiptUpload ? "Receipt uploaded successfully" : "Document uploaded successfully",
+        description: isReceiptUpload 
+          ? "Your receipt has been attached to this time entry." 
+          : "Your document has been uploaded and indexed."
       });
       
       if (onSuccess) {
@@ -157,9 +187,11 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Upload Document</CardTitle>
+        <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
         <CardDescription>
-          Upload and categorize documents for your projects, invoices, and more.
+          {isReceiptUpload 
+            ? "Upload receipts for materials, services, or other expenses related to this time entry."
+            : "Upload and categorize documents for your projects, invoices, and more."}
         </CardDescription>
       </CardHeader>
       
@@ -205,7 +237,9 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                                 <p className="text-xs text-gray-500">PDF, PNG, JPG, or other document formats</p>
                                 {watchFiles.length > 0 && (
                                   <p className="mt-2 text-sm text-[#0485ea] font-medium">
-                                    {watchFiles[0].name}
+                                    {watchFiles.length > 1 
+                                      ? `${watchFiles.length} files selected` 
+                                      : watchFiles[0].name}
                                   </p>
                                 )}
                               </div>
@@ -214,10 +248,11 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                               id="dropzone-file"
                               type="file"
                               className="hidden"
+                              multiple={true}
                               onChange={(e) => {
                                 const files = e.target.files;
                                 if (files && files.length > 0) {
-                                  handleFileSelect([files[0]]);
+                                  handleFileSelect(Array.from(files));
                                 }
                               }}
                             />
@@ -237,47 +272,58 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               <Separator />
               
               <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="metadata.category"
-                  render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel>Document Category</FormLabel>
-                      <FormControl>
-                        <DocumentCategorySelector
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!isReceiptUpload && (
+                  <FormField
+                    control={form.control}
+                    name="metadata.category"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel>Document Category</FormLabel>
+                        <FormControl>
+                          <DocumentCategorySelector
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 
-                <FormField
-                  control={form.control}
-                  name="metadata.isExpense"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Expense Document
-                        </FormLabel>
-                        <FormDescription>
-                          Mark this document as an expense record (invoice, receipt, etc.)
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                {!isReceiptUpload && (
+                  <FormField
+                    control={form.control}
+                    name="metadata.isExpense"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Expense Document
+                          </FormLabel>
+                          <FormDescription>
+                            Mark this document as an expense record (invoice, receipt, etc.)
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
                 
-                {watchIsExpense && (
+                {showVendorSelector && (
+                  <VendorSelector 
+                    control={form.control} 
+                    watchVendorType={watchVendorType} 
+                  />
+                )}
+                
+                {(watchIsExpense || isReceiptUpload) && (
                   <ExpenseForm control={form.control} />
                 )}
                 
@@ -289,7 +335,9 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                       <FormLabel>Notes</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Add any relevant notes about this document..."
+                          placeholder={isReceiptUpload 
+                            ? "Add any details about this receipt..." 
+                            : "Add any relevant notes about this document..."}
                           {...field}
                         />
                       </FormControl>
@@ -315,7 +363,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                 className="bg-[#0485ea] hover:bg-[#0375d1]"
                 disabled={isUploading || watchFiles.length === 0}
               >
-                {isUploading ? "Uploading..." : "Upload Document"}
+                {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
               </Button>
             </CardFooter>
           </form>

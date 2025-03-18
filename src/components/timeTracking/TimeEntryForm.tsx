@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Timer } from 'lucide-react';
+import { Calendar as CalendarIcon, Timer, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -10,21 +10,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn, formatTimeRange } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TimeEntryFormData } from '@/types/timeTracking';
 
 import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
 import TimeRangeSelector from './form/TimeRangeSelector';
-import ReceiptUploader from './form/ReceiptUploader';
 import ConfirmationDialog from './form/ConfirmationDialog';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import { useEntityData } from './hooks/useEntityData';
+import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
+import { EntityType } from '../documents/schemas/documentSchema';
 
 interface TimeEntryFormProps {
   onSuccess: () => void;
 }
 
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [hasReceipts, setHasReceipts] = useState(false);
+
   const {
     form,
     isLoading,
@@ -52,6 +58,14 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   const hoursWorked = form.watch('hoursWorked');
+
+  const handleReceiptUploadSuccess = () => {
+    setShowReceiptUpload(false);
+    toast({
+      title: "Receipt uploaded",
+      description: "Your receipt has been added to this time entry."
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -189,12 +203,33 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
-            {/* Receipt Upload */}
-            <ReceiptUploader
-              selectedFiles={selectedFiles}
-              onFilesSelected={handleFilesSelected}
-              onFileClear={handleFileClear}
-            />
+            {/* Receipts Option */}
+            <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
+              <div>
+                <h4 className="font-medium">Attach Receipt(s)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Do you have any receipts to upload for this time entry?
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Switch
+                  checked={hasReceipts}
+                  onCheckedChange={setHasReceipts}
+                  className="data-[state=checked]:bg-[#0485ea]"
+                />
+                {hasReceipts && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="gap-1"
+                    onClick={() => setShowReceiptUpload(true)}
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Receipts
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardContent>
           
           <CardFooter>
@@ -222,8 +257,26 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         isLoading={isLoading}
         onConfirm={confirmSubmit}
       />
+
+      {/* Receipt Upload Dialog */}
+      <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Upload Receipt(s)</DialogTitle>
+          </DialogHeader>
+          <EnhancedDocumentUpload
+            entityType={entityType === 'work_order' ? 'WORK_ORDER' as EntityType : 'PROJECT' as EntityType}
+            entityId={entityId}
+            onSuccess={handleReceiptUploadSuccess}
+            onCancel={() => setShowReceiptUpload(false)}
+            isReceiptUpload={true}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
+import { toast } from '@/hooks/use-toast';
 
 export default TimeEntryForm;

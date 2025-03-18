@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -151,16 +152,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
         description: 'Your time entry has been successfully recorded.',
       });
       
-      form.reset({
-        entityType: 'work_order',
-        entityId: '',
-        workDate: new Date(),
-        startTime: '',
-        endTime: '',
-        hoursWorked: 0,
-        notes: '',
-        employeeId: form.getValues('employeeId') || '',
-      });
+      form.reset(defaultFormValues);
       
       setSelectedFiles([]);
       setShowConfirmDialog(false);
