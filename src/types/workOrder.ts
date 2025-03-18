@@ -18,5 +18,30 @@ export interface WorkOrder {
   materials_cost?: number;
   labor_cost?: number;
   actual_hours?: number;
-  progress?: number; // Add progress property
+  time_estimate?: number;
+  progress?: number;
+}
+
+export interface WorkOrderTimelog {
+  id: string;
+  work_order_id: string;
+  employee_id: string | null;
+  hours_worked: number;
+  work_date: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkOrderMaterial {
+  id: string;
+  work_order_id: string;
+  vendor_id: string | null;
+  material_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  receipt_document_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
