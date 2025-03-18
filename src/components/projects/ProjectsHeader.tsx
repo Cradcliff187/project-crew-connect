@@ -4,6 +4,7 @@ import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProjectDialog from './ProjectDialog';
+import PageHeader from '@/components/layout/PageHeader';
 
 interface ProjectsHeaderProps {
   searchQuery: string;
@@ -20,14 +21,10 @@ const ProjectsHeader = ({
   
   return (
     <>
-      <div className="flex flex-col gap-2 mb-6 animate-in">
-        <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
-        <p className="text-muted-foreground">
-          Manage your active and completed projects
-        </p>
-      </div>
-      
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 animate-in" style={{ animationDelay: '0.1s' }}>
+      <PageHeader
+        title="Projects"
+        description="Manage your active and completed projects"
+      >
         <div className="relative w-full md:w-auto flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input 
@@ -54,7 +51,7 @@ const ProjectsHeader = ({
             New Project
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
       <ProjectDialog 
         open={showProjectDialog} 

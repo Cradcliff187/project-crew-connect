@@ -4,6 +4,7 @@ import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import VendorDialog from './VendorDialog';
+import PageHeader from '@/components/layout/PageHeader';
 
 interface VendorsHeaderProps {
   searchQuery: string;
@@ -16,14 +17,10 @@ const VendorsHeader = ({ searchQuery, setSearchQuery, onVendorAdded }: VendorsHe
   
   return (
     <>
-      <div className="flex flex-col gap-2 mb-6 animate-in">
-        <h1 className="text-3xl font-semibold tracking-tight">Vendors</h1>
-        <p className="text-muted-foreground">
-          Manage your suppliers and material vendors
-        </p>
-      </div>
-      
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 animate-in" style={{ animationDelay: '0.1s' }}>
+      <PageHeader
+        title="Vendors"
+        description="Manage your suppliers and material vendors"
+      >
         <div className="relative w-full md:w-auto flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input 
@@ -50,7 +47,7 @@ const VendorsHeader = ({ searchQuery, setSearchQuery, onVendorAdded }: VendorsHe
             New Vendor
           </Button>
         </div>
-      </div>
+      </PageHeader>
       
       {/* Vendor Dialog */}
       <VendorDialog 

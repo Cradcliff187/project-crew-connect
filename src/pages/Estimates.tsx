@@ -12,7 +12,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import StatusBadge from '@/components/ui/StatusBadge';
 import PageTransition from '@/components/layout/PageTransition';
-import Header from '@/components/layout/Header';
+import PageHeader from '@/components/layout/PageHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EstimateDetails, { EstimateItem, EstimateRevision } from '@/components/estimates/EstimateDetails';
@@ -198,120 +198,112 @@ const Estimates = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <Header />
+        <PageHeader
+          title="Estimates"
+          description="Create and manage your project estimates"
+        >
+          <div className="relative w-full md:w-auto flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input 
+              type="search" 
+              placeholder="Search estimates..." 
+              className="pl-9 subtle-input rounded-md"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Filter className="h-4 w-4 mr-1" />
+              Filter
+              <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
+            </Button>
+            <Button 
+              size="sm" 
+              className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0373ce]"
+              onClick={handleCreateNewEstimate}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Estimate
+            </Button>
+          </div>
+        </PageHeader>
         
-        <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
-          <div className="flex flex-col gap-2 mb-6 animate-in">
-            <h1 className="text-3xl font-semibold tracking-tight">Estimates</h1>
-            <p className="text-muted-foreground">
-              Create and manage your project estimates
-            </p>
-          </div>
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 animate-in" style={{ animationDelay: '0.1s' }}>
-            <div className="relative w-full md:w-auto flex-1 max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="Search estimates..." 
-                className="pl-9 subtle-input rounded-md"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
-                <Filter className="h-4 w-4 mr-1" />
-                Filter
-                <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
-              </Button>
-              <Button 
-                size="sm" 
-                className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0373ce]"
-                onClick={handleCreateNewEstimate}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New Estimate
-              </Button>
-            </div>
-          </div>
-          
-          <div className="bg-white border rounded-lg shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Estimate #</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Versions</TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={`skeleton-${i}`}>
-                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-6" /></TableCell>
-                      <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : filteredEstimates.length > 0 ? (
-                  filteredEstimates.map((estimate) => (
-                    <TableRow key={estimate.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewEstimate(estimate)}>
-                      <TableCell className="font-medium">{estimate.id}</TableCell>
-                      <TableCell>{estimate.client}</TableCell>
-                      <TableCell>{estimate.project}</TableCell>
-                      <TableCell>{formatDate(estimate.date)}</TableCell>
-                      <TableCell>${estimate.amount.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={estimate.status as StatusType} />
-                      </TableCell>
-                      <TableCell>{estimate.versions}</TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewEstimate(estimate)}>View details</DropdownMenuItem>
-                            <DropdownMenuItem>Edit estimate</DropdownMenuItem>
-                            <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                            <DropdownMenuItem>Create new version</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>Convert to project</DropdownMenuItem>
-                            <DropdownMenuItem>Download PDF</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                      <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-                      <p>No estimates found. Create your first estimate!</p>
+        <div className="bg-white border rounded-lg shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Estimate #</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Versions</TableHead>
+                <TableHead className="w-[60px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={`skeleton-${i}`}>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-6" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredEstimates.length > 0 ? (
+                filteredEstimates.map((estimate) => (
+                  <TableRow key={estimate.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewEstimate(estimate)}>
+                    <TableCell className="font-medium">{estimate.id}</TableCell>
+                    <TableCell>{estimate.client}</TableCell>
+                    <TableCell>{estimate.project}</TableCell>
+                    <TableCell>{formatDate(estimate.date)}</TableCell>
+                    <TableCell>${estimate.amount.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={estimate.status as StatusType} />
+                    </TableCell>
+                    <TableCell>{estimate.versions}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewEstimate(estimate)}>View details</DropdownMenuItem>
+                          <DropdownMenuItem>Edit estimate</DropdownMenuItem>
+                          <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                          <DropdownMenuItem>Create new version</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>Convert to project</DropdownMenuItem>
+                          <DropdownMenuItem>Download PDF</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </main>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
+                    <p>No estimates found. Create your first estimate!</p>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       
       {selectedEstimate && (
