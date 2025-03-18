@@ -151,16 +151,19 @@ export function useTimeEntryForm(onSuccess: () => void) {
         description: 'Your time entry has been successfully recorded.',
       });
       
-      // Reset the form
+      // Fix for the TypeScript error: ensure all required properties are provided
+      // when resetting the form
       form.reset({
-        entityType: 'work_order',
-        workDate: new Date(),
-        startTime: '',
-        endTime: '',
-        hoursWorked: 0,
+        entityType: 'work_order', // Make sure this is not optional
+        entityId: '',             // Provide a default value
+        workDate: new Date(),     // Provide a default value
+        startTime: '',            // Provide a default value
+        endTime: '',              // Provide a default value
+        hoursWorked: 0,           // Provide a default value
         notes: '',
         employeeId: form.getValues('employeeId'), // Keep the current employee
       });
+      
       setSelectedFiles([]);
       setShowConfirmDialog(false);
       
