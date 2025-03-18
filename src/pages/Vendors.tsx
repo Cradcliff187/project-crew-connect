@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -31,15 +31,23 @@ const Vendors = () => {
   } = useQuery({
     queryKey: ['vendors'],
     queryFn: fetchVendors,
-    onError: (error: any) => {
-      console.error('Error fetching vendors:', error);
+    meta: {
+      onError: (error: any) => {
+        console.error('Error fetching vendors:', error);
+      }
+    }
+  });
+
+  // Handle errors outside the query to show toast
+  useEffect(() => {
+    if (queryError) {
       toast({
         title: 'Error fetching vendors',
-        description: error.message,
+        description: (queryError as Error).message,
         variant: 'destructive'
       });
     }
-  });
+  }, [queryError]);
 
   const error = queryError ? (queryError as Error).message : null;
   

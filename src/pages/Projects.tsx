@@ -38,15 +38,23 @@ const Projects = () => {
   } = useQuery({
     queryKey: ['projects'],
     queryFn: fetchProjects,
-    onError: (error: any) => {
-      console.error('Error fetching projects:', error);
+    meta: {
+      onError: (error: any) => {
+        console.error('Error fetching projects:', error);
+      }
+    }
+  });
+
+  // Handle errors outside the query to show toast
+  useEffect(() => {
+    if (queryError) {
       toast({
         title: 'Error fetching projects',
-        description: error.message,
+        description: (queryError as Error).message,
         variant: 'destructive'
       });
     }
-  });
+  }, [queryError]);
 
   const error = queryError ? (queryError as Error).message : null;
   

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,13 +44,15 @@ export const useEstimateDetails = () => {
     queryKey: ['estimateItems', currentEstimateId],
     queryFn: () => currentEstimateId ? fetchEstimateItems(currentEstimateId) : Promise.resolve([]),
     enabled: !!currentEstimateId,
-    onError: (error: any) => {
-      console.error('Error fetching estimate items:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load estimate items. Please try again.",
-        variant: "destructive"
-      });
+    meta: {
+      onError: (error: any) => {
+        console.error('Error fetching estimate items:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load estimate items. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   });
 
@@ -61,13 +64,15 @@ export const useEstimateDetails = () => {
     queryKey: ['estimateRevisions', currentEstimateId],
     queryFn: () => currentEstimateId ? fetchEstimateRevisions(currentEstimateId) : Promise.resolve([]),
     enabled: !!currentEstimateId,
-    onError: (error: any) => {
-      console.error('Error fetching estimate revisions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load estimate revisions. Please try again.",
-        variant: "destructive"
-      });
+    meta: {
+      onError: (error: any) => {
+        console.error('Error fetching estimate revisions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load estimate revisions. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   });
 
