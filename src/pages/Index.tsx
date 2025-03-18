@@ -6,7 +6,6 @@ import { StatusType } from '@/types/common';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import PageTransition from '@/components/layout/PageTransition';
-import Header from '@/components/layout/Header';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
@@ -28,8 +27,6 @@ const Dashboard = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-screen">
-        <Header />
-        
         <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
           <div className="flex flex-col gap-2 mb-6 animate-in">
             <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
