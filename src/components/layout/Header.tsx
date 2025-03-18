@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Bell, Search, Menu } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -42,12 +41,6 @@ const Header = () => {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <img 
-          src="/lovable-uploads/5c52be9f-4fda-4b1d-bafb-59f86d835938.png" 
-          alt="AKC Construction Logo" 
-          className="h-5 w-auto ml-2 cursor-pointer"
-          onClick={() => navigate('/')}  
-        />
       </div>
       
       <div className="hidden md:flex items-center w-full max-w-xs mx-auto">
