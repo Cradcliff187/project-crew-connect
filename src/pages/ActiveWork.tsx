@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageTransition from '@/components/layout/PageTransition';
 import ActiveWorkTable from '@/components/activeWork/ActiveWorkTable';
@@ -23,15 +22,6 @@ const ActiveWork = () => {
     workOrdersError,
     handleWorkOrderChange
   } = useActiveWorkData();
-
-  // Show error toast if there's an error
-  if (projectsError && !toast.check({ title: 'Error fetching projects' })) {
-    toast({
-      title: 'Error fetching projects',
-      description: (projectsError as Error).message,
-      variant: 'destructive'
-    });
-  }
 
   // Apply filters
   const filteredItems = filterWorkItems(allItems, activeTab, searchQuery);
