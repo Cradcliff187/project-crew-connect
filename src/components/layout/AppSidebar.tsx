@@ -102,10 +102,11 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="flex items-center justify-start pl-4">
         <Link to="/" className="flex items-center space-x-2">
-          <div className="bg-construction-600 rounded-md p-1.5 flex items-center justify-center">
+          {/* AKC Logo - We'll use a brand-colored block with text as fallback */}
+          <div className="bg-[#0485ea] rounded-md p-1.5 flex items-center justify-center">
             <span className="text-white font-bold text-lg">AKC</span>
           </div>
-          <span className="text-lg font-bold text-construction-600 font-montserrat">{siteConfig.name}</span>
+          <span className="text-lg font-bold text-[#0485ea] font-montserrat">{siteConfig.name}</span>
         </Link>
       </SidebarHeader>
       <SidebarSeparator />
