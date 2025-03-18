@@ -30,14 +30,30 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
   const navigate = useNavigate();
   
   // Handle view click - Navigate to detail page
-  const handleViewClick = () => {
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     // Call the provided onView prop (for backward compatibility)
     onView(subcontractor);
     // Navigate to the detail page
     navigate(`/subcontractors/${subcontractor.subid}`);
   };
 
-  // Get action menu groups - similar pattern to Vendors and Contacts
+  // Handle edit click
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit(subcontractor);
+  };
+
+  // Handle delete click
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete(subcontractor);
+  };
+
+  // Get action menu groups
   const getSubcontractorActions = (): ActionGroup[] => {
     return [
       {
@@ -46,12 +62,12 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
           {
             label: 'View details',
             icon: <Eye className="h-4 w-4" />,
-            onClick: () => handleViewClick()
+            onClick: handleViewClick
           },
           {
             label: 'Edit subcontractor',
             icon: <Edit className="h-4 w-4" />,
-            onClick: () => onEdit(subcontractor)
+            onClick: handleEditClick
           }
         ]
       },
@@ -63,7 +79,7 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
             icon: <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
             </svg>,
-            onClick: () => console.log('Assign to project')
+            onClick: (e) => console.log('Assign to project')
           }
         ]
       },
@@ -73,7 +89,7 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
           {
             label: 'Delete subcontractor',
             icon: <Trash2 className="h-4 w-4" />,
-            onClick: () => onDelete(subcontractor),
+            onClick: handleDeleteClick,
             className: 'text-red-600'
           }
         ]
@@ -82,7 +98,7 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
   };
 
   return (
-    <TableRow>
+    <TableRow onClick={handleViewClick} className="cursor-pointer hover:bg-muted/50">
       <TableCell>
         <SubcontractorInfo subcontractor={subcontractor} />
       </TableCell>
@@ -104,7 +120,7 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
       <TableCell>
         <SubcontractorStatusBadge status={subcontractor.status} />
       </TableCell>
-      <TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-end">
           <ActionMenu groups={getSubcontractorActions()} />
         </div>

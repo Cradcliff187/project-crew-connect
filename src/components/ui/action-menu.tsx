@@ -68,7 +68,9 @@ const ActionMenu = ({
                 <HoverCard key={`item-${groupIndex}-${itemIndex}`}>
                   <HoverCardTrigger asChild>
                     <DropdownMenuItem
+                      key={`trigger-${groupIndex}-${itemIndex}`}
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         item.onClick(e);
                       }}
@@ -87,6 +89,7 @@ const ActionMenu = ({
                 <DropdownMenuItem
                   key={`item-${groupIndex}-${itemIndex}`}
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     item.onClick(e);
                   }}

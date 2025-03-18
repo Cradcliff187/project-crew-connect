@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { Star } from 'lucide-react';
 
 interface SubcontractorDetailHeaderProps {
   subcontractor: any;
@@ -20,30 +18,9 @@ const SubcontractorDetailHeader = ({ subcontractor, loading, onEdit }: Subcontra
     navigate('/subcontractors');
   };
 
-  // Status badge styling
-  const getStatusBadge = (status: string | null) => {
-    if (!status) return <Badge variant="outline">Unknown</Badge>;
-    
-    switch (status.toUpperCase()) {
-      case 'PENDING':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
-      case 'QUALIFIED':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Qualified</Badge>;
-      case 'ACTIVE':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
-      case 'INACTIVE':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
-      case 'REJECTED':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>;
-      case 'VERIFIED':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Verified</Badge>;
-      case 'PREFERRED':
-        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Preferred</Badge>;
-      case 'REVIEW_NEEDED':
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Review Needed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onEdit();
   };
 
   if (loading) {
@@ -64,7 +41,7 @@ const SubcontractorDetailHeader = ({ subcontractor, loading, onEdit }: Subcontra
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Subcontractors
       </Button>
-      <Button onClick={onEdit}>Edit Subcontractor</Button>
+      <Button onClick={handleEdit}>Edit Subcontractor</Button>
     </div>
   );
 };
