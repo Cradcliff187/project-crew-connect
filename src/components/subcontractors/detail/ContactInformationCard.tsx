@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
-import { formatSubcontractorAddress } from '../utils';
-import type { Subcontractor } from '../utils';
+import { formatSubcontractorAddress } from '../utils/subcontractorUtils';
+import { Subcontractor } from '../utils/subcontractorUtils';
 
 interface ContactInformationCardProps {
   subcontractor: Subcontractor;

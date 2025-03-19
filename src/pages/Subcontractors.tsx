@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/layout/PageTransition';
 import SubcontractorsHeader from '@/components/subcontractors/SubcontractorsHeader';
 import SubcontractorsTable from '@/components/subcontractors/SubcontractorsTable';
-import type { Subcontractor } from '@/components/subcontractors/utils';
+import { Subcontractor } from '@/components/subcontractors/utils/subcontractorUtils';
 
 const Subcontractors = () => {
   const [searchQuery, setSearchQuery] = useState('');

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Specialty } from '../utils';
+import { Specialty } from '../utils/subcontractorUtils';
 
 export const useSpecialties = () => {
   const [specialties, setSpecialties] = useState<Record<string, Specialty>>({});
