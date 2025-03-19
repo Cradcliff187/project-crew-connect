@@ -17,7 +17,6 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
     
     try {
       setLoading(true);
-      console.log('Fetching subcontractor with ID:', subcontractorId);
       
       const { data, error } = await supabase
         .from('subcontractors')
@@ -26,32 +25,29 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
         .maybeSingle();
       
       if (error) {
-        console.error('Supabase error:', error);
         throw error;
       }
       
       if (!data) {
-        console.error('No subcontractor found with ID:', subcontractorId);
         setSubcontractor(null);
         return;
       }
       
-      console.log('Subcontractor data received:', data);
-      
-      // Ensure subid is a string
-      const processedData = {
+      // Ensure subid is a string and specialty_ids is an array
+      const processedData: Subcontractor = {
         ...data,
-        subid: String(data.subid)
+        subid: String(data.subid),
+        specialty_ids: Array.isArray(data.specialty_ids) ? data.specialty_ids : [],
       };
       
-      setSubcontractor(processedData as Subcontractor);
+      setSubcontractor(processedData);
       
       // Fetch specialties if the subcontractor has any
-      if (data?.specialty_ids && data.specialty_ids.length > 0) {
+      if (processedData.specialty_ids && processedData.specialty_ids.length > 0) {
         const { data: specialtiesData, error: specialtiesError } = await supabase
           .from('subcontractor_specialties')
           .select('*')
-          .in('id', data.specialty_ids);
+          .in('id', processedData.specialty_ids);
         
         if (specialtiesError) throw specialtiesError;
         
@@ -65,7 +61,7 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
       }
 
       // Fetch associated projects and work orders
-      await fetchAssociatedData(data?.subid);
+      await fetchAssociatedData(String(data.subid));
     } catch (error: any) {
       console.error('Error fetching subcontractor:', error);
       toast({
@@ -83,7 +79,7 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
 
     setLoadingAssociations(true);
     try {
-      // Fetch associated projects - safely fetch by string ID
+      // Fetch associated projects
       const { data: projectsData, error: projectsError } = await supabase
         .from('subinvoices')
         .select('projectid, projectname')

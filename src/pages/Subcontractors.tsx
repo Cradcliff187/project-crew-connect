@@ -27,11 +27,14 @@ const Subcontractors = () => {
         throw error;
       }
       
-      // Ensure any null values are properly handled for new fields
+      // Process data to ensure all fields have appropriate default values
       const processedData = data?.map(sub => ({
         ...sub,
+        // Ensure subid is a string
+        subid: String(sub.subid),
         // Set default values for fields that might not exist in the database yet
         payment_terms: sub.payment_terms || "NET30",
+        specialty_ids: Array.isArray(sub.specialty_ids) ? sub.specialty_ids : [],
         notes: sub.notes || null
       })) as Subcontractor[];
       

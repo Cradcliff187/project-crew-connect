@@ -13,8 +13,7 @@ import SubcontractorForm from './SubcontractorForm';
 import { SubcontractorFormData } from './types/formTypes';
 import { useSubcontractorSubmit } from './useSubcontractorSubmit';
 import { Subcontractor } from './utils/subcontractorUtils';
-import { useEffect, useState } from 'react';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
 
 interface SubcontractorDialogProps {
   open: boolean;
@@ -42,31 +41,17 @@ const SubcontractorDialog = ({
       return;
     }
     
-    // If we're editing, ensure subid is a string
-    if (isEditing && initialData) {
-      if ('subid' in initialData && initialData.subid) {
-        // Format the data for the form
-        const formatted: Partial<SubcontractorFormData> = {
-          ...initialData,
-          subid: String(initialData.subid), // Ensure subid is a string
-        };
-        
-        console.log('SubcontractorDialog - Formatted data for form:', formatted);
-        setFormattedData(formatted);
-      } else {
-        console.error('SubcontractorDialog - Missing subid in edit mode:', initialData);
-        toast({
-          title: "Error",
-          description: "Cannot edit subcontractor: Missing ID",
-          variant: "destructive"
-        });
-        onOpenChange(false);
-      }
-    } else {
-      // For new subcontractor, just pass the initialData
-      setFormattedData(initialData as Partial<SubcontractorFormData>);
-    }
-  }, [initialData, isEditing, onOpenChange, open]);
+    // Format the data for the form
+    const formatted: Partial<SubcontractorFormData> = {
+      ...initialData,
+      // Ensure subid is a string if it exists
+      ...(isEditing && 'subid' in initialData && initialData.subid 
+          ? { subid: String(initialData.subid) } 
+          : {})
+    };
+    
+    setFormattedData(formatted);
+  }, [initialData, isEditing, open]);
   
   const handleSuccess = () => {
     onOpenChange(false); // Close dialog
@@ -76,8 +61,6 @@ const SubcontractorDialog = ({
   const { isSubmitting, handleSubmit } = useSubcontractorSubmit(handleSuccess, isEditing);
   
   const onSubmit = async (data: SubcontractorFormData) => {
-    // Log the data being submitted
-    console.log('SubcontractorDialog - Form submitted with data:', data);
     await handleSubmit(data);
   };
   
