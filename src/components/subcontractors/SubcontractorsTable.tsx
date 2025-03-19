@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
@@ -61,12 +60,11 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
       return;
     }
     
-    // Create a deep copy to avoid reference issues
+    // Create a deep copy to avoid reference issues and ensure subid is a string
     const subcontractorCopy = JSON.parse(JSON.stringify(subcontractor));
-    
-    // Ensure subid is a string
     subcontractorCopy.subid = String(subcontractorCopy.subid);
     
+    console.log('Setting selected subcontractor for edit:', subcontractorCopy);
     setSelectedSubcontractor(subcontractorCopy);
     setEditDialogOpen(true);
   };

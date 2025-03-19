@@ -53,6 +53,10 @@ const SubcontractorDetailPage = () => {
     console.log('Opening edit dialog with data:', subcontractor);
     
     // Ensure we're working with a deep copy to avoid reference issues
+    // and ensure subid is a string
+    const subcontractorCopy = JSON.parse(JSON.stringify(subcontractor));
+    subcontractorCopy.subid = String(subcontractorCopy.subid);
+    
     setEditDialogOpen(true);
   };
   
