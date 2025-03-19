@@ -1,66 +1,24 @@
 
-import { useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import SubcontractorsHeader from '@/components/subcontractors/SubcontractorsHeader';
 import SubcontractorsTable from '@/components/subcontractors/SubcontractorsTable';
-import { Subcontractor } from '@/components/subcontractors/utils/subcontractorUtils';
+import useSubcontractors from '@/components/subcontractors/hooks/useSubcontractors';
 
 const Subcontractors = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [specialtiesUpdated, setSpecialtiesUpdated] = useState(0);
   
-  // Fetch subcontractors from Supabase
-  const fetchSubcontractors = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('subcontractors')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Ensure any null values are properly handled for new fields
-      const processedData = data?.map(sub => ({
-        ...sub,
-        // Set default values for fields that might not exist in the database yet
-        payment_terms: sub.payment_terms || "NET30",
-        notes: sub.notes || null
-      })) as Subcontractor[];
-      
-      setSubcontractors(processedData || []);
-    } catch (error: any) {
-      console.error('Error fetching subcontractors:', error);
-      setError(error.message);
-      toast({
-        title: 'Error fetching subcontractors',
-        description: error.message,
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use our custom hook with real Supabase data
+  const { subcontractors, loading, error, refetch } = useSubcontractors();
   
-  useEffect(() => {
-    fetchSubcontractors();
-  }, []);
-
   const handleSubcontractorAdded = () => {
-    fetchSubcontractors();
+    refetch();
   };
 
   const handleSpecialtyAdded = () => {
     // Increment the specialties update counter to trigger a refresh in components that use specialties
     setSpecialtiesUpdated(prev => prev + 1);
-    // We don't need to refetch subcontractors here as the specialties are separate
   };
 
   return (

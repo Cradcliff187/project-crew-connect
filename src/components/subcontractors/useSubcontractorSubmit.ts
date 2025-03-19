@@ -17,7 +17,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           throw new Error('Subcontractor ID is missing. Cannot update subcontractor.');
         }
         
-        console.log('Updating subcontractor with ID:', data.subid);
+        console.log('Updating subcontractor with ID:', data.subid, 'with data:', data);
         
         // Update existing subcontractor
         const { error } = await supabase
@@ -46,6 +46,11 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             rating: data.rating,
             preferred: data.preferred,
             last_performance_review: data.last_performance_review,
+            // Performance metrics
+            on_time_percentage: data.on_time_percentage,
+            quality_score: data.quality_score,
+            safety_incidents: data.safety_incidents,
+            response_time_hours: data.response_time_hours,
             // Notes
             notes: data.notes,
             updated_at: new Date().toISOString(),
@@ -53,7 +58,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           .eq('subid', data.subid);
         
         if (error) {
-          console.error('Error updating subcontractor:', error);
+          console.error('Supabase error updating subcontractor:', error);
           throw error;
         }
         
@@ -67,10 +72,12 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           .rpc('generate_subcontractor_id');
         
         if (subcontractorIdError) {
+          console.error('Error generating subcontractor ID:', subcontractorIdError);
           throw subcontractorIdError;
         }
         
         const subcontractorId = subcontractorIdData;
+        console.log('Generated new subcontractor ID:', subcontractorId);
         
         // Now insert the subcontractor with the pre-generated ID
         const { data: subcontractor, error } = await supabase
@@ -100,6 +107,11 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             rating: data.rating,
             preferred: data.preferred,
             last_performance_review: data.last_performance_review,
+            // Performance metrics
+            on_time_percentage: data.on_time_percentage,
+            quality_score: data.quality_score,
+            safety_incidents: data.safety_incidents,
+            response_time_hours: data.response_time_hours,
             // Notes
             notes: data.notes,
             created_at: new Date().toISOString(),
@@ -108,6 +120,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           .select();
         
         if (error) {
+          console.error('Supabase error creating subcontractor:', error);
           throw error;
         }
         
@@ -136,3 +149,5 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
     handleSubmit,
   };
 };
+
+export default useSubcontractorSubmit;
