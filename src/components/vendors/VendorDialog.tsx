@@ -32,9 +32,11 @@ const VendorDialog = ({
   console.log('VendorDialog initialData:', initialData);
   
   const handleSuccess = () => {
-    onOpenChange(false); // Close dialog
-    onVendorAdded(); // Refresh vendors list
+    // First close the dialog and refresh the vendors list
+    onOpenChange(false);
+    onVendorAdded();
     
+    // Then show the confirmation toast
     toast({
       title: isEditing ? "Vendor updated" : "Vendor created",
       description: `The vendor has been ${isEditing ? 'updated' : 'created'} successfully.`,

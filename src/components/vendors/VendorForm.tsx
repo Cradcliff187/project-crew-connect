@@ -32,13 +32,6 @@ export interface VendorFormData {
   // Financial information
   payment_terms?: string;
   tax_id?: string | null;
-  hourly_rate?: number | null;
-  // Compliance information
-  insurance_expiration?: string | null;
-  insurance_provider?: string | null;
-  insurance_policy_number?: string | null;
-  contract_on_file?: boolean;
-  contract_expiration?: string | null;
   // Notes
   notes?: string | null;
 }
@@ -78,12 +71,6 @@ const VendorForm = ({
       status: initialData?.status || 'PENDING',
       payment_terms: initialData?.payment_terms || 'NET30',
       tax_id: initialData?.tax_id || '',
-      hourly_rate: initialData?.hourly_rate || null,
-      insurance_expiration: initialData?.insurance_expiration || null,
-      insurance_provider: initialData?.insurance_provider || '',
-      insurance_policy_number: initialData?.insurance_policy_number || '',
-      contract_on_file: initialData?.contract_on_file || false,
-      contract_expiration: initialData?.contract_expiration || null,
       notes: initialData?.notes || '',
     }
   });
@@ -222,27 +209,6 @@ const VendorForm = ({
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="hourly_rate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Standard Hourly Rate ($)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="0.00" 
-                      step="0.01" 
-                      min="0"
-                      value={field.value === null ? '' : field.value}
-                      onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                    />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

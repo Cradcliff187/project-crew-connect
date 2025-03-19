@@ -32,11 +32,8 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
             state: data.state,
             zip: data.zip,
             status: data.status,
-            // Financial info
             payment_terms: data.payment_terms,
-            hourly_rate: data.hourly_rate,
             tax_id: data.tax_id,
-            // Notes
             notes: data.notes,
             updated_at: new Date().toISOString(),
           })
@@ -48,11 +45,6 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
         }
         
         console.log('Vendor updated successfully');
-        
-        toast({
-          title: 'Vendor updated successfully',
-          description: `${data.vendorname} has been updated.`,
-        });
       } else {
         // Generate a unique ID for the vendor
         const { data: vendorIdData, error: vendorIdError } = await supabase
@@ -63,6 +55,7 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
         }
         
         const vendorId = vendorIdData;
+        console.log('Generated vendor ID:', vendorId);
         
         // Now insert the vendor with the pre-generated ID
         const { data: vendor, error } = await supabase
@@ -77,11 +70,8 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
             state: data.state,
             zip: data.zip,
             status: data.status,
-            // Financial info
             payment_terms: data.payment_terms,
-            hourly_rate: data.hourly_rate,
             tax_id: data.tax_id,
-            // Notes
             notes: data.notes,
             createdon: new Date().toISOString(),
             created_at: new Date().toISOString(),
@@ -90,13 +80,11 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
           .select();
         
         if (error) {
+          console.error('Error creating vendor:', error);
           throw error;
         }
         
-        toast({
-          title: 'Vendor created successfully',
-          description: `${data.vendorname} has been added to your vendors.`,
-        });
+        console.log('Vendor created successfully:', vendor);
       }
       
       // Call the success callback
