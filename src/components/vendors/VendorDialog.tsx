@@ -38,7 +38,7 @@ const VendorDialog = ({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Add New Vendor</DialogTitle>
           <DialogDescription>
@@ -46,11 +46,9 @@ const VendorDialog = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 overflow-y-auto">
-          <VendorForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
-        </div>
+        <VendorForm onSubmit={onSubmit} isSubmitting={isSubmitting} />
         
-        <DialogFooter className="sticky bottom-0 pt-4 bg-background">
+        <DialogFooter className="pt-4">
           <Button 
             type="button" 
             variant="outline" 
