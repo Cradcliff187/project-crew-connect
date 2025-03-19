@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
@@ -17,15 +16,13 @@ interface SubcontractorsTableProps {
   loading: boolean;
   error: string | null;
   searchQuery: string;
-  onSubcontractorUpdated: () => void;
 }
 
 const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   subcontractors,
   loading,
   error,
-  searchQuery,
-  onSubcontractorUpdated
+  searchQuery
 }) => {
   const navigate = useNavigate();
   
@@ -63,7 +60,12 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
       return;
     }
     
-    setSelectedSubcontractor(subcontractor);
+    // Create a deep copy to avoid reference issues and ensure subid is a string
+    const subcontractorCopy = JSON.parse(JSON.stringify(subcontractor));
+    subcontractorCopy.subid = String(subcontractorCopy.subid);
+    
+    console.log('Setting selected subcontractor for edit:', subcontractorCopy);
+    setSelectedSubcontractor(subcontractorCopy);
     setEditDialogOpen(true);
   };
   
@@ -83,22 +85,12 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   };
   
   const handleSubcontractorUpdated = () => {
-    // Call the parent handler to refresh data
-    onSubcontractorUpdated();
-    
-    // Show toast notification
+    // This would be used to refresh the subcontractors list
     toast({
       title: "Subcontractor updated",
       description: "The subcontractor has been updated successfully"
     });
-  };
-  
-  // Clear selected subcontractor when dialog closes
-  const handleDialogOpenChange = (open: boolean) => {
-    setEditDialogOpen(open);
-    if (!open) {
-      setSelectedSubcontractor(null);
-    }
+    window.location.reload(); // Simple reload to refresh data
   };
   
   // Show loading state if any data is still loading
@@ -147,13 +139,15 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
       </div>
       
       {/* Edit Subcontractor Dialog */}
-      <SubcontractorDialog
-        open={editDialogOpen}
-        onOpenChange={handleDialogOpenChange}
-        onSubcontractorAdded={handleSubcontractorUpdated}
-        initialData={selectedSubcontractor || undefined}
-        isEditing={true}
-      />
+      {selectedSubcontractor && (
+        <SubcontractorDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSubcontractorAdded={handleSubcontractorUpdated}
+          initialData={selectedSubcontractor}
+          isEditing={true}
+        />
+      )}
     </div>
   );
 };

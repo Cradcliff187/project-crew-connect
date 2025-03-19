@@ -5,6 +5,7 @@ import PageTransition from '@/components/layout/PageTransition';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 import SubcontractorDialog from '../SubcontractorDialog';
 import useSubcontractorData from './useSubcontractorData';
 
@@ -50,6 +51,12 @@ const SubcontractorDetailPage = () => {
     }
     
     console.log('Opening edit dialog with data:', subcontractor);
+    
+    // Ensure we're working with a deep copy to avoid reference issues
+    // and ensure subid is a string
+    const subcontractorCopy = JSON.parse(JSON.stringify(subcontractor));
+    subcontractorCopy.subid = String(subcontractorCopy.subid);
+    
     setEditDialogOpen(true);
   };
   
@@ -59,11 +66,6 @@ const SubcontractorDetailPage = () => {
       title: "Subcontractor Updated",
       description: "Subcontractor details have been updated successfully."
     });
-  };
-  
-  // Clear selected subcontractor when dialog closes
-  const handleDialogOpenChange = (open: boolean) => {
-    setEditDialogOpen(open);
   };
   
   if (loading) {
@@ -149,13 +151,15 @@ const SubcontractorDetailPage = () => {
         </Card>
         
         {/* Edit Subcontractor Dialog */}
-        <SubcontractorDialog
-          open={editDialogOpen}
-          onOpenChange={handleDialogOpenChange}
-          onSubcontractorAdded={handleSubcontractorUpdated}
-          initialData={subcontractor}
-          isEditing={true}
-        />
+        {subcontractor && (
+          <SubcontractorDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onSubcontractorAdded={handleSubcontractorUpdated}
+            initialData={subcontractor}
+            isEditing={true}
+          />
+        )}
       </div>
     </PageTransition>
   );

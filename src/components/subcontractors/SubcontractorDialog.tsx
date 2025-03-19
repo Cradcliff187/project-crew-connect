@@ -13,8 +13,6 @@ import SubcontractorForm from './SubcontractorForm';
 import { SubcontractorFormData } from './types/formTypes';
 import { useSubcontractorSubmit } from './useSubcontractorSubmit';
 import { Subcontractor } from './utils/subcontractorUtils';
-import { useEffect, useState } from 'react';
-import { toast } from '@/hooks/use-toast';
 
 interface SubcontractorDialogProps {
   open: boolean;
@@ -32,41 +30,8 @@ const SubcontractorDialog = ({
   isEditing = false
 }: SubcontractorDialogProps) => {
   
-  // Create a state to store the properly formatted form data
-  const [formattedData, setFormattedData] = useState<Partial<SubcontractorFormData> | null>(null);
-  
-  // Effect to format the initialData when it changes or dialog opens
-  useEffect(() => {
-    if (!initialData) {
-      setFormattedData(null);
-      return;
-    }
-    
-    // If we're editing, ensure subid is a string
-    if (isEditing && initialData) {
-      if ('subid' in initialData && initialData.subid) {
-        // Format the data for the form
-        const formatted: Partial<SubcontractorFormData> = {
-          ...initialData,
-          subid: String(initialData.subid), // Ensure subid is a string
-        };
-        
-        console.log('SubcontractorDialog - Formatted data for form:', formatted);
-        setFormattedData(formatted);
-      } else {
-        console.error('SubcontractorDialog - Missing subid in edit mode:', initialData);
-        toast({
-          title: "Error",
-          description: "Cannot edit subcontractor: Missing ID",
-          variant: "destructive"
-        });
-        onOpenChange(false);
-      }
-    } else {
-      // For new subcontractor, just pass the initialData
-      setFormattedData(initialData as Partial<SubcontractorFormData>);
-    }
-  }, [initialData, isEditing, onOpenChange, open]);
+  // Log the initial data to help with debugging
+  console.log('SubcontractorDialog initialData:', initialData);
   
   const handleSuccess = () => {
     onOpenChange(false); // Close dialog
@@ -76,9 +41,19 @@ const SubcontractorDialog = ({
   const { isSubmitting, handleSubmit } = useSubcontractorSubmit(handleSuccess, isEditing);
   
   const onSubmit = async (data: SubcontractorFormData) => {
-    // Log the data being submitted
-    console.log('SubcontractorDialog - Form submitted with data:', data);
-    await handleSubmit(data);
+    // Create a new form data object to ensure we have a clean set of properties
+    const formData: SubcontractorFormData = {
+      ...data
+    };
+    
+    // When editing, ensure the subid is passed correctly
+    if (isEditing && initialData && 'subid' in initialData) {
+      formData.subid = String(initialData.subid);
+      console.log('Submitting form with subid:', formData.subid);
+    }
+    
+    console.log('Form submitted with data:', formData);
+    await handleSubmit(formData);
   };
   
   return (
@@ -96,14 +71,12 @@ const SubcontractorDialog = ({
         </DialogHeader>
         
         <div className="overflow-y-auto py-4">
-          {formattedData !== null && (
-            <SubcontractorForm 
-              onSubmit={onSubmit} 
-              isSubmitting={isSubmitting} 
-              initialData={formattedData}
-              isEditing={isEditing}
-            />
-          )}
+          <SubcontractorForm 
+            onSubmit={onSubmit} 
+            isSubmitting={isSubmitting} 
+            initialData={initialData}
+            isEditing={isEditing}
+          />
         </div>
         
         <DialogFooter className="sticky bottom-0 pt-4 bg-background">
