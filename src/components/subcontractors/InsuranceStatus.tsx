@@ -3,7 +3,7 @@ import React from 'react';
 import { format } from 'date-fns';
 import { Shield, ShieldAlert, ShieldCheck, ShieldQuestion } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getInsuranceStatusInfo } from './utils/subcontractorUtils';
+import { getInsuranceStatusInfo } from './utils/complianceUtils';
 
 interface InsuranceStatusProps {
   expirationDate: string | null;
