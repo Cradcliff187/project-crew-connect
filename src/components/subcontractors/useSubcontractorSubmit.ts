@@ -9,6 +9,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
   
   const handleSubmit = async (data: SubcontractorFormData) => {
     setIsSubmitting(true);
+    console.log('Processing submission:', data);
     
     try {
       if (isEditing) {
@@ -17,7 +18,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           throw new Error('Subcontractor ID is missing. Cannot update subcontractor.');
         }
         
-        console.log('Updating subcontractor with ID:', data.subid, 'with data:', data);
+        console.log('Updating subcontractor with ID:', data.subid);
         
         // Update existing subcontractor
         const { error } = await supabase
@@ -62,10 +63,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           throw error;
         }
         
-        toast({
-          title: 'Subcontractor updated successfully',
-          description: `${data.subname} has been updated.`,
-        });
+        console.log('Successfully updated subcontractor');
       } else {
         // Generate a unique ID for the subcontractor
         const { data: subcontractorIdData, error: subcontractorIdError } = await supabase
@@ -124,21 +122,14 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           throw error;
         }
         
-        toast({
-          title: 'Subcontractor created successfully',
-          description: `${data.subname} has been added to your subcontractors.`,
-        });
+        console.log('Successfully created subcontractor:', subcontractor);
       }
       
       // Call the success callback
       onSuccess();
     } catch (error: any) {
       console.error(`Error ${isEditing ? 'updating' : 'creating'} subcontractor:`, error);
-      toast({
-        title: `Error ${isEditing ? 'updating' : 'creating'} subcontractor`,
-        description: error.message || `There was an error ${isEditing ? 'updating' : 'creating'} the subcontractor. Please try again.`,
-        variant: 'destructive',
-      });
+      throw error;
     } finally {
       setIsSubmitting(false);
     }

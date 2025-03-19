@@ -39,6 +39,7 @@ const SubcontractorDetailPage = () => {
   
   const handleEdit = () => {
     if (subcontractor) {
+      console.log('Opening edit dialog with data:', subcontractor);
       setEditDialogOpen(true);
     } else {
       toast({
@@ -50,7 +51,9 @@ const SubcontractorDetailPage = () => {
   };
   
   const handleSubcontractorUpdated = () => {
+    console.log('Subcontractor updated, refreshing data...');
     fetchSubcontractor();
+    
     toast({
       title: "Subcontractor Updated",
       description: "Subcontractor details have been updated successfully."

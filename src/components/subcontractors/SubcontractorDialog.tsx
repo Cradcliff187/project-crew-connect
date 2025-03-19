@@ -13,6 +13,7 @@ import SubcontractorForm from './SubcontractorForm';
 import { SubcontractorFormData } from './types/formTypes';
 import { useSubcontractorSubmit } from './useSubcontractorSubmit';
 import { Subcontractor } from './utils/types';
+import { toast } from '@/hooks/use-toast';
 
 interface SubcontractorDialogProps {
   open: boolean;
@@ -43,17 +44,32 @@ const SubcontractorDialog = ({
   const handleSuccess = () => {
     onOpenChange(false); // Close dialog
     onSubcontractorAdded(); // Refresh subcontractors list
+    
+    toast({
+      title: isEditing ? "Subcontractor updated" : "Subcontractor created",
+      description: `The subcontractor has been ${isEditing ? 'updated' : 'created'} successfully.`,
+    });
   };
   
   const { isSubmitting, handleSubmit } = useSubcontractorSubmit(handleSuccess, isEditing);
   
   const onSubmit = async (data: SubcontractorFormData) => {
-    // Ensure subid is passed for editing
-    if (isEditing && initialData && 'subid' in initialData) {
-      data.subid = initialData.subid;
+    try {
+      // Ensure subid is passed for editing
+      if (isEditing && initialData && 'subid' in initialData) {
+        data.subid = initialData.subid;
+      }
+      
+      console.log('Submitting subcontractor data:', data);
+      await handleSubmit(data);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem submitting the form. Please try again.",
+        variant: "destructive"
+      });
     }
-    
-    await handleSubmit(data);
   };
   
   return (
