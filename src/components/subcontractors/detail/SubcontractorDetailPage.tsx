@@ -140,13 +140,15 @@ const SubcontractorDetailPage = () => {
         </Card>
         
         {/* Edit Subcontractor Dialog */}
-        <SubcontractorDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          onSubcontractorAdded={handleSubcontractorUpdated}
-          initialData={subcontractor}
-          isEditing={true}
-        />
+        {subcontractor && (
+          <SubcontractorDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onSubcontractorAdded={handleSubcontractorUpdated}
+            initialData={subcontractor}
+            isEditing={true}
+          />
+        )}
       </div>
     </PageTransition>
   );

@@ -31,14 +31,14 @@ const SubcontractorDialog = ({
 }: SubcontractorDialogProps) => {
   
   // Convert initialData to the format expected by the form
-  const formData = isEditing && initialData 
+  const formData = initialData
     ? {
         ...initialData,
         // Ensure these fields are properly typed
         subid: 'subid' in initialData ? initialData.subid : undefined,
         specialty_ids: 'specialty_ids' in initialData ? initialData.specialty_ids || [] : [],
       }
-    : initialData as Partial<SubcontractorFormData>;
+    : undefined;
   
   const handleSuccess = () => {
     onOpenChange(false); // Close dialog
