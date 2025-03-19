@@ -65,7 +65,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
         
         console.log('Successfully updated subcontractor');
       } else {
-        // Generate a unique ID for the subcontractor
+        // Generate a unique ID for the subcontractor - Now using SUP-XXXXXX format
         const { data: subcontractorIdData, error: subcontractorIdError } = await supabase
           .rpc('generate_subcontractor_id');
         
@@ -75,7 +75,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
         }
         
         const subcontractorId = subcontractorIdData;
-        console.log('Generated new subcontractor ID:', subcontractorId);
+        console.log('Generated new subcontractor ID (SUP-XXXXXX format):', subcontractorId);
         
         // Now insert the subcontractor with the pre-generated ID
         const { data: subcontractor, error } = await supabase

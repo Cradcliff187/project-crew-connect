@@ -46,7 +46,7 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
         
         console.log('Vendor updated successfully');
       } else {
-        // Generate a unique ID for the vendor
+        // Generate a unique ID for the vendor - Now using VEND-XXXXXX format
         const { data: vendorIdData, error: vendorIdError } = await supabase
           .rpc('generate_vendor_id');
         
@@ -55,7 +55,7 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
         }
         
         const vendorId = vendorIdData;
-        console.log('Generated vendor ID:', vendorId);
+        console.log('Generated vendor ID (VEND-XXXXXX format):', vendorId);
         
         // Now insert the vendor with the pre-generated ID
         const { data: vendor, error } = await supabase
