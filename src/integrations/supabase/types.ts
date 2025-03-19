@@ -1536,10 +1536,13 @@ export type Database = {
           createdby: string | null
           createdon: string | null
           email: string | null
+          notes: string | null
+          payment_terms: string | null
           phone: string | null
           qbvendortype: string | null
           state: string | null
           status: string | null
+          tax_id: string | null
           updated_at: string
           vendorid: string
           vendorname: string | null
@@ -1552,10 +1555,13 @@ export type Database = {
           createdby?: string | null
           createdon?: string | null
           email?: string | null
+          notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
           qbvendortype?: string | null
           state?: string | null
           status?: string | null
+          tax_id?: string | null
           updated_at?: string
           vendorid: string
           vendorname?: string | null
@@ -1568,10 +1574,13 @@ export type Database = {
           createdby?: string | null
           createdon?: string | null
           email?: string | null
+          notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
           qbvendortype?: string | null
           state?: string | null
           status?: string | null
+          tax_id?: string | null
           updated_at?: string
           vendorid?: string
           vendorname?: string | null

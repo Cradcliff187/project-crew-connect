@@ -1,3 +1,4 @@
+
 import { Package, Eye, Edit, History, ListTree, Archive } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 // Define vendor type based on our database schema
 export interface Vendor {
   vendorid: string;
-  vendorname: string;
+  vendorname: string | null;
   email: string | null;
   phone: string | null;
   address: string | null;
@@ -18,9 +19,9 @@ export interface Vendor {
   zip: string | null;
   status: string | null;
   createdon: string | null;
-  payment_terms?: string | null;
-  tax_id?: string | null;
-  notes?: string | null;
+  payment_terms: string | null;
+  tax_id: string | null;
+  notes: string | null;
 }
 
 interface VendorsTableProps {
