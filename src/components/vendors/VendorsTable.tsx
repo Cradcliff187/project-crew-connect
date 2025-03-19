@@ -18,9 +18,6 @@ export interface Vendor {
   zip: string | null;
   status: string | null;
   createdon: string | null;
-  payment_terms?: string | null;
-  tax_id?: string | null;
-  notes?: string | null;
 }
 
 interface VendorsTableProps {
