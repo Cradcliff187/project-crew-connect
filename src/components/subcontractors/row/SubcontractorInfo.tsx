@@ -1,6 +1,8 @@
 
 import React from 'react';
-import { Subcontractor, calculateVendorScore } from '../utils/subcontractorUtils';
+import { Subcontractor } from '../utils/types';
+import { calculateVendorScore } from '../utils/performanceUtils';
+import { formatDate } from '../utils/formatUtils';
 import InsuranceStatus from '../InsuranceStatus';
 import VendorScoreBadge from '../VendorScoreBadge';
 import { Star, Clock, CheckCircle2 } from 'lucide-react';
@@ -105,19 +107,6 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
         )}
       </div>
     );
-  };
-
-  // Format created_at date
-  const formatDate = (dateString: string) => {
-    try {
-      return new Intl.DateTimeFormat('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      }).format(new Date(dateString));
-    } catch (error) {
-      return 'Invalid date';
-    }
   };
 
   return (
