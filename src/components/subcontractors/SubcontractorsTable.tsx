@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
 import SubcontractorRow from './SubcontractorRow';
 import SubcontractorEmptyState from './SubcontractorEmptyState';
@@ -49,7 +50,11 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   const filteredSubcontractors = filterSubcontractors(subcontractors, searchQuery);
   
   const handleEditClick = (subcontractor: Subcontractor) => {
+    console.log('Edit subcontractor clicked:', subcontractor);
+    
+    // Make sure we have a complete subcontractor object with all properties
     if (!subcontractor.subid) {
+      console.error('Subcontractor is missing subid:', subcontractor);
       toast({
         title: "Error",
         description: "Cannot edit subcontractor: Missing ID",
@@ -63,6 +68,8 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   };
   
   const handleDeleteClick = (subcontractor: Subcontractor) => {
+    console.log('Delete subcontractor', subcontractor.subid);
+    // Would implement delete functionality here
     toast({
       title: "Not implemented",
       description: "Delete functionality is not implemented yet",
@@ -71,6 +78,7 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   };
   
   const handleViewClick = (subcontractor: Subcontractor) => {
+    console.log('View subcontractor', subcontractor.subid);
     navigate(`/subcontractors/${subcontractor.subid}`);
   };
   
@@ -139,15 +147,13 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
       </div>
       
       {/* Edit Subcontractor Dialog */}
-      {selectedSubcontractor && (
-        <SubcontractorDialog
-          open={editDialogOpen}
-          onOpenChange={handleDialogOpenChange}
-          onSubcontractorAdded={handleSubcontractorUpdated}
-          initialData={selectedSubcontractor}
-          isEditing={true}
-        />
-      )}
+      <SubcontractorDialog
+        open={editDialogOpen}
+        onOpenChange={handleDialogOpenChange}
+        onSubcontractorAdded={handleSubcontractorUpdated}
+        initialData={selectedSubcontractor || undefined}
+        isEditing={true}
+      />
     </div>
   );
 };

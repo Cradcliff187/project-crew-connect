@@ -17,6 +17,12 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           throw new Error('Subcontractor ID is missing. Cannot update subcontractor.');
         }
         
+        // Ensure subid is a string
+        const subid = String(data.subid);
+        
+        console.log('Updating subcontractor with ID:', subid);
+        console.log('Update data:', data);
+        
         // Update existing subcontractor
         const { error } = await supabase
           .from('subcontractors')
@@ -53,11 +59,14 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             notes: data.notes,
             updated_at: new Date().toISOString(),
           })
-          .eq('subid', data.subid);
+          .eq('subid', subid);
         
         if (error) {
+          console.error('Error updating subcontractor:', error);
           throw error;
         }
+        
+        console.log('Subcontractor updated successfully');
         
         toast({
           title: 'Subcontractor updated successfully',
@@ -75,7 +84,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
         const subcontractorId = subcontractorIdData;
         
         // Now insert the subcontractor with the pre-generated ID
-        const { error } = await supabase
+        const { data: subcontractor, error } = await supabase
           .from('subcontractors')
           .insert({
             subid: subcontractorId,
@@ -111,7 +120,8 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             notes: data.notes,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          });
+          })
+          .select();
         
         if (error) {
           throw error;

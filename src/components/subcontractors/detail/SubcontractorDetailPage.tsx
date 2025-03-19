@@ -26,6 +26,8 @@ const SubcontractorDetailPage = () => {
   const { subcontractorId } = useParams<{ subcontractorId: string }>();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
+  console.log('SubcontractorDetailPage - Current subcontractorId:', subcontractorId);
+  
   // Use the custom hook to fetch subcontractor data
   const { 
     subcontractor, 
@@ -47,6 +49,7 @@ const SubcontractorDetailPage = () => {
       return;
     }
     
+    console.log('Opening edit dialog with data:', subcontractor);
     setEditDialogOpen(true);
   };
   
@@ -58,6 +61,7 @@ const SubcontractorDetailPage = () => {
     });
   };
   
+  // Clear selected subcontractor when dialog closes
   const handleDialogOpenChange = (open: boolean) => {
     setEditDialogOpen(open);
   };
