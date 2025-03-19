@@ -12,7 +12,7 @@ import {
 import SubcontractorForm from './SubcontractorForm';
 import { SubcontractorFormData } from './types/formTypes';
 import { useSubcontractorSubmit } from './useSubcontractorSubmit';
-import { Subcontractor } from './utils/subcontractorUtils';
+import type { Subcontractor } from './utils';
 import { useState, useEffect } from 'react';
 
 interface SubcontractorDialogProps {
