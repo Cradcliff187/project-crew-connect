@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +10,7 @@ import VendorsTable, { Vendor } from '@/components/vendors/VendorsTable';
 const fetchVendors = async () => {
   const { data, error } = await supabase
     .from('vendors')
-    .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon')
+    .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon, payment_terms, tax_id, notes')
     .order('createdon', { ascending: false });
   
   if (error) {
