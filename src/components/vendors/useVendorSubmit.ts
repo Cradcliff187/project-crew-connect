@@ -45,9 +45,13 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
         }
         
         console.log('Vendor updated successfully');
+        toast({
+          title: "Vendor updated",
+          description: "The vendor has been updated successfully.",
+        });
         onSuccess(); // Call success callback to close dialog and refresh list
       } else {
-        // Generate a unique ID for the vendor - Now using VEND-XXXXXX format
+        // Generate a unique ID for the vendor using the Supabase RPC function
         const { data: vendorIdData, error: vendorIdError } = await supabase
           .rpc('generate_vendor_id');
         
@@ -57,7 +61,7 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
         }
         
         const vendorId = vendorIdData;
-        console.log('Generated vendor ID (VEND-XXXXXX format):', vendorId);
+        console.log('Generated vendor ID:', vendorId);
         
         // Now insert the vendor with the pre-generated ID
         const { data: vendor, error } = await supabase
@@ -87,14 +91,12 @@ export const useVendorSubmit = (onSuccess: () => void, isEditing = false) => {
         }
         
         console.log('Vendor created successfully:', vendor);
+        toast({
+          title: "Vendor added",
+          description: "The vendor has been created successfully.",
+        });
         onSuccess(); // Call success callback to close dialog and refresh list
       }
-      
-      // Show success toast
-      toast({
-        title: isEditing ? "Vendor updated" : "Vendor added",
-        description: `The vendor has been ${isEditing ? 'updated' : 'created'} successfully.`,
-      });
     } catch (error: any) {
       console.error(`Error ${isEditing ? 'updating' : 'creating'} vendor:`, error);
       toast({

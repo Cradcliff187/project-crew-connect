@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import VendorForm, { VendorFormData } from './VendorForm';
 import { useVendorSubmit } from './useVendorSubmit';
-import { toast } from '@/hooks/use-toast';
 
 interface VendorDialogProps {
   open: boolean;
