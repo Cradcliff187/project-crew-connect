@@ -37,7 +37,7 @@ const PerformanceSection: React.FC<FormSectionProps> = ({ control }) => {
               <FormLabel>Quality Rating (1-5)</FormLabel>
               <Select 
                 onValueChange={(value) => field.onChange(value ? Number(value) : null)}
-                value={field.value?.toString() || ''}
+                value={field.value?.toString() || ""}
               >
                 <FormControl>
                   <SelectTrigger>
