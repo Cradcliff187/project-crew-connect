@@ -32,7 +32,6 @@ const VendorDialog = ({
   const { isSubmitting, handleSubmit } = useVendorSubmit(handleSuccess);
   
   const onSubmit = async (data: VendorFormData) => {
-    console.log('Form submitted with data:', data);
     await handleSubmit(data);
   };
   

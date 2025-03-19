@@ -12,15 +12,12 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
     
     try {
       if (isEditing) {
-        // Ensure subid is available for updating and is a string
+        // Ensure subid is available for updating
         if (!data.subid) {
           throw new Error('Subcontractor ID is missing. Cannot update subcontractor.');
         }
         
-        // Ensure subid is a string
-        const subid = String(data.subid);
-        
-        console.log('Updating subcontractor with ID:', subid);
+        console.log('Updating subcontractor with ID:', data.subid);
         console.log('Update data:', data);
         
         // Update existing subcontractor
@@ -59,7 +56,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             notes: data.notes,
             updated_at: new Date().toISOString(),
           })
-          .eq('subid', subid);
+          .eq('subid', data.subid);
         
         if (error) {
           console.error('Error updating subcontractor:', error);

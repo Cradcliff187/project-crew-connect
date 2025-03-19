@@ -50,7 +50,7 @@ const VendorForm = ({ onSubmit, isSubmitting }: VendorFormProps) => {
   
   return (
     <Form {...form}>
-      <form id="vendor-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
         <FormField
           control={form.control}
           name="vendorname"
@@ -181,6 +181,10 @@ const VendorForm = ({ onSubmit, isSubmitting }: VendorFormProps) => {
             </FormItem>
           )}
         />
+        
+        <div className="pt-4 flex justify-end space-x-2">
+          {/* The dialog footer with buttons will be in the parent component */}
+        </div>
       </form>
     </Form>
   );

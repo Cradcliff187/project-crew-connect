@@ -61,13 +61,7 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
       return;
     }
     
-    // Create a deep copy to avoid reference issues
-    const subcontractorCopy = JSON.parse(JSON.stringify(subcontractor));
-    
-    // Ensure subid is a string
-    subcontractorCopy.subid = String(subcontractorCopy.subid);
-    
-    setSelectedSubcontractor(subcontractorCopy);
+    setSelectedSubcontractor(subcontractor);
     setEditDialogOpen(true);
   };
   
@@ -140,16 +134,14 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
         </Table>
       </div>
       
-      {/* Edit Subcontractor Dialog */}
-      {selectedSubcontractor && (
-        <SubcontractorDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          onSubcontractorAdded={handleSubcontractorUpdated}
-          initialData={selectedSubcontractor}
-          isEditing={true}
-        />
-      )}
+      {/* Edit Subcontractor Dialog - ALWAYS render the dialog but control visibility with open prop */}
+      <SubcontractorDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSubcontractorAdded={handleSubcontractorUpdated}
+        initialData={selectedSubcontractor}
+        isEditing={true}
+      />
     </div>
   );
 };

@@ -32,7 +32,6 @@ const FinancialSection: React.FC<FormSectionProps> = ({ control }) => {
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value || 'NET30'}
-                value={field.value || 'NET30'}
               >
                 <FormControl>
                   <SelectTrigger>

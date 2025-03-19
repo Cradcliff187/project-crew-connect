@@ -41,19 +41,14 @@ const SubcontractorDialog = ({
   const { isSubmitting, handleSubmit } = useSubcontractorSubmit(handleSuccess, isEditing);
   
   const onSubmit = async (data: SubcontractorFormData) => {
-    // Create a new form data object to ensure we don't have any unexpected properties
-    const formData: SubcontractorFormData = {
-      ...data
-    };
-    
-    // Ensure subid is passed for editing and is treated as a string
+    // Ensure subid is passed for editing
     if (isEditing && initialData && 'subid' in initialData) {
-      formData.subid = String(initialData.subid);
-      console.log('Submitting form with subid:', formData.subid);
+      data.subid = initialData.subid;
+      console.log('Submitting form with subid:', data.subid);
     }
     
-    console.log('Form submitted with data:', formData);
-    await handleSubmit(formData);
+    console.log('Form submitted with data:', data);
+    await handleSubmit(data);
   };
   
   return (
