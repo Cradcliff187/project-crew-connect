@@ -12,7 +12,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
     
     try {
       if (isEditing) {
-        // Ensure subid is available for updating
+        // Ensure subid is available for updating and is a string
         if (!data.subid) {
           throw new Error('Subcontractor ID is missing. Cannot update subcontractor.');
         }

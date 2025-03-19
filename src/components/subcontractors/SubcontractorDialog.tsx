@@ -41,12 +41,12 @@ const SubcontractorDialog = ({
   const { isSubmitting, handleSubmit } = useSubcontractorSubmit(handleSuccess, isEditing);
   
   const onSubmit = async (data: SubcontractorFormData) => {
-    // Create a new form data object to ensure we have a clean set of properties
+    // Create a new form data object to ensure we don't have any unexpected properties
     const formData: SubcontractorFormData = {
       ...data
     };
     
-    // When editing, ensure the subid is passed correctly
+    // Ensure subid is passed for editing and is treated as a string
     if (isEditing && initialData && 'subid' in initialData) {
       formData.subid = String(initialData.subid);
       console.log('Submitting form with subid:', formData.subid);
@@ -58,7 +58,7 @@ const SubcontractorDialog = ({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             {isEditing ? 'Edit Subcontractor' : 'Add New Subcontractor'}
@@ -70,16 +70,14 @@ const SubcontractorDialog = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="overflow-y-auto py-4">
-          <SubcontractorForm 
-            onSubmit={onSubmit} 
-            isSubmitting={isSubmitting} 
-            initialData={initialData}
-            isEditing={isEditing}
-          />
-        </div>
+        <SubcontractorForm 
+          onSubmit={onSubmit} 
+          isSubmitting={isSubmitting} 
+          initialData={initialData}
+          isEditing={isEditing}
+        />
         
-        <DialogFooter className="sticky bottom-0 pt-4 bg-background">
+        <DialogFooter className="pt-4">
           <Button 
             type="button" 
             variant="outline" 
