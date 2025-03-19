@@ -8,16 +8,22 @@ import VendorsHeader from '@/components/vendors/VendorsHeader';
 import VendorsTable, { Vendor } from '@/components/vendors/VendorsTable';
 
 const fetchVendors = async () => {
-  const { data, error } = await supabase
-    .from('vendors')
-    .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon, payment_terms, tax_id, notes')
-    .order('createdon', { ascending: false });
-  
-  if (error) {
+  try {
+    const { data, error } = await supabase
+      .from('vendors')
+      .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon, payment_terms, tax_id, notes')
+      .order('createdon', { ascending: false });
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching vendors:', error);
     throw error;
   }
-  
-  return data || [];
 };
 
 const Vendors = () => {
@@ -89,7 +95,7 @@ const Vendors = () => {
         />
         
         <VendorsTable 
-          vendors={vendors}
+          vendors={vendors as Vendor[]}
           loading={loading}
           error={error}
           searchQuery={searchQuery}
