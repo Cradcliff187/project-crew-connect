@@ -35,12 +35,6 @@ const VendorDialog = ({
     // First close the dialog and refresh the vendors list
     onOpenChange(false);
     onVendorAdded();
-    
-    // Then show the confirmation toast
-    toast({
-      title: isEditing ? "Vendor updated" : "Vendor created",
-      description: `The vendor has been ${isEditing ? 'updated' : 'created'} successfully.`,
-    });
   };
   
   const { isSubmitting, handleSubmit } = useVendorSubmit(handleSuccess, isEditing);
@@ -57,7 +51,12 @@ const VendorDialog = ({
   };
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpenState) => {
+      // Only allow closing the dialog if we're not in the middle of submitting
+      if (!isSubmitting || !newOpenState) {
+        onOpenChange(newOpenState);
+      }
+    }}>
       <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">

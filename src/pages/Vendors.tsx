@@ -10,7 +10,7 @@ import VendorsTable, { Vendor } from '@/components/vendors/VendorsTable';
 const fetchVendors = async () => {
   const { data, error } = await supabase
     .from('vendors')
-    .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon')
+    .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon, payment_terms, tax_id, notes')
     .order('createdon', { ascending: false });
   
   if (error) {
@@ -37,6 +37,30 @@ const Vendors = () => {
       }
     }
   });
+
+  // Setup real-time subscription for vendor changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('vendors-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vendors'
+        },
+        (payload) => {
+          console.log('Real-time vendor change:', payload);
+          refetch(); // Refetch vendors when changes are detected
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription when component unmounts
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
 
   // Handle errors outside the query to show toast
   useEffect(() => {
