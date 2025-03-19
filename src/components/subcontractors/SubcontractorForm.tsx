@@ -29,63 +29,48 @@ const SubcontractorForm = ({
   // Log the initial data for debugging
   console.log('SubcontractorForm initialData:', initialData);
   
-  // Ensure all incoming data has the right types
-  const formattedInitialData = initialData ? {
-    ...initialData,
-    subid: initialData.subid ? String(initialData.subid) : undefined,
-    rating: initialData.rating !== undefined ? Number(initialData.rating) : null,
-    hourly_rate: initialData.hourly_rate !== undefined ? Number(initialData.hourly_rate) : null,
-    on_time_percentage: initialData.on_time_percentage !== undefined ? Number(initialData.on_time_percentage) : null,
-    quality_score: initialData.quality_score !== undefined ? Number(initialData.quality_score) : null,
-    safety_incidents: initialData.safety_incidents !== undefined ? Number(initialData.safety_incidents) : null,
-    response_time_hours: initialData.response_time_hours !== undefined ? Number(initialData.response_time_hours) : null,
-  } : undefined;
-  
+  // Initialize the form with default values or initialData if available
   const form = useForm<SubcontractorFormData>({
     defaultValues: {
-      subid: formattedInitialData?.subid || undefined,
-      subname: formattedInitialData?.subname || '',
-      contactemail: formattedInitialData?.contactemail || '',
-      phone: formattedInitialData?.phone || '',
-      address: formattedInitialData?.address || '',
-      city: formattedInitialData?.city || '',
-      state: formattedInitialData?.state || '',
-      zip: formattedInitialData?.zip || '',
-      status: formattedInitialData?.status || 'PENDING',
-      specialty_ids: formattedInitialData?.specialty_ids || [],
-      payment_terms: formattedInitialData?.payment_terms || 'NET30',
-      notes: formattedInitialData?.notes || '',
+      subid: initialData?.subid || undefined,
+      subname: initialData?.subname || '',
+      contactemail: initialData?.contactemail || '',
+      phone: initialData?.phone || '',
+      address: initialData?.address || '',
+      city: initialData?.city || '',
+      state: initialData?.state || '',
+      zip: initialData?.zip || '',
+      status: initialData?.status || 'PENDING',
+      specialty_ids: initialData?.specialty_ids || [],
+      payment_terms: initialData?.payment_terms || 'NET30',
+      notes: initialData?.notes || '',
       // Additional vendor management fields
-      insurance_expiration: formattedInitialData?.insurance_expiration || null,
-      insurance_provider: formattedInitialData?.insurance_provider || '',
-      insurance_policy_number: formattedInitialData?.insurance_policy_number || '',
-      tax_id: formattedInitialData?.tax_id || '',
-      rating: formattedInitialData?.rating || null,
-      hourly_rate: formattedInitialData?.hourly_rate || null,
-      contract_on_file: formattedInitialData?.contract_on_file || false,
-      contract_expiration: formattedInitialData?.contract_expiration || null,
-      preferred: formattedInitialData?.preferred || false,
-      last_performance_review: formattedInitialData?.last_performance_review || null,
-      on_time_percentage: formattedInitialData?.on_time_percentage || null,
-      quality_score: formattedInitialData?.quality_score || null,
-      safety_incidents: formattedInitialData?.safety_incidents || null,
-      response_time_hours: formattedInitialData?.response_time_hours || null,
+      insurance_expiration: initialData?.insurance_expiration || null,
+      insurance_provider: initialData?.insurance_provider || '',
+      insurance_policy_number: initialData?.insurance_policy_number || '',
+      tax_id: initialData?.tax_id || '',
+      rating: initialData?.rating || null,
+      hourly_rate: initialData?.hourly_rate || null,
+      contract_on_file: initialData?.contract_on_file || false,
+      contract_expiration: initialData?.contract_expiration || null,
+      preferred: initialData?.preferred || false,
+      last_performance_review: initialData?.last_performance_review || null,
+      on_time_percentage: initialData?.on_time_percentage || null,
+      quality_score: initialData?.quality_score || null,
+      safety_incidents: initialData?.safety_incidents || null,
+      response_time_hours: initialData?.response_time_hours || null,
     }
   });
 
-  // Log values whenever form values change (for debugging)
+  // Effect to reset form when initialData changes
   useEffect(() => {
-    if (isEditing) {
-      console.log('Current form values:', form.getValues());
-    }
-  }, [form, isEditing]);
-
-  // Effect to update form if initialData changes (e.g., different subcontractor selected)
-  useEffect(() => {
-    if (initialData && isEditing) {
-      console.log('Resetting form with updated initialData');
+    if (initialData) {
+      // Log what we're resetting to
+      console.log('SubcontractorForm - Resetting form with initialData');
+      
+      // Reset the form with initial data
       form.reset({
-        subid: String(initialData.subid || ''),
+        subid: initialData.subid,
         subname: initialData.subname || '',
         contactemail: initialData.contactemail || '',
         phone: initialData.phone || '',
@@ -102,23 +87,29 @@ const SubcontractorForm = ({
         insurance_provider: initialData.insurance_provider || '',
         insurance_policy_number: initialData.insurance_policy_number || '',
         tax_id: initialData.tax_id || '',
-        rating: initialData.rating !== undefined ? Number(initialData.rating) : null,
-        hourly_rate: initialData.hourly_rate !== undefined ? Number(initialData.hourly_rate) : null,
+        rating: initialData.rating || null,
+        hourly_rate: initialData.hourly_rate || null,
         contract_on_file: initialData.contract_on_file || false,
         contract_expiration: initialData.contract_expiration || null,
         preferred: initialData.preferred || false,
         last_performance_review: initialData.last_performance_review || null,
-        on_time_percentage: initialData.on_time_percentage !== undefined ? Number(initialData.on_time_percentage) : null,
-        quality_score: initialData.quality_score !== undefined ? Number(initialData.quality_score) : null,
-        safety_incidents: initialData.safety_incidents !== undefined ? Number(initialData.safety_incidents) : null,
-        response_time_hours: initialData.response_time_hours !== undefined ? Number(initialData.response_time_hours) : null,
+        on_time_percentage: initialData.on_time_percentage || null,
+        quality_score: initialData.quality_score || null,
+        safety_incidents: initialData.safety_incidents || null,
+        response_time_hours: initialData.response_time_hours || null,
       });
     }
-  }, [initialData, form, isEditing]);
+  }, [initialData, form]);
+
+  // Handle form submission
+  const handleFormSubmit = (data: SubcontractorFormData) => {
+    console.log('SubcontractorForm - Handle form submit:', data);
+    onSubmit(data);
+  };
 
   return (
     <Form {...form}>
-      <form id="subcontractor-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+      <form id="subcontractor-form" onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
         {/* Basic Information */}
         <BasicInfoSection control={form.control} />
         
@@ -140,7 +131,7 @@ const SubcontractorForm = ({
         <NotesAndStatusSection control={form.control} />
 
         {/* Hidden field for subid when editing */}
-        {isEditing && (
+        {isEditing && initialData?.subid && (
           <input type="hidden" {...form.register('subid')} />
         )}
       </form>

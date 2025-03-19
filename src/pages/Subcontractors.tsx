@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/layout/PageTransition';
@@ -15,7 +15,7 @@ const Subcontractors = () => {
   const [specialtiesUpdated, setSpecialtiesUpdated] = useState(0);
   
   // Fetch subcontractors from Supabase
-  const fetchSubcontractors = async () => {
+  const fetchSubcontractors = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -36,6 +36,7 @@ const Subcontractors = () => {
       })) as Subcontractor[];
       
       setSubcontractors(processedData || []);
+      setError(null);
     } catch (error: any) {
       console.error('Error fetching subcontractors:', error);
       setError(error.message);
@@ -47,11 +48,11 @@ const Subcontractors = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
   
   useEffect(() => {
     fetchSubcontractors();
-  }, []);
+  }, [fetchSubcontractors]);
 
   const handleSubcontractorAdded = () => {
     fetchSubcontractors();
@@ -79,6 +80,7 @@ const Subcontractors = () => {
             loading={loading}
             error={error}
             searchQuery={searchQuery}
+            onSubcontractorUpdated={handleSubcontractorAdded}
           />
         </div>
       </div>
