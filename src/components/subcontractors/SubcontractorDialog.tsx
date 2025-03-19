@@ -12,7 +12,7 @@ import {
 import SubcontractorForm from './SubcontractorForm';
 import { SubcontractorFormData } from './types/formTypes';
 import { useSubcontractorSubmit } from './useSubcontractorSubmit';
-import { Subcontractor } from './utils/subcontractorUtils';
+import { Subcontractor } from './utils/types';
 
 interface SubcontractorDialogProps {
   open: boolean;
@@ -30,8 +30,15 @@ const SubcontractorDialog = ({
   isEditing = false
 }: SubcontractorDialogProps) => {
   
-  // Log the initial data to help with debugging
-  console.log('SubcontractorDialog initialData:', initialData);
+  // Convert initialData to the format expected by the form
+  const formData = isEditing && initialData 
+    ? {
+        ...initialData,
+        // Ensure these fields are properly typed
+        subid: 'subid' in initialData ? initialData.subid : undefined,
+        specialty_ids: 'specialty_ids' in initialData ? initialData.specialty_ids || [] : [],
+      }
+    : initialData as Partial<SubcontractorFormData>;
   
   const handleSuccess = () => {
     onOpenChange(false); // Close dialog
@@ -44,10 +51,8 @@ const SubcontractorDialog = ({
     // Ensure subid is passed for editing
     if (isEditing && initialData && 'subid' in initialData) {
       data.subid = initialData.subid;
-      console.log('Submitting form with subid:', data.subid);
     }
     
-    console.log('Form submitted with data:', data);
     await handleSubmit(data);
   };
   
@@ -68,7 +73,7 @@ const SubcontractorDialog = ({
         <SubcontractorForm 
           onSubmit={onSubmit} 
           isSubmitting={isSubmitting} 
-          initialData={initialData}
+          initialData={formData}
           isEditing={isEditing}
         />
         

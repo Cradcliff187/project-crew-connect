@@ -25,12 +25,6 @@ export interface Subcontractor {
   contract_expiration?: string | null;
   preferred?: boolean;
   last_performance_review?: string | null;
-  // Performance metrics
-  on_time_percentage?: number | null;
-  quality_score?: number | null;
-  safety_incidents?: number | null;
-  response_time_hours?: number | null;
-  total_completed_amount?: number | null;
 }
 
 export interface Specialty {

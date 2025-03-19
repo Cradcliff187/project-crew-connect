@@ -7,7 +7,8 @@ import SubcontractorEmptyState from './SubcontractorEmptyState';
 import SubcontractorLoadingState from './SubcontractorLoadingState';
 import SubcontractorErrorState from './SubcontractorErrorState';
 import { useSpecialties } from './hooks/useSpecialties';
-import { Subcontractor, filterSubcontractors } from './utils/subcontractorUtils';
+import { Subcontractor } from './utils/types';
+import { filterSubcontractors } from './utils/filterUtils';
 import SubcontractorDialog from './SubcontractorDialog';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -49,25 +50,11 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   
   const handleEditClick = (subcontractor: Subcontractor) => {
     console.log('Edit subcontractor clicked:', subcontractor);
-    
-    // Make sure we have a complete subcontractor object with all properties
-    if (!subcontractor.subid) {
-      console.error('Subcontractor is missing subid:', subcontractor);
-      toast({
-        title: "Error",
-        description: "Cannot edit subcontractor: Missing ID",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setSelectedSubcontractor(subcontractor);
     setEditDialogOpen(true);
   };
   
   const handleDeleteClick = (subcontractor: Subcontractor) => {
-    console.log('Delete subcontractor', subcontractor.subid);
-    // Would implement delete functionality here
     toast({
       title: "Not implemented",
       description: "Delete functionality is not implemented yet",
@@ -76,12 +63,10 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   };
   
   const handleViewClick = (subcontractor: Subcontractor) => {
-    console.log('View subcontractor', subcontractor.subid);
     navigate(`/subcontractors/${subcontractor.subid}`);
   };
   
   const handleSubcontractorUpdated = () => {
-    // This would be used to refresh the subcontractors list
     toast({
       title: "Subcontractor updated",
       description: "The subcontractor has been updated successfully"
@@ -134,14 +119,16 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
         </Table>
       </div>
       
-      {/* Edit Subcontractor Dialog - ALWAYS render the dialog but control visibility with open prop */}
-      <SubcontractorDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        onSubcontractorAdded={handleSubcontractorUpdated}
-        initialData={selectedSubcontractor}
-        isEditing={true}
-      />
+      {/* Edit Subcontractor Dialog */}
+      {selectedSubcontractor && (
+        <SubcontractorDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSubcontractorAdded={handleSubcontractorUpdated}
+          initialData={selectedSubcontractor}
+          isEditing={true}
+        />
+      )}
     </div>
   );
 };

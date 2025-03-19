@@ -1,11 +1,9 @@
 
 import React from 'react';
 import { Subcontractor } from '../utils/types';
-import { calculateVendorScore } from '../utils/performanceUtils';
 import { formatDate } from '../utils/formatUtils';
 import InsuranceStatus from '../InsuranceStatus';
-import VendorScoreBadge from '../VendorScoreBadge';
-import { Star, Clock, CheckCircle2 } from 'lucide-react';
+import { Star, Clock, CheckCircle2, FileCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SubcontractorInfoProps {
@@ -13,9 +11,6 @@ interface SubcontractorInfoProps {
 }
 
 const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
-  // Calculate vendor score
-  const vendorScore = calculateVendorScore(subcontractor);
-  
   // Render vendor compliance status indicators
   const renderComplianceIndicators = () => {
     return (
@@ -23,21 +18,13 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
         {/* Insurance Status */}
         <InsuranceStatus expirationDate={subcontractor.insurance_expiration} />
         
-        {/* Vendor Score */}
-        <VendorScoreBadge score={vendorScore} />
-        
         {/* Contract Status */}
         {subcontractor.contract_on_file && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="inline-flex">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-blue-500">
-                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                    <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-                    <path d="M9 17h6" />
-                    <path d="M9 13h6" />
-                  </svg>
+                  <FileCheck className="h-4 w-4 text-blue-500" />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -82,25 +69,6 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
                 {new Date(subcontractor.last_performance_review) <= new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000) && 
                   <p className="text-amber-400">Review overdue</p>
                 }
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-        
-        {/* Performance Metrics */}
-        {subcontractor.on_time_percentage && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="inline-flex">
-                  <CheckCircle2 className={`h-4 w-4 ${
-                    subcontractor.on_time_percentage >= 90 ? 'text-green-500' :
-                    subcontractor.on_time_percentage >= 75 ? 'text-amber-500' : 'text-red-500'
-                  }`} />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>On-time percentage: {subcontractor.on_time_percentage}%</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -5,7 +5,6 @@ import PageTransition from '@/components/layout/PageTransition';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
 import SubcontractorDialog from '../SubcontractorDialog';
 import useSubcontractorData from './useSubcontractorData';
 
@@ -27,8 +26,6 @@ const SubcontractorDetailPage = () => {
   const { subcontractorId } = useParams<{ subcontractorId: string }>();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   
-  console.log('SubcontractorDetailPage - Current subcontractorId:', subcontractorId);
-  
   // Use the custom hook to fetch subcontractor data
   const { 
     subcontractor, 
@@ -41,8 +38,15 @@ const SubcontractorDetailPage = () => {
   } = useSubcontractorData(subcontractorId);
   
   const handleEdit = () => {
-    console.log('Opening edit dialog with data:', subcontractor);
-    setEditDialogOpen(true);
+    if (subcontractor) {
+      setEditDialogOpen(true);
+    } else {
+      toast({
+        title: "Error",
+        description: "Cannot edit - Subcontractor not found",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleSubcontractorUpdated = () => {
@@ -135,7 +139,7 @@ const SubcontractorDetailPage = () => {
           </div>
         </Card>
         
-        {/* Edit Subcontractor Dialog - ALWAYS render the dialog but control visibility with open prop */}
+        {/* Edit Subcontractor Dialog */}
         <SubcontractorDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}

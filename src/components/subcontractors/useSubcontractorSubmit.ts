@@ -18,7 +18,6 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
         }
         
         console.log('Updating subcontractor with ID:', data.subid);
-        console.log('Update data:', data);
         
         // Update existing subcontractor
         const { error } = await supabase
@@ -47,11 +46,6 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             rating: data.rating,
             preferred: data.preferred,
             last_performance_review: data.last_performance_review,
-            // Performance metrics
-            on_time_percentage: data.on_time_percentage,
-            quality_score: data.quality_score,
-            safety_incidents: data.safety_incidents,
-            response_time_hours: data.response_time_hours,
             // Notes
             notes: data.notes,
             updated_at: new Date().toISOString(),
@@ -62,8 +56,6 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
           console.error('Error updating subcontractor:', error);
           throw error;
         }
-        
-        console.log('Subcontractor updated successfully');
         
         toast({
           title: 'Subcontractor updated successfully',
@@ -108,11 +100,6 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
             rating: data.rating,
             preferred: data.preferred,
             last_performance_review: data.last_performance_review,
-            // Performance metrics
-            on_time_percentage: data.on_time_percentage,
-            quality_score: data.quality_score,
-            safety_incidents: data.safety_incidents,
-            response_time_hours: data.response_time_hours,
             // Notes
             notes: data.notes,
             created_at: new Date().toISOString(),
