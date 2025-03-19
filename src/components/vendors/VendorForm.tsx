@@ -16,6 +16,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Define vendor form data type
 export interface VendorFormData {
@@ -62,6 +63,8 @@ const VendorForm = ({
   isSubmitting, 
   initialData 
 }: VendorFormProps) => {
+  const isMobile = useIsMobile();
+  
   const form = useForm<VendorFormData>({
     defaultValues: {
       vendorid: initialData?.vendorid || undefined,
@@ -94,7 +97,7 @@ const VendorForm = ({
           name="vendorname"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Vendor Name *</FormLabel>
+              <FormLabel>Vendor Name <span className="text-red-500">*</span></FormLabel>
               <FormControl>
                 <Input placeholder="Enter vendor name" {...field} required />
               </FormControl>
@@ -103,7 +106,7 @@ const VendorForm = ({
           )}
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4`}>
           <FormField
             control={form.control}
             name="email"
@@ -147,12 +150,12 @@ const VendorForm = ({
           )}
         />
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-2 md:grid-cols-4 gap-4'}`}>
           <FormField
             control={form.control}
             name="city"
             render={({ field }) => (
-              <FormItem className="col-span-2">
+              <FormItem className={isMobile ? "col-span-2" : "col-span-2"}>
                 <FormLabel>City</FormLabel>
                 <FormControl>
                   <Input placeholder="City" {...field} />
@@ -195,7 +198,7 @@ const VendorForm = ({
         <div className="pt-4 border-t">
           <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Financial Information</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4`}>
             <FormField
               control={form.control}
               name="payment_terms"
@@ -268,7 +271,7 @@ const VendorForm = ({
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
                   defaultValue={field.value}
@@ -307,6 +310,7 @@ const VendorForm = ({
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Additional notes about this vendor"
                   {...field}
+                  value={field.value || ''}
                 />
               </FormControl>
               <FormMessage />
