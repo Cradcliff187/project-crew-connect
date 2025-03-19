@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Clock, DollarSign, FileText } from 'lucide-react';
-import { getPaymentTermsLabel, Subcontractor } from '../utils/subcontractorUtils';
+import { getPaymentTermsLabel } from '../utils/performanceUtils';
+import { Subcontractor } from '../utils/types';
 
 interface FinancialInformationCardProps {
   subcontractor: Subcontractor;
@@ -30,12 +31,7 @@ const FinancialInformationCard = ({ subcontractor }: FinancialInformationCardPro
             <span>Tax ID: {subcontractor.tax_id}</span>
           </div>
         )}
-        {subcontractor.total_completed_amount > 0 && (
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-            <span>Total Completed: ${subcontractor.total_completed_amount.toLocaleString()}</span>
-          </div>
-        )}
+        {/* Removed the total_completed_amount check that was causing the error */}
       </div>
     </div>
   );
