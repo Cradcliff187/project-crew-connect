@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderFormValues } from './WorkOrderFormSchema';
+import { useEffect } from 'react';
 
 interface WorkOrderLocationFieldsProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -21,7 +22,10 @@ const WorkOrderLocationFields = ({
   locations, 
   employees 
 }: WorkOrderLocationFieldsProps) => {
-  console.log('Customers data:', customers); // Add debugging to check customers data
+  // Add effect to log customer data whenever it changes
+  useEffect(() => {
+    console.log('Customers data in component:', customers);
+  }, [customers]);
   
   return (
     <>
@@ -32,19 +36,32 @@ const WorkOrderLocationFields = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Customer</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ""}>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value || ""}
+                onOpenChange={(open) => {
+                  if (open) console.log('Dropdown opened, customers:', customers);
+                }}
+              >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   {customers && customers.length > 0 ? (
-                    customers.map((customer) => (
-                      <SelectItem key={customer.customerid} value={customer.customerid}>
-                        {customer.customername}
-                      </SelectItem>
-                    ))
+                    customers.map((customer) => {
+                      console.log('Rendering customer option:', customer);
+                      return (
+                        <SelectItem 
+                          key={customer.customerid} 
+                          value={customer.customerid}
+                          className="cursor-pointer hover:bg-gray-100"
+                        >
+                          {customer.customername}
+                        </SelectItem>
+                      );
+                    })
                   ) : (
                     <SelectItem value="no-customers" disabled>No customers available</SelectItem>
                   )}
@@ -81,14 +98,18 @@ const WorkOrderLocationFields = ({
               <FormLabel>Location</FormLabel>
               <Select onValueChange={field.onChange} value={field.value || ""}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   {locations && locations.length > 0 ? (
                     locations.map((location) => (
-                      <SelectItem key={location.location_id} value={location.location_id}>
+                      <SelectItem 
+                        key={location.location_id} 
+                        value={location.location_id}
+                        className="cursor-pointer hover:bg-gray-100"
+                      >
                         {location.location_name}
                       </SelectItem>
                     ))
@@ -171,14 +192,18 @@ const WorkOrderLocationFields = ({
             <FormLabel>Assigned To</FormLabel>
             <Select onValueChange={field.onChange} value={field.value || ""}>
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
+              <SelectContent className="bg-white z-50">
                 {employees && employees.length > 0 ? (
                   employees.map((employee) => (
-                    <SelectItem key={employee.employee_id} value={employee.employee_id}>
+                    <SelectItem 
+                      key={employee.employee_id} 
+                      value={employee.employee_id}
+                      className="cursor-pointer hover:bg-gray-100"
+                    >
                       {`${employee.first_name} ${employee.last_name}`}
                     </SelectItem>
                   ))

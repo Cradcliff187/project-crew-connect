@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
@@ -45,36 +46,64 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
   const fetchData = async () => {
     try {
       console.log('Fetching customers data...');
-      // Remove the status filter completely to get all customers
+      
+      // Fetch all customers without any filters
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('customerid, customername');
       
       if (customersError) {
         console.error('Error fetching customers:', customersError);
+        toast({
+          title: 'Error fetching customers',
+          description: customersError.message,
+          variant: 'destructive',
+        });
       }
       
-      console.log('Customers data received:', customersData);
+      console.log('Raw customers data received:', customersData);
       
-      const { data: locationsData } = await supabase
+      const { data: locationsData, error: locationsError } = await supabase
         .from('site_locations')
         .select('location_id, location_name')
         .eq('is_active', true);
       
-      const { data: employeesData } = await supabase
+      if (locationsError) {
+        console.error('Error fetching locations:', locationsError);
+      }
+      
+      const { data: employeesData, error: employeesError } = await supabase
         .from('employees')
         .select('employee_id, first_name, last_name')
         .eq('status', 'ACTIVE');
       
+      if (employeesError) {
+        console.error('Error fetching employees:', employeesError);
+      }
+      
+      // Ensure we have valid data before setting state
+      const customers = customersData || [];
+      console.log(`Setting ${customers.length} customers in form data`);
+      
       setFormData({
-        customers: customersData || [],
+        customers: customers,
         locations: locationsData || [],
         employees: employeesData || []
       });
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast({
+        title: 'Error fetching form data',
+        description: 'Failed to load necessary data. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
+  
+  // Automatically fetch data when the component mounts
+  useEffect(() => {
+    fetchData();
+  }, []);
   
   const onSubmit = async (values: WorkOrderFormValues) => {
     setIsSubmitting(true);

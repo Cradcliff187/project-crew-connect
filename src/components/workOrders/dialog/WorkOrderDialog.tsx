@@ -1,4 +1,5 @@
 
+import { useEffect } from 'react';
 import { SaveIcon, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -28,13 +29,16 @@ const WorkOrderDialog = ({
     onSubmit 
   } = useWorkOrderForm({ onOpenChange, onWorkOrderAdded });
 
+  // Fetch data when dialog opens
+  useEffect(() => {
+    if (open) {
+      console.log('Dialog opened, fetching data...');
+      fetchData();
+    }
+  }, [open]);
+
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      onOpenChange(open);
-      if (open) {
-        fetchData();
-      }
-    }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Create New Work Order</DialogTitle>
