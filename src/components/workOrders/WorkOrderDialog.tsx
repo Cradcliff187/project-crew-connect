@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Switch } from '@/components/ui/switch';
 
 const workOrderSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -38,6 +39,11 @@ const workOrderSchema = z.object({
   scheduled_date: z.date().optional(),
   customer_id: z.string().optional(),
   location_id: z.string().optional(),
+  use_custom_address: z.boolean().default(false),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
   assigned_to: z.string().optional(),
 });
 
@@ -67,8 +73,15 @@ const WorkOrderDialog = ({
       priority: 'MEDIUM',
       po_number: '',
       time_estimate: 0,
+      use_custom_address: false,
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
     },
   });
+
+  const useCustomAddress = form.watch('use_custom_address');
 
   const fetchData = async () => {
     try {
@@ -107,6 +120,35 @@ const WorkOrderDialog = ({
     setIsSubmitting(true);
     
     try {
+      // First handle creating a new location if custom address is used
+      let locationId = values.location_id;
+
+      if (values.use_custom_address && values.address) {
+        // Insert a new location and get the ID
+        const { data: newLocation, error: locationError } = await supabase
+          .from('site_locations')
+          .insert({
+            location_name: `${values.address}, ${values.city || ''} ${values.state || ''} ${values.zip || ''}`.trim(),
+            address: values.address,
+            city: values.city,
+            state: values.state,
+            zip: values.zip,
+            customer_id: values.customer_id || null,
+            is_active: true
+          })
+          .select('location_id')
+          .single();
+        
+        if (locationError) {
+          throw locationError;
+        }
+        
+        if (newLocation) {
+          locationId = newLocation.location_id;
+        }
+      }
+
+      // Now create the work order with either the selected or newly created location
       const { error } = await supabase
         .from('maintenance_work_orders')
         .insert({
@@ -117,7 +159,7 @@ const WorkOrderDialog = ({
           time_estimate: values.time_estimate,
           scheduled_date: values.scheduled_date ? values.scheduled_date.toISOString() : null,
           customer_id: values.customer_id || null,
-          location_id: values.location_id || null,
+          location_id: locationId || null,
           assigned_to: values.assigned_to || null,
           status: 'NEW',
         });
@@ -279,7 +321,7 @@ const WorkOrderDialog = ({
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                           <Calendar
                             mode="single"
                             selected={field.value || undefined}
@@ -324,6 +366,24 @@ const WorkOrderDialog = ({
                 
                 <FormField
                   control={form.control}
+                  name="use_custom_address"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between space-y-0 pt-7">
+                      <FormLabel>Create New Location</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {!useCustomAddress ? (
+                <FormField
+                  control={form.control}
                   name="location_id"
                   render={({ field }) => (
                     <FormItem>
@@ -346,7 +406,67 @@ const WorkOrderDialog = ({
                     </FormItem>
                   )}
                 />
-              </div>
+              ) : (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter address" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter city" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>State</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter state" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="zip"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ZIP</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter ZIP code" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              )}
               
               <FormField
                 control={form.control}
