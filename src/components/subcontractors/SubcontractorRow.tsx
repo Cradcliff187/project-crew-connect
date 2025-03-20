@@ -2,7 +2,7 @@
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, Eye } from 'lucide-react';
-import { Subcontractor } from './utils/subcontractorUtils';
+import { Subcontractor } from './utils/types';
 import { useNavigate } from 'react-router-dom';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import SubcontractorInfo from './row/SubcontractorInfo';

@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
 import SubcontractorRow from './SubcontractorRow';
 import SubcontractorEmptyState from './SubcontractorEmptyState';
@@ -74,19 +73,28 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
     window.location.reload(); // Simple reload to refresh data
   };
   
-  // Show loading state if any data is still loading
-  if (loading || loadingSpecialties) {
-    return <SubcontractorLoadingState />;
-  }
-  
   // Show error state if there's an error
   if (error || specialtiesError) {
-    return <SubcontractorErrorState error={error || specialtiesError || 'An error occurred'} />;
-  }
-  
-  // Show empty state if no subcontractors
-  if (!filteredSubcontractors || filteredSubcontractors.length === 0) {
-    return <SubcontractorEmptyState />;
+    return (
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead>Name</TableHead>
+              <TableHead>Specialties</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Added</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <SubcontractorErrorState error={error || specialtiesError || 'An error occurred'} />
+          </TableBody>
+        </Table>
+      </div>
+    );
   }
   
   return (
@@ -104,18 +112,32 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {filteredSubcontractors.map((subcontractor) => (
-              <SubcontractorRow
-                key={subcontractor.subid}
-                subcontractor={subcontractor}
-                specialties={specialtyMap}
-                onEdit={handleEditClick}
-                onDelete={handleDeleteClick}
-                onView={handleViewClick}
-              />
-            ))}
-          </TableBody>
+          
+          {/* Loading state */}
+          {(loading || loadingSpecialties) && <SubcontractorLoadingState />}
+          
+          {/* Data loaded but empty */}
+          {!loading && !loadingSpecialties && (!filteredSubcontractors || filteredSubcontractors.length === 0) && (
+            <TableBody>
+              <SubcontractorEmptyState />
+            </TableBody>
+          )}
+          
+          {/* Data loaded with results */}
+          {!loading && !loadingSpecialties && filteredSubcontractors && filteredSubcontractors.length > 0 && (
+            <TableBody>
+              {filteredSubcontractors.map((subcontractor) => (
+                <SubcontractorRow
+                  key={subcontractor.subid}
+                  subcontractor={subcontractor}
+                  specialties={specialtyMap}
+                  onEdit={handleEditClick}
+                  onDelete={handleDeleteClick}
+                  onView={handleViewClick}
+                />
+              ))}
+            </TableBody>
+          )}
         </Table>
       </div>
       
