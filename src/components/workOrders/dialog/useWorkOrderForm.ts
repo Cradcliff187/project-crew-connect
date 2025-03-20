@@ -49,7 +49,26 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
       console.log('Fetching form data...');
       setDataLoaded(false);
       
-      // Fetch customers data with debug logging
+      // Debugging the query itself
+      console.log('Checking customers table schema...');
+      const { data: tablesData, error: tablesError } = await supabase
+        .from('customers')
+        .select('*')
+        .limit(1);
+      
+      if (tablesError) {
+        console.error('Error checking customers table:', tablesError);
+      } else {
+        console.log('Customers table sample:', tablesData);
+        if (tablesData && tablesData.length > 0) {
+          // Log the structure of a customer record to understand available fields
+          console.log('Customer record structure:', Object.keys(tablesData[0]));
+        } else {
+          console.log('No customer records found in database');
+        }
+      }
+      
+      // Fetch customers with explicit field selection
       console.log('Fetching customers from Supabase...');
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
@@ -65,13 +84,12 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
         });
       }
 
-      // Debug log the raw response
       console.log('Raw customers response:', customersData);
       
-      // Ensure we have arrays to work with
-      const customers = Array.isArray(customersData) ? customersData : [];
+      // Create customers array with proper fallback
+      let customers = Array.isArray(customersData) ? customersData : [];
       
-      // If empty, let's insert a test customer for debugging
+      // Add test customer for development if no real customers found
       if (customers.length === 0) {
         console.log('No customers found, creating a test customer in the form data');
         customers.push({
