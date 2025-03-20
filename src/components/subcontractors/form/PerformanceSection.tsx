@@ -10,13 +10,16 @@ import {
 } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormSectionProps } from '../types/formTypes';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const PerformanceSection: React.FC<FormSectionProps> = ({ control }) => {
+  const isMobile = useIsMobile();
+  
   return (
     <div className="pt-4 border-t">
       <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Performance & Evaluation</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4`}>
         <FormField
           control={control}
           name="preferred"
