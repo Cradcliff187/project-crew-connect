@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderFormValues } from '../WorkOrderFormSchema';
+import { useLocationCreate } from './useLocationCreate';
 
 interface UseWorkOrderSubmitProps {
   onWorkOrderAdded: () => void;
@@ -16,40 +17,16 @@ export const useWorkOrderSubmit = ({
   resetForm 
 }: UseWorkOrderSubmitProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createLocationIfNeeded } = useLocationCreate();
 
   const onSubmit = async (values: WorkOrderFormValues) => {
     setIsSubmitting(true);
     
     try {
-      // First handle creating a new location if custom address is used
-      let locationId = values.location_id;
+      // Use our new hook to handle location creation
+      const locationId = await createLocationIfNeeded(values);
 
-      if (values.use_custom_address && values.address) {
-        // Insert a new location and get the ID
-        const { data: newLocation, error: locationError } = await supabase
-          .from('site_locations')
-          .insert({
-            location_name: `${values.address}, ${values.city || ''} ${values.state || ''} ${values.zip || ''}`.trim(),
-            address: values.address,
-            city: values.city,
-            state: values.state,
-            zip: values.zip,
-            customer_id: values.customer_id || null,
-            is_active: true
-          })
-          .select('location_id')
-          .single();
-        
-        if (locationError) {
-          throw locationError;
-        }
-        
-        if (newLocation) {
-          locationId = newLocation.location_id;
-        }
-      }
-
-      // Now create the work order with either the selected or newly created location
+      // Create the work order with either the selected or newly created location
       const { error } = await supabase
         .from('maintenance_work_orders')
         .insert({
