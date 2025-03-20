@@ -8,12 +8,7 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import { FormSectionProps } from '../types/formTypes';
 
 const PerformanceSection: React.FC<FormSectionProps> = ({ control }) => {

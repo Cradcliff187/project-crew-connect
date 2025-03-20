@@ -27,8 +27,7 @@ export const useSubcontractorCompliance = (subcontractorId: string | undefined) 
             insurance_policy_number,
             contract_on_file,
             contract_expiration,
-            tax_id,
-            last_performance_review
+            tax_id
           `)
           .eq('subid', subcontractorId)
           .maybeSingle();

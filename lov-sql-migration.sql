@@ -22,3 +22,12 @@ SELECT CASE
   )::text
   ELSE 'Table already in realtime publication'::text
 END;
+
+-- Drop performance-related columns if they exist
+ALTER TABLE public.subcontractors 
+DROP COLUMN IF EXISTS rating,
+DROP COLUMN IF EXISTS on_time_percentage,
+DROP COLUMN IF EXISTS quality_score,
+DROP COLUMN IF EXISTS safety_incidents,
+DROP COLUMN IF EXISTS response_time_hours,
+DROP COLUMN IF EXISTS last_performance_review;
