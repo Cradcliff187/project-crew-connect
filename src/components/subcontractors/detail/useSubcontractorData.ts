@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Subcontractor } from '../utils/subcontractorUtils';
@@ -46,39 +45,26 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
       
       console.log('Subcontractor data received:', data);
       
-      // Merge data from normalized tables into a single object for backwards compatibility
-      const mergedData = {
+      // Process the data and ensure numeric values are properly typed
+      const processedData = {
         ...data,
-        // Add performance data if available
-        ...(performance && {
-          rating: performance.rating,
-          on_time_percentage: performance.on_time_percentage,
-          quality_score: performance.quality_score,
-          safety_incidents: performance.safety_incidents,
-          response_time_hours: performance.response_time_hours
-        }),
-        // Add compliance data if available
-        ...(compliance && {
-          insurance_expiration: compliance.insurance_expiration,
-          insurance_provider: compliance.insurance_provider,
-          insurance_policy_number: compliance.insurance_policy_number,
-          contract_on_file: compliance.contract_on_file,
-          contract_expiration: compliance.contract_expiration,
-          tax_id: compliance.tax_id,
-          last_performance_review: compliance.last_performance_review
-        }),
-        // Use specialtyIds from the hook if available
-        specialty_ids: specialtyIds.length > 0 ? specialtyIds : (data.specialty_ids || [])
+        rating: typeof data.rating === 'number' ? data.rating : null,
+        hourly_rate: typeof data.hourly_rate === 'number' ? data.hourly_rate : null,
+        on_time_percentage: typeof data.on_time_percentage === 'number' ? data.on_time_percentage : null,
+        quality_score: typeof data.quality_score === 'number' ? data.quality_score : null,
+        safety_incidents: typeof data.safety_incidents === 'number' ? data.safety_incidents : null,
+        response_time_hours: typeof data.response_time_hours === 'number' ? data.response_time_hours : null,
+        specialty_ids: Array.isArray(data.specialty_ids) ? data.specialty_ids : []
       };
       
-      setSubcontractor(mergedData as Subcontractor);
+      setSubcontractor(processedData as Subcontractor);
       
       // Fetch specialties if the subcontractor has any
-      if (mergedData.specialty_ids && mergedData.specialty_ids.length > 0) {
+      if (processedData.specialty_ids && processedData.specialty_ids.length > 0) {
         const { data: specialtiesData, error: specialtiesError } = await supabase
           .from('subcontractor_specialties')
           .select('*')
-          .in('id', mergedData.specialty_ids);
+          .in('id', processedData.specialty_ids);
         
         if (specialtiesError) throw specialtiesError;
         
