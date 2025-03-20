@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,11 +45,10 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
   const fetchData = async () => {
     try {
       console.log('Fetching customers data...');
-      // Changed 'ACTIVE' to 'active' to match database values
+      // Remove the status filter completely to get all customers
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
-        .select('customerid, customername')
-        .eq('status', 'active');
+        .select('customerid, customername');
       
       if (customersError) {
         console.error('Error fetching customers:', customersError);
