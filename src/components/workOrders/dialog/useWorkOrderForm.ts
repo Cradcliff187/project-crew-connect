@@ -46,10 +46,11 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
 
   const fetchData = async () => {
     try {
-      console.log('Fetching customers data...');
+      console.log('Fetching form data...');
       setDataLoaded(false);
       
-      // Fetch customers data with explicit fields selection
+      // Fetch customers data with debug logging
+      console.log('Fetching customers from Supabase...');
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('customerid, customername')
@@ -63,10 +64,21 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
           variant: 'destructive',
         });
       }
+
+      // Debug log the raw response
+      console.log('Raw customers response:', customersData);
       
-      // Make sure we have an array to work with
+      // Ensure we have arrays to work with
       const customers = Array.isArray(customersData) ? customersData : [];
-      console.log(`Fetched ${customers.length} customers:`, customers);
+      
+      // If empty, let's insert a test customer for debugging
+      if (customers.length === 0) {
+        console.log('No customers found, creating a test customer in the form data');
+        customers.push({
+          customerid: 'test-customer-id',
+          customername: 'Test Customer (Local Only)'
+        });
+      }
       
       // Fetch locations with explicit fields selection
       const { data: locationsData, error: locationsError } = await supabase
@@ -90,13 +102,14 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
         console.error('Error fetching employees:', employeesError);
       }
       
-      setFormData({
+      const updatedFormData = {
         customers: customers,
         locations: Array.isArray(locationsData) ? locationsData : [],
         employees: Array.isArray(employeesData) ? employeesData : []
-      });
+      };
       
-      console.log(`Setting ${customers.length} customers in form data:`, customers);
+      console.log('Setting form data:', updatedFormData);
+      setFormData(updatedFormData);
       setDataLoaded(true);
     } catch (error) {
       console.error('Error fetching data:', error);

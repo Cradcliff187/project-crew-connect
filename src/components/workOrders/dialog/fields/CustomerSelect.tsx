@@ -14,11 +14,12 @@ const CustomerSelect = ({ form, customers }: CustomerSelectProps) => {
   const [customerData, setCustomerData] = useState<Array<{ customerid: string; customername: string }>>([]);
   
   useEffect(() => {
-    if (customers && customers.length > 0) {
-      console.log('Setting customer data in component:', customers);
+    console.log('CustomerSelect received customers:', customers);
+    if (customers && Array.isArray(customers)) {
       setCustomerData(customers);
     } else {
-      console.log('No customers provided to component or empty array');
+      console.warn('Invalid customers data provided:', customers);
+      setCustomerData([]);
     }
   }, [customers]);
   
@@ -47,18 +48,15 @@ const CustomerSelect = ({ form, customers }: CustomerSelectProps) => {
               sideOffset={4}
             >
               {customerData && customerData.length > 0 ? (
-                customerData.map((customer) => {
-                  console.log('Rendering customer option:', customer);
-                  return (
-                    <SelectItem 
-                      key={customer.customerid} 
-                      value={customer.customerid}
-                      className="cursor-pointer hover:bg-gray-100 py-2 px-4"
-                    >
-                      {customer.customername || 'Unnamed Customer'}
-                    </SelectItem>
-                  );
-                })
+                customerData.map((customer) => (
+                  <SelectItem 
+                    key={customer.customerid} 
+                    value={customer.customerid}
+                    className="cursor-pointer hover:bg-gray-100 py-2 px-4"
+                  >
+                    {customer.customername || 'Unnamed Customer'}
+                  </SelectItem>
+                ))
               ) : (
                 <SelectItem value="no-customers" disabled className="text-gray-500">
                   No customers available
