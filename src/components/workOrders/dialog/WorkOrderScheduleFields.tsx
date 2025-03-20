@@ -1,13 +1,14 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { UseFormReturn } from 'react-hook-form';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import { WorkOrderFormValues } from './WorkOrderFormSchema';
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface WorkOrderScheduleFieldsProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -21,16 +22,14 @@ const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
         name="time_estimate"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Estimated Hours</FormLabel>
+            <FormLabel>Est. Hours</FormLabel>
             <FormControl>
               <Input 
                 type="number" 
-                placeholder="0" 
-                min="0" 
-                step="0.5" 
+                placeholder="Enter estimated hours" 
                 {...field}
-                value={field.value === undefined ? '' : field.value}
-                onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                value={field.value || ''}
+                onChange={(e) => field.onChange(Number(e.target.value) || 0)}
               />
             </FormControl>
             <FormMessage />
@@ -43,13 +42,16 @@ const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
         name="scheduled_date"
         render={({ field }) => (
           <FormItem className="flex flex-col">
-            <FormLabel>Scheduled Date</FormLabel>
+            <FormLabel>Schedule Date</FormLabel>
             <Popover>
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
                     variant={"outline"}
-                    className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                    className={cn(
+                      "w-full pl-3 text-left font-normal",
+                      !field.value && "text-muted-foreground"
+                    )}
                   >
                     {field.value ? (
                       format(field.value, "PPP")
@@ -60,14 +62,12 @@ const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={field.value || undefined}
+                  selected={field.value}
                   onSelect={field.onChange}
-                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   initialFocus
-                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
