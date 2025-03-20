@@ -25,35 +25,18 @@ const WorkOrderDialog = ({
     formData, 
     useCustomAddress, 
     dataLoaded,
-    isLoading
+    isLoading,
+    onSubmit
   } = useWorkOrderForm({ 
     onOpenChange, 
     onWorkOrderAdded,
     isOpen: open // Pass the open state to control data fetching
   });
 
-  const handleSubmit = form.handleSubmit((data) => {
-    console.log('Form submitted with data:', data);
-    // This prevents immediately closing the dialog
-    // to avoid flickering animation issues
-    setTimeout(() => {
-      form.handleSubmit(async (values) => {
-        await onSubmit(values);
-      })();
-    }, 10);
+  const handleSubmit = form.handleSubmit(async (values) => {
+    console.log('Form submitted with data:', values);
+    await onSubmit(values);
   });
-
-  // Function to handle submission
-  const onSubmit = async (values: any) => {
-    console.log('Submitting form with values:', values);
-    try {
-      await form.handleSubmit(async (data) => {
-        console.log('Final submission with data:', data);
-      })();
-    } catch (error) {
-      console.error('Error in form submission:', error);
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
