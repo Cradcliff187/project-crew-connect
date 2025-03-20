@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,20 +18,14 @@ export const useWorkOrderData = (isOpen: boolean = true) => {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fetchedRef = useRef(false);
 
   const fetchData = async () => {
-    // Don't fetch if we've already fetched or if dialog isn't open
-    if (fetchedRef.current || !isOpen) {
-      return;
-    }
+    if (!isOpen) return;
     
     try {
-      console.log('Fetching form data...');
       setIsLoading(true);
       setDataLoaded(false);
       setError(null);
-      fetchedRef.current = true;
 
       // Fetch customers data
       const { data: customersData, error: customersError } = await supabase
@@ -40,18 +34,14 @@ export const useWorkOrderData = (isOpen: boolean = true) => {
         .order('customername');
       
       if (customersError) {
-        console.error('Error fetching customers:', customersError);
         toast({
           title: 'Error fetching customers',
           description: customersError.message,
           variant: 'destructive',
         });
         setError(customersError.message);
-        fetchedRef.current = false;
         return; 
       }
-
-      console.log('Customers data fetched successfully:', customersData);
       
       // Create customers array with proper fallback
       const customers = Array.isArray(customersData) ? customersData : [];
@@ -64,7 +54,6 @@ export const useWorkOrderData = (isOpen: boolean = true) => {
         .order('location_name');
       
       if (locationsError) {
-        console.error('Error fetching locations:', locationsError);
         toast({
           title: 'Error fetching locations',
           description: locationsError.message,
@@ -81,7 +70,6 @@ export const useWorkOrderData = (isOpen: boolean = true) => {
         .order('last_name');
       
       if (employeesError) {
-        console.error('Error fetching employees:', employeesError);
         toast({
           title: 'Error fetching employees',
           description: employeesError.message,
@@ -96,18 +84,15 @@ export const useWorkOrderData = (isOpen: boolean = true) => {
         employees: Array.isArray(employeesData) ? employeesData : []
       };
       
-      console.log('Setting form data:', updatedFormData);
       setFormData(updatedFormData);
       setDataLoaded(true);
     } catch (error) {
-      console.error('Error fetching data:', error);
       setError('Failed to load necessary data. Please try again.');
       toast({
         title: 'Error fetching form data',
         description: 'Failed to load necessary data. Please try again.',
         variant: 'destructive',
       });
-      fetchedRef.current = false;
     } finally {
       setIsLoading(false);
     }
@@ -117,17 +102,7 @@ export const useWorkOrderData = (isOpen: boolean = true) => {
   useEffect(() => {
     if (isOpen) {
       fetchData();
-    } else {
-      // Reset the fetch flag when dialog closes
-      fetchedRef.current = false;
     }
-    
-    // Cleanup function to reset state when unmounting
-    return () => {
-      if (!isOpen) {
-        fetchedRef.current = false;
-      }
-    };
   }, [isOpen]);
 
   return {

@@ -10,6 +10,8 @@ interface LocationSelectProps {
 }
 
 const LocationSelect = ({ form, locations }: LocationSelectProps) => {
+  const hasLocations = locations && locations.length > 0;
+  
   return (
     <FormField
       control={form.control}
@@ -18,11 +20,9 @@ const LocationSelect = ({ form, locations }: LocationSelectProps) => {
         <FormItem>
           <FormLabel>Location</FormLabel>
           <Select 
-            onValueChange={(value) => {
-              console.log('Selected location value:', value);
-              field.onChange(value);
-            }} 
+            onValueChange={field.onChange}
             value={field.value || ""}
+            disabled={!hasLocations}
           >
             <FormControl>
               <SelectTrigger className="bg-white">
@@ -34,7 +34,7 @@ const LocationSelect = ({ form, locations }: LocationSelectProps) => {
               position="popper"
               sideOffset={4}
             >
-              {locations && locations.length > 0 ? (
+              {hasLocations ? (
                 locations.map((location) => (
                   <SelectItem 
                     key={location.location_id} 

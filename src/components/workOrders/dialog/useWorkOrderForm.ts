@@ -4,12 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import workOrderSchema, { WorkOrderFormValues } from './WorkOrderFormSchema';
 import { useWorkOrderData } from './hooks/useWorkOrderData';
 import { useWorkOrderSubmit } from './hooks/useWorkOrderSubmit';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 interface UseWorkOrderFormProps {
   onOpenChange: (open: boolean) => void;
   onWorkOrderAdded: () => void;
-  isOpen: boolean; // Add isOpen prop to control data fetching
+  isOpen: boolean;
 }
 
 const DEFAULT_VALUES: WorkOrderFormValues = {
@@ -26,8 +26,6 @@ const DEFAULT_VALUES: WorkOrderFormValues = {
 };
 
 const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded, isOpen }: UseWorkOrderFormProps) => {
-  const initialized = useRef(false);
-  
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderSchema),
     defaultValues: DEFAULT_VALUES,
@@ -38,8 +36,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded, isOpen }: UseWorkOrd
     formData,
     dataLoaded,
     isLoading,
-    fetchData
-  } = useWorkOrderData(isOpen); // Pass isOpen to control fetching
+  } = useWorkOrderData(isOpen);
 
   const { isSubmitting, onSubmit } = useWorkOrderSubmit({
     onWorkOrderAdded,
@@ -49,21 +46,10 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded, isOpen }: UseWorkOrd
 
   const useCustomAddress = form.watch('use_custom_address');
   
-  // Only fetch data when dialog is opened and not already initialized
+  // Reset form when dialog opens
   useEffect(() => {
-    if (isOpen && !initialized.current) {
-      console.log('Dialog opened, initializing form...');
-      
-      // Reset the form once when dialog opens
+    if (isOpen) {
       form.reset(DEFAULT_VALUES);
-      
-      // Mark as initialized to prevent multiple resets
-      initialized.current = true;
-    }
-    
-    // Reset the initialization flag when dialog closes
-    if (!isOpen) {
-      initialized.current = false;
     }
   }, [isOpen, form]);
 
@@ -74,7 +60,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded, isOpen }: UseWorkOrd
     useCustomAddress,
     dataLoaded,
     isLoading,
-    onSubmit  // Now we're returning the onSubmit function
+    onSubmit
   };
 };
 

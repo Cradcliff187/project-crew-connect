@@ -23,7 +23,9 @@ const WorkOrderLocationFields = ({
   employees 
 }: WorkOrderLocationFieldsProps) => {
   return (
-    <>
+    <div className="space-y-4">
+      <h3 className="text-md font-semibold text-gray-700">Location Information</h3>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CustomerSelect form={form} customers={customers} />
         <CreateLocationToggle form={form} />
@@ -35,8 +37,9 @@ const WorkOrderLocationFields = ({
         <CustomLocationFields form={form} />
       )}
       
+      <h3 className="text-md font-semibold text-gray-700 mt-6">Assignment</h3>
       <AssigneeSelect form={form} employees={employees} />
-    </>
+    </div>
   );
 };
 

@@ -12,21 +12,21 @@ interface WorkOrderBasicInfoFieldsProps {
 
 const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
   return (
-    <>
+    <div className="space-y-4">
+      <h3 className="text-md font-semibold text-gray-700">Basic Information</h3>
+      
       <FormField
         control={form.control}
         name="title"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Title *</FormLabel>
+            <FormLabel className="font-medium">
+              Title <span className="text-red-500">*</span>
+            </FormLabel>
             <FormControl>
               <Input 
                 {...field}
                 placeholder="Enter work order title"
-                onChange={(e) => {
-                  console.log('Title changed:', e.target.value);
-                  field.onChange(e);
-                }}
               />
             </FormControl>
             <FormMessage />
@@ -39,16 +39,12 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description</FormLabel>
+            <FormLabel className="font-medium">Description</FormLabel>
             <FormControl>
               <Textarea 
                 {...field}
                 placeholder="Enter work order description" 
                 rows={3}
-                onChange={(e) => {
-                  console.log('Description changed:', e.target.value);
-                  field.onChange(e);
-                }}
               />
             </FormControl>
             <FormMessage />
@@ -62,12 +58,9 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
           name="priority"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Priority</FormLabel>
+              <FormLabel className="font-medium">Priority</FormLabel>
               <Select 
-                onValueChange={(value) => {
-                  console.log('Priority changed:', value);
-                  field.onChange(value);
-                }}
+                onValueChange={field.onChange}
                 defaultValue={field.value || 'MEDIUM'}
                 value={field.value}
               >
@@ -93,15 +86,11 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
           name="po_number"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>PO Number</FormLabel>
+              <FormLabel className="font-medium">PO Number</FormLabel>
               <FormControl>
                 <Input 
                   {...field}
                   placeholder="Enter PO number"
-                  onChange={(e) => {
-                    console.log('PO Number changed:', e.target.value);
-                    field.onChange(e);
-                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -109,7 +98,7 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
           )}
         />
       </div>
-    </>
+    </div>
   );
 };
 

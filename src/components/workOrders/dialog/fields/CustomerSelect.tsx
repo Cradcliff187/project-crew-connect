@@ -1,5 +1,4 @@
 
-import { useEffect, useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
@@ -11,17 +10,7 @@ interface CustomerSelectProps {
 }
 
 const CustomerSelect = ({ form, customers }: CustomerSelectProps) => {
-  const [customerData, setCustomerData] = useState<Array<{ customerid: string; customername: string }>>([]);
-  
-  useEffect(() => {
-    console.log('CustomerSelect received customers:', customers);
-    if (customers && Array.isArray(customers)) {
-      setCustomerData(customers);
-    } else {
-      console.warn('Invalid customers data provided:', customers);
-      setCustomerData([]);
-    }
-  }, [customers]);
+  const hasCustomers = customers && customers.length > 0;
   
   return (
     <FormField
@@ -31,11 +20,9 @@ const CustomerSelect = ({ form, customers }: CustomerSelectProps) => {
         <FormItem>
           <FormLabel>Customer</FormLabel>
           <Select 
-            onValueChange={(value) => {
-              console.log('Selected customer value:', value);
-              field.onChange(value);
-            }}
+            onValueChange={field.onChange}
             value={field.value || ""}
+            disabled={!hasCustomers}
           >
             <FormControl>
               <SelectTrigger className="bg-white">
@@ -47,8 +34,8 @@ const CustomerSelect = ({ form, customers }: CustomerSelectProps) => {
               position="popper"
               sideOffset={4}
             >
-              {customerData && customerData.length > 0 ? (
-                customerData.map((customer) => (
+              {hasCustomers ? (
+                customers.map((customer) => (
                   <SelectItem 
                     key={customer.customerid} 
                     value={customer.customerid}
