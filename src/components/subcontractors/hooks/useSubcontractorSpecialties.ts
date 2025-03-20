@@ -18,9 +18,9 @@ export const useSubcontractorSpecialties = (subcontractorId: string | undefined)
         setLoading(true);
         console.log('Fetching specialties for subcontractor:', subcontractorId);
         
-        // Use the consolidated table
+        // Use the consolidated subcontractors table
         const { data, error } = await supabase
-          .from('subcontractors_new')
+          .from('subcontractors')
           .select('specialty_ids')
           .eq('subid', subcontractorId)
           .maybeSingle();

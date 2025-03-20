@@ -18,9 +18,9 @@ export const useSubcontractorCompliance = (subcontractorId: string | undefined) 
         setLoading(true);
         console.log('Fetching compliance data for subcontractor:', subcontractorId);
         
-        // Use the consolidated table
+        // Use the consolidated subcontractors table
         const { data, error } = await supabase
-          .from('subcontractors_new')
+          .from('subcontractors')
           .select(`
             insurance_expiration, 
             insurance_provider,

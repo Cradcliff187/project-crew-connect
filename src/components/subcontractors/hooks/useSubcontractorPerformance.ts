@@ -18,9 +18,9 @@ export const useSubcontractorPerformance = (subcontractorId: string | undefined)
         setLoading(true);
         console.log('Fetching performance data for subcontractor:', subcontractorId);
         
-        // Use the consolidated table
+        // Use the consolidated subcontractors table
         const { data, error } = await supabase
-          .from('subcontractors_new')
+          .from('subcontractors')
           .select(`
             rating, 
             on_time_percentage, 
