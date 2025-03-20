@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -334,5 +335,69 @@ const WorkOrderDialog = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {locations
+                          {locations.map((location) => (
+                            <SelectItem key={location.location_id} value={location.location_id}>
+                              {location.location_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="assigned_to"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned To</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select employee" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {employees.map((employee) => (
+                          <SelectItem key={employee.employee_id} value={employee.employee_id}>
+                            {`${employee.first_name} ${employee.last_name}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter className="mt-6 sm:justify-between">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => onOpenChange(false)}
+                  className="sm:mb-0"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
+                >
+                  <SaveIcon className="h-4 w-4 mr-2" />
+                  {isSubmitting ? 'Saving...' : 'Save Work Order'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
+export default WorkOrderDialog;
