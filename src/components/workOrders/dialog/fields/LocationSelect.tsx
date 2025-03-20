@@ -17,7 +17,13 @@ const LocationSelect = ({ form, locations }: LocationSelectProps) => {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Location</FormLabel>
-          <Select onValueChange={field.onChange} value={field.value || ""}>
+          <Select 
+            onValueChange={(value) => {
+              console.log('Selected location value:', value);
+              field.onChange(value);
+            }} 
+            value={field.value || ""}
+          >
             <FormControl>
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Select location" />
