@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Subcontractor } from '../utils/subcontractorUtils';
 import { toast } from '@/hooks/use-toast';
+import useSubcontractorPerformance from '../hooks/useSubcontractorPerformance';
+import useSubcontractorCompliance from '../hooks/useSubcontractorCompliance';
+import useSubcontractorSpecialties from '../hooks/useSubcontractorSpecialties';
 
 export const useSubcontractorData = (subcontractorId: string | undefined) => {
   const [subcontractor, setSubcontractor] = useState<Subcontractor | null>(null);
@@ -11,6 +14,11 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
   const [projects, setProjects] = useState<any[]>([]);
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [loadingAssociations, setLoadingAssociations] = useState(false);
+
+  // Use our custom hooks to get specialized data
+  const { performance, loading: loadingPerformance } = useSubcontractorPerformance(subcontractorId);
+  const { compliance, loading: loadingCompliance } = useSubcontractorCompliance(subcontractorId);
+  const { specialtyIds, loading: loadingSpecialtyIds } = useSubcontractorSpecialties(subcontractorId);
 
   const fetchSubcontractor = async () => {
     if (!subcontractorId) return;
@@ -37,14 +45,40 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
       }
       
       console.log('Subcontractor data received:', data);
-      setSubcontractor(data as Subcontractor);
+      
+      // Merge data from normalized tables into a single object for backwards compatibility
+      const mergedData = {
+        ...data,
+        // Add performance data if available
+        ...(performance && {
+          rating: performance.rating,
+          on_time_percentage: performance.on_time_percentage,
+          quality_score: performance.quality_score,
+          safety_incidents: performance.safety_incidents,
+          response_time_hours: performance.response_time_hours
+        }),
+        // Add compliance data if available
+        ...(compliance && {
+          insurance_expiration: compliance.insurance_expiration,
+          insurance_provider: compliance.insurance_provider,
+          insurance_policy_number: compliance.insurance_policy_number,
+          contract_on_file: compliance.contract_on_file,
+          contract_expiration: compliance.contract_expiration,
+          tax_id: compliance.tax_id,
+          last_performance_review: compliance.last_performance_review
+        }),
+        // Use specialtyIds from the hook if available
+        specialty_ids: specialtyIds.length > 0 ? specialtyIds : (data.specialty_ids || [])
+      };
+      
+      setSubcontractor(mergedData as Subcontractor);
       
       // Fetch specialties if the subcontractor has any
-      if (data?.specialty_ids && data.specialty_ids.length > 0) {
+      if (mergedData.specialty_ids && mergedData.specialty_ids.length > 0) {
         const { data: specialtiesData, error: specialtiesError } = await supabase
           .from('subcontractor_specialties')
           .select('*')
-          .in('id', data.specialty_ids);
+          .in('id', mergedData.specialty_ids);
         
         if (specialtiesError) throw specialtiesError;
         
@@ -76,27 +110,52 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
 
     setLoadingAssociations(true);
     try {
-      // Fetch associated projects - safely fetch by string ID
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('subinvoices')
-        .select('projectid, projectname')
-        .eq('subid', subId)
+      // First try the new invoices table
+      const { data: invoicesData, error: invoicesError } = await supabase
+        .from('subcontractor_invoices_new')
+        .select('project_id')
+        .eq('subcontractor_id', subId)
         .order('created_at', { ascending: false });
-      
-      if (projectsError) {
-        console.error('Error fetching project data:', projectsError);
-      } else {
-        // Get unique projects by projectid
-        const uniqueProjects = projectsData?.reduce((acc: any[], current) => {
-          const x = acc.find(item => item.projectid === current.projectid);
-          if (!x) {
-            return acc.concat([current]);
-          } else {
-            return acc;
-          }
-        }, []);
         
-        setProjects(uniqueProjects || []);
+      if (invoicesError) {
+        console.error('Error fetching invoice data from new table:', invoicesError);
+        
+        // Fall back to the old tables
+        const { data: legacyInvoicesData, error: legacyInvoicesError } = await supabase
+          .from('subinvoices')
+          .select('projectid, projectname')
+          .eq('subid', subId)
+          .order('created_at', { ascending: false });
+          
+        if (legacyInvoicesError) {
+          console.error('Error fetching legacy invoice data:', legacyInvoicesError);
+        } else {
+          // Get unique projects by projectid
+          const uniqueProjects = legacyInvoicesData?.reduce((acc: any[], current) => {
+            const x = acc.find(item => item.projectid === current.projectid);
+            if (!x) {
+              return acc.concat([current]);
+            } else {
+              return acc;
+            }
+          }, []);
+          
+          setProjects(uniqueProjects || []);
+        }
+      } else if (invoicesData && invoicesData.length > 0) {
+        // Get project details for each unique project_id
+        const uniqueProjectIds = [...new Set(invoicesData.map(item => item.project_id))].filter(Boolean);
+        
+        if (uniqueProjectIds.length > 0) {
+          const { data: projectsData, error: projectsError } = await supabase
+            .from('projects')
+            .select('projectid, projectname')
+            .in('projectid', uniqueProjectIds);
+            
+          if (!projectsError) {
+            setProjects(projectsData || []);
+          }
+        }
       }
 
       // Safely try to fetch associated work orders
@@ -122,13 +181,21 @@ export const useSubcontractorData = (subcontractorId: string | undefined) => {
     }
   };
 
+  // Main effect to fetch data when subcontractor ID changes
+  useEffect(() => {
+    if (!loadingPerformance && !loadingCompliance && !loadingSpecialtyIds) {
+      fetchSubcontractor();
+    }
+  }, [subcontractorId, loadingPerformance, loadingCompliance, loadingSpecialtyIds]);
+
+  // Initial data fetch
   useEffect(() => {
     fetchSubcontractor();
   }, [subcontractorId]);
 
   return {
     subcontractor,
-    loading,
+    loading: loading || loadingPerformance || loadingCompliance || loadingSpecialtyIds,
     specialties,
     projects,
     workOrders,
