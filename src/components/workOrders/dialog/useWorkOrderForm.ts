@@ -49,10 +49,11 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
       console.log('Fetching customers data...');
       setDataLoaded(false);
       
-      // Fetch all customers without any filters
+      // Fetch customers data with explicit fields selection
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
-        .select('customerid, customername');
+        .select('customerid, customername')
+        .order('customername');
       
       if (customersError) {
         console.error('Error fetching customers:', customersError);
@@ -63,29 +64,31 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
         });
       }
       
-      console.log('Raw customers data received:', customersData);
+      // Make sure we have an array to work with
+      const customers = Array.isArray(customersData) ? customersData : [];
+      console.log(`Fetched ${customers.length} customers:`, customers);
       
+      // Fetch locations with explicit fields selection
       const { data: locationsData, error: locationsError } = await supabase
         .from('site_locations')
         .select('location_id, location_name')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('location_name');
       
       if (locationsError) {
         console.error('Error fetching locations:', locationsError);
       }
       
+      // Fetch employees with explicit fields selection
       const { data: employeesData, error: employeesError } = await supabase
         .from('employees')
         .select('employee_id, first_name, last_name')
-        .eq('status', 'ACTIVE');
+        .eq('status', 'ACTIVE')
+        .order('last_name');
       
       if (employeesError) {
         console.error('Error fetching employees:', employeesError);
       }
-      
-      // Ensure we have valid data before setting state
-      const customers = Array.isArray(customersData) ? customersData : [];
-      console.log(`Setting ${customers.length} customers in form data:`, customers);
       
       setFormData({
         customers: customers,
@@ -93,6 +96,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
         employees: Array.isArray(employeesData) ? employeesData : []
       });
       
+      console.log(`Setting ${customers.length} customers in form data:`, customers);
       setDataLoaded(true);
     } catch (error) {
       console.error('Error fetching data:', error);

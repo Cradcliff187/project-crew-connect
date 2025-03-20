@@ -40,10 +40,11 @@ const WorkOrderDialog = ({
 
   // Debug logging for customer data
   useEffect(() => {
-    if (formData.customers && formData.customers.length > 0) {
-      console.log('Customer data in dialog component:', formData.customers);
+    if (formData.customers) {
+      console.log('Customers available in dialog component:', formData.customers.length);
+      console.log('Customer data sample:', formData.customers.slice(0, 3));
     }
-  }, [formData.customers]);
+  }, [formData]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
