@@ -22,7 +22,11 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
             <FormControl>
               <Input 
                 placeholder="Enter work order title" 
-                {...field}
+                onChange={(e) => field.onChange(e.target.value)}
+                value={field.value || ''}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
               />
             </FormControl>
             <FormMessage />
@@ -40,8 +44,11 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
               <Textarea 
                 placeholder="Enter work order description" 
                 rows={3} 
-                {...field}
+                onChange={(e) => field.onChange(e.target.value)}
                 value={field.value || ''}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
               />
             </FormControl>
             <FormMessage />
@@ -81,7 +88,14 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
             <FormItem>
               <FormLabel>PO Number</FormLabel>
               <FormControl>
-                <Input placeholder="Enter PO number" {...field} value={field.value || ''} />
+                <Input 
+                  placeholder="Enter PO number" 
+                  onChange={(e) => field.onChange(e.target.value)}
+                  value={field.value || ''}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

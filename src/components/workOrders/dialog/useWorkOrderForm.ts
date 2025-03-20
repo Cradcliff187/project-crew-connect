@@ -43,11 +43,11 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
   });
 
   const useCustomAddress = form.watch('use_custom_address');
-
-  // Add a debug log to track form values
+  
+  // Log form values for debugging
   useEffect(() => {
-    const subscription = form.watch((value) => {
-      console.log('Form values updated:', value);
+    const subscription = form.watch((value, { name, type }) => {
+      console.log(`Field ${name} changed (${type}):`, value);
     });
     return () => subscription.unsubscribe();
   }, [form]);
