@@ -17,22 +17,25 @@ interface WorkOrderProgressCardProps {
 
 const WorkOrderProgressCard = ({ workOrder, onProgressUpdate }: WorkOrderProgressCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [progressValue, setProgressValue] = useState(workOrder.progress);
+  const [progressValue, setProgressValue] = useState(workOrder.progress || 0);
   const [loading, setLoading] = useState(false);
   
   const handleSaveProgress = async () => {
     setLoading(true);
     try {
+      // Ensure the progress value is between 0 and 100
+      const normalizedProgress = Math.min(Math.max(progressValue, 0), 100);
+      
       const { error } = await supabase
         .from('maintenance_work_orders')
-        .update({ progress: progressValue })
+        .update({ progress: normalizedProgress })
         .eq('work_order_id', workOrder.work_order_id);
       
       if (error) throw error;
       
       toast({
         title: 'Progress updated',
-        description: `Work order progress has been updated to ${progressValue}%.`,
+        description: `Work order progress has been updated to ${normalizedProgress}%.`,
       });
       
       onProgressUpdate();
@@ -50,31 +53,33 @@ const WorkOrderProgressCard = ({ workOrder, onProgressUpdate }: WorkOrderProgres
   };
   
   const handleCancelEdit = () => {
-    setProgressValue(workOrder.progress);
+    setProgressValue(workOrder.progress || 0);
     setIsEditing(false);
   };
   
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Progress</CardTitle>
-        {!isEditing ? (
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-            <Pencil className="h-4 w-4 mr-1" />
-            Update
-          </Button>
-        ) : (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={loading}>
-              <X className="h-4 w-4 mr-1" />
-              Cancel
+      <CardHeader className="pb-2">
+        <div className="flex flex-row items-center justify-between w-full">
+          <CardTitle>Progress</CardTitle>
+          {!isEditing ? (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Pencil className="h-4 w-4 mr-1" />
+              Update
             </Button>
-            <Button variant="default" size="sm" onClick={handleSaveProgress} disabled={loading} className="bg-[#0485ea] hover:bg-[#0375d1]">
-              <Check className="h-4 w-4 mr-1" />
-              Save
-            </Button>
-          </div>
-        )}
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={loading}>
+                <X className="h-4 w-4 mr-1" />
+                Cancel
+              </Button>
+              <Button variant="default" size="sm" onClick={handleSaveProgress} disabled={loading} className="bg-[#0485ea] hover:bg-[#0375d1]">
+                <Check className="h-4 w-4 mr-1" />
+                Save
+              </Button>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="mb-2">

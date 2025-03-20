@@ -6,6 +6,7 @@ import CreateLocationToggle from './fields/CreateLocationToggle';
 import LocationSelect from './fields/LocationSelect';
 import CustomLocationFields from './fields/CustomLocationFields';
 import AssigneeSelect from './fields/AssigneeSelect';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface WorkOrderLocationFieldsProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -22,12 +23,20 @@ const WorkOrderLocationFields = ({
   locations, 
   employees 
 }: WorkOrderLocationFieldsProps) => {
+  // Check if data is loaded
+  const hasCustomers = customers && customers.length > 0;
+  const hasEmployees = employees && employees.length > 0;
+  
   return (
     <div className="space-y-4">
       <h3 className="text-md font-semibold text-gray-700">Location Information</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <CustomerSelect form={form} customers={customers} />
+        {hasCustomers ? (
+          <CustomerSelect form={form} customers={customers} />
+        ) : (
+          <Skeleton className="h-10 w-full" />
+        )}
         <CreateLocationToggle form={form} />
       </div>
       
@@ -38,7 +47,11 @@ const WorkOrderLocationFields = ({
       )}
       
       <h3 className="text-md font-semibold text-gray-700 mt-6">Assignment</h3>
-      <AssigneeSelect form={form} employees={employees} />
+      {hasEmployees ? (
+        <AssigneeSelect form={form} employees={employees} />
+      ) : (
+        <Skeleton className="h-10 w-full" />
+      )}
     </div>
   );
 };

@@ -12,6 +12,8 @@ import {
   WorkOrderCostSummary,
   WorkOrderProgressCard
 } from './details';
+import WorkOrderTimelogs from './WorkOrderTimelogs';
+import WorkOrderMaterials from './WorkOrderMaterials';
 
 interface WorkOrderDetailsProps {
   workOrder: WorkOrder;
@@ -20,6 +22,18 @@ interface WorkOrderDetailsProps {
 
 const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) => {
   const [activeTab, setActiveTab] = useState('details');
+  const [showTimelogs, setShowTimelogs] = useState(false);
+  
+  // Function to handle refreshing the work order data
+  const handleRefresh = () => {
+    onStatusChange();
+  };
+  
+  // Switch to time tab and possibly focus on the add form
+  const handleAddTimeLog = () => {
+    setActiveTab('costs');
+    setShowTimelogs(true);
+  };
   
   return (
     <div className="space-y-6">
@@ -29,7 +43,7 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
           {workOrder.po_number && <p className="text-sm text-muted-foreground">PO #{workOrder.po_number}</p>}
         </div>
         
-        <WorkOrderStatusControl workOrder={workOrder} onStatusChange={onStatusChange} />
+        <WorkOrderStatusControl workOrder={workOrder} onStatusChange={handleRefresh} />
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -49,7 +63,7 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
           
           <WorkOrderProgressCard 
             workOrder={workOrder} 
-            onProgressUpdate={onStatusChange} 
+            onProgressUpdate={handleRefresh} 
           />
         </TabsContent>
         
@@ -58,7 +72,50 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
         </TabsContent>
         
         <TabsContent value="costs">
-          <WorkOrderCostSummary workOrder={workOrder} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              {showTimelogs ? (
+                <WorkOrderTimelogs 
+                  workOrderId={workOrder.work_order_id} 
+                  onTimeLogAdded={handleRefresh}
+                />
+              ) : (
+                <WorkOrderMaterials 
+                  workOrderId={workOrder.work_order_id} 
+                  onMaterialAdded={handleRefresh}
+                />
+              )}
+            </div>
+            <div>
+              <WorkOrderCostSummary 
+                workOrder={workOrder} 
+                onAddTimeLog={() => setShowTimelogs(true)}
+              />
+            </div>
+          </div>
+          
+          <div className="mt-6">
+            <Tabs defaultValue={showTimelogs ? "time" : "materials"} onValueChange={(value) => setShowTimelogs(value === "time")}>
+              <TabsList>
+                <TabsTrigger value="materials">Materials</TabsTrigger>
+                <TabsTrigger value="time">Time Tracking</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="materials" className="mt-6">
+                <WorkOrderMaterials 
+                  workOrderId={workOrder.work_order_id} 
+                  onMaterialAdded={handleRefresh}
+                />
+              </TabsContent>
+              
+              <TabsContent value="time" className="mt-6">
+                <WorkOrderTimelogs 
+                  workOrderId={workOrder.work_order_id} 
+                  onTimeLogAdded={handleRefresh}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

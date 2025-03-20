@@ -3,6 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderFormValues } from '../WorkOrderFormSchema';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface LocationSelectProps {
   form: UseFormReturn<WorkOrderFormValues>;

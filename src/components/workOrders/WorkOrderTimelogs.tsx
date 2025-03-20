@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Plus, Save, Trash2, Calendar, User } from 'lucide-react';
+import { Clock, Plus, Save, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { WorkOrderTimelog } from '@/types/workOrder';
@@ -17,12 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface WorkOrderTimelogsProps {
   workOrderId: string;
+  onTimeLogAdded?: () => void;
 }
 
-const WorkOrderTimelogs = ({ workOrderId }: WorkOrderTimelogsProps) => {
+const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsProps) => {
   const [timelogs, setTimelogs] = useState<WorkOrderTimelog[]>([]);
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<{ employee_id: string, name: string }[]>([]);
@@ -36,6 +38,7 @@ const WorkOrderTimelogs = ({ workOrderId }: WorkOrderTimelogsProps) => {
   const fetchTimelogs = async () => {
     setLoading(true);
     try {
+      // Use descending order to show most recent first
       const { data, error } = await supabase
         .from('work_order_time_logs')
         .select('*')
@@ -91,6 +94,11 @@ const WorkOrderTimelogs = ({ workOrderId }: WorkOrderTimelogsProps) => {
     fetchEmployees();
   }, [workOrderId]);
   
+  const resetForm = () => {
+    setHours('');
+    setNotes('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -126,11 +134,15 @@ const WorkOrderTimelogs = ({ workOrderId }: WorkOrderTimelogsProps) => {
       });
       
       // Reset form
-      setHours('');
-      setNotes('');
+      resetForm();
       
       // Refresh time logs
       fetchTimelogs();
+
+      // Notify parent component
+      if (onTimeLogAdded) {
+        onTimeLogAdded();
+      }
     } catch (error: any) {
       console.error('Error logging time:', error);
       toast({
@@ -165,6 +177,11 @@ const WorkOrderTimelogs = ({ workOrderId }: WorkOrderTimelogsProps) => {
       
       // Refresh time logs
       fetchTimelogs();
+
+      // Notify parent component
+      if (onTimeLogAdded) {
+        onTimeLogAdded();
+      }
     } catch (error: any) {
       console.error('Error deleting time log:', error);
       toast({
@@ -248,8 +265,17 @@ const WorkOrderTimelogs = ({ workOrderId }: WorkOrderTimelogsProps) => {
               className="w-full md:w-auto bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={submitting}
             >
-              <Save className="h-4 w-4 mr-2" />
-              {submitting ? 'Saving...' : 'Log Time'}
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Log Time
+                </>
+              )}
             </Button>
           </CardFooter>
         </form>
@@ -259,7 +285,11 @@ const WorkOrderTimelogs = ({ workOrderId }: WorkOrderTimelogsProps) => {
         <h3 className="text-lg font-semibold mb-4">Time History</h3>
         
         {loading ? (
-          <div className="text-center py-4">Loading time logs...</div>
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
         ) : timelogs.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
             No time has been logged for this work order yet.

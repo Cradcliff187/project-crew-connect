@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Upload, Plus } from 'lucide-react';
+import { FileText, Upload, Plus, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
 interface WorkOrderDocument {
   document_id: string;
@@ -23,52 +24,62 @@ interface WorkOrderDocumentsListProps {
 const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) => {
   const [documents, setDocuments] = useState<WorkOrderDocument[]>([]);
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  const fetchDocuments = async () => {
+    setLoading(true);
+    try {
+      // Fetch documents
+      const { data: documentsData, error: documentsError } = await supabase
+        .from('documents')
+        .select('document_id, file_name, category, created_at, file_type, storage_path')
+        .eq('entity_id', workOrderId)
+        .eq('entity_type', 'WORK_ORDER');
+          
+      if (documentsError) {
+        console.error('Error fetching documents:', documentsError);
+        return;
+      }
+      
+      // Get public URLs for documents
+      const enhancedDocuments = await Promise.all(
+        (documentsData || []).map(async (doc) => {
+          let url = '';
+          if (doc.storage_path) {
+            const { data } = supabase.storage
+              .from('construction_documents')
+              .getPublicUrl(doc.storage_path);
+            url = data.publicUrl;
+          }
+          
+          return {
+            ...doc,
+            url
+          };
+        })
+      );
+      
+      setDocuments(enhancedDocuments);
+    } catch (error) {
+      console.error('Error processing documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        // Fetch documents
-        const { data: documentsData, error: documentsError } = await supabase
-          .from('documents')
-          .select('document_id, file_name, category, created_at, file_type, storage_path')
-          .eq('entity_id', workOrderId)
-          .eq('entity_type', 'WORK_ORDER');
-          
-        if (documentsError) {
-          console.error('Error fetching documents:', documentsError);
-          return;
-        }
-        
-        // Get public URLs for documents
-        const enhancedDocuments = await Promise.all(
-          (documentsData || []).map(async (doc) => {
-            let url = '';
-            if (doc.storage_path) {
-              const { data } = supabase.storage
-                .from('construction_documents')
-                .getPublicUrl(doc.storage_path);
-              url = data.publicUrl;
-            }
-            
-            return {
-              ...doc,
-              url
-            };
-          })
-        );
-        
-        setDocuments(enhancedDocuments);
-      } catch (error) {
-        console.error('Error processing documents:', error);
-      }
-    };
-    
     fetchDocuments();
   }, [workOrderId]);
 
   // Toggle document upload form
   const toggleUploadForm = () => {
     setShowUploadForm(!showUploadForm);
+  };
+
+  // Handle successful document upload
+  const handleUploadSuccess = () => {
+    setShowUploadForm(false);
+    fetchDocuments();
   };
   
   return (
@@ -81,25 +92,37 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
             className="text-[#0485ea]"
             onClick={toggleUploadForm}
           >
-            <Upload className="h-4 w-4 mr-1" />
-            Upload Document
+            {showUploadForm ? (
+              <>
+                <X className="h-4 w-4 mr-1" />
+                Cancel Upload
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-1" />
+                Upload Document
+              </>
+            )}
           </Button>
         </div>
         
         {showUploadForm && (
           <div className="mb-6">
-            {/* Placeholder for document upload form */}
-            <Card className="bg-gray-50">
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">
-                  Upload form would go here
-                </p>
-              </CardContent>
-            </Card>
+            <EnhancedDocumentUpload 
+              entityType="WORK_ORDER"
+              entityId={workOrderId}
+              onSuccess={handleUploadSuccess}
+              onCancel={() => setShowUploadForm(false)}
+            />
           </div>
         )}
         
-        {documents.length > 0 ? (
+        {loading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        ) : documents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {documents.map((doc) => (
               <Card key={doc.document_id} className="overflow-hidden">

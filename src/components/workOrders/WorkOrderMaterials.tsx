@@ -4,7 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Package, Plus, Save, Trash2, DollarSign } from 'lucide-react';
+import { Package, Plus, Save, Trash2, DollarSign, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/lib/utils';
@@ -16,12 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface WorkOrderMaterialsProps {
   workOrderId: string;
+  onMaterialAdded?: () => void;
 }
 
-const WorkOrderMaterials = ({ workOrderId }: WorkOrderMaterialsProps) => {
+const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterialsProps) => {
   const [materials, setMaterials] = useState<WorkOrderMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [vendors, setVendors] = useState<{ vendorid: string, vendorname: string }[]>([]);
@@ -81,6 +83,13 @@ const WorkOrderMaterials = ({ workOrderId }: WorkOrderMaterialsProps) => {
     fetchVendors();
   }, [workOrderId]);
   
+  const resetForm = () => {
+    setMaterialName('');
+    setQuantity('1');
+    setUnitPrice('');
+    setSelectedVendor(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -130,12 +139,15 @@ const WorkOrderMaterials = ({ workOrderId }: WorkOrderMaterialsProps) => {
       });
       
       // Reset form
-      setMaterialName('');
-      setQuantity('1');
-      setUnitPrice('');
+      resetForm();
       
       // Refresh materials list
       fetchMaterials();
+
+      // Notify parent component if provided
+      if (onMaterialAdded) {
+        onMaterialAdded();
+      }
     } catch (error: any) {
       console.error('Error adding material:', error);
       toast({
@@ -170,6 +182,11 @@ const WorkOrderMaterials = ({ workOrderId }: WorkOrderMaterialsProps) => {
       
       // Refresh materials list
       fetchMaterials();
+
+      // Notify parent component if provided
+      if (onMaterialAdded) {
+        onMaterialAdded();
+      }
     } catch (error: any) {
       console.error('Error deleting material:', error);
       toast({
@@ -272,7 +289,7 @@ const WorkOrderMaterials = ({ workOrderId }: WorkOrderMaterialsProps) => {
             {(unitPrice && quantity) && (
               <div className="mt-4 text-right">
                 <p className="text-sm font-medium">
-                  Total: {formatCurrency(parseFloat(unitPrice) * parseFloat(quantity))}
+                  Total: {formatCurrency(parseFloat(unitPrice || "0") * parseFloat(quantity || "0"))}
                 </p>
               </div>
             )}
@@ -283,8 +300,17 @@ const WorkOrderMaterials = ({ workOrderId }: WorkOrderMaterialsProps) => {
               className="w-full md:w-auto bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={submitting}
             >
-              <Save className="h-4 w-4 mr-2" />
-              {submitting ? 'Saving...' : 'Add Material'}
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Add Material
+                </>
+              )}
             </Button>
           </CardFooter>
         </form>
@@ -299,7 +325,11 @@ const WorkOrderMaterials = ({ workOrderId }: WorkOrderMaterialsProps) => {
         </div>
         
         {loading ? (
-          <div className="text-center py-4">Loading materials...</div>
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
         ) : materials.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
             No materials have been added to this work order yet.

@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, ClipboardList, Package, FileText } from 'lucide-react';
+import { ClipboardList, Clock, Package, FileText } from 'lucide-react';
 import { WorkOrder } from '@/types/workOrder';
 import WorkOrderDetails from './WorkOrderDetails';
 import WorkOrderTimelogs from './WorkOrderTimelogs';
@@ -33,6 +32,11 @@ const WorkOrderDetailDialog = ({
       setActiveTab('details');
     }
   }, [workOrder.work_order_id, open]);
+  
+  // Function to handle any updates to the work order
+  const handleWorkOrderUpdate = () => {
+    onStatusChange();
+  };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,22 +69,29 @@ const WorkOrderDetailDialog = ({
             <TabsContent value="details" className="h-full">
               <WorkOrderDetails 
                 workOrder={workOrder} 
-                onStatusChange={onStatusChange} 
+                onStatusChange={handleWorkOrderUpdate} 
               />
             </TabsContent>
             
             <TabsContent value="time" className="h-full">
-              <WorkOrderTimelogs workOrderId={workOrder.work_order_id} />
+              <WorkOrderTimelogs 
+                workOrderId={workOrder.work_order_id} 
+                onTimeLogAdded={handleWorkOrderUpdate}
+              />
             </TabsContent>
             
             <TabsContent value="materials" className="h-full">
-              <WorkOrderMaterials workOrderId={workOrder.work_order_id} />
+              <WorkOrderMaterials 
+                workOrderId={workOrder.work_order_id} 
+                onMaterialAdded={handleWorkOrderUpdate}
+              />
             </TabsContent>
             
             <TabsContent value="documents" className="h-full">
               <WorkOrderDocuments 
                 workOrderId={workOrder.work_order_id} 
                 entityType="WORK_ORDER"
+                onDocumentAdded={handleWorkOrderUpdate}
               />
             </TabsContent>
           </div>
