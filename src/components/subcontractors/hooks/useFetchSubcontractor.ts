@@ -38,12 +38,7 @@ export const useFetchSubcontractor = () => {
       // Process the data and ensure numeric values are properly typed
       const processedData = {
         ...data,
-        rating: typeof data.rating === 'number' ? data.rating : null,
         hourly_rate: typeof data.hourly_rate === 'number' ? data.hourly_rate : null,
-        on_time_percentage: typeof data.on_time_percentage === 'number' ? data.on_time_percentage : null,
-        quality_score: typeof data.quality_score === 'number' ? data.quality_score : null,
-        safety_incidents: typeof data.safety_incidents === 'number' ? data.safety_incidents : null,
-        response_time_hours: typeof data.response_time_hours === 'number' ? data.response_time_hours : null,
         specialty_ids: Array.isArray(data.specialty_ids) ? data.specialty_ids : []
       };
       

@@ -14,7 +14,7 @@ import SubcontractorDetailCard from './SubcontractorDetailCard';
 import ContactInformationCard from './ContactInformationCard';
 import FinancialInformationCard from './FinancialInformationCard';
 import ComplianceInformationCard from './ComplianceInformationCard';
-import PerformanceMetricsCard from './PerformanceMetricsCard';
+import RateInformationCard from './PerformanceMetricsCard';
 import SpecialtiesSection from './SpecialtiesSection';
 import AssociatedProjectsCard from './AssociatedProjectsCard';
 import WorkOrdersCard from './WorkOrdersCard';
@@ -94,10 +94,13 @@ const SubcontractorDetailPage = () => {
             {/* Compliance Information */}
             <ComplianceInformationCard subcontractor={subcontractor} />
             
-            <Separator />
-            
-            {/* Performance Metrics */}
-            <PerformanceMetricsCard subcontractor={subcontractor} />
+            {/* Rate Information (only if hourly_rate exists) */}
+            {subcontractor.hourly_rate && (
+              <>
+                <Separator />
+                <RateInformationCard subcontractor={subcontractor} />
+              </>
+            )}
             
             {/* Specialties */}
             {subcontractor.specialty_ids && subcontractor.specialty_ids.length > 0 && (

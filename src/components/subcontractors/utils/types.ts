@@ -19,17 +19,10 @@ export interface Subcontractor {
   insurance_provider?: string | null;
   insurance_policy_number?: string | null;
   tax_id?: string | null;
-  rating?: number | null;
   hourly_rate?: number | null;
   contract_on_file?: boolean;
   contract_expiration?: string | null;
   preferred?: boolean;
-  last_performance_review?: string | null;
-  // Performance metrics
-  on_time_percentage?: number | null;
-  quality_score?: number | null;
-  safety_incidents?: number | null;
-  response_time_hours?: number | null;
 }
 
 export interface Specialty {

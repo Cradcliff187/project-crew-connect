@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Subcontractor, getPaymentTermsLabel, getRatingDisplay } from '../utils/subcontractorUtils';
+import { Subcontractor } from '../utils/types';
+import { getPaymentTermsLabel } from '../utils/performanceUtils';
 import { format } from 'date-fns';
 
 interface SubcontractorDetailsProps {
@@ -26,11 +27,6 @@ const SubcontractorDetails = ({ subcontractor }: SubcontractorDetailsProps) => {
       {subcontractor.hourly_rate && (
         <div className="text-xs text-muted-foreground">
           Rate: ${subcontractor.hourly_rate}/hr
-        </div>
-      )}
-      {subcontractor.rating && (
-        <div className="text-xs text-amber-500">
-          {getRatingDisplay(subcontractor.rating)}
         </div>
       )}
     </>
