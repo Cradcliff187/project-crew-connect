@@ -56,7 +56,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
         
         // Update subcontractor in the consolidated table
         const { error } = await supabase
-          .from('subcontractors_new')
+          .from('subcontractors')  // Changed from 'subcontractors_new' to 'subcontractors'
           .update({
             ...submissionData,
             updated_at: new Date().toISOString(),
@@ -88,7 +88,7 @@ export const useSubcontractorSubmit = (onSuccess: () => void, isEditing = false)
         
         // Insert the subcontractor in the consolidated table
         const { error } = await supabase
-          .from('subcontractors_new')
+          .from('subcontractors')  // Changed from 'subcontractors_new' to 'subcontractors'
           .insert({
             ...submissionData,
             subid: subcontractorId,
