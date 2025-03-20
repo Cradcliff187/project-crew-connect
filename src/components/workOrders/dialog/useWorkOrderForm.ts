@@ -24,6 +24,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
     locations: [],
     employees: []
   });
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderSchema),
@@ -46,6 +47,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
   const fetchData = async () => {
     try {
       console.log('Fetching customers data...');
+      setDataLoaded(false);
       
       // Fetch all customers without any filters
       const { data: customersData, error: customersError } = await supabase
@@ -82,14 +84,16 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
       }
       
       // Ensure we have valid data before setting state
-      const customers = customersData || [];
-      console.log(`Setting ${customers.length} customers in form data`);
+      const customers = Array.isArray(customersData) ? customersData : [];
+      console.log(`Setting ${customers.length} customers in form data:`, customers);
       
       setFormData({
         customers: customers,
-        locations: locationsData || [],
-        employees: employeesData || []
+        locations: Array.isArray(locationsData) ? locationsData : [],
+        employees: Array.isArray(employeesData) ? employeesData : []
       });
+      
+      setDataLoaded(true);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -183,7 +187,8 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
     formData,
     useCustomAddress,
     fetchData,
-    onSubmit
+    onSubmit,
+    dataLoaded
   };
 };
 

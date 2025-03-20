@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderFormValues } from './WorkOrderFormSchema';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface WorkOrderLocationFieldsProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -22,9 +22,16 @@ const WorkOrderLocationFields = ({
   locations, 
   employees 
 }: WorkOrderLocationFieldsProps) => {
-  // Add effect to log customer data whenever it changes
+  const [isCustomerOpen, setIsCustomerOpen] = useState(false);
+  
+  // Force re-render when customers data changes
+  const [customerData, setCustomerData] = useState<Array<{ customerid: string; customername: string }>>([]);
+  
   useEffect(() => {
-    console.log('Customers data in component:', customers);
+    console.log('Customer data changed in component:', customers);
+    if (customers && customers.length > 0) {
+      setCustomerData([...customers]);
+    }
   }, [customers]);
   
   return (
@@ -37,33 +44,47 @@ const WorkOrderLocationFields = ({
             <FormItem>
               <FormLabel>Customer</FormLabel>
               <Select 
-                onValueChange={field.onChange} 
+                onValueChange={(value) => {
+                  console.log('Selected customer value:', value);
+                  field.onChange(value);
+                }}
                 value={field.value || ""}
                 onOpenChange={(open) => {
-                  if (open) console.log('Dropdown opened, customers:', customers);
+                  console.log('Dropdown opened state:', open);
+                  console.log('Available customers when opening dropdown:', customerData);
+                  setIsCustomerOpen(open);
                 }}
+                open={isCustomerOpen}
               >
                 <FormControl>
                   <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="bg-white z-50">
-                  {customers && customers.length > 0 ? (
-                    customers.map((customer) => {
+                <SelectContent 
+                  className="bg-white z-[100]" 
+                  position="popper"
+                  align="start"
+                  side="bottom"
+                  avoidCollisions={false}
+                >
+                  {customerData && customerData.length > 0 ? (
+                    customerData.map((customer) => {
                       console.log('Rendering customer option:', customer);
                       return (
                         <SelectItem 
                           key={customer.customerid} 
                           value={customer.customerid}
-                          className="cursor-pointer hover:bg-gray-100"
+                          className="cursor-pointer hover:bg-gray-100 py-2 px-4"
                         >
-                          {customer.customername}
+                          {customer.customername || 'Unnamed Customer'}
                         </SelectItem>
                       );
                     })
                   ) : (
-                    <SelectItem value="no-customers" disabled>No customers available</SelectItem>
+                    <SelectItem value="no-customers" disabled className="text-gray-500">
+                      No customers available
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -102,19 +123,21 @@ const WorkOrderLocationFields = ({
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="bg-white z-50">
+                <SelectContent className="bg-white z-[100]">
                   {locations && locations.length > 0 ? (
                     locations.map((location) => (
                       <SelectItem 
                         key={location.location_id} 
                         value={location.location_id}
-                        className="cursor-pointer hover:bg-gray-100"
+                        className="cursor-pointer hover:bg-gray-100 py-2 px-4"
                       >
                         {location.location_name}
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="no-locations" disabled>No locations available</SelectItem>
+                    <SelectItem value="no-locations" disabled className="text-gray-500">
+                      No locations available
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -196,19 +219,21 @@ const WorkOrderLocationFields = ({
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="bg-white z-50">
+              <SelectContent className="bg-white z-[100]">
                 {employees && employees.length > 0 ? (
                   employees.map((employee) => (
                     <SelectItem 
                       key={employee.employee_id} 
                       value={employee.employee_id}
-                      className="cursor-pointer hover:bg-gray-100"
+                      className="cursor-pointer hover:bg-gray-100 py-2 px-4"
                     >
                       {`${employee.first_name} ${employee.last_name}`}
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="no-employees" disabled>No employees available</SelectItem>
+                  <SelectItem value="no-employees" disabled className="text-gray-500">
+                    No employees available
+                  </SelectItem>
                 )}
               </SelectContent>
             </Select>

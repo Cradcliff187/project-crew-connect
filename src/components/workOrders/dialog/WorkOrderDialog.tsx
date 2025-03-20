@@ -26,7 +26,8 @@ const WorkOrderDialog = ({
     formData, 
     useCustomAddress, 
     fetchData, 
-    onSubmit 
+    onSubmit,
+    dataLoaded
   } = useWorkOrderForm({ onOpenChange, onWorkOrderAdded });
 
   // Fetch data when dialog opens
@@ -37,9 +38,16 @@ const WorkOrderDialog = ({
     }
   }, [open]);
 
+  // Debug logging for customer data
+  useEffect(() => {
+    if (formData.customers && formData.customers.length > 0) {
+      console.log('Customer data in dialog component:', formData.customers);
+    }
+  }, [formData.customers]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden bg-white">
         <DialogHeader>
           <DialogTitle>Create New Work Order</DialogTitle>
         </DialogHeader>
