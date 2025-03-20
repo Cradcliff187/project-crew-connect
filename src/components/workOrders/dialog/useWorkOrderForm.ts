@@ -73,7 +73,8 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded, isOpen }: UseWorkOrd
     formData,
     useCustomAddress,
     dataLoaded,
-    isLoading
+    isLoading,
+    onSubmit  // Now we're returning the onSubmit function
   };
 };
 
