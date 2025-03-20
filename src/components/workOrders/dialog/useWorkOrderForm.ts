@@ -45,10 +45,17 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
 
   const fetchData = async () => {
     try {
-      const { data: customersData } = await supabase
+      console.log('Fetching customers data...');
+      const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('customerid, customername')
         .eq('status', 'ACTIVE');
+      
+      if (customersError) {
+        console.error('Error fetching customers:', customersError);
+      }
+      
+      console.log('Customers data received:', customersData);
       
       const { data: locationsData } = await supabase
         .from('site_locations')

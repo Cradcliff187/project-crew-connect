@@ -21,6 +21,8 @@ const WorkOrderLocationFields = ({
   locations, 
   employees 
 }: WorkOrderLocationFieldsProps) => {
+  console.log('Customers data:', customers); // Add debugging to check customers data
+  
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -30,18 +32,22 @@ const WorkOrderLocationFields = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Customer</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || ""}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.customerid} value={customer.customerid}>
-                      {customer.customername}
-                    </SelectItem>
-                  ))}
+                  {customers && customers.length > 0 ? (
+                    customers.map((customer) => (
+                      <SelectItem key={customer.customerid} value={customer.customerid}>
+                        {customer.customername}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-customers" disabled>No customers available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -73,18 +79,22 @@ const WorkOrderLocationFields = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Location</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || ""}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {locations.map((location) => (
-                    <SelectItem key={location.location_id} value={location.location_id}>
-                      {location.location_name}
-                    </SelectItem>
-                  ))}
+                  {locations && locations.length > 0 ? (
+                    locations.map((location) => (
+                      <SelectItem key={location.location_id} value={location.location_id}>
+                        {location.location_name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-locations" disabled>No locations available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -159,18 +169,22 @@ const WorkOrderLocationFields = ({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Assigned To</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={field.onChange} value={field.value || ""}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.employee_id} value={employee.employee_id}>
-                    {`${employee.first_name} ${employee.last_name}`}
-                  </SelectItem>
-                ))}
+                {employees && employees.length > 0 ? (
+                  employees.map((employee) => (
+                    <SelectItem key={employee.employee_id} value={employee.employee_id}>
+                      {`${employee.first_name} ${employee.last_name}`}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-employees" disabled>No employees available</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <FormMessage />
