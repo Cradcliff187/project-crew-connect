@@ -18,7 +18,7 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
           <FormItem>
             <FormLabel>Address</FormLabel>
             <FormControl>
-              <Input placeholder="Enter address" {...field} />
+              <Input {...field} placeholder="Enter address" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -33,7 +33,7 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
             <FormItem>
               <FormLabel>City</FormLabel>
               <FormControl>
-                <Input placeholder="Enter city" {...field} />
+                <Input {...field} placeholder="Enter city" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -47,7 +47,7 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
             <FormItem>
               <FormLabel>State</FormLabel>
               <FormControl>
-                <Input placeholder="Enter state" {...field} />
+                <Input {...field} placeholder="Enter state" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -61,7 +61,7 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
             <FormItem>
               <FormLabel>ZIP</FormLabel>
               <FormControl>
-                <Input placeholder="Enter ZIP code" {...field} />
+                <Input {...field} placeholder="Enter ZIP code" />
               </FormControl>
               <FormMessage />
             </FormItem>

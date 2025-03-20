@@ -27,7 +27,8 @@ const WorkOrderDialog = ({
     useCustomAddress, 
     fetchData, 
     onSubmit,
-    dataLoaded
+    dataLoaded,
+    isLoading
   } = useWorkOrderForm({ onOpenChange, onWorkOrderAdded });
 
   // Fetch data when dialog opens
@@ -51,13 +52,15 @@ const WorkOrderDialog = ({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <WorkOrderBasicInfoFields form={form} />
               <WorkOrderScheduleFields form={form} />
-              <WorkOrderLocationFields 
-                form={form} 
-                useCustomAddress={useCustomAddress}
-                customers={formData.customers}
-                locations={formData.locations}
-                employees={formData.employees}
-              />
+              {dataLoaded && (
+                <WorkOrderLocationFields 
+                  form={form} 
+                  useCustomAddress={useCustomAddress}
+                  customers={formData.customers}
+                  locations={formData.locations}
+                  employees={formData.employees}
+                />
+              )}
               
               <DialogFooter className="mt-6 sm:justify-between">
                 <Button 

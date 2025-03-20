@@ -27,8 +27,11 @@ const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
               <Input 
                 type="number" 
                 placeholder="Enter estimated hours" 
-                onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                 value={field.value || ''}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value);
+                  field.onChange(value);
+                }}
                 onBlur={field.onBlur}
                 name={field.name}
                 ref={field.ref}

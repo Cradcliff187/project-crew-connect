@@ -21,12 +21,8 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
             <FormLabel>Title *</FormLabel>
             <FormControl>
               <Input 
-                placeholder="Enter work order title" 
-                onChange={(e) => field.onChange(e.target.value)}
-                value={field.value || ''}
-                onBlur={field.onBlur}
-                name={field.name}
-                ref={field.ref}
+                {...field} 
+                placeholder="Enter work order title"
               />
             </FormControl>
             <FormMessage />
@@ -42,13 +38,9 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
             <FormLabel>Description</FormLabel>
             <FormControl>
               <Textarea 
+                {...field}
                 placeholder="Enter work order description" 
                 rows={3} 
-                onChange={(e) => field.onChange(e.target.value)}
-                value={field.value || ''}
-                onBlur={field.onBlur}
-                name={field.name}
-                ref={field.ref}
               />
             </FormControl>
             <FormMessage />
@@ -63,7 +55,11 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Priority</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || 'MEDIUM'}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value || 'MEDIUM'}
+                value={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
@@ -89,12 +85,8 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
               <FormLabel>PO Number</FormLabel>
               <FormControl>
                 <Input 
+                  {...field}
                   placeholder="Enter PO number" 
-                  onChange={(e) => field.onChange(e.target.value)}
-                  value={field.value || ''}
-                  onBlur={field.onBlur}
-                  name={field.name}
-                  ref={field.ref}
                 />
               </FormControl>
               <FormMessage />

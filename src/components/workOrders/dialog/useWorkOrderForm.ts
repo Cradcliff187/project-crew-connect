@@ -26,7 +26,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
       state: '',
       zip: '',
     },
-    mode: 'onChange',
+    mode: 'onBlur', // Changed from 'onChange' to improve performance
   });
 
   const {
@@ -44,11 +44,14 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
 
   const useCustomAddress = form.watch('use_custom_address');
   
-  // Log form values for debugging
+  // Enhanced logging for debugging
   useEffect(() => {
+    console.log('Initial form state:', form.getValues());
+    
     const subscription = form.watch((value, { name, type }) => {
-      console.log(`Field ${name} changed (${type}):`, value);
+      console.log(`Field ${name || 'unknown'} changed (${type || 'unknown'}):`, value);
     });
+    
     return () => subscription.unsubscribe();
   }, [form]);
 
