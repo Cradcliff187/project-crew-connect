@@ -16,14 +16,14 @@ const AssigneeSelect = ({ form, employees }: AssigneeSelectProps) => {
       name="assigned_to"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Assigned To</FormLabel>
+          <FormLabel>Assign To</FormLabel>
           <Select onValueChange={field.onChange} value={field.value || ""}>
             <FormControl>
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Select employee" />
               </SelectTrigger>
             </FormControl>
-            <SelectContent className="bg-white z-[100]">
+            <SelectContent className="bg-white z-[1000]" sideOffset={4}>
               {employees && employees.length > 0 ? (
                 employees.map((employee) => (
                   <SelectItem 

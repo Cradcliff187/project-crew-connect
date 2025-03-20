@@ -23,7 +23,7 @@ const LocationSelect = ({ form, locations }: LocationSelectProps) => {
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
             </FormControl>
-            <SelectContent className="bg-white z-[100]">
+            <SelectContent className="bg-white z-[1000]" sideOffset={4}>
               {locations && locations.length > 0 ? (
                 locations.map((location) => (
                   <SelectItem 
