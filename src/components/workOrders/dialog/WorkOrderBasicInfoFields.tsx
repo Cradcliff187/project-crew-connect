@@ -20,7 +20,12 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
           <FormItem>
             <FormLabel>Title *</FormLabel>
             <FormControl>
-              <Input placeholder="Enter work order title" {...field} />
+              <Input 
+                placeholder="Enter work order title" 
+                {...field} 
+                value={field.value || ''}
+                onChange={(e) => field.onChange(e.target.value)}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

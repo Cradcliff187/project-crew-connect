@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import workOrderSchema, { WorkOrderFormValues } from './WorkOrderFormSchema';
 import { useWorkOrderData } from './hooks/useWorkOrderData';
 import { useWorkOrderSubmit } from './hooks/useWorkOrderSubmit';
+import { useEffect } from 'react';
 
 interface UseWorkOrderFormProps {
   onOpenChange: (open: boolean) => void;
@@ -25,6 +26,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
       state: '',
       zip: '',
     },
+    mode: 'onChange',
   });
 
   const {
@@ -41,6 +43,14 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
   });
 
   const useCustomAddress = form.watch('use_custom_address');
+
+  // Add a debug log to track form values
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      console.log('Form values updated:', value);
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   return {
     form,
