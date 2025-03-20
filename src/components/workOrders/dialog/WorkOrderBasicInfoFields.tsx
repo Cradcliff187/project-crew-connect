@@ -21,8 +21,12 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
             <FormLabel>Title *</FormLabel>
             <FormControl>
               <Input 
-                {...field} 
+                {...field}
                 placeholder="Enter work order title"
+                onChange={(e) => {
+                  console.log('Title changed:', e.target.value);
+                  field.onChange(e);
+                }}
               />
             </FormControl>
             <FormMessage />
@@ -40,7 +44,11 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
               <Textarea 
                 {...field}
                 placeholder="Enter work order description" 
-                rows={3} 
+                rows={3}
+                onChange={(e) => {
+                  console.log('Description changed:', e.target.value);
+                  field.onChange(e);
+                }}
               />
             </FormControl>
             <FormMessage />
@@ -56,7 +64,10 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
             <FormItem>
               <FormLabel>Priority</FormLabel>
               <Select 
-                onValueChange={field.onChange} 
+                onValueChange={(value) => {
+                  console.log('Priority changed:', value);
+                  field.onChange(value);
+                }}
                 defaultValue={field.value || 'MEDIUM'}
                 value={field.value}
               >
@@ -86,7 +97,11 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
               <FormControl>
                 <Input 
                   {...field}
-                  placeholder="Enter PO number" 
+                  placeholder="Enter PO number"
+                  onChange={(e) => {
+                    console.log('PO Number changed:', e.target.value);
+                    field.onChange(e);
+                  }}
                 />
               </FormControl>
               <FormMessage />

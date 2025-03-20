@@ -35,7 +35,21 @@ const WorkOrderDialog = ({
   useEffect(() => {
     if (open) {
       console.log('Dialog opened, fetching data...');
-      form.reset(); // Reset form when dialog opens
+      // Only reset the form after it's fully initialized
+      setTimeout(() => {
+        form.reset({
+          title: '',
+          description: '',
+          priority: 'MEDIUM',
+          po_number: '',
+          time_estimate: 0,
+          use_custom_address: false,
+          address: '',
+          city: '',
+          state: '',
+          zip: '',
+        });
+      }, 0);
       fetchData();
     }
   }, [open, fetchData, form]);

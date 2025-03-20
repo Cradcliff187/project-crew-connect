@@ -26,7 +26,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
       state: '',
       zip: '',
     },
-    mode: 'onBlur', // Changed from 'onChange' to improve performance
+    mode: 'onChange', // Changed from 'onBlur' to 'onChange' for better responsiveness
   });
 
   const {
@@ -46,7 +46,7 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
   
   // Enhanced logging for debugging
   useEffect(() => {
-    console.log('Initial form state:', form.getValues());
+    console.log('Form initialized with values:', form.getValues());
     
     const subscription = form.watch((value, { name, type }) => {
       console.log(`Field ${name || 'unknown'} changed (${type || 'unknown'}):`, value);

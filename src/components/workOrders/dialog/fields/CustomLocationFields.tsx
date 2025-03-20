@@ -18,7 +18,14 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
           <FormItem>
             <FormLabel>Address</FormLabel>
             <FormControl>
-              <Input {...field} placeholder="Enter address" />
+              <Input 
+                {...field} 
+                placeholder="Enter address"
+                onChange={(e) => {
+                  console.log('Address changed:', e.target.value);
+                  field.onChange(e);
+                }}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -33,7 +40,14 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
             <FormItem>
               <FormLabel>City</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Enter city" />
+                <Input 
+                  {...field} 
+                  placeholder="Enter city" 
+                  onChange={(e) => {
+                    console.log('City changed:', e.target.value);
+                    field.onChange(e);
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -47,7 +61,14 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
             <FormItem>
               <FormLabel>State</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Enter state" />
+                <Input 
+                  {...field} 
+                  placeholder="Enter state"
+                  onChange={(e) => {
+                    console.log('State changed:', e.target.value);
+                    field.onChange(e);
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -61,7 +82,14 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
             <FormItem>
               <FormLabel>ZIP</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Enter ZIP code" />
+                <Input 
+                  {...field} 
+                  placeholder="Enter ZIP code"
+                  onChange={(e) => {
+                    console.log('ZIP changed:', e.target.value);
+                    field.onChange(e);
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
