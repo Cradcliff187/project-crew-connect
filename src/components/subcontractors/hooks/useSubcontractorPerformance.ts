@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 
 export const useSubcontractorPerformance = (subcontractorId: string | undefined) => {
   const [performance, setPerformance] = useState<any | null>(null);
@@ -17,8 +16,9 @@ export const useSubcontractorPerformance = (subcontractorId: string | undefined)
       
       try {
         setLoading(true);
+        console.log('Fetching performance data for subcontractor:', subcontractorId);
         
-        // Updated to use the new consolidated table
+        // Use the consolidated table
         const { data, error } = await supabase
           .from('subcontractors_new')
           .select(`
@@ -35,6 +35,7 @@ export const useSubcontractorPerformance = (subcontractorId: string | undefined)
           throw error;
         }
         
+        console.log('Received performance data:', data);
         setPerformance(data);
       } catch (error: any) {
         console.error('Error fetching subcontractor performance:', error);

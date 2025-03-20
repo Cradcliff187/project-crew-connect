@@ -12,7 +12,7 @@ export const useSubcontractors = () => {
   const fetchSubcontractors = async () => {
     setLoading(true);
     try {
-      // Updated to use the new consolidated table
+      console.log('Fetching subcontractors from subcontractors_new table');
       const { data, error } = await supabase
         .from('subcontractors_new')
         .select('*')
@@ -22,15 +22,18 @@ export const useSubcontractors = () => {
         throw error;
       }
       
-      // Ensure any null values are properly handled
+      console.log('Subcontractors data received:', data);
+      
+      // Ensure any null values are properly handled and convert specialty_ids to string[]
       const processedData = data?.map(sub => ({
         ...sub,
-        // Set default values for fields that might be null
-        specialty_ids: sub.specialty_ids || [],
+        // Convert UUID[] to string[] for specialty_ids if it exists
+        specialty_ids: Array.isArray(sub.specialty_ids) ? sub.specialty_ids.map(id => String(id)) : [],
         payment_terms: sub.payment_terms || "NET30",
         notes: sub.notes || null
       })) as Subcontractor[];
       
+      console.log('Processed subcontractors data:', processedData);
       setSubcontractors(processedData || []);
     } catch (error: any) {
       console.error('Error fetching subcontractors:', error);
@@ -55,7 +58,7 @@ export const useSubcontractors = () => {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'subcontractors_new' // Updated to the new table name
+          table: 'subcontractors_new'
         }, 
         (payload) => {
           console.log('Realtime update:', payload);

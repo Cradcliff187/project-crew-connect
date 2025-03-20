@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 
 export const useSubcontractorCompliance = (subcontractorId: string | undefined) => {
   const [compliance, setCompliance] = useState<any | null>(null);
@@ -17,8 +16,9 @@ export const useSubcontractorCompliance = (subcontractorId: string | undefined) 
       
       try {
         setLoading(true);
+        console.log('Fetching compliance data for subcontractor:', subcontractorId);
         
-        // Updated to use the new consolidated table
+        // Use the consolidated table
         const { data, error } = await supabase
           .from('subcontractors_new')
           .select(`
@@ -37,6 +37,7 @@ export const useSubcontractorCompliance = (subcontractorId: string | undefined) 
           throw error;
         }
         
+        console.log('Received compliance data:', data);
         setCompliance(data);
       } catch (error: any) {
         console.error('Error fetching subcontractor compliance:', error);

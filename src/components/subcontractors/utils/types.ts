@@ -9,7 +9,7 @@ export interface Subcontractor {
   state: string | null;
   zip: string | null;
   status: string | null;
-  specialty_ids: string[];
+  specialty_ids: string[]; // Make sure this is string[] to match our converted data
   created_at: string;
   // Required vendor management fields
   payment_terms: string | null;
@@ -25,6 +25,11 @@ export interface Subcontractor {
   contract_expiration?: string | null;
   preferred?: boolean;
   last_performance_review?: string | null;
+  // Performance metrics
+  on_time_percentage?: number | null;
+  quality_score?: number | null;
+  safety_incidents?: number | null;
+  response_time_hours?: number | null;
 }
 
 export interface Specialty {
