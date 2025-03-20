@@ -12,9 +12,9 @@ export const useSubcontractors = () => {
   const fetchSubcontractors = async () => {
     setLoading(true);
     try {
-      console.log('Fetching subcontractors from subcontractors_new table');
+      console.log('Fetching subcontractors from subcontractors table');
       const { data, error } = await supabase
-        .from('subcontractors_new')
+        .from('subcontractors')  // Changed from 'subcontractors_new' to 'subcontractors'
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -58,7 +58,7 @@ export const useSubcontractors = () => {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'subcontractors_new'
+          table: 'subcontractors'  // Changed from 'subcontractors_new' to 'subcontractors'
         }, 
         (payload) => {
           console.log('Realtime update:', payload);
