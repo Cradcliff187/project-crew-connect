@@ -1521,6 +1521,99 @@ export type Database = {
         }
         Relationships: []
       }
+      subcontractors_new: {
+        Row: {
+          address: string | null
+          city: string | null
+          contactemail: string | null
+          contract_expiration: string | null
+          contract_on_file: boolean | null
+          created_at: string
+          hourly_rate: number | null
+          insurance_expiration: string | null
+          insurance_policy_number: string | null
+          insurance_provider: string | null
+          last_performance_review: string | null
+          notes: string | null
+          on_time_percentage: number | null
+          payment_terms: string | null
+          phone: string | null
+          preferred: boolean | null
+          quality_score: number | null
+          rating: number | null
+          response_time_hours: number | null
+          safety_incidents: number | null
+          specialty_ids: string[] | null
+          state: string | null
+          status: string | null
+          subid: string
+          subname: string
+          tax_id: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          contactemail?: string | null
+          contract_expiration?: string | null
+          contract_on_file?: boolean | null
+          created_at?: string
+          hourly_rate?: number | null
+          insurance_expiration?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          last_performance_review?: string | null
+          notes?: string | null
+          on_time_percentage?: number | null
+          payment_terms?: string | null
+          phone?: string | null
+          preferred?: boolean | null
+          quality_score?: number | null
+          rating?: number | null
+          response_time_hours?: number | null
+          safety_incidents?: number | null
+          specialty_ids?: string[] | null
+          state?: string | null
+          status?: string | null
+          subid: string
+          subname: string
+          tax_id?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          contactemail?: string | null
+          contract_expiration?: string | null
+          contract_on_file?: boolean | null
+          created_at?: string
+          hourly_rate?: number | null
+          insurance_expiration?: string | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          last_performance_review?: string | null
+          notes?: string | null
+          on_time_percentage?: number | null
+          payment_terms?: string | null
+          phone?: string | null
+          preferred?: boolean | null
+          quality_score?: number | null
+          rating?: number | null
+          response_time_hours?: number | null
+          safety_incidents?: number | null
+          specialty_ids?: string[] | null
+          state?: string | null
+          status?: string | null
+          subid?: string
+          subname?: string
+          tax_id?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: []
+      }
       subinvoices: {
         Row: {
           created_at: string

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Control, useWatch, useController } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,9 +53,9 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
         if (vendorError) throw vendorError;
         setVendorOptions(vendors || []);
         
-        // Fetch subcontractors
+        // Fetch subcontractors - updated to use new table
         const { data: subcontractors, error: subError } = await supabase
-          .from('subcontractors')
+          .from('subcontractors_new')
           .select('subid, subname')
           .order('subname');
           

@@ -31,7 +31,6 @@ const FinancialInformationCard = ({ subcontractor }: FinancialInformationCardPro
             <span>Tax ID: {subcontractor.tax_id}</span>
           </div>
         )}
-        {/* Removed the total_completed_amount check that was causing the error */}
       </div>
     </div>
   );

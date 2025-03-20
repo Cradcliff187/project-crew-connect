@@ -18,41 +18,26 @@ export const useSubcontractorCompliance = (subcontractorId: string | undefined) 
       try {
         setLoading(true);
         
-        // Try the new table first
-        const { data: complianceData, error: complianceError } = await supabase
-          .from('subcontractor_compliance')
-          .select('*')
-          .eq('subcontractor_id', subcontractorId)
+        // Updated to use the new consolidated table
+        const { data, error } = await supabase
+          .from('subcontractors_new')
+          .select(`
+            insurance_expiration, 
+            insurance_provider,
+            insurance_policy_number,
+            contract_on_file,
+            contract_expiration,
+            tax_id,
+            last_performance_review
+          `)
+          .eq('subid', subcontractorId)
           .maybeSingle();
         
-        if (complianceError) {
-          throw complianceError;
+        if (error) {
+          throw error;
         }
         
-        if (complianceData) {
-          setCompliance(complianceData);
-        } else {
-          // Fall back to the old table structure for backward compatibility
-          const { data: subcontractorData, error: subcontractorError } = await supabase
-            .from('subcontractors')
-            .select(`
-              insurance_expiration, 
-              insurance_provider,
-              insurance_policy_number,
-              contract_on_file,
-              contract_expiration,
-              tax_id,
-              last_performance_review
-            `)
-            .eq('subid', subcontractorId)
-            .maybeSingle();
-          
-          if (subcontractorError) {
-            throw subcontractorError;
-          }
-          
-          setCompliance(subcontractorData);
-        }
+        setCompliance(data);
       } catch (error: any) {
         console.error('Error fetching subcontractor compliance:', error);
         setError(error.message);

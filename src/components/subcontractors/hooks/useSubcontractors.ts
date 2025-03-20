@@ -12,8 +12,9 @@ export const useSubcontractors = () => {
   const fetchSubcontractors = async () => {
     setLoading(true);
     try {
+      // Updated to use the new consolidated table
       const { data, error } = await supabase
-        .from('subcontractors')
+        .from('subcontractors_new')
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -54,7 +55,7 @@ export const useSubcontractors = () => {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'subcontractors' 
+          table: 'subcontractors_new' // Updated to the new table name
         }, 
         (payload) => {
           console.log('Realtime update:', payload);

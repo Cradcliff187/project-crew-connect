@@ -17,36 +17,21 @@ export const useSubcontractorSpecialties = (subcontractorId: string | undefined)
       try {
         setLoading(true);
         
-        // First try the new junction table
-        const { data: junctionData, error: junctionError } = await supabase
-          .from('subcontractor_specialty_junction')
-          .select('specialty_id')
-          .eq('subcontractor_id', subcontractorId);
+        // Updated to use the new consolidated table
+        const { data, error } = await supabase
+          .from('subcontractors_new')
+          .select('specialty_ids')
+          .eq('subid', subcontractorId)
+          .maybeSingle();
         
-        if (junctionError) {
-          throw junctionError;
+        if (error) {
+          throw error;
         }
         
-        if (junctionData && junctionData.length > 0) {
-          // Use the normalized structure
-          setSpecialtyIds(junctionData.map(item => item.specialty_id));
+        if (data && data.specialty_ids) {
+          setSpecialtyIds(data.specialty_ids);
         } else {
-          // Fall back to the old structure with arrays
-          const { data: subcontractorData, error: subcontractorError } = await supabase
-            .from('subcontractors')
-            .select('specialty_ids')
-            .eq('subid', subcontractorId)
-            .maybeSingle();
-          
-          if (subcontractorError) {
-            throw subcontractorError;
-          }
-          
-          if (subcontractorData && subcontractorData.specialty_ids) {
-            setSpecialtyIds(subcontractorData.specialty_ids);
-          } else {
-            setSpecialtyIds([]);
-          }
+          setSpecialtyIds([]);
         }
       } catch (error: any) {
         console.error('Error fetching subcontractor specialties:', error);
