@@ -1,5 +1,4 @@
 
-import { useEffect } from 'react';
 import { SaveIcon, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -25,34 +24,36 @@ const WorkOrderDialog = ({
     isSubmitting, 
     formData, 
     useCustomAddress, 
-    fetchData, 
-    onSubmit,
     dataLoaded,
     isLoading
-  } = useWorkOrderForm({ onOpenChange, onWorkOrderAdded });
+  } = useWorkOrderForm({ 
+    onOpenChange, 
+    onWorkOrderAdded,
+    isOpen: open // Pass the open state to control data fetching
+  });
 
-  // Fetch data when dialog opens
-  useEffect(() => {
-    if (open) {
-      console.log('Dialog opened, fetching data...');
-      // Only reset the form after it's fully initialized
-      setTimeout(() => {
-        form.reset({
-          title: '',
-          description: '',
-          priority: 'MEDIUM',
-          po_number: '',
-          time_estimate: 0,
-          use_custom_address: false,
-          address: '',
-          city: '',
-          state: '',
-          zip: '',
-        });
-      }, 0);
-      fetchData();
+  const handleSubmit = form.handleSubmit((data) => {
+    console.log('Form submitted with data:', data);
+    // This prevents immediately closing the dialog
+    // to avoid flickering animation issues
+    setTimeout(() => {
+      form.handleSubmit(async (values) => {
+        await onSubmit(values);
+      })();
+    }, 10);
+  });
+
+  // Function to handle submission
+  const onSubmit = async (values: any) => {
+    console.log('Submitting form with values:', values);
+    try {
+      await form.handleSubmit(async (data) => {
+        console.log('Final submission with data:', data);
+      })();
+    } catch (error) {
+      console.error('Error in form submission:', error);
     }
-  }, [open, fetchData, form]);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -63,9 +64,11 @@ const WorkOrderDialog = ({
         
         <div className="overflow-y-auto flex-grow pr-1 -mr-1">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <WorkOrderBasicInfoFields form={form} />
               <WorkOrderScheduleFields form={form} />
+              
+              {/* Only render location fields when data is loaded */}
               {dataLoaded && (
                 <WorkOrderLocationFields 
                   form={form} 

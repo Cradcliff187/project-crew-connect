@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -9,7 +9,7 @@ export interface FormData {
   employees: { employee_id: string; first_name: string; last_name: string }[];
 }
 
-export const useWorkOrderData = () => {
+export const useWorkOrderData = (isOpen: boolean = true) => {
   const [formData, setFormData] = useState<FormData>({
     customers: [],
     locations: [],
@@ -18,13 +18,20 @@ export const useWorkOrderData = () => {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fetchedRef = useRef(false);
 
   const fetchData = async () => {
+    // Don't fetch if we've already fetched or if dialog isn't open
+    if (fetchedRef.current || !isOpen) {
+      return;
+    }
+    
     try {
       console.log('Fetching form data...');
       setIsLoading(true);
       setDataLoaded(false);
       setError(null);
+      fetchedRef.current = true;
 
       // Fetch customers data
       const { data: customersData, error: customersError } = await supabase
@@ -40,6 +47,7 @@ export const useWorkOrderData = () => {
           variant: 'destructive',
         });
         setError(customersError.message);
+        fetchedRef.current = false;
         return; 
       }
 
@@ -99,15 +107,28 @@ export const useWorkOrderData = () => {
         description: 'Failed to load necessary data. Please try again.',
         variant: 'destructive',
       });
+      fetchedRef.current = false;
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Automatically fetch data when the component mounts
+  // Fetch data when component mounts or dialog opens
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isOpen) {
+      fetchData();
+    } else {
+      // Reset the fetch flag when dialog closes
+      fetchedRef.current = false;
+    }
+    
+    // Cleanup function to reset state when unmounting
+    return () => {
+      if (!isOpen) {
+        fetchedRef.current = false;
+      }
+    };
+  }, [isOpen]);
 
   return {
     formData,

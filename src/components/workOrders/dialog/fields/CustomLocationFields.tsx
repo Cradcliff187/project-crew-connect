@@ -19,12 +19,8 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
             <FormLabel>Address</FormLabel>
             <FormControl>
               <Input 
-                {...field} 
                 placeholder="Enter address"
-                onChange={(e) => {
-                  console.log('Address changed:', e.target.value);
-                  field.onChange(e);
-                }}
+                {...field}
               />
             </FormControl>
             <FormMessage />
@@ -41,12 +37,8 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
               <FormLabel>City</FormLabel>
               <FormControl>
                 <Input 
-                  {...field} 
                   placeholder="Enter city" 
-                  onChange={(e) => {
-                    console.log('City changed:', e.target.value);
-                    field.onChange(e);
-                  }}
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -62,12 +54,8 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
               <FormLabel>State</FormLabel>
               <FormControl>
                 <Input 
-                  {...field} 
                   placeholder="Enter state"
-                  onChange={(e) => {
-                    console.log('State changed:', e.target.value);
-                    field.onChange(e);
-                  }}
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -83,12 +71,8 @@ const CustomLocationFields = ({ form }: CustomLocationFieldsProps) => {
               <FormLabel>ZIP</FormLabel>
               <FormControl>
                 <Input 
-                  {...field} 
                   placeholder="Enter ZIP code"
-                  onChange={(e) => {
-                    console.log('ZIP changed:', e.target.value);
-                    field.onChange(e);
-                  }}
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
