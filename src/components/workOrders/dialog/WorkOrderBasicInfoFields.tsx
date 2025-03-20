@@ -22,9 +22,11 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
             <FormControl>
               <Input 
                 placeholder="Enter work order title" 
-                {...field} 
-                value={field.value || ''}
-                onChange={(e) => field.onChange(e.target.value)}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
               />
             </FormControl>
             <FormMessage />
@@ -42,7 +44,6 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
               <Textarea 
                 placeholder="Enter work order description" 
                 rows={3} 
-                {...field} 
                 value={field.value || ''}
               />
             </FormControl>
