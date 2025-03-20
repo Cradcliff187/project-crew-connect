@@ -43,7 +43,7 @@ const CustomerSelect = ({ form, customers }: CustomerSelectProps) => {
             </FormControl>
             <SelectContent 
               className="bg-white z-[1000]"
-              position="item"
+              position="item-aligned"
               sideOffset={4}
             >
               {customerData && customerData.length > 0 ? (

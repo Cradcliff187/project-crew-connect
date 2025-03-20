@@ -25,7 +25,7 @@ const LocationSelect = ({ form, locations }: LocationSelectProps) => {
             </FormControl>
             <SelectContent 
               className="bg-white z-[1000]" 
-              position="item"
+              position="item-aligned"
               sideOffset={4}
             >
               {locations && locations.length > 0 ? (
