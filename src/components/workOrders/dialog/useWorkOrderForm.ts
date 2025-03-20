@@ -48,28 +48,8 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
     try {
       console.log('Fetching form data...');
       setDataLoaded(false);
-      
-      // Debugging the query itself
-      console.log('Checking customers table schema...');
-      const { data: tablesData, error: tablesError } = await supabase
-        .from('customers')
-        .select('*')
-        .limit(1);
-      
-      if (tablesError) {
-        console.error('Error checking customers table:', tablesError);
-      } else {
-        console.log('Customers table sample:', tablesData);
-        if (tablesData && tablesData.length > 0) {
-          // Log the structure of a customer record to understand available fields
-          console.log('Customer record structure:', Object.keys(tablesData[0]));
-        } else {
-          console.log('No customer records found in database');
-        }
-      }
-      
-      // Fetch customers with explicit field selection
-      console.log('Fetching customers from Supabase...');
+
+      // Fetch customers data
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('customerid, customername')
@@ -82,23 +62,15 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
           description: customersError.message,
           variant: 'destructive',
         });
+        return; // Exit early on error
       }
 
-      console.log('Raw customers response:', customersData);
+      console.log('Customers data fetched successfully:', customersData);
       
       // Create customers array with proper fallback
-      let customers = Array.isArray(customersData) ? customersData : [];
+      const customers = Array.isArray(customersData) ? customersData : [];
       
-      // Add test customer for development if no real customers found
-      if (customers.length === 0) {
-        console.log('No customers found, creating a test customer in the form data');
-        customers.push({
-          customerid: 'test-customer-id',
-          customername: 'Test Customer (Local Only)'
-        });
-      }
-      
-      // Fetch locations with explicit fields selection
+      // Fetch locations
       const { data: locationsData, error: locationsError } = await supabase
         .from('site_locations')
         .select('location_id, location_name')
@@ -107,9 +79,14 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
       
       if (locationsError) {
         console.error('Error fetching locations:', locationsError);
+        toast({
+          title: 'Error fetching locations',
+          description: locationsError.message,
+          variant: 'destructive',
+        });
       }
       
-      // Fetch employees with explicit fields selection
+      // Fetch employees
       const { data: employeesData, error: employeesError } = await supabase
         .from('employees')
         .select('employee_id, first_name, last_name')
@@ -118,6 +95,11 @@ const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded }: UseWorkOrderFormPr
       
       if (employeesError) {
         console.error('Error fetching employees:', employeesError);
+        toast({
+          title: 'Error fetching employees',
+          description: employeesError.message,
+          variant: 'destructive',
+        });
       }
       
       const updatedFormData = {

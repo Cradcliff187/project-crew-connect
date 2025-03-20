@@ -34,17 +34,10 @@ const WorkOrderDialog = ({
   useEffect(() => {
     if (open) {
       console.log('Dialog opened, fetching data...');
+      form.reset(); // Reset form when dialog opens
       fetchData();
     }
-  }, [open]);
-
-  // Debug logging for customer data
-  useEffect(() => {
-    if (formData.customers) {
-      console.log('Customers available in dialog component:', formData.customers.length);
-      console.log('Customer data sample:', formData.customers.slice(0, 3));
-    }
-  }, [formData]);
+  }, [open, fetchData, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,7 +71,7 @@ const WorkOrderDialog = ({
                 </Button>
                 <Button 
                   type="submit" 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !dataLoaded}
                   className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
                 >
                   <SaveIcon className="h-4 w-4 mr-2" />
