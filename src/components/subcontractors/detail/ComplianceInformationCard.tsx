@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Shield, FileText, Calendar } from 'lucide-react';
+import { Shield, FileText } from 'lucide-react';
 import { Subcontractor } from '../utils/subcontractorUtils';
 import InsuranceStatus from '../InsuranceStatus';
 import { format } from 'date-fns';
@@ -54,12 +54,6 @@ const ComplianceInformationCard = ({ subcontractor }: ComplianceInformationCardP
           {subcontractor.contract_on_file && subcontractor.contract_expiration && (
             <div className="flex items-center gap-2">
               <span className="ml-6">Expires: {formatDate(subcontractor.contract_expiration)}</span>
-            </div>
-          )}
-          {subcontractor.last_performance_review && (
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>Last Review: {formatDate(subcontractor.last_performance_review)}</span>
             </div>
           )}
         </div>

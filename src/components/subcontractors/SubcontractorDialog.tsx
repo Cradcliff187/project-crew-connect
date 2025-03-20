@@ -38,13 +38,8 @@ const SubcontractorDialog = ({
         // Ensure these fields are properly typed
         subid: 'subid' in initialData ? initialData.subid : undefined,
         specialty_ids: 'specialty_ids' in initialData ? initialData.specialty_ids || [] : [],
-        // Ensure rating is correctly typed to prevent errors in the Select component
-        rating: typeof initialData.rating === 'number' ? initialData.rating : null,
+        // Ensure hourly_rate is correctly typed
         hourly_rate: typeof initialData.hourly_rate === 'number' ? initialData.hourly_rate : null,
-        on_time_percentage: typeof initialData.on_time_percentage === 'number' ? initialData.on_time_percentage : null,
-        quality_score: typeof initialData.quality_score === 'number' ? initialData.quality_score : null,
-        safety_incidents: typeof initialData.safety_incidents === 'number' ? initialData.safety_incidents : null,
-        response_time_hours: typeof initialData.response_time_hours === 'number' ? initialData.response_time_hours : null,
       }
     : undefined;
   
