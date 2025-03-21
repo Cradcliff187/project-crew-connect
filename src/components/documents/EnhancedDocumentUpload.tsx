@@ -143,20 +143,30 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
         const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
         const filePath = `${entityType.toLowerCase()}/${entityId || 'general'}/${fileName}`;
         
+        // IMPORTANT: Ensuring we use the correct bucket name
+        const bucketName = 'construction_documents'; // Using snake_case format for the bucket name
+        
+        console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
+        
         // Upload file to Supabase Storage
-        const { error: uploadError } = await supabase.storage
-          .from('construction_documents')
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from(bucketName)
           .upload(filePath, file);
           
         if (uploadError) {
+          console.error('Storage upload error:', uploadError);
           throw uploadError;
         }
         
+        console.log('File uploaded successfully:', uploadData);
+        
         // Get public URL for the uploaded file
         const { data: { publicUrl } } = supabase.storage
-          .from('construction_documents')
+          .from(bucketName)
           .getPublicUrl(filePath);
           
+        console.log('Public URL generated:', publicUrl);
+        
         // Now insert document metadata to Supabase
         const { data: insertedData, error: insertError } = await supabase
           .from('documents')
@@ -182,8 +192,11 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
           .single();
           
         if (insertError) {
+          console.error('Document metadata insert error:', insertError);
           throw insertError;
         }
+        
+        console.log('Document metadata inserted:', insertedData);
         
         // Store the document ID for the first file
         if (insertedData) {

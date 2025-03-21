@@ -1,7 +1,11 @@
 
-import { formatCurrency } from '@/lib/utils';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { EntityType } from '@/components/documents/schemas/documentSchema';
 import { WorkOrderMaterial } from '@/types/workOrder';
 
 interface MaterialReceiptUploadProps {
@@ -12,49 +16,46 @@ interface MaterialReceiptUploadProps {
   onCancel: () => void;
 }
 
-const MaterialReceiptUpload = ({ 
-  workOrderId, 
-  material, 
+const MaterialReceiptUpload: React.FC<MaterialReceiptUploadProps> = ({
+  workOrderId,
+  material,
   vendorName,
-  onSuccess, 
-  onCancel 
-}: MaterialReceiptUploadProps) => {
+  onSuccess,
+  onCancel
+}) => {
+  // Prefill data for receipt upload
+  const prefillData = {
+    amount: material.total_price,
+    vendorId: material.vendor_id || undefined,
+    materialName: material.material_name
+  };
+
+  // Handle successful upload
+  const handleSuccess = (documentId?: string) => {
+    if (documentId) {
+      onSuccess(documentId);
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to get document ID after upload",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
-    <div className="py-2">
-      <div className="mb-4 space-y-2">
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <p className="text-sm font-medium text-gray-500">Material</p>
-            <p className="text-sm">{material.material_name}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500">Vendor</p>
-            <p className="text-sm">{vendorName}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-500">Amount</p>
-            <p className="text-sm">{formatCurrency(material.total_price)}</p>
-          </div>
-        </div>
-      </div>
-      
-      <EnhancedDocumentUpload 
-        entityType={"WORK_ORDER" as EntityType}
-        entityId={workOrderId}
-        onSuccess={(documentId: string) => {
-          if (documentId) {
-            onSuccess(documentId);
-          }
-        }}
-        onCancel={onCancel}
-        isReceiptUpload={true}
-        prefillData={{
-          amount: material.total_price,
-          vendorId: material.vendor_id || undefined,
-          materialName: material.material_name
-        }}
-      />
-    </div>
+    <Card className="shadow-none border-0 p-0">
+      <CardContent className="p-0">
+        <EnhancedDocumentUpload
+          entityType="WORK_ORDER"
+          entityId={workOrderId}
+          onSuccess={handleSuccess}
+          onCancel={onCancel}
+          isReceiptUpload={true}
+          prefillData={prefillData}
+        />
+      </CardContent>
+    </Card>
   );
 };
 

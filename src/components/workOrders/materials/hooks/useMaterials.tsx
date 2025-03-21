@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,7 +76,8 @@ export function useMaterials(workOrderId: string) {
     setSubmitting(true);
     
     try {
-      console.log('Adding material:', {
+      // Detailed logging to help debug the issue
+      console.log('Adding material with payload:', {
         work_order_id: workOrderId,
         vendor_id: material.vendorId,
         material_name: material.materialName,
@@ -84,7 +86,12 @@ export function useMaterials(workOrderId: string) {
         total_price: totalPrice,
       });
       
-      const { data, error } = await supabase
+      // Validate that workOrderId is a valid UUID
+      if (!workOrderId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workOrderId)) {
+        throw new Error(`Invalid work order ID format: ${workOrderId}`);
+      }
+      
+      const { data, error, status } = await supabase
         .from('work_order_materials')
         .insert({
           work_order_id: workOrderId,
@@ -97,6 +104,7 @@ export function useMaterials(workOrderId: string) {
         .select();
       
       if (error) {
+        console.error('Supabase error details:', { error, status });
         throw error;
       }
       
