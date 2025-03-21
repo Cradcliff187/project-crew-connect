@@ -75,8 +75,8 @@ const AddMaterialForm = ({
                 Vendor
               </label>
               <Select 
-                value={selectedVendor || undefined} 
-                onValueChange={(value) => setSelectedVendor(value)}
+                value={selectedVendor || ""} 
+                onValueChange={(value) => setSelectedVendor(value || null)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select vendor" />
