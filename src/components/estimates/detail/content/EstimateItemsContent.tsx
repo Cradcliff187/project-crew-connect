@@ -1,6 +1,7 @@
 
 import React from 'react';
 import EstimateItems from '../../EstimateItems';
+import { EstimateItem } from '../../types/estimateTypes';
 
 interface EstimateItemsContentProps {
   items: {
@@ -23,9 +24,19 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
   contingencyPercentage,
   total
 }) => {
+  // Transform the simplified items to match the EstimateItem type
+  const transformedItems: EstimateItem[] = items.map(item => ({
+    ...item,
+    estimate_id: '', // Adding the required estimate_id property
+    // Default values for other required properties in EstimateItem
+    item_type: 'labor',
+    cost: 0,
+    markup_percentage: 0
+  }));
+
   return (
     <>
-      <EstimateItems items={items} />
+      <EstimateItems items={transformedItems} />
       
       <div className="flex justify-end mt-4">
         <div className="w-64">
