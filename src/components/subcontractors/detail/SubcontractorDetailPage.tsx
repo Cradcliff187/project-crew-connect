@@ -16,8 +16,8 @@ import FinancialInformationCard from './FinancialInformationCard';
 import ComplianceInformationCard from './ComplianceInformationCard';
 import RateInformationCard from './PerformanceMetricsCard';
 import SpecialtiesSection from './SpecialtiesSection';
-import AssociatedProjectsCard from './AssociatedProjectsCard';
-import WorkOrdersCard from './WorkOrdersCard';
+import AssociatedProjects from './AssociatedProjects';
+import AssociatedWorkOrders from './AssociatedWorkOrders';
 import NotesSection from './NotesSection';
 import SubcontractorNotFoundView from './SubcontractorNotFoundView';
 import SubcontractorLoadingView from './SubcontractorLoadingView';
@@ -123,7 +123,7 @@ const SubcontractorDetailPage = () => {
             {projects.length > 0 && (
               <>
                 <Separator />
-                <AssociatedProjectsCard 
+                <AssociatedProjects 
                   projects={projects} 
                   loading={loadingAssociations} 
                 />
@@ -134,7 +134,7 @@ const SubcontractorDetailPage = () => {
             {workOrders.length > 0 && (
               <>
                 <Separator />
-                <WorkOrdersCard 
+                <AssociatedWorkOrders 
                   workOrders={workOrders} 
                   loading={loadingAssociations} 
                 />

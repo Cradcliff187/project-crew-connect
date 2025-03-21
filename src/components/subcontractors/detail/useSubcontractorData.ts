@@ -1,52 +1,66 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Subcontractor } from '../utils/types';
-import useSubcontractorCompliance from '../hooks/useSubcontractorCompliance';
 import useSubcontractorSpecialties from '../hooks/useSubcontractorSpecialties';
-import useFetchSubcontractor from '../hooks/useFetchSubcontractor';
-import useAssociatedData from '../hooks/useAssociatedData';
+import { useSubcontractorAssociatedData } from './hooks/useSubcontractorAssociatedData';
 
-export const useSubcontractorData = (subcontractorId: string | undefined) => {
+const useSubcontractorData = (subcontractorId: string | undefined) => {
+  const [subcontractor, setSubcontractor] = useState<Subcontractor | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Use our custom hooks to get specialized data
-  const { compliance, loading: loadingCompliance } = useSubcontractorCompliance(subcontractorId);
-  const { specialtyIds, loading: loadingSpecialtyIds } = useSubcontractorSpecialties(subcontractorId);
+  const { specialties } = useSubcontractorSpecialties();
   
-  // Use our newly created hooks
-  const { subcontractor, specialties, fetchSubcontractor } = useFetchSubcontractor();
-  const { projects, workOrders, loadingAssociations, fetchAssociatedData } = useAssociatedData();
-
-  // Function to refetch all subcontractor data
-  const fetchAllData = async () => {
-    if (!subcontractorId) return;
-    
-    setLoading(true);
-    const subData = await fetchSubcontractor(subcontractorId);
-    
-    if (subData) {
-      // Fetch associated data if we got the main subcontractor data
-      await fetchAssociatedData(subData.subid);
+  // Use the associated data hook
+  const { 
+    projects, 
+    workOrders, 
+    loadingAssociations, 
+    fetchAssociatedData 
+  } = useSubcontractorAssociatedData();
+  
+  const fetchSubcontractor = async () => {
+    if (!subcontractorId) {
+      setLoading(false);
+      return;
     }
     
-    setLoading(false);
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('subcontractors_new')
+        .select('*')
+        .eq('subid', subcontractorId)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching subcontractor:', error);
+        throw error;
+      }
+      
+      setSubcontractor(data);
+      
+      // Fetch associated data once we have the subcontractor
+      fetchAssociatedData(subcontractorId);
+      
+    } catch (error) {
+      console.error('Error in fetchSubcontractor:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-
-  // Main effect to fetch data when subcontractor ID changes
+  
   useEffect(() => {
-    if (!loadingCompliance && !loadingSpecialtyIds) {
-      fetchAllData();
-    }
-  }, [subcontractorId, loadingCompliance, loadingSpecialtyIds]);
-
+    fetchSubcontractor();
+  }, [subcontractorId]);
+  
   return {
     subcontractor,
-    loading: loading || loadingCompliance || loadingSpecialtyIds,
+    loading,
     specialties,
     projects,
     workOrders,
     loadingAssociations,
-    fetchSubcontractor: fetchAllData,
+    fetchSubcontractor
   };
 };
 
