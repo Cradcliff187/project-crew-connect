@@ -14,6 +14,7 @@ import EstimateItemsTab from './EstimateItemsTab';
 import EstimateRevisionsTab from './EstimateRevisionsTab';
 import EstimateDocumentsTab from './EstimateDocumentsTab';
 import { useToast } from "@/hooks/use-toast";
+import { Document } from '@/components/documents/schemas/documentSchema';
 
 export type EstimateDetailsDialogProps = {
   estimate: {
@@ -34,6 +35,7 @@ export type EstimateDetailsDialogProps = {
   };
   items?: EstimateItem[];
   revisions?: EstimateRevision[];
+  itemDocuments?: Record<string, Document[]>;
   open: boolean;
   onClose: () => void;
 };
@@ -42,6 +44,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
   estimate, 
   items = [], 
   revisions = [], 
+  itemDocuments = {},
   open, 
   onClose 
 }) => {
@@ -136,7 +139,10 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
             </TabsContent>
             
             <TabsContent value="items" className="m-0">
-              <EstimateItemsTab items={items} />
+              <EstimateItemsTab 
+                items={items}
+                itemDocuments={itemDocuments}
+              />
             </TabsContent>
             
             <TabsContent value="revisions" className="m-0">
@@ -147,7 +153,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
             </TabsContent>
             
             <TabsContent value="documents" className="m-0">
-              <EstimateDocumentsTab />
+              <EstimateDocumentsTab estimateId={estimate.id} />
             </TabsContent>
           </ScrollArea>
         </Tabs>

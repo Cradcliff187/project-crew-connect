@@ -3,6 +3,7 @@ import React from 'react';
 import EstimateDetailsDialog from './details/EstimateDetailsDialog';
 import { EstimateItem, EstimateRevision } from './types/estimateTypes';
 import { StatusType } from '@/types/common';
+import { Document } from '@/components/documents/schemas/documentSchema';
 
 export type EstimateDetailsProps = {
   estimate: {
@@ -23,6 +24,7 @@ export type EstimateDetailsProps = {
   };
   items?: EstimateItem[];
   revisions?: EstimateRevision[];
+  itemDocuments?: Record<string, Document[]>;
   open: boolean;
   onClose: () => void;
 };
@@ -31,6 +33,7 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
   estimate, 
   items = [], 
   revisions = [], 
+  itemDocuments = {},
   open, 
   onClose 
 }) => {
@@ -39,6 +42,7 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
       estimate={estimate}
       items={items}
       revisions={revisions}
+      itemDocuments={itemDocuments}
       open={open}
       onClose={onClose}
     />
