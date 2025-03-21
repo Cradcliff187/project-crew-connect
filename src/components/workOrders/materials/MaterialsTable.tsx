@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2, Upload, Receipt } from 'lucide-react';
+import { Trash2, Receipt } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderMaterial } from '@/types/workOrder';
 import { useState } from 'react';
@@ -17,6 +17,7 @@ interface MaterialsTableProps {
   onDelete: (id: string) => Promise<void>;
   totalCost: number;
   workOrderId: string;
+  onReceiptUploaded?: (materialId: string, documentId: string) => Promise<void>;
 }
 
 const MaterialsTable = ({ 
@@ -25,9 +26,11 @@ const MaterialsTable = ({
   vendors, 
   onDelete,
   totalCost,
-  workOrderId
+  workOrderId,
+  onReceiptUploaded
 }: MaterialsTableProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<WorkOrderMaterial | null>(null);
   
   // Find vendor name by ID
   const getVendorName = (vendorId: string | null) => {
@@ -36,24 +39,26 @@ const MaterialsTable = ({
     return vendor ? vendor.vendorname : 'Unknown Vendor';
   };
 
+  const handleOpenReceiptUpload = (material: WorkOrderMaterial) => {
+    setSelectedMaterial(material);
+    setUploadDialogOpen(true);
+  };
+
+  const handleReceiptUploaded = async (documentId: string) => {
+    if (selectedMaterial && onReceiptUploaded) {
+      await onReceiptUploaded(selectedMaterial.id, documentId);
+    }
+    setUploadDialogOpen(false);
+    setSelectedMaterial(null);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Materials List</h3>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-[#0485ea]"
-            onClick={() => setUploadDialogOpen(true)}
-          >
-            <Receipt className="h-4 w-4 mr-2" />
-            Upload Receipt
-          </Button>
-          <p className="text-sm font-medium">
-            Total: {formatCurrency(totalCost)}
-          </p>
-        </div>
+        <p className="text-sm font-medium">
+          Total: {formatCurrency(totalCost)}
+        </p>
       </div>
       
       {loading ? (
@@ -88,14 +93,26 @@ const MaterialsTable = ({
                   <TableCell>{formatCurrency(material.unit_price)}</TableCell>
                   <TableCell>{formatCurrency(material.total_price)}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(material.id)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenReceiptUpload(material)}
+                        className="text-[#0485ea] hover:text-[#0375d1] hover:bg-blue-50"
+                        title="Upload Receipt"
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(material.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        title="Delete Material"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -104,19 +121,21 @@ const MaterialsTable = ({
         </div>
       )}
 
-      {/* Receipt Upload Dialog */}
+      {/* Material Receipt Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Upload Material Receipt</DialogTitle>
+            <DialogTitle>Upload Receipt for {selectedMaterial?.material_name}</DialogTitle>
           </DialogHeader>
-          <EnhancedDocumentUpload 
-            entityType={"WORK_ORDER" as EntityType}
-            entityId={workOrderId}
-            onSuccess={() => setUploadDialogOpen(false)}
-            onCancel={() => setUploadDialogOpen(false)}
-            isReceiptUpload={true}
-          />
+          {selectedMaterial && (
+            <MaterialReceiptUpload 
+              workOrderId={workOrderId}
+              material={selectedMaterial}
+              vendorName={getVendorName(selectedMaterial.vendor_id)}
+              onSuccess={handleReceiptUploaded}
+              onCancel={() => setUploadDialogOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -124,3 +143,58 @@ const MaterialsTable = ({
 };
 
 export default MaterialsTable;
+
+// Material Receipt Upload component - simplified version of EnhancedDocumentUpload
+interface MaterialReceiptUploadProps {
+  workOrderId: string;
+  material: WorkOrderMaterial;
+  vendorName: string;
+  onSuccess: (documentId: string) => void;
+  onCancel: () => void;
+}
+
+const MaterialReceiptUpload = ({ 
+  workOrderId, 
+  material, 
+  vendorName,
+  onSuccess, 
+  onCancel 
+}: MaterialReceiptUploadProps) => {
+  return (
+    <div className="py-2">
+      <div className="mb-4 space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <p className="text-sm font-medium text-gray-500">Material</p>
+            <p className="text-sm">{material.material_name}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Vendor</p>
+            <p className="text-sm">{vendorName}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Amount</p>
+            <p className="text-sm">{formatCurrency(material.total_price)}</p>
+          </div>
+        </div>
+      </div>
+      
+      <EnhancedDocumentUpload 
+        entityType={"WORK_ORDER" as EntityType}
+        entityId={workOrderId}
+        onSuccess={(documentId: string) => {
+          if (documentId) {
+            onSuccess(documentId);
+          }
+        }}
+        onCancel={onCancel}
+        isReceiptUpload={true}
+        prefillData={{
+          amount: material.total_price,
+          vendorId: material.vendor_id || undefined,
+          materialName: material.material_name
+        }}
+      />
+    </div>
+  );
+};

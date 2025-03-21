@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,9 +32,14 @@ import {
 interface EnhancedDocumentUploadProps {
   entityType: EntityType;
   entityId?: string;
-  onSuccess?: () => void;
+  onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
   isReceiptUpload?: boolean;
+  prefillData?: {
+    amount?: number;
+    vendorId?: string;
+    materialName?: string;
+  };
 }
 
 const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
@@ -41,7 +47,8 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   entityId,
   onSuccess,
   onCancel,
-  isReceiptUpload = false
+  isReceiptUpload = false,
+  prefillData
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('file');
@@ -73,7 +80,24 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       form.setValue('metadata.isExpense', true);
       setShowVendorSelector(true);
     }
-  }, [isReceiptUpload, form]);
+    
+    // If prefill data is provided, use it
+    if (prefillData) {
+      if (prefillData.amount) {
+        form.setValue('metadata.amount', prefillData.amount);
+      }
+      
+      if (prefillData.vendorId) {
+        form.setValue('metadata.vendorId', prefillData.vendorId);
+      }
+      
+      if (prefillData.materialName) {
+        // Add material name as a tag and in notes
+        form.setValue('metadata.tags', [prefillData.materialName]);
+        form.setValue('metadata.notes', `Receipt for: ${prefillData.materialName}`);
+      }
+    }
+  }, [isReceiptUpload, prefillData, form]);
 
   const watchIsExpense = form.watch('metadata.isExpense');
   const watchVendorType = form.watch('metadata.vendorType');
@@ -107,6 +131,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   const onSubmit = async (data: DocumentUploadFormValues) => {
     try {
       setIsUploading(true);
+      let uploadedDocumentId: string | undefined;
       
       const { files, metadata } = data;
       
@@ -133,7 +158,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
           .getPublicUrl(filePath);
           
         // Now insert document metadata to Supabase
-        const { error: insertError } = await supabase
+        const { data: insertedData, error: insertError } = await supabase
           .from('documents')
           .insert({
             file_name: file.name,
@@ -152,22 +177,29 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
             notes: metadata.notes,
             vendor_id: metadata.vendorId || null,
             vendor_type: metadata.vendorType || null,
-          });
+          })
+          .select('document_id')
+          .single();
           
         if (insertError) {
           throw insertError;
+        }
+        
+        // Store the document ID for the first file
+        if (insertedData) {
+          uploadedDocumentId = insertedData.document_id;
         }
       }
       
       toast({
         title: isReceiptUpload ? "Receipt uploaded successfully" : "Document uploaded successfully",
         description: isReceiptUpload 
-          ? "Your receipt has been attached to this time entry." 
+          ? "Your receipt has been attached to this material." 
           : "Your document has been uploaded and indexed."
       });
       
       if (onSuccess) {
-        onSuccess();
+        onSuccess(uploadedDocumentId);
       }
       
       // Reset form
@@ -186,16 +218,21 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     }
   };
 
+  // If prefill data is available and it's a receipt upload, simplify the UI
+  const simplifiedUpload = isReceiptUpload && prefillData;
+
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
-        <CardDescription>
-          {isReceiptUpload 
-            ? "Upload receipts for materials, services, or other expenses related to this time entry."
-            : "Upload and categorize documents for your projects, invoices, and more."}
-        </CardDescription>
-      </CardHeader>
+      {!simplifiedUpload && (
+        <CardHeader>
+          <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
+          <CardDescription>
+            {isReceiptUpload 
+              ? "Upload receipts for materials or expenses related to this work order."
+              : "Upload and categorize documents for your projects, invoices, and more."}
+          </CardDescription>
+        </CardHeader>
+      )}
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -303,83 +340,86 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               />
             )}
             
-            <Separator />
+            {!simplifiedUpload && <Separator />}
             
-            <div className="space-y-4">
-              {!isReceiptUpload && (
+            {!simplifiedUpload && (
+              <div className="space-y-4">
+                {!isReceiptUpload && (
+                  <FormField
+                    control={form.control}
+                    name="metadata.category"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel>Document Category</FormLabel>
+                        <FormControl>
+                          <DocumentCategorySelector
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
+                {!isReceiptUpload && (
+                  <FormField
+                    control={form.control}
+                    name="metadata.isExpense"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Expense Document
+                          </FormLabel>
+                          <FormDescription>
+                            Mark this document as an expense record (invoice, receipt, etc.)
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
+                
+                {/* Only show vendor selector if not using prefilled data */}
+                {showVendorSelector && !prefillData?.vendorId && (
+                  <VendorSelector 
+                    control={form.control} 
+                    watchVendorType={watchVendorType} 
+                  />
+                )}
+                
+                {(watchIsExpense || isReceiptUpload) && !prefillData?.amount && (
+                  <ExpenseForm control={form.control} />
+                )}
+                
                 <FormField
                   control={form.control}
-                  name="metadata.category"
+                  name="metadata.notes"
                   render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel>Document Category</FormLabel>
+                    <FormItem>
+                      <FormLabel>Notes</FormLabel>
                       <FormControl>
-                        <DocumentCategorySelector
-                          value={field.value}
-                          onChange={field.onChange}
+                        <Textarea
+                          placeholder={isReceiptUpload 
+                            ? "Add any details about this receipt..." 
+                            : "Add any relevant notes about this document..."}
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
-              
-              {!isReceiptUpload && (
-                <FormField
-                  control={form.control}
-                  name="metadata.isExpense"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Expense Document
-                        </FormLabel>
-                        <FormDescription>
-                          Mark this document as an expense record (invoice, receipt, etc.)
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              )}
-              
-              {showVendorSelector && (
-                <VendorSelector 
-                  control={form.control} 
-                  watchVendorType={watchVendorType} 
-                />
-              )}
-              
-              {(watchIsExpense || isReceiptUpload) && (
-                <ExpenseForm control={form.control} />
-              )}
-              
-              <FormField
-                control={form.control}
-                name="metadata.notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder={isReceiptUpload 
-                          ? "Add any details about this receipt..." 
-                          : "Add any relevant notes about this document..."}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+              </div>
+            )}
           </CardContent>
           
           <CardFooter className="flex justify-between">

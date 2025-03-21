@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Package } from 'lucide-react';
 import { WorkOrderMaterial } from '@/types/workOrder';
 import { AddMaterialForm, MaterialsTable } from './materials';
 
@@ -170,6 +169,40 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     }
   };
   
+  // Handle attaching receipt to material
+  const handleReceiptUploaded = async (materialId: string, documentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('work_order_materials')
+        .update({ receipt_document_id: documentId })
+        .eq('id', materialId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: 'Receipt Attached',
+        description: 'Receipt has been attached to the material successfully.',
+      });
+      
+      // Refresh materials list
+      fetchMaterials();
+      
+      // Notify parent component if provided
+      if (onMaterialAdded) {
+        onMaterialAdded();
+      }
+    } catch (error: any) {
+      console.error('Error attaching receipt:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to attach receipt. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   // Calculate total materials cost
   const totalMaterialsCost = materials.reduce((sum, material) => sum + material.total_price, 0);
 
@@ -195,6 +228,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
         onDelete={handleDelete}
         totalCost={totalMaterialsCost}
         workOrderId={workOrderId}
+        onReceiptUploaded={handleReceiptUploaded}
       />
     </div>
   );
