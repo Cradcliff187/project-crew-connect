@@ -79,7 +79,7 @@ const EstimateItemRow = ({
   };
 
   return (
-    <div className="grid grid-cols-12 gap-2 items-start p-3 border rounded-md">
+    <div className="grid grid-cols-12 gap-3 items-start p-4 border rounded-md bg-white">
       <ItemRowHeader 
         index={index} 
         control={form.control} 

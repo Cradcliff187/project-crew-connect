@@ -10,7 +10,7 @@ interface ItemCalculationsProps {
 const ItemCalculations = ({ itemPrice, grossMargin, grossMarginPercentage }: ItemCalculationsProps) => {
   return (
     <>
-      <div className="col-span-6 md:col-span-2">
+      <div className="col-span-6 md:col-span-3">
         <FormItem>
           <FormLabel>Price</FormLabel>
           <div className="h-10 px-3 py-2 rounded-md border border-input bg-gray-50 text-right">
@@ -19,7 +19,7 @@ const ItemCalculations = ({ itemPrice, grossMargin, grossMarginPercentage }: Ite
         </FormItem>
       </div>
 
-      <div className="col-span-6 md:col-span-2">
+      <div className="col-span-6 md:col-span-3">
         <FormItem>
           <FormLabel>Gross Margin</FormLabel>
           <div className="h-10 px-3 py-2 rounded-md border border-input bg-gray-50 text-right">

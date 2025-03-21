@@ -12,7 +12,7 @@ interface CostFieldsProps {
 const CostFields = ({ control, index }: CostFieldsProps) => {
   return (
     <>
-      <div className="col-span-6 md:col-span-2">
+      <div className="col-span-6 md:col-span-3">
         <FormField
           control={control}
           name={`items.${index}.cost`}
@@ -28,7 +28,7 @@ const CostFields = ({ control, index }: CostFieldsProps) => {
         />
       </div>
 
-      <div className="col-span-6 md:col-span-2">
+      <div className="col-span-6 md:col-span-3">
         <FormField
           control={control}
           name={`items.${index}.markup_percentage`}
