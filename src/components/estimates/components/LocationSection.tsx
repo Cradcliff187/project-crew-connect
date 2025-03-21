@@ -3,6 +3,7 @@ import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 import LocationToggle from './LocationToggle';
 import LocationFields from './LocationFields';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 
 interface LocationSectionProps {
   useCustomLocation: boolean;
@@ -21,7 +22,19 @@ const LocationSection = ({ useCustomLocation, handleCustomLocationToggle }: Loca
         onToggleChange={handleCustomLocationToggle}
       />
 
-      <LocationFields />
+      <Collapsible open={useCustomLocation}>
+        <CollapsibleContent className="mt-4">
+          <LocationFields />
+        </CollapsibleContent>
+      </Collapsible>
+      
+      {!useCustomLocation && (
+        <div className="mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+          <p className="text-sm text-gray-600">
+            Using customer address as job site location
+          </p>
+        </div>
+      )}
     </div>
   );
 };
