@@ -44,7 +44,6 @@ export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProp
         .ilike('from_status', normalizedStatus); // Use case-insensitive comparison
 
       if (error) {
-        // Don't throw error here, just log it and fall back to static transitions
         console.error('Error fetching transitions:', error);
         useStaticTransitions(normalizedStatus);
         return;
