@@ -1,103 +1,70 @@
 
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EstimateDetailsProps } from '../EstimateDetails';
 import EstimateDetailsTab from './EstimateDetailsTab';
 import EstimateItemsTab from './EstimateItemsTab';
 import EstimateRevisionsTab from './EstimateRevisionsTab';
-import EstimateDocumentsTab from './EstimateDocumentsTab';
-import { formatDate } from '@/lib/utils';
-import { Document } from '@/components/documents/schemas/documentSchema';
+import EstimateDocumentsTab from '../details/EstimateDocumentsTab';
 
-interface EstimateDetailsDialogProps {
-  estimate: {
-    id: string;
-    client: string;
-    project: string;
-    date: string;
-    amount: number;
-    status: string;
-    versions: number;
-    location?: {
-      address?: string;
-      city?: string;
-      state?: string;
-      zip?: string;
-    };
-    description?: string;
-  };
-  items: EstimateItem[];
-  revisions: EstimateRevision[];
-  documents?: Document[];
-  open: boolean;
-  onClose: () => void;
-}
-
-const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
-  estimate,
-  items,
-  revisions,
-  documents = [],
-  open,
-  onClose
-}) => {
-  const [activeTab, setActiveTab] = useState('details');
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-
+const EstimateDetailsDialog = ({ 
+  estimate, 
+  items, 
+  revisions, 
+  documents, 
+  open, 
+  onClose,
+  onDocumentAdded
+}: EstimateDetailsProps) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>Estimate Details</DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="items">Items</TabsTrigger>
-            <TabsTrigger value="revisions">Revisions ({revisions.length})</TabsTrigger>
-            <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="details">
-            <EstimateDetailsTab estimate={estimate} />
-          </TabsContent>
-
-          <TabsContent value="items">
-            <EstimateItemsTab items={items} />
-          </TabsContent>
-
-          <TabsContent value="revisions">
-            <EstimateRevisionsTab 
-              revisions={revisions} 
-              formatDate={formatDate} 
-            />
-          </TabsContent>
-
-          <TabsContent value="documents">
-            <EstimateDocumentsTab 
-              estimateId={estimate.id} 
-              documents={documents}
-            />
-          </TabsContent>
+      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden">
+        <Tabs defaultValue="details" className="w-full">
+          <div className="border-b">
+            <div className="px-4">
+              <TabsList className="mt-4">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="items">Items</TabsTrigger>
+                <TabsTrigger value="revisions">Revisions</TabsTrigger>
+                <TabsTrigger value="documents">
+                  Documents
+                  {documents && documents.length > 0 && (
+                    <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0485ea] text-[0.7rem] text-white">
+                      {documents.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
+          
+          <div className="p-4 overflow-y-auto max-h-[80vh]">
+            <TabsContent value="details">
+              <EstimateDetailsTab estimate={estimate} />
+            </TabsContent>
+            
+            <TabsContent value="items">
+              <EstimateItemsTab
+                items={items}
+                estimateId={estimate.id}
+              />
+            </TabsContent>
+            
+            <TabsContent value="revisions">
+              <EstimateRevisionsTab
+                revisions={revisions}
+                estimateId={estimate.id}
+              />
+            </TabsContent>
+            
+            <TabsContent value="documents">
+              <EstimateDocumentsTab 
+                documents={documents} 
+                estimateId={estimate.id}
+                onDocumentAdded={onDocumentAdded}
+              />
+            </TabsContent>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>

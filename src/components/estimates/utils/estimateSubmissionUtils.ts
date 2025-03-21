@@ -98,7 +98,17 @@ export const submitEstimateItems = async (
     if (item.document && item.document instanceof File) {
       try {
         console.log(`Uploading document for item ${index}: ${item.document.name}`);
-        documentId = await uploadItemDocument(item.document, estimateId, index);
+        // Pass the item data so we can determine vendor/subcontractor relationship
+        documentId = await uploadItemDocument(
+          item.document, 
+          estimateId, 
+          index,
+          {
+            item_type: item.item_type,
+            vendor_id: item.vendor_id,
+            subcontractor_id: item.subcontractor_id
+          }
+        );
         console.log(`Document uploaded with ID: ${documentId}`);
       } catch (error) {
         console.error(`Error uploading document for item ${index}:`, error);

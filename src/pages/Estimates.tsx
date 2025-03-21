@@ -47,6 +47,13 @@ const Estimates = () => {
     fetchEstimates(); // Refresh the list when the dialog is closed
   };
   
+  const handleDocumentAdded = () => {
+    if (selectedEstimate) {
+      console.log("Document added, refreshing estimate details");
+      refetchAll(selectedEstimate.id);
+    }
+  };
+  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', { 
@@ -90,6 +97,7 @@ const Estimates = () => {
           documents={estimateDocuments}
           open={!!selectedEstimate}
           onClose={closeEstimateDetails}
+          onDocumentAdded={handleDocumentAdded}
         />
       )}
     </PageTransition>

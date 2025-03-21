@@ -27,6 +27,7 @@ export type EstimateDetailsProps = {
   documents?: Document[];
   open: boolean;
   onClose: () => void;
+  onDocumentAdded?: () => void;
 };
 
 const EstimateDetails: React.FC<EstimateDetailsProps> = ({ 
@@ -35,7 +36,8 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
   revisions = [], 
   documents = [],
   open, 
-  onClose 
+  onClose,
+  onDocumentAdded
 }) => {
   console.log('EstimateDetails rendering with:', {
     estimateId: estimate.id,
@@ -52,6 +54,7 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
       documents={documents}
       open={open}
       onClose={onClose}
+      onDocumentAdded={onDocumentAdded}
     />
   );
 };
