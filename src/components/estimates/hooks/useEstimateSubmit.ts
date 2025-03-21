@@ -183,11 +183,11 @@ export const useEstimateSubmit = () => {
         throw itemsError;
       }
 
-      // Show success message
+      // Show success message with the proper toast function
       toast({
-        title: "Success",
-        description: `Estimate ${estimateId} has been created.`,
-        variant: "default"
+        title: "Estimate Created",
+        description: `Estimate ${estimateId} has been successfully created.`,
+        variant: "success",
       });
 
       // Call the success callback

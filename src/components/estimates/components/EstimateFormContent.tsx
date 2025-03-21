@@ -10,6 +10,7 @@ import LocationSection from './LocationSection';
 import EstimateItemFields from './EstimateItemFields';
 import EstimateSummary from './EstimateSummary';
 import EstimateFormButtons from './EstimateFormButtons';
+import EstimatePreviewDialog from './EstimatePreviewDialog';
 
 import { estimateFormSchema, type EstimateFormValues } from '../schemas/estimateFormSchema';
 import { useEstimateSubmit } from '../hooks/useEstimateSubmit';
@@ -23,12 +24,14 @@ interface EstimateFormContentProps {
 
 const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCustomLocation }: EstimateFormContentProps) => {
   const { isSubmitting, submitEstimate } = useEstimateSubmit();
+  const [showPreview, setShowPreview] = useState(false);
   const [selectedCustomerAddress, setSelectedCustomerAddress] = useState<{
     address?: string;
     city?: string;
     state?: string;
     zip?: string;
   } | null>(null);
+  const [selectedCustomerName, setSelectedCustomerName] = useState<string>('');
 
   // Initialize the form
   const form = useForm<EstimateFormValues>({
@@ -61,6 +64,7 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
     const selectedCustomer = customers.find(c => c.id === customerId);
     
     if (selectedCustomer) {
+      setSelectedCustomerName(selectedCustomer.name || '');
       setSelectedCustomerAddress({
         address: selectedCustomer.address,
         city: selectedCustomer.city,
@@ -99,40 +103,78 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
     }
   };
 
-  // Handle form submission
+  // Handle preview display
+  const handleShowPreview = () => {
+    const isValid = form.trigger();
+    isValid.then((valid) => {
+      if (valid) {
+        setShowPreview(true);
+      }
+    });
+  };
+
+  // Handle closing preview
+  const handleClosePreview = () => {
+    setShowPreview(false);
+  };
+
+  // Handle form submission directly (from create button)
   const onSubmit = async (data: EstimateFormValues) => {
     await submitEstimate(data, customers, onClose);
   };
 
+  // Handle submission from preview dialog
+  const handleConfirmSubmit = async () => {
+    const data = form.getValues();
+    await submitEstimate(data, customers, onClose);
+  };
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6">
-        <BasicInfoFields 
-          customers={customers}
-          handleCustomerChange={handleCustomerChange}
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6">
+          <BasicInfoFields 
+            customers={customers}
+            handleCustomerChange={handleCustomerChange}
+          />
+          
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+            <DescriptionField />
+          </div>
+
+          <LocationSection
+            useCustomLocation={useCustomLocation}
+            handleCustomLocationToggle={handleCustomLocationToggle}
+            customerAddress={selectedCustomerAddress || undefined}
+          />
+
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+            <EstimateItemFields />
+          </div>
+
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+            <EstimateSummary />
+          </div>
+
+          <EstimateFormButtons 
+            onCancel={onClose} 
+            onPreview={handleShowPreview}
+            isSubmitting={isSubmitting} 
+          />
+        </form>
+      </Form>
+
+      {showPreview && (
+        <EstimatePreviewDialog
+          open={showPreview}
+          onClose={handleClosePreview}
+          onConfirm={handleConfirmSubmit}
+          formData={form.getValues()}
+          customerName={selectedCustomerName}
+          isSubmitting={isSubmitting}
         />
-        
-        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-          <DescriptionField />
-        </div>
-
-        <LocationSection
-          useCustomLocation={useCustomLocation}
-          handleCustomLocationToggle={handleCustomLocationToggle}
-          customerAddress={selectedCustomerAddress || undefined}
-        />
-
-        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-          <EstimateItemFields />
-        </div>
-
-        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-          <EstimateSummary />
-        </div>
-
-        <EstimateFormButtons onCancel={onClose} isSubmitting={isSubmitting} />
-      </form>
-    </Form>
+      )}
+    </>
   );
 };
 
