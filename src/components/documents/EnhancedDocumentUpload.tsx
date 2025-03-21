@@ -55,6 +55,14 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const { isMobile, hasCamera } = useDeviceCapabilities();
+  
+  // Log props for debugging
+  console.log('EnhancedDocumentUpload props:', { 
+    entityType, 
+    entityId, 
+    isReceiptUpload, 
+    prefillData 
+  });
 
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
@@ -131,6 +139,8 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   const onSubmit = async (data: DocumentUploadFormValues) => {
     try {
       setIsUploading(true);
+      console.log('Uploading document with data:', data);
+      
       let uploadedDocumentId: string | undefined;
       
       const { files, metadata } = data;
@@ -143,8 +153,8 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
         const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
         const filePath = `${entityType.toLowerCase()}/${entityId || 'general'}/${fileName}`;
         
-        // IMPORTANT: Ensuring we use the correct bucket name
-        const bucketName = 'construction_documents'; // Using snake_case format for the bucket name
+        // IMPORTANT: Using the correct bucket name in snake_case format
+        const bucketName = 'construction_documents';
         
         console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
         
@@ -212,6 +222,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       });
       
       if (onSuccess) {
+        console.log('Calling onSuccess with document ID:', uploadedDocumentId);
         onSuccess(uploadedDocumentId);
       }
       

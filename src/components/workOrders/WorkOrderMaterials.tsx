@@ -78,7 +78,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
       
       // Show the receipt upload dialog for the new material
       if (newMaterial) {
-        setSelectedMaterial(newMaterial as WorkOrderMaterial);
+        setSelectedMaterial(newMaterial);
         setShowReceiptUpload(true);
       }
       
