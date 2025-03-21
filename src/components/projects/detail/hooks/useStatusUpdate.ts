@@ -65,6 +65,22 @@ export const useStatusUpdate = ({
     try {
       console.log(`Updating project status from ${currentStatus} to ${newStatus} for project ID: ${projectId}`);
       
+      // First verify if this transition is allowed through the RPC
+      const { data: validationData, error: validationError } = await supabase
+        .rpc('validate_status_transition', {
+          entity_type_param: 'PROJECT',
+          from_status_param: normalizedCurrentStatus,
+          to_status_param: normalizedNewStatus
+        });
+
+      if (validationError) {
+        throw new Error(`Status transition validation failed: ${validationError.message}`);
+      }
+      
+      if (validationData === false) {
+        throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+      }
+      
       // Use the configured Supabase client which already has headers set up properly
       const { error, data } = await supabase
         .from('projects')
