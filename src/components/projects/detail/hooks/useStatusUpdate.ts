@@ -45,6 +45,7 @@ export const useStatusUpdate = ({
     try {
       console.log(`Updating project status from ${currentStatus} to ${newStatus}`);
       
+      // Ensure we're using the correct Supabase client with API key
       const { error } = await supabase
         .from('projects')
         .update({ 
