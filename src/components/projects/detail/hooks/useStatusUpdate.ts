@@ -29,7 +29,7 @@ export const useStatusUpdate = ({
   };
   
   const updateStatus = async (newStatus: string) => {
-    if (currentStatus === newStatus) {
+    if (currentStatus.toLowerCase() === newStatus.toLowerCase()) {
       toast({
         title: 'Status unchanged',
         description: `Project is already ${statusLabels[newStatus] || newStatus}.`,
