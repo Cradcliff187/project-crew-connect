@@ -12,8 +12,8 @@ export const statusOptions = [
 // Note: These are fallback transitions if the database call fails
 // The actual transitions are fetched from the database
 export const statusTransitions: Record<string, string[]> = {
-  new: ['active', 'cancelled'],
-  active: ['on_hold', 'cancelled'],
+  new: ['active', 'cancelled', 'pending'],
+  active: ['on_hold', 'cancelled', 'completed'],
   on_hold: ['active', 'completed', 'cancelled'],
   completed: ['active'],
   cancelled: ['active'],

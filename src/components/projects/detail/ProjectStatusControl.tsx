@@ -80,10 +80,10 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
   // Fallback transitions if database call fails
   const getStaticTransitions = (currentStatus: string): {status: string, label: string}[] => {
     // These are fallback transitions if the database call fails
-    // They should match what's defined in the database
+    // They should match what's defined in the database and ProjectConstants.ts
     const staticTransitions: Record<string, string[]> = {
-      new: ['active', 'cancelled'],
-      active: ['on_hold', 'cancelled'], 
+      new: ['active', 'cancelled', 'pending'],
+      active: ['on_hold', 'cancelled', 'completed'], 
       on_hold: ['active', 'completed', 'cancelled'],
       completed: ['active'],
       cancelled: ['active'],
