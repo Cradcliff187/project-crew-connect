@@ -62,6 +62,13 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog }: WorkOrderCostSummaryP
     fetchCostData();
   }, [workOrder.work_order_id]);
   
+  // Handle the button click to log time
+  const handleLogTimeClick = () => {
+    if (onAddTimeLog) {
+      onAddTimeLog();
+    }
+  };
+  
   return (
     <Card>
       <CardContent className="pt-6">
@@ -105,7 +112,7 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog }: WorkOrderCostSummaryP
           <Button 
             variant="outline" 
             className="text-[#0485ea] mb-4"
-            onClick={onAddTimeLog}
+            onClick={handleLogTimeClick}
           >
             <Plus className="h-4 w-4 mr-1" />
             Log Time
