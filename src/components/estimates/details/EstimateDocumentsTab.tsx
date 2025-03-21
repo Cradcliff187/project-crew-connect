@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
-import { EnhancedDocumentUpload } from '@/components/documents/EnhancedDocumentUpload';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { FileIcon, ImageIcon, XCircleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

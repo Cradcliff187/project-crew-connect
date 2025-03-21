@@ -18,6 +18,15 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('details');
   
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
@@ -38,7 +47,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
           </TabsContent>
           
           <TabsContent value="revisions">
-            <EstimateRevisionsTab revisions={revisions} />
+            <EstimateRevisionsTab revisions={revisions} formatDate={formatDate} />
           </TabsContent>
 
           <TabsContent value="documents">
