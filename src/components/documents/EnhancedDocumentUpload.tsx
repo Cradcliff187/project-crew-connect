@@ -18,12 +18,13 @@ interface EnhancedDocumentUploadProps {
   entityId?: string;
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
+  onStartUpload?: () => void; // Added this property to fix the TypeScript error
   isReceiptUpload?: boolean;
   prefillData?: {
     amount?: number;
     vendorId?: string;
     materialName?: string;
-    category?: DocumentCategory;  // Added this property to align with updated interfaces
+    category?: DocumentCategory;
   };
 }
 
@@ -32,6 +33,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   entityId,
   onSuccess,
   onCancel,
+  onStartUpload,
   isReceiptUpload = false,
   prefillData
 }) => {
@@ -66,7 +68,8 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     onSuccess,
     onCancel,
     isReceiptUpload,
-    prefillData
+    prefillData,
+    onStartUpload, // Pass the onStartUpload prop to the hook
   });
 
   // Initialize form with prefill data if available

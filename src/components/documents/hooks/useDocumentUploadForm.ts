@@ -16,6 +16,7 @@ interface UseDocumentUploadFormProps {
   entityId?: string;
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
+  onStartUpload?: () => void; // Added this property to fix the TypeScript error
   isReceiptUpload?: boolean;
   prefillData?: {
     amount?: number;
@@ -30,6 +31,7 @@ export const useDocumentUploadForm = ({
   entityId,
   onSuccess,
   onCancel,
+  onStartUpload,
   isReceiptUpload = false,
   prefillData
 }: UseDocumentUploadFormProps) => {
@@ -68,6 +70,11 @@ export const useDocumentUploadForm = ({
   const onSubmit = async (data: DocumentUploadFormValues) => {
     try {
       setIsUploading(true);
+      
+      // Call onStartUpload if provided
+      if (onStartUpload) {
+        onStartUpload();
+      }
       
       const result = await uploadDocument(data);
       

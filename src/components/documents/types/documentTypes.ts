@@ -10,5 +10,7 @@ export interface PrefillData {
   amount?: number;
   vendorId?: string;
   materialName?: string;
-  category?: DocumentCategory;  // Added this property
+  category?: DocumentCategory;
 }
+
+// No changes needed here, but ensuring the file is complete
