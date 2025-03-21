@@ -5,6 +5,7 @@ import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { FileUpload } from '@/components/ui/file-upload';
 import { File, PaperclipIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ItemDocumentUploadProps {
   index: number;
@@ -26,6 +27,7 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
       const file = files[0];
       setSelectedFile(file);
       field.onChange(file);
+      console.log(`File selected for item ${index}:`, file.name);
     }
   };
   
@@ -34,11 +36,14 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
     e.stopPropagation();
     setSelectedFile(null);
     field.onChange(undefined);
+    console.log(`File cleared for item ${index}`);
   };
 
   const getLabelForUpload = () => {
     if (itemType === 'subcontractor') {
       return "Attach Subcontractor Estimate";
+    } else if (itemType === 'vendor') {
+      return "Attach Vendor Quote";
     }
     return "Attach Document";
   };
@@ -47,16 +52,25 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
     <div className="mt-2">
       {!selectedFile ? (
         <div className="flex items-center">
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="sm"
-            className="p-0 h-auto text-sm text-[#0485ea] hover:bg-transparent hover:text-[#0373ce]"
-            onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
-          >
-            <PaperclipIcon className="h-3 w-3 mr-1" />
-            {getLabelForUpload()}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm"
+                  className="p-0 h-auto text-sm text-[#0485ea] hover:bg-transparent hover:text-[#0373ce]"
+                  onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+                >
+                  <PaperclipIcon className="h-3 w-3 mr-1" />
+                  {getLabelForUpload()}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Attach a PDF or image to this item</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           
           <div className="hidden">
             <FileUpload

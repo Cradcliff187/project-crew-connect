@@ -37,6 +37,13 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
   open, 
   onClose 
 }) => {
+  console.log('EstimateDetails rendering with:', {
+    estimateId: estimate.id,
+    itemsCount: items.length,
+    revisionsCount: revisions.length,
+    documentsCount: documents.length
+  });
+  
   return (
     <EstimateDetailsDialog
       estimate={estimate}

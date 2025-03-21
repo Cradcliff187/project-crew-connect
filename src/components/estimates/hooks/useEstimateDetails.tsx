@@ -7,19 +7,23 @@ import { EstimateItem, EstimateRevision } from '@/components/estimates/types/est
 import { Document } from '@/components/documents/schemas/documentSchema';
 
 const fetchEstimateItems = async (estimateId: string) => {
+  console.log(`Fetching items for estimate: ${estimateId}`);
   const { data, error } = await supabase
     .from('estimate_items')
     .select('*')
     .eq('estimate_id', estimateId);
   
   if (error) {
+    console.error("Error fetching estimate items:", error);
     throw error;
   }
   
+  console.log(`Retrieved ${data?.length || 0} items for estimate ${estimateId}`);
   return data || [];
 };
 
 const fetchEstimateRevisions = async (estimateId: string) => {
+  console.log(`Fetching revisions for estimate: ${estimateId}`);
   const { data, error } = await supabase
     .from('estimate_revisions')
     .select('*')
@@ -27,25 +31,77 @@ const fetchEstimateRevisions = async (estimateId: string) => {
     .order('version', { ascending: false });
   
   if (error) {
+    console.error("Error fetching estimate revisions:", error);
     throw error;
   }
   
+  console.log(`Retrieved ${data?.length || 0} revisions for estimate ${estimateId}`);
   return data || [];
 };
 
 const fetchEstimateDocuments = async (estimateId: string) => {
-  const { data, error } = await supabase
+  console.log(`Fetching documents for estimate: ${estimateId}`);
+  
+  // First, get documents directly linked to the estimate
+  const { data: directDocs, error: directError } = await supabase
     .from('documents')
     .select('*')
     .eq('entity_type', 'ESTIMATE')
     .eq('entity_id', estimateId);
 
-  if (error) {
-    throw error;
+  if (directError) {
+    console.error("Error fetching direct estimate documents:", directError);
+    throw directError;
   }
+  
+  console.log(`Retrieved ${directDocs?.length || 0} direct documents for estimate ${estimateId}`);
+  
+  // Then, get documents linked through estimate_items
+  const { data: itemDocs, error: itemsError } = await supabase
+    .from('estimate_items')
+    .select('document_id')
+    .eq('estimate_id', estimateId)
+    .not('document_id', 'is', null);
+    
+  if (itemsError) {
+    console.error("Error fetching estimate items with documents:", itemsError);
+    throw itemsError;
+  }
+  
+  console.log(`Found ${itemDocs?.length || 0} item document references`);
+  
+  // Get the actual document records for those linked through items
+  let linkedDocs: any[] = [];
+  if (itemDocs && itemDocs.length > 0) {
+    const documentIds = itemDocs.map(item => item.document_id).filter(Boolean);
+    
+    if (documentIds.length > 0) {
+      const { data: docs, error: docsError } = await supabase
+        .from('documents')
+        .select('*')
+        .in('document_id', documentIds);
+        
+      if (docsError) {
+        console.error("Error fetching linked documents:", docsError);
+      } else {
+        linkedDocs = docs || [];
+        console.log(`Retrieved ${linkedDocs.length} linked documents`);
+      }
+    }
+  }
+  
+  // Combine both sets of documents
+  const allDocs = [...(directDocs || []), ...linkedDocs];
+  
+  // Remove duplicates (if any)
+  const uniqueDocs = allDocs.filter((doc, index, self) => 
+    index === self.findIndex(d => d.document_id === doc.document_id)
+  );
+  
+  console.log(`Total unique documents: ${uniqueDocs.length}`);
 
   // Get document URLs
-  const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
+  const docsWithUrls = await Promise.all(uniqueDocs.map(async (doc) => {
     const { data: { publicUrl } } = supabase.storage
       .from('construction_documents')
       .getPublicUrl(doc.storage_path);
@@ -121,6 +177,7 @@ export const useEstimateDetails = () => {
   });
 
   const fetchEstimateDetails = (estimateId: string) => {
+    console.log(`Setting current estimate ID to ${estimateId}`);
     setCurrentEstimateId(estimateId);
   };
 

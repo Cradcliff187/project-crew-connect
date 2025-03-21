@@ -420,6 +420,7 @@ export type Database = {
           cost: number | null
           created_at: string
           description: string
+          document_id: string | null
           estimate_id: string
           id: string
           item_type: string | null
@@ -435,6 +436,7 @@ export type Database = {
           cost?: number | null
           created_at?: string
           description: string
+          document_id?: string | null
           estimate_id: string
           id?: string
           item_type?: string | null
@@ -450,6 +452,7 @@ export type Database = {
           cost?: number | null
           created_at?: string
           description?: string
+          document_id?: string | null
           estimate_id?: string
           id?: string
           item_type?: string | null
@@ -462,6 +465,13 @@ export type Database = {
           vendor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "estimate_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
           {
             foreignKeyName: "estimate_items_subcontractor_id_fkey"
             columns: ["subcontractor_id"]

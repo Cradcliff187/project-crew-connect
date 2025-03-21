@@ -88,6 +88,8 @@ export const submitEstimateItems = async (
   data: EstimateFormValues,
   estimateId: string
 ): Promise<void> => {
+  console.log(`Submitting ${data.items.length} items for estimate ${estimateId}`);
+  
   // Upload any pending document files
   const itemsWithDocuments = await Promise.all(data.items.map(async (item, index) => {
     let documentId = null;
@@ -95,13 +97,16 @@ export const submitEstimateItems = async (
     // If document is a File object, upload it
     if (item.document && item.document instanceof File) {
       try {
+        console.log(`Uploading document for item ${index}: ${item.document.name}`);
         documentId = await uploadItemDocument(item.document, estimateId, index);
+        console.log(`Document uploaded with ID: ${documentId}`);
       } catch (error) {
         console.error(`Error uploading document for item ${index}:`, error);
       }
     } else if (item.document && typeof item.document === 'string') {
       // If it's already a document ID (from a previous upload)
       documentId = item.document;
+      console.log(`Using existing document ID for item ${index}: ${documentId}`);
       // Update this document's entity_id with the new estimate ID
       await updateDocumentEntityId(documentId, estimateId);
     }
@@ -138,7 +143,7 @@ export const submitEstimateItems = async (
       markup_percentage: parseFloat(item.markup_percentage ||'0'),
       vendor_id: item.item_type === 'vendor' ? item.vendor_id : null,
       subcontractor_id: item.item_type === 'subcontractor' ? item.subcontractor_id : null,
-      document_id: item.documentId
+      document_id: item.documentId  // Now we can store the document ID
     };
   });
 
@@ -151,4 +156,6 @@ export const submitEstimateItems = async (
     console.error("Error inserting estimate items:", itemsError);
     throw itemsError;
   }
+  
+  console.log(`Successfully inserted ${estimateItems.length} items for estimate ${estimateId}`);
 };

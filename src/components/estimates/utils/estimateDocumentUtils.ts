@@ -12,6 +12,8 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
     const fileName = `${timestamp}-item-${itemIndex}.${fileExt}`;
     const filePath = `estimates/${estimateId}/items/${fileName}`;
     
+    console.log(`Uploading file for estimate ${estimateId}, item ${itemIndex}: ${fileName}`);
+    
     // Upload file to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('construction_documents')
@@ -27,6 +29,14 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
       .from('construction_documents')
       .getPublicUrl(filePath);
       
+    // Determine the appropriate category based on item type
+    let category = 'estimate';
+    if (file.name.toLowerCase().includes('invoice') || file.name.toLowerCase().includes('receipt')) {
+      category = 'invoice';
+    } else if (file.name.toLowerCase().includes('quote') || file.name.toLowerCase().includes('proposal')) {
+      category = 'subcontractor_estimate';
+    }
+    
     // Also store document metadata in documents table
     const documentMetadata = {
       file_name: file.name,
@@ -35,9 +45,11 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
       storage_path: filePath,
       entity_type: 'ESTIMATE',
       entity_id: estimateId,
-      category: 'subcontractor_estimate',
+      category: category,
       tags: ['estimate_item', `item_${itemIndex}`]
     };
+    
+    console.log('Inserting document metadata:', documentMetadata);
     
     // Insert document metadata and get the document ID
     const { data: insertedDoc, error: documentError } = await supabase
@@ -51,6 +63,7 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
       return null;
     }
     
+    console.log('Document uploaded successfully with ID:', insertedDoc?.document_id);
     return insertedDoc?.document_id || null;
   } catch (error) {
     console.error('Error in document upload:', error);
@@ -65,6 +78,8 @@ export const updateDocumentEntityId = async (documentId: string | undefined, est
   if (!documentId) return false;
   
   try {
+    console.log(`Updating document ${documentId} to link with estimate ${estimateId}`);
+    
     const { error } = await supabase
       .from('documents')
       .update({ entity_id: estimateId })
@@ -75,9 +90,42 @@ export const updateDocumentEntityId = async (documentId: string | undefined, est
       return false;
     }
     
+    console.log(`Document ${documentId} successfully linked to estimate ${estimateId}`);
     return true;
   } catch (error) {
     console.error('Error in update document entity_id:', error);
     return false;
+  }
+};
+
+/**
+ * Get all documents associated with an estimate
+ */
+export const getEstimateDocuments = async (estimateId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('entity_type', 'ESTIMATE')
+      .eq('entity_id', estimateId);
+
+    if (error) {
+      console.error('Error fetching estimate documents:', error);
+      return [];
+    }
+
+    // Add URLs to the documents
+    const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
+      const { data: { publicUrl } } = supabase.storage
+        .from('construction_documents')
+        .getPublicUrl(doc.storage_path);
+      
+      return { ...doc, url: publicUrl };
+    }));
+
+    return docsWithUrls || [];
+  } catch (error) {
+    console.error('Error in getEstimateDocuments:', error);
+    return [];
   }
 };

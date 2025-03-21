@@ -6,10 +6,12 @@ import EstimatesTable, { EstimateType } from '@/components/estimates/EstimatesTa
 import EstimatesHeader from '@/components/estimates/EstimatesHeader';
 import { useEstimates } from '@/components/estimates/hooks/useEstimates';
 import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
+import { useToast } from '@/hooks/use-toast';
 
 const Estimates = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEstimate, setSelectedEstimate] = useState<EstimateType | null>(null);
+  const { toast } = useToast();
   
   const { estimates, loading, fetchEstimates } = useEstimates();
   const { 
@@ -24,7 +26,18 @@ const Estimates = () => {
   
   const handleViewEstimate = (estimate: EstimateType) => {
     setSelectedEstimate(estimate);
-    fetchEstimateDetails(estimate.id);
+    console.log(`Viewing estimate: ${estimate.id}`);
+    
+    try {
+      fetchEstimateDetails(estimate.id);
+    } catch (error) {
+      console.error("Error fetching estimate details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load estimate details. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   const closeEstimateDetails = () => {
@@ -42,6 +55,14 @@ const Estimates = () => {
       year: 'numeric' 
     }).format(date);
   };
+  
+  console.log('Estimates page rendering with:', {
+    estimatesCount: estimates.length,
+    itemsCount: estimateItems.length,
+    revisionsCount: estimateRevisions.length,
+    documentsCount: estimateDocuments.length,
+    selectedEstimateId: selectedEstimate?.id
+  });
   
   return (
     <PageTransition>
