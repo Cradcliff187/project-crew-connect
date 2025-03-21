@@ -10,6 +10,11 @@ interface EstimateItemsContentProps {
     quantity: number;
     unit_price: number;
     total_price: number;
+    cost?: number;
+    markup_percentage?: number;
+    markup_amount?: number;
+    gross_margin?: number;
+    gross_margin_percentage?: number;
   }[];
   subtotal: number;
   contingencyAmount?: number;
@@ -28,10 +33,10 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
   const transformedItems: EstimateItem[] = items.map(item => ({
     ...item,
     estimate_id: '', // Adding the required estimate_id property
-    // Default values for other required properties in EstimateItem
+    // Default values for other required properties in EstimateItem that might be missing
     item_type: 'labor',
-    cost: 0,
-    markup_percentage: 0
+    cost: item.cost || 0,
+    markup_percentage: item.markup_percentage || 0
   }));
 
   return (

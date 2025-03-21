@@ -422,8 +422,11 @@ export type Database = {
           description: string
           document_id: string | null
           estimate_id: string
+          gross_margin: number | null
+          gross_margin_percentage: number | null
           id: string
           item_type: string | null
+          markup_amount: number | null
           markup_percentage: number | null
           quantity: number
           subcontractor_id: string | null
@@ -438,8 +441,11 @@ export type Database = {
           description: string
           document_id?: string | null
           estimate_id: string
+          gross_margin?: number | null
+          gross_margin_percentage?: number | null
           id?: string
           item_type?: string | null
+          markup_amount?: number | null
           markup_percentage?: number | null
           quantity?: number
           subcontractor_id?: string | null
@@ -454,8 +460,11 @@ export type Database = {
           description?: string
           document_id?: string | null
           estimate_id?: string
+          gross_margin?: number | null
+          gross_margin_percentage?: number | null
           id?: string
           item_type?: string | null
+          markup_amount?: number | null
           markup_percentage?: number | null
           quantity?: number
           subcontractor_id?: string | null

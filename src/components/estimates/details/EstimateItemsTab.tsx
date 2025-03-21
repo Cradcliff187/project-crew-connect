@@ -14,6 +14,14 @@ const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items, itemDocument
   // Calculate the subtotal, which is the sum of all item total prices
   const subtotal = items.reduce((acc, item) => acc + item.total_price, 0);
   
+  // Calculate the total gross margin
+  const totalGrossMargin = items.reduce((acc, item) => acc + (item.gross_margin || 0), 0);
+  
+  // Calculate the overall gross margin percentage
+  const overallGrossMarginPercentage = subtotal > 0 
+    ? (totalGrossMargin / subtotal) * 100 
+    : 0;
+  
   return (
     <Card>
       <CardHeader>
@@ -39,6 +47,16 @@ const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items, itemDocument
                 ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
             </div>
+            
+            {totalGrossMargin > 0 && (
+              <div className="flex justify-between py-2 text-sm">
+                <span>Total Gross Margin:</span>
+                <span className="font-medium">
+                  ${totalGrossMargin.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {' '}({overallGrossMarginPercentage.toFixed(1)}%)
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

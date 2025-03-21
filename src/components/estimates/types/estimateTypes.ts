@@ -11,6 +11,9 @@ export interface EstimateItem {
   item_type?: string;
   cost?: number;
   markup_percentage?: number;
+  markup_amount?: number;
+  gross_margin?: number;
+  gross_margin_percentage?: number;
   document_id?: string;
   vendor_id?: string;
   subcontractor_id?: string;
