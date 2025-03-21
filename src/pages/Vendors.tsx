@@ -115,14 +115,16 @@ const Vendors = () => {
           onVendorAdded={handleVendorAdded}
         />
         
-        <VendorsTable 
-          vendors={vendors as Vendor[]}
-          loading={loading}
-          error={error}
-          searchQuery={searchQuery}
-          onViewDetails={handleViewVendorDetails}
-          onEditVendor={handleEditVendor}
-        />
+        <div className="mt-6">
+          <VendorsTable 
+            vendors={vendors as Vendor[]}
+            loading={loading}
+            error={error}
+            searchQuery={searchQuery}
+            onViewDetails={handleViewVendorDetails}
+            onEditVendor={handleEditVendor}
+          />
+        </div>
 
         {/* Edit Vendor Dialog */}
         {editDialogOpen && selectedVendor && (

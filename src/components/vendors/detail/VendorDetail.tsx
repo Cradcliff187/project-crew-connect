@@ -9,10 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PageTransition from '@/components/layout/PageTransition';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { mapStatusToStatusBadge } from '../VendorsTable';
 import { Vendor } from '../VendorsTable';
 import { useState } from 'react';
 import VendorDialog from '../VendorDialog';
+import { formatDate, mapStatusToStatusBadge, formatVendorAddress } from '../utils/vendorUtils';
 
 const fetchVendorDetails = async (vendorId: string) => {
   const { data, error } = await supabase
@@ -57,6 +57,7 @@ const VendorDetail = () => {
     refetch();
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <PageTransition>
@@ -82,6 +83,7 @@ const VendorDetail = () => {
     );
   }
 
+  // Error or vendor not found
   if (error || !vendor) {
     return (
       <PageTransition>
@@ -106,6 +108,7 @@ const VendorDetail = () => {
   return (
     <PageTransition>
       <div className="container py-8">
+        {/* Back Button */}
         <div className="flex items-center gap-2 mb-6">
           <Button variant="ghost" size="sm" onClick={handleBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -128,64 +131,73 @@ const VendorDetail = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Contact Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">Email</h3>
-                <p>{vendor.email || 'No email provided'}</p>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Vendor Details</CardTitle>
+          </CardHeader>
+          <CardContent className="px-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Contact Information</h3>
+                <div className="space-y-2">
+                  {vendor.email && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Email</h4>
+                      <p>{vendor.email}</p>
+                    </div>
+                  )}
+                  {vendor.phone && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Phone</h4>
+                      <p>{vendor.phone}</p>
+                    </div>
+                  )}
+                  {formatVendorAddress(vendor) && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Address</h4>
+                      <p className="whitespace-pre-line">{formatVendorAddress(vendor)}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">Phone</h3>
-                <p>{vendor.phone || 'No phone provided'}</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">Address</h3>
-                <p>{vendor.address || 'No address provided'}</p>
-                {(vendor.city || vendor.state || vendor.zip) && (
-                  <p>{[vendor.city, vendor.state, vendor.zip].filter(Boolean).join(', ')}</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Financial Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Financial Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">Payment Terms</h3>
-                <p>{vendor.payment_terms || 'Not specified'}</p>
+              {/* Financial Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-[#0485ea]">Financial Information</h3>
+                <div className="space-y-2">
+                  {vendor.payment_terms && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Payment Terms</h4>
+                      <p>{vendor.payment_terms}</p>
+                    </div>
+                  )}
+                  {vendor.tax_id && (
+                    <div>
+                      <h4 className="font-medium text-sm text-muted-foreground mb-1">Tax ID</h4>
+                      <p>{vendor.tax_id}</p>
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-medium text-sm text-muted-foreground mb-1">Created On</h4>
+                    <p>{vendor.createdon ? formatDate(vendor.createdon) : 'Unknown'}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">Tax ID</h3>
-                <p>{vendor.tax_id || 'Not provided'}</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-sm text-muted-foreground mb-1">Created On</h3>
-                <p>{vendor.createdon ? new Date(vendor.createdon).toLocaleDateString() : 'Unknown'}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-        {/* Notes */}
-        {vendor.notes && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap">{vendor.notes}</p>
-            </CardContent>
-          </Card>
-        )}
+            {/* Notes */}
+            {vendor.notes && (
+              <>
+                <Separator />
+                <div className="pt-4">
+                  <h3 className="text-lg font-medium mb-4">Notes</h3>
+                  <p className="whitespace-pre-wrap">{vendor.notes}</p>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Edit Vendor Dialog */}
         {editDialogOpen && (
