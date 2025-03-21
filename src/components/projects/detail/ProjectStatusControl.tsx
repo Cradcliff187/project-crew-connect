@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Check, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,48 +34,59 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
     pending: 'Pending',
   };
   
-  // Fetch available status transitions from Supabase
-  useEffect(() => {
-    const fetchAvailableTransitions = async () => {
-      try {
-        // Use the get_next_possible_transitions RPC function
-        const { data, error } = await supabase
-          .rpc('get_next_possible_transitions', {
-            entity_type_param: 'PROJECT',
-            current_status_param: project.status.toLowerCase()
-          });
+  // Create a memoized fetchAvailableTransitions function
+  const fetchAvailableTransitions = useCallback(async () => {
+    try {
+      console.log(`Fetching transitions for project status: ${project.status.toLowerCase()}`);
+      
+      // Use the get_next_possible_transitions RPC function
+      const { data, error } = await supabase
+        .rpc('get_next_possible_transitions', {
+          entity_type_param: 'PROJECT',
+          current_status_param: project.status.toLowerCase()
+        });
 
-        if (error) {
-          console.error('Error fetching transitions:', error);
-          // Fallback to static transitions based on current status
-          const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
-          setAvailableStatuses(fallbackTransitions);
-        } else if (data && data.length > 0) {
-          const formattedTransitions = data.map((transition: any) => ({
-            status: transition.to_status,
-            label: transition.label || statusLabels[transition.to_status] || transition.to_status,
-          }));
-          setAvailableStatuses(formattedTransitions);
-        } else {
-          // No transitions found, use fallback
-          const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
-          setAvailableStatuses(fallbackTransitions);
-          
-          // If we got empty results but expected some transitions, show a warning
-          if (project.status !== 'completed' && project.status !== 'cancelled') {
-            console.warn('No status transitions found in database for status:', project.status);
-          }
-        }
-      } catch (error) {
-        console.error('Error in transition fetch:', error);
-        // Fallback to static transitions
+      if (error) {
+        console.error('Error fetching transitions:', error);
+        // Fallback to static transitions based on current status
         const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
         setAvailableStatuses(fallbackTransitions);
+        
+        toast({
+          title: 'Warning',
+          description: `Using fallback transitions. Database error: ${error.message}`,
+          variant: 'destructive',
+        });
+      } else if (data && data.length > 0) {
+        console.log('Transitions fetched from database:', data);
+        const formattedTransitions = data.map((transition: any) => ({
+          status: transition.to_status,
+          label: transition.label || statusLabels[transition.to_status] || transition.to_status,
+        }));
+        setAvailableStatuses(formattedTransitions);
+      } else {
+        // No transitions found, use fallback
+        console.warn('No status transitions found in database for status:', project.status);
+        const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
+        setAvailableStatuses(fallbackTransitions);
+        
+        toast({
+          title: 'Warning',
+          description: `No transitions found for status: ${project.status}. Using defaults.`,
+        });
       }
-    };
-
+    } catch (error) {
+      console.error('Error in transition fetch:', error);
+      // Fallback to static transitions
+      const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
+      setAvailableStatuses(fallbackTransitions);
+    }
+  }, [project.status, toast]);
+  
+  // Fetch available status transitions from Supabase
+  useEffect(() => {
     fetchAvailableTransitions();
-  }, [project.status]);
+  }, [project.status, fetchAvailableTransitions]);
   
   // Fallback transitions if database call fails
   const getStaticTransitions = (currentStatus: string): {status: string, label: string}[] => {
@@ -110,9 +121,14 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
     
     setUpdating(true);
     try {
+      console.log(`Updating project status from ${project.status} to ${newStatus}`);
+      
       const { error } = await supabase
         .from('projects')
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
         .eq('projectid', project.projectid);
       
       if (error) {
@@ -143,6 +159,9 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
         description: errorMessage,
         variant: 'destructive',
       });
+      
+      // Refresh transitions after error to ensure we have the latest data
+      fetchAvailableTransitions();
     } finally {
       setUpdating(false);
     }
