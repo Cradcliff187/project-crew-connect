@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,6 @@ import EstimateBudgetIntegration from './EstimateBudgetIntegration';
 import { useEstimateToProject } from './hooks/useEstimateToProject';
 import { StatusType } from '@/types/common';
 
-// Interface for the estimate
 interface EstimateProps {
   data: {
     estimateid: string;
@@ -118,12 +116,10 @@ const EstimateDetail: React.FC<EstimateProps> = ({
           description: `Estimate converted to project: ${projectData.projectname}`,
         });
         
-        // Update estimate status to 'converted'
         if (onStatusChange) {
           onStatusChange(data.estimateid, 'converted');
         }
         
-        // Refresh the estimate data
         if (onRefresh) {
           onRefresh();
         }
@@ -140,7 +136,6 @@ const EstimateDetail: React.FC<EstimateProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center gap-2">
@@ -162,9 +157,7 @@ const EstimateDetail: React.FC<EstimateProps> = ({
         />
       </div>
       
-      {/* Main content */}
       <div className="grid md:grid-cols-3 gap-6">
-        {/* Estimate info */}
         <div className="md:col-span-1 space-y-6">
           <Card>
             <CardHeader>
@@ -243,7 +236,6 @@ const EstimateDetail: React.FC<EstimateProps> = ({
             </CardContent>
           </Card>
           
-          {/* Show budget integration component if estimate is converted to project */}
           {data.status === 'converted' && data.projectid && (
             <EstimateBudgetIntegration 
               estimateId={data.estimateid}
@@ -253,7 +245,6 @@ const EstimateDetail: React.FC<EstimateProps> = ({
           )}
         </div>
         
-        {/* Estimate items */}
         <div className="md:col-span-2">
           <Tabs defaultValue="items">
             <TabsList>
@@ -307,7 +298,6 @@ const EstimateDetail: React.FC<EstimateProps> = ({
         </div>
       </div>
       
-      {/* Delete dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -328,7 +318,6 @@ const EstimateDetail: React.FC<EstimateProps> = ({
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Convert to project dialog */}
       <AlertDialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
