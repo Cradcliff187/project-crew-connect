@@ -8,10 +8,14 @@ export function useMaterials(workOrderId: string) {
   const [materials, setMaterials] = useState<WorkOrderMaterial[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const fetchMaterials = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
+      console.log('Fetching materials for work order:', workOrderId);
       const { data, error } = await supabase
         .from('work_order_materials')
         .select('*')
@@ -22,12 +26,14 @@ export function useMaterials(workOrderId: string) {
         throw error;
       }
       
+      console.log('Fetched materials:', data);
       setMaterials(data || []);
     } catch (error: any) {
       console.error('Error fetching materials:', error);
+      setError(error.message);
       toast({
         title: 'Error',
-        description: 'Failed to load materials.',
+        description: 'Failed to load materials: ' + error.message,
         variant: 'destructive',
       });
     } finally {
@@ -36,7 +42,9 @@ export function useMaterials(workOrderId: string) {
   };
   
   useEffect(() => {
-    fetchMaterials();
+    if (workOrderId) {
+      fetchMaterials();
+    }
   }, [workOrderId]);
   
   const handleAddMaterial = async (material: {
@@ -68,7 +76,16 @@ export function useMaterials(workOrderId: string) {
     setSubmitting(true);
     
     try {
-      const { error } = await supabase
+      console.log('Adding material:', {
+        work_order_id: workOrderId,
+        vendor_id: material.vendorId,
+        material_name: material.materialName,
+        quantity: material.quantity,
+        unit_price: material.unitPrice,
+        total_price: totalPrice,
+      });
+      
+      const { data, error } = await supabase
         .from('work_order_materials')
         .insert({
           work_order_id: workOrderId,
@@ -77,11 +94,14 @@ export function useMaterials(workOrderId: string) {
           quantity: material.quantity,
           unit_price: material.unitPrice,
           total_price: totalPrice,
-        });
+        })
+        .select();
       
       if (error) {
         throw error;
       }
+      
+      console.log('Material added successfully:', data);
       
       toast({
         title: 'Material Added',
@@ -94,7 +114,7 @@ export function useMaterials(workOrderId: string) {
       console.error('Error adding material:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add material. Please try again.',
+        description: 'Failed to add material: ' + error.message,
         variant: 'destructive',
       });
     } finally {
@@ -108,6 +128,7 @@ export function useMaterials(workOrderId: string) {
     }
     
     try {
+      console.log('Deleting material with ID:', id);
       const { error } = await supabase
         .from('work_order_materials')
         .delete()
@@ -128,7 +149,7 @@ export function useMaterials(workOrderId: string) {
       console.error('Error deleting material:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete material. Please try again.',
+        description: 'Failed to delete material: ' + error.message,
         variant: 'destructive',
       });
     }
@@ -136,6 +157,7 @@ export function useMaterials(workOrderId: string) {
   
   const handleReceiptUploaded = async (materialId: string, documentId: string) => {
     try {
+      console.log('Attaching receipt:', { materialId, documentId });
       const { error } = await supabase
         .from('work_order_materials')
         .update({ receipt_document_id: documentId })
@@ -156,7 +178,7 @@ export function useMaterials(workOrderId: string) {
       console.error('Error attaching receipt:', error);
       toast({
         title: 'Error',
-        description: 'Failed to attach receipt. Please try again.',
+        description: 'Failed to attach receipt: ' + error.message,
         variant: 'destructive',
       });
     }
@@ -169,6 +191,7 @@ export function useMaterials(workOrderId: string) {
     materials,
     loading,
     submitting,
+    error,
     totalMaterialsCost,
     handleAddMaterial,
     handleDelete,

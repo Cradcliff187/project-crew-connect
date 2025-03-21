@@ -1,6 +1,8 @@
 
 import { AddMaterialForm, MaterialsTable } from './materials';
 import { useMaterials, useVendors } from './materials/hooks';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface WorkOrderMaterialsProps {
   workOrderId: string;
@@ -12,6 +14,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     materials, 
     loading, 
     submitting, 
+    error,
     totalMaterialsCost,
     handleAddMaterial, 
     handleDelete,
@@ -19,7 +22,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     fetchMaterials
   } = useMaterials(workOrderId);
   
-  const { vendors, fetchVendors } = useVendors();
+  const { vendors, loading: vendorsLoading, error: vendorsError, fetchVendors } = useVendors();
   
   // Handle material added
   const handleMaterialAdded = () => {
@@ -74,6 +77,15 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   
   return (
     <div className="space-y-6">
+      {(error || vendorsError) && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error || vendorsError}. Please refresh the page or try again later.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <AddMaterialForm 
         vendors={vendors}
         onSubmit={handleSubmit}
