@@ -2,9 +2,13 @@
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Upload, Receipt } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderMaterial } from '@/types/workOrder';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface MaterialsTableProps {
   materials: WorkOrderMaterial[];
@@ -12,6 +16,7 @@ interface MaterialsTableProps {
   vendors: { vendorid: string, vendorname: string }[];
   onDelete: (id: string) => Promise<void>;
   totalCost: number;
+  workOrderId: string;
 }
 
 const MaterialsTable = ({ 
@@ -19,8 +24,11 @@ const MaterialsTable = ({
   loading, 
   vendors, 
   onDelete,
-  totalCost 
+  totalCost,
+  workOrderId
 }: MaterialsTableProps) => {
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  
   // Find vendor name by ID
   const getVendorName = (vendorId: string | null) => {
     if (!vendorId) return '-';
@@ -32,9 +40,20 @@ const MaterialsTable = ({
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Materials List</h3>
-        <p className="text-sm font-medium">
-          Total: {formatCurrency(totalCost)}
-        </p>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-[#0485ea]"
+            onClick={() => setUploadDialogOpen(true)}
+          >
+            <Receipt className="h-4 w-4 mr-2" />
+            Upload Receipt
+          </Button>
+          <p className="text-sm font-medium">
+            Total: {formatCurrency(totalCost)}
+          </p>
+        </div>
       </div>
       
       {loading ? (
@@ -84,6 +103,22 @@ const MaterialsTable = ({
           </Table>
         </div>
       )}
+
+      {/* Receipt Upload Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Upload Material Receipt</DialogTitle>
+          </DialogHeader>
+          <EnhancedDocumentUpload 
+            entityType={"WORK_ORDER" as EntityType}
+            entityId={workOrderId}
+            onSuccess={() => setUploadDialogOpen(false)}
+            onCancel={() => setUploadDialogOpen(false)}
+            isReceiptUpload={true}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

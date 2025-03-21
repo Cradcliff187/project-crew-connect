@@ -194,6 +194,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
         vendors={vendors}
         onDelete={handleDelete}
         totalCost={totalMaterialsCost}
+        workOrderId={workOrderId}
       />
     </div>
   );
