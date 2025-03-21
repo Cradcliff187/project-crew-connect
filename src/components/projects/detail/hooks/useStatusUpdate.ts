@@ -65,6 +65,9 @@ export const useStatusUpdate = ({
     try {
       console.log(`Updating project status from ${currentStatus} to ${newStatus} for project ID: ${projectId}`);
       
+      // Check if the new status is "completed" (case insensitive)
+      const isCompletedStatus = normalizedNewStatus === 'completed';
+      
       // No validation required - we're skipping the transition validation
       // and directly updating the status
       const { error, data } = await supabase
@@ -81,6 +84,11 @@ export const useStatusUpdate = ({
       }
       
       console.log('Update response data:', data);
+      
+      // If status is changed to "completed", update progress to 100%
+      if (isCompletedStatus) {
+        await updateProgressTo100Percent();
+      }
       
       toast({
         title: 'Status updated',
@@ -116,6 +124,42 @@ export const useStatusUpdate = ({
       refreshTransitions();
     } finally {
       setUpdating(false);
+    }
+  };
+  
+  // Helper function to update project progress to 100% when status is completed
+  const updateProgressTo100Percent = async () => {
+    try {
+      // Check if a progress record exists
+      const { data: progressData } = await supabase
+        .from('project_progress')
+        .select('id')
+        .eq('projectid', projectId)
+        .maybeSingle();
+      
+      if (progressData) {
+        // Update existing record
+        await supabase
+          .from('project_progress')
+          .update({ progress_percentage: 100 })
+          .eq('projectid', projectId);
+          
+        console.log('Updated progress to 100% for completed project');
+      } else {
+        // Create new progress record with 100%
+        await supabase
+          .from('project_progress')
+          .insert({ 
+            projectid: projectId, 
+            progress_percentage: 100 
+          });
+          
+        console.log('Created new progress record with 100% for completed project');
+      }
+    } catch (error) {
+      console.error('Error updating project progress to 100%:', error);
+      // We don't want to fail the status update if progress update fails,
+      // so we just log the error and continue
     }
   };
   
