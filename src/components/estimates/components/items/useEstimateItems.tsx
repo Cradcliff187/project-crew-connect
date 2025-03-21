@@ -25,13 +25,14 @@ export const useEstimateItems = () => {
         if (vendorError) throw vendorError;
         setVendors(vendorData || []);
         
-        // Fetch subcontractors
+        // Fetch subcontractors - using 'subcontractors' table instead of 'subcontractors_new'
         const { data: subData, error: subError } = await supabase
-          .from('subcontractors_new')
+          .from('subcontractors')
           .select('subid, subname')
           .order('subname');
           
         if (subError) throw subError;
+        console.log('Subcontractors fetched:', subData);
         setSubcontractors(subData || []);
       } catch (error) {
         console.error('Error fetching vendors and subcontractors:', error);

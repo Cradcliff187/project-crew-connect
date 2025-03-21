@@ -6,6 +6,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -23,7 +24,8 @@ interface EstimateFormProps {
 }
 
 const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
-  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
+  const [customers, setCustomers] = useState<{ id: string; name: string; address?: string; city?: string; state?: string; zip?: string }[]>([]);
+  const [useCustomLocation, setUseCustomLocation] = useState(false);
   const { isSubmitting, submitEstimate } = useEstimateSubmit();
 
   // Initialize the form
@@ -56,11 +58,18 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
       try {
         const { data, error } = await supabase
           .from('customers')
-          .select('customerid, customername')
+          .select('customerid, customername, address, city, state, zip')
           .order('customername');
           
         if (error) throw error;
-        setCustomers(data?.map(c => ({ id: c.customerid, name: c.customername || '' })) || []);
+        setCustomers(data?.map(c => ({ 
+          id: c.customerid, 
+          name: c.customername || '',
+          address: c.address,
+          city: c.city,
+          state: c.state,
+          zip: c.zip
+        })) || []);
       } catch (error) {
         console.error('Error fetching customers:', error);
       }
@@ -70,6 +79,21 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
       fetchCustomers();
     }
   }, [open]);
+
+  // Handle customer selection to populate address if needed
+  const handleCustomerChange = (customerId: string) => {
+    form.setValue('customer', customerId);
+    
+    if (!useCustomLocation) {
+      const selectedCustomer = customers.find(c => c.id === customerId);
+      if (selectedCustomer) {
+        form.setValue('location.address', selectedCustomer.address || '');
+        form.setValue('location.city', selectedCustomer.city || '');
+        form.setValue('location.state', selectedCustomer.state || '');
+        form.setValue('location.zip', selectedCustomer.zip || '');
+      }
+    }
+  };
 
   // Handle form submission
   const onSubmit = async (data: EstimateFormValues) => {
@@ -106,7 +130,10 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Customer*</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select 
+                      onValueChange={handleCustomerChange} 
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a customer" />
@@ -143,6 +170,32 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
                 </FormItem>
               )}
             />
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="custom-location"
+                checked={useCustomLocation}
+                onCheckedChange={(checked) => {
+                  setUseCustomLocation(checked);
+                  if (!checked && form.getValues('customer')) {
+                    // Reset to customer address when switching back
+                    const selectedCustomer = customers.find(c => c.id === form.getValues('customer'));
+                    if (selectedCustomer) {
+                      form.setValue('location.address', selectedCustomer.address || '');
+                      form.setValue('location.city', selectedCustomer.city || '');
+                      form.setValue('location.state', selectedCustomer.state || '');
+                      form.setValue('location.zip', selectedCustomer.zip || '');
+                    }
+                  }
+                }}
+              />
+              <label
+                htmlFor="custom-location"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Site location is different from customer address
+              </label>
+            </div>
 
             <LocationFields />
 
