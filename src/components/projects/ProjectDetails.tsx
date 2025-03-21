@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -13,6 +12,7 @@ import ProjectStatusControl from './detail/ProjectStatusControl';
 import ProjectBudget from './detail/ProjectBudget';
 import ProjectMilestones from './detail/ProjectMilestones';
 import { ProjectDocumentsList } from './detail';
+import ProjectProgressCard from './progress/ProjectProgressCard';
 
 export interface ProjectDetails {
   projectid: string;
@@ -93,19 +93,7 @@ const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDet
               </Card>
             </div>
             <div>
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-base font-medium mb-4">Location</h3>
-                  {project.sitelocationaddress ? (
-                    <div className="text-sm">
-                      <p>{project.sitelocationaddress}</p>
-                      <p>{project.sitelocationcity}, {project.sitelocationstate} {project.sitelocationzip}</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No site location specified</p>
-                  )}
-                </CardContent>
-              </Card>
+              <ProjectProgressCard projectId={project.projectid} />
             </div>
           </div>
         </TabsContent>
