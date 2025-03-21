@@ -54,7 +54,11 @@ export const formatDate = (dateString: string | null): string => {
 };
 
 // Map status to StatusBadge variant
-export const mapStatusToStatusBadge = (status: string): any => {
+export const mapStatusToStatusBadge = (status: string | null): any => {
+  if (!status) return { variant: 'default', label: 'Unknown' };
+  
+  const statusKey = typeof status === 'string' ? status.toUpperCase() : String(status);
+  
   const statusMap: Record<string, any> = {
     'ACTIVE': { variant: 'success', label: 'Active' },
     'INACTIVE': { variant: 'destructive', label: 'Inactive' },
@@ -62,5 +66,5 @@ export const mapStatusToStatusBadge = (status: string): any => {
     'ARCHIVED': { variant: 'outline', label: 'Archived' }
   };
   
-  return statusMap[status] || { variant: 'default', label: status };
+  return statusMap[statusKey] || { variant: 'default', label: status };
 };
