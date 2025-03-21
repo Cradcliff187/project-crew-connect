@@ -17,6 +17,7 @@ export const useEstimates = () => {
         .select(`
           estimateid,
           customername,
+          customerid,
           projectname,
           datecreated,
           estimateamount,
@@ -40,25 +41,31 @@ export const useEstimates = () => {
       
       // Process each estimate to get its revisions
       for (const estimate of estimatesData || []) {
-        const { data: revisionsData, error: revisionsError } = await supabase
-          .from('estimate_revisions')
-          .select('id')
-          .eq('estimate_id', estimate.estimateid);
+        try {
+          const { data: revisionsData, error: revisionsError } = await supabase
+            .from('estimate_revisions')
+            .select('id')
+            .eq('estimate_id', estimate.estimateid);
+            
+          if (revisionsError) {
+            console.error(`Error fetching revisions for estimate ${estimate.estimateid}:`, revisionsError);
+            continue;
+          }
           
-        if (revisionsError) {
-          console.error(`Error fetching revisions for estimate ${estimate.estimateid}:`, revisionsError);
-          continue;
+          revisionCounts[estimate.estimateid] = (revisionsData?.length || 0);
+        } catch (err) {
+          console.error(`Error processing revisions for estimate ${estimate.estimateid}:`, err);
+          revisionCounts[estimate.estimateid] = 0;
         }
-        
-        revisionCounts[estimate.estimateid] = (revisionsData?.length || 0);
       }
 
       const formattedEstimates = estimatesData.map(estimate => {
         const revisionCount = revisionCounts[estimate.estimateid] || 0;
+        const clientName = estimate.customername || 'Unknown Client';
         
         return {
           id: estimate.estimateid,
-          client: estimate.customername || 'Unknown Client',
+          client: clientName,
           project: estimate.projectname || 'Unnamed Project',
           date: estimate.datecreated || new Date().toISOString(),
           amount: Number(estimate.estimateamount) || 0,

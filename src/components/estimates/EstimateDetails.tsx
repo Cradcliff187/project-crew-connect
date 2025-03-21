@@ -183,8 +183,14 @@ const EstimateDetails: React.FC<EstimateDetailsProps> = ({
                     {estimate.location && (
                       <div>
                         <span className="text-muted-foreground">Location:</span>
-                        <p>{estimate.location.address}</p>
-                        <p>{estimate.location.city}, {estimate.location.state} {estimate.location.zip}</p>
+                        {estimate.location.address && <p>{estimate.location.address}</p>}
+                        {(estimate.location.city || estimate.location.state || estimate.location.zip) && (
+                          <p>
+                            {estimate.location.city && `${estimate.location.city}, `}
+                            {estimate.location.state && `${estimate.location.state} `}
+                            {estimate.location.zip && estimate.location.zip}
+                          </p>
+                        )}
                       </div>
                     )}
                   </CardContent>
