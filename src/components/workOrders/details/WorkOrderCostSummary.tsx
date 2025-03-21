@@ -81,7 +81,7 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
   
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="pt-4">
         <h3 className="text-lg font-semibold mb-4">Cost Summary</h3>
         
         {isLoading ? (
@@ -113,15 +113,15 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
           </div>
         )}
         
-        <Separator className="my-6" />
+        <Separator className="my-4" />
         
         <div>
-          <h3 className="text-lg font-semibold mb-4">Time Logs</h3>
+          <h3 className="text-lg font-semibold mb-3">Time Logs</h3>
           
           {/* Button to add time log */}
           <Button 
             variant="outline" 
-            className="text-[#0485ea] mb-4"
+            className="text-[#0485ea] mb-3"
             onClick={handleLogTimeClick}
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -129,7 +129,7 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
           </Button>
           
           {/* Time logs summary */}
-          <div className="text-center py-6 border rounded-md">
+          <div className="text-center py-4 border rounded-md">
             <Clock className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-muted-foreground">
               {timeLogCount > 0 
@@ -140,15 +140,15 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
           </div>
         </div>
 
-        <Separator className="my-6" />
+        <Separator className="my-4" />
         
         <div>
-          <h3 className="text-lg font-semibold mb-4">Materials</h3>
+          <h3 className="text-lg font-semibold mb-3">Materials</h3>
           
           {/* Button to view materials */}
           <Button 
             variant="outline" 
-            className="text-[#0485ea] mb-4"
+            className="text-[#0485ea] mb-3"
             onClick={handleViewMaterialsClick}
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -156,7 +156,7 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
           </Button>
           
           {/* Materials summary */}
-          <div className="text-center py-6 border rounded-md">
+          <div className="text-center py-4 border rounded-md">
             <Package className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
             <p className="text-muted-foreground">
               {materialCount > 0 
