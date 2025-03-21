@@ -12,19 +12,21 @@ import { useQueryClient } from '@tanstack/react-query';
 interface WorkOrderCostSummaryProps {
   workOrder: WorkOrder;
   onAddTimeLog?: () => void;
+  onViewMaterials?: () => void;
 }
 
-const WorkOrderCostSummary = ({ workOrder, onAddTimeLog }: WorkOrderCostSummaryProps) => {
+const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: WorkOrderCostSummaryProps) => {
   const [materialsTotal, setMaterialsTotal] = useState<number | null>(null);
   const [laborTotal, setLaborTotal] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeLogCount, setTimeLogCount] = useState(0);
+  const [materialCount, setMaterialCount] = useState(0);
   const queryClient = useQueryClient();
   
   const fetchCostData = async () => {
     setIsLoading(true);
     try {
-      // Fetch materials total
+      // Fetch materials total and count
       const { data: materialsData, error: materialsError } = await supabase
         .from('work_order_materials')
         .select('total_price')
@@ -35,6 +37,7 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog }: WorkOrderCostSummaryP
       } else {
         const total = (materialsData || []).reduce((sum, item) => sum + (item.total_price || 0), 0);
         setMaterialsTotal(total);
+        setMaterialCount(materialsData?.length || 0);
       }
       
       // Fetch labor total and time log count
@@ -66,6 +69,13 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog }: WorkOrderCostSummaryP
   const handleLogTimeClick = () => {
     if (onAddTimeLog) {
       onAddTimeLog();
+    }
+  };
+  
+  // Handle the button click to view materials
+  const handleViewMaterialsClick = () => {
+    if (onViewMaterials) {
+      onViewMaterials();
     }
   };
   
@@ -127,6 +137,33 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog }: WorkOrderCostSummaryP
                 : 'No time logs recorded yet'}
             </p>
             <p className="text-sm mt-1">Total: {workOrder.actual_hours || 0} hours</p>
+          </div>
+        </div>
+
+        <Separator className="my-6" />
+        
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Materials</h3>
+          
+          {/* Button to view materials */}
+          <Button 
+            variant="outline" 
+            className="text-[#0485ea] mb-4"
+            onClick={handleViewMaterialsClick}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            {materialCount > 0 ? 'View Materials' : 'Add Materials'}
+          </Button>
+          
+          {/* Materials summary */}
+          <div className="text-center py-6 border rounded-md">
+            <Package className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
+            <p className="text-muted-foreground">
+              {materialCount > 0 
+                ? `${materialCount} material ${materialCount === 1 ? 'item' : 'items'} added` 
+                : 'No materials added yet'}
+            </p>
+            <p className="text-sm mt-1">Total: {formatCurrency(materialsTotal || 0)}</p>
           </div>
         </div>
       </CardContent>

@@ -35,6 +35,11 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
     setActiveTab("time");
   };
   
+  // Handler for the Add/View Materials button click
+  const handleMaterialsClick = () => {
+    setActiveTab("materials");
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -96,7 +101,8 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
             <div>
               <WorkOrderCostSummary 
                 workOrder={workOrder} 
-                onAddTimeLog={handleAddTimeLog} 
+                onAddTimeLog={handleAddTimeLog}
+                onViewMaterials={handleMaterialsClick}
               />
             </div>
           </div>
