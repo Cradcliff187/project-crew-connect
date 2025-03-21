@@ -8,20 +8,17 @@ const LocationFields = () => {
   const form = useFormContext<EstimateFormValues>();
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-2">
+      <h3 className="text-lg font-medium">Location</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="location.address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[#333333] font-medium">Street Address</FormLabel>
+              <FormLabel>Address</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter job site address" 
-                  {...field} 
-                  className="border-gray-300 focus:border-[#0485ea] focus:ring-[#0485ea]"
-                />
+                <Input placeholder="Enter address" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -33,13 +30,9 @@ const LocationFields = () => {
           name="location.city"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[#333333] font-medium">City</FormLabel>
+              <FormLabel>City</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter city" 
-                  {...field} 
-                  className="border-gray-300 focus:border-[#0485ea] focus:ring-[#0485ea]"
-                />
+                <Input placeholder="Enter city" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -51,13 +44,9 @@ const LocationFields = () => {
           name="location.state"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[#333333] font-medium">State</FormLabel>
+              <FormLabel>State</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter state" 
-                  {...field} 
-                  className="border-gray-300 focus:border-[#0485ea] focus:ring-[#0485ea]"
-                />
+                <Input placeholder="Enter state" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -69,13 +58,9 @@ const LocationFields = () => {
           name="location.zip"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[#333333] font-medium">ZIP Code</FormLabel>
+              <FormLabel>ZIP Code</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter ZIP code" 
-                  {...field} 
-                  className="border-gray-300 focus:border-[#0485ea] focus:ring-[#0485ea]"
-                />
+                <Input placeholder="Enter ZIP code" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -17,26 +17,6 @@ export const uploadDocument = async (
     let uploadedDocumentId: string | undefined;
     
     const { files, metadata } = data;
-    const BUCKET_NAME = 'construction_documents';
-    
-    // First, check if the bucket exists
-    const { data: bucketData, error: bucketCheckError } = await supabase.storage.getBucket(BUCKET_NAME);
-    
-    if (bucketCheckError && bucketCheckError.message.includes('does not exist')) {
-      console.log(`Creating bucket ${BUCKET_NAME}`);
-      const { error: createBucketError } = await supabase.storage.createBucket(BUCKET_NAME, {
-        public: true,
-        fileSizeLimit: 52428800  // 50MB
-      });
-      
-      if (createBucketError) {
-        console.error('Error creating storage bucket:', createBucketError);
-        throw new Error('Unable to create storage bucket. Please contact the administrator.');
-      }
-    } else if (bucketCheckError) {
-      console.error('Error checking bucket:', bucketCheckError);
-      throw new Error('Unable to access storage buckets. Please check your permissions.');
-    }
     
     // We'll handle multiple files if they're provided
     for (const file of files) {
@@ -46,30 +26,26 @@ export const uploadDocument = async (
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       const filePath = `${metadata.entityType.toLowerCase()}/${metadata.entityId || 'general'}/${fileName}`;
       
-      console.log(`Uploading file to ${BUCKET_NAME} bucket, path: ${filePath}`);
-      console.log(`File type: ${file.type}, size: ${file.size} bytes`);
+      // Using the correct bucket name
+      const bucketName = 'construction_documents';
       
-      // Create a proper file blob with correct content type
-      const fileBlob = new Blob([await file.arrayBuffer()], { type: file.type });
+      console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
       
-      // Upload the file using the Supabase storage API with explicit content type
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, fileBlob, {
-          contentType: file.type,
-          cacheControl: '3600'
-        });
-      
+      // Upload file to Supabase Storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file);
+        
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
-        throw new Error(`File upload failed: ${uploadError.message || 'Unknown error'}`);
+        throw uploadError;
       }
       
-      console.log('File uploaded successfully');
+      console.log('File uploaded successfully:', uploadData);
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
-        .from(BUCKET_NAME)
+        .from(bucketName)
         .getPublicUrl(filePath);
         
       console.log('Public URL generated:', publicUrl);
@@ -120,7 +96,7 @@ export const uploadDocument = async (
       documentId: uploadedDocumentId
     };
     
-  } catch (error: any) {
+  } catch (error) {
     console.error('Upload error:', error);
     return {
       success: false,

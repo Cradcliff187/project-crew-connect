@@ -92,3 +92,4 @@ export const calculateGrandTotal = (
 ): number => {
   return calculateSubtotal(items) + calculateContingencyAmount(items, contingencyPercentage);
 };
+

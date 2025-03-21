@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Camera, Image, Undo, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -126,7 +125,7 @@ const MobileDocumentCapture: React.FC<MobileDocumentCaptureProps> = ({ onCapture
           <input
             ref={cameraRef}
             type="file"
-            accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip"
+            accept="image/*"
             capture="environment"
             className="hidden"
             onChange={handleCameraCapture}
@@ -135,7 +134,7 @@ const MobileDocumentCapture: React.FC<MobileDocumentCaptureProps> = ({ onCapture
           <input
             ref={galleryRef}
             type="file"
-            accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip"
+            accept="image/*"
             className="hidden"
             onChange={handleGallerySelect}
           />

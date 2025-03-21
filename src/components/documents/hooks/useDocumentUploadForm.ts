@@ -7,8 +7,7 @@ import { uploadDocument } from '../services/DocumentUploader';
 import { 
   DocumentUploadFormValues, 
   documentUploadSchema, 
-  EntityType,
-  DocumentCategory
+  EntityType 
 } from '../schemas/documentSchema';
 
 interface UseDocumentUploadFormProps {
@@ -16,13 +15,11 @@ interface UseDocumentUploadFormProps {
   entityId?: string;
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
-  onStartUpload?: () => void; // Added this property to fix the TypeScript error
   isReceiptUpload?: boolean;
   prefillData?: {
     amount?: number;
     vendorId?: string;
     materialName?: string;
-    category?: DocumentCategory;
   };
 }
 
@@ -31,7 +28,6 @@ export const useDocumentUploadForm = ({
   entityId,
   onSuccess,
   onCancel,
-  onStartUpload,
   isReceiptUpload = false,
   prefillData
 }: UseDocumentUploadFormProps) => {
@@ -39,6 +35,7 @@ export const useDocumentUploadForm = ({
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
 
+  // Initialize form with default values
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
@@ -56,9 +53,11 @@ export const useDocumentUploadForm = ({
     }
   });
 
+  // Handle file selection and preview
   const handleFileSelect = (files: File[]) => {
     form.setValue('files', files);
     
+    // Create preview URL for the first image if it's an image
     if (files.length > 0 && files[0].type.startsWith('image/')) {
       const previewUrl = URL.createObjectURL(files[0]);
       setPreviewURL(previewUrl);
@@ -67,14 +66,10 @@ export const useDocumentUploadForm = ({
     }
   };
 
+  // Handle form submission
   const onSubmit = async (data: DocumentUploadFormValues) => {
     try {
       setIsUploading(true);
-      
-      // Call onStartUpload if provided
-      if (onStartUpload) {
-        onStartUpload();
-      }
       
       const result = await uploadDocument(data);
       
@@ -94,6 +89,7 @@ export const useDocumentUploadForm = ({
         onSuccess(result.documentId);
       }
       
+      // Reset form
       form.reset();
       setPreviewURL(null);
       
@@ -109,6 +105,7 @@ export const useDocumentUploadForm = ({
     }
   };
 
+  // Set up receipts category and expense type
   const initializeForm = () => {
     if (isReceiptUpload) {
       form.setValue('metadata.category', 'receipt');
@@ -116,6 +113,7 @@ export const useDocumentUploadForm = ({
       setShowVendorSelector(true);
     }
     
+    // If prefill data is provided, use it
     if (prefillData) {
       if (prefillData.amount) {
         form.setValue('metadata.amount', prefillData.amount);
@@ -126,12 +124,9 @@ export const useDocumentUploadForm = ({
       }
       
       if (prefillData.materialName) {
+        // Add material name as a tag and in notes
         form.setValue('metadata.tags', [prefillData.materialName]);
         form.setValue('metadata.notes', `Receipt for: ${prefillData.materialName}`);
-      }
-
-      if (prefillData.category) {
-        form.setValue('metadata.category', prefillData.category);
       }
     }
   };

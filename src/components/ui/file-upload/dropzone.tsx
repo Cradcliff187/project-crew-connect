@@ -32,7 +32,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
         <Upload className="h-8 w-8 text-muted-foreground" />
         <p className="text-sm font-medium">{dropzoneText}</p>
         <p className="text-xs text-muted-foreground">
-          Accepted files: {acceptedFileTypes.replace(/\*/g, 'all').split(',').join(', ')}
+          Accepted files: {acceptedFileTypes.replace(/\*/g, 'all')}
         </p>
         <p className="text-xs text-muted-foreground">
           Maximum file size: {maxFileSize}MB

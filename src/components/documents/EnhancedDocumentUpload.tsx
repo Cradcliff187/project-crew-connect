@@ -5,7 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
-import { EntityType, DocumentCategory } from './schemas/documentSchema';
+import { EntityType } from './schemas/documentSchema';
 
 // Import refactored components
 import DropzoneUploader from './components/DropzoneUploader';
@@ -18,13 +18,11 @@ interface EnhancedDocumentUploadProps {
   entityId?: string;
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
-  onStartUpload?: () => void; // Added this property to fix the TypeScript error
   isReceiptUpload?: boolean;
   prefillData?: {
     amount?: number;
     vendorId?: string;
     materialName?: string;
-    category?: DocumentCategory;
   };
 }
 
@@ -33,7 +31,6 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   entityId,
   onSuccess,
   onCancel,
-  onStartUpload,
   isReceiptUpload = false,
   prefillData
 }) => {
@@ -68,8 +65,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     onSuccess,
     onCancel,
     isReceiptUpload,
-    prefillData,
-    onStartUpload, // Pass the onStartUpload prop to the hook
+    prefillData
   });
 
   // Initialize form with prefill data if available

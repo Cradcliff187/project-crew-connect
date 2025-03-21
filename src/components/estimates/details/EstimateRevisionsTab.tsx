@@ -3,19 +3,13 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { EstimateRevision } from '../types/estimateTypes';
-import { formatDate as defaultFormatDate } from '@/lib/utils';
 
 type EstimateRevisionsTabProps = {
   revisions: EstimateRevision[];
-  estimateId?: string; // Making this optional so it doesn't break existing code
-  formatDate?: (dateString: string) => string;
+  formatDate: (dateString: string) => string;
 };
 
-const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ 
-  revisions, 
-  estimateId,
-  formatDate = defaultFormatDate // Use the formatDate from utils as default
-}) => {
+const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, formatDate }) => {
   return (
     <Card>
       <CardHeader>

@@ -19,9 +19,9 @@ export const estimateFormSchema = z.object({
     cost: z.string().min(1, { message: "Cost is required" }),
     markup_percentage: z.string().default("0"),
     quantity: z.string().optional().default("1"),
+    unitPrice: z.string().optional(),
     vendor_id: z.string().optional(),
     subcontractor_id: z.string().optional(),
-    document: z.instanceof(File).optional(),
   })).min(1, { message: "At least one item is required" }),
 });
 
@@ -33,6 +33,7 @@ export type EstimateItem = {
   cost: string;
   markup_percentage: string;
   quantity?: string;
+  unitPrice?: string;
 };
 
 // Types for calculation results
@@ -43,3 +44,4 @@ export type ItemCalculationResult = {
   grossMargin: number;
   grossMarginPercentage: number;
 };
+
