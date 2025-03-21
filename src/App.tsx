@@ -17,6 +17,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WorkOrders from './pages/WorkOrders';
 import ActiveWork from './pages/ActiveWork';
 import SubcontractorDetail from './components/subcontractors/SubcontractorDetail';
+import WorkOrderDetail from './components/workOrders/details/WorkOrderDetail';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ function App() {
             <Route path="/subcontractors" element={<Subcontractors />} />
             <Route path="/subcontractors/:subcontractorId" element={<SubcontractorDetail />} />
             <Route path="/workorders" element={<WorkOrders />} />
+            <Route path="/workorders/:workOrderId" element={<WorkOrderDetail />} />
             <Route path="/active-work" element={<ActiveWork />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" />} />

@@ -1,8 +1,6 @@
 
 import { Pencil, Check, X } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { WorkOrder } from '@/types/workOrder';
 import { useWorkOrderProgress } from './hooks/useWorkOrderProgress';
 import ProgressDisplay from './progress/ProgressDisplay';
@@ -25,49 +23,46 @@ const WorkOrderProgressCard = ({ workOrder, onProgressUpdate }: WorkOrderProgres
   } = useWorkOrderProgress(workOrder, onProgressUpdate);
   
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex flex-row items-center justify-between w-full">
-          <CardTitle>Progress</CardTitle>
-          {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={startEditing}>
-              <Pencil className="h-4 w-4 mr-1" />
-              Update
+    <div className="space-y-4">
+      <div className="flex flex-row items-center justify-between w-full">
+        <h3 className="text-base font-medium">Work Progress</h3>
+        {!isEditing ? (
+          <Button variant="outline" size="sm" onClick={startEditing}>
+            <Pencil className="h-4 w-4 mr-1" />
+            Update
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={loading}>
+              <X className="h-4 w-4 mr-1" />
+              Cancel
             </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={loading}>
-                <X className="h-4 w-4 mr-1" />
-                Cancel
-              </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={handleSaveProgress} 
-                disabled={loading} 
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-              >
-                <Check className="h-4 w-4 mr-1" />
-                Save
-              </Button>
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-2">
-          <ProgressDisplay progressValue={progressValue} />
-          
-          {isEditing && (
-            <ProgressEditForm 
-              progressValue={progressValue}
-              onProgressChange={setProgressValue}
-              loading={loading}
-            />
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={handleSaveProgress} 
+              disabled={loading} 
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Save
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      <div>
+        <ProgressDisplay progressValue={progressValue} />
+        
+        {isEditing && (
+          <ProgressEditForm 
+            progressValue={progressValue}
+            onProgressChange={setProgressValue}
+            loading={loading}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

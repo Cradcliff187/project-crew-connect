@@ -61,6 +61,8 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
           
           <WorkOrderDescription description={workOrder.description} />
           
+          <Separator className="my-4" />
+          
           <WorkOrderProgressCard 
             workOrder={workOrder} 
             onProgressUpdate={handleRefresh} 
