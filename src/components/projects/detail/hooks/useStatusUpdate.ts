@@ -65,12 +65,12 @@ export const useStatusUpdate = ({
     try {
       console.log(`Updating project status from ${currentStatus} to ${newStatus} for project ID: ${projectId}`);
       
-      // First verify if this transition is allowed through the RPC
+      // We'll use the validate_projects_status_transition function which exists in the DB
+      // First check if the transition is valid by making a direct query
       const { data: validationData, error: validationError } = await supabase
-        .rpc('validate_status_transition', {
-          entity_type_param: 'PROJECT',
-          from_status_param: normalizedCurrentStatus,
-          to_status_param: normalizedNewStatus
+        .rpc('validate_projects_status_transition', {
+          current_status: normalizedCurrentStatus,
+          new_status: normalizedNewStatus
         });
 
       if (validationError) {

@@ -51,6 +51,7 @@ export const useStatusTransitions = (projectId: string, currentStatus: string) =
     } catch (err: any) {
       console.error('Error in transition fetching:', err);
       // Use fallback transitions in case of error
+      const normalizedStatus = currentStatus.toLowerCase();
       const fallbackOptions = fallbackTransitions[normalizedStatus] || [];
       setAllowedTransitions(fallbackOptions);
       setError(err.message);
