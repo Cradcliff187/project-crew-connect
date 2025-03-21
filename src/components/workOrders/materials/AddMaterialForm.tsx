@@ -82,7 +82,7 @@ const AddMaterialForm = ({
                   <SelectValue placeholder="Select vendor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {vendors.map((vendor) => (
                     <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
                       {vendor.vendorname}
