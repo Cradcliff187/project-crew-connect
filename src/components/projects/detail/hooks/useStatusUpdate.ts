@@ -52,8 +52,7 @@ export const useStatusUpdate = ({
           status: newStatus, // Keep original case for the database
           updated_at: new Date().toISOString()
         })
-        .eq('projectid', projectId)
-        .select();
+        .eq('projectid', projectId);
       
       if (error) {
         throw error;

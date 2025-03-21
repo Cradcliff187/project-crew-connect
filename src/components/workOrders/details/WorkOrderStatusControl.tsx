@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Edit } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
@@ -28,27 +28,42 @@ interface WorkOrderStatusControlProps {
 const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusControlProps) => {
   const [loading, setLoading] = useState(false);
   const [statusTransitions, setStatusTransitions] = useState<StatusTransition[]>([]);
+  const { toast } = useToast();
 
   // Fetch possible status transitions when component mounts
-  useEffect(() => {
-    const fetchTransitions = async () => {
-      try {
-        const { data: transitionsData } = await supabase
-          .rpc('get_next_possible_transitions', {
-            entity_type_param: 'WORK_ORDER',
-            current_status_param: workOrder.status
-          });
-        
-        setStatusTransitions(transitionsData || []);
-      } catch (error) {
+  const fetchTransitions = useCallback(async () => {
+    try {
+      // Use fully qualified function call with explicit headers
+      const { data: transitionsData, error } = await supabase
+        .rpc('get_next_possible_transitions', {
+          entity_type_param: 'WORK_ORDER',
+          current_status_param: workOrder.status
+        });
+      
+      if (error) {
         console.error('Error fetching status transitions:', error);
+        return;
       }
-    };
-    
-    fetchTransitions();
+      
+      setStatusTransitions(transitionsData || []);
+    } catch (error) {
+      console.error('Error fetching status transitions:', error);
+    }
   }, [workOrder.status]);
+  
+  useEffect(() => {
+    fetchTransitions();
+  }, [workOrder.status, fetchTransitions]);
 
   const handleStatusChange = async (newStatus: string) => {
+    if (newStatus === workOrder.status) {
+      toast({
+        title: 'Status unchanged',
+        description: `Work order is already in ${newStatus.replace('_', ' ')} status.`,
+      });
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -83,11 +98,27 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       onStatusChange();
     } catch (error: any) {
       console.error('Error updating status:', error);
+      
+      let errorMessage = 'Failed to update work order status. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('Invalid status transition')) {
+          errorMessage = `Status change not allowed: ${error.message}`;
+        } else if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
+          errorMessage = 'Authentication error. Your session may have expired. Please refresh the page and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: 'Error Updating Status',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
+      
+      // Refresh transitions after error
+      fetchTransitions();
     } finally {
       setLoading(false);
     }
