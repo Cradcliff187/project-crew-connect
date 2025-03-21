@@ -26,7 +26,7 @@ const StatusDropdownMenu = ({
 }: StatusDropdownMenuProps) => {
   // Get the appropriate icon for each status
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'active':
         return <Play className="mr-2 h-4 w-4 text-emerald-500" />;
       case 'on_hold':
