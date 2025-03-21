@@ -4,7 +4,7 @@ import { StatusType } from '@/types/common';
 import React from 'react';
 
 interface StatusBadgeProps {
-  status: StatusType;
+  status: StatusType | string;
   size?: 'sm' | 'md';
   className?: string;
 }
@@ -14,7 +14,9 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   size = 'md',
   className = ''
 }) => {
-  const statusLower = status.toLowerCase() as Lowercase<StatusType>;
+  // Safely handle any type of status input
+  const safeStatus = typeof status === 'string' ? status : 'unknown';
+  const statusLower = safeStatus.toLowerCase();
   
   const getStatusColor = () => {
     switch (statusLower) {
@@ -51,8 +53,9 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   };
   
   const getStatusLabel = () => {
-    // Capitalize first letter
-    return statusLower.charAt(0).toUpperCase() + statusLower.slice(1);
+    // Display original status with first letter capitalized
+    if (safeStatus === 'unknown') return 'Unknown';
+    return safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1).toLowerCase();
   };
   
   return (

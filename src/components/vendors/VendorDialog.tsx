@@ -24,7 +24,7 @@ const VendorDialog = ({
   open,
   onOpenChange,
   onVendorAdded,
-  initialData,
+  initialData = {}, // Provide empty object as default
   isEditing = false
 }: VendorDialogProps) => {
   // Log the initial data to help with debugging
