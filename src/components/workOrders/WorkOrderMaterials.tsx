@@ -6,6 +6,8 @@ import { AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { MaterialReceiptUpload, ReceiptConfirmationDialog } from './materials/components';
 import { WorkOrderMaterial } from '@/types/workOrder';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WorkOrderMaterialsProps {
   workOrderId: string;
@@ -39,6 +41,14 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   // State for receipt upload dialog
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<WorkOrderMaterial | null>(null);
+  
+  // State for viewing receipt
+  const [viewingReceipt, setViewingReceipt] = useState(false);
+  const [receiptDocument, setReceiptDocument] = useState<{
+    url: string;
+    fileName: string;
+    fileType: string;
+  } | null>(null);
   
   // Handle material added
   const handleMaterialAdded = () => {
@@ -116,10 +126,45 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   };
   
   // Handle receipt button click
-  const handleReceiptClick = (material: WorkOrderMaterial) => {
+  const handleReceiptClick = async (material: WorkOrderMaterial) => {
     console.log("Receipt button clicked for material:", material);
     setSelectedMaterial(material);
-    setShowReceiptUpload(true);
+    
+    // Check if material has a receipt
+    if (material.receipt_document_id) {
+      // Fetch receipt document data
+      try {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('file_name, file_type, storage_path')
+          .eq('document_id', material.receipt_document_id)
+          .single();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          // Generate public URL
+          const { data: urlData } = supabase.storage
+            .from('construction_documents')
+            .getPublicUrl(data.storage_path);
+          
+          setReceiptDocument({
+            url: urlData.publicUrl,
+            fileName: data.file_name,
+            fileType: data.file_type
+          });
+          
+          setViewingReceipt(true);
+        }
+      } catch (error) {
+        console.error("Error fetching receipt document:", error);
+      }
+    } else {
+      // Show upload dialog for new receipt
+      setShowReceiptUpload(true);
+    }
   };
   
   // Handle receipt uploaded
@@ -137,6 +182,12 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     if (!vendorId) return "";
     const vendor = vendors.find(v => v.vendorid === vendorId);
     return vendor ? vendor.vendorname : "Unknown Vendor";
+  };
+  
+  // Close receipt viewer
+  const handleCloseReceiptViewer = () => {
+    setViewingReceipt(false);
+    setReceiptDocument(null);
   };
   
   return (
@@ -193,6 +244,41 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
           </div>
         </div>
       )}
+      
+      {/* Receipt Viewer Dialog */}
+      <Dialog open={viewingReceipt} onOpenChange={(open) => !open && handleCloseReceiptViewer()}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Receipt: {receiptDocument?.fileName}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="border rounded-md overflow-hidden h-[400px]">
+              {receiptDocument?.fileType?.startsWith('image/') ? (
+                <img
+                  src={receiptDocument.url}
+                  alt={receiptDocument.fileName}
+                  className="w-full h-full object-contain"
+                />
+              ) : receiptDocument?.fileType?.includes('pdf') ? (
+                <iframe
+                  src={receiptDocument.url}
+                  title={receiptDocument.fileName}
+                  className="w-full h-full"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full bg-gray-50">
+                  <p>Preview not available</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end">
+              <Button onClick={handleCloseReceiptViewer}>Close</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

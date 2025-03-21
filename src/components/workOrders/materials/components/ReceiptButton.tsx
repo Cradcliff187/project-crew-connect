@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Receipt } from 'lucide-react';
+import { Eye, Receipt } from 'lucide-react';
 import { WorkOrderMaterial } from '@/types/workOrder';
 
 interface ReceiptButtonProps {
@@ -22,7 +22,7 @@ const ReceiptButton = ({ material, onClick }: ReceiptButtonProps) => {
           : 'bg-[#0485ea] text-white hover:bg-[#0375d1]'
       }`}
     >
-      <Receipt className="h-4 w-4" />
+      {hasReceipt ? <Eye className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
       {hasReceipt ? 'View Receipt' : 'Add Receipt'}
     </Button>
   );
