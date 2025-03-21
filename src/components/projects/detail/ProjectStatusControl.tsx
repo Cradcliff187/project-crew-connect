@@ -56,6 +56,7 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
         description: `Project status changed to ${statusLabels[newStatus as keyof typeof statusLabels]}.`,
       });
       
+      // Call the onStatusChange callback to refresh project data
       onStatusChange();
     } catch (error: any) {
       console.error('Error updating project status:', error);

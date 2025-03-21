@@ -1,27 +1,121 @@
 
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProgressEditFormProps {
-  progressValue: number;
-  onProgressChange: (value: number) => void;
+  projectId: string;
+  currentProgress: number;
+  onProgressUpdate: () => void;
+  onCancel: () => void;
 }
 
-const ProgressEditForm = ({ progressValue, onProgressChange }: ProgressEditFormProps) => {
+const ProgressEditForm: React.FC<ProgressEditFormProps> = ({
+  projectId,
+  currentProgress,
+  onProgressUpdate,
+  onCancel
+}) => {
+  const [progress, setProgress] = useState(currentProgress);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  
+  const handleProgressChange = (value: number[]) => {
+    setProgress(value[0]);
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value >= 0 && value <= 100) {
+      setProgress(value);
+    }
+  };
+  
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Check if a progress record exists
+      const { data, error: checkError } = await supabase
+        .from('project_progress')
+        .select('id')
+        .eq('projectid', projectId)
+        .maybeSingle();
+      
+      let result;
+      
+      if (data) {
+        // Update existing record
+        result = await supabase
+          .from('project_progress')
+          .update({ progress_percentage: progress })
+          .eq('projectid', projectId);
+      } else {
+        // Insert new record
+        result = await supabase
+          .from('project_progress')
+          .insert({ projectid: projectId, progress_percentage: progress });
+      }
+      
+      if (result.error) throw result.error;
+      
+      toast({
+        title: 'Progress updated',
+        description: `Project progress has been updated to ${progress}%.`,
+      });
+      
+      onProgressUpdate();
+    } catch (error: any) {
+      console.error('Error updating progress:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update progress. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+  
   return (
-    <div className="mt-4">
-      <label className="text-sm font-medium mb-1 block">Update Progress</label>
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          value={progressValue}
-          onChange={(e) => onProgressChange(Number(e.target.value))}
-          min={0}
-          max={100}
-          className="w-24"
-        />
-        <span>%</span>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Slider
+            value={[progress]}
+            min={0}
+            max={100}
+            step={1}
+            onValueChange={handleProgressChange}
+            className="flex-1"
+          />
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            value={progress}
+            onChange={handleInputChange}
+            className="w-16"
+          />
+          <span className="text-sm">%</span>
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground mt-1">Enter a value between 0 and 100</p>
+      
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
+          Cancel
+        </Button>
+        <Button 
+          size="sm" 
+          onClick={handleSave} 
+          disabled={saving}
+          className="bg-[#0485ea] hover:bg-[#0375d1]"
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </Button>
+      </div>
     </div>
   );
 };

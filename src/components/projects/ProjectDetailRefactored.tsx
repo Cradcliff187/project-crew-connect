@@ -18,50 +18,53 @@ const ProjectDetailRefactored = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  useEffect(() => {
-    const fetchProjectDetails = async () => {
-      setLoading(true);
-      try {
-        // Fetch the project data
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('projectid', projectId)
+  // Function to fetch project details that can be reused
+  const fetchProjectDetails = async () => {
+    if (!projectId) return;
+    
+    setLoading(true);
+    try {
+      // Fetch the project data
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('projectid', projectId)
+        .single();
+      
+      if (error) throw error;
+      
+      const projectData = data as ProjectDetailsType;
+      setProject(projectData);
+      
+      // If there's a customerid but no customername (or customername is empty),
+      // fetch the customer details directly
+      if (projectData.customerid && (!projectData.customername || projectData.customername.trim() === '')) {
+        const { data: customerData, error: customerError } = await supabase
+          .from('customers')
+          .select('customerid, customername')
+          .eq('customerid', projectData.customerid)
           .single();
         
-        if (error) throw error;
-        
-        const projectData = data as ProjectDetailsType;
-        setProject(projectData);
-        
-        // If there's a customerid but no customername (or customername is empty),
-        // fetch the customer details directly
-        if (projectData.customerid && (!projectData.customername || projectData.customername.trim() === '')) {
-          const { data: customerData, error: customerError } = await supabase
-            .from('customers')
-            .select('customerid, customername')
-            .eq('customerid', projectData.customerid)
-            .single();
-          
-          if (customerError) {
-            console.warn('Error fetching customer details:', customerError);
-          } else if (customerData) {
-            setCustomerDetails(customerData as { customerid: string; customername: string });
-          }
+        if (customerError) {
+          console.warn('Error fetching customer details:', customerError);
+        } else if (customerData) {
+          setCustomerDetails(customerData as { customerid: string; customername: string });
         }
-      } catch (error: any) {
-        console.error('Error fetching project details:', error);
-        setError(error.message);
-        toast({
-          title: 'Error loading project',
-          description: error.message,
-          variant: 'destructive'
-        });
-      } finally {
-        setLoading(false);
       }
-    };
-    
+    } catch (error: any) {
+      console.error('Error fetching project details:', error);
+      setError(error.message);
+      toast({
+        title: 'Error loading project',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     if (projectId) {
       fetchProjectDetails();
     }
@@ -72,24 +75,8 @@ const ProjectDetailRefactored = () => {
   };
   
   const handleRefresh = () => {
-    // Refetch the project data when changes are made
-    if (projectId) {
-      setLoading(true);
-      supabase
-        .from('projects')
-        .select('*')
-        .eq('projectid', projectId)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error refreshing project:', error);
-            return;
-          }
-          
-          setProject(data as ProjectDetailsType);
-          setLoading(false);
-        });
-    }
+    // Use the fetchProjectDetails function to refresh data
+    fetchProjectDetails();
   };
   
   return (
