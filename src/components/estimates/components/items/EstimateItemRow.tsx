@@ -1,6 +1,4 @@
 
-import { Button } from '@/components/ui/button';
-import { Trash } from 'lucide-react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { 
@@ -9,12 +7,11 @@ import {
   calculateItemGrossMarginPercentage 
 } from '../../utils/estimateCalculations';
 
-import ItemDescription from './ItemDescription';
-import ItemTypeSelector from './ItemTypeSelector';
-import VendorSelector from './VendorSelector';
-import SubcontractorSelector from './SubcontractorSelector';
+import ItemRowHeader from './ItemRowHeader';
+import ItemVendorSection from './ItemVendorSection';
 import CostFields from './CostFields';
 import ItemCalculations from './ItemCalculations';
+import ItemFooter from './ItemFooter';
 
 type Vendor = { vendorid: string; vendorname: string };
 type Subcontractor = { subid: string; subname: string };
@@ -83,39 +80,20 @@ const EstimateItemRow = ({
 
   return (
     <div className="grid grid-cols-12 gap-2 items-start p-3 border rounded-md">
-      <ItemDescription control={form.control} index={index} />
+      <ItemRowHeader 
+        index={index} 
+        control={form.control} 
+        onTypeChange={handleTypeChange} 
+      />
 
-      <div className="col-span-12 md:col-span-3">
-        <ItemTypeSelector 
-          control={form.control} 
-          index={index} 
-          onTypeChange={handleTypeChange}
-        />
-      </div>
-
-      {/* Show vendor selector if type is vendor */}
-      {itemType === 'vendor' && (
-        <div className="col-span-12 md:col-span-3">
-          <VendorSelector 
-            control={form.control} 
-            index={index} 
-            vendors={vendors}
-            loading={loading}
-          />
-        </div>
-      )}
-
-      {/* Show subcontractor selector if type is subcontractor */}
-      {itemType === 'subcontractor' && (
-        <div className="col-span-12 md:col-span-3">
-          <SubcontractorSelector 
-            control={form.control} 
-            index={index} 
-            subcontractors={subcontractors}
-            loading={loading}
-          />
-        </div>
-      )}
+      <ItemVendorSection
+        index={index}
+        control={form.control}
+        itemType={itemType}
+        vendors={vendors}
+        subcontractors={subcontractors}
+        loading={loading}
+      />
 
       <CostFields control={form.control} index={index} />
       
@@ -125,20 +103,7 @@ const EstimateItemRow = ({
         grossMarginPercentage={grossMarginPercentage}
       />
 
-      <div className="col-span-12 flex justify-end">
-        {canRemove && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onRemove}
-            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash className="h-4 w-4 mr-1" />
-            Remove Item
-          </Button>
-        )}
-      </div>
+      <ItemFooter onRemove={onRemove} canRemove={canRemove} />
     </div>
   );
 };
