@@ -28,7 +28,7 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
       const file = files[0];
       setSelectedFile(file);
       field.onChange(file);
-      console.log(`File selected for item ${index}:`, file.name, file.type);
+      console.log(`File selected for item ${index}:`, file.name, file.type, file.size);
     }
   };
   

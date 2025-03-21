@@ -21,6 +21,7 @@ export const uploadItemDocument = async (
     const filePath = `estimates/${estimateId}/items/${fileName}`;
     
     console.log(`Uploading file for estimate ${estimateId}, item ${itemIndex}: ${fileName}`);
+    console.log(`File type: ${file.type}, size: ${file.size} bytes`);
     
     // First, verify the bucket exists
     const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
@@ -37,12 +38,17 @@ export const uploadItemDocument = async (
       return null;
     }
     
+    // Create a clean copy of the file to ensure no metadata issues
+    const fileBlob = file.slice(0, file.size, file.type);
+    const cleanFile = new File([fileBlob], file.name, { type: file.type });
+    
     // Upload file to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('construction_documents')
-      .upload(filePath, file, {
+      .upload(filePath, cleanFile, {
         contentType: file.type, // Explicitly set the content type to match the file
-        cacheControl: '3600'
+        cacheControl: '3600',
+        upsert: false // Ensure we don't overwrite existing files
       });
       
     if (uploadError) {

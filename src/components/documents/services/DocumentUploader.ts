@@ -43,13 +43,19 @@ export const uploadDocument = async (
       const filePath = `${metadata.entityType.toLowerCase()}/${metadata.entityId || 'general'}/${fileName}`;
       
       console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
+      console.log(`File type: ${file.type}, size: ${file.size} bytes`);
+      
+      // Create a clean copy of the file to ensure no metadata issues
+      const fileBlob = file.slice(0, file.size, file.type);
+      const cleanFile = new File([fileBlob], file.name, { type: file.type });
       
       // Upload file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file, {
+        .upload(filePath, cleanFile, {
           contentType: file.type,
-          cacheControl: '3600'
+          cacheControl: '3600',
+          upsert: false // Ensure we don't overwrite existing files
         });
         
       if (uploadError) {
@@ -112,7 +118,7 @@ export const uploadDocument = async (
       documentId: uploadedDocumentId
     };
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error);
     return {
       success: false,
