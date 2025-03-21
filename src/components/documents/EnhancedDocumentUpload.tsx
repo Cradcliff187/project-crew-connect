@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
-import { CalendarIcon, Upload, FolderOpen } from 'lucide-react';
+import { CalendarIcon, Upload, FolderOpen, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import DocumentCategorySelector from './DocumentCategorySelector';
 import MobileDocumentCapture from './MobileDocumentCapture';
