@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
-import { CalendarIcon, Upload } from 'lucide-react';
+import { CalendarIcon, Upload, FolderOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import DocumentCategorySelector from './DocumentCategorySelector';
 import MobileDocumentCapture from './MobileDocumentCapture';
@@ -221,6 +221,95 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // If prefill data is available and it's a receipt upload, simplify the UI
   const simplifiedUpload = isReceiptUpload && prefillData;
 
+  // The main file upload component - always visible regardless of device type
+  const FileUploadSection = () => (
+    <FormField
+      control={form.control}
+      name="files"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Upload Receipt</FormLabel>
+          <FormControl>
+            <div className={cn(
+              "flex flex-col items-center justify-center w-full",
+              isReceiptUpload ? "mt-2" : ""
+            )}>
+              <div
+                className={cn(
+                  "flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
+                  watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
+                )}
+                onClick={() => document.getElementById('dropzone-file')?.click()}
+              >
+                {previewURL ? (
+                  <div className="w-full h-full p-2 flex flex-col items-center justify-center">
+                    <img
+                      src={previewURL}
+                      alt="Preview"
+                      className="max-h-36 max-w-full object-contain mb-2"
+                    />
+                    <p className="text-sm text-[#0485ea] font-medium">
+                      {watchFiles[0]?.name}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-10 h-10 mb-3 text-[#0485ea]" />
+                    <p className="mb-2 text-sm">
+                      <span className="font-semibold text-[#0485ea]">Drag and drop</span> your receipt here
+                    </p>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      className="mt-2 border-[#0485ea] text-[#0485ea]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        document.getElementById('dropzone-file')?.click();
+                      }}
+                    >
+                      <FolderOpen className="h-4 w-4 mr-2" />
+                      Browse Files
+                    </Button>
+                    {watchFiles.length > 0 && (
+                      <p className="mt-2 text-sm text-[#0485ea] font-medium">
+                        {watchFiles.length > 1 
+                          ? `${watchFiles.length} files selected` 
+                          : watchFiles[0].name}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <input
+                  id="dropzone-file"
+                  type="file"
+                  className="hidden"
+                  multiple={false}
+                  accept="image/*,application/pdf"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      handleFileSelect(Array.from(files));
+                    }
+                  }}
+                />
+              </div>
+              
+              {watchFiles.length > 0 && (
+                <div className="w-full mt-2">
+                  <p className="text-sm text-[#0485ea] font-medium text-center">
+                    {watchFiles.length} file(s) selected
+                  </p>
+                </div>
+              )}
+            </div>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
   return (
     <Card className="w-full">
       {!simplifiedUpload && (
@@ -237,107 +326,23 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-6 pt-4">
-            {isMobile ? (
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-2">
-                  <TabsTrigger value="file">File Upload</TabsTrigger>
-                  <TabsTrigger value="mobile">Mobile Capture</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="file" className="space-y-4 mt-0">
-                  <FormField
-                    control={form.control}
-                    name="files"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Document File</FormLabel>
-                        <FormControl>
-                          <div className="flex flex-col items-center justify-center w-full">
-                            <label
-                              htmlFor="dropzone-file"
-                              className={cn(
-                                "flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
-                                watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
-                              )}
-                            >
-                              {previewURL ? (
-                                <div className="w-full h-full p-2 flex items-center justify-center">
-                                  <img
-                                    src={previewURL}
-                                    alt="Preview"
-                                    className="max-h-full max-w-full object-contain"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                  <Upload className="w-10 h-10 mb-3 text-gray-400" />
-                                  <p className="mb-2 text-sm text-gray-500">
-                                    <span className="font-semibold">Click to upload</span> or drag and drop
-                                  </p>
-                                  <p className="text-xs text-gray-500">PDF, PNG, JPG, or other document formats</p>
-                                  {watchFiles.length > 0 && (
-                                    <p className="mt-2 text-sm text-[#0485ea] font-medium">
-                                      {watchFiles.length > 1 
-                                        ? `${watchFiles.length} files selected` 
-                                        : watchFiles[0].name}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-                              <input
-                                id="dropzone-file"
-                                type="file"
-                                className="hidden"
-                                multiple={true}
-                                onChange={(e) => {
-                                  const files = e.target.files;
-                                  if (files && files.length > 0) {
-                                    handleFileSelect(Array.from(files));
-                                  }
-                                }}
-                              />
-                            </label>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="mobile" className="space-y-4 mt-0">
-                  <MobileDocumentCapture onCapture={handleMobileCapture} />
-                </TabsContent>
-              </Tabs>
-            ) : (
-              // Desktop version - simplified without tabs
-              <FormField
-                control={form.control}
-                name="files"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Document File</FormLabel>
-                    <FormControl>
-                      <FileUpload
-                        onFilesSelected={handleFileSelect}
-                        selectedFiles={watchFiles}
-                        onFileClear={(index) => {
-                          const newFiles = [...watchFiles];
-                          newFiles.splice(index, 1);
-                          handleFileSelect(newFiles);
-                        }}
-                        acceptedFileTypes="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        maxFileSize={10}
-                        dropzoneText={isReceiptUpload 
-                          ? "Upload receipt files" 
-                          : "Upload document files"}
-                        allowCamera={false} // Explicitly disable camera on desktop
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Always show file upload section, regardless of device type */}
+            <FileUploadSection />
+            
+            {isMobile && hasCamera && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setActiveTab('mobile')}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <Camera className="h-4 w-4" />
+                Take Photo Instead
+              </Button>
+            )}
+            
+            {activeTab === 'mobile' && isMobile && hasCamera && (
+              <MobileDocumentCapture onCapture={handleMobileCapture} />
             )}
             
             {!simplifiedUpload && <Separator />}
