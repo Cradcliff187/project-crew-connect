@@ -29,10 +29,14 @@ export const useStatusUpdate = ({
   };
   
   const updateStatus = async (newStatus: string) => {
-    if (currentStatus.toLowerCase() === newStatus.toLowerCase()) {
+    // Normalize both statuses to lowercase for comparison
+    const normalizedCurrentStatus = currentStatus.toLowerCase();
+    const normalizedNewStatus = newStatus.toLowerCase();
+    
+    if (normalizedCurrentStatus === normalizedNewStatus) {
       toast({
         title: 'Status unchanged',
-        description: `Project is already ${statusLabels[newStatus] || newStatus}.`,
+        description: `Project is already ${statusLabels[normalizedNewStatus] || newStatus}.`,
       });
       return;
     }
@@ -44,7 +48,7 @@ export const useStatusUpdate = ({
       const { error } = await supabase
         .from('projects')
         .update({ 
-          status: newStatus,
+          status: newStatus, // Keep original case for the database
           updated_at: new Date().toISOString()
         })
         .eq('projectid', projectId);
@@ -55,7 +59,7 @@ export const useStatusUpdate = ({
       
       toast({
         title: 'Status updated',
-        description: `Project status changed to ${statusLabels[newStatus] || newStatus}.`,
+        description: `Project status changed to ${statusLabels[normalizedNewStatus] || newStatus}.`,
       });
       
       // Call the onStatusChange callback to refresh project data

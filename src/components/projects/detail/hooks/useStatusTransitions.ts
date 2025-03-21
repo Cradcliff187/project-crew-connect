@@ -32,6 +32,7 @@ export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProp
     
     setLoading(true);
     try {
+      // Normalize status to lowercase for case-insensitive comparison
       const normalizedStatus = currentStatus.toLowerCase();
       console.log(`Fetching transitions for project status: ${normalizedStatus}`);
       
@@ -40,7 +41,7 @@ export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProp
         .from('status_transitions')
         .select('to_status, label, description')
         .eq('entity_type', 'PROJECT')
-        .eq('from_status', normalizedStatus);
+        .ilike('from_status', normalizedStatus); // Use case-insensitive comparison
 
       if (error) {
         // Don't throw error here, just log it and fall back to static transitions
@@ -53,7 +54,7 @@ export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProp
         console.log('Transitions fetched successfully:', data);
         const formattedTransitions = data.map((transition: any) => ({
           status: transition.to_status,
-          label: transition.label || statusLabels[transition.to_status] || transition.to_status,
+          label: transition.label || statusLabels[transition.to_status.toLowerCase()] || transition.to_status,
         }));
         setAvailableStatuses(formattedTransitions);
       } else {
@@ -77,7 +78,7 @@ export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProp
     
     const formattedTransitions = fallbackTransitions.map(status => ({
       status,
-      label: statusLabels[status] || status.charAt(0).toUpperCase() + status.slice(1)
+      label: statusLabels[status.toLowerCase()] || status.charAt(0).toUpperCase() + status.slice(1)
     }));
     
     setAvailableStatuses(formattedTransitions);
