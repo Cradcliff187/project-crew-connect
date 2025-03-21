@@ -14,10 +14,12 @@ const ReceiptButton = ({ material, onClick }: ReceiptButtonProps) => {
       variant="outline"
       size="sm"
       onClick={() => onClick(material)}
-      className="bg-[#0485ea] text-white hover:bg-[#0375d1] flex items-center gap-1"
+      className={`flex items-center gap-1 ${material.receipt_document_id 
+        ? 'text-green-600 hover:bg-green-50 border-green-300' 
+        : 'bg-[#0485ea] text-white hover:bg-[#0375d1]'}`}
     >
       <Receipt className="h-4 w-4" />
-      {material.receipt_document_id ? 'Update Receipt' : 'Add Receipt'}
+      {material.receipt_document_id ? 'View Receipt' : 'Add Receipt'}
     </Button>
   );
 };
