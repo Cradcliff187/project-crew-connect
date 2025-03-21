@@ -89,13 +89,7 @@ const Vendors = () => {
 
   const handleViewVendorDetails = (vendor: Vendor) => {
     console.log('View vendor details:', vendor);
-    // For now, we'll just show a toast since we don't have a vendor details page yet
-    // When a details page is created, we would navigate to it like:
-    // navigate(`/vendors/${vendor.vendorid}`);
-    toast({
-      title: "Vendor Details",
-      description: `Viewing details for ${vendor.vendorname}. This feature is coming soon.`,
-    });
+    navigate(`/vendors/${vendor.vendorid}`);
   };
 
   return (

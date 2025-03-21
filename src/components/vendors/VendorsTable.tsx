@@ -207,7 +207,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails }: V
                 <TableCell>
                   <StatusBadge status={mapStatusToStatusBadge(vendor.status)} />
                 </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
+                <TableCell>
                   <ActionMenu groups={getVendorActions(vendor)} />
                 </TableCell>
               </TableRow>

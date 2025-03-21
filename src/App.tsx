@@ -18,6 +18,7 @@ import WorkOrders from './pages/WorkOrders';
 import ActiveWork from './pages/ActiveWork';
 import SubcontractorDetail from './components/subcontractors/SubcontractorDetail';
 import WorkOrderDetail from './components/workOrders/details/WorkOrderDetail';
+import VendorDetail from './components/vendors/detail/VendorDetail';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ function App() {
             <Route path="/documents" element={<Documents />} />
             <Route path="/time-tracking" element={<TimeTracking />} />
             <Route path="/vendors" element={<Vendors />} />
+            <Route path="/vendors/:vendorId" element={<VendorDetail />} />
             <Route path="/subcontractors" element={<Subcontractors />} />
             <Route path="/subcontractors/:subcontractorId" element={<SubcontractorDetail />} />
             <Route path="/work-orders" element={<WorkOrders />} />
