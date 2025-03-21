@@ -5,7 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
-import { EntityType } from './schemas/documentSchema';
+import { EntityType, DocumentCategory } from './schemas/documentSchema';
 
 // Import refactored components
 import DropzoneUploader from './components/DropzoneUploader';
@@ -23,6 +23,7 @@ interface EnhancedDocumentUploadProps {
     amount?: number;
     vendorId?: string;
     materialName?: string;
+    category?: DocumentCategory;  // Added this property to align with updated interfaces
   };
 }
 
