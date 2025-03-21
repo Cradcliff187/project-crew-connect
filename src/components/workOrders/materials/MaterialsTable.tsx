@@ -95,13 +95,13 @@ const MaterialsTable = ({
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleOpenReceiptUpload(material)}
-                        className="text-[#0485ea] hover:text-[#0375d1] hover:bg-blue-50"
-                        title="Upload Receipt"
+                        className="text-[#0485ea] hover:text-[#0375d1] hover:bg-blue-50 flex items-center"
                       >
-                        <Receipt className="h-4 w-4" />
+                        <Receipt className="h-4 w-4 mr-1" />
+                        {material.receipt_document_id ? 'Update Receipt' : 'Add Receipt'}
                       </Button>
                       <Button
                         variant="ghost"
