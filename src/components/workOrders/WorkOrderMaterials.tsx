@@ -1,7 +1,5 @@
 
 import { useState } from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
 import { WorkOrderMaterial } from '@/types/workOrder';
 
 // Import hooks
@@ -10,8 +8,7 @@ import { useReceiptManager } from './materials/hooks/useReceiptManager';
 import { useConfirmationManager } from './materials/hooks/useConfirmationManager';
 
 // Import components
-import { AddMaterialForm, MaterialsTable } from './materials';
-import { ReceiptConfirmationDialog } from './materials/components';
+import { MaterialsErrorAlert, MaterialsInfoSection, ReceiptConfirmationDialog } from './materials/components';
 import { ReceiptViewerDialog, ReceiptUploadDialog } from './materials/dialogs/ReceiptDialog';
 
 interface WorkOrderMaterialsProps {
@@ -103,30 +100,21 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   
   return (
     <div className="space-y-6">
-      {(error || vendorsError) && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error || vendorsError}. Please refresh the page or try again later.
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Error Alert */}
+      <MaterialsErrorAlert error={error || vendorsError} />
       
-      <AddMaterialForm 
-        vendors={vendors}
-        onSubmit={handlePromptForReceipt}
-        submitting={submitting}
-        onVendorAdded={handleVendorAdded}
-      />
-      
-      <MaterialsTable 
+      {/* Materials Info Section */}
+      <MaterialsInfoSection 
         materials={materials}
         loading={loading}
+        submitting={submitting}
         vendors={vendors}
-        onDelete={handleDelete}
-        totalCost={totalMaterialsCost}
+        totalMaterialsCost={totalMaterialsCost}
         workOrderId={workOrderId}
-        onReceiptUploaded={handleReceiptAttached}
+        onMaterialPrompt={handlePromptForReceipt}
+        onDelete={handleDelete}
+        onReceiptAttached={handleReceiptAttached}
+        onVendorAdded={handleVendorAdded}
         onReceiptClick={handleReceiptClick}
       />
       
