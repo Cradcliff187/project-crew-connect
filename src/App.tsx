@@ -42,8 +42,7 @@ function App() {
             <Route path="/work-orders" element={<WorkOrders />} />
             <Route path="/work-orders/:workOrderId" element={<WorkOrderDetail />} />
             <Route path="/active-work" element={<ActiveWork />} />
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<Navigate to="/404" />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>

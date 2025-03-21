@@ -9,8 +9,8 @@ const ProgressDisplay = ({ progressValue }: ProgressDisplayProps) => {
   // Function to determine progress bar color based on value
   const getProgressColor = (value: number): string => {
     if (value >= 80) return 'bg-green-500';
-    if (value >= 40) return 'bg-amber-500';
-    return 'bg-orange-500';
+    if (value >= 40) return 'bg-[#0485ea]';
+    return 'bg-amber-500';
   };
 
   const progressColor = getProgressColor(progressValue);
@@ -32,7 +32,7 @@ const ProgressDisplay = ({ progressValue }: ProgressDisplayProps) => {
         <p className="text-xs text-green-600 mt-1">Work order is complete!</p>
       )}
       {progressValue > 0 && progressValue < 100 && (
-        <p className="text-xs text-gray-500 mt-1">Work is in progress</p>
+        <p className="text-xs text-[#0485ea] mt-1">Work is in progress</p>
       )}
       {progressValue === 0 && (
         <p className="text-xs text-gray-500 mt-1">Work has not started</p>

@@ -74,7 +74,7 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
                     This work order is currently <span className="font-medium">{workOrder.progress || 0}% complete</span>. 
                     {workOrder.status === 'COMPLETED' ? 
                       ' The work has been completed.' : 
-                      workOrder.progress > 0 ? ' Work is in progress.' : ' Work has not started yet.'}
+                      workOrder.progress && workOrder.progress > 0 ? ' Work is in progress.' : ' Work has not started yet.'}
                   </p>
                   
                   {workOrder.scheduled_date && (

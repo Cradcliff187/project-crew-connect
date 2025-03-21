@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { WorkOrder } from '@/types/workOrder';
 import WorkOrderDetails from './WorkOrderDetails';
@@ -27,9 +27,9 @@ const WorkOrderDetailDialog = ({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={isMobile ? "max-w-[95vw] p-3 h-[90vh]" : "max-w-[900px] h-[80vh]"}>
+      <DialogContent className={isMobile ? "max-w-[95vw] p-4 h-[90vh]" : "max-w-[900px] h-[80vh]"}>
         <DialogHeader>
-          <DialogTitle>Work Order: {workOrder.title}</DialogTitle>
+          <DialogTitle className="text-[#0485ea]">Work Order: {workOrder.title}</DialogTitle>
         </DialogHeader>
         
         <div className="flex-1 overflow-auto mt-4">
