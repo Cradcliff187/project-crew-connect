@@ -9,7 +9,7 @@ import {
   calculateItemGrossMarginPercentage, 
   calculateSubtotal 
 } from './estimateCalculations';
-import { uploadItemDocument } from './estimateDocumentUtils';
+import { uploadItemDocument, updateDocumentEntityId } from './estimateDocumentUtils';
 
 /**
  * Prepares and submits an estimate to the database
@@ -88,12 +88,23 @@ export const submitEstimateItems = async (
   data: EstimateFormValues,
   estimateId: string
 ): Promise<void> => {
+  // Prepare and update any pre-uploaded documents with the new estimate ID
+  await Promise.all(data.items.map(async (item) => {
+    if (item.document && typeof item.document === 'string') {
+      // If document is a string, it's a document ID that needs to be updated
+      await updateDocumentEntityId(item.document, estimateId);
+    }
+  }));
+
   // Prepare and upload documents first, then insert estimate items
   const estimateItems = await Promise.all(data.items.map(async (item, index) => {
-    // Upload document if provided
+    // Upload document if provided and it's a File object
     let documentId = null;
-    if (item.document) {
+    if (item.document && item.document instanceof File) {
       documentId = await uploadItemDocument(item.document, estimateId, index);
+    } else if (item.document && typeof item.document === 'string') {
+      // If it's already a document ID (from a previous upload)
+      documentId = item.document;
     }
     
     const typedItem: EstimateItem = {

@@ -35,7 +35,7 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
       storage_path: filePath,
       entity_type: 'ESTIMATE',
       entity_id: estimateId,
-      category: 'estimate',
+      category: 'subcontractor_estimate',
       tags: ['estimate_item', `item_${itemIndex}`]
     };
     
@@ -55,5 +55,29 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
   } catch (error) {
     console.error('Error in document upload:', error);
     return null;
+  }
+};
+
+/**
+ * Updates document entity_id when an estimate is created
+ */
+export const updateDocumentEntityId = async (documentId: string | undefined, estimateId: string): Promise<boolean> => {
+  if (!documentId) return false;
+  
+  try {
+    const { error } = await supabase
+      .from('documents')
+      .update({ entity_id: estimateId })
+      .eq('document_id', documentId);
+      
+    if (error) {
+      console.error('Error updating document entity_id:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in update document entity_id:', error);
+    return false;
   }
 };
