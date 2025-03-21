@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
+import { Package, Hammer } from 'lucide-react';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import SubcontractorRow from './SubcontractorRow';
 import SubcontractorEmptyState from './SubcontractorEmptyState';
 import SubcontractorLoadingState from './SubcontractorLoadingState';
@@ -11,6 +12,7 @@ import { filterSubcontractors } from './utils/filterUtils';
 import SubcontractorDialog from './SubcontractorDialog';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 interface SubcontractorsTableProps {
   subcontractors: Subcontractor[];
@@ -76,70 +78,118 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
   // Show error state if there's an error
   if (error || specialtiesError) {
     return (
-      <div className="border rounded-md">
+      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
         <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Name</TableHead>
+          <TableHeader className="bg-gray-50">
+            <TableRow>
+              <TableHead>Subcontractor</TableHead>
               <TableHead>Specialties</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Added</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[60px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <SubcontractorErrorState error={error || specialtiesError || 'An error occurred'} />
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-6 text-red-500">
+                <p>Error loading subcontractors: {error || specialtiesError}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  Try Again
+                </Button>
+              </TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </div>
     );
   }
   
-  return (
-    <div>
-      <div className="border rounded-md mb-6">
+  // Table loading skeleton
+  if (loading || loadingSpecialties) {
+    return (
+      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
         <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Name</TableHead>
+          <TableHeader className="bg-gray-50">
+            <TableRow>
+              <TableHead>Subcontractor</TableHead>
               <TableHead>Specialties</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Added</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[60px]"></TableHead>
             </TableRow>
           </TableHeader>
-          
-          {/* Loading state */}
-          {(loading || loadingSpecialties) && <SubcontractorLoadingState />}
-          
-          {/* Data loaded but empty */}
-          {!loading && !loadingSpecialties && (!filteredSubcontractors || filteredSubcontractors.length === 0) && (
-            <TableBody>
-              <SubcontractorEmptyState />
-            </TableBody>
-          )}
-          
-          {/* Data loaded with results */}
-          {!loading && !loadingSpecialties && filteredSubcontractors && filteredSubcontractors.length > 0 && (
-            <TableBody>
-              {filteredSubcontractors.map((subcontractor) => (
-                <SubcontractorRow
-                  key={subcontractor.subid}
-                  subcontractor={subcontractor}
-                  specialties={specialtyMap}
-                  onEdit={handleEditClick}
-                  onDelete={handleDeleteClick}
-                  onView={handleViewClick}
-                />
-              ))}
-            </TableBody>
-          )}
+          <SubcontractorLoadingState />
         </Table>
       </div>
+    );
+  }
+  
+  // Empty state
+  if (!filteredSubcontractors || filteredSubcontractors.length === 0) {
+    return (
+      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+        <Table>
+          <TableHeader className="bg-gray-50">
+            <TableRow>
+              <TableHead>Subcontractor</TableHead>
+              <TableHead>Specialties</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Added</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[60px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                <Hammer className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
+                <p>No subcontractors found. Add your first subcontractor!</p>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+  
+  // Data loaded with results
+  return (
+    <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+      <Table>
+        <TableHeader className="bg-gray-50">
+          <TableRow>
+            <TableHead>Subcontractor</TableHead>
+            <TableHead>Specialties</TableHead>
+            <TableHead>Contact</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Added</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="w-[60px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredSubcontractors.map((subcontractor) => (
+            <SubcontractorRow
+              key={subcontractor.subid}
+              subcontractor={subcontractor}
+              specialties={specialtyMap}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              onView={handleViewClick}
+            />
+          ))}
+        </TableBody>
+      </Table>
       
       {/* Edit Subcontractor Dialog */}
       {selectedSubcontractor && (

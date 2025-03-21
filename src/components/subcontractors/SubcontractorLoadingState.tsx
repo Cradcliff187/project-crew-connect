@@ -6,11 +6,11 @@ const SubcontractorLoadingState = () => {
   return (
     <TableBody>
       {Array.from({ length: 5 }).map((_, index) => (
-        <TableRow key={index}>
+        <TableRow key={`skeleton-${index}`}>
           <TableCell>
-            <div className="flex flex-col space-y-2">
-              <Skeleton className="h-4 w-[150px]" />
-              <Skeleton className="h-3 w-[100px]" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[120px]" />
+              <Skeleton className="h-3 w-[80px]" />
             </div>
           </TableCell>
           <TableCell>
@@ -20,30 +20,19 @@ const SubcontractorLoadingState = () => {
             </div>
           </TableCell>
           <TableCell>
-            <div className="flex flex-col space-y-2">
-              <Skeleton className="h-3 w-[180px]" />
-              <Skeleton className="h-3 w-[100px]" />
-            </div>
+            <Skeleton className="h-4 w-[150px]" />
           </TableCell>
           <TableCell>
-            <div className="flex flex-col space-y-2">
-              <Skeleton className="h-3 w-[150px]" />
-              <Skeleton className="h-3 w-[100px]" />
-            </div>
+            <Skeleton className="h-4 w-[150px]" />
           </TableCell>
           <TableCell>
-            <div className="flex flex-col space-y-2">
-              <Skeleton className="h-3 w-[120px]" />
-              <Skeleton className="h-3 w-[80px]" />
-            </div>
+            <Skeleton className="h-4 w-[100px]" />
           </TableCell>
           <TableCell>
             <Skeleton className="h-6 w-[80px] rounded-full" />
           </TableCell>
           <TableCell>
-            <div className="flex justify-end">
-              <Skeleton className="h-8 w-8 rounded-full" />
-            </div>
+            <Skeleton className="h-8 w-8 rounded-full" />
           </TableCell>
         </TableRow>
       ))}
