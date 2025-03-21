@@ -10,15 +10,19 @@ import { EntityType } from '@/components/documents/schemas/documentSchema';
 interface WorkOrderDocumentsProps {
   workOrderId: string;
   entityType: string;
+  onDocumentAdded?: () => void;
 }
 
-const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps) => {
+const WorkOrderDocuments = ({ workOrderId, entityType, onDocumentAdded }: WorkOrderDocumentsProps) => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   const handleUploadSuccess = () => {
     setIsUploadOpen(false);
     setRefreshTrigger(prev => prev + 1);
+    if (onDocumentAdded) {
+      onDocumentAdded();
+    }
   };
   
   return (

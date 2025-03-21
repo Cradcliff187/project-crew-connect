@@ -6,6 +6,7 @@ import { FileText, Upload, Plus, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface WorkOrderDocument {
   document_id: string;
