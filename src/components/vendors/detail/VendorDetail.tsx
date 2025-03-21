@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import PageTransition from '@/components/layout/PageTransition';
 import VendorDialog from '@/components/vendors/VendorDialog';
 import VendorDocuments from './VendorDocuments';
+import VendorMetrics from './VendorMetrics';
 import { getPaymentTermsLabel } from '../utils/vendorUtils';
 
 const VendorDetail = () => {
@@ -213,6 +214,10 @@ const VendorDetail = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        <div className="mt-6">
+          <VendorMetrics vendorId={vendor.vendorid} />
         </div>
 
         <div className="mt-6">
