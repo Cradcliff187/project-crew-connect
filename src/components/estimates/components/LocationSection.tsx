@@ -8,9 +8,19 @@ import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 interface LocationSectionProps {
   useCustomLocation: boolean;
   handleCustomLocationToggle: (checked: boolean) => void;
+  customerAddress?: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  };
 }
 
-const LocationSection = ({ useCustomLocation, handleCustomLocationToggle }: LocationSectionProps) => {
+const LocationSection = ({ 
+  useCustomLocation, 
+  handleCustomLocationToggle,
+  customerAddress 
+}: LocationSectionProps) => {
   const form = useFormContext<EstimateFormValues>();
   
   return (
@@ -31,8 +41,20 @@ const LocationSection = ({ useCustomLocation, handleCustomLocationToggle }: Loca
       {!useCustomLocation && (
         <div className="mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
           <p className="text-sm text-gray-600">
-            Using customer address as job site location
+            Using customer address as job site location:
           </p>
+          {customerAddress && (
+            <div className="mt-2 text-sm text-gray-700">
+              <p>{customerAddress.address || 'No address provided'}</p>
+              <p>
+                {[
+                  customerAddress.city,
+                  customerAddress.state,
+                  customerAddress.zip
+                ].filter(Boolean).join(', ')}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

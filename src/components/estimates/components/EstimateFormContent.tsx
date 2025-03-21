@@ -2,7 +2,7 @@
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import BasicInfoFields from './BasicInfoFields';
 import DescriptionField from './DescriptionField';
@@ -23,6 +23,12 @@ interface EstimateFormContentProps {
 
 const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCustomLocation }: EstimateFormContentProps) => {
   const { isSubmitting, submitEstimate } = useEstimateSubmit();
+  const [selectedCustomerAddress, setSelectedCustomerAddress] = useState<{
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  } | null>(null);
 
   // Initialize the form
   const form = useForm<EstimateFormValues>({
@@ -52,9 +58,17 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
   const handleCustomerChange = (customerId: string) => {
     form.setValue('customer', customerId);
     
-    if (!useCustomLocation) {
-      const selectedCustomer = customers.find(c => c.id === customerId);
-      if (selectedCustomer) {
+    const selectedCustomer = customers.find(c => c.id === customerId);
+    
+    if (selectedCustomer) {
+      setSelectedCustomerAddress({
+        address: selectedCustomer.address,
+        city: selectedCustomer.city,
+        state: selectedCustomer.state,
+        zip: selectedCustomer.zip
+      });
+      
+      if (!useCustomLocation) {
         form.setValue('location.address', selectedCustomer.address || '');
         form.setValue('location.city', selectedCustomer.city || '');
         form.setValue('location.state', selectedCustomer.state || '');
@@ -105,6 +119,7 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
         <LocationSection
           useCustomLocation={useCustomLocation}
           handleCustomLocationToggle={handleCustomLocationToggle}
+          customerAddress={selectedCustomerAddress || undefined}
         />
 
         <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
