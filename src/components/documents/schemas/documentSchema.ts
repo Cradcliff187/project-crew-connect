@@ -1,7 +1,6 @@
-
 import * as z from 'zod';
 
-// Define the category options
+// Update documentCategories to include subcontractor_estimate
 export const documentCategories = [
   'invoice',
   'receipt',
@@ -10,7 +9,8 @@ export const documentCategories = [
   'insurance',
   'certification',
   'photo',
-  'other'
+  'other',
+  'subcontractor_estimate'  // New category added here
 ] as const;
 
 // Define the entity types that documents can be related to

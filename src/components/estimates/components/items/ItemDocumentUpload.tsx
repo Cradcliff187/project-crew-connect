@@ -1,11 +1,8 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Control, useController } from 'react-hook-form';
-import { PaperclipIcon, FileIcon, XIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { FileUpload } from '@/components/ui/file-upload';
-import { FormItem, FormLabel } from '@/components/ui/form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
 interface ItemDocumentUploadProps {
   index: number;
@@ -21,79 +18,56 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
     defaultValue: undefined,
   });
 
-  const handleFilesSelected = (files: File[]) => {
-    if (files.length > 0) {
-      field.onChange(files[0]);
-      setIsUploadOpen(false);
-    }
+  const handleDocumentUpload = (documentId?: string) => {
+    // Update form field with the uploaded document's ID
+    field.onChange(documentId);
+    setIsUploadOpen(false);
   };
 
-  const clearFile = () => {
-    field.onChange(undefined);
-  };
-
-  // Render a different message based on item type
-  const getUploadLabel = () => {
+  const getLabelForUpload = () => {
     if (itemType === 'subcontractor') {
-      return "Attach subcontractor's estimate";
-    } else if (itemType === 'vendor') {
-      return "Attach vendor's quote";
+      return "Subcontractor Estimate";
     }
-    return "Attach supporting document";
+    return "Attach Document";
   };
 
   return (
     <div className="mt-2">
-      {!field.value && !isUploadOpen ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="text-xs"
+      {!field.value && (
+        <button 
+          type="button" 
           onClick={() => setIsUploadOpen(true)}
+          className="text-sm text-[#0485ea] hover:underline"
         >
-          <PaperclipIcon className="h-3 w-3 mr-1" />
-          {getUploadLabel()}
-        </Button>
-      ) : isUploadOpen ? (
-        <div className="border rounded-md p-3 bg-gray-50">
-          <FormItem>
-            <FormLabel>{getUploadLabel()}</FormLabel>
-            <FileUpload
-              onFilesSelected={handleFilesSelected}
-              selectedFiles={field.value ? [field.value] : []}
-              onFileClear={clearFile}
-              allowMultiple={false}
-              acceptedFileTypes="application/pdf,image/*"
-              dropzoneText="Drag file here or click to upload"
-            />
-          </FormItem>
-          <div className="mt-2 flex justify-end">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsUploadOpen(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : field.value ? (
+          {getLabelForUpload()}
+        </button>
+      )}
+      
+      {isUploadOpen && (
+        <EnhancedDocumentUpload 
+          entityType="ESTIMATE"
+          entityId={null}  // We'll set this when the estimate is created
+          onSuccess={handleDocumentUpload}
+          onCancel={() => setIsUploadOpen(false)}
+          isReceiptUpload={false}
+          prefillData={{
+            category: itemType === 'subcontractor' ? 'subcontractor_estimate' : 'estimate'
+          }}
+        />
+      )}
+
+      {field.value && (
         <div className="flex items-center text-xs p-2 bg-blue-50 rounded border border-blue-200">
-          <FileIcon className="h-3 w-3 text-blue-500 mr-2" />
-          <span className="flex-1 truncate">{field.value.name}</span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={clearFile}
+          <span className="flex-1 truncate">Document uploaded</span>
+          <button 
+            type="button" 
+            onClick={() => field.onChange(undefined)}
+            className="ml-2 text-red-500 hover:text-red-700"
           >
-            <XIcon className="h-3 w-3" />
-          </Button>
+            Remove
+          </button>
         </div>
-      ) : null}
+      )}
     </div>
   );
 };
