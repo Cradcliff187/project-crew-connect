@@ -49,30 +49,17 @@ export const uploadDocument = async (
       console.log(`Uploading file to ${BUCKET_NAME} bucket, path: ${filePath}`);
       console.log(`File type: ${file.type}, size: ${file.size} bytes`);
       
-      // Get correct upload URL
-      const { data: uploadUrl } = supabase.storage.from(BUCKET_NAME).getUploadUrl(filePath);
-      console.log('Upload URL:', uploadUrl);
+      // Upload the file using the Supabase storage API
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(filePath, file, {
+          contentType: file.type, // Set the proper content type
+          cacheControl: '3600'
+        });
       
-      // Create a clean copy of the file to ensure no metadata issues
-      const fileBlob = file.slice(0, file.size, file.type);
-      
-      // Upload using fetch with explicit headers
-      const uploadResponse = await fetch(
-        `${supabase.storageUrl}/object/${BUCKET_NAME}/${filePath}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
-            // No Content-Type header here, let the browser set it with the file boundary
-          },
-          body: fileBlob
-        }
-      );
-      
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        console.error('Storage upload error:', errorData);
-        throw new Error(`File upload failed: ${errorData.error || 'Unknown error'}`);
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`File upload failed: ${uploadError.message || 'Unknown error'}`);
       }
       
       console.log('File uploaded successfully');

@@ -16,10 +16,6 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
     },
     global: {
-      fetch: (...args) => {
-        // Use a custom fetch to avoid any default headers
-        return fetch(...args);
-      },
       headers: {} // Explicitly set empty headers
     }
   }

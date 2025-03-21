@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -45,33 +44,16 @@ export const uploadItemDocument = async (
       return null;
     }
 
-    // Prepare file data using FormData to ensure correct content type
-    const formData = new FormData();
-    formData.append('file', file, file.name);
-    
-    // Get correct upload URL
-    const { data: uploadUrl } = supabase.storage.from(BUCKET_NAME).getUploadUrl(filePath);
-    console.log('Upload URL:', uploadUrl);
-    
-    // Create a clean copy of the file with explicit blob
-    const fileBlob = file.slice(0, file.size, file.type);
-    
-    // Upload using fetch with explicit headers
-    const uploadResponse = await fetch(
-      `${supabase.storageUrl}/object/${BUCKET_NAME}/${filePath}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
-          // No Content-Type header here, let the browser set it with the file boundary
-        },
-        body: fileBlob
-      }
-    );
-    
-    if (!uploadResponse.ok) {
-      const errorData = await uploadResponse.json();
-      console.error('Error uploading document:', errorData);
+    // Upload the file using Supabase storage
+    const { error: uploadError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, file, { 
+        contentType: file.type, // Set the correct content type
+        cacheControl: '3600'
+      });
+      
+    if (uploadError) {
+      console.error('Error uploading document:', uploadError);
       return null;
     }
     
