@@ -10,6 +10,9 @@ import ProjectClientCard from './detail/ProjectClientCard';
 import ProjectBudgetCard from './detail/ProjectBudgetCard';
 import ProjectDescription from './detail/ProjectDescription';
 import ProjectStatusControl from './detail/ProjectStatusControl';
+import ProjectBudget from './detail/ProjectBudget';
+import ProjectMilestones from './detail/ProjectMilestones';
+import { ProjectDocumentsList } from './detail';
 
 export interface ProjectDetails {
   projectid: string;

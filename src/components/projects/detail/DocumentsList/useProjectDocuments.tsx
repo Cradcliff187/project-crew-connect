@@ -12,16 +12,31 @@ export const useProjectDocuments = (projectId: string) => {
     try {
       setLoading(true);
       
-      // Fetch documents from the database
+      // Fetch documents from the documents table, filtered by project_id as entity_id
       const { data, error } = await supabase
-        .from('project_documents')
+        .from('documents')
         .select('*')
-        .eq('project_id', projectId)
+        .eq('entity_type', 'PROJECT')
+        .eq('entity_id', projectId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      setDocuments(data as ProjectDocument[]);
+      // Transform the data to match our ProjectDocument interface
+      const projectDocuments: ProjectDocument[] = data.map(doc => ({
+        id: doc.document_id,
+        project_id: doc.entity_id,
+        file_name: doc.file_name,
+        file_type: doc.file_type || '',
+        file_size: doc.file_size || 0,
+        file_url: doc.storage_path,
+        uploaded_by: doc.uploaded_by || '',
+        created_at: doc.created_at,
+        description: doc.notes,
+        category: doc.category
+      }));
+      
+      setDocuments(projectDocuments);
     } catch (error: any) {
       console.error('Error fetching project documents:', error);
       toast({
