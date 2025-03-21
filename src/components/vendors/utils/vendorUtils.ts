@@ -38,3 +38,29 @@ export const formatVendorAddress = (vendor: any): string | null => {
   
   return formattedAddress || null;
 };
+
+// Format date for display
+export const formatDate = (dateString: string | null): string => {
+  if (!dateString) return 'N/A';
+  
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid date';
+  
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  }).format(date);
+};
+
+// Map status to StatusBadge variant
+export const mapStatusToStatusBadge = (status: string): any => {
+  const statusMap: Record<string, any> = {
+    'ACTIVE': { variant: 'success', label: 'Active' },
+    'INACTIVE': { variant: 'destructive', label: 'Inactive' },
+    'PENDING': { variant: 'warning', label: 'Pending' },
+    'ARCHIVED': { variant: 'outline', label: 'Archived' }
+  };
+  
+  return statusMap[status] || { variant: 'default', label: status };
+};

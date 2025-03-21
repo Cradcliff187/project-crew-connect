@@ -1,8 +1,11 @@
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Upload, Camera, File, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useDeviceCapabilities } from "@/hooks/use-mobile";
+import { Dropzone } from "./file-upload/dropzone";
+import { SelectedFiles } from "./file-upload/selected-files";
+import { CameraButton } from "./file-upload/camera-button";
+import { validateFiles } from "./file-upload/file-validation";
 
 interface FileUploadProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onFilesSelected: (files: File[]) => void;
@@ -42,37 +45,12 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     };
 
     const validateAndProcessFiles = (files: File[]) => {
-      setErrors([]);
-      const newErrors: string[] = [];
-      const validFiles = files.filter(file => {
-        if (file.size > maxFileSize * 1024 * 1024) {
-          newErrors.push(`${file.name} exceeds maximum size of ${maxFileSize}MB`);
-          return false;
-        }
-        
-        const fileType = file.type.toLowerCase();
-        const acceptedTypes = acceptedFileTypes.split(',');
-        const isValidType = acceptedTypes.some(type => {
-          if (type.includes('*')) {
-            return fileType.startsWith(type.split('/')[0]);
-          }
-          return type === fileType;
-        });
-        
-        if (!isValidType) {
-          newErrors.push(`${file.name} is not an accepted file type`);
-          return false;
-        }
-        
-        return true;
-      });
+      const validation = validateFiles(files, { maxFileSize, acceptedFileTypes });
       
-      if (newErrors.length > 0) {
-        setErrors(newErrors);
-      }
+      setErrors(validation.errors);
       
-      if (validFiles.length > 0) {
-        onFilesSelected(validFiles);
+      if (validation.validFiles.length > 0) {
+        onFilesSelected(validation.validFiles);
       }
       
       if (fileInputRef.current) {
@@ -124,28 +102,17 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     return (
       <div className={cn("space-y-4", className)}>
         <div
-          className={cn(
-            "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-            isDragging
-              ? "border-[#0485ea] bg-[#0485ea]/10"
-              : "border-border hover:border-[#0485ea]/50 hover:bg-[#0485ea]/5",
-            className
-          )}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onClick={handleClickUpload}
         >
-          <div className="flex flex-col items-center gap-2">
-            <Upload className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm font-medium">{dropzoneText}</p>
-            <p className="text-xs text-muted-foreground">
-              Accepted files: {acceptedFileTypes.replace(/\*/g, 'all')}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Maximum file size: {maxFileSize}MB
-            </p>
-          </div>
+          <Dropzone
+            isDragging={isDragging}
+            dropzoneText={dropzoneText}
+            acceptedFileTypes={acceptedFileTypes}
+            maxFileSize={maxFileSize}
+            onClick={handleClickUpload}
+          />
         </div>
 
         {errors.length > 0 && (
@@ -157,15 +124,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
         )}
 
         {allowCamera && isMobile && hasCamera && (
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleCameraCapture} 
-            className="w-full"
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Take Photo
-          </Button>
+          <CameraButton onCameraCapture={handleCameraCapture} />
         )}
 
         <input
@@ -185,37 +144,10 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
           {...props}
         />
 
-        {selectedFiles.length > 0 && (
-          <div className="grid gap-2 mt-4">
-            {selectedFiles.map((file, index) => (
-              <div
-                key={`${file.name}-${index}`}
-                className="flex items-center justify-between bg-muted p-3 rounded-md"
-              >
-                <div className="flex items-center gap-2">
-                  <File className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium truncate">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {(file.size / 1024 / 1024).toFixed(2)}MB
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile(index);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+        <SelectedFiles
+          files={selectedFiles}
+          onRemoveFile={removeFile}
+        />
       </div>
     );
   }
