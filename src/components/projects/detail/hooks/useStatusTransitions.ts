@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { statusTransitions as fallbackTransitions } from '@/components/projects/ProjectConstants';
+import { statusOptions } from '@/components/projects/ProjectConstants';
 
 export const useStatusTransitions = (projectId: string, currentStatus: string) => {
   const [allowedTransitions, setAllowedTransitions] = useState<string[]>([]);
@@ -19,41 +18,28 @@ export const useStatusTransitions = (projectId: string, currentStatus: string) =
       setLoading(true);
       setError(null);
       
-      console.log(`Fetching transitions for project: ${projectId}, status: ${currentStatus}`);
+      console.log(`Fetching all possible statuses for project: ${projectId}, current status: ${currentStatus}`);
       
-      // Normalize status to lowercase for consistency
-      const normalizedStatus = currentStatus.toLowerCase();
+      // Instead of fetching transitions from the database,
+      // we now return all statuses except the current one
+      const normalizedCurrentStatus = currentStatus.toLowerCase();
       
-      // Call RPC function to get next possible transitions
-      const { data, error } = await supabase
-        .rpc('get_next_possible_transitions', {
-          entity_type_param: 'PROJECT',
-          current_status_param: normalizedStatus
-        });
+      // Get all statuses except the current one
+      const allPossibleTransitions = statusOptions
+        .filter(option => option.value.toLowerCase() !== normalizedCurrentStatus)
+        .map(option => option.value);
       
-      if (error) {
-        console.error('Error fetching transitions:', error);
-        // Fall back to client-side transitions if the RPC call fails
-        const fallbackOptions = fallbackTransitions[normalizedStatus] || [];
-        setAllowedTransitions(fallbackOptions);
-        setError(`Falling back to predefined transitions. Server error: ${error.message}`);
-      } else if (data && data.length > 0) {
-        // Extract to_status from each transition entry
-        const transitions = data.map((item: any) => item.to_status);
-        setAllowedTransitions(transitions);
-        console.log('Fetched transitions:', transitions);
-      } else {
-        // If no transitions found, fall back to client-side definitions
-        const fallbackOptions = fallbackTransitions[normalizedStatus] || [];
-        setAllowedTransitions(fallbackOptions);
-        console.log('No transitions found in DB, using fallback:', fallbackOptions);
-      }
+      setAllowedTransitions(allPossibleTransitions);
+      console.log('Available statuses:', allPossibleTransitions);
     } catch (err: any) {
-      console.error('Error in transition fetching:', err);
-      // Use fallback transitions in case of error
+      console.error('Error in transition handling:', err);
+      // Fallback to all statuses except current
       const normalizedStatus = currentStatus.toLowerCase();
-      const fallbackOptions = fallbackTransitions[normalizedStatus] || [];
-      setAllowedTransitions(fallbackOptions);
+      const allStatusesExceptCurrent = statusOptions
+        .filter(option => option.value.toLowerCase() !== normalizedStatus)
+        .map(option => option.value);
+      
+      setAllowedTransitions(allStatusesExceptCurrent);
       setError(err.message);
     } finally {
       setLoading(false);

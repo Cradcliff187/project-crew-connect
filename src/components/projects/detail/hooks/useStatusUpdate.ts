@@ -65,23 +65,8 @@ export const useStatusUpdate = ({
     try {
       console.log(`Updating project status from ${currentStatus} to ${newStatus} for project ID: ${projectId}`);
       
-      // We'll use the validate_projects_status_transition function which exists in the DB
-      // First check if the transition is valid by making a direct query
-      const { data: validationData, error: validationError } = await supabase
-        .rpc('validate_projects_status_transition', {
-          current_status: normalizedCurrentStatus,
-          new_status: normalizedNewStatus
-        });
-
-      if (validationError) {
-        throw new Error(`Status transition validation failed: ${validationError.message}`);
-      }
-      
-      if (validationData === false) {
-        throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
-      }
-      
-      // Use the configured Supabase client which already has headers set up properly
+      // No validation required - we're skipping the transition validation
+      // and directly updating the status
       const { error, data } = await supabase
         .from('projects')
         .update({ 
@@ -110,9 +95,7 @@ export const useStatusUpdate = ({
       let errorMessage = 'Failed to update project status. Please try again.';
       
       if (error.message) {
-        if (error.message.includes('Invalid status transition')) {
-          errorMessage = `Status change not allowed: ${error.message}. Please refresh the page to get the latest allowed transitions.`;
-        } else if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
+        if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
           errorMessage = 'Authentication error. Please refresh the page and try again.';
         } else if (error.details && error.details.includes('violates row-level security')) {
           errorMessage = 'Permission denied: You do not have access to update this project.';
