@@ -97,19 +97,20 @@ const SubcontractorDetailPage = () => {
             
             <Separator />
             
-            {/* Associated Projects Section */}
-            <AssociatedProjects 
-              projects={projects} 
-              loading={loadingAssociations} 
-            />
-            
-            <Separator />
-            
-            {/* Associated Work Orders Section */}
-            <AssociatedWorkOrders 
-              workOrders={workOrders} 
-              loading={loadingAssociations} 
-            />
+            {/* Associated Data Section */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Associated Projects Section */}
+              <AssociatedProjects 
+                projects={projects} 
+                loading={loadingAssociations} 
+              />
+              
+              {/* Associated Work Orders Section */}
+              <AssociatedWorkOrders 
+                workOrders={workOrders} 
+                loading={loadingAssociations} 
+              />
+            </div>
             
             <Separator />
             
