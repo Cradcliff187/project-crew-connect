@@ -36,7 +36,7 @@ export const useEstimateSubmit = () => {
       
       // Prepare the estimate data object with the proper field structure
       const estimateData = {
-        // Don't include the estimateid field, let the trigger handle it
+        estimateid: tempEstimateId, // Include this for TypeScript, the trigger will replace it
         customerid: data.customer,
         customername: customerName,
         "job description": data.description,
