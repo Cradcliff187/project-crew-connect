@@ -10,6 +10,7 @@ interface UseProjectProgressResult {
   fetchProgress: () => Promise<void>;
   setProgressValue: (value: number) => void;
   saveProgress: (value: number) => Promise<boolean>;
+  refetch: () => Promise<void>; // Add refetch as an alias for fetchProgress
 }
 
 export const useProjectProgress = (projectId: string): UseProjectProgressResult => {
@@ -103,7 +104,8 @@ export const useProjectProgress = (projectId: string): UseProjectProgressResult 
     progressData,
     loading, 
     error, 
-    fetchProgress, 
+    fetchProgress,
+    refetch: fetchProgress, // Add refetch as an alias for fetchProgress 
     setProgressValue,
     saveProgress
   };
