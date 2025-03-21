@@ -4,7 +4,7 @@ import * as z from 'zod';
 // Define the form schema with validation
 export const estimateFormSchema = z.object({
   project: z.string().min(1, { message: "Project name is required" }),
-  client: z.string().min(1, { message: "Client is required" }),
+  customer: z.string().min(1, { message: "Customer is required" }),
   description: z.string().optional(),
   location: z.object({
     address: z.string().optional(),

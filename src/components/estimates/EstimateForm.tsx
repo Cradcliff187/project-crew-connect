@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -23,7 +22,7 @@ interface EstimateFormProps {
 }
 
 const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
   const { isSubmitting, submitEstimate } = useEstimateSubmit();
 
   // Initialize the form
@@ -31,7 +30,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     resolver: zodResolver(estimateFormSchema),
     defaultValues: {
       project: '',
-      client: '',
+      customer: '',
       description: '',
       contingency_percentage: '0',
       location: {
@@ -44,31 +43,30 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     },
   });
 
-  // Fetch clients when the form opens
+  // Fetch customers when the form opens
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchCustomers = async () => {
       try {
         const { data, error } = await supabase
-          .from('contacts')
-          .select('id, name')
-          .eq('contact_type', 'client')
-          .order('name');
+          .from('customers')
+          .select('customerid, customername')
+          .order('customername');
           
         if (error) throw error;
-        setClients(data || []);
+        setCustomers(data?.map(c => ({ id: c.customerid, name: c.customername || '' })) || []);
       } catch (error) {
-        console.error('Error fetching clients:', error);
+        console.error('Error fetching customers:', error);
       }
     };
     
     if (open) {
-      fetchClients();
+      fetchCustomers();
     }
   }, [open]);
 
   // Handle form submission
   const onSubmit = async (data: EstimateFormValues) => {
-    await submitEstimate(data, clients, onClose);
+    await submitEstimate(data, customers, onClose);
   };
 
   return (
@@ -97,20 +95,20 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
 
               <FormField
                 control={form.control}
-                name="client"
+                name="customer"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Client*</FormLabel>
+                    <FormLabel>Customer*</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a client" />
+                          <SelectValue placeholder="Select a customer" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.name}
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
