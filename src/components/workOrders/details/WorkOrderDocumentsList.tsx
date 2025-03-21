@@ -2,12 +2,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Upload, Plus, X } from 'lucide-react';
+import { FileText, Upload, Plus, X, Eye, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface WorkOrderDocument {
   document_id: string;
@@ -17,6 +18,7 @@ interface WorkOrderDocument {
   file_type: string | null;
   storage_path?: string;
   url?: string;
+  is_receipt?: boolean;
 }
 
 interface WorkOrderDocumentsListProps {
@@ -27,11 +29,14 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
   const [documents, setDocuments] = useState<WorkOrderDocument[]>([]);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [viewDocument, setViewDocument] = useState<WorkOrderDocument | null>(null);
   
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      // Fetch documents
+      console.log('Fetching documents for work order:', workOrderId);
+      
+      // Fetch direct work order documents
       const { data: documentsData, error: documentsError } = await supabase
         .from('documents')
         .select('document_id, file_name, category, created_at, file_type, storage_path')
@@ -43,9 +48,48 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
         return;
       }
       
+      // Fetch receipt documents linked to work order materials
+      const { data: materialsData, error: materialsError } = await supabase
+        .from('work_order_materials')
+        .select('receipt_document_id')
+        .eq('work_order_id', workOrderId)
+        .not('receipt_document_id', 'is', null);
+      
+      if (materialsError) {
+        console.error('Error fetching material receipts:', materialsError);
+        return;
+      }
+      
+      // Extract document IDs from materials
+      const receiptDocumentIds = materialsData
+        .map(material => material.receipt_document_id)
+        .filter(id => id !== null);
+      
+      // If we have receipt documents, fetch them
+      let receiptDocuments: any[] = [];
+      if (receiptDocumentIds.length > 0) {
+        const { data: receiptsData, error: receiptsError } = await supabase
+          .from('documents')
+          .select('document_id, file_name, category, created_at, file_type, storage_path')
+          .in('document_id', receiptDocumentIds);
+        
+        if (receiptsError) {
+          console.error('Error fetching receipt documents:', receiptsError);
+        } else {
+          // Mark these as receipts for display purposes
+          receiptDocuments = receiptsData.map(doc => ({
+            ...doc,
+            is_receipt: true
+          }));
+        }
+      }
+      
+      // Combine all documents
+      const allDocuments = [...(documentsData || []), ...receiptDocuments];
+      
       // Get public URLs for documents
       const enhancedDocuments = await Promise.all(
-        (documentsData || []).map(async (doc) => {
+        allDocuments.map(async (doc) => {
           let url = '';
           if (doc.storage_path) {
             const { data } = supabase.storage
@@ -61,6 +105,7 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
         })
       );
       
+      console.log('Fetched documents:', enhancedDocuments);
       setDocuments(enhancedDocuments);
     } catch (error) {
       console.error('Error processing documents:', error);
@@ -82,6 +127,16 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
   const handleUploadSuccess = () => {
     setShowUploadForm(false);
     fetchDocuments();
+  };
+  
+  // Handle view document
+  const handleViewDocument = (doc: WorkOrderDocument) => {
+    setViewDocument(doc);
+  };
+  
+  // Close document viewer
+  const handleCloseViewer = () => {
+    setViewDocument(null);
   };
   
   return (
@@ -136,9 +191,18 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
                     <div className="overflow-hidden">
                       <p className="font-medium truncate">{doc.file_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {doc.category ? doc.category : 'Uncategorized'} • {formatDate(doc.created_at)}
+                        {doc.is_receipt ? 'Material Receipt' : doc.category ? doc.category : 'Uncategorized'} • {formatDate(doc.created_at)}
                       </p>
-                      <div className="mt-2">
+                      <div className="mt-2 flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-[#0485ea]"
+                          onClick={() => handleViewDocument(doc)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
                         <Button 
                           size="sm" 
                           variant="outline" 
@@ -146,7 +210,8 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
                           asChild
                         >
                           <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                            View
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
                           </a>
                         </Button>
                       </div>
@@ -171,6 +236,53 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
           </div>
         )}
       </CardContent>
+      
+      {/* Document Viewer Dialog */}
+      <Dialog open={!!viewDocument} onOpenChange={(open) => !open && handleCloseViewer()}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>{viewDocument?.file_name}</DialogTitle>
+          </DialogHeader>
+          {viewDocument && (
+            <div className="space-y-4">
+              <div className="border rounded-md overflow-hidden h-[400px]">
+                {viewDocument.file_type?.startsWith('image/') ? (
+                  <img
+                    src={viewDocument.url}
+                    alt={viewDocument.file_name}
+                    className="w-full h-full object-contain"
+                  />
+                ) : viewDocument.file_type?.includes('pdf') ? (
+                  <iframe
+                    src={viewDocument.url}
+                    title={viewDocument.file_name}
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-gray-50">
+                    <p>Preview not available</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleCloseViewer}>
+                  Close
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="text-[#0485ea]"
+                  asChild
+                >
+                  <a href={viewDocument.url} target="_blank" rel="noopener noreferrer">
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

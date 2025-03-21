@@ -9,19 +9,21 @@ interface ReceiptButtonProps {
 }
 
 const ReceiptButton = ({ material, onClick }: ReceiptButtonProps) => {
+  const hasReceipt = !!material.receipt_document_id;
+  
   return (
     <Button
-      variant={material.receipt_document_id ? "outline" : "default"}
+      variant={hasReceipt ? "outline" : "default"}
       size="sm"
       onClick={() => onClick(material)}
       className={`flex items-center gap-1 ${
-        material.receipt_document_id 
+        hasReceipt 
           ? 'text-green-600 hover:bg-green-50 border-green-300' 
           : 'bg-[#0485ea] text-white hover:bg-[#0375d1]'
       }`}
     >
       <Receipt className="h-4 w-4" />
-      {material.receipt_document_id ? 'View Receipt' : 'Add Receipt'}
+      {hasReceipt ? 'View Receipt' : 'Add Receipt'}
     </Button>
   );
 };
