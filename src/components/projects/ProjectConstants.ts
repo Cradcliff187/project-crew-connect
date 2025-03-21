@@ -14,7 +14,7 @@ export const statusOptions = [
 // All keys must be lowercase for case-insensitive lookups
 export const statusTransitions: Record<string, string[]> = {
   new: ['active', 'cancelled', 'pending'],
-  active: ['on_hold', 'cancelled', 'completed'],
+  active: ['on_hold', 'completed', 'cancelled'],
   on_hold: ['active', 'completed', 'cancelled'],
   completed: ['active'],
   cancelled: ['active'],
