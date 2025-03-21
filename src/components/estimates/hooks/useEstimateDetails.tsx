@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { EstimateItem, EstimateRevision } from '@/components/estimates/EstimateDetails';
+import { EstimateItem, EstimateRevision } from '@/components/estimates/types/estimateTypes';
 
 const fetchEstimateItems = async (estimateId: string) => {
   const { data, error } = await supabase
