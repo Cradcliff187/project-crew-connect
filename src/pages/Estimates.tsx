@@ -14,10 +14,12 @@ const Estimates = () => {
   const { estimates, loading, fetchEstimates } = useEstimates();
   const { 
     estimateItems, 
-    estimateRevisions, 
+    estimateRevisions,
+    estimateDocuments,
     fetchEstimateDetails,
     setEstimateItems,
-    setEstimateRevisions
+    setEstimateRevisions,
+    refetchAll
   } = useEstimateDetails();
   
   const handleViewEstimate = (estimate: EstimateType) => {
@@ -64,6 +66,7 @@ const Estimates = () => {
           estimate={selectedEstimate}
           items={estimateItems}
           revisions={estimateRevisions}
+          documents={estimateDocuments}
           open={!!selectedEstimate}
           onClose={closeEstimateDetails}
         />

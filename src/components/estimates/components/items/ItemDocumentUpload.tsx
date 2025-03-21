@@ -29,7 +29,9 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
     }
   };
   
-  const clearFile = () => {
+  const clearFile = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setSelectedFile(null);
     field.onChange(undefined);
   };

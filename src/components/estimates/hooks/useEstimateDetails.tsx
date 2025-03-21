@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { EstimateItem, EstimateRevision } from '@/components/estimates/types/estimateTypes';
+import { Document } from '@/components/documents/schemas/documentSchema';
 
 const fetchEstimateItems = async (estimateId: string) => {
   const { data, error } = await supabase
@@ -30,6 +31,29 @@ const fetchEstimateRevisions = async (estimateId: string) => {
   }
   
   return data || [];
+};
+
+const fetchEstimateDocuments = async (estimateId: string) => {
+  const { data, error } = await supabase
+    .from('documents')
+    .select('*')
+    .eq('entity_type', 'ESTIMATE')
+    .eq('entity_id', estimateId);
+
+  if (error) {
+    throw error;
+  }
+
+  // Get document URLs
+  const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
+    const { data: { publicUrl } } = supabase.storage
+      .from('construction_documents')
+      .getPublicUrl(doc.storage_path);
+    
+    return { ...doc, url: publicUrl };
+  }));
+
+  return docsWithUrls || [];
 };
 
 export const useEstimateDetails = () => {
@@ -76,6 +100,26 @@ export const useEstimateDetails = () => {
     }
   });
 
+  const {
+    data: estimateDocuments = [],
+    isLoading: documentsLoading,
+    refetch: refetchDocuments
+  } = useQuery({
+    queryKey: ['estimateDocuments', currentEstimateId],
+    queryFn: () => currentEstimateId ? fetchEstimateDocuments(currentEstimateId) : Promise.resolve([]),
+    enabled: !!currentEstimateId,
+    meta: {
+      onError: (error: any) => {
+        console.error('Error fetching estimate documents:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load estimate documents. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+  });
+
   const fetchEstimateDetails = (estimateId: string) => {
     setCurrentEstimateId(estimateId);
   };
@@ -95,9 +139,15 @@ export const useEstimateDetails = () => {
   return {
     estimateItems,
     estimateRevisions,
+    estimateDocuments,
     fetchEstimateDetails,
     setEstimateItems,
     setEstimateRevisions,
-    isLoading: itemsLoading || revisionsLoading
+    isLoading: itemsLoading || revisionsLoading || documentsLoading,
+    refetchAll: () => {
+      refetchItems();
+      refetchRevisions();
+      refetchDocuments();
+    }
   };
 };

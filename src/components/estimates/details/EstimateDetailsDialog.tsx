@@ -15,6 +15,7 @@ import EstimateItemsTab from './EstimateItemsTab';
 import EstimateRevisionsTab from './EstimateRevisionsTab';
 import EstimateDocumentsTab from './EstimateDocumentsTab';
 import { formatDate } from '@/lib/utils';
+import { Document } from '@/components/documents/schemas/documentSchema';
 
 interface EstimateDetailsDialogProps {
   estimate: {
@@ -35,6 +36,7 @@ interface EstimateDetailsDialogProps {
   };
   items: EstimateItem[];
   revisions: EstimateRevision[];
+  documents?: Document[];
   open: boolean;
   onClose: () => void;
 }
@@ -43,6 +45,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
   estimate,
   items,
   revisions,
+  documents = [],
   open,
   onClose
 }) => {
@@ -71,7 +74,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="items">Items</TabsTrigger>
             <TabsTrigger value="revisions">Revisions ({revisions.length})</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details">
@@ -90,7 +93,10 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
           </TabsContent>
 
           <TabsContent value="documents">
-            <EstimateDocumentsTab estimateId={estimate.id} />
+            <EstimateDocumentsTab 
+              estimateId={estimate.id} 
+              documents={documents}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>

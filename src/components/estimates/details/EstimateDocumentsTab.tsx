@@ -1,78 +1,22 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { supabase } from '@/integrations/supabase/client';
-import { Document } from '@/components/documents/schemas/documentSchema';
 import { Badge } from '@/components/ui/badge';
 import { File, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
+import { Document } from '@/components/documents/schemas/documentSchema';
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
+  documents?: Document[];
 }
 
-const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      setLoading(true);
-      try {
-        // Fetch all documents related to this estimate
-        const { data, error } = await supabase
-          .from('documents')
-          .select('*')
-          .eq('entity_type', 'ESTIMATE')
-          .eq('entity_id', estimateId);
-
-        if (error) {
-          throw error;
-        }
-
-        // Get document URLs
-        const docsWithUrls = await Promise.all(data.map(async (doc) => {
-          const { data: { publicUrl } } = supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(doc.storage_path);
-          
-          return { ...doc, url: publicUrl };
-        }));
-
-        setDocuments(docsWithUrls);
-      } catch (error) {
-        console.error('Error fetching estimate documents:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (estimateId) {
-      fetchDocuments();
-    }
-  }, [estimateId]);
+const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId, documents = [] }) => {
 
   const openDocument = (url: string) => {
     window.open(url, '_blank');
   };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Related Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-14 bg-gray-100 rounded"></div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
