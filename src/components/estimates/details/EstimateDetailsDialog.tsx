@@ -14,6 +14,7 @@ import EstimateDetailsTab from './EstimateDetailsTab';
 import EstimateItemsTab from './EstimateItemsTab';
 import EstimateRevisionsTab from './EstimateRevisionsTab';
 import EstimateDocumentsTab from './EstimateDocumentsTab';
+import { formatDate } from '@/lib/utils';
 
 interface EstimateDetailsDialogProps {
   estimate: {
@@ -82,7 +83,10 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
           </TabsContent>
 
           <TabsContent value="revisions">
-            <EstimateRevisionsTab revisions={revisions} />
+            <EstimateRevisionsTab 
+              revisions={revisions} 
+              formatDate={formatDate} 
+            />
           </TabsContent>
 
           <TabsContent value="documents">
