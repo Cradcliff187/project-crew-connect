@@ -16,6 +16,59 @@ export const useEstimateSubmit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  const uploadItemDocument = async (file: File, estimateId: string, itemIndex: number): Promise<string | null> => {
+    try {
+      // Create a unique file path
+      const timestamp = new Date().getTime();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${timestamp}-item-${itemIndex}.${fileExt}`;
+      const filePath = `estimates/${estimateId}/items/${fileName}`;
+      
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('construction_documents')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        console.error('Error uploading document:', uploadError);
+        return null;
+      }
+      
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('construction_documents')
+        .getPublicUrl(filePath);
+        
+      // Also store document metadata in documents table
+      const documentData = {
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        storage_path: filePath,
+        entity_type: 'ESTIMATE',
+        entity_id: estimateId,
+        category: 'estimate',
+        tags: ['estimate_item', `item_${itemIndex}`]
+      };
+      
+      const { data: documentData, error: documentError } = await supabase
+        .from('documents')
+        .insert(documentData)
+        .select('document_id')
+        .single();
+        
+      if (documentError) {
+        console.error('Error storing document metadata:', documentError);
+        return null;
+      }
+      
+      return documentData.document_id;
+    } catch (error) {
+      console.error('Error in document upload:', error);
+      return null;
+    }
+  };
+
   const submitEstimate = async (data: EstimateFormValues, customers: { id: string; name: string }[], onSuccess: () => void) => {
     try {
       setIsSubmitting(true);
@@ -83,8 +136,14 @@ export const useEstimateSubmit = () => {
       console.log("Estimate created:", insertedData);
       const estimateId = insertedData[0].estimateid;
 
-      // Prepare and insert the estimate items with the new fields
-      const estimateItems = data.items.map(item => {
+      // Prepare and upload documents first, then insert estimate items
+      const estimateItems = await Promise.all(data.items.map(async (item, index) => {
+        // Upload document if provided
+        let documentId = null;
+        if (item.document) {
+          documentId = await uploadItemDocument(item.document, estimateId, index);
+        }
+        
         const typedItem: EstimateItem = {
           cost: item.cost,
           markup_percentage: item.markup_percentage,
@@ -108,9 +167,10 @@ export const useEstimateSubmit = () => {
           cost: cost,
           markup_percentage: parseFloat(item.markup_percentage || '0'),
           vendor_id: item.item_type === 'vendor' ? item.vendor_id : null,
-          subcontractor_id: item.item_type === 'subcontractor' ? item.subcontractor_id : null
+          subcontractor_id: item.item_type === 'subcontractor' ? item.subcontractor_id : null,
+          document_id: documentId
         };
-      });
+      }));
 
       console.log("Inserting estimate items:", estimateItems);
       const { error: itemsError } = await supabase

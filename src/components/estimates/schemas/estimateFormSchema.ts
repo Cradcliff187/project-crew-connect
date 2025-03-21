@@ -21,6 +21,7 @@ export const estimateFormSchema = z.object({
     quantity: z.string().optional().default("1"),
     vendor_id: z.string().optional(),
     subcontractor_id: z.string().optional(),
+    document: z.instanceof(File).optional(),
   })).min(1, { message: "At least one item is required" }),
 });
 

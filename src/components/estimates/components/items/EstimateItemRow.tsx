@@ -12,6 +12,7 @@ import ItemVendorSection from './ItemVendorSection';
 import CostFields from './CostFields';
 import ItemCalculations from './ItemCalculations';
 import ItemFooter from './ItemFooter';
+import ItemDocumentUpload from './ItemDocumentUpload';
 
 type Vendor = { vendorid: string; vendorname: string };
 type Subcontractor = { subid: string; subname: string };
@@ -102,6 +103,14 @@ const EstimateItemRow = ({
         grossMargin={grossMargin}
         grossMarginPercentage={grossMarginPercentage}
       />
+
+      <div className="col-span-12">
+        <ItemDocumentUpload 
+          index={index} 
+          control={form.control} 
+          itemType={itemType} 
+        />
+      </div>
 
       <ItemFooter onRemove={onRemove} canRemove={canRemove} />
     </div>
