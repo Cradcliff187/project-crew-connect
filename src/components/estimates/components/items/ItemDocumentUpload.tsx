@@ -1,8 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Control, useController } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { FileUpload } from '@/components/ui/file-upload';
+import { File, PaperclipIcon, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ItemDocumentUploadProps {
   index: number;
@@ -11,60 +13,70 @@ interface ItemDocumentUploadProps {
 }
 
 const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProps) => {
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const { field } = useController({
     control,
     name: `items.${index}.document`,
     defaultValue: undefined,
   });
-
-  const handleDocumentUpload = (documentId?: string) => {
-    // Update form field with the uploaded document's ID
-    field.onChange(documentId);
-    setIsUploadOpen(false);
+  
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  const handleFileSelect = (files: File[]) => {
+    if (files.length > 0) {
+      const file = files[0];
+      setSelectedFile(file);
+      field.onChange(file);
+    }
+  };
+  
+  const clearFile = () => {
+    setSelectedFile(null);
+    field.onChange(undefined);
   };
 
   const getLabelForUpload = () => {
     if (itemType === 'subcontractor') {
-      return "Subcontractor Estimate";
+      return "Attach Subcontractor Estimate";
     }
     return "Attach Document";
   };
 
   return (
     <div className="mt-2">
-      {!field.value && (
-        <button 
-          type="button" 
-          onClick={() => setIsUploadOpen(true)}
-          className="text-sm text-[#0485ea] hover:underline"
-        >
-          {getLabelForUpload()}
-        </button>
-      )}
-      
-      {isUploadOpen && (
-        <EnhancedDocumentUpload 
-          entityType="ESTIMATE"
-          entityId={null}  // We'll set this when the estimate is created
-          onSuccess={handleDocumentUpload}
-          onCancel={() => setIsUploadOpen(false)}
-          isReceiptUpload={false}
-          prefillData={{
-            category: itemType === 'subcontractor' ? 'subcontractor_estimate' : 'estimate'
-          }}
-        />
-      )}
-
-      {field.value && (
+      {!selectedFile ? (
+        <div className="flex items-center">
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="sm"
+            className="p-0 h-auto text-sm text-[#0485ea] hover:bg-transparent hover:text-[#0373ce]"
+            onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+          >
+            <PaperclipIcon className="h-3 w-3 mr-1" />
+            {getLabelForUpload()}
+          </Button>
+          
+          <div className="hidden">
+            <FileUpload
+              id={`file-upload-${index}`}
+              onFilesSelected={handleFileSelect}
+              allowCamera={false}
+              allowMultiple={false}
+              acceptedFileTypes="application/pdf,image/*"
+              className="hidden"
+            />
+          </div>
+        </div>
+      ) : (
         <div className="flex items-center text-xs p-2 bg-blue-50 rounded border border-blue-200">
-          <span className="flex-1 truncate">Document uploaded</span>
+          <File className="h-3 w-3 mr-1 text-[#0485ea]" />
+          <span className="flex-1 truncate">{selectedFile.name}</span>
           <button 
             type="button" 
-            onClick={() => field.onChange(undefined)}
+            onClick={clearFile}
             className="ml-2 text-red-500 hover:text-red-700"
           >
-            Remove
+            <X className="h-3 w-3" />
           </button>
         </div>
       )}

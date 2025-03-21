@@ -88,25 +88,32 @@ export const submitEstimateItems = async (
   data: EstimateFormValues,
   estimateId: string
 ): Promise<void> => {
-  // Prepare and update any pre-uploaded documents with the new estimate ID
-  await Promise.all(data.items.map(async (item) => {
-    if (item.document && typeof item.document === 'string') {
-      // If document is a string, it's a document ID that needs to be updated
-      await updateDocumentEntityId(item.document, estimateId);
-    }
-  }));
-
-  // Prepare and upload documents first, then insert estimate items
-  const estimateItems = await Promise.all(data.items.map(async (item, index) => {
-    // Upload document if provided and it's a File object
+  // Upload any pending document files
+  const itemsWithDocuments = await Promise.all(data.items.map(async (item, index) => {
     let documentId = null;
+    
+    // If document is a File object, upload it
     if (item.document && item.document instanceof File) {
-      documentId = await uploadItemDocument(item.document, estimateId, index);
+      try {
+        documentId = await uploadItemDocument(item.document, estimateId, index);
+      } catch (error) {
+        console.error(`Error uploading document for item ${index}:`, error);
+      }
     } else if (item.document && typeof item.document === 'string') {
       // If it's already a document ID (from a previous upload)
       documentId = item.document;
+      // Update this document's entity_id with the new estimate ID
+      await updateDocumentEntityId(documentId, estimateId);
     }
     
+    return {
+      ...item,
+      documentId
+    };
+  }));
+  
+  // Now insert all estimate items with their document IDs
+  const estimateItems = itemsWithDocuments.map((item, index) => {
     const typedItem: EstimateItem = {
       cost: item.cost,
       markup_percentage: item.markup_percentage,
@@ -128,12 +135,12 @@ export const submitEstimateItems = async (
       total_price: totalPrice,
       item_type: item.item_type,
       cost: cost,
-      markup_percentage: parseFloat(item.markup_percentage || '0'),
+      markup_percentage: parseFloat(item.markup_percentage ||'0'),
       vendor_id: item.item_type === 'vendor' ? item.vendor_id : null,
       subcontractor_id: item.item_type === 'subcontractor' ? item.subcontractor_id : null,
-      document_id: documentId
+      document_id: item.documentId
     };
-  }));
+  });
 
   console.log("Inserting estimate items:", estimateItems);
   const { error: itemsError } = await supabase
