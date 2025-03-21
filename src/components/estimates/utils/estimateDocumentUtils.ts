@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -44,11 +45,14 @@ export const uploadItemDocument = async (
       return null;
     }
 
-    // Upload the file using Supabase storage
+    // Create a proper blob with correct content type
+    const fileBlob = new Blob([await file.arrayBuffer()], { type: file.type });
+    
+    // Upload the file using Supabase storage with explicit content type
     const { error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
-      .upload(filePath, file, { 
-        contentType: file.type, // Set the correct content type
+      .upload(filePath, fileBlob, { 
+        contentType: file.type,
         cacheControl: '3600'
       });
       

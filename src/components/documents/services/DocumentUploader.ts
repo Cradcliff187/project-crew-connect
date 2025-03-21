@@ -49,11 +49,14 @@ export const uploadDocument = async (
       console.log(`Uploading file to ${BUCKET_NAME} bucket, path: ${filePath}`);
       console.log(`File type: ${file.type}, size: ${file.size} bytes`);
       
-      // Upload the file using the Supabase storage API
+      // Create a proper file blob with correct content type
+      const fileBlob = new Blob([await file.arrayBuffer()], { type: file.type });
+      
+      // Upload the file using the Supabase storage API with explicit content type
       const { error: uploadError } = await supabase.storage
         .from(BUCKET_NAME)
-        .upload(filePath, file, {
-          contentType: file.type, // Set the proper content type
+        .upload(filePath, fileBlob, {
+          contentType: file.type,
           cacheControl: '3600'
         });
       
