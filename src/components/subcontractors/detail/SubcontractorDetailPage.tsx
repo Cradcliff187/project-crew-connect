@@ -97,6 +97,22 @@ const SubcontractorDetailPage = () => {
             
             <Separator />
             
+            {/* Associated Projects Section */}
+            <AssociatedProjects 
+              projects={projects} 
+              loading={loadingAssociations} 
+            />
+            
+            <Separator />
+            
+            {/* Associated Work Orders Section */}
+            <AssociatedWorkOrders 
+              workOrders={workOrders} 
+              loading={loadingAssociations} 
+            />
+            
+            <Separator />
+            
             {/* Compliance Information */}
             <ComplianceInformationCard subcontractor={subcontractor} />
             
@@ -115,28 +131,6 @@ const SubcontractorDetailPage = () => {
                 <SpecialtiesSection 
                   subcontractor={subcontractor} 
                   specialtyIds={specialtyIds} 
-                />
-              </>
-            )}
-
-            {/* Associated Projects */}
-            {projects.length > 0 && (
-              <>
-                <Separator />
-                <AssociatedProjects 
-                  projects={projects} 
-                  loading={loadingAssociations} 
-                />
-              </>
-            )}
-
-            {/* Associated Work Orders */}
-            {workOrders.length > 0 && (
-              <>
-                <Separator />
-                <AssociatedWorkOrders 
-                  workOrders={workOrders} 
-                  loading={loadingAssociations} 
                 />
               </>
             )}

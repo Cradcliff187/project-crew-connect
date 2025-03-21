@@ -14,54 +14,64 @@ interface AssociatedWorkOrdersProps {
 const AssociatedWorkOrders: React.FC<AssociatedWorkOrdersProps> = ({ workOrders, loading }) => {
   if (loading) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Associated Work Orders</h3>
-        <div className="text-muted-foreground">Loading work orders...</div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="h-5 w-5" />
+            Associated Work Orders
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-muted-foreground">Loading work orders...</div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium">Associated Work Orders</h3>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Work Order</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Labor Cost</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {workOrders.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <Wrench className="h-8 w-8 opacity-40" />
-                    <p>No work orders found</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              workOrders.map((workOrder) => (
-                <TableRow key={workOrder.work_order_id}>
-                  <TableCell className="font-medium">{workOrder.title}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {workOrder.status?.toLowerCase() || 'Unknown'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatDate(workOrder.created_at)}</TableCell>
-                  <TableCell>${workOrder.labor_cost || '0.00'}</TableCell>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Wrench className="h-5 w-5" />
+          Associated Work Orders
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {workOrders.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <Wrench className="h-12 w-12 mx-auto mb-2 opacity-20" />
+            <p>No work orders are associated with this subcontractor yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Work Order</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Labor Cost</TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+              </TableHeader>
+              <TableBody>
+                {workOrders.map((workOrder) => (
+                  <TableRow key={workOrder.work_order_id}>
+                    <TableCell className="font-medium">{workOrder.title}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">
+                        {workOrder.status?.toLowerCase() || 'Unknown'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatDate(workOrder.created_at)}</TableCell>
+                    <TableCell>${workOrder.labor_cost || '0.00'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
