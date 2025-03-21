@@ -40,7 +40,7 @@ export const useEstimateSubmit = () => {
         .getPublicUrl(filePath);
         
       // Also store document metadata in documents table
-      const documentData = {
+      const documentMetadata = {
         file_name: file.name,
         file_type: file.type,
         file_size: file.size,
@@ -51,9 +51,10 @@ export const useEstimateSubmit = () => {
         tags: ['estimate_item', `item_${itemIndex}`]
       };
       
-      const { data: documentData, error: documentError } = await supabase
+      // Insert document metadata and get the document ID
+      const { data: insertedDoc, error: documentError } = await supabase
         .from('documents')
-        .insert(documentData)
+        .insert(documentMetadata)
         .select('document_id')
         .single();
         
@@ -62,7 +63,7 @@ export const useEstimateSubmit = () => {
         return null;
       }
       
-      return documentData.document_id;
+      return insertedDoc?.document_id || null;
     } catch (error) {
       console.error('Error in document upload:', error);
       return null;
