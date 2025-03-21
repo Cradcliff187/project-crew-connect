@@ -1,8 +1,16 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
-import { calculateSubtotal } from '../utils/estimateCalculations';
+import { 
+  calculateItemCost, 
+  calculateItemMarkup, 
+  calculateItemPrice, 
+  calculateItemGrossMargin, 
+  calculateItemGrossMarginPercentage, 
+  calculateSubtotal 
+} from '../utils/estimateCalculations';
 
 export const useEstimateSubmit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,8 +23,10 @@ export const useEstimateSubmit = () => {
       
       // Make sure items match the EstimateItem type for calculations
       const typedItems: EstimateItem[] = data.items.map(item => ({
+        cost: item.cost,
+        markup_percentage: item.markup_percentage,
         quantity: item.quantity,
-        unitPrice: item.unitPrice
+        item_type: item.item_type
       }));
       
       // Calculate the total amount
@@ -73,14 +83,37 @@ export const useEstimateSubmit = () => {
       console.log("Estimate created:", insertedData);
       const estimateId = insertedData[0].estimateid;
 
-      // Insert the estimate items
-      const estimateItems = data.items.map(item => ({
-        estimate_id: estimateId,
-        description: item.description,
-        quantity: parseFloat(item.quantity),
-        unit_price: parseFloat(item.unitPrice),
-        total_price: parseFloat(item.quantity) * parseFloat(item.unitPrice)
-      }));
+      // Prepare and insert the estimate items with the new fields
+      const estimateItems = data.items.map(item => {
+        const typedItem: EstimateItem = {
+          cost: item.cost,
+          markup_percentage: item.markup_percentage,
+          quantity: item.quantity || '1'
+        };
+        
+        // Calculate all the derived values
+        const cost = calculateItemCost(typedItem);
+        const markupAmount = calculateItemMarkup(typedItem);
+        const totalPrice = calculateItemPrice(typedItem);
+        const grossMargin = calculateItemGrossMargin(typedItem);
+        const grossMarginPercentage = calculateItemGrossMarginPercentage(typedItem);
+        
+        return {
+          estimate_id: estimateId,
+          description: item.description,
+          quantity: parseFloat(item.quantity || '1'),
+          unit_price: totalPrice / (parseFloat(item.quantity || '1') || 1), // Unit price is the price per unit
+          total_price: totalPrice,
+          item_type: item.item_type,
+          cost: cost,
+          markup_percentage: parseFloat(item.markup_percentage || '0'),
+          markup_amount: markupAmount,
+          gross_margin: grossMargin,
+          gross_margin_percentage: grossMarginPercentage,
+          vendor_id: item.item_type === 'vendor' ? item.vendor_id : null,
+          subcontractor_id: item.item_type === 'subcontractor' ? item.subcontractor_id : null
+        };
+      });
 
       console.log("Inserting estimate items:", estimateItems);
       const { error: itemsError } = await supabase

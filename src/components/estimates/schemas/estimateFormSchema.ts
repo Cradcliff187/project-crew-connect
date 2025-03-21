@@ -15,8 +15,13 @@ export const estimateFormSchema = z.object({
   contingency_percentage: z.string().optional().default("0"),
   items: z.array(z.object({
     description: z.string().min(1, { message: "Description is required" }),
-    quantity: z.string().min(1, { message: "Quantity is required" }),
-    unitPrice: z.string().min(1, { message: "Unit price is required" }),
+    item_type: z.enum(['labor', 'vendor', 'subcontractor']).default('labor'),
+    cost: z.string().min(1, { message: "Cost is required" }),
+    markup_percentage: z.string().default("0"),
+    quantity: z.string().optional().default("1"),
+    unitPrice: z.string().optional(),
+    vendor_id: z.string().optional(),
+    subcontractor_id: z.string().optional(),
   })).min(1, { message: "At least one item is required" }),
 });
 
@@ -24,6 +29,19 @@ export type EstimateFormValues = z.infer<typeof estimateFormSchema>;
 
 // Define a type for calculation functions to ensure consistency
 export type EstimateItem = {
-  quantity: string;
-  unitPrice: string;
+  item_type?: string;
+  cost: string;
+  markup_percentage: string;
+  quantity?: string;
+  unitPrice?: string;
 };
+
+// Types for calculation results
+export type ItemCalculationResult = {
+  cost: number;
+  price: number;
+  markup: number;
+  grossMargin: number;
+  grossMarginPercentage: number;
+};
+

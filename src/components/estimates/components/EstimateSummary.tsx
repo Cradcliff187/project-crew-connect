@@ -6,7 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { calculateSubtotal, calculateContingencyAmount, calculateGrandTotal } from '../utils/estimateCalculations';
+import { 
+  calculateSubtotal, 
+  calculateContingencyAmount, 
+  calculateGrandTotal,
+  calculateTotalCost,
+  calculateTotalMarkup,
+  calculateTotalGrossMargin,
+  calculateOverallGrossMarginPercentage
+} from '../utils/estimateCalculations';
 import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
 
 const EstimateSummary = () => {
@@ -25,11 +33,18 @@ const EstimateSummary = () => {
 
   // Convert items to the expected type for calculations
   const calculationItems: EstimateItem[] = items.map((item: any) => ({
-    quantity: item.quantity || '0',
-    unitPrice: item.unitPrice || '0'
+    cost: item.cost || '0',
+    markup_percentage: item.markup_percentage || '0',
+    quantity: item.quantity || '1',
+    item_type: item.item_type
   }));
 
+  // Calculate all the totals
+  const totalCost = calculateTotalCost(calculationItems);
+  const totalMarkup = calculateTotalMarkup(calculationItems);
   const subtotal = calculateSubtotal(calculationItems);
+  const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
+  const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
   const contingencyAmount = calculateContingencyAmount(calculationItems, contingencyPercentage);
   const grandTotal = calculateGrandTotal(calculationItems, contingencyPercentage);
 
@@ -41,8 +56,23 @@ const EstimateSummary = () => {
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Subtotal:</span>
+              <span className="text-sm text-gray-600">Total Cost:</span>
+              <span className="font-medium">${totalCost.toFixed(2)}</span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Total Markup:</span>
+              <span className="font-medium">${totalMarkup.toFixed(2)}</span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Subtotal (Price):</span>
               <span className="font-medium">${subtotal.toFixed(2)}</span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">Gross Margin:</span>
+              <span className="font-medium">${totalGrossMargin.toFixed(2)} ({overallMarginPercentage.toFixed(1)}%)</span>
             </div>
             
             <div className="flex items-center gap-4">
@@ -75,7 +105,7 @@ const EstimateSummary = () => {
             </div>
             
             <div className="flex justify-between pt-2 border-t">
-              <span className="text-md font-semibold">Total:</span>
+              <span className="text-md font-semibold">Grand Total:</span>
               <span className="font-semibold">${grandTotal.toFixed(2)}</span>
             </div>
           </div>
