@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useProjectProgress } from './hooks/useProjectProgress';
 import ProgressDisplay from './ProgressDisplay';
 import ProgressEditForm from './ProgressEditForm';
+import { toast } from '@/hooks/use-toast';
 
 interface ProjectProgressProps {
   projectId: string;
@@ -28,17 +29,17 @@ const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
   const handleSaveProgress = async () => {
     const success = await saveProgress(progressValue);
     if (success) {
+      toast({
+        title: 'Progress Updated',
+        description: `Project progress has been updated to ${progressValue}%.`
+      });
       setIsEditing(false);
     }
   };
   
   const handleCancelEdit = () => {
-    // Reset to original value
-    if (progressData) {
-      setProgressValue(progressData.progress_percentage);
-    } else {
-      setProgressValue(0);
-    }
+    // Reset to original value by re-fetching from server
+    fetchProgress();
     setIsEditing(false);
   };
   
@@ -95,10 +96,12 @@ const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
           <ProgressDisplay progressValue={progressValue} />
           
           {isEditing && (
-            <ProgressEditForm 
-              progressValue={progressValue}
-              onProgressChange={setProgressValue}
-            />
+            <div className="mt-4">
+              <ProgressEditForm 
+                onProgressChange={setProgressValue}
+                progressValue={progressValue}
+              />
+            </div>
           )}
         </div>
       </CardContent>
