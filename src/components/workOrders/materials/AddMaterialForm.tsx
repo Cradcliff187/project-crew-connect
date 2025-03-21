@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, PlusCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import VendorDialog from '@/components/vendors/VendorDialog';
 
 interface AddMaterialFormProps {
   vendors: { vendorid: string, vendorname: string }[];
@@ -16,18 +17,21 @@ interface AddMaterialFormProps {
     vendorId: string | null;
   }) => Promise<void>;
   submitting: boolean;
+  onVendorAdded?: () => void;
 }
 
 const AddMaterialForm = ({ 
   vendors, 
   onSubmit, 
-  submitting 
+  submitting,
+  onVendorAdded
 }: AddMaterialFormProps) => {
   // Form state
   const [materialName, setMaterialName] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [unitPrice, setUnitPrice] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+  const [showVendorDialog, setShowVendorDialog] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +51,16 @@ const AddMaterialForm = ({
     setQuantity('1');
     setUnitPrice('');
     setSelectedVendor(null);
+  };
+
+  const handleVendorAdded = () => {
+    // Close the dialog
+    setShowVendorDialog(false);
+    
+    // Notify parent to refresh vendors
+    if (onVendorAdded) {
+      onVendorAdded();
+    }
   };
 
   return (
@@ -71,12 +85,24 @@ const AddMaterialForm = ({
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="vendor" className="text-sm font-medium">
-                Vendor
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="vendor" className="text-sm font-medium">
+                  Vendor
+                </label>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs text-[#0485ea] hover:text-[#0375d1]"
+                  onClick={() => setShowVendorDialog(true)}
+                >
+                  <PlusCircle className="h-3.5 w-3.5 mr-1" />
+                  Add New
+                </Button>
+              </div>
               <Select 
                 value={selectedVendor || ""} 
-                onValueChange={(value) => setSelectedVendor(value || null)}
+                onValueChange={(value) => setSelectedVendor(value === "none" ? null : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select vendor" />
@@ -155,6 +181,14 @@ const AddMaterialForm = ({
           </Button>
         </CardFooter>
       </form>
+
+      {/* Vendor Dialog */}
+      <VendorDialog
+        open={showVendorDialog}
+        onOpenChange={setShowVendorDialog}
+        onVendorAdded={handleVendorAdded}
+        isEditing={false}
+      />
     </Card>
   );
 };

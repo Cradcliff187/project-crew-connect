@@ -172,6 +172,12 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   
   // Calculate total materials cost
   const totalMaterialsCost = materials.reduce((sum, material) => sum + material.total_price, 0);
+
+  // Handle vendor added callback
+  const handleVendorAdded = () => {
+    // Refresh vendors list
+    fetchVendors();
+  };
   
   return (
     <div className="space-y-6">
@@ -179,6 +185,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
         vendors={vendors}
         onSubmit={handleAddMaterial}
         submitting={submitting}
+        onVendorAdded={handleVendorAdded}
       />
       
       <MaterialsTable 
