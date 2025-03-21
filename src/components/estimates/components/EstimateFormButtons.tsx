@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, X, Save } from 'lucide-react';
 
 interface EstimateFormButtonsProps {
   onCancel: () => void;
@@ -18,6 +18,7 @@ const EstimateFormButtons = ({ onCancel, onPreview, isSubmitting }: EstimateForm
         disabled={isSubmitting}
         className="border-gray-300 text-gray-700 hover:bg-gray-50"
       >
+        <X className="h-4 w-4 mr-1" />
         Cancel
       </Button>
       <Button
@@ -35,6 +36,7 @@ const EstimateFormButtons = ({ onCancel, onPreview, isSubmitting }: EstimateForm
         disabled={isSubmitting}
         className="bg-[#0485ea] hover:bg-[#0373ce] text-white font-medium px-6"
       >
+        <Save className="h-4 w-4 mr-1" />
         {isSubmitting ? "Creating..." : "Create Estimate"}
       </Button>
     </div>

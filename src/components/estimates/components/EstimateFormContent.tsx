@@ -1,4 +1,3 @@
-
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,7 +32,6 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
   } | null>(null);
   const [selectedCustomerName, setSelectedCustomerName] = useState<string>('');
 
-  // Initialize the form
   const form = useForm<EstimateFormValues>({
     resolver: zodResolver(estimateFormSchema),
     defaultValues: {
@@ -57,7 +55,6 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
     },
   });
 
-  // Handle customer selection to populate address if needed
   const handleCustomerChange = (customerId: string) => {
     form.setValue('customer', customerId);
     
@@ -81,18 +78,15 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
     }
   };
 
-  // Handle toggle for custom location
   const handleCustomLocationToggle = (checked: boolean) => {
     setUseCustomLocation(checked);
     
     if (checked) {
-      // Clear location fields when custom location is selected
       form.setValue('location.address', '');
       form.setValue('location.city', '');
       form.setValue('location.state', '');
       form.setValue('location.zip', '');
     } else if (form.getValues('customer')) {
-      // Reset to customer address when switching back
       const selectedCustomer = customers.find(c => c.id === form.getValues('customer'));
       if (selectedCustomer) {
         form.setValue('location.address', selectedCustomer.address || '');
@@ -103,7 +97,6 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
     }
   };
 
-  // Handle preview display
   const handleShowPreview = () => {
     const isValid = form.trigger();
     isValid.then((valid) => {
@@ -113,20 +106,18 @@ const EstimateFormContent = ({ onClose, customers, useCustomLocation, setUseCust
     });
   };
 
-  // Handle closing preview
   const handleClosePreview = () => {
     setShowPreview(false);
   };
 
-  // Handle form submission directly (from create button)
   const onSubmit = async (data: EstimateFormValues) => {
     await submitEstimate(data, customers, onClose);
   };
 
-  // Handle submission from preview dialog
   const handleConfirmSubmit = async () => {
     const data = form.getValues();
     await submitEstimate(data, customers, onClose);
+    setShowPreview(false);
   };
 
   return (
