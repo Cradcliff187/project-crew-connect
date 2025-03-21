@@ -27,11 +27,17 @@ const checkUserAgentForMobile = (): boolean => {
 }
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  // Use a ref to determine if component is mounted to avoid SSR issues
+  const isMounted = React.useRef(false)
+  const [isMobile, setIsMobile] = React.useState<boolean>(false)
 
   React.useEffect(() => {
+    isMounted.current = true
+    
     // Initial check: First check user agent, then screen size as fallback
     const checkMobile = () => {
+      if (!isMounted.current) return
+      
       // First try user agent detection
       const userAgentIsMobile = checkUserAgentForMobile()
       
@@ -54,12 +60,13 @@ export function useIsMobile() {
     window.addEventListener("resize", handleResize)
     
     return () => {
+      isMounted.current = false
       mql.removeEventListener("change", handleResize)
       window.removeEventListener("resize", handleResize)
     }
   }, [])
 
-  return !!isMobile
+  return isMobile
 }
 
 // Export an additional hook for more specific device capabilities
