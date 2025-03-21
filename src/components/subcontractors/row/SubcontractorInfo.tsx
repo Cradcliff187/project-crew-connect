@@ -1,22 +1,29 @@
 
 import React from 'react';
 import { Subcontractor } from '../utils/types';
-import { formatDate } from '../utils/formatUtils';
-import InsuranceStatus from '../InsuranceStatus';
-import { Star, FileCheck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { FileText, Star, FileCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDocumentCount } from '@/hooks/useDocumentCount';
 
 interface SubcontractorInfoProps {
   subcontractor: Subcontractor;
 }
 
 const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
-  // Render vendor compliance status indicators
+  const { count, loading } = useDocumentCount('SUBCONTRACTOR', subcontractor.subid);
+  
+  // Render compliance status indicators
   const renderComplianceIndicators = () => {
     return (
       <div className="flex gap-1 items-center">
-        {/* Insurance Status */}
-        <InsuranceStatus expirationDate={subcontractor.insurance_expiration} />
+        {/* Document Count */}
+        {count > 0 && (
+          <Badge variant="outline" className="text-xs flex items-center gap-1 h-5 whitespace-nowrap">
+            <FileText className="h-3 w-3" />
+            {loading ? '...' : count} docs
+          </Badge>
+        )}
         
         {/* Contract Status */}
         {subcontractor.contract_on_file && (
@@ -24,7 +31,7 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="inline-flex">
-                  <FileCheck className="h-4 w-4 text-blue-500" />
+                  <FileCheck className="h-4 w-4 text-[#0485ea]" />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -54,10 +61,12 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
   };
 
   return (
-    <div>
-      <div className="font-medium">{subcontractor.subname}</div>
-      <div className="text-xs text-muted-foreground">{subcontractor.subid}</div>
-      {renderComplianceIndicators()}
+    <div className="flex flex-col">
+      <div className="font-medium text-[#0485ea]">{subcontractor.subname || 'Unnamed Subcontractor'}</div>
+      <div className="flex items-center gap-2">
+        <div className="text-xs text-muted-foreground">{subcontractor.subid}</div>
+        {renderComplianceIndicators()}
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Package, Hammer } from 'lucide-react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Hammer } from 'lucide-react';
+import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
 import SubcontractorRow from './SubcontractorRow';
 import SubcontractorEmptyState from './SubcontractorEmptyState';
 import SubcontractorLoadingState from './SubcontractorLoadingState';
@@ -12,7 +12,6 @@ import { filterSubcontractors } from './utils/filterUtils';
 import SubcontractorDialog from './SubcontractorDialog';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 
 interface SubcontractorsTableProps {
   subcontractors: Subcontractor[];
@@ -92,19 +91,7 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-6 text-red-500">
-                <p>Error loading subcontractors: {error || specialtiesError}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={() => window.location.reload()}
-                >
-                  Try Again
-                </Button>
-              </TableCell>
-            </TableRow>
+            <SubcontractorErrorState error={error || specialtiesError || "Unknown error"} />
           </TableBody>
         </Table>
       </div>
@@ -150,12 +137,7 @@ const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                <Hammer className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-                <p>No subcontractors found. Add your first subcontractor!</p>
-              </TableCell>
-            </TableRow>
+            <SubcontractorEmptyState />
           </TableBody>
         </Table>
       </div>

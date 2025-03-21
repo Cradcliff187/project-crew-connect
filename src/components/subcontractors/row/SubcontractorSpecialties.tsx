@@ -17,7 +17,7 @@ const SubcontractorSpecialties = ({ specialtyIds, specialties }: SubcontractorSp
       {specialtyIds.map(id => {
         const specialty = specialties[id];
         return specialty ? (
-          <Badge key={id} variant="secondary" className="text-xs">
+          <Badge key={id} variant="secondary" className="text-xs bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]">
             {specialty.specialty}
           </Badge>
         ) : null;
