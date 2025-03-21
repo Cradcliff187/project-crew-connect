@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -39,7 +40,13 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
         state: '',
         zip: '',
       },
-      items: [{ description: '', quantity: '1', unitPrice: '0' }],
+      items: [{ 
+        description: '', 
+        quantity: '1', 
+        cost: '0',
+        markup_percentage: '20',
+        item_type: 'labor'
+      }],
     },
   });
 
