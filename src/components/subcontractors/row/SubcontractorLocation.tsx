@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Subcontractor, formatSubcontractorAddress } from '../utils/subcontractorUtils';
+import { Subcontractor } from '../utils/types';
 
 interface SubcontractorLocationProps {
   subcontractor: Subcontractor;
@@ -8,9 +8,13 @@ interface SubcontractorLocationProps {
 
 const SubcontractorLocation = ({ subcontractor }: SubcontractorLocationProps) => {
   return (
-    <div className="text-sm whitespace-pre-line">
-      {formatSubcontractorAddress(subcontractor)}
-    </div>
+    <>
+      {subcontractor.city && subcontractor.state ? (
+        <div>{subcontractor.city}, {subcontractor.state}</div>
+      ) : (
+        <div className="text-muted-foreground">No Location</div>
+      )}
+    </>
   );
 };
 
