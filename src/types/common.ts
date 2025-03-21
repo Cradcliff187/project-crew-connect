@@ -20,7 +20,13 @@ export type StatusType =
   | 'prospect'
   | 'sent'
   | 'rejected'
-  | 'verified';
+  | 'verified'
+  // Added new status types to match SubcontractorStatusBadge usage
+  | 'success'
+  | 'info'
+  | 'error'
+  | 'neutral'
+  | 'purple';
 
 export interface Option {
   label: string;
