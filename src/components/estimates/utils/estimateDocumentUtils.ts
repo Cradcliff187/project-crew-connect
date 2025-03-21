@@ -26,18 +26,22 @@ export const uploadItemDocument = async (
     
     const BUCKET_NAME = 'construction_documents';
     
-    // First, verify the bucket exists
-    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+    // First, create the bucket if it doesn't exist
+    const { data: bucketExists, error: bucketCheckError } = await supabase.storage.getBucket(BUCKET_NAME);
     
-    if (bucketError) {
-      console.error('Error accessing storage buckets:', bucketError);
-      return null;
-    }
-    
-    const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
-    
-    if (!bucketExists) {
-      console.error(`The ${BUCKET_NAME} bucket does not exist. Please create it in Supabase.`);
+    if (bucketCheckError && bucketCheckError.message.includes('does not exist')) {
+      console.log(`Creating bucket ${BUCKET_NAME}`);
+      const { error: createBucketError } = await supabase.storage.createBucket(BUCKET_NAME, {
+        public: true,
+        fileSizeLimit: 52428800  // 50MB
+      });
+      
+      if (createBucketError) {
+        console.error('Error creating storage bucket:', createBucketError);
+        return null;
+      }
+    } else if (bucketCheckError) {
+      console.error('Error checking bucket:', bucketCheckError);
       return null;
     }
     
@@ -45,13 +49,15 @@ export const uploadItemDocument = async (
     const fileBlob = file.slice(0, file.size, file.type);
     const cleanFile = new File([fileBlob], file.name, { type: file.type });
     
-    // Upload file to Supabase Storage
+    console.log('Uploading with content type:', cleanFile.type);
+    
+    // Upload file to Supabase Storage with explicit options
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(filePath, cleanFile, {
-        contentType: file.type, // Explicitly set the content type to match the file
+        contentType: cleanFile.type, // Explicitly set the content type
         cacheControl: '3600',
-        upsert: false // Ensure we don't overwrite existing files
+        upsert: false
       });
       
     if (uploadError) {
