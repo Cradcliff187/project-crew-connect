@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -63,7 +62,7 @@ const mainNav = [
   },
   {
     title: "Work Orders",
-    href: "/workorders",
+    href: "/work-orders",
     icon: <ClipboardList className="h-5 w-5" />,
   },
   {
