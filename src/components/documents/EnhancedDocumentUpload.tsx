@@ -153,7 +153,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
         const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
         const filePath = `${entityType.toLowerCase()}/${entityId || 'general'}/${fileName}`;
         
-        // IMPORTANT: Using the correct bucket name in snake_case format
+        // IMPORTANT: Using the correct bucket name
         const bucketName = 'construction_documents';
         
         console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);

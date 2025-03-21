@@ -1,11 +1,9 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { WorkOrderMaterial } from '@/types/workOrder';
+import { toast } from '@/hooks/use-toast';
 
 interface MaterialReceiptUploadProps {
   workOrderId: string;
@@ -22,8 +20,6 @@ const MaterialReceiptUpload: React.FC<MaterialReceiptUploadProps> = ({
   onSuccess,
   onCancel
 }) => {
-  const [isUploading, setIsUploading] = useState(false);
-
   // Prefill data for receipt upload
   const prefillData = {
     amount: material.total_price,

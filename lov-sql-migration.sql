@@ -1,33 +1,40 @@
 
--- Add payment terms, tax_id, and notes to vendors table if they don't exist
-ALTER TABLE public.vendors 
-ADD COLUMN IF NOT EXISTS payment_terms VARCHAR DEFAULT 'NET30',
-ADD COLUMN IF NOT EXISTS tax_id VARCHAR,
-ADD COLUMN IF NOT EXISTS notes TEXT;
+-- Create the construction_documents bucket if it doesn't exist
+DO $$
+BEGIN
+    -- Check if the bucket exists
+    IF NOT EXISTS (
+        SELECT 1 FROM storage.buckets WHERE name = 'construction_documents'
+    ) THEN
+        -- Create the bucket with appropriate settings
+        INSERT INTO storage.buckets (id, name, public)
+        VALUES ('construction_documents', 'construction_documents', true);
+        
+        -- Create a policy to allow anonymous reads
+        INSERT INTO storage.policies (name, definition, bucket_id)
+        VALUES (
+            'Public Read Access',
+            '(bucket_id = ''construction_documents''::text)',
+            'construction_documents'
+        );
+    END IF;
+END $$;
 
--- Enable replica identity for real-time updates if not already enabled
-ALTER TABLE public.vendors REPLICA IDENTITY FULL;
+-- Enable Row Level Security for materials table if not already enabled
+ALTER TABLE IF EXISTS public.work_order_materials ENABLE ROW LEVEL SECURITY;
 
--- Add table to realtime publication if not already added
-SELECT CASE 
-  WHEN NOT EXISTS (
-    SELECT 1 FROM pg_publication_tables 
-    WHERE pubname = 'supabase_realtime' 
-    AND schemaname = 'public' 
-    AND tablename = 'vendors'
-  ) 
-  THEN pg_catalog.pg_publication_add_table(
-    'supabase_realtime'::pg_catalog.text,
-    'vendors'::regclass
-  )::text
-  ELSE 'Table already in realtime publication'::text
-END;
-
--- Drop performance-related columns if they exist
-ALTER TABLE public.subcontractors 
-DROP COLUMN IF EXISTS rating,
-DROP COLUMN IF EXISTS on_time_percentage,
-DROP COLUMN IF EXISTS quality_score,
-DROP COLUMN IF EXISTS safety_incidents,
-DROP COLUMN IF EXISTS response_time_hours,
-DROP COLUMN IF EXISTS last_performance_review;
+-- Add RLS policy for materials if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'work_order_materials' 
+        AND policyname = 'Universal access to work_order_materials'
+    ) THEN
+        -- Create a universal access policy (can be restricted later)
+        CREATE POLICY "Universal access to work_order_materials" 
+        ON public.work_order_materials 
+        FOR ALL 
+        USING (true);
+    END IF;
+END $$;
