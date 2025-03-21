@@ -7,6 +7,7 @@ import { useStatusTransitions } from './hooks/useStatusTransitions';
 import { useStatusUpdate } from './hooks/useStatusUpdate';
 import StatusDropdownMenu from './StatusDropdownMenu';
 import NoStatusOptions from './NoStatusOptions';
+import { statusOptions } from '../ProjectConstants';
 
 interface ProjectStatusControlProps {
   project: ProjectDetails;
@@ -14,15 +15,25 @@ interface ProjectStatusControlProps {
 }
 
 const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlProps) => {
-  const { availableStatuses, refreshTransitions } = useStatusTransitions({
-    currentStatus: project.status
-  });
+  const { allowedTransitions, refreshTransitions } = useStatusTransitions(
+    project.projectid, 
+    project.status
+  );
   
   const { updating, updateStatus } = useStatusUpdate({
     projectId: project.projectid,
     currentStatus: project.status,
     onStatusChange,
     refreshTransitions
+  });
+  
+  // Convert allowedTransitions to StatusOption format
+  const availableStatuses = allowedTransitions.map(status => {
+    const option = statusOptions.find(opt => opt.value.toLowerCase() === status.toLowerCase());
+    return {
+      status: status,
+      label: option?.label || status
+    };
   });
   
   const handleStatusChange = useCallback((newStatus: string) => {
