@@ -6,6 +6,7 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { File, PaperclipIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface ItemDocumentUploadProps {
   index: number;
@@ -27,7 +28,7 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
       const file = files[0];
       setSelectedFile(file);
       field.onChange(file);
-      console.log(`File selected for item ${index}:`, file.name);
+      console.log(`File selected for item ${index}:`, file.name, file.type);
     }
   };
   
@@ -46,6 +47,24 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
       return "Attach Vendor Quote";
     }
     return "Attach Document";
+  };
+
+  const getDocumentCategory = () => {
+    if (itemType === 'subcontractor') {
+      return "subcontractor_estimate";
+    } else if (itemType === 'vendor') {
+      return "vendor_quote";
+    }
+    return "other";
+  };
+
+  const getCategoryBadgeColor = () => {
+    if (itemType === 'subcontractor') {
+      return "bg-purple-100 text-purple-800";
+    } else if (itemType === 'vendor') {
+      return "bg-blue-100 text-blue-800";
+    }
+    return "bg-gray-100 text-gray-800";
   };
 
   return (
@@ -67,7 +86,7 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Attach a PDF or image to this item</p>
+                <p>Attach a PDF, Office document, image, or other file to this item</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -76,7 +95,7 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
             <FileUpload
               id={`file-upload-${index}`}
               onFilesSelected={handleFileSelect}
-              allowCamera={false}
+              allowCamera={true}
               allowMultiple={false}
               acceptedFileTypes="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip"
               className="hidden"
@@ -85,12 +104,19 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
         </div>
       ) : (
         <div className="flex items-center text-xs p-2 bg-blue-50 rounded border border-blue-200">
-          <File className="h-3 w-3 mr-1 text-[#0485ea]" />
-          <span className="flex-1 truncate">{selectedFile.name}</span>
+          <div className="flex items-center flex-1 min-w-0">
+            <File className="h-3 w-3 mr-1 text-[#0485ea] flex-shrink-0" />
+            <span className="truncate">{selectedFile.name}</span>
+            
+            <Badge className={`ml-2 text-[0.65rem] py-0 px-1.5 ${getCategoryBadgeColor()}`}>
+              {itemType === 'subcontractor' ? 'Subcontractor Estimate' : 
+               itemType === 'vendor' ? 'Vendor Quote' : 'Document'}
+            </Badge>
+          </div>
           <button 
             type="button" 
             onClick={clearFile}
-            className="ml-2 text-red-500 hover:text-red-700"
+            className="ml-2 text-red-500 hover:text-red-700 flex-shrink-0"
           >
             <X className="h-3 w-3" />
           </button>

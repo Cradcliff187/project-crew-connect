@@ -11,8 +11,15 @@ export const documentCategories = [
   'certification',
   'photo',
   'other',
-  'subcontractor_estimate',  // New category added here
-  'vendor_quote'  // New category for vendor quotes
+  'subcontractor_estimate',  // Category for subcontractor estimates
+  'vendor_quote',  // Category for vendor quotes
+  'proposal',
+  'change_order',
+  'schedule',
+  'warranty',
+  'manual',
+  'drawing',
+  'permit'
 ] as const;
 
 // Define the entity types that documents can be related to
