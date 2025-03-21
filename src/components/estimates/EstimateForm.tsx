@@ -124,94 +124,107 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
-        <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-2xl font-semibold">Create New Estimate</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 font-sans">
+        <DialogHeader className="sticky top-0 z-10 bg-white px-6 pt-6 pb-4 border-b shadow-sm">
+          <DialogTitle className="text-2xl font-bold font-montserrat text-[#0485ea]">Create New Estimate</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-6">
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <h2 className="text-xl font-montserrat font-semibold mb-4 text-[#333333]">Project Information</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="project"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#333333] font-medium">Project Name*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter project name" {...field} className="border-gray-300 focus:border-[#0485ea] focus:ring-[#0485ea]" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#333333] font-medium">Customer*</FormLabel>
+                      <Select 
+                        onValueChange={handleCustomerChange} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="border-gray-300 focus:border-[#0485ea] focus:ring-[#0485ea]">
+                            <SelectValue placeholder="Select a customer" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {customers.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.id}>
+                              {customer.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="project"
+                name="description"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Name*</FormLabel>
+                  <FormItem className="mt-4">
+                    <FormLabel className="text-[#333333] font-medium">Job Description</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter project name" {...field} />
+                      <Textarea 
+                        placeholder="Enter detailed job description" 
+                        className="min-h-[120px] border-gray-300 focus:border-[#0485ea] focus:ring-[#0485ea]" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="customer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Customer*</FormLabel>
-                    <Select 
-                      onValueChange={handleCustomerChange} 
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a customer" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter job description" 
-                      className="min-h-[100px]" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <h2 className="text-xl font-montserrat font-semibold mb-4 text-[#333333]">Location Details</h2>
+              
+              <div className="flex items-center space-x-2 mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <Switch
+                  id="custom-location"
+                  checked={useCustomLocation}
+                  onCheckedChange={handleCustomLocationToggle}
+                  className="data-[state=checked]:bg-[#0485ea]"
+                />
+                <label
+                  htmlFor="custom-location"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Job site location is different from customer address
+                </label>
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="custom-location"
-                checked={useCustomLocation}
-                onCheckedChange={handleCustomLocationToggle}
-              />
-              <label
-                htmlFor="custom-location"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Job site location is different from customer address
-              </label>
+              <LocationFields />
             </div>
 
-            <LocationFields />
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <EstimateItemFields />
+            </div>
 
-            <EstimateItemFields />
-
-            <EstimateSummary />
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+              <EstimateSummary />
+            </div>
 
             <EstimateFormButtons onCancel={onClose} isSubmitting={isSubmitting} />
           </form>
