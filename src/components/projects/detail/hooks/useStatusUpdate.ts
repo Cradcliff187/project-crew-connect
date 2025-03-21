@@ -72,7 +72,7 @@ export const useStatusUpdate = ({
       
       if (error.message) {
         if (error.message.includes('Invalid status transition')) {
-          errorMessage = `Status change not allowed: ${error.message}`;
+          errorMessage = `Status change not allowed: ${error.message}. Please refresh the page to get the latest allowed transitions.`;
         } else if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
           errorMessage = 'Authentication error. Please refresh the page and try again.';
         } else {

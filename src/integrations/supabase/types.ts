@@ -1077,6 +1077,7 @@ export type Database = {
       }
       status_definitions: {
         Row: {
+          color: string | null
           created_at: string
           description: string | null
           entity_type: Database["public"]["Enums"]["entity_type"]
@@ -1086,6 +1087,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          color?: string | null
           created_at?: string
           description?: string | null
           entity_type: Database["public"]["Enums"]["entity_type"]
@@ -1095,6 +1097,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          color?: string | null
           created_at?: string
           description?: string | null
           entity_type?: Database["public"]["Enums"]["entity_type"]
