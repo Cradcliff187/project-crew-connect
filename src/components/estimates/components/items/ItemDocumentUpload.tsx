@@ -78,7 +78,7 @@ const ItemDocumentUpload = ({ index, control, itemType }: ItemDocumentUploadProp
               onFilesSelected={handleFileSelect}
               allowCamera={false}
               allowMultiple={false}
-              acceptedFileTypes="application/pdf,image/*"
+              acceptedFileTypes="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip"
               className="hidden"
             />
           </div>

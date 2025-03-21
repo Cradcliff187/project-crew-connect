@@ -82,7 +82,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   type="file"
                   className="hidden"
                   multiple={false}
-                  accept="image/*,application/pdf"
+                  accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip"
                   onChange={(e) => {
                     const files = e.target.files;
                     if (files && files.length > 0) {

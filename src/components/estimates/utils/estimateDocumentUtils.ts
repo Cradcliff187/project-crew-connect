@@ -45,6 +45,10 @@ export const uploadItemDocument = async (
     if (file.name.toLowerCase().includes('invoice') || file.name.toLowerCase().includes('receipt')) {
       category = 'invoice';
     } else if (file.name.toLowerCase().includes('quote') || file.name.toLowerCase().includes('proposal')) {
+      category = itemData?.item_type === 'vendor' ? 'vendor_quote' : 'subcontractor_estimate';
+    } else if (itemData?.item_type === 'vendor') {
+      category = 'vendor_quote';
+    } else if (itemData?.item_type === 'subcontractor') {
       category = 'subcontractor_estimate';
     }
     
@@ -67,7 +71,9 @@ export const uploadItemDocument = async (
       category: category,
       tags: tags,
       // Add vendor or subcontractor relationship if available
-      vendor_id: itemData?.item_type === 'vendor' ? itemData.vendor_id : null,
+      vendor_id: itemData?.item_type === 'vendor' 
+        ? itemData.vendor_id 
+        : (itemData?.item_type === 'subcontractor' ? itemData.subcontractor_id : null),
       vendor_type: itemData?.item_type || null
     };
     
