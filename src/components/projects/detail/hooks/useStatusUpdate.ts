@@ -30,8 +30,17 @@ export const useStatusUpdate = ({
   
   const updateStatus = async (newStatus: string) => {
     // Normalize both statuses to lowercase for comparison
-    const normalizedCurrentStatus = currentStatus.toLowerCase();
-    const normalizedNewStatus = newStatus.toLowerCase();
+    const normalizedCurrentStatus = currentStatus?.toLowerCase();
+    const normalizedNewStatus = newStatus?.toLowerCase();
+    
+    if (!normalizedCurrentStatus || !normalizedNewStatus) {
+      toast({
+        title: 'Error',
+        description: 'Invalid status values provided',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     if (normalizedCurrentStatus === normalizedNewStatus) {
       toast({
@@ -41,22 +50,36 @@ export const useStatusUpdate = ({
       return;
     }
     
+    // Validate project ID format
+    if (!projectId || typeof projectId !== 'string' || !projectId.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Invalid project ID',
+        variant: 'destructive',
+      });
+      console.error('Invalid project ID:', projectId);
+      return;
+    }
+    
     setUpdating(true);
     try {
-      console.log(`Updating project status from ${currentStatus} to ${newStatus}`);
+      console.log(`Updating project status from ${currentStatus} to ${newStatus} for project ID: ${projectId}`);
       
       // Use the configured Supabase client which already has headers set up properly
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('projects')
         .update({ 
           status: newStatus, 
           updated_at: new Date().toISOString()
         })
-        .eq('projectid', projectId);
+        .eq('projectid', projectId)
+        .select();
       
       if (error) {
         throw error;
       }
+      
+      console.log('Update response data:', data);
       
       toast({
         title: 'Status updated',
@@ -75,6 +98,10 @@ export const useStatusUpdate = ({
           errorMessage = `Status change not allowed: ${error.message}. Please refresh the page to get the latest allowed transitions.`;
         } else if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
           errorMessage = 'Authentication error. Please refresh the page and try again.';
+        } else if (error.details && error.details.includes('violates row-level security')) {
+          errorMessage = 'Permission denied: You do not have access to update this project.';
+        } else if (error.message.includes('not found')) {
+          errorMessage = `Project with ID "${projectId}" not found. It may have been deleted.`;
         } else {
           errorMessage = error.message;
         }

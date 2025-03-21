@@ -1,97 +1,72 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { statusTransitions } from '../../ProjectConstants';
+import { statusTransitions as fallbackTransitions } from '@/components/projects/ProjectConstants';
 
-interface StatusOption {
-  status: string;
-  label: string;
-}
+export const useStatusTransitions = (projectId: string, currentStatus: string) => {
+  const [allowedTransitions, setAllowedTransitions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-interface UseStatusTransitionsProps {
-  currentStatus: string;
-}
+  const fetchTransitions = async () => {
+    if (!projectId || !currentStatus) {
+      setAllowedTransitions([]);
+      setLoading(false);
+      return;
+    }
 
-export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProps) => {
-  const [availableStatuses, setAvailableStatuses] = useState<StatusOption[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const { toast } = useToast();
-  
-  const statusLabels: Record<string, string> = {
-    new: 'New',
-    active: 'Active',
-    on_hold: 'On Hold',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
-    pending: 'Pending',
-  };
-  
-  const fetchTransitions = useCallback(async () => {
-    if (!currentStatus) return;
-    
-    setLoading(true);
     try {
-      // Normalize status to lowercase for case-insensitive comparison
-      const normalizedStatus = currentStatus.toLowerCase();
-      console.log(`Fetching transitions for project status: ${normalizedStatus}`);
+      setLoading(true);
+      setError(null);
       
-      // First try to get transitions from the database
+      console.log(`Fetching transitions for project: ${projectId}, status: ${currentStatus}`);
+      
+      // Normalize status to lowercase for consistency
+      const normalizedStatus = currentStatus.toLowerCase();
+      
+      // Call RPC function to get next possible transitions
       const { data, error } = await supabase
-        .from('status_transitions')
-        .select('to_status, label, description')
-        .eq('entity_type', 'PROJECT')
-        .ilike('from_status', normalizedStatus); // Use case-insensitive comparison
-
+        .rpc('get_next_possible_transitions', {
+          entity_type_param: 'PROJECT',
+          current_status_param: normalizedStatus
+        });
+      
       if (error) {
         console.error('Error fetching transitions:', error);
-        // Fall back to static transitions on error
-        useStaticTransitions(normalizedStatus);
-        return;
-      }
-      
-      if (data && data.length > 0) {
-        console.log('Transitions fetched successfully:', data);
-        const formattedTransitions = data.map((transition: any) => ({
-          status: transition.to_status,
-          label: transition.label || statusLabels[transition.to_status.toLowerCase()] || transition.to_status,
-        }));
-        setAvailableStatuses(formattedTransitions);
+        // Fall back to client-side transitions if the RPC call fails
+        const fallbackOptions = fallbackTransitions[normalizedStatus] || [];
+        setAllowedTransitions(fallbackOptions);
+        setError(`Falling back to predefined transitions. Server error: ${error.message}`);
+      } else if (data && data.length > 0) {
+        // Extract to_status from each transition entry
+        const transitions = data.map((item: any) => item.to_status);
+        setAllowedTransitions(transitions);
+        console.log('Fetched transitions:', transitions);
       } else {
-        console.warn('No status transitions found in database for status:', normalizedStatus);
-        // Fall back to static transitions
-        useStaticTransitions(normalizedStatus);
+        // If no transitions found, fall back to client-side definitions
+        const fallbackOptions = fallbackTransitions[normalizedStatus] || [];
+        setAllowedTransitions(fallbackOptions);
+        console.log('No transitions found in DB, using fallback:', fallbackOptions);
       }
-    } catch (error) {
-      console.error('Failed to fetch transitions:', error);
-      // Fall back to static transitions on error
-      useStaticTransitions(currentStatus.toLowerCase());
+    } catch (err: any) {
+      console.error('Error in transition fetching:', err);
+      // Use fallback transitions in case of error
+      const fallbackOptions = fallbackTransitions[currentStatus.toLowerCase()] || [];
+      setAllowedTransitions(fallbackOptions);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [currentStatus]);
-  
-  // Helper function to use static transitions from ProjectConstants
-  const useStaticTransitions = (currentStatus: string) => {
-    const fallbackTransitions = statusTransitions[currentStatus] || [];
-    console.log('Using static fallback transitions:', fallbackTransitions);
-    
-    const formattedTransitions = fallbackTransitions.map(status => ({
-      status,
-      label: statusLabels[status.toLowerCase()] || status.charAt(0).toUpperCase() + status.slice(1)
-    }));
-    
-    setAvailableStatuses(formattedTransitions);
   };
-  
-  // Fetch available status transitions when the currentStatus changes
+
   useEffect(() => {
     fetchTransitions();
-  }, [currentStatus, fetchTransitions]);
-  
+  }, [projectId, currentStatus]);
+
   return {
-    availableStatuses,
+    allowedTransitions,
     loading,
+    error,
     refreshTransitions: fetchTransitions
   };
 };
