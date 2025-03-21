@@ -29,6 +29,7 @@ interface VendorsTableProps {
   loading: boolean;
   error: string | null;
   searchQuery: string;
+  onViewDetails: (vendor: Vendor) => void;
 }
 
 // Map database status to StatusBadge component status
@@ -59,7 +60,7 @@ export const formatDate = (dateString: string | null) => {
   }).format(date);
 };
 
-const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProps) => {
+const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails }: VendorsTableProps) => {
   // Filter vendors based on search query
   const filteredVendors = vendors.filter(vendor => 
     (vendor.vendorname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -74,17 +75,26 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
           {
             label: 'View details',
             icon: <Eye className="w-4 h-4" />,
-            onClick: (e) => console.log('View vendor details', vendor.vendorid)
+            onClick: (e) => {
+              e.stopPropagation();
+              onViewDetails(vendor);
+            }
           },
           {
             label: 'Edit vendor',
             icon: <Edit className="w-4 h-4" />,
-            onClick: (e) => console.log('Edit vendor', vendor.vendorid)
+            onClick: (e) => {
+              e.stopPropagation();
+              console.log('Edit vendor', vendor.vendorid);
+            }
           },
           {
             label: 'Order history',
             icon: <History className="w-4 h-4" />,
-            onClick: (e) => console.log('Order history', vendor.vendorid)
+            onClick: (e) => {
+              e.stopPropagation();
+              console.log('Order history', vendor.vendorid);
+            }
           }
         ]
       },
@@ -93,7 +103,10 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
           {
             label: 'Material catalog',
             icon: <ListTree className="w-4 h-4" />,
-            onClick: (e) => console.log('Material catalog', vendor.vendorid)
+            onClick: (e) => {
+              e.stopPropagation();
+              console.log('Material catalog', vendor.vendorid);
+            }
           }
         ]
       },
@@ -102,7 +115,10 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
           {
             label: 'Deactivate vendor',
             icon: <Archive className="w-4 h-4" />,
-            onClick: (e) => console.log('Deactivate vendor', vendor.vendorid),
+            onClick: (e) => {
+              e.stopPropagation();
+              console.log('Deactivate vendor', vendor.vendorid);
+            },
             className: 'text-red-600'
           }
         ]
@@ -110,10 +126,14 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
     ];
   };
 
+  const handleRowClick = (vendor: Vendor) => {
+    onViewDetails(vendor);
+  };
+
   return (
     <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-gray-50">
           <TableRow>
             <TableHead>Vendor</TableHead>
             <TableHead>Contact</TableHead>
@@ -163,9 +183,13 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
             </TableRow>
           ) : (
             filteredVendors.map((vendor) => (
-              <TableRow key={vendor.vendorid}>
+              <TableRow 
+                key={vendor.vendorid}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleRowClick(vendor)}
+              >
                 <TableCell>
-                  <div className="font-medium">{vendor.vendorname || 'Unnamed Vendor'}</div>
+                  <div className="font-medium text-[#0485ea]">{vendor.vendorname || 'Unnamed Vendor'}</div>
                   <div className="text-xs text-muted-foreground">{vendor.vendorid}</div>
                 </TableCell>
                 <TableCell>
@@ -183,7 +207,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery }: VendorsTableProp
                 <TableCell>
                   <StatusBadge status={mapStatusToStatusBadge(vendor.status)} />
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <ActionMenu groups={getVendorActions(vendor)} />
                 </TableCell>
               </TableRow>

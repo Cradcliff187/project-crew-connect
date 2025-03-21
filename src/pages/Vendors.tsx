@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import PageTransition from '@/components/layout/PageTransition';
 import VendorsHeader from '@/components/vendors/VendorsHeader';
 import VendorsTable, { Vendor } from '@/components/vendors/VendorsTable';
+import { useNavigate } from 'react-router-dom';
 
 const fetchVendors = async () => {
   try {
@@ -28,6 +29,7 @@ const fetchVendors = async () => {
 
 const Vendors = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
   
   const { 
     data: vendors = [], 
@@ -85,6 +87,17 @@ const Vendors = () => {
     refetch();
   };
 
+  const handleViewVendorDetails = (vendor: Vendor) => {
+    console.log('View vendor details:', vendor);
+    // For now, we'll just show a toast since we don't have a vendor details page yet
+    // When a details page is created, we would navigate to it like:
+    // navigate(`/vendors/${vendor.vendorid}`);
+    toast({
+      title: "Vendor Details",
+      description: `Viewing details for ${vendor.vendorname}. This feature is coming soon.`,
+    });
+  };
+
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
@@ -99,6 +112,7 @@ const Vendors = () => {
           loading={loading}
           error={error}
           searchQuery={searchQuery}
+          onViewDetails={handleViewVendorDetails}
         />
       </div>
     </PageTransition>
