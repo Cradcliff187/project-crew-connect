@@ -21,6 +21,7 @@ import WorkOrdersCard from './WorkOrdersCard';
 import NotesSection from './NotesSection';
 import SubcontractorNotFoundView from './SubcontractorNotFoundView';
 import SubcontractorLoadingView from './SubcontractorLoadingView';
+import SubcontractorDocuments from './SubcontractorDocuments';
 
 const SubcontractorDetailPage = () => {
   const { subcontractorId } = useParams<{ subcontractorId: string }>();
@@ -88,6 +89,11 @@ const SubcontractorDetailPage = () => {
               {/* Financial Information */}
               <FinancialInformationCard subcontractor={subcontractor} />
             </div>
+            
+            <Separator />
+            
+            {/* Documents Section */}
+            <SubcontractorDocuments subcontractorId={subcontractor.subid} />
             
             <Separator />
             
