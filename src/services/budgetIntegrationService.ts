@@ -114,7 +114,7 @@ export const importWorkOrderCostsToProject = async (
         description: `Labor for Work Order: ${workOrder.title}`,
         amount: workOrder.actual_hours * 75, // Assuming $75/hr labor rate
         budget_item_id: linkData?.[0]?.budget_item_id || null,
-        expense_date: new Date()
+        expense_date: new Date().toISOString() // Convert Date to ISO string
       };
       
       const { error: laborError } = await supabase
@@ -134,7 +134,7 @@ export const importWorkOrderCostsToProject = async (
         description: `Materials for Work Order: ${workOrder.title}`,
         amount: workOrder.materials_cost,
         budget_item_id: linkData?.[0]?.budget_item_id || null,
-        expense_date: new Date()
+        expense_date: new Date().toISOString() // Convert Date to ISO string
       };
       
       const { error: materialsError } = await supabase

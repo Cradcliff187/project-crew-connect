@@ -1,19 +1,27 @@
 
-export type EstimateItem = {
+export interface EstimateItem {
   id: string;
   estimate_id: string;
   description: string;
   quantity: number;
   unit_price: number;
   total_price: number;
-};
+  created_at?: string;
+  updated_at?: string;
+  item_type?: string;
+  cost?: number;
+  markup_percentage?: number;
+  document_id?: string;
+  vendor_id?: string;
+  subcontractor_id?: string;
+}
 
-export type EstimateRevision = {
+export interface EstimateRevision {
   id: string;
   estimate_id: string;
   version: number;
   revision_date: string;
-  revision_by: string | null;
-  notes: string | null;
-  amount: number | null;
-};
+  amount?: number;
+  notes?: string;
+  revision_by?: string;
+}

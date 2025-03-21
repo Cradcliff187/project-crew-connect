@@ -1,227 +1,157 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from '@/components/ui/button';
-import { Plus, File, FileText, Download, Trash2 } from 'lucide-react';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Document } from '@/components/documents/schemas/documentSchema';
-import { cn } from '@/lib/utils';
+import { EnhancedDocumentUpload } from '@/components/documents/EnhancedDocumentUpload';
+import { FileIcon, ImageIcon, XCircleIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface EstimateDocumentsTabProps {
-  estimateId?: string;
+  estimateId: string;
 }
 
 const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId }) => {
-  const isMobile = useIsMobile();
-  const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [showUploadForm, setShowUploadForm] = useState<boolean>(false);
-  
-  // Fetch documents when component mounts or estimateId changes
-  useEffect(() => {
-    if (estimateId) {
-      fetchDocuments();
-    } else {
-      setDocuments([]);
-      setIsLoading(false);
-    }
-  }, [estimateId]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchDocuments = async () => {
-    if (!estimateId) return;
-    
     try {
-      setIsLoading(true);
-      
+      setLoading(true);
       const { data, error } = await supabase
         .from('documents')
         .select('*')
         .eq('entity_type', 'ESTIMATE')
         .eq('entity_id', estimateId);
-        
+
       if (error) throw error;
-      
-      // Generate URLs for the documents
+
+      // Get the public URLs for each document
       const docsWithUrls = await Promise.all(
         (data || []).map(async (doc) => {
-          const { data: { publicUrl } } = supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(doc.storage_path);
+          if (doc.storage_path) {
+            const { data: urlData } = supabase.storage
+              .from('construction_documents')
+              .getPublicUrl(doc.storage_path);
             
-          return { ...doc, url: publicUrl };
+            return { ...doc, url: urlData.publicUrl };
+          }
+          return doc;
         })
       );
-      
-      setDocuments(docsWithUrls as Document[]);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      toast({
-        title: 'Error fetching documents',
-        description: 'Unable to load documents at this time.',
-        variant: 'destructive'
-      });
+
+      setDocuments(docsWithUrls);
+    } catch (err: any) {
+      console.error('Error fetching documents:', err);
+      setError(err.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleUploadSuccess = (documentId?: string) => {
-    setShowUploadForm(false);
+  useEffect(() => {
     fetchDocuments();
-    toast({
-      title: 'Document uploaded',
-      description: 'Document was successfully attached to this estimate.'
-    });
+  }, [estimateId]);
+
+  const handleDocumentUploadSuccess = () => {
+    fetchDocuments();
   };
 
-  const handleDeleteDocument = async (documentId: string, storagePath: string) => {
+  const handleViewDocument = (url: string) => {
+    window.open(url, '_blank');
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
     try {
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('construction_documents')
-        .remove([storagePath]);
-        
-      if (storageError) throw storageError;
-      
-      // Delete from database
-      const { error: dbError } = await supabase
+      const { error } = await supabase
         .from('documents')
         .delete()
         .eq('document_id', documentId);
-        
-      if (dbError) throw dbError;
       
-      // Update documents list
-      setDocuments(documents.filter(doc => doc.document_id !== documentId));
+      if (error) throw error;
       
-      toast({
-        title: 'Document deleted',
-        description: 'Document was successfully removed.'
-      });
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      toast({
-        title: 'Error deleting document',
-        description: 'Unable to delete document at this time.',
-        variant: 'destructive'
-      });
+      // Refresh document list
+      fetchDocuments();
+    } catch (err: any) {
+      console.error('Error deleting document:', err);
+      setError(err.message);
     }
   };
-
-  const formatFileSize = (bytes: number | null): string => {
-    if (!bytes) return '0 B';
-    
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
-  };
-
-  const getFileIcon = (fileType: string | null): JSX.Element => {
-    if (fileType?.startsWith('image/')) {
-      return <File className="h-10 w-10 text-[#0485ea]" />;
-    } else if (fileType?.includes('pdf')) {
-      return <FileText className="h-10 w-10 text-[#0485ea]" />;
-    } else {
-      return <File className="h-10 w-10 text-[#0485ea]" />;
-    }
-  };
-
-  if (showUploadForm) {
-    return (
-      <Card className={isMobile ? "px-2" : ""}>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Upload Document</CardTitle>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowUploadForm(false)}
-            size="sm"
-          >
-            Cancel
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <EnhancedDocumentUpload
-            entityType="ESTIMATE"
-            entityId={estimateId}
-            onSuccess={handleUploadSuccess}
-            onCancel={() => setShowUploadForm(false)}
-          />
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
-    <Card className={isMobile ? "px-2" : ""}>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Related Documents</CardTitle>
-        {estimateId && (
-          <Button 
-            onClick={() => setShowUploadForm(true)}
-            size="sm"
-            className="bg-[#0485ea] hover:bg-[#0373ce]"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Document
-          </Button>
-        )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Documents</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0485ea]"></div>
+        <div className="mb-6">
+          <EnhancedDocumentUpload 
+            entityType="ESTIMATE"
+            entityId={estimateId}
+            onSuccess={handleDocumentUploadSuccess}
+          />
+        </div>
+
+        {loading ? (
+          <div className="text-center py-4">Loading documents...</div>
+        ) : error ? (
+          <div className="text-center py-4 text-red-500">
+            Error loading documents: {error}
           </div>
         ) : documents.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
-            No documents attached to this estimate.
+            No documents uploaded for this estimate.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {documents.map((doc) => (
-              <div 
-                key={doc.document_id} 
-                className={cn(
-                  "flex items-start space-x-4 p-4 rounded-md",
-                  "border border-gray-200 hover:bg-gray-50 transition-colors"
-                )}
-              >
-                {getFileIcon(doc.file_type)}
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm">{doc.file_name}</h4>
-                  <div className="flex mt-1 text-xs text-muted-foreground">
-                    <span>{formatFileSize(doc.file_size)}</span>
-                    <span className="mx-2">•</span>
-                    <span>{new Date(doc.created_at).toLocaleDateString()}</span>
-                    {doc.category && (
-                      <>
-                        <span className="mx-2">•</span>
-                        <span className="capitalize">{doc.category}</span>
-                      </>
+              <div key={doc.document_id} className="border rounded-lg p-3 flex flex-col">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center">
+                    {doc.file_type?.includes('image') ? (
+                      <ImageIcon className="h-5 w-5 mr-2 text-blue-500" />
+                    ) : (
+                      <FileIcon className="h-5 w-5 mr-2 text-gray-500" />
                     )}
+                    <span className="font-medium truncate max-w-[180px]" title={doc.file_name}>
+                      {doc.file_name}
+                    </span>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleDeleteDocument(doc.document_id)}
+                  >
+                    <XCircleIcon className="h-4 w-4 text-red-500" />
+                  </Button>
                 </div>
-                <div className="flex space-x-1">
-                  <a 
-                    href={doc.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[#0485ea] hover:text-[#0373ce]"
-                  >
-                    <Button variant="ghost" size="icon">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </a>
+                
+                <div className="mt-2 flex-grow">
+                  {doc.file_type?.includes('image') && doc.url ? (
+                    <div className="cursor-pointer" onClick={() => handleViewDocument(doc.url!)}>
+                      <img
+                        src={doc.url}
+                        alt={doc.file_name}
+                        className="w-full h-24 object-cover rounded"
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 mb-2">
+                      {doc.file_type || 'Unknown file type'}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-2">
                   <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => handleDeleteDocument(doc.document_id, doc.storage_path)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => doc.url && handleViewDocument(doc.url)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    View Document
                   </Button>
                 </div>
               </div>

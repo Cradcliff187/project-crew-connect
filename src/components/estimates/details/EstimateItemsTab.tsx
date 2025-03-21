@@ -10,7 +10,7 @@ interface EstimateItemsTabProps {
   itemDocuments?: Record<string, Document[]>;
 }
 
-const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items, itemDocuments }) => {
+const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items, itemDocuments = {} }) => {
   // Calculate the subtotal, which is the sum of all item total prices
   const subtotal = items.reduce((acc, item) => acc + item.total_price, 0);
   

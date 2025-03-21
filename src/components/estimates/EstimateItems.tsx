@@ -1,98 +1,78 @@
 
 import React from 'react';
-import { FileText, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Document } from '@/components/documents/schemas/documentSchema';
+import { EstimateItem } from './types/estimateTypes';
+import { FileIcon, LinkIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface EstimateItemsProps {
-  items: {
-    id: string;
-    description: string;
-    quantity: number;
-    unit_price: number;
-    total_price: number;
-    item_type?: string;
-    document_id?: string;
-  }[];
+  items: EstimateItem[];
   itemDocuments?: Record<string, Document[]>;
 }
 
 const EstimateItems: React.FC<EstimateItemsProps> = ({ items, itemDocuments = {} }) => {
-  // Helper function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  // Helper to get item type display text
-  const getItemTypeDisplay = (type?: string) => {
-    switch (type) {
-      case 'labor':
-        return 'Labor';
-      case 'vendor':
-        return 'Material';
-      case 'subcontractor':
-        return 'Subcontractor';
-      default:
-        return 'Other';
-    }
+  const handleOpenDocument = (url: string) => {
+    window.open(url, '_blank');
   };
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-4 py-2 text-left">Description</th>
-              <th className="px-4 py-2 text-left">Type</th>
-              <th className="px-4 py-2 text-right">Quantity</th>
-              <th className="px-4 py-2 text-right">Unit Price</th>
-              <th className="px-4 py-2 text-right">Total</th>
-              <th className="px-4 py-2 text-center">Documents</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="border-b">
-                <td className="px-4 py-3">{item.description}</td>
-                <td className="px-4 py-3">{getItemTypeDisplay(item.item_type)}</td>
-                <td className="px-4 py-3 text-right">{item.quantity}</td>
-                <td className="px-4 py-3 text-right">{formatCurrency(item.unit_price)}</td>
-                <td className="px-4 py-3 text-right">{formatCurrency(item.total_price)}</td>
-                <td className="px-4 py-3 text-center">
-                  {itemDocuments[item.id] && itemDocuments[item.id].length > 0 ? (
-                    <div className="flex justify-center">
-                      {itemDocuments[item.id].map((doc) => (
-                        <a 
-                          key={doc.document_id}
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={doc.file_name}
-                        >
-                          <Button variant="ghost" size="sm" className="text-[#0485ea]">
-                            <FileText className="h-4 w-4 mr-1" />
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </a>
-                      ))}
-                    </div>
-                  ) : item.document_id ? (
-                    <div className="flex justify-center">
-                      <Button variant="ghost" size="sm" className="text-[#0485ea]" disabled>
-                        <FileText className="h-4 w-4" />
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Description</TableHead>
+            <TableHead className="w-[100px] text-right">Quantity</TableHead>
+            <TableHead className="w-[120px] text-right">Unit Price</TableHead>
+            <TableHead className="w-[120px] text-right">Total</TableHead>
+            <TableHead className="w-[120px] text-center">Type</TableHead>
+            <TableHead className="w-[100px] text-center">Attachments</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell className="font-medium">{item.description}</TableCell>
+              <TableCell className="text-right">{item.quantity}</TableCell>
+              <TableCell className="text-right">
+                ${item.unit_price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </TableCell>
+              <TableCell className="text-right">
+                ${item.total_price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </TableCell>
+              <TableCell className="text-center">
+                <span className="capitalize">{item.item_type || 'labor'}</span>
+              </TableCell>
+              <TableCell className="text-center">
+                {itemDocuments[item.id] && itemDocuments[item.id].length > 0 ? (
+                  <div className="flex justify-center space-x-1">
+                    {itemDocuments[item.id].map((doc) => (
+                      <Button 
+                        key={doc.document_id} 
+                        variant="ghost" 
+                        size="sm"
+                        title={doc.file_name}
+                        onClick={() => doc.url && handleOpenDocument(doc.url)}
+                        className="p-1"
+                      >
+                        {doc.file_type?.includes('image') ? (
+                          <img 
+                            src={doc.url} 
+                            alt={doc.file_name} 
+                            className="w-6 h-6 object-cover rounded" 
+                          />
+                        ) : (
+                          doc.url ? <LinkIcon size={16} /> : <FileIcon size={16} />
+                        )}
                       </Button>
-                    </div>
-                  ) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
