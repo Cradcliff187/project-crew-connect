@@ -1,12 +1,10 @@
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderMaterial } from '@/types/workOrder';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MaterialReceiptUpload, MaterialTableRow } from './components';
+import { MaterialReceiptUpload, MaterialsTableContent } from './components';
 
 interface MaterialsTableProps {
   materials: WorkOrderMaterial[];
@@ -70,31 +68,12 @@ const MaterialsTable = ({
           No materials have been added to this work order yet.
         </div>
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Material</TableHead>
-                <TableHead>Vendor</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Unit Price</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {materials.map((material) => (
-                <MaterialTableRow
-                  key={material.id}
-                  material={material}
-                  vendorName={getVendorName(material.vendor_id)}
-                  onDelete={onDelete}
-                  onReceiptClick={handleOpenReceiptUpload}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <MaterialsTableContent 
+          materials={materials}
+          vendors={vendors}
+          onDelete={onDelete}
+          onReceiptClick={handleOpenReceiptUpload}
+        />
       )}
 
       {/* Material Receipt Upload Dialog */}
