@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { WorkOrderMaterial } from '@/types/workOrder';
@@ -23,6 +22,8 @@ const MaterialReceiptUpload: React.FC<MaterialReceiptUploadProps> = ({
   onSuccess,
   onCancel
 }) => {
+  const [isUploading, setIsUploading] = useState(false);
+
   // Prefill data for receipt upload
   const prefillData = {
     amount: material.total_price,
@@ -30,8 +31,15 @@ const MaterialReceiptUpload: React.FC<MaterialReceiptUploadProps> = ({
     materialName: material.material_name
   };
 
+  console.log("MaterialReceiptUpload component rendering with:", { 
+    workOrderId, 
+    materialId: material.id,
+    prefillData 
+  });
+
   // Handle successful upload
   const handleSuccess = (documentId?: string) => {
+    console.log("Document upload success, got ID:", documentId);
     if (documentId) {
       onSuccess(documentId);
     } else {

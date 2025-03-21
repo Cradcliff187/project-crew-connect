@@ -73,6 +73,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     if (!pendingMaterial) return;
     
     try {
+      console.log("Adding material and then showing receipt upload dialog");
       // Create the material
       const newMaterial = await handleAddMaterial(pendingMaterial);
       
@@ -80,6 +81,9 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
       if (newMaterial) {
         setSelectedMaterial(newMaterial);
         setShowReceiptUpload(true);
+        console.log("Setting showReceiptUpload to true, selectedMaterial:", newMaterial);
+      } else {
+        console.log("No material returned from handleAddMaterial");
       }
       
       // Close the confirmation dialog
@@ -113,12 +117,14 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   
   // Handle receipt button click
   const handleReceiptClick = (material: WorkOrderMaterial) => {
+    console.log("Receipt button clicked for material:", material);
     setSelectedMaterial(material);
     setShowReceiptUpload(true);
   };
   
   // Handle receipt uploaded
   const handleReceiptAttached = async (materialId: string, documentId: string) => {
+    console.log("Receipt attached. Material ID:", materialId, "Document ID:", documentId);
     await handleReceiptUploaded(materialId, documentId);
     setShowReceiptUpload(false);
     
@@ -173,9 +179,8 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
       />
       
       {/* Material Receipt Upload Dialog */}
-      {selectedMaterial && (
-        <div className={showReceiptUpload ? "block" : "hidden"}>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowReceiptUpload(false)} />
+      {selectedMaterial && showReceiptUpload && (
+        <div className="fixed inset-0 bg-black/50 z-40">
           <div className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] bg-white p-6 shadow-lg rounded-lg">
             <h3 className="text-lg font-semibold mb-4">Upload Receipt</h3>
             <MaterialReceiptUpload
