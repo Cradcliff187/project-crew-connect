@@ -45,14 +45,15 @@ export const useStatusUpdate = ({
     try {
       console.log(`Updating project status from ${currentStatus} to ${newStatus}`);
       
-      // Use the projectId directly (don't change formatting)
+      // Ensure we're using the correct headers by being explicit
       const { error } = await supabase
         .from('projects')
         .update({ 
           status: newStatus, // Keep original case for the database
           updated_at: new Date().toISOString()
         })
-        .eq('projectid', projectId);
+        .eq('projectid', projectId)
+        .select();
       
       if (error) {
         throw error;
@@ -74,7 +75,7 @@ export const useStatusUpdate = ({
         if (error.message.includes('Invalid status transition')) {
           errorMessage = `Status change not allowed: ${error.message}`;
         } else if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
-          errorMessage = 'Your session may have expired. Please refresh the page and try again.';
+          errorMessage = 'Authentication error. Your session may have expired. Please refresh the page and try again.';
         } else {
           errorMessage = error.message;
         }

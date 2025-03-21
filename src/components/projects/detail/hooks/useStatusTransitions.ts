@@ -45,6 +45,7 @@ export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProp
 
       if (error) {
         console.error('Error fetching transitions:', error);
+        // Fall back to static transitions on error
         useStaticTransitions(normalizedStatus);
         return;
       }
