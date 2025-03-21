@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -23,11 +22,27 @@ export const uploadItemDocument = async (
     
     console.log(`Uploading file for estimate ${estimateId}, item ${itemIndex}: ${fileName}`);
     
+    // First, verify the bucket exists
+    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+    
+    if (bucketError) {
+      console.error('Error accessing storage buckets:', bucketError);
+      return null;
+    }
+    
+    const bucketExists = buckets.some(bucket => bucket.name === 'construction_documents');
+    
+    if (!bucketExists) {
+      console.error('The construction_documents bucket does not exist. Please create it in Supabase.');
+      return null;
+    }
+    
     // Upload file to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('construction_documents')
       .upload(filePath, file, {
-        contentType: file.type // Explicitly set the content type to match the file
+        contentType: file.type, // Explicitly set the content type to match the file
+        cacheControl: '3600'
       });
       
     if (uploadError) {

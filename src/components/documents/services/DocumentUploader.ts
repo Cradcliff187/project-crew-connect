@@ -18,6 +18,22 @@ export const uploadDocument = async (
     
     const { files, metadata } = data;
     
+    // First, verify the bucket exists
+    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+    
+    if (bucketError) {
+      console.error('Error accessing storage buckets:', bucketError);
+      throw new Error('Unable to access storage buckets. Please check your permissions.');
+    }
+    
+    const bucketName = 'construction_documents';
+    const bucketExists = buckets.some(bucket => bucket.name === bucketName);
+    
+    if (!bucketExists) {
+      console.error(`The ${bucketName} bucket does not exist. Please create it in Supabase.`);
+      throw new Error(`Storage bucket '${bucketName}' not found. Please contact the administrator.`);
+    }
+    
     // We'll handle multiple files if they're provided
     for (const file of files) {
       // Create a unique file name using timestamp and original name
@@ -26,15 +42,15 @@ export const uploadDocument = async (
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       const filePath = `${metadata.entityType.toLowerCase()}/${metadata.entityId || 'general'}/${fileName}`;
       
-      // Using the correct bucket name
-      const bucketName = 'construction_documents';
-      
       console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
       
       // Upload file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          contentType: file.type,
+          cacheControl: '3600'
+        });
         
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
