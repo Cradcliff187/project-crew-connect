@@ -6,3 +6,4 @@ export { default as TotalPriceDisplay } from './TotalPriceDisplay';
 export { default as MaterialFormFields } from './MaterialFormFields';
 export { default as ReceiptButton } from './ReceiptButton';
 export { default as MaterialsTableContent } from './MaterialsTableContent';
+export { default as ReceiptConfirmationDialog } from './ReceiptConfirmationDialog';

@@ -3,6 +3,8 @@ import { AddMaterialForm, MaterialsTable } from './materials';
 import { useMaterials, useVendors } from './materials/hooks';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { ReceiptConfirmationDialog } from './materials/components';
 
 interface WorkOrderMaterialsProps {
   workOrderId: string;
@@ -24,6 +26,19 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   
   const { vendors, loading: vendorsLoading, error: vendorsError, fetchVendors } = useVendors();
   
+  // State for receipt confirmation dialog
+  const [showReceiptConfirmation, setShowReceiptConfirmation] = useState(false);
+  const [pendingMaterial, setPendingMaterial] = useState<{
+    materialName: string;
+    quantity: number;
+    unitPrice: number;
+    vendorId: string | null;
+  } | null>(null);
+
+  // State for receipt upload dialog
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+  
   // Handle material added
   const handleMaterialAdded = () => {
     // Refresh materials list
@@ -41,38 +56,80 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     fetchVendors();
   };
   
-  // Handle material submit wrapped to add the notification
-  const handleSubmit = async (material: {
+  // Handle prompt for receipt upload
+  const handlePromptForReceipt = (material: {
     materialName: string;
     quantity: number;
     unitPrice: number;
     vendorId: string | null;
   }) => {
+    setPendingMaterial(material);
+    setShowReceiptConfirmation(true);
+  };
+  
+  // Handle confirmation to add material with receipt
+  const handleConfirmWithReceipt = async () => {
+    if (!pendingMaterial) return;
+    
     try {
-      await handleAddMaterial(material);
+      // Create the material
+      const newMaterial = await handleAddMaterial(pendingMaterial);
       
-      // Notify parent component if provided
+      // Show the receipt upload dialog for the new material
+      if (newMaterial) {
+        setSelectedMaterial(newMaterial);
+        setShowReceiptUpload(true);
+      }
+      
+      // Close the confirmation dialog
+      setShowReceiptConfirmation(false);
+      setPendingMaterial(null);
+      
+      // Refresh the materials list
       handleMaterialAdded();
     } catch (error) {
-      console.error("Error in handleSubmit:", error);
-      // Error is already handled in the handleAddMaterial function
+      console.error("Error in handleConfirmWithReceipt:", error);
     }
   };
   
-  // Handle delete wrapped to add the notification
-  const handleDeleteMaterial = async (id: string) => {
-    await handleDelete(id);
+  // Handle confirmation to add material without receipt
+  const handleConfirmWithoutReceipt = async () => {
+    if (!pendingMaterial) return;
     
-    // Notify parent component if provided
+    try {
+      await handleAddMaterial(pendingMaterial);
+      
+      // Close the confirmation dialog
+      setShowReceiptConfirmation(false);
+      setPendingMaterial(null);
+      
+      // Refresh the materials list
+      handleMaterialAdded();
+    } catch (error) {
+      console.error("Error in handleConfirmWithoutReceipt:", error);
+    }
+  };
+  
+  // Handle receipt button click
+  const handleReceiptClick = (material: any) => {
+    setSelectedMaterial(material);
+    setShowReceiptUpload(true);
+  };
+  
+  // Handle receipt uploaded
+  const handleReceiptAttached = async (materialId: string, documentId: string) => {
+    await handleReceiptUploaded(materialId, documentId);
+    setShowReceiptUpload(false);
+    
+    // Refresh the materials list
     handleMaterialAdded();
   };
   
-  // Handle receipt uploaded wrapped to add the notification
-  const handleReceiptAttached = async (materialId: string, documentId: string) => {
-    await handleReceiptUploaded(materialId, documentId);
-    
-    // Notify parent component if provided
-    handleMaterialAdded();
+  // Find vendor name by ID
+  const getVendorName = (vendorId: string | null) => {
+    if (!vendorId) return "";
+    const vendor = vendors.find(v => v.vendorid === vendorId);
+    return vendor ? vendor.vendorname : "Unknown Vendor";
   };
   
   return (
@@ -88,20 +145,49 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
       
       <AddMaterialForm 
         vendors={vendors}
-        onSubmit={handleSubmit}
+        onSubmit={handleAddMaterial}
         submitting={submitting}
         onVendorAdded={handleVendorAdded}
+        onPromptForReceipt={handlePromptForReceipt}
       />
       
       <MaterialsTable 
         materials={materials}
         loading={loading}
         vendors={vendors}
-        onDelete={handleDeleteMaterial}
+        onDelete={handleDelete}
         totalCost={totalMaterialsCost}
         workOrderId={workOrderId}
         onReceiptUploaded={handleReceiptAttached}
+        onReceiptClick={handleReceiptClick}
       />
+      
+      {/* Receipt Confirmation Dialog */}
+      <ReceiptConfirmationDialog
+        open={showReceiptConfirmation}
+        onOpenChange={setShowReceiptConfirmation}
+        materialData={pendingMaterial}
+        vendorName={pendingMaterial?.vendorId ? getVendorName(pendingMaterial.vendorId) : ""}
+        onConfirmWithReceipt={handleConfirmWithReceipt}
+        onConfirmWithoutReceipt={handleConfirmWithoutReceipt}
+      />
+      
+      {/* Material Receipt Upload Dialog */}
+      {selectedMaterial && (
+        <div className={showReceiptUpload ? "block" : "hidden"}>
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowReceiptUpload(false)} />
+          <div className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] bg-white p-6 shadow-lg rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">Upload Receipt</h3>
+            <MaterialReceiptUpload
+              workOrderId={workOrderId}
+              material={selectedMaterial}
+              vendorName={getVendorName(selectedMaterial.vendor_id)}
+              onSuccess={(documentId) => handleReceiptAttached(selectedMaterial.id, documentId)}
+              onCancel={() => setShowReceiptUpload(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

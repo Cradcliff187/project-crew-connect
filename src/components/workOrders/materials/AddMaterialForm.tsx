@@ -17,13 +17,20 @@ interface AddMaterialFormProps {
   }) => Promise<void>;
   submitting: boolean;
   onVendorAdded?: () => void;
+  onPromptForReceipt: (material: {
+    materialName: string;
+    quantity: number;
+    unitPrice: number;
+    vendorId: string | null;
+  }) => void;
 }
 
 const AddMaterialForm = ({ 
   vendors, 
   onSubmit, 
   submitting,
-  onVendorAdded
+  onVendorAdded,
+  onPromptForReceipt
 }: AddMaterialFormProps) => {
   // Form state
   const [materialName, setMaterialName] = useState('');
@@ -38,18 +45,15 @@ const AddMaterialForm = ({
     const qtyValue = parseFloat(quantity);
     const priceValue = parseFloat(unitPrice);
     
-    await onSubmit({
+    const materialData = {
       materialName,
       quantity: qtyValue,
       unitPrice: priceValue,
       vendorId: selectedVendor
-    });
+    };
     
-    // Reset form
-    setMaterialName('');
-    setQuantity('1');
-    setUnitPrice('');
-    setSelectedVendor(null);
+    // Prompt for receipt attachment
+    onPromptForReceipt(materialData);
   };
 
   const handleVendorAdded = () => {
@@ -98,7 +102,7 @@ const AddMaterialForm = ({
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Add Material
+                Submit
               </>
             )}
           </Button>

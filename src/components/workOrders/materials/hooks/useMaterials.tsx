@@ -59,7 +59,7 @@ export function useMaterials(workOrderId: string) {
         description: 'Please enter a material name.',
         variant: 'destructive',
       });
-      return;
+      return null;
     }
     
     if (material.quantity <= 0 || material.unitPrice <= 0) {
@@ -68,7 +68,7 @@ export function useMaterials(workOrderId: string) {
         description: 'Quantity and price must be greater than zero.',
         variant: 'destructive',
       });
-      return;
+      return null;
     }
     
     const totalPrice = material.quantity * material.unitPrice;
@@ -108,8 +108,8 @@ export function useMaterials(workOrderId: string) {
         description: 'Material has been added successfully.',
       });
       
-      // Refresh materials list
-      fetchMaterials();
+      // Return the newly created material
+      return data[0];
     } catch (error: any) {
       console.error('Error adding material:', error);
       toast({
@@ -117,6 +117,7 @@ export function useMaterials(workOrderId: string) {
         description: 'Failed to add material: ' + error.message,
         variant: 'destructive',
       });
+      return null;
     } finally {
       setSubmitting(false);
     }
