@@ -328,6 +328,8 @@ export type Database = {
           tags: string[] | null
           updated_at: string
           uploaded_by: string | null
+          vendor_id: string | null
+          vendor_type: string | null
           version: number | null
         }
         Insert: {
@@ -347,6 +349,8 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           uploaded_by?: string | null
+          vendor_id?: string | null
+          vendor_type?: string | null
           version?: number | null
         }
         Update: {
@@ -366,6 +370,8 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string
           uploaded_by?: string | null
+          vendor_id?: string | null
+          vendor_type?: string | null
           version?: number | null
         }
         Relationships: []

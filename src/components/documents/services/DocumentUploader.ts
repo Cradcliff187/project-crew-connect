@@ -51,26 +51,30 @@ export const uploadDocument = async (
       console.log('Public URL generated:', publicUrl);
       
       // Now insert document metadata to Supabase
+      const documentData = {
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        storage_path: filePath,
+        entity_type: metadata.entityType,
+        entity_id: metadata.entityId || null,
+        tags: metadata.tags || [],
+        // Additional metadata fields
+        category: metadata.category,
+        amount: metadata.amount || null,
+        expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
+        version: metadata.version || 1,
+        is_expense: metadata.isExpense || false,
+        notes: metadata.notes || null,
+        vendor_id: metadata.vendorId || null,
+        vendor_type: metadata.vendorType || null,
+      };
+      
+      console.log('Inserting document metadata:', documentData);
+      
       const { data: insertedData, error: insertError } = await supabase
         .from('documents')
-        .insert({
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          storage_path: filePath,
-          entity_type: metadata.entityType,
-          entity_id: metadata.entityId || null,
-          tags: metadata.tags,
-          // Additional metadata fields
-          category: metadata.category,
-          amount: metadata.amount,
-          expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
-          version: metadata.version,
-          is_expense: metadata.isExpense,
-          notes: metadata.notes,
-          vendor_id: metadata.vendorId || null,
-          vendor_type: metadata.vendorType || null,
-        })
+        .insert(documentData)
         .select('document_id')
         .single();
         
