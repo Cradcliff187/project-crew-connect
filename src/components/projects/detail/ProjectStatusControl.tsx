@@ -13,7 +13,7 @@ import { mapStatusToStatusBadge } from '../ProjectsTable';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProjectDetails } from '../ProjectDetails';
-import { statusOptions } from '../ProjectConstants';
+import { statusOptions, statusTransitions } from '../ProjectConstants';
 
 interface ProjectStatusControlProps {
   project: ProjectDetails;
@@ -37,78 +37,63 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
   // Create a memoized fetchAvailableTransitions function
   const fetchAvailableTransitions = useCallback(async () => {
     try {
-      console.log(`Fetching transitions for project status: ${project.status.toLowerCase()}`);
+      const currentStatus = project.status.toLowerCase();
+      console.log(`Fetching transitions for project status: ${currentStatus}`);
       
-      // Use the get_next_possible_transitions RPC function
+      // First try to get transitions from the database
       const { data, error } = await supabase
-        .rpc('get_next_possible_transitions', {
-          entity_type_param: 'PROJECT',
-          current_status_param: project.status.toLowerCase()
-        });
+        .from('status_transitions')
+        .select('to_status, label, description')
+        .eq('entity_type', 'PROJECT')
+        .eq('from_status', currentStatus);
 
       if (error) {
         console.error('Error fetching transitions:', error);
-        // Fallback to static transitions based on current status
-        const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
-        setAvailableStatuses(fallbackTransitions);
-        
-        toast({
-          title: 'Warning',
-          description: `Using fallback transitions. Database error: ${error.message}`,
-          variant: 'destructive',
-        });
-      } else if (data && data.length > 0) {
-        console.log('Transitions fetched from database:', data);
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        console.log('Transitions fetched successfully:', data);
         const formattedTransitions = data.map((transition: any) => ({
           status: transition.to_status,
           label: transition.label || statusLabels[transition.to_status] || transition.to_status,
         }));
         setAvailableStatuses(formattedTransitions);
       } else {
-        // No transitions found, use fallback
-        console.warn('No status transitions found in database for status:', project.status);
-        const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
-        setAvailableStatuses(fallbackTransitions);
-        
-        toast({
-          title: 'Warning',
-          description: `No transitions found for status: ${project.status}. Using defaults.`,
-        });
+        console.warn('No status transitions found in database for status:', currentStatus);
+        // Fall back to static transitions
+        useStaticTransitions(currentStatus);
       }
     } catch (error) {
-      console.error('Error in transition fetch:', error);
-      // Fallback to static transitions
-      const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
-      setAvailableStatuses(fallbackTransitions);
+      console.error('Failed to fetch transitions:', error);
+      // Fall back to static transitions on error
+      useStaticTransitions(project.status.toLowerCase());
     }
-  }, [project.status, toast]);
+  }, [project.status]);
   
-  // Fetch available status transitions from Supabase
-  useEffect(() => {
-    fetchAvailableTransitions();
-  }, [project.status, fetchAvailableTransitions]);
-  
-  // Fallback transitions if database call fails
-  const getStaticTransitions = (currentStatus: string): {status: string, label: string}[] => {
-    // These are fallback transitions if the database call fails
-    // They should match what's defined in the database and ProjectConstants.ts
-    const staticTransitions: Record<string, string[]> = {
-      new: ['active', 'cancelled', 'pending'],
-      active: ['on_hold', 'cancelled', 'completed'], 
-      on_hold: ['active', 'completed', 'cancelled'],
-      completed: ['active'],
-      cancelled: ['active'],
-      pending: ['active', 'cancelled'],
-    };
+  // Helper function to use static transitions from ProjectConstants
+  const useStaticTransitions = (currentStatus: string) => {
+    const fallbackTransitions = statusTransitions[currentStatus] || [];
+    console.log('Using static fallback transitions:', fallbackTransitions);
     
-    const current = currentStatus.toLowerCase();
-    const available = staticTransitions[current] || [];
-    
-    return available.map(status => ({
+    const formattedTransitions = fallbackTransitions.map(status => ({
       status,
       label: statusLabels[status] || status.charAt(0).toUpperCase() + status.slice(1)
     }));
+    
+    setAvailableStatuses(formattedTransitions);
+    
+    toast({
+      title: 'Using default transitions',
+      description: 'Could not fetch transitions from database, using defaults.',
+      variant: 'default',
+    });
   };
+  
+  // Fetch available status transitions when the project status changes
+  useEffect(() => {
+    fetchAvailableTransitions();
+  }, [project.status, fetchAvailableTransitions]);
   
   const handleStatusChange = async (newStatus: string) => {
     if (project.status === newStatus) {
@@ -145,13 +130,16 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
     } catch (error: any) {
       console.error('Error updating project status:', error);
       
-      // Provide a more helpful error message
       let errorMessage = 'Failed to update project status. Please try again.';
       
-      if (error.message && error.message.includes('Invalid status transition')) {
-        errorMessage = `Status change not allowed: ${error.message}. Try an intermediate status first.`;
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error.message) {
+        if (error.message.includes('Invalid status transition')) {
+          errorMessage = `Status change not allowed: ${error.message}`;
+        } else if (error.message.includes('No API key found')) {
+          errorMessage = 'Authentication error. Please refresh the page and try again.';
+        } else {
+          errorMessage = error.message;
+        }
       }
       
       toast({
@@ -160,7 +148,7 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
         variant: 'destructive',
       });
       
-      // Refresh transitions after error to ensure we have the latest data
+      // Refresh transitions after error
       fetchAvailableTransitions();
     } finally {
       setUpdating(false);
