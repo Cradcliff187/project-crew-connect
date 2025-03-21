@@ -4,21 +4,25 @@ import React from 'react';
 
 // Function to get document icon based on file type
 export const getDocumentIcon = (fileType: string | null) => {
-  if (!fileType) return <FileType className="h-5 w-5 text-[#0485ea]" />;
+  // Create a function that returns a FileType component with the specified color
+  const createFileTypeIcon = (color: string) => 
+    React.createElement(FileType, { className: `h-5 w-5 ${color}` });
+  
+  if (!fileType) return createFileTypeIcon("text-[#0485ea]");
   
   if (fileType.includes('pdf')) {
-    return <FileType className="h-5 w-5 text-red-500" />;
+    return createFileTypeIcon("text-red-500");
   } else if (fileType.includes('image')) {
-    return <FileType className="h-5 w-5 text-green-500" />;
+    return createFileTypeIcon("text-green-500");
   } else if (fileType.includes('word') || fileType.includes('document')) {
-    return <FileType className="h-5 w-5 text-blue-500" />;
+    return createFileTypeIcon("text-blue-500");
   } else if (fileType.includes('excel') || fileType.includes('sheet')) {
-    return <FileType className="h-5 w-5 text-emerald-500" />;
+    return createFileTypeIcon("text-emerald-500");
   } else if (fileType.includes('zip') || fileType.includes('archive')) {
-    return <FileType className="h-5 w-5 text-amber-500" />;
+    return createFileTypeIcon("text-amber-500");
   }
   
-  return <FileType className="h-5 w-5 text-[#0485ea]" />;
+  return createFileTypeIcon("text-[#0485ea]");
 };
 
 // Format file size for display
