@@ -1,32 +1,24 @@
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Package, Clock, Plus, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrder } from '@/types/workOrder';
 import { formatCurrency } from '@/lib/utils';
-import { useQueryClient } from '@tanstack/react-query';
 
 interface WorkOrderCostSummaryProps {
   workOrder: WorkOrder;
-  onAddTimeLog?: () => void;
-  onViewMaterials?: () => void;
 }
 
-const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: WorkOrderCostSummaryProps) => {
+const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
   const [materialsTotal, setMaterialsTotal] = useState<number | null>(null);
   const [laborTotal, setLaborTotal] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeLogCount, setTimeLogCount] = useState(0);
-  const [materialCount, setMaterialCount] = useState(0);
-  const queryClient = useQueryClient();
   
   const fetchCostData = async () => {
     setIsLoading(true);
     try {
-      // Fetch materials total and count
+      // Fetch materials total
       const { data: materialsData, error: materialsError } = await supabase
         .from('work_order_materials')
         .select('total_price')
@@ -37,10 +29,9 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
       } else {
         const total = (materialsData || []).reduce((sum, item) => sum + (item.total_price || 0), 0);
         setMaterialsTotal(total);
-        setMaterialCount(materialsData?.length || 0);
       }
       
-      // Fetch labor total and time log count
+      // Fetch labor total
       const { data: laborData, error: laborError } = await supabase
         .from('work_order_time_logs')
         .select('hours_worked')
@@ -52,7 +43,6 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
         // Calculate based on a default rate of $75/hour as per database function
         const hours = (laborData || []).reduce((sum, item) => sum + (item.hours_worked || 0), 0);
         setLaborTotal(hours * 75);
-        setTimeLogCount(laborData?.length || 0);
       }
     } catch (error) {
       console.error('Error fetching cost data:', error);
@@ -64,20 +54,6 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
   useEffect(() => {
     fetchCostData();
   }, [workOrder.work_order_id]);
-  
-  // Handle the button click to log time
-  const handleLogTimeClick = () => {
-    if (onAddTimeLog) {
-      onAddTimeLog();
-    }
-  };
-  
-  // Handle the button click to view materials
-  const handleViewMaterialsClick = () => {
-    if (onViewMaterials) {
-      onViewMaterials();
-    }
-  };
   
   return (
     <Card>
@@ -91,18 +67,12 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
         ) : (
           <div className="space-y-4">
             <div className="flex justify-between items-center pb-2 border-b">
-              <div className="flex items-center">
-                <Package className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>Materials Cost</span>
-              </div>
+              <span className="text-muted-foreground">Materials Cost</span>
               <span className="font-medium">{formatCurrency(materialsTotal || 0)}</span>
             </div>
             
             <div className="flex justify-between items-center pb-2 border-b">
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>Labor Cost ({workOrder.actual_hours || 0} hours)</span>
-              </div>
+              <span className="text-muted-foreground">Labor Cost ({workOrder.actual_hours || 0} hours)</span>
               <span className="font-medium">{formatCurrency(laborTotal || 0)}</span>
             </div>
             
@@ -112,60 +82,6 @@ const WorkOrderCostSummary = ({ workOrder, onAddTimeLog, onViewMaterials }: Work
             </div>
           </div>
         )}
-        
-        <Separator className="my-4" />
-        
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Time Logs</h3>
-          
-          {/* Button to add time log */}
-          <Button 
-            variant="outline" 
-            className="text-[#0485ea] mb-3"
-            onClick={handleLogTimeClick}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Log Time
-          </Button>
-          
-          {/* Time logs summary */}
-          <div className="text-center py-4 border rounded-md">
-            <Clock className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
-            <p className="text-muted-foreground">
-              {timeLogCount > 0 
-                ? `${timeLogCount} time ${timeLogCount === 1 ? 'entry' : 'entries'} recorded` 
-                : 'No time logs recorded yet'}
-            </p>
-            <p className="text-sm mt-1">Total: {workOrder.actual_hours || 0} hours</p>
-          </div>
-        </div>
-
-        <Separator className="my-4" />
-        
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Materials</h3>
-          
-          {/* Button to view materials */}
-          <Button 
-            variant="outline" 
-            className="text-[#0485ea] mb-3"
-            onClick={handleViewMaterialsClick}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            {materialCount > 0 ? 'View Materials' : 'Add Materials'}
-          </Button>
-          
-          {/* Materials summary */}
-          <div className="text-center py-4 border rounded-md">
-            <Package className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
-            <p className="text-muted-foreground">
-              {materialCount > 0 
-                ? `${materialCount} material ${materialCount === 1 ? 'item' : 'items'} added` 
-                : 'No materials added yet'}
-            </p>
-            <p className="text-sm mt-1">Total: {formatCurrency(materialsTotal || 0)}</p>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

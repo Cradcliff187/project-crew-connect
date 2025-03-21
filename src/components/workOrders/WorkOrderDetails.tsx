@@ -30,16 +30,6 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
   // State to manage active tab
   const [activeTab, setActiveTab] = useState("overview");
   
-  // Handler for the Log Time button click
-  const handleAddTimeLog = () => {
-    setActiveTab("time");
-  };
-  
-  // Handler for the Add/View Materials button click
-  const handleMaterialsClick = () => {
-    setActiveTab("materials");
-  };
-  
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -99,11 +89,7 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
               </Card>
             </div>
             <div>
-              <WorkOrderCostSummary 
-                workOrder={workOrder} 
-                onAddTimeLog={handleAddTimeLog}
-                onViewMaterials={handleMaterialsClick}
-              />
+              <WorkOrderCostSummary workOrder={workOrder} />
             </div>
           </div>
         </TabsContent>
