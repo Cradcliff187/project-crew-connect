@@ -7,9 +7,10 @@ import { EstimateItem } from '../types/estimateTypes';
 
 type EstimateItemsTabProps = {
   items: EstimateItem[];
+  estimateId?: string; // Making this optional so it doesn't break existing code
 };
 
-const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items }) => {
+const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items, estimateId }) => {
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + Number(item.total_price), 0);
   };
