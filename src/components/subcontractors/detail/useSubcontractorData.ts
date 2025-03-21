@@ -26,8 +26,9 @@ const useSubcontractorData = (subcontractorId: string | undefined) => {
     
     try {
       setLoading(true);
+      // The key fix: query the 'subcontractors' table (not 'subcontractors_new')
       const { data, error } = await supabase
-        .from('subcontractors_new')
+        .from('subcontractors')
         .select('*')
         .eq('subid', subcontractorId)
         .single();
