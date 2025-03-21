@@ -26,7 +26,7 @@ export const uploadItemDocument = async (
     
     const BUCKET_NAME = 'construction_documents';
     
-    // First, create the bucket if it doesn't exist
+    // Check if the bucket exists
     const { data: bucketExists, error: bucketCheckError } = await supabase.storage.getBucket(BUCKET_NAME);
     
     if (bucketCheckError && bucketCheckError.message.includes('does not exist')) {
@@ -44,28 +44,38 @@ export const uploadItemDocument = async (
       console.error('Error checking bucket:', bucketCheckError);
       return null;
     }
+
+    // Prepare file data using FormData to ensure correct content type
+    const formData = new FormData();
+    formData.append('file', file, file.name);
     
-    // Create a clean copy of the file to ensure no metadata issues
+    // Get correct upload URL
+    const { data: uploadUrl } = supabase.storage.from(BUCKET_NAME).getUploadUrl(filePath);
+    console.log('Upload URL:', uploadUrl);
+    
+    // Create a clean copy of the file with explicit blob
     const fileBlob = file.slice(0, file.size, file.type);
-    const cleanFile = new File([fileBlob], file.name, { type: file.type });
     
-    console.log('Uploading with content type:', cleanFile.type);
+    // Upload using fetch with explicit headers
+    const uploadResponse = await fetch(
+      `${supabase.storageUrl}/object/${BUCKET_NAME}/${filePath}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          // No Content-Type header here, let the browser set it with the file boundary
+        },
+        body: fileBlob
+      }
+    );
     
-    // Upload file to Supabase Storage with explicit options
-    const { error: uploadError, data: uploadData } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(filePath, cleanFile, {
-        contentType: cleanFile.type, // Explicitly set the content type
-        cacheControl: '3600',
-        upsert: false
-      });
-      
-    if (uploadError) {
-      console.error('Error uploading document:', uploadError);
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      console.error('Error uploading document:', errorData);
       return null;
     }
     
-    console.log('File upload successful:', uploadData?.path);
+    console.log('File upload successful');
     
     // Get the public URL
     const { data: { publicUrl } } = supabase.storage
@@ -94,7 +104,7 @@ export const uploadItemDocument = async (
       tags.push(itemData.item_type);
     }
     
-    // Also store document metadata in documents table
+    // Store document metadata in documents table
     const documentMetadata = {
       file_name: file.name,
       file_type: file.type,

@@ -49,27 +49,33 @@ export const uploadDocument = async (
       console.log(`Uploading file to ${BUCKET_NAME} bucket, path: ${filePath}`);
       console.log(`File type: ${file.type}, size: ${file.size} bytes`);
       
+      // Get correct upload URL
+      const { data: uploadUrl } = supabase.storage.from(BUCKET_NAME).getUploadUrl(filePath);
+      console.log('Upload URL:', uploadUrl);
+      
       // Create a clean copy of the file to ensure no metadata issues
       const fileBlob = file.slice(0, file.size, file.type);
-      const cleanFile = new File([fileBlob], file.name, { type: file.type });
       
-      console.log('Uploading with content type:', cleanFile.type);
+      // Upload using fetch with explicit headers
+      const uploadResponse = await fetch(
+        `${supabase.storageUrl}/object/${BUCKET_NAME}/${filePath}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            // No Content-Type header here, let the browser set it with the file boundary
+          },
+          body: fileBlob
+        }
+      );
       
-      // Upload file to Supabase Storage with explicit content type
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, cleanFile, {
-          contentType: cleanFile.type, // Explicitly set content type
-          cacheControl: '3600',
-          upsert: false // Ensure we don't overwrite existing files
-        });
-        
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw uploadError;
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        console.error('Storage upload error:', errorData);
+        throw new Error(`File upload failed: ${errorData.error || 'Unknown error'}`);
       }
       
-      console.log('File uploaded successfully:', uploadData);
+      console.log('File uploaded successfully');
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
