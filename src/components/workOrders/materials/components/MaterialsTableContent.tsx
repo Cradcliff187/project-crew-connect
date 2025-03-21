@@ -1,5 +1,5 @@
 
-import { Table, TableHeader, TableBody, TableHead, TableRow } from '@/components/ui/table';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { WorkOrderMaterial } from '@/types/workOrder';
 import { MaterialTableRow } from './';
 
