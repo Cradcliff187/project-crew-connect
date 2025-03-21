@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { StatusType } from '@/types/common';
 import React from 'react';
@@ -45,7 +44,10 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       case 'on-hold':
+      case 'on_hold':
         return 'bg-orange-100 text-orange-800';
+      case 'new':
+        return 'bg-blue-100 text-blue-800';
       case 'unknown':
       default:
         return 'bg-gray-100 text-gray-800';
@@ -53,8 +55,23 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   };
   
   const getStatusLabel = () => {
+    // Handle special cases
+    if (statusLower === 'on_hold' || statusLower === 'on-hold') {
+      return 'On Hold';
+    }
+    
     // Display original status with first letter capitalized
     if (safeStatus === 'unknown') return 'Unknown';
+    
+    // Convert snake_case to space-separated words with capitalized first letters
+    if (safeStatus.includes('_')) {
+      return safeStatus
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    }
+    
+    // Otherwise just capitalize first letter
     return safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1).toLowerCase();
   };
   

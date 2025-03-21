@@ -14,6 +14,7 @@ export type StatusType =
   | 'converted'
   | 'cancelled'
   | 'on-hold'
+  | 'on_hold'
   | 'qualified'
   | 'unknown'
   | 'potential'
@@ -21,6 +22,7 @@ export type StatusType =
   | 'sent'
   | 'rejected'
   | 'verified'
+  | 'new'
   // Added new status types to match SubcontractorStatusBadge usage
   | 'success'
   | 'info'
