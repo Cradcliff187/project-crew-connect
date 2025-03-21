@@ -417,36 +417,65 @@ export type Database = {
       }
       estimate_items: {
         Row: {
+          cost: number | null
           created_at: string
           description: string
           estimate_id: string
           id: string
+          item_type: string | null
+          markup_percentage: number | null
           quantity: number
+          subcontractor_id: string | null
           total_price: number
           unit_price: number
           updated_at: string
+          vendor_id: string | null
         }
         Insert: {
+          cost?: number | null
           created_at?: string
           description: string
           estimate_id: string
           id?: string
+          item_type?: string | null
+          markup_percentage?: number | null
           quantity?: number
+          subcontractor_id?: string | null
           total_price?: number
           unit_price?: number
           updated_at?: string
+          vendor_id?: string | null
         }
         Update: {
+          cost?: number | null
           created_at?: string
           description?: string
           estimate_id?: string
           id?: string
+          item_type?: string | null
+          markup_percentage?: number | null
           quantity?: number
+          subcontractor_id?: string | null
           total_price?: number
           unit_price?: number
           updated_at?: string
+          vendor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "estimate_items_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["subid"]
+          },
+          {
+            foreignKeyName: "estimate_items_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["vendorid"]
+          },
           {
             foreignKeyName: "fk_estimate_items_estimateid"
             columns: ["estimate_id"]

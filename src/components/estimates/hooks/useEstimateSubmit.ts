@@ -107,9 +107,6 @@ export const useEstimateSubmit = () => {
           item_type: item.item_type,
           cost: cost,
           markup_percentage: parseFloat(item.markup_percentage || '0'),
-          markup_amount: markupAmount,
-          gross_margin: grossMargin,
-          gross_margin_percentage: grossMarginPercentage,
           vendor_id: item.item_type === 'vendor' ? item.vendor_id : null,
           subcontractor_id: item.item_type === 'subcontractor' ? item.subcontractor_id : null
         };
