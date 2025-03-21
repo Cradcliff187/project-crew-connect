@@ -4,7 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 /**
  * Uploads a document for an estimate item and returns the document ID
  */
-export const uploadItemDocument = async (file: File, estimateId: string, itemIndex: number): Promise<string | null> => {
+export const uploadItemDocument = async (
+  file: File, 
+  estimateId: string, 
+  itemIndex: number,
+  itemData?: {
+    item_type?: string;
+    vendor_id?: string;
+    subcontractor_id?: string;
+  }
+): Promise<string | null> => {
   try {
     // Create a unique file path
     const timestamp = new Date().getTime();
@@ -17,7 +26,9 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
     // Upload file to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('construction_documents')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        contentType: file.type // Explicitly set the content type to match the file
+      });
       
     if (uploadError) {
       console.error('Error uploading document:', uploadError);
@@ -37,6 +48,14 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
       category = 'subcontractor_estimate';
     }
     
+    // Prepare tags array with the basic information
+    const tags = ['estimate_item', `item_${itemIndex}`];
+    
+    // Add item type to tags if available
+    if (itemData?.item_type) {
+      tags.push(itemData.item_type);
+    }
+    
     // Also store document metadata in documents table
     const documentMetadata = {
       file_name: file.name,
@@ -46,7 +65,10 @@ export const uploadItemDocument = async (file: File, estimateId: string, itemInd
       entity_type: 'ESTIMATE',
       entity_id: estimateId,
       category: category,
-      tags: ['estimate_item', `item_${itemIndex}`]
+      tags: tags,
+      // Add vendor or subcontractor relationship if available
+      vendor_id: itemData?.item_type === 'vendor' ? itemData.vendor_id : null,
+      vendor_type: itemData?.item_type || null
     };
     
     console.log('Inserting document metadata:', documentMetadata);

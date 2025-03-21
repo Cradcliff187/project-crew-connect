@@ -1,5 +1,5 @@
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EstimateDetailsProps } from '../EstimateDetails';
 import EstimateDetailsTab from './EstimateDetailsTab';
@@ -19,6 +19,7 @@ const EstimateDetailsDialog = ({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden">
+        <DialogTitle className="sr-only">Estimate Details</DialogTitle>
         <Tabs defaultValue="details" className="w-full">
           <div className="border-b">
             <div className="px-4">
