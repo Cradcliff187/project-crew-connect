@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
 import {
   WorkOrderStatusControl,
@@ -21,18 +22,9 @@ interface WorkOrderDetailsProps {
 }
 
 const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) => {
-  const [activeTab, setActiveTab] = useState('details');
-  const [showTimelogs, setShowTimelogs] = useState(false);
-  
   // Function to handle refreshing the work order data
   const handleRefresh = () => {
     onStatusChange();
-  };
-  
-  // Switch to time tab and possibly focus on the add form
-  const handleAddTimeLog = () => {
-    setActiveTab('costs');
-    setShowTimelogs(true);
   };
   
   return (
@@ -46,78 +38,75 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
         <WorkOrderStatusControl workOrder={workOrder} onStatusChange={handleRefresh} />
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="overview">
         <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="costs">Costs & Time</TabsTrigger>
+          <TabsTrigger value="time">Time Tracking</TabsTrigger>
+          <TabsTrigger value="materials">Materials</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="details" className="space-y-4">
+        <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <WorkOrderInfoCard workOrder={workOrder} />
             <WorkOrderContactCard workOrder={workOrder} />
           </div>
           
-          <WorkOrderDescription description={workOrder.description} />
+          <Card>
+            <CardContent className="pt-6">
+              <WorkOrderDescription description={workOrder.description} />
+              
+              <Separator className="my-4" />
+              
+              <WorkOrderProgressCard 
+                workOrder={workOrder} 
+                onProgressUpdate={handleRefresh} 
+              />
+            </CardContent>
+          </Card>
           
-          <Separator className="my-4" />
-          
-          <WorkOrderProgressCard 
-            workOrder={workOrder} 
-            onProgressUpdate={handleRefresh} 
-          />
+          <div className="md:grid md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-base font-medium mb-4">Summary</h3>
+                  <p className="text-sm text-muted-foreground">
+                    This work order is currently <span className="font-medium">{workOrder.progress || 0}% complete</span>. 
+                    {workOrder.status === 'COMPLETED' ? 
+                      ' The work has been completed.' : 
+                      workOrder.progress > 0 ? ' Work is in progress.' : ' Work has not started yet.'}
+                  </p>
+                  
+                  {workOrder.scheduled_date && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Scheduled for completion by {new Date(workOrder.scheduled_date).toLocaleDateString()}.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+            <div>
+              <WorkOrderCostSummary workOrder={workOrder} />
+            </div>
+          </div>
         </TabsContent>
         
         <TabsContent value="documents">
           <WorkOrderDocumentsList workOrderId={workOrder.work_order_id} />
         </TabsContent>
         
-        <TabsContent value="costs">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              {showTimelogs ? (
-                <WorkOrderTimelogs 
-                  workOrderId={workOrder.work_order_id} 
-                  onTimeLogAdded={handleRefresh}
-                />
-              ) : (
-                <WorkOrderMaterials 
-                  workOrderId={workOrder.work_order_id} 
-                  onMaterialAdded={handleRefresh}
-                />
-              )}
-            </div>
-            <div>
-              <WorkOrderCostSummary 
-                workOrder={workOrder} 
-                onAddTimeLog={() => setShowTimelogs(true)}
-              />
-            </div>
-          </div>
-          
-          <div className="mt-6">
-            <Tabs defaultValue={showTimelogs ? "time" : "materials"} onValueChange={(value) => setShowTimelogs(value === "time")}>
-              <TabsList>
-                <TabsTrigger value="materials">Materials</TabsTrigger>
-                <TabsTrigger value="time">Time Tracking</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="materials" className="mt-6">
-                <WorkOrderMaterials 
-                  workOrderId={workOrder.work_order_id} 
-                  onMaterialAdded={handleRefresh}
-                />
-              </TabsContent>
-              
-              <TabsContent value="time" className="mt-6">
-                <WorkOrderTimelogs 
-                  workOrderId={workOrder.work_order_id} 
-                  onTimeLogAdded={handleRefresh}
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
+        <TabsContent value="time">
+          <WorkOrderTimelogs 
+            workOrderId={workOrder.work_order_id} 
+            onTimeLogAdded={handleRefresh}
+          />
+        </TabsContent>
+        
+        <TabsContent value="materials">
+          <WorkOrderMaterials 
+            workOrderId={workOrder.work_order_id} 
+            onMaterialAdded={handleRefresh}
+          />
         </TabsContent>
       </Tabs>
     </div>

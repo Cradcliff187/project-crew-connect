@@ -39,8 +39,8 @@ function App() {
             <Route path="/vendors" element={<Vendors />} />
             <Route path="/subcontractors" element={<Subcontractors />} />
             <Route path="/subcontractors/:subcontractorId" element={<SubcontractorDetail />} />
-            <Route path="/workorders" element={<WorkOrders />} />
-            <Route path="/workorders/:workOrderId" element={<WorkOrderDetail />} />
+            <Route path="/work-orders" element={<WorkOrders />} />
+            <Route path="/work-orders/:workOrderId" element={<WorkOrderDetail />} />
             <Route path="/active-work" element={<ActiveWork />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" />} />

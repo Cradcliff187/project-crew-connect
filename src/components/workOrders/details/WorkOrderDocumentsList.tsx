@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Upload, Plus, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface WorkOrderDocument {
   document_id: string;
@@ -85,9 +86,9 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
   
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Documents & Receipts</h3>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg">Documents & Receipts</CardTitle>
           <Button 
             variant="outline" 
             className="text-[#0485ea]"
@@ -106,11 +107,13 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
             )}
           </Button>
         </div>
-        
+      </CardHeader>
+      
+      <CardContent>
         {showUploadForm && (
           <div className="mb-6">
             <EnhancedDocumentUpload 
-              entityType="WORK_ORDER"
+              entityType={"WORK_ORDER" as EntityType}
               entityId={workOrderId}
               onSuccess={handleUploadSuccess}
               onCancel={() => setShowUploadForm(false)}

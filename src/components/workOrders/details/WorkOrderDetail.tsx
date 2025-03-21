@@ -1,26 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Package, CalendarCheck, ClipboardList, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import StatusBadge from '@/components/ui/StatusBadge';
-import { formatDate, formatCurrency } from '@/lib/utils';
 import PageTransition from '@/components/layout/PageTransition';
 
-import WorkOrderHeader from './WorkOrderHeader';
-import WorkOrderTimelogs from '../WorkOrderTimelogs';
-import WorkOrderMaterials from '../WorkOrderMaterials';
-import WorkOrderCostSummary from './WorkOrderCostSummary';
-import WorkOrderStatus from './WorkOrderStatus';
-import WorkOrderProjectLink from '../WorkOrderProjectLink';
-
+import WorkOrderDetails from '../WorkOrderDetails';
 import { WorkOrder } from '@/types/workOrder';
 
 const WorkOrderDetail = () => {
@@ -113,120 +103,10 @@ const WorkOrderDetail = () => {
             </div>
           </Card>
         ) : (
-          <>
-            <WorkOrderHeader workOrder={workOrder} onUpdate={handleRefresh} />
-            
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-2">
-                    <StatusBadge status={workOrder.status} />
-                  </div>
-                  <WorkOrderStatus 
-                    workOrder={workOrder} 
-                    onStatusChange={handleRefresh} 
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Schedule</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-blue-50 p-2 rounded-full">
-                      <CalendarCheck className="h-6 w-6 text-blue-500" />
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Scheduled For</div>
-                      <div className="font-semibold">
-                        {workOrder.scheduled_date 
-                          ? formatDate(workOrder.scheduled_date) 
-                          : 'Not scheduled'}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Time</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm text-muted-foreground">Estimated:</span>
-                    <span className="font-medium">
-                      {workOrder.time_estimate 
-                        ? `${workOrder.time_estimate} hours` 
-                        : 'Not specified'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Actual:</span>
-                    <span className="font-medium">
-                      {workOrder.actual_hours 
-                        ? `${workOrder.actual_hours} hours` 
-                        : '0 hours'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {workOrder.description ? (
-                    <p>{workOrder.description}</p>
-                  ) : (
-                    <p className="text-muted-foreground">No description provided.</p>
-                  )}
-                </CardContent>
-              </Card>
-              
-              <WorkOrderProjectLink 
-                workOrderId={workOrder.work_order_id} 
-                onLinkComplete={handleRefresh}
-              />
-            </div>
-            
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="md:col-span-2">
-                <Tabs defaultValue="materials">
-                  <TabsList>
-                    <TabsTrigger value="materials">
-                      <Package className="h-4 w-4 mr-2" />
-                      Materials
-                    </TabsTrigger>
-                    <TabsTrigger value="time">
-                      <Clock className="h-4 w-4 mr-2" />
-                      Time Tracking
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="materials" className="mt-6">
-                    <WorkOrderMaterials workOrderId={workOrder.work_order_id} />
-                  </TabsContent>
-                  
-                  <TabsContent value="time" className="mt-6">
-                    <WorkOrderTimelogs workOrderId={workOrder.work_order_id} />
-                  </TabsContent>
-                </Tabs>
-              </div>
-              
-              <div>
-                <WorkOrderCostSummary workOrder={workOrder} />
-              </div>
-            </div>
-          </>
+          <WorkOrderDetails 
+            workOrder={workOrder} 
+            onStatusChange={handleRefresh} 
+          />
         )}
       </div>
     </PageTransition>
