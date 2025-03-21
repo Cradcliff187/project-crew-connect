@@ -1,4 +1,3 @@
-
 import { Package, Eye, Edit, History, ListTree, Archive } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,7 @@ interface VendorsTableProps {
   error: string | null;
   searchQuery: string;
   onViewDetails: (vendor: Vendor) => void;
+  onEditVendor: (vendor: Vendor) => void;
 }
 
 // Map database status to StatusBadge component status
@@ -60,7 +60,7 @@ export const formatDate = (dateString: string | null) => {
   }).format(date);
 };
 
-const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails }: VendorsTableProps) => {
+const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onEditVendor }: VendorsTableProps) => {
   // Filter vendors based on search query
   const filteredVendors = vendors.filter(vendor => 
     (vendor.vendorname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -85,7 +85,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails }: V
             icon: <Edit className="w-4 h-4" />,
             onClick: (e) => {
               e.stopPropagation();
-              console.log('Edit vendor', vendor.vendorid);
+              onEditVendor(vendor);
             }
           },
           {

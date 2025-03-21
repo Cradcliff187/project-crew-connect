@@ -2,7 +2,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Package } from 'lucide-react';
+import { ArrowLeft, Package, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +11,8 @@ import PageTransition from '@/components/layout/PageTransition';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { mapStatusToStatusBadge } from '../VendorsTable';
 import { Vendor } from '../VendorsTable';
+import { useState } from 'react';
+import VendorDialog from '../VendorDialog';
 
 const fetchVendorDetails = async (vendorId: string) => {
   const { data, error } = await supabase
@@ -30,8 +32,9 @@ const fetchVendorDetails = async (vendorId: string) => {
 const VendorDetail = () => {
   const { vendorId } = useParams<{ vendorId: string }>();
   const navigate = useNavigate();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const { data: vendor, isLoading, error } = useQuery({
+  const { data: vendor, isLoading, error, refetch } = useQuery({
     queryKey: ['vendor', vendorId],
     queryFn: () => fetchVendorDetails(vendorId!),
     enabled: !!vendorId,
@@ -44,6 +47,14 @@ const VendorDetail = () => {
 
   const handleBack = () => {
     navigate('/vendors');
+  };
+
+  const handleEditVendor = () => {
+    setEditDialogOpen(true);
+  };
+
+  const handleVendorEdited = () => {
+    refetch();
   };
 
   if (isLoading) {
@@ -111,6 +122,10 @@ const VendorDetail = () => {
               <StatusBadge status={mapStatusToStatusBadge(vendor.status)} />
             </div>
           </div>
+          <Button onClick={handleEditVendor} className="mt-4 md:mt-0 bg-[#0485ea] hover:bg-[#0375d1]">
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Vendor
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -170,6 +185,17 @@ const VendorDetail = () => {
               <p className="whitespace-pre-wrap">{vendor.notes}</p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Edit Vendor Dialog */}
+        {editDialogOpen && (
+          <VendorDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            onVendorAdded={handleVendorEdited}
+            initialData={vendor}
+            isEditing={true}
+          />
         )}
       </div>
     </PageTransition>
