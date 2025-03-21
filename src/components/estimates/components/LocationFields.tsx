@@ -8,15 +8,15 @@ const LocationFields = () => {
   const form = useFormContext<EstimateFormValues>();
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-lg font-medium">Job Site Location</h3>
+    <div className="space-y-2 p-4 border rounded-md bg-gray-50">
+      <h3 className="text-lg font-medium text-#0485ea">Job Site Location</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="location.address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Address</FormLabel>
+              <FormLabel>Street Address</FormLabel>
               <FormControl>
                 <Input placeholder="Enter job site address" {...field} />
               </FormControl>

@@ -95,6 +95,28 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     }
   };
 
+  // Handle toggle for custom location
+  const handleCustomLocationToggle = (checked: boolean) => {
+    setUseCustomLocation(checked);
+    
+    if (checked) {
+      // Clear location fields when custom location is selected
+      form.setValue('location.address', '');
+      form.setValue('location.city', '');
+      form.setValue('location.state', '');
+      form.setValue('location.zip', '');
+    } else if (form.getValues('customer')) {
+      // Reset to customer address when switching back
+      const selectedCustomer = customers.find(c => c.id === form.getValues('customer'));
+      if (selectedCustomer) {
+        form.setValue('location.address', selectedCustomer.address || '');
+        form.setValue('location.city', selectedCustomer.city || '');
+        form.setValue('location.state', selectedCustomer.state || '');
+        form.setValue('location.zip', selectedCustomer.zip || '');
+      }
+    }
+  };
+
   // Handle form submission
   const onSubmit = async (data: EstimateFormValues) => {
     await submitEstimate(data, customers, onClose);
@@ -175,25 +197,13 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
               <Switch
                 id="custom-location"
                 checked={useCustomLocation}
-                onCheckedChange={(checked) => {
-                  setUseCustomLocation(checked);
-                  if (!checked && form.getValues('customer')) {
-                    // Reset to customer address when switching back
-                    const selectedCustomer = customers.find(c => c.id === form.getValues('customer'));
-                    if (selectedCustomer) {
-                      form.setValue('location.address', selectedCustomer.address || '');
-                      form.setValue('location.city', selectedCustomer.city || '');
-                      form.setValue('location.state', selectedCustomer.state || '');
-                      form.setValue('location.zip', selectedCustomer.zip || '');
-                    }
-                  }
-                }}
+                onCheckedChange={handleCustomLocationToggle}
               />
               <label
                 htmlFor="custom-location"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Site location is different from customer address
+                Job site location is different from customer address
               </label>
             </div>
 
