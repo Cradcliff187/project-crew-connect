@@ -1,19 +1,60 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Subcontractor } from '../utils/subcontractorUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SpecialtiesSectionProps {
   subcontractor: Subcontractor;
-  specialties: Record<string, any>;
+  specialtyIds: string[];
 }
 
-const SpecialtiesSection = ({ subcontractor, specialties }: SpecialtiesSectionProps) => {
+const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionProps) => {
+  const [specialties, setSpecialties] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      if (!specialtyIds.length) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('subcontractor_specialties')
+          .select('*')
+          .in('id', specialtyIds);
+
+        if (error) throw error;
+
+        // Convert to a map for easier lookup
+        const specialtiesMap = (data || []).reduce((acc, curr) => {
+          acc[curr.id] = curr;
+          return acc;
+        }, {} as Record<string, any>);
+
+        setSpecialties(specialtiesMap);
+      } catch (error) {
+        console.error('Error fetching specialties:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSpecialties();
+  }, [specialtyIds]);
+
   if (!subcontractor.specialty_ids || subcontractor.specialty_ids.length === 0) {
     return null;
   }
 
   const renderSpecialties = () => {
+    if (loading) {
+      return <div className="text-muted-foreground">Loading specialties...</div>;
+    }
+
     return (
       <div className="flex flex-wrap gap-1">
         {subcontractor.specialty_ids.map(id => {

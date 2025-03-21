@@ -31,7 +31,7 @@ const SubcontractorDetailPage = () => {
   const { 
     subcontractor, 
     loading, 
-    specialties, 
+    specialtyIds, 
     projects, 
     workOrders, 
     loadingAssociations,
@@ -114,7 +114,7 @@ const SubcontractorDetailPage = () => {
                 <Separator />
                 <SpecialtiesSection 
                   subcontractor={subcontractor} 
-                  specialties={specialties} 
+                  specialtyIds={specialtyIds} 
                 />
               </>
             )}
