@@ -45,11 +45,14 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     unitPrice: number;
     vendorId: string | null;
   }) => {
-    await handleAddMaterial(material);
-    
-    // Notify parent component if provided
-    if (onMaterialAdded) {
-      onMaterialAdded();
+    try {
+      await handleAddMaterial(material);
+      
+      // Notify parent component if provided
+      handleMaterialAdded();
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+      // Error is already handled in the handleAddMaterial function
     }
   };
   
@@ -58,9 +61,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     await handleDelete(id);
     
     // Notify parent component if provided
-    if (onMaterialAdded) {
-      onMaterialAdded();
-    }
+    handleMaterialAdded();
   };
   
   // Handle receipt uploaded wrapped to add the notification
@@ -68,9 +69,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     await handleReceiptUploaded(materialId, documentId);
     
     // Notify parent component if provided
-    if (onMaterialAdded) {
-      onMaterialAdded();
-    }
+    handleMaterialAdded();
   };
   
   return (

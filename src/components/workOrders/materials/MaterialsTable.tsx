@@ -80,7 +80,10 @@ const MaterialsTable = ({
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Upload Receipt for {selectedMaterial?.material_name}</DialogTitle>
+            <DialogTitle>
+              {selectedMaterial?.receipt_document_id ? 'View Receipt for ' : 'Upload Receipt for '}
+              {selectedMaterial?.material_name}
+            </DialogTitle>
           </DialogHeader>
           {selectedMaterial && (
             <MaterialReceiptUpload 

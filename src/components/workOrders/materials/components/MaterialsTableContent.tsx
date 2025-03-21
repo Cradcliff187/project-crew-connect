@@ -37,15 +37,23 @@ const MaterialsTableContent = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {materials.map((material) => (
-            <MaterialTableRow
-              key={material.id}
-              material={material}
-              vendorName={getVendorName(material.vendor_id)}
-              onDelete={onDelete}
-              onReceiptClick={onReceiptClick}
-            />
-          ))}
+          {materials.length > 0 ? (
+            materials.map((material) => (
+              <MaterialTableRow
+                key={material.id}
+                material={material}
+                vendorName={getVendorName(material.vendor_id)}
+                onDelete={onDelete}
+                onReceiptClick={onReceiptClick}
+              />
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                No materials have been added to this work order yet.
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </div>

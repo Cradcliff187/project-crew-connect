@@ -27,7 +27,10 @@ const MaterialTableRow = ({
       <TableCell>{formatCurrency(material.unit_price)}</TableCell>
       <TableCell>{formatCurrency(material.total_price)}</TableCell>
       <TableCell className="flex items-center justify-end gap-2">
-        <ReceiptButton material={material} onClick={onReceiptClick} />
+        <ReceiptButton 
+          material={material} 
+          onClick={onReceiptClick} 
+        />
         <Button
           variant="outline"
           size="sm"
