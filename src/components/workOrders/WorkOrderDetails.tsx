@@ -72,7 +72,7 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
                   <h3 className="text-base font-medium mb-4">Summary</h3>
                   <p className="text-sm text-muted-foreground">
                     This work order is currently <span className="font-medium">{workOrder.progress || 0}% complete</span>. 
-                    {workOrder.status === 'COMPLETED' ? 
+                    {workOrder.status === 'completed' ? 
                       ' The work has been completed.' : 
                       workOrder.progress && workOrder.progress > 0 ? ' Work is in progress.' : ' Work has not started yet.'}
                   </p>
