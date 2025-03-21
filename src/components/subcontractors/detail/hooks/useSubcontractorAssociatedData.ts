@@ -39,17 +39,19 @@ export const useSubcontractorAssociatedData = () => {
         }
       }
 
-      // Fetch work orders associated with this subcontractor
-      const { data: woLaborsData, error: woLaborsError } = await supabase
-        .from('work_order_labor')
-        .select('work_order_id')
-        .eq('subcontractor_id', subcontractorId);
+      // Fetch work orders associated with this subcontractor through documents
+      const { data: woDocData, error: woDocError } = await supabase
+        .from('documents')
+        .select('entity_id')
+        .eq('vendor_id', subcontractorId)
+        .eq('vendor_type', 'subcontractor')
+        .eq('entity_type', 'WORK_ORDER');
       
-      if (woLaborsError) {
-        console.error('Error fetching subcontractor work order associations:', woLaborsError);
-      } else if (woLaborsData && woLaborsData.length > 0) {
-        // Get unique work order IDs
-        const uniqueWorkOrderIds = [...new Set(woLaborsData.map(item => item.work_order_id))].filter(Boolean);
+      if (woDocError) {
+        console.error('Error fetching subcontractor work order associations from documents:', woDocError);
+      } else if (woDocData && woDocData.length > 0) {
+        // Get unique work order IDs (entity_id in this case is the work_order_id)
+        const uniqueWorkOrderIds = [...new Set(woDocData.map(item => item.entity_id))].filter(Boolean);
         
         if (uniqueWorkOrderIds.length > 0) {
           // Fetch detailed work order information

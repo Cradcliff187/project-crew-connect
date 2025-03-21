@@ -8,7 +8,7 @@ import { useSubcontractorAssociatedData } from './hooks/useSubcontractorAssociat
 const useSubcontractorData = (subcontractorId: string | undefined) => {
   const [subcontractor, setSubcontractor] = useState<Subcontractor | null>(null);
   const [loading, setLoading] = useState(true);
-  const { specialties } = useSubcontractorSpecialties();
+  const { specialties } = useSubcontractorSpecialties(subcontractorId);
   
   // Use the associated data hook
   const { 
