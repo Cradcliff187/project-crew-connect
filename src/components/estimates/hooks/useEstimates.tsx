@@ -35,19 +35,22 @@ export const useEstimates = () => {
         throw error;
       }
 
-      const { data: revisionCountsData, error: revisionsError } = await supabase
-        .from('estimate_revisions')
-        .select('estimate_id, count', { count: 'exact' });
-
-      if (revisionsError) {
-        console.error('Error fetching revision counts:', revisionsError);
-      }
-
+      // Fetch the revision counts separately
       const revisionCounts: Record<string, number> = {};
-      if (revisionCountsData) {
-        revisionCountsData.forEach((item) => {
-          revisionCounts[item.estimate_id] = item.count || 0;
-        });
+      
+      // Process each estimate to get its revisions
+      for (const estimate of estimatesData || []) {
+        const { data: revisionsData, error: revisionsError } = await supabase
+          .from('estimate_revisions')
+          .select('id')
+          .eq('estimate_id', estimate.estimateid);
+          
+        if (revisionsError) {
+          console.error(`Error fetching revisions for estimate ${estimate.estimateid}:`, revisionsError);
+          continue;
+        }
+        
+        revisionCounts[estimate.estimateid] = (revisionsData?.length || 0);
       }
 
       const formattedEstimates = estimatesData.map(estimate => {

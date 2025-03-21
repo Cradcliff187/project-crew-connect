@@ -459,6 +459,7 @@ export type Database = {
       estimate_revisions: {
         Row: {
           amount: number | null
+          count: number | null
           created_at: string
           estimate_id: string
           id: string
@@ -470,6 +471,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          count?: number | null
           created_at?: string
           estimate_id: string
           id?: string
@@ -481,6 +483,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          count?: number | null
           created_at?: string
           estimate_id?: string
           id?: string
