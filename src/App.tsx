@@ -10,7 +10,7 @@ import TimeTracking from './pages/TimeTracking';
 import NotFound from './pages/NotFound';
 import Vendors from './pages/Vendors';
 import Subcontractors from './pages/Subcontractors';
-import ProjectDetail from './components/projects/ProjectDetail';
+import ProjectDetailRefactored from './components/projects/ProjectDetailRefactored';
 import ProjectEdit from './components/projects/ProjectEdit';
 import Layout from './components/layout/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -31,7 +31,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
             <Route path="/projects" element={<Projects />} />
-            <Route path="/projects/:projectId" element={<ProjectDetail />} />
+            <Route path="/projects/:projectId" element={<ProjectDetailRefactored />} />
             <Route path="/projects/:projectId/edit" element={<ProjectEdit />} />
             <Route path="/estimates" element={<Estimates />} />
             <Route path="/contacts" element={<Contacts />} />
