@@ -1,12 +1,11 @@
 
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Loader2, PlusCircle } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { Save, Loader2 } from 'lucide-react';
 import VendorDialog from '@/components/vendors/VendorDialog';
+import MaterialFormFields from './components/MaterialFormFields';
+import TotalPriceDisplay from './components/TotalPriceDisplay';
 
 interface AddMaterialFormProps {
   vendors: { vendorid: string, vendorname: string }[];
@@ -70,96 +69,20 @@ const AddMaterialForm = ({
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="materialName" className="text-sm font-medium">
-                Material Name *
-              </label>
-              <Input
-                id="materialName"
-                placeholder="Enter material name"
-                value={materialName}
-                onChange={(e) => setMaterialName(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="vendor" className="text-sm font-medium">
-                  Vendor
-                </label>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-xs text-[#0485ea] hover:text-[#0375d1]"
-                  onClick={() => setShowVendorDialog(true)}
-                >
-                  <PlusCircle className="h-3.5 w-3.5 mr-1" />
-                  Add New
-                </Button>
-              </div>
-              <Select 
-                value={selectedVendor || ""} 
-                onValueChange={(value) => setSelectedVendor(value === "none" ? null : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select vendor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                      {vendor.vendorname}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <MaterialFormFields 
+            materialName={materialName}
+            setMaterialName={setMaterialName}
+            quantity={quantity}
+            setQuantity={setQuantity}
+            unitPrice={unitPrice}
+            setUnitPrice={setUnitPrice}
+            selectedVendor={selectedVendor}
+            setSelectedVendor={setSelectedVendor}
+            vendors={vendors}
+            onAddVendorClick={() => setShowVendorDialog(true)}
+          />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="space-y-2">
-              <label htmlFor="quantity" className="text-sm font-medium">
-                Quantity *
-              </label>
-              <Input
-                id="quantity"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="1"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="unitPrice" className="text-sm font-medium">
-                Unit Price ($) *
-              </label>
-              <Input
-                id="unitPrice"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                value={unitPrice}
-                onChange={(e) => setUnitPrice(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-          
-          {(unitPrice && quantity) && (
-            <div className="mt-4 text-right">
-              <p className="text-sm font-medium">
-                Total: {formatCurrency(parseFloat(unitPrice || "0") * parseFloat(quantity || "0"))}
-              </p>
-            </div>
-          )}
+          <TotalPriceDisplay unitPrice={unitPrice} quantity={quantity} />
         </CardContent>
         <CardFooter>
           <Button 
