@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -23,6 +24,8 @@ export const uploadItemDocument = async (
     console.log(`Uploading file for estimate ${estimateId}, item ${itemIndex}: ${fileName}`);
     console.log(`File type: ${file.type}, size: ${file.size} bytes`);
     
+    const BUCKET_NAME = 'construction_documents';
+    
     // First, verify the bucket exists
     const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
     
@@ -31,10 +34,10 @@ export const uploadItemDocument = async (
       return null;
     }
     
-    const bucketExists = buckets.some(bucket => bucket.name === 'construction_documents');
+    const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
     
     if (!bucketExists) {
-      console.error('The construction_documents bucket does not exist. Please create it in Supabase.');
+      console.error(`The ${BUCKET_NAME} bucket does not exist. Please create it in Supabase.`);
       return null;
     }
     
@@ -43,8 +46,8 @@ export const uploadItemDocument = async (
     const cleanFile = new File([fileBlob], file.name, { type: file.type });
     
     // Upload file to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from('construction_documents')
+    const { error: uploadError, data: uploadData } = await supabase.storage
+      .from(BUCKET_NAME)
       .upload(filePath, cleanFile, {
         contentType: file.type, // Explicitly set the content type to match the file
         cacheControl: '3600',
@@ -56,11 +59,15 @@ export const uploadItemDocument = async (
       return null;
     }
     
+    console.log('File upload successful:', uploadData?.path);
+    
     // Get the public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('construction_documents')
+      .from(BUCKET_NAME)
       .getPublicUrl(filePath);
       
+    console.log('File public URL:', publicUrl);
+    
     // Determine the appropriate category based on item type
     let category = 'estimate';
     if (file.name.toLowerCase().includes('invoice') || file.name.toLowerCase().includes('receipt')) {

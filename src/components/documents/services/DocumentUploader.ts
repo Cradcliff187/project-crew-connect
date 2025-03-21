@@ -17,6 +17,7 @@ export const uploadDocument = async (
     let uploadedDocumentId: string | undefined;
     
     const { files, metadata } = data;
+    const BUCKET_NAME = 'construction_documents';
     
     // First, verify the bucket exists
     const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
@@ -26,12 +27,11 @@ export const uploadDocument = async (
       throw new Error('Unable to access storage buckets. Please check your permissions.');
     }
     
-    const bucketName = 'construction_documents';
-    const bucketExists = buckets.some(bucket => bucket.name === bucketName);
+    const bucketExists = buckets.some(bucket => bucket.name === BUCKET_NAME);
     
     if (!bucketExists) {
-      console.error(`The ${bucketName} bucket does not exist. Please create it in Supabase.`);
-      throw new Error(`Storage bucket '${bucketName}' not found. Please contact the administrator.`);
+      console.error(`The ${BUCKET_NAME} bucket does not exist. Please create it in Supabase.`);
+      throw new Error(`Storage bucket '${BUCKET_NAME}' not found. Please contact the administrator.`);
     }
     
     // We'll handle multiple files if they're provided
@@ -42,7 +42,7 @@ export const uploadDocument = async (
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       const filePath = `${metadata.entityType.toLowerCase()}/${metadata.entityId || 'general'}/${fileName}`;
       
-      console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
+      console.log(`Uploading file to ${BUCKET_NAME} bucket, path: ${filePath}`);
       console.log(`File type: ${file.type}, size: ${file.size} bytes`);
       
       // Create a clean copy of the file to ensure no metadata issues
@@ -51,7 +51,7 @@ export const uploadDocument = async (
       
       // Upload file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage
-        .from(bucketName)
+        .from(BUCKET_NAME)
         .upload(filePath, cleanFile, {
           contentType: file.type,
           cacheControl: '3600',
@@ -67,7 +67,7 @@ export const uploadDocument = async (
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
+        .from(BUCKET_NAME)
         .getPublicUrl(filePath);
         
       console.log('Public URL generated:', publicUrl);
