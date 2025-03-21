@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Check, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import { mapStatusToStatusBadge } from '../ProjectsTable';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProjectDetails } from '../ProjectDetails';
+import { statusOptions } from '../ProjectConstants';
 
 interface ProjectStatusControlProps {
   project: ProjectDetails;
@@ -59,6 +60,11 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
           // No transitions found, use fallback
           const fallbackTransitions = getStaticTransitions(project.status.toLowerCase());
           setAvailableStatuses(fallbackTransitions);
+          
+          // If we got empty results but expected some transitions, show a warning
+          if (project.status !== 'completed' && project.status !== 'cancelled') {
+            console.warn('No status transitions found in database for status:', project.status);
+          }
         }
       } catch (error) {
         console.error('Error in transition fetch:', error);
@@ -74,10 +80,11 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
   // Fallback transitions if database call fails
   const getStaticTransitions = (currentStatus: string): {status: string, label: string}[] => {
     // These are fallback transitions if the database call fails
+    // They should match what's defined in the database
     const staticTransitions: Record<string, string[]> = {
       new: ['active', 'cancelled'],
-      active: ['on_hold', 'cancelled'], // Note: completed might require an intermediate step
-      on_hold: ['active', 'cancelled'],
+      active: ['on_hold', 'cancelled'], 
+      on_hold: ['active', 'completed', 'cancelled'],
       completed: ['active'],
       cancelled: ['active'],
       pending: ['active', 'cancelled'],
@@ -93,6 +100,14 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
   };
   
   const handleStatusChange = async (newStatus: string) => {
+    if (project.status === newStatus) {
+      toast({
+        title: 'Status unchanged',
+        description: `Project is already ${statusLabels[newStatus] || newStatus}.`,
+      });
+      return;
+    }
+    
     setUpdating(true);
     try {
       const { error } = await supabase
@@ -100,7 +115,9 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
         .update({ status: newStatus })
         .eq('projectid', project.projectid);
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: 'Status updated',
@@ -111,9 +128,19 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
       onStatusChange();
     } catch (error: any) {
       console.error('Error updating project status:', error);
+      
+      // Provide a more helpful error message
+      let errorMessage = 'Failed to update project status. Please try again.';
+      
+      if (error.message && error.message.includes('Invalid status transition')) {
+        errorMessage = `Status change not allowed: ${error.message}. Try an intermediate status first.`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Error',
-        description: error.message || 'Failed to update project status. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -125,7 +152,7 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
     <div className="flex items-center gap-2">
       <StatusBadge status={mapStatusToStatusBadge(project.status)} />
       
-      {availableStatuses.length > 0 && (
+      {availableStatuses.length > 0 ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" disabled={updating} className="ml-2">
@@ -146,6 +173,11 @@ const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlP
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+      ) : (
+        <div className="flex items-center ml-2 text-sm text-muted-foreground">
+          <Info className="h-4 w-4 mr-1" />
+          No status changes available
+        </div>
       )}
     </div>
   );

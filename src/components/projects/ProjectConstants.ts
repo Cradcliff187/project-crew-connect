@@ -9,6 +9,8 @@ export const statusOptions = [
 ];
 
 // Status transitions based on Supabase validation rules
+// Note: These are fallback transitions if the database call fails
+// The actual transitions are fetched from the database
 export const statusTransitions: Record<string, string[]> = {
   new: ['active', 'cancelled'],
   active: ['on_hold', 'cancelled'],
