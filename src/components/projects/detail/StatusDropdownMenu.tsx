@@ -1,5 +1,5 @@
 
-import { Check, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle, Pause, X, Play, Clock, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -24,6 +24,26 @@ const StatusDropdownMenu = ({
   updating, 
   onStatusChange 
 }: StatusDropdownMenuProps) => {
+  // Get the appropriate icon for each status
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Play className="mr-2 h-4 w-4 text-emerald-500" />;
+      case 'on_hold':
+        return <Pause className="mr-2 h-4 w-4 text-amber-500" />;
+      case 'completed':
+        return <Check className="mr-2 h-4 w-4 text-green-500" />;
+      case 'cancelled':
+        return <X className="mr-2 h-4 w-4 text-red-500" />;
+      case 'pending':
+        return <Clock className="mr-2 h-4 w-4 text-blue-500" />;
+      case 'new':
+        return <ArrowUpRight className="mr-2 h-4 w-4 text-purple-500" />;
+      default:
+        return <AlertCircle className="mr-2 h-4 w-4 text-gray-500" />;
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -36,10 +56,9 @@ const StatusDropdownMenu = ({
           <DropdownMenuItem 
             key={statusOption.status}
             onClick={() => onStatusChange(statusOption.status)}
-            className="cursor-pointer"
+            className="cursor-pointer flex items-center"
           >
-            {statusOption.status === 'active' && <Check className="mr-2 h-4 w-4 text-green-500" />}
-            {statusOption.status === 'on_hold' && <AlertCircle className="mr-2 h-4 w-4 text-amber-500" />}
+            {getStatusIcon(statusOption.status)}
             {statusOption.label}
           </DropdownMenuItem>
         ))}

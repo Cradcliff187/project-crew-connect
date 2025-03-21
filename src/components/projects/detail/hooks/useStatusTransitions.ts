@@ -43,8 +43,10 @@ export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProp
         .eq('from_status', normalizedStatus);
 
       if (error) {
+        // Don't throw error here, just log it and fall back to static transitions
         console.error('Error fetching transitions:', error);
-        throw error;
+        useStaticTransitions(normalizedStatus);
+        return;
       }
       
       if (data && data.length > 0) {
@@ -79,12 +81,6 @@ export const useStatusTransitions = ({ currentStatus }: UseStatusTransitionsProp
     }));
     
     setAvailableStatuses(formattedTransitions);
-    
-    toast({
-      title: 'Using default transitions',
-      description: 'Could not fetch transitions from database, using defaults.',
-      variant: 'default',
-    });
   };
   
   // Fetch available status transitions when the currentStatus changes

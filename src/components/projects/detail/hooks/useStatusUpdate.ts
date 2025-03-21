@@ -68,8 +68,8 @@ export const useStatusUpdate = ({
       if (error.message) {
         if (error.message.includes('Invalid status transition')) {
           errorMessage = `Status change not allowed: ${error.message}`;
-        } else if (error.message.includes('No API key found')) {
-          errorMessage = 'Authentication error. Please refresh the page and try again.';
+        } else if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
+          errorMessage = 'Your session may have expired. Please refresh the page and try again.';
         } else {
           errorMessage = error.message;
         }
