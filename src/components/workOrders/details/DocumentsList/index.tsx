@@ -46,8 +46,10 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">Documents & Receipts</CardTitle>
           <Button 
-            variant="outline" 
-            className="text-[#0485ea]"
+            variant={showUploadForm ? "outline" : "default"}
+            className={showUploadForm 
+              ? "text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50" 
+              : "bg-[#0485ea] hover:bg-[#0375d1]"}
             onClick={toggleUploadForm}
           >
             {showUploadForm ? (

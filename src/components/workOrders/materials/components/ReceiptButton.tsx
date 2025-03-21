@@ -18,7 +18,7 @@ const ReceiptButton = ({ material, onClick }: ReceiptButtonProps) => {
       onClick={() => onClick(material)}
       className={`flex items-center gap-1 ${
         hasReceipt 
-          ? 'text-green-600 hover:bg-green-50 border-green-300' 
+          ? 'text-[#0485ea] hover:bg-blue-50 border-[#0485ea]/30' 
           : 'bg-[#0485ea] text-white hover:bg-[#0375d1]'
       }`}
     >

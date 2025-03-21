@@ -41,12 +41,12 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
         <WorkOrderStatusControl workOrder={workOrder} onStatusChange={handleRefresh} />
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="time">Time Tracking</TabsTrigger>
-          <TabsTrigger value="materials">Materials</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-4 mb-4">
+          <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="documents" className="text-sm">Documents</TabsTrigger>
+          <TabsTrigger value="time" className="text-sm">Time Tracking</TabsTrigger>
+          <TabsTrigger value="materials" className="text-sm">Materials</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">

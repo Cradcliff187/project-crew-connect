@@ -26,7 +26,7 @@ const MaterialsTableContent = ({
   return (
     <div className="rounded-md border overflow-x-auto">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-gray-50">
           <TableRow>
             <TableHead>Material</TableHead>
             <TableHead>Vendor</TableHead>

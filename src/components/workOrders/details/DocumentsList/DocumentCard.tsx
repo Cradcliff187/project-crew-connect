@@ -25,7 +25,7 @@ const DocumentCard = ({ document, onViewDocument }: DocumentCardProps) => {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-[#0485ea]"
+                className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
                 onClick={() => onViewDocument(document)}
               >
                 <Eye className="h-4 w-4 mr-1" />
@@ -34,7 +34,7 @@ const DocumentCard = ({ document, onViewDocument }: DocumentCardProps) => {
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="text-[#0485ea]"
+                className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
                 asChild
               >
                 <a href={document.url} target="_blank" rel="noopener noreferrer">

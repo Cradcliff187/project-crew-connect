@@ -35,7 +35,7 @@ const MaterialTableRow = ({
           variant="outline"
           size="sm"
           onClick={() => onDelete(material.id)}
-          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+          className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
