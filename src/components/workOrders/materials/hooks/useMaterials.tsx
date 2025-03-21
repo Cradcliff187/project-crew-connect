@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -109,7 +108,7 @@ export function useMaterials(workOrderId: string) {
       });
       
       // Return the newly created material
-      return data[0];
+      return data[0] as WorkOrderMaterial;
     } catch (error: any) {
       console.error('Error adding material:', error);
       toast({
@@ -185,7 +184,6 @@ export function useMaterials(workOrderId: string) {
     }
   };
   
-  // Calculate total materials cost
   const totalMaterialsCost = materials.reduce((sum, material) => sum + material.total_price, 0);
   
   return {

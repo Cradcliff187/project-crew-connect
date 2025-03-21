@@ -4,7 +4,8 @@ import { useMaterials, useVendors } from './materials/hooks';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useState } from 'react';
-import { ReceiptConfirmationDialog } from './materials/components';
+import { MaterialReceiptUpload, ReceiptConfirmationDialog } from './materials/components';
+import { WorkOrderMaterial } from '@/types/workOrder';
 
 interface WorkOrderMaterialsProps {
   workOrderId: string;
@@ -37,7 +38,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
 
   // State for receipt upload dialog
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
-  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<WorkOrderMaterial | null>(null);
   
   // Handle material added
   const handleMaterialAdded = () => {
@@ -77,7 +78,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
       
       // Show the receipt upload dialog for the new material
       if (newMaterial) {
-        setSelectedMaterial(newMaterial);
+        setSelectedMaterial(newMaterial as WorkOrderMaterial);
         setShowReceiptUpload(true);
       }
       
@@ -111,7 +112,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   };
   
   // Handle receipt button click
-  const handleReceiptClick = (material: any) => {
+  const handleReceiptClick = (material: WorkOrderMaterial) => {
     setSelectedMaterial(material);
     setShowReceiptUpload(true);
   };
@@ -145,10 +146,9 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
       
       <AddMaterialForm 
         vendors={vendors}
-        onSubmit={handleAddMaterial}
+        onSubmit={handlePromptForReceipt}
         submitting={submitting}
         onVendorAdded={handleVendorAdded}
-        onPromptForReceipt={handlePromptForReceipt}
       />
       
       <MaterialsTable 
