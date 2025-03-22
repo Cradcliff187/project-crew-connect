@@ -12,6 +12,7 @@ interface WorkOrderDialogFooterProps {
   onPrevious: () => void;
   onNext: () => void;
   onCancel: () => void;
+  onSubmit: () => void; // New prop for handling form submission
 }
 
 const WorkOrderDialogFooter = ({
@@ -21,7 +22,8 @@ const WorkOrderDialogFooter = ({
   dataLoaded,
   onPrevious,
   onNext,
-  onCancel
+  onCancel,
+  onSubmit
 }: WorkOrderDialogFooterProps) => {
   const isFirstStep = currentStep === WORK_ORDER_STEPS[0].id;
   const isLastStep = currentStep === WORK_ORDER_STEPS[WORK_ORDER_STEPS.length - 1].id;
@@ -65,8 +67,8 @@ const WorkOrderDialogFooter = ({
           </Button>
         ) : (
           <Button 
-            form="work-order-form"
-            type="submit" 
+            type="button" // Changed from "submit" to "button" 
+            onClick={onSubmit} // Use the onSubmit prop instead of form submission
             disabled={isSubmitting || isLoading || !dataLoaded}
             className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
           >

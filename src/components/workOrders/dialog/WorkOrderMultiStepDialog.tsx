@@ -38,7 +38,8 @@ const WorkOrderMultiStepDialog = ({
     isOpen: open
   });
 
-  const handleSubmit = form.handleSubmit(async (values) => {
+  // This function is now only used when the "Save Work Order" button is clicked
+  const handleFormSubmit = form.handleSubmit(async (values) => {
     await onSubmit(values);
   });
 
@@ -84,6 +85,8 @@ const WorkOrderMultiStepDialog = ({
     setCurrentStep(WORK_ORDER_STEPS[0].id);
   }
 
+  const isLastStep = currentStep === WORK_ORDER_STEPS[WORK_ORDER_STEPS.length - 1].id;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px] md:max-w-[700px] max-h-[90vh] flex flex-col overflow-hidden bg-white shadow-lg border-2 border-gray-100">
@@ -106,7 +109,8 @@ const WorkOrderMultiStepDialog = ({
             <WorkOrderLoadingState />
           ) : (
             <Form {...form}>
-              <form id="work-order-form" onSubmit={handleSubmit} className="space-y-6">
+              {/* The form no longer has the onSubmit handler directly - this prevents automatic submission */}
+              <form id="work-order-form" className="space-y-6">
                 <WorkOrderStepContent
                   currentStep={currentStep}
                   form={form}
@@ -128,6 +132,7 @@ const WorkOrderMultiStepDialog = ({
           onPrevious={goToPreviousStep}
           onNext={handleNext}
           onCancel={() => onOpenChange(false)}
+          onSubmit={handleFormSubmit} // Pass the submit handler to the footer
         />
       </DialogContent>
     </Dialog>
