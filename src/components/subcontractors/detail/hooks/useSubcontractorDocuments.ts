@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define a completely standalone interface with all properties explicitly defined
+// Define a standalone interface with all properties explicitly defined
 export interface SubcontractorDocument {
   document_id: string;
   file_name: string;
@@ -37,7 +37,7 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
       // Get documents directly related to the subcontractor
       const { data: subDocs, error: subError } = await supabase
         .from('documents')
-        .select('document_id, file_name, category, created_at, file_type, storage_path')
+        .select('*')  // Select all fields to ensure we get everything we need
         .eq('entity_type', 'SUBCONTRACTOR')
         .eq('entity_id', subcontractorId);
       
@@ -46,29 +46,29 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
         return;
       }
       
-      // Check if the documents table has subcontractor_id column
+      // Try to fetch documents that have subcontractor_id field
       const { data: referencedDocs, error: refError } = await supabase
         .from('documents')
-        .select('document_id, file_name, category, created_at, file_type, storage_path')
+        .select('*')  // Select all fields to ensure we get everything we need
         .eq('subcontractor_id', subcontractorId);
       
       if (refError) {
         console.error('Error fetching referenced documents by subcontractor_id:', refError);
         
-        // If the above query fails, try the alternative path with vendor_id (treating subcontractor as a vendor)
+        // If the above query fails, try the alternative path with vendor_id
         const { data: vendorDocs, error: vendorError } = await supabase
           .from('documents')
-          .select('document_id, file_name, category, created_at, file_type, storage_path')
-          .eq('vendor_id', subcontractorId);
+          .select('*')  // Select all fields to ensure we get everything we need
+          .eq('vendor_id', subcontractorId)
+          .eq('entity_type', 'SUBCONTRACTOR');
           
         if (vendorError) {
           console.error('Error fetching documents using vendor_id:', vendorError);
-          return;
+        } else {
+          // Use vendor documents if available
+          const allDocs = [...(subDocs || []), ...(vendorDocs || [])];
+          processDocuments(allDocs);
         }
-        
-        // Use vendor documents if available
-        const allDocs = [...(subDocs || []), ...(vendorDocs || [])];
-        processDocuments(allDocs);
       } else {
         // Successfully fetched with subcontractor_id
         const allDocs = [...(subDocs || []), ...(referencedDocs || [])];
@@ -83,6 +83,11 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
   
   // Helper function to process document data
   const processDocuments = async (docs: any[]) => {
+    if (!docs || docs.length === 0) {
+      setDocuments([]);
+      return;
+    }
+    
     // Remove duplicates based on document_id
     const uniqueDocs = Array.from(
       new Map(docs.map(doc => [doc.document_id, doc])).values()
@@ -106,7 +111,7 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
       })
     );
     
-    setDocuments(enhancedDocuments);
+    setDocuments(enhancedDocuments as SubcontractorDocument[]);
   };
   
   useEffect(() => {
