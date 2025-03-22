@@ -1,14 +1,12 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Upload, X } from 'lucide-react';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { EntityType } from '@/components/documents/schemas/documentSchema';
+import { Card, CardContent } from '@/components/ui/card';
 import DocumentsGrid from './DocumentsGrid';
 import DocumentViewer from './DocumentViewer';
 import { useWorkOrderDocuments } from './useWorkOrderDocuments';
 import { WorkOrderDocument } from './types';
+import DocumentsHeader from './DocumentsHeader';
+import UploadSection from './UploadSection';
 
 interface WorkOrderDocumentsListProps {
   workOrderId: string;
@@ -42,41 +40,18 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
   
   return (
     <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">Documents & Receipts</CardTitle>
-          <Button 
-            variant={showUploadForm ? "outline" : "default"}
-            className={showUploadForm 
-              ? "text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50" 
-              : "bg-[#0485ea] hover:bg-[#0375d1]"}
-            onClick={toggleUploadForm}
-          >
-            {showUploadForm ? (
-              <>
-                <X className="h-4 w-4 mr-1" />
-                Cancel Upload
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4 mr-1" />
-                Upload Document
-              </>
-            )}
-          </Button>
-        </div>
-      </CardHeader>
+      <DocumentsHeader 
+        showUploadForm={showUploadForm} 
+        toggleUploadForm={toggleUploadForm} 
+      />
       
       <CardContent>
         {showUploadForm && (
-          <div className="mb-6">
-            <EnhancedDocumentUpload 
-              entityType={"WORK_ORDER" as EntityType}
-              entityId={workOrderId}
-              onSuccess={handleUploadSuccess}
-              onCancel={() => setShowUploadForm(false)}
-            />
-          </div>
+          <UploadSection 
+            workOrderId={workOrderId}
+            onSuccess={handleUploadSuccess}
+            onCancel={() => setShowUploadForm(false)}
+          />
         )}
         
         <DocumentsGrid 
