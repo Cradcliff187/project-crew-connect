@@ -139,8 +139,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
             id: newTimeEntryId,
             entity_id: entityId,
             entity_type: entityType,
-            date_worked: form.watch('workDate').toISOString(),
-            vendor_id: null
+            date_worked: form.watch('workDate').toISOString()
           } as any}
           onSuccess={(timeEntryId, documentId) => handleReceiptUploadSuccess(timeEntryId, documentId)}
           onCancel={() => {

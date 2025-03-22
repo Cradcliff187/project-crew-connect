@@ -26,7 +26,6 @@ export const useTimeEntriesData = (filterType: string) => {
           employee_rate,
           notes,
           has_receipts,
-          vendor_id,
           total_cost,
           created_at,
           updated_at
@@ -97,18 +96,6 @@ export const useTimeEntriesData = (filterType: string) => {
           
           if (employee) {
             employeeName = `${employee.first_name} ${employee.last_name}`;
-          }
-        }
-        
-        if (entry.vendor_id) {
-          const { data: vendor } = await supabase
-            .from('vendors')
-            .select('vendorname')
-            .eq('vendorid', entry.vendor_id)
-            .maybeSingle();
-          
-          if (vendor) {
-            vendorName = vendor.vendorname;
           }
         }
         
