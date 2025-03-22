@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Control, useWatch, useController } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,15 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import VendorForm from '../vendors/VendorForm';
 import { DocumentUploadFormValues } from './schemas/documentSchema';
+import { Subcontractor } from '@/components/subcontractors/utils/types';
 
 interface Vendor {
   vendorid: string;
   vendorname: string;
-}
-
-interface Subcontractor {
-  subid: string;
-  subname: string;
 }
 
 interface VendorSelectorProps {
@@ -53,9 +50,9 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
         if (vendorError) throw vendorError;
         setVendorOptions(vendors || []);
         
-        // Fetch subcontractors - updated to use new table
+        // Fetch subcontractors - updated to use the correct table name
         const { data: subcontractors, error: subError } = await supabase
-          .from('subcontractors_new')
+          .from('subcontractors')
           .select('subid, subname')
           .order('subname');
           
