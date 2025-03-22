@@ -46,6 +46,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       }
       
       setStatusTransitions(transitionsData || []);
+      console.log('Available transitions:', transitionsData);
     } catch (error) {
       console.error('Error fetching status transitions:', error);
     }
