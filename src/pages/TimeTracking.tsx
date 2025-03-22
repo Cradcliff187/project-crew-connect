@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Search, Clock, Filter, Calendar, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,8 +29,9 @@ const TimeTracking = () => {
     setIsLoading(true);
     
     try {
+      // Query time_entries table directly, which should now have all entries
       let query = supabase
-        .from('time_entries_migration_view')
+        .from('time_entries')
         .select(`
           id,
           entity_type,
@@ -42,12 +44,12 @@ const TimeTracking = () => {
           employee_rate,
           notes,
           has_receipts,
-          location_data,
           created_at,
           updated_at
         `)
         .order('date_worked', { ascending: false });
       
+      // Apply entity type filter if selected
       if (filterType === 'work_orders') {
         query = query.eq('entity_type', 'work_order');
       } else if (filterType === 'projects') {
@@ -58,11 +60,15 @@ const TimeTracking = () => {
       
       if (error) throw error;
       
+      console.log('Fetched time entries:', data);
+      
+      // Enhance the data with entity names and other details
       const enhancedEntries = await Promise.all((data || []).map(async (entry: any) => {
         let entityName = 'Unknown';
         let entityLocation = '';
         let employeeName = '';
         
+        // Get entity details (work order or project)
         if (entry.entity_type === 'work_order') {
           const { data: workOrder } = await supabase
             .from('maintenance_work_orders')
@@ -100,6 +106,7 @@ const TimeTracking = () => {
           }
         }
         
+        // Get employee name if there's an employee ID
         if (entry.employee_id) {
           const { data: employee } = await supabase
             .from('employees')
@@ -112,6 +119,7 @@ const TimeTracking = () => {
           }
         }
         
+        // Calculate cost if there's an employee rate
         const cost = entry.hours_worked && entry.employee_rate 
           ? entry.hours_worked * entry.employee_rate 
           : undefined;
@@ -125,6 +133,7 @@ const TimeTracking = () => {
         };
       }));
       
+      // Apply search filter if needed
       let filteredEntries = enhancedEntries;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -151,12 +160,38 @@ const TimeTracking = () => {
   
   const handleDeleteEntry = async (id: string) => {
     try {
+      // Get the entry details before deleting
+      const { data: entry, error: fetchError } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
+      // Delete the time entry
       const { error } = await supabase
         .from('time_entries')
         .delete()
         .eq('id', id);
         
       if (error) throw error;
+      
+      // If the entry was for a work order, also clean up work_order_time_logs
+      // Note: This is a best effort cleanup; database triggers handle the actual cost recalculation
+      if (entry.entity_type === 'work_order') {
+        const { error: workOrderLogError } = await supabase
+          .from('work_order_time_logs')
+          .delete()
+          .eq('work_order_id', entry.entity_id)
+          .eq('hours_worked', entry.hours_worked)
+          .eq('employee_id', entry.employee_id || '')
+          .eq('work_date', entry.date_worked);
+          
+        if (workOrderLogError) {
+          console.warn('Warning: Could not clean up associated work order time log:', workOrderLogError);
+        }
+      }
       
       toast({
         title: 'Time entry deleted',
@@ -179,14 +214,46 @@ const TimeTracking = () => {
     if (entry) {
       if (entry.entity_type === 'work_order') {
         console.log('View work order:', entry.entity_id);
+        // You could add navigation to the work order page here
       } else {
         console.log('View project:', entry.entity_id);
+        // You could add navigation to the project page here
       }
     }
   };
   
-  const handleViewReceipts = (id: string) => {
-    console.log('View receipts for:', id);
+  const handleViewReceipts = async (id: string) => {
+    try {
+      const { data: receipts, error } = await supabase
+        .from('time_entry_receipts')
+        .select('*')
+        .eq('time_entry_id', id);
+        
+      if (error) throw error;
+      
+      if (receipts && receipts.length > 0) {
+        console.log('Receipts for time entry:', receipts);
+        
+        // Here you would typically open a modal to display the receipts
+        // For now, just show a toast with the number of receipts
+        toast({
+          title: 'Receipts found',
+          description: `Found ${receipts.length} receipt(s) for this time entry.`,
+        });
+      } else {
+        toast({
+          title: 'No receipts',
+          description: 'No receipts were found for this time entry.',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching receipts:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load receipts for this time entry.',
+        variant: 'destructive',
+      });
+    }
   };
   
   const handleFormSuccess = () => {

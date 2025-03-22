@@ -59,9 +59,24 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 }) => {
   if (!confirmationData) return null;
 
+  const entityName = entityType === 'work_order' 
+    ? workOrders.find(wo => wo.id === confirmationData.entityId)?.title
+    : projects.find(p => p.id === confirmationData.entityId)?.title;
+
+  const entityLocation = entityType === 'work_order'
+    ? workOrders.find(wo => wo.id === confirmationData.entityId)?.location
+    : projects.find(p => p.id === confirmationData.entityId)?.location || 
+      (projects.find(p => p.id === confirmationData.entityId)?.city && projects.find(p => p.id === confirmationData.entityId)?.state ? 
+        `${projects.find(p => p.id === confirmationData.entityId)?.city}, ${projects.find(p => p.id === confirmationData.entityId)?.state}` : 
+        undefined);
+
+  const employeeName = confirmationData.employeeId && employees.length > 0
+    ? employees.find(e => e.employee_id === confirmationData.employeeId)?.name || 'Unknown'
+    : undefined;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Confirm Time Entry</DialogTitle>
           <DialogDescription>
@@ -76,10 +91,15 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             
             <div className="text-muted-foreground">Name:</div>
             <div className="font-medium">
-              {entityType === 'work_order' 
-                ? workOrders.find(wo => wo.id === confirmationData.entityId)?.title
-                : projects.find(p => p.id === confirmationData.entityId)?.title}
+              {entityName || `Unknown ${confirmationData.entityType}`}
             </div>
+            
+            {entityLocation && (
+              <>
+                <div className="text-muted-foreground">Location:</div>
+                <div className="font-medium">{entityLocation}</div>
+              </>
+            )}
             
             <div className="text-muted-foreground">Date:</div>
             <div className="font-medium">
@@ -96,12 +116,10 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
               {confirmationData.hoursWorked} hours
             </div>
             
-            {confirmationData.employeeId && employees.length > 0 && (
+            {employeeName && (
               <>
                 <div className="text-muted-foreground">Employee:</div>
-                <div className="font-medium">
-                  {employees.find(e => e.employee_id === confirmationData.employeeId)?.name}
-                </div>
+                <div className="font-medium">{employeeName}</div>
               </>
             )}
             
