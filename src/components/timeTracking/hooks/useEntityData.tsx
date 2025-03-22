@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -24,6 +24,16 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
   
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
+  
+  const getSelectedEntityDetails = useCallback(() => {
+    if (!entityId) return null;
+    
+    if (entityType === 'work_order') {
+      return workOrders.find(wo => wo.id === entityId);
+    } else {
+      return projects.find(proj => proj.id === entityId);
+    }
+  }, [entityType, entityId, workOrders, projects]);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -87,7 +97,10 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
         
         // Set default employee if there's any
         if (formattedEmployees.length > 0 && !form.getValues('employeeId')) {
-          form.setValue('employeeId', formattedEmployees[0].employee_id);
+          // We cannot use setValue here in a way that causes re-renders during rendering
+          setTimeout(() => {
+            form.setValue('employeeId', formattedEmployees[0].employee_id);
+          }, 0);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -103,16 +116,6 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
     
     fetchData();
   }, [form]);
-  
-  const getSelectedEntityDetails = () => {
-    if (!entityId) return null;
-    
-    if (entityType === 'work_order') {
-      return workOrders.find(wo => wo.id === entityId);
-    } else {
-      return projects.find(proj => proj.id === entityId);
-    }
-  };
   
   return {
     workOrders,

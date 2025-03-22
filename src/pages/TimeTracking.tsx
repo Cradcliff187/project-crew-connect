@@ -57,22 +57,20 @@ const TimeTracking = () => {
   
   // Handle search filter
   useEffect(() => {
-    if (searchQuery === '') {
-      fetchTimeEntries();
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filteredEntries = timeEntries.filter((entry: any) => 
-        (entry.entity_name && entry.entity_name.toLowerCase().includes(query)) ||
-        (entry.entity_location && entry.entity_location.toLowerCase().includes(query)) ||
-        (entry.employee_name && entry.employee_name.toLowerCase().includes(query)) ||
-        (entry.vendor_name && entry.vendor_name.toLowerCase().includes(query)) ||
-        (entry.notes && entry.notes.toLowerCase().includes(query))
-      );
-      // No API call, just filter the existing data
-    }
+    // Don't trigger fetch on search - just filter locally
   }, [searchQuery]);
   
-  // Handle view entry
+  // Filtered entries based on search
+  const filteredEntries = searchQuery === '' ? 
+    timeEntries : 
+    timeEntries.filter((entry: any) => 
+      (entry.entity_name && entry.entity_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (entry.entity_location && entry.entity_location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (entry.employee_name && entry.employee_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (entry.notes && entry.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  
+  // Handle view entry - extracted to avoid re-renders
   const handleViewEntry = (id: string) => {
     const entry = timeEntries.find(e => e.id === id);
     if (entry) {
@@ -228,7 +226,7 @@ const TimeTracking = () => {
                 </div>
               ) : (
                 <TimeTrackingTable 
-                  entries={timeEntries}
+                  entries={filteredEntries}
                   onDelete={handleConfirmDelete}
                   onView={handleViewEntry}
                   onEdit={handleEditEntry}
@@ -307,11 +305,6 @@ const TimeTracking = () => {
                 {selectedEntry && (
                   <div className="text-sm font-normal text-muted-foreground">
                     {selectedEntry.entity_name} - {formatDate(selectedEntry.date_worked)}
-                    {selectedEntry.vendor_name && (
-                      <span className="ml-2 text-[#0485ea]">
-                        Vendor: {selectedEntry.vendor_name}
-                      </span>
-                    )}
                   </div>
                 )}
               </div>

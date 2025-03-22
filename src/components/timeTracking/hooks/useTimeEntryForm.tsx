@@ -51,7 +51,6 @@ export const useTimeEntryForm = (onSuccess: () => void, isEditMode: boolean = fa
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmationData, setConfirmationData] = useState<TimeEntryFormValues | null>(null);
-  const [newTimeEntryId, setNewTimeEntryId] = useState<string | null>(null);
   
   const form = useForm<TimeEntryFormValues>({
     resolver: zodResolver(timeEntrySchema),
@@ -73,8 +72,15 @@ export const useTimeEntryForm = (onSuccess: () => void, isEditMode: boolean = fa
   
   // Update hours worked whenever start or end time changes
   if (startTime && endTime) {
-    const hoursWorked = calculateHoursWorked(startTime, endTime);
-    form.setValue('hoursWorked', hoursWorked);
+    try {
+      const hoursWorked = calculateHoursWorked(startTime, endTime);
+      // Use setValue outside render to avoid infinite loop
+      if (hoursWorked !== form.getValues('hoursWorked')) {
+        form.setValue('hoursWorked', hoursWorked, { shouldValidate: false });
+      }
+    } catch (error) {
+      console.error('Error calculating hours:', error);
+    }
   }
   
   const handleSubmit = (values: TimeEntryFormValues) => {
@@ -85,6 +91,7 @@ export const useTimeEntryForm = (onSuccess: () => void, isEditMode: boolean = fa
       // In create mode, show confirmation dialog
       setConfirmationData(values);
       setShowConfirmDialog(true);
+      return values; // Return values to satisfy the type system
     }
   };
   
@@ -108,17 +115,6 @@ export const useTimeEntryForm = (onSuccess: () => void, isEditMode: boolean = fa
       // Format date for the database
       const formattedDate = format(workDate, 'yyyy-MM-dd');
       
-      console.log('Submitting time entry:', {
-        entity_type: entityType,
-        entity_id: entityId,
-        date_worked: formattedDate,
-        start_time: startTime,
-        end_time: endTime,
-        hours_worked: hoursWorked,
-        employee_id: employeeId,
-        notes
-      });
-      
       // Insert time entry
       const { data: timeEntry, error } = await supabase
         .from('time_entries')
@@ -137,8 +133,6 @@ export const useTimeEntryForm = (onSuccess: () => void, isEditMode: boolean = fa
         .single();
       
       if (error) throw error;
-      
-      console.log('Time entry created:', timeEntry);
       
       // If it's a work order, also create a work order time log
       if (entityType === 'work_order') {
@@ -178,8 +172,6 @@ export const useTimeEntryForm = (onSuccess: () => void, isEditMode: boolean = fa
     setShowConfirmDialog,
     confirmationData,
     handleSubmit,
-    confirmSubmit,
-    newTimeEntryId,
-    setNewTimeEntryId
+    confirmSubmit
   };
 };

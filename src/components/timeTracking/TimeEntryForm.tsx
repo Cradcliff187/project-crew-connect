@@ -18,6 +18,7 @@ interface TimeEntryFormProps {
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   const [selectedEmployeeRate, setSelectedEmployeeRate] = useState<number | null>(null);
+  const [newTimeEntryId, setNewTimeEntryId] = useState<string | null>(null);
 
   const {
     form,
@@ -26,9 +27,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     setShowConfirmDialog,
     confirmationData,
     handleSubmit,
-    confirmSubmit,
-    newTimeEntryId,
-    setNewTimeEntryId
+    confirmSubmit
   } = useTimeEntryForm(onSuccess);
 
   const {
@@ -143,7 +142,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
             date_worked: form.watch('workDate').toISOString(),
             vendor_id: null
           } as any}
-          onSuccess={handleReceiptUploadSuccess}
+          onSuccess={(timeEntryId, documentId) => handleReceiptUploadSuccess(timeEntryId, documentId)}
           onCancel={() => {
             setShowReceiptUpload(false);
             onSuccess();

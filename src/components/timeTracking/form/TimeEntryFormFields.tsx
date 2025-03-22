@@ -46,22 +46,65 @@ const TimeEntryFormFields: React.FC<TimeEntryFormFieldsProps> = ({
   const hoursWorked = form.watch('hoursWorked');
   const employeeId = form.watch('employeeId');
 
+  // Safely update employee rate when employeeId changes
   useEffect(() => {
     if (employeeId && employees.length > 0) {
       const employee = employees.find(emp => emp.employee_id === employeeId);
-      setSelectedEmployeeRate(employee?.hourly_rate || null);
-    } else {
+      if (employee?.hourly_rate !== selectedEmployeeRate) {
+        setSelectedEmployeeRate(employee?.hourly_rate || null);
+      }
+    } else if (selectedEmployeeRate !== null) {
       setSelectedEmployeeRate(null);
     }
-  }, [employeeId, employees, setSelectedEmployeeRate]);
+  }, [employeeId, employees, selectedEmployeeRate, setSelectedEmployeeRate]);
 
   const laborCost = hoursWorked * (selectedEmployeeRate || 75);
+
+  // Handlers to prevent re-renders in render
+  const handleEntityTypeChange = (value: 'work_order' | 'project') => {
+    form.setValue('entityType', value, { shouldValidate: true });
+  };
+
+  const handleEntityIdChange = (value: string) => {
+    form.setValue('entityId', value, { shouldValidate: true });
+  };
+
+  const handleEmployeeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    form.setValue('employeeId', e.target.value, { shouldValidate: true });
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      form.setValue('workDate', date, { shouldValidate: true });
+    }
+  };
+
+  const handleStartTimeChange = (value: string) => {
+    form.setValue('startTime', value, { shouldValidate: true });
+    if (endTime) {
+      const [startHour, startMinute] = value.split(':').map(Number);
+      const [endHour, endMinute] = endTime.split(':').map(Number);
+      const startTotal = startHour * 60 + startMinute;
+      const endTotal = endHour * 60 + endMinute;
+      
+      if (endTotal <= startTotal && endTotal > startTotal - 120) {
+        let newEndHour = startHour + 1;
+        if (newEndHour >= 24) newEndHour -= 24;
+        const newEndTime = `${newEndHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+        form.setValue('endTime', newEndTime, { shouldValidate: true });
+      }
+    }
+  };
+
+  const handleEndTimeChange = (value: string) => {
+    form.setValue('endTime', value, { shouldValidate: true });
+  };
 
   return (
     <CardContent className="space-y-6">
       <EntityTypeSelector 
         entityType={entityType} 
-        onChange={(value) => form.setValue('entityType', value, { shouldValidate: true })}
+        onChange={handleEntityTypeChange}
       />
       
       <EntitySelector
@@ -70,7 +113,7 @@ const TimeEntryFormFields: React.FC<TimeEntryFormFieldsProps> = ({
         workOrders={workOrders}
         projects={projects}
         isLoading={isLoadingEntities}
-        onChange={(value) => form.setValue('entityId', value, { shouldValidate: true })}
+        onChange={handleEntityIdChange}
         error={form.formState.errors.entityId?.message}
         selectedEntity={getSelectedEntityDetails()}
         required={true}
@@ -82,7 +125,7 @@ const TimeEntryFormFields: React.FC<TimeEntryFormFieldsProps> = ({
           id="employee"
           className="w-full border border-gray-300 rounded-md p-2"
           value={employeeId || ''}
-          onChange={(e) => form.setValue('employeeId', e.target.value, { shouldValidate: true })}
+          onChange={handleEmployeeChange}
         >
           {employees.map(employee => (
             <option key={employee.employee_id} value={employee.employee_id}>
@@ -115,7 +158,7 @@ const TimeEntryFormFields: React.FC<TimeEntryFormFieldsProps> = ({
             <Calendar
               mode="single"
               selected={form.watch('workDate')}
-              onSelect={(date) => date && form.setValue('workDate', date, { shouldValidate: true })}
+              onSelect={handleDateSelect}
               initialFocus
             />
           </PopoverContent>
@@ -136,23 +179,8 @@ const TimeEntryFormFields: React.FC<TimeEntryFormFieldsProps> = ({
         <TimeRangeSelector
           startTime={startTime}
           endTime={endTime}
-          onStartTimeChange={(value) => {
-            form.setValue('startTime', value, { shouldValidate: true });
-            if (endTime) {
-              const [startHour, startMinute] = value.split(':').map(Number);
-              const [endHour, endMinute] = endTime.split(':').map(Number);
-              const startTotal = startHour * 60 + startMinute;
-              const endTotal = endHour * 60 + endMinute;
-              
-              if (endTotal <= startTotal && endTotal > startTotal - 120) {
-                let newEndHour = startHour + 1;
-                if (newEndHour >= 24) newEndHour -= 24;
-                const newEndTime = `${newEndHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
-                form.setValue('endTime', newEndTime, { shouldValidate: true });
-              }
-            }
-          }}
-          onEndTimeChange={(value) => form.setValue('endTime', value, { shouldValidate: true })}
+          onStartTimeChange={handleStartTimeChange}
+          onEndTimeChange={handleEndTimeChange}
           startTimeError={form.formState.errors.startTime?.message}
           endTimeError={form.formState.errors.endTime?.message}
         />
