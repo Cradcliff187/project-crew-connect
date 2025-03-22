@@ -1,7 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { SubcontractorDocument } from '../types/documentTypes';
+import { DocumentBase } from '@/components/documents/types/documentTypes';
+
+// Define the type directly here instead of importing to avoid circular references
+export type SubcontractorDocument = DocumentBase;
 
 export const useSubcontractorDocuments = (subcontractorId: string) => {
   const [documents, setDocuments] = useState<SubcontractorDocument[]>([]);

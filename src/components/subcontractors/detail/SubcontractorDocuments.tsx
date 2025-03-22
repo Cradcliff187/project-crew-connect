@@ -9,7 +9,7 @@ import { EntityType } from '@/components/documents/schemas/documentSchema';
 import { useSubcontractorDocuments } from './hooks/useSubcontractorDocuments';
 import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
 import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
-import { SubcontractorDocument } from './types/documentTypes';
+import { SubcontractorDocument } from './hooks/useSubcontractorDocuments';
 
 interface SubcontractorDocumentsProps {
   subcontractorId: string;

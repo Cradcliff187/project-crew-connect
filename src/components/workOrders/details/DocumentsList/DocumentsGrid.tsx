@@ -36,7 +36,7 @@ const DocumentsGrid = ({
         <DocumentCard 
           key={doc.document_id} 
           document={doc} 
-          onViewDocument={onViewDocument} 
+          onViewDocument={() => onViewDocument(doc)} 
         />
       ))}
     </div>
