@@ -111,7 +111,10 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
         )}
         
         {(watchIsExpense || isReceiptUpload) && !prefillData?.amount && (
-          <ExpenseForm control={control} />
+          <ExpenseForm 
+            control={control} 
+            isReceiptUpload={isReceiptUpload} 
+          />
         )}
         
         <FormField

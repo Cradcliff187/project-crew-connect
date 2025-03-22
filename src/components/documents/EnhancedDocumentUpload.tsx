@@ -58,7 +58,8 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     watchIsExpense,
     watchVendorType,
     watchFiles,
-    watchCategory
+    watchCategory,
+    watchCostType
   } = useDocumentUploadForm({
     entityType,
     entityId,

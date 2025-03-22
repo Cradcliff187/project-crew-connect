@@ -48,7 +48,8 @@ export const useDocumentUploadForm = ({
         tags: [],
         isExpense: isReceiptUpload ? true : false,
         vendorId: '',
-        vendorType: 'vendor'
+        vendorType: 'vendor',
+        costType: 'materials', // Default to materials for receipt uploads
       }
     }
   });
@@ -110,6 +111,7 @@ export const useDocumentUploadForm = ({
     if (isReceiptUpload) {
       form.setValue('metadata.category', 'receipt');
       form.setValue('metadata.isExpense', true);
+      form.setValue('metadata.costType', 'materials'); // Default value
       setShowVendorSelector(true);
     }
     
@@ -143,6 +145,7 @@ export const useDocumentUploadForm = ({
     watchIsExpense: form.watch('metadata.isExpense'),
     watchVendorType: form.watch('metadata.vendorType'),
     watchFiles: form.watch('files'),
-    watchCategory: form.watch('metadata.category')
+    watchCategory: form.watch('metadata.category'),
+    watchCostType: form.watch('metadata.costType')
   };
 };
