@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calculateHoursWorked } from '../utils/timeCalculations';
-import { timeEntrySchema, TimeEntryFormValues } from '../schemas/timeEntrySchema';
+import { timeEntrySchema } from '../schemas/timeEntrySchema';
+import type { TimeEntryFormValues } from '../schemas/timeEntrySchema';
 import { submitTimeEntry } from '../utils/timeEntrySubmission';
 
-export { TimeEntryFormValues } from '../schemas/timeEntrySchema';
+// Re-export the type with the proper syntax
+export type { TimeEntryFormValues };
 
 export const useTimeEntryForm = (onSuccess: () => void, isEditMode: boolean = false) => {
   const [isLoading, setIsLoading] = useState(false);
