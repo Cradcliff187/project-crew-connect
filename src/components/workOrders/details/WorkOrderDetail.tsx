@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
@@ -12,6 +11,7 @@ import PageTransition from '@/components/layout/PageTransition';
 
 import WorkOrderDetails from '../WorkOrderDetails';
 import { WorkOrder } from '@/types/workOrder';
+import WorkOrderDocuments from '@/components/workOrders/documents';
 
 const WorkOrderDetail = () => {
   const { workOrderId } = useParams<{ workOrderId: string }>();
