@@ -2,7 +2,7 @@
 import React from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { costTypes } from '../schemas/documentSchema';
+import { expenseTypes } from '../schemas/documentSchema';
 
 interface CostTypeSelectorProps {
   value: string;
@@ -16,7 +16,7 @@ const CostTypeSelector: React.FC<CostTypeSelectorProps> = ({ value, onChange }) 
       onValueChange={onChange}
       className="flex flex-col space-y-1"
     >
-      {costTypes.map((type) => (
+      {expenseTypes.map((type) => (
         <div key={type} className="flex items-center space-x-2">
           <RadioGroupItem value={type} id={`cost-type-${type}`} />
           <Label htmlFor={`cost-type-${type}`} className="capitalize">

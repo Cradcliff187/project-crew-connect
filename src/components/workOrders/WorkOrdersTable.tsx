@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,9 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusType } from '@/types/common';
 
+type WorkOrderStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'ALL';
+type BadgeVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'earth' | 'sage';
+
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
   loading: boolean;
@@ -30,46 +34,50 @@ interface WorkOrdersTableProps {
 }
 
 const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChange }: WorkOrdersTableProps) => {
-  const [statusFilter, setStatusFilter] = useState<StatusType | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<WorkOrderStatus>('ALL');
   
   const filteredWorkOrders = workOrders.filter(workOrder => {
     const searchRegex = new RegExp(searchQuery, 'i');
     const matchesSearch = searchRegex.test(workOrder.title) || (workOrder.work_order_number ? searchRegex.test(workOrder.work_order_number) : false);
     
-    const matchesStatus = statusFilter === 'ALL' || workOrder.status === statusFilter;
+    const matchesStatus = statusFilter === 'ALL' || workOrder.status === statusFilter.toLowerCase().replace('_', '-');
     
     return matchesSearch && matchesStatus;
   });
 
   const StatusBadge = ({ status }: { status: StatusType }) => {
-    let badgeText = status.replace(/_/g, ' ');
+    let badgeText = status.replace(/_/g, ' ').replace(/-/g, ' ');
     badgeText = badgeText.charAt(0).toUpperCase() + badgeText.slice(1).toLowerCase();
   
-    let badgeColor = "neutral";
+    let badgeVariant: BadgeVariant = "default";
   
+    // Map status to appropriate badge variant
     switch (status) {
-      case "NOT_STARTED":
-        badgeColor = "secondary";
+      case "not_started":
+      case "not-started": 
+        badgeVariant = "secondary";
         break;
-      case "IN_PROGRESS":
-        badgeColor = "info";
+      case "in_progress":
+      case "in-progress":
+        badgeVariant = "secondary";
         break;
-      case "ON_HOLD":
-        badgeColor = "warning";
+      case "on_hold":
+      case "on-hold":
+        badgeVariant = "outline";
         break;
-      case "COMPLETED":
-        badgeColor = "success";
+      case "completed":
+        badgeVariant = "default";
         break;
-      case "CANCELLED":
-        badgeColor = "destructive";
+      case "cancelled":
+        badgeVariant = "destructive";
         break;
       default:
-        badgeColor = "neutral";
+        badgeVariant = "outline";
         break;
     }
   
     return (
-      <Badge variant={badgeColor}>
+      <Badge variant={badgeVariant}>
         {badgeText}
       </Badge>
     );
@@ -141,7 +149,7 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
       {/* Status Filter */}
       <div className="mb-4 flex items-center space-x-2">
         <Label htmlFor="status">Filter by Status:</Label>
-        <Select onValueChange={(value) => setStatusFilter(value as StatusType | 'ALL')}>
+        <Select onValueChange={(value) => setStatusFilter(value as WorkOrderStatus)}>
           <SelectTrigger id="status">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>

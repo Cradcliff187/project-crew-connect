@@ -23,6 +23,8 @@ export type StatusType =
   | 'rejected'
   | 'verified'
   | 'new'
+  | 'not_started'
+  | 'not-started'
   // Added new status types to match SubcontractorStatusBadge usage
   | 'success'
   | 'info'

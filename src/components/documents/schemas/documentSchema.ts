@@ -39,6 +39,9 @@ export const expenseTypes = [
   'other'
 ] as const;
 
+// For backward compatibility - alias expenseTypes as costTypes
+export const costTypes = expenseTypes;
+
 // Define the document metadata schema
 export const documentMetadataSchema = z.object({
   category: z.enum(documentCategories),
