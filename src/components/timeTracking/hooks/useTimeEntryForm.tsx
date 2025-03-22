@@ -80,6 +80,62 @@ export function useTimeEntryForm(onSuccess: () => void) {
     setShowConfirmDialog(true);
   };
   
+  const updateWorkOrderCosts = async (workOrderId: string, hoursWorked: number, employeeRate: number | null) => {
+    try {
+      // Create a time log entry in work_order_time_logs
+      const { error: logError } = await supabase
+        .from('work_order_time_logs')
+        .insert({
+          work_order_id: workOrderId,
+          employee_id: confirmationData?.employeeId || null,
+          hours_worked: hoursWorked,
+          notes: confirmationData?.notes,
+          work_date: new Date().toISOString(),
+        });
+        
+      if (logError) {
+        console.error('Error creating work order time log:', logError);
+      } else {
+        console.log('Successfully created work order time log');
+      }
+      
+      // Note: The database trigger update_work_order_hours() will update the work order's actual_hours
+      // and calculate_work_order_total_cost() will update the total_cost automatically
+    } catch (error) {
+      console.error('Error updating work order costs:', error);
+      throw error;
+    }
+  };
+  
+  const updateProjectCosts = async (projectId: string, hoursWorked: number, employeeRate: number | null) => {
+    try {
+      // Create a project expense for the labor
+      const actualRate = employeeRate || 75; // Default to $75/hr if no specific rate
+      const amount = hoursWorked * actualRate;
+      
+      const { error: expenseError } = await supabase
+        .from('project_expenses')
+        .insert({
+          project_id: projectId,
+          description: `Labor: ${hoursWorked} hours${confirmationData?.notes ? ' - ' + confirmationData.notes : ''}`,
+          amount: amount,
+          expense_date: format(confirmationData?.workDate || new Date(), 'yyyy-MM-dd')
+        });
+        
+      if (expenseError) {
+        console.error('Error creating project expense:', expenseError);
+      } else {
+        console.log('Successfully created project expense');
+      }
+      
+      // Note: The database trigger update_project_total_expenses() will update the project's current_expenses
+      // and update_project_budget_status() will update the budget_status automatically
+    } catch (error) {
+      console.error('Error updating project costs:', error);
+      throw error;
+    }
+  };
+  
   const confirmSubmit = async () => {
     if (!confirmationData) return;
     
@@ -97,6 +153,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
         employeeRate = empData?.hourly_rate;
       }
       
+      // First, create the time entry record
       const timeEntry = {
         entity_type: confirmationData.entityType,
         entity_id: confirmationData.entityId,
@@ -120,6 +177,22 @@ export function useTimeEntryForm(onSuccess: () => void) {
         
       if (error) throw error;
       
+      // Next, update costs for the associated entity
+      if (confirmationData.entityType === 'work_order') {
+        await updateWorkOrderCosts(
+          confirmationData.entityId, 
+          confirmationData.hoursWorked,
+          employeeRate
+        );
+      } else if (confirmationData.entityType === 'project') {
+        await updateProjectCosts(
+          confirmationData.entityId,
+          confirmationData.hoursWorked,
+          employeeRate
+        );
+      }
+      
+      // Handle receipt uploads if any
       if (selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
           const fileExt = file.name.split('.').pop();
@@ -149,7 +222,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
       
       toast({
         title: 'Time entry submitted',
-        description: 'Your time entry has been successfully recorded.',
+        description: 'Your time entry has been successfully recorded and costs have been updated.',
       });
       
       form.reset(defaultFormValues);

@@ -34,6 +34,19 @@ export const validateFiles = (
   // Parse the accepted types
   const acceptedTypesArray = acceptedFileTypes.split(',');
   
+  // Add proper MIME types for any file extensions included in acceptedTypesArray
+  const extendedAcceptedTypes = [...acceptedTypesArray];
+  
+  acceptedTypesArray.forEach(type => {
+    if (type.startsWith('.') && extensionToMimeType[type]) {
+      extensionToMimeType[type].forEach(mimeType => {
+        if (!extendedAcceptedTypes.includes(mimeType)) {
+          extendedAcceptedTypes.push(mimeType);
+        }
+      });
+    }
+  });
+  
   const validFiles = files.filter(file => {
     // Check file size
     if (file.size > maxFileSize * 1024 * 1024) {
@@ -47,7 +60,7 @@ export const validateFiles = (
     const fileExtension = '.' + fileName.split('.').pop();
     
     // Check if the file type matches any accepted MIME type
-    const isValidType = acceptedTypesArray.some(type => {
+    const isValidType = extendedAcceptedTypes.some(type => {
       // Handle wildcard MIME types like image/*
       if (type.includes('*')) {
         const category = type.split('/')[0];
@@ -65,11 +78,8 @@ export const validateFiles = (
     
     // If file type is empty but extension is recognized, use extension-based validation
     if (!fileType && fileExtension) {
-      const validExtension = Object.keys(extensionToMimeType).some(ext => 
-        ext === fileExtension && acceptedTypesArray.includes(ext)
-      );
-      
-      if (validExtension) {
+      const mimeTypes = extensionToMimeType[fileExtension];
+      if (mimeTypes && mimeTypes.some(mimeType => extendedAcceptedTypes.includes(mimeType))) {
         return true;
       }
     }
