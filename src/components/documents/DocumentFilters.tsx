@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { documentCategories } from './schemas/documentSchema';
-import DocumentCategorySelector from './DocumentCategorySelector';
+import { DocumentFilterFormValues, DocumentFiltersProps } from './types/documentTypes';
 
 // Define the filter schema
 const filterSchema = z.object({
@@ -19,19 +20,12 @@ const filterSchema = z.object({
   dateTo: z.string().optional(),
 });
 
-type FilterValues = z.infer<typeof filterSchema>;
-
-interface DocumentFiltersProps {
-  onFilterChange: (filters: FilterValues) => void;
-  initialFilters?: Partial<FilterValues>;
-}
-
 const DocumentFilters: React.FC<DocumentFiltersProps> = ({ 
   onFilterChange,
   initialFilters = {}
 }) => {
   // Initialize the form with default values
-  const form = useForm<FilterValues>({
+  const form = useForm<DocumentFilterFormValues>({
     resolver: zodResolver(filterSchema),
     defaultValues: {
       searchTerm: initialFilters.searchTerm || '',
@@ -43,7 +37,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   });
 
   // Handle form submission
-  const onSubmit = (data: FilterValues) => {
+  const onSubmit = (data: DocumentFilterFormValues) => {
     onFilterChange(data);
   };
 
@@ -91,9 +85,28 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                 )}
               />
               
-              {/* Category Selector */}
-              <DocumentCategorySelector 
+              {/* Category Field - Use select instead of DocumentCategorySelector */}
+              <FormField
                 control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <select 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        {...field}
+                      >
+                        <option value="">All Categories</option>
+                        {documentCategories.map((category) => (
+                          <option key={category} value={category}>
+                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                  </FormItem>
+                )}
               />
               
               {/* Date Range */}

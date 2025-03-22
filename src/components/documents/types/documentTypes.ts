@@ -6,6 +6,19 @@ export interface DocumentFormProps {
   control: Control<DocumentUploadFormValues>;
 }
 
+export interface DocumentFilterFormValues {
+  searchTerm?: string;
+  category?: string;
+  isExpense?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface DocumentFiltersProps {
+  onFilterChange: (filters: DocumentFilterFormValues) => void;
+  initialFilters?: Partial<DocumentFilterFormValues>;
+}
+
 export interface SubcontractorDocument {
   document_id: string;
   file_name: string;

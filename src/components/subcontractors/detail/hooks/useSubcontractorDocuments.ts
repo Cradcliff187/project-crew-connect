@@ -1,10 +1,22 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { SubcontractorDocument } from '../../detail/types';
+import { SubcontractorDocument } from '../types/documentTypes';
+
+// Define the SubcontractorDocument type directly in this file to avoid circular references
+interface DocumentTypes {
+  document_id: string;
+  file_name: string;
+  category: string | null;
+  created_at: string;
+  file_type: string | null;
+  storage_path?: string;
+  url?: string;
+  is_expense?: boolean;
+}
 
 export const useSubcontractorDocuments = (subcontractorId: string) => {
-  const [documents, setDocuments] = useState<SubcontractorDocument[]>([]);
+  const [documents, setDocuments] = useState<DocumentTypes[]>([]);
   const [loading, setLoading] = useState(true);
   
   const fetchDocuments = async () => {

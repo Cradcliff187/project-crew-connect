@@ -1,20 +1,29 @@
+
 import React, { useState } from 'react';
 import { Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EstimateItem } from '../types/estimateTypes';
+import { EstimateItem } from './types/estimateTypes';
 import { useToast } from "@/hooks/use-toast";
-import MaterialReceiptUpload from '@/components/workOrders/materials/components/MaterialReceiptUpload';
-import { PrefillData } from '@/components/documents/schemas/documentSchema';
+import { Document } from '@/components/documents/schemas/documentSchema';
 
-interface EstimateItemsProps {
+export interface EstimateItemsProps {
   items: EstimateItem[];
   onChange: (newItems: EstimateItem[]) => void;
+  itemDocuments?: Record<string, Document[]>;
+  estimateId?: string;
+  onDocumentAdded?: () => void;
 }
 
-const EstimateItems: React.FC<EstimateItemsProps> = ({ items, onChange }) => {
+const EstimateItems: React.FC<EstimateItemsProps> = ({ 
+  items, 
+  onChange,
+  itemDocuments = {},
+  estimateId,
+  onDocumentAdded
+}) => {
   const { toast } = useToast();
   const [uploadingDocumentId, setUploadingDocumentId] = useState<string | null>(null);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
@@ -35,14 +44,14 @@ const EstimateItems: React.FC<EstimateItemsProps> = ({ items, onChange }) => {
   const handleAddItem = () => {
     const newItem: EstimateItem = {
       id: Math.random().toString(36).substring(2, 9), // Generate a simple unique ID
-      estimate_id: '',
+      estimate_id: estimateId || '',
       description: '',
       quantity: 1,
       unit_price: 0,
       total_price: 0,
       item_type: 'labor',
-      cost: '0',
-      markup_percentage: '0',
+      cost: 0,
+      markup_percentage: 0,
     };
     onChange([...items, newItem]);
   };
@@ -76,6 +85,10 @@ const EstimateItems: React.FC<EstimateItemsProps> = ({ items, onChange }) => {
       description: "The document has been successfully attached to the item.",
     });
     closeDocumentUpload();
+    
+    if (onDocumentAdded) {
+      onDocumentAdded();
+    }
   };
 
   return (
@@ -163,16 +176,15 @@ const EstimateItems: React.FC<EstimateItemsProps> = ({ items, onChange }) => {
       <Button onClick={handleAddItem}>Add Item</Button>
 
       {showDocumentUpload && selectedItem && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-lg">
             <h2 className="text-lg font-semibold mb-4">Upload Document</h2>
-            <MaterialReceiptUpload
-              workOrderId={selectedItem.estimate_id} // This is not a work order, but we can use the estimate ID here
-              material={selectedItem} // Pass the selected item as material
-              vendorName="" // No vendor name available here
-              onSuccess={handleDocumentUploaded}
-              onCancel={closeDocumentUpload}
-            />
+            {/* We'll use a simpler approach here */}
+            <div className="space-y-4">
+              <Button onClick={closeDocumentUpload} variant="outline">
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}

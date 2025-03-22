@@ -34,14 +34,20 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
     ...item,
     estimate_id: '', // Adding the required estimate_id property
     // Default values for other required properties in EstimateItem that might be missing
-    item_type: 'labor',
+    item_type: item.item_type || 'labor',
     cost: item.cost || 0,
     markup_percentage: item.markup_percentage || 0
   }));
 
+  // A no-op onChange handler since this is a read-only view
+  const handleItemsChange = (newItems: EstimateItem[]) => {
+    // This is intentionally empty as we're just displaying items
+    console.log("Items would change to:", newItems);
+  };
+
   return (
     <>
-      <EstimateItems items={transformedItems} />
+      <EstimateItems items={transformedItems} onChange={handleItemsChange} />
       
       <div className="flex justify-end mt-4">
         <div className="w-64">

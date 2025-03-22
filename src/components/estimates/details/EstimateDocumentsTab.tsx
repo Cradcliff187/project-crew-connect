@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -14,13 +15,13 @@ import { useEstimateDetails } from '../hooks/useEstimateDetails';
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
-  itemDocuments: Document[];
-  onDocumentsUpdated: () => void;
+  itemDocuments?: Document[];
+  onDocumentsUpdated?: () => void;
 }
 
 const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
   estimateId,
-  itemDocuments,
+  itemDocuments = [],
   onDocumentsUpdated
 }) => {
   const [open, setOpen] = useState(false);
@@ -32,7 +33,9 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
       description: "The document has been successfully uploaded.",
     });
     setOpen(false);
-    onDocumentsUpdated();
+    if (onDocumentsUpdated) {
+      onDocumentsUpdated();
+    }
     fetchItemDocuments(estimateId);
   };
 
@@ -59,11 +62,6 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
             {itemDocuments && itemDocuments.length > 0 ? (
               itemDocuments.map((document) => {
                 // Fix the property access 
-                // Change:
-                // const entityType = document.vendor_type === 'vendor' ? 'VENDOR' : 'SUBCONTRACTOR';
-                // const entityId = document.vendor_id;
-                
-                // To:
                 const entityType = document.vendor_id ? 'VENDOR' : 
                                    document.subcontractor_id ? 'SUBCONTRACTOR' : null;
                 const entityId = document.vendor_id || document.subcontractor_id;

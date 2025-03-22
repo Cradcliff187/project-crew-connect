@@ -65,7 +65,8 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
           <TabsContent value="documents">
             <EstimateDocumentsTab 
               estimateId={estimate.id} 
-              onDocumentUploadSuccess={handleDocumentsUpdated}
+              itemDocuments={Object.values(itemDocuments || {}).flat()}
+              onDocumentsUpdated={handleDocumentsUpdated}
             />
           </TabsContent>
         </Tabs>
