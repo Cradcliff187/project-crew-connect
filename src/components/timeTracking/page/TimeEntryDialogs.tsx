@@ -69,10 +69,10 @@ const TimeEntryDialogs: React.FC<TimeEntryDialogsProps> = ({
                 setShowDetailDialog(false);
                 setShowDeleteDialog(true);
               }}
-              onViewReceipts={() => {
+              onViewReceipts={async () => {
                 setShowDetailDialog(false);
                 if (selectedEntry) {
-                  handleViewReceipts(selectedEntry.id);
+                  await handleViewReceipts(selectedEntry.id);
                 }
               }}
             />
