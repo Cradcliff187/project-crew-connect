@@ -47,7 +47,12 @@ const StatusDropdownMenu = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={updating} className="ml-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          disabled={updating} 
+          className="ml-2 border-[#0485ea]/30 hover:border-[#0485ea] hover:bg-[#0485ea]/10"
+        >
           {updating ? 'Updating...' : 'Change Status'}
         </Button>
       </DropdownMenuTrigger>

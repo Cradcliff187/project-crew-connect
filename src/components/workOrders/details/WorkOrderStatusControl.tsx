@@ -152,14 +152,14 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
               groups={getStatusActions()} 
               size="sm" 
               variant="outline"
-              triggerClassName="bg-muted/50 border border-input"
+              triggerClassName="bg-muted/50 border border-input hover:bg-[#0485ea]/10"
             />
           </div>
           
           {/* Desktop view with Select component */}
           <div className="hidden md:block">
             <Select onValueChange={handleStatusChange} disabled={loading}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] border-[#0485ea]/30 hover:border-[#0485ea] focus:ring-[#0485ea]/20">
                 <SelectValue placeholder="Change status" />
               </SelectTrigger>
               <SelectContent>
