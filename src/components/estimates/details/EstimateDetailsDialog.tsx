@@ -14,7 +14,8 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   revisions,
   itemDocuments,
   open,
-  onClose
+  onClose,
+  onDocumentsUpdated
 }) => {
   const [activeTab, setActiveTab] = useState('details');
   
@@ -25,6 +26,12 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
       day: 'numeric',
       year: 'numeric'
     }).format(date);
+  };
+  
+  const handleDocumentsUpdated = () => {
+    if (onDocumentsUpdated) {
+      onDocumentsUpdated();
+    }
   };
   
   return (
@@ -43,7 +50,12 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
           </TabsContent>
           
           <TabsContent value="items">
-            <EstimateItemsTab items={items} itemDocuments={itemDocuments} />
+            <EstimateItemsTab 
+              items={items} 
+              itemDocuments={itemDocuments} 
+              estimateId={estimate.id}
+              onDocumentsUpdated={handleDocumentsUpdated}
+            />
           </TabsContent>
           
           <TabsContent value="revisions">
@@ -51,7 +63,10 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
           </TabsContent>
 
           <TabsContent value="documents">
-            <EstimateDocumentsTab estimateId={estimate.id} />
+            <EstimateDocumentsTab 
+              estimateId={estimate.id} 
+              onDocumentUploadSuccess={handleDocumentsUpdated}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>

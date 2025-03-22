@@ -9,9 +9,13 @@ import { Button } from '@/components/ui/button';
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
+  onDocumentUploadSuccess?: () => void;
 }
 
-const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId }) => {
+const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ 
+  estimateId,
+  onDocumentUploadSuccess
+}) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +60,9 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
 
   const handleDocumentUploadSuccess = () => {
     fetchDocuments();
+    if (onDocumentUploadSuccess) {
+      onDocumentUploadSuccess();
+    }
   };
 
   const handleViewDocument = (url: string) => {
@@ -73,6 +80,9 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
       
       // Refresh document list
       fetchDocuments();
+      if (onDocumentUploadSuccess) {
+        onDocumentUploadSuccess();
+      }
     } catch (err: any) {
       console.error('Error deleting document:', err);
       setError(err.message);
@@ -127,6 +137,12 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
                     <XCircleIcon className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
+                
+                {doc.vendor_id && (
+                  <div className="text-xs text-gray-500 mb-2">
+                    Associated with: {doc.vendor_type === 'vendor' ? 'Vendor' : 'Subcontractor'}
+                  </div>
+                )}
                 
                 <div className="mt-2 flex-grow">
                   {doc.file_type?.includes('image') && doc.url ? (

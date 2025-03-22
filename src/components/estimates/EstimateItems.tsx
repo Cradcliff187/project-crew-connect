@@ -2,19 +2,33 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EstimateItem } from "./types/estimateTypes";
 import { Document } from "@/components/documents/schemas/documentSchema";
-import { DownloadIcon, FileIcon } from "lucide-react";
+import { DownloadIcon, FileIcon, PaperclipIcon, PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import EnhancedDocumentUpload from "@/components/documents/EnhancedDocumentUpload";
 
 interface EstimateItemsProps {
   items: EstimateItem[];
   itemDocuments?: Record<string, Document[]>;
+  estimateId?: string;
+  readOnly?: boolean;
+  onDocumentAdded?: () => void;
 }
 
-const EstimateItems = ({ items, itemDocuments = {} }: EstimateItemsProps) => {
+const EstimateItems = ({ 
+  items, 
+  itemDocuments = {}, 
+  estimateId,
+  readOnly = false,
+  onDocumentAdded
+}: EstimateItemsProps) => {
   const [vendorNames, setVendorNames] = useState<Record<string, string>>({});
   const [subcontractorNames, setSubcontractorNames] = useState<Record<string, string>>({});
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   
   // Fetch vendor and subcontractor names for display
   useEffect(() => {
@@ -93,92 +107,144 @@ const EstimateItems = ({ items, itemDocuments = {} }: EstimateItemsProps) => {
     return `${percentage.toFixed(1)}%`;
   };
 
+  const handleAttachDocument = (item: EstimateItem) => {
+    setSelectedItem(item);
+    setShowDocumentUpload(true);
+  };
+
+  const handleDocumentUploadSuccess = () => {
+    setShowDocumentUpload(false);
+    if (onDocumentAdded) {
+      onDocumentAdded();
+    }
+  };
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[40%]">Description</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead className="text-right">Quantity</TableHead>
-            <TableHead className="text-right">Unit Price</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            {/* Show margin info if available in any item */}
-            {items.some(item => item.gross_margin !== undefined) && (
-              <TableHead className="text-right">Margin</TableHead>
-            )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.length === 0 ? (
+    <>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
-                No items found for this estimate.
-              </TableCell>
+              <TableHead className="w-[40%]">Description</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="text-right">Unit Price</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              {/* Show margin info if available in any item */}
+              {items.some(item => item.gross_margin !== undefined) && (
+                <TableHead className="text-right">Margin</TableHead>
+              )}
+              {!readOnly && estimateId && (
+                <TableHead className="text-right">Actions</TableHead>
+              )}
             </TableRow>
-          ) : (
-            items.map((item) => {
-              // Get documents associated with this item
-              const docs = itemDocuments[item.id] || [];
-              // Get vendor or subcontractor name if applicable
-              const vendorName = item.vendor_id ? vendorNames[item.vendor_id] : null;
-              const subcontractorName = item.subcontractor_id ? subcontractorNames[item.subcontractor_id] : null;
-              
-              return (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    <div>{item.description}</div>
-                    
-                    {/* Show vendor or subcontractor info if available */}
-                    {(vendorName || subcontractorName) && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {vendorName && <span>Vendor: {vendorName}</span>}
-                        {subcontractorName && <span>Subcontractor: {subcontractorName}</span>}
-                      </div>
-                    )}
-                    
-                    {/* Show associated documents */}
-                    {docs.length > 0 && (
-                      <div className="mt-1 flex items-center gap-2">
-                        {docs.map(doc => (
-                          <a 
-                            key={doc.document_id}
-                            href={doc.url || `https://zrxezqllmpdlhiudutme.supabase.co/storage/v1/object/public/construction_documents/${doc.storage_path}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
-                          >
-                            <FileIcon className="h-3 w-3 mr-1" />
-                            {doc.file_name}
-                            <DownloadIcon className="h-3 w-3 ml-1" />
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{getTypeLabel(item.item_type)}</TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(item.total_price)}</TableCell>
-                  {items.some(item => item.gross_margin !== undefined) && (
-                    <TableCell className="text-right">
-                      {item.gross_margin !== undefined && (
-                        <>
-                          {formatCurrency(item.gross_margin)} 
-                          <span className="text-xs ml-1 text-muted-foreground">
-                            ({formatPercentage(item.gross_margin_percentage)})
-                          </span>
-                        </>
+          </TableHeader>
+          <TableBody>
+            {items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={readOnly ? 6 : 7} className="text-center text-muted-foreground py-6">
+                  No items found for this estimate.
+                </TableCell>
+              </TableRow>
+            ) : (
+              items.map((item) => {
+                // Get documents associated with this item
+                const docs = itemDocuments[item.id] || [];
+                // Get vendor or subcontractor name if applicable
+                const vendorName = item.vendor_id ? vendorNames[item.vendor_id] : null;
+                const subcontractorName = item.subcontractor_id ? subcontractorNames[item.subcontractor_id] : null;
+                
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      <div>{item.description}</div>
+                      
+                      {/* Show vendor or subcontractor info if available */}
+                      {(vendorName || subcontractorName) && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {vendorName && <span>Vendor: {vendorName}</span>}
+                          {subcontractorName && <span>Subcontractor: {subcontractorName}</span>}
+                        </div>
+                      )}
+                      
+                      {/* Show associated documents */}
+                      {docs.length > 0 && (
+                        <div className="mt-1 flex items-center gap-2">
+                          {docs.map(doc => (
+                            <a 
+                              key={doc.document_id}
+                              href={doc.url || `https://zrxezqllmpdlhiudutme.supabase.co/storage/v1/object/public/construction_documents/${doc.storage_path}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
+                            >
+                              <FileIcon className="h-3 w-3 mr-1" />
+                              {doc.file_name}
+                              <DownloadIcon className="h-3 w-3 ml-1" />
+                            </a>
+                          ))}
+                        </div>
                       )}
                     </TableCell>
-                  )}
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
-    </div>
+                    <TableCell>{getTypeLabel(item.item_type)}</TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(item.total_price)}</TableCell>
+                    {items.some(item => item.gross_margin !== undefined) && (
+                      <TableCell className="text-right">
+                        {item.gross_margin !== undefined && (
+                          <>
+                            {formatCurrency(item.gross_margin)} 
+                            <span className="text-xs ml-1 text-muted-foreground">
+                              ({formatPercentage(item.gross_margin_percentage)})
+                            </span>
+                          </>
+                        )}
+                      </TableCell>
+                    )}
+                    {!readOnly && estimateId && (
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAttachDocument(item)}
+                          className="h-8 px-2 text-[#0485ea]"
+                        >
+                          <PaperclipIcon className="h-4 w-4 mr-1" />
+                          Attach
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Document Upload Dialog */}
+      {selectedItem && (
+        <Dialog open={showDocumentUpload} onOpenChange={setShowDocumentUpload}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Attach Document to Item</DialogTitle>
+            </DialogHeader>
+            <EnhancedDocumentUpload
+              entityType="ESTIMATE"
+              entityId={estimateId}
+              onSuccess={handleDocumentUploadSuccess}
+              onCancel={() => setShowDocumentUpload(false)}
+              prefillData={{
+                vendorId: selectedItem.vendor_id || selectedItem.subcontractor_id || '',
+                materialName: selectedItem.description,
+                vendorType: selectedItem.vendor_id ? 'vendor' : selectedItem.subcontractor_id ? 'subcontractor' : undefined
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 

@@ -17,6 +17,7 @@ const Estimates = () => {
     estimateRevisions,
     itemDocuments,
     fetchEstimateDetails,
+    fetchItemDocuments,
     setEstimateItems,
     setEstimateRevisions
   } = useEstimateDetails();
@@ -31,6 +32,12 @@ const Estimates = () => {
     setEstimateItems([]);
     setEstimateRevisions([]);
     fetchEstimates(); // Refresh the list when the dialog is closed
+  };
+
+  const handleDocumentsUpdated = () => {
+    if (selectedEstimate) {
+      fetchItemDocuments(selectedEstimate.id);
+    }
   };
   
   const formatDate = (dateString: string) => {
@@ -68,6 +75,7 @@ const Estimates = () => {
           itemDocuments={itemDocuments}
           open={!!selectedEstimate}
           onClose={closeEstimateDetails}
+          onDocumentsUpdated={handleDocumentsUpdated}
         />
       )}
     </PageTransition>

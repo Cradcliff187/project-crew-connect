@@ -1,65 +1,73 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import EstimateItems from '../EstimateItems';
-import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateItem } from '../types/estimateTypes';
+import { Document } from '@/components/documents/schemas/documentSchema';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
 interface EstimateItemsTabProps {
   items: EstimateItem[];
   itemDocuments?: Record<string, Document[]>;
+  estimateId: string;
+  onDocumentsUpdated?: () => void;
 }
 
-const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items, itemDocuments = {} }) => {
-  // Calculate the subtotal, which is the sum of all item total prices
-  const subtotal = items.reduce((acc, item) => acc + item.total_price, 0);
-  
-  // Calculate the total gross margin
-  const totalGrossMargin = items.reduce((acc, item) => acc + (item.gross_margin || 0), 0);
-  
-  // Calculate the overall gross margin percentage
-  const overallGrossMarginPercentage = subtotal > 0 
-    ? (totalGrossMargin / subtotal) * 100 
-    : 0;
-  
+const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ 
+  items, 
+  itemDocuments = {},
+  estimateId,
+  onDocumentsUpdated
+}) => {
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+
+  const handleDocumentUploadSuccess = () => {
+    setShowDocumentUpload(false);
+    if (onDocumentsUpdated) {
+      onDocumentsUpdated();
+    }
+  };
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Line Items</CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setShowDocumentUpload(true)}
+          className="text-[#0485ea] border-[#0485ea] hover:bg-[#0485ea]/10"
+        >
+          <PlusCircle className="h-4 w-4 mr-1" />
+          Add Document
+        </Button>
       </CardHeader>
       <CardContent>
-        {items.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            No items for this estimate.
-          </div>
-        ) : (
-          <EstimateItems 
-            items={items}
-            itemDocuments={itemDocuments} 
-          />
-        )}
-        
-        <div className="flex justify-end mt-4">
-          <div className="w-64">
-            <div className="flex justify-between py-2 text-sm">
-              <span>Subtotal:</span>
-              <span className="font-medium">
-                ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-            
-            {totalGrossMargin > 0 && (
-              <div className="flex justify-between py-2 text-sm">
-                <span>Total Gross Margin:</span>
-                <span className="font-medium">
-                  ${totalGrossMargin.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  {' '}({overallGrossMarginPercentage.toFixed(1)}%)
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
+        <EstimateItems 
+          items={items} 
+          itemDocuments={itemDocuments} 
+          estimateId={estimateId}
+          onDocumentAdded={onDocumentsUpdated}
+        />
       </CardContent>
+
+      {/* General Document Upload Dialog */}
+      <Dialog open={showDocumentUpload} onOpenChange={setShowDocumentUpload}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Document to Estimate</DialogTitle>
+          </DialogHeader>
+          <EnhancedDocumentUpload
+            entityType="ESTIMATE"
+            entityId={estimateId}
+            onSuccess={handleDocumentUploadSuccess}
+            onCancel={() => setShowDocumentUpload(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
