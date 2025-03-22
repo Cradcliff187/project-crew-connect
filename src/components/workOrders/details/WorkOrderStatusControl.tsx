@@ -167,6 +167,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
           align="start"
           sideOffset={5}
         >
+          {/* Only render Command component when we have status options */}
           {statusOptions.length > 0 ? (
             <Command className="rounded-md overflow-hidden">
               <CommandGroup>
