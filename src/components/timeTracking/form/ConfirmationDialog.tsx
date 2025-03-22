@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { FileUpload } from '@/components/ui/file-upload';
 import { TimeEntryFormValues } from '../hooks/useTimeEntryForm';
 
 interface WorkOrderOrProject {
@@ -40,6 +41,8 @@ interface ConfirmationDialogProps {
   onUploadReceipts: () => void;
   hasReceipts: boolean;
   setHasReceipts: (value: boolean) => void;
+  handleFilesSelected: (files: File[]) => void;
+  handleFileClear: (index: number) => void;
 }
 
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
@@ -55,8 +58,12 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   onConfirm,
   onUploadReceipts,
   hasReceipts,
-  setHasReceipts
+  setHasReceipts,
+  handleFilesSelected,
+  handleFileClear
 }) => {
+  const [showFileUpload, setShowFileUpload] = useState(false);
+
   if (!confirmationData) return null;
 
   const entityName = entityType === 'work_order' 
@@ -73,6 +80,10 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   const employeeName = confirmationData.employeeId && employees.length > 0
     ? employees.find(e => e.employee_id === confirmationData.employeeId)?.name || 'Unknown'
     : undefined;
+
+  const toggleFileUpload = () => {
+    setShowFileUpload(!showFileUpload);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -150,7 +161,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                   type="button" 
                   variant="outline" 
                   className="gap-1"
-                  onClick={onUploadReceipts}
+                  onClick={toggleFileUpload}
                 >
                   <Upload className="h-4 w-4" />
                   {selectedFiles.length > 0 ? 'Change Receipts' : 'Upload Receipts'}
@@ -159,7 +170,23 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             </div>
           </div>
           
-          {selectedFiles.length > 0 && (
+          {/* File Upload Component (shown conditionally) */}
+          {hasReceipts && showFileUpload && (
+            <div className="p-3 border rounded-md bg-muted/30">
+              <h4 className="text-sm font-medium mb-2">Upload Receipts</h4>
+              <FileUpload
+                onFilesSelected={handleFilesSelected}
+                onFileClear={handleFileClear}
+                selectedFiles={selectedFiles}
+                allowMultiple={true}
+                acceptedFileTypes="image/*,application/pdf"
+                dropzoneText="Drop receipts here or click to browse"
+              />
+            </div>
+          )}
+          
+          {/* Display selected files if any, and not showing the upload component */}
+          {selectedFiles.length > 0 && !showFileUpload && (
             <div className="rounded-md bg-muted p-3">
               <div className="text-sm font-medium">Attached Receipts:</div>
               <div className="text-xs text-muted-foreground">

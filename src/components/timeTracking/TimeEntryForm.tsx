@@ -67,6 +67,11 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     });
   };
 
+  // Direct receipt upload handler for the confirmation dialog
+  const handleDirectReceiptUpload = () => {
+    setShowReceiptUpload(true);
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -228,9 +233,11 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         selectedFiles={selectedFiles}
         isLoading={isLoading}
         onConfirm={confirmSubmit}
-        onUploadReceipts={() => setShowReceiptUpload(true)}
+        onUploadReceipts={handleDirectReceiptUpload}
         hasReceipts={hasReceipts}
         setHasReceipts={setHasReceipts}
+        handleFilesSelected={handleFilesSelected}
+        handleFileClear={handleFileClear}
       />
 
       {/* Receipt Upload Dialog */}
