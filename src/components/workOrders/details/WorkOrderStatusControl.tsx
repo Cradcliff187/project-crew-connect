@@ -55,7 +55,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       
       setStatusOptions(data || []);
       console.log('Available statuses:', data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching status options:', error);
       toast({
         title: 'Error loading statuses',
@@ -131,37 +131,44 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   };
 
   return (
-    <div className="flex items-center">
+    <div className="flex items-center relative z-10">
       <span className="mr-2 text-sm font-medium">Status:</span>
       
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button 
-            className="flex items-center cursor-pointer gap-1 hover:opacity-80 transition-opacity disabled:opacity-50"
+            className="flex items-center cursor-pointer gap-1 hover:bg-accent p-1 rounded transition-colors"
             disabled={loading || statusOptions.length === 0}
             aria-label="Change status"
           >
             <StatusBadge status={workOrder.status} />
-            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            <ChevronDown className="h-4 w-4 ml-1 text-primary" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="p-0 w-[200px]" align="start">
-          <Command>
+        <PopoverContent 
+          className="p-0 w-[220px] bg-popover border border-border shadow-md" 
+          align="start"
+          sideOffset={5}
+        >
+          <Command className="rounded-md overflow-hidden">
             <CommandGroup>
               {statusOptions.map((option) => (
                 <CommandItem
                   key={option.status_code}
                   value={option.status_code}
                   onSelect={() => handleStatusChange(option.status_code)}
-                  className="cursor-pointer flex items-center"
+                  className="flex items-center cursor-pointer hover:bg-accent transition-colors px-3 py-2"
+                  disabled={loading}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      option.status_code === workOrder.status ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label || option.status_code}
+                  <div className="flex items-center w-full">
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4 flex-shrink-0",
+                        option.status_code === workOrder.status ? "opacity-100 text-primary" : "opacity-0"
+                      )}
+                    />
+                    <span className="text-sm">{option.label || option.status_code}</span>
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>
