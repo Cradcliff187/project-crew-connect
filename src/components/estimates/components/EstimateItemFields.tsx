@@ -45,9 +45,9 @@ const EstimateItemFields = () => {
         if (vendorError) throw vendorError;
         setVendors(vendorData || []);
         
-        // Fetch subcontractors
+        // Fetch subcontractors - Updated to use the 'subcontractors' table instead of 'subcontractors_new'
         const { data: subData, error: subError } = await supabase
-          .from('subcontractors_new')
+          .from('subcontractors')
           .select('subid, subname')
           .order('subname');
           
