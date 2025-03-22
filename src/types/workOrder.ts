@@ -48,3 +48,6 @@ export interface WorkOrderExpense {
   updated_at: string;
   expense_type?: string;
 }
+
+// For backward compatibility during transition
+export type WorkOrderMaterial = WorkOrderExpense;
