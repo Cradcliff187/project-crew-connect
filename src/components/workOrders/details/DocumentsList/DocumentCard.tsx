@@ -1,48 +1,48 @@
 
+import React from 'react';
+import { FileText, FileImage, File } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Download, FileText } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { WorkOrderDocument } from './types';
+import { DocumentBase } from '@/components/documents/types/documentTypes';
 
 interface DocumentCardProps {
-  document: WorkOrderDocument;
-  onViewDocument: (document: WorkOrderDocument) => void;
+  document: DocumentBase;
+  onViewDocument: () => void;
 }
 
 const DocumentCard = ({ document, onViewDocument }: DocumentCardProps) => {
+  // Helper function to determine document icon
+  const getDocumentIcon = () => {
+    if (document.file_type?.startsWith('image/')) {
+      return <FileImage className="h-10 w-10 text-blue-400" />;
+    }
+
+    if (document.category === 'receipt' || document.category === 'invoice') {
+      return <FileText className="h-10 w-10 text-green-500" />;
+    }
+
+    return <File className="h-10 w-10 text-muted-foreground" />;
+  };
+
   return (
-    <Card key={document.document_id} className="overflow-hidden">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-start">
-          <FileText className="h-10 w-10 mr-3 text-muted-foreground shrink-0" />
-          <div className="overflow-hidden">
+          {getDocumentIcon()}
+          <div className="ml-3 overflow-hidden">
             <p className="font-medium truncate">{document.file_name}</p>
             <p className="text-xs text-muted-foreground">
-              {document.is_receipt ? 'Material Receipt' : document.category ? document.category : 'Uncategorized'} • {formatDate(document.created_at)}
+              {document.category ? document.category : 'Uncategorized'} • {formatDate(document.created_at)}
             </p>
-            <div className="mt-2 flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
-                onClick={() => onViewDocument(document)}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                View
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
-                asChild
-              >
-                <a href={document.url} target="_blank" rel="noopener noreferrer">
-                  <Download className="h-4 w-4 mr-1" />
-                  Download
-                </a>
-              </Button>
-            </div>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="mt-2 text-[#0485ea]"
+              onClick={onViewDocument}
+            >
+              View Document
+            </Button>
           </div>
         </div>
       </CardContent>

@@ -1,14 +1,7 @@
 
-export interface VendorDocument {
-  document_id: string;
-  file_name: string;
-  category: string | null;
-  created_at: string;
-  file_type: string | null;
-  storage_path?: string;
-  url?: string;
-  is_receipt?: boolean;
-}
+import { DocumentBase } from '@/components/documents/types/documentTypes';
+
+export type VendorDocument = DocumentBase;
 
 export interface VendorProject {
   project_id: string;
