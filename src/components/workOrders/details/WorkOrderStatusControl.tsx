@@ -68,6 +68,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   };
   
   const handleStatusChange = async (newStatus: string) => {
+    // If the status hasn't changed, just close the popover and return
     if (newStatus === workOrder.status) {
       setOpen(false);
       return;
@@ -76,20 +77,29 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
     setLoading(true);
     
     try {
+      console.log(`Updating work order ${workOrder.work_order_id} status to ${newStatus}`);
+      
+      // Update the work order status in the database
       const { error } = await supabase
         .from('maintenance_work_orders')
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
         .eq('work_order_id', workOrder.work_order_id);
       
       if (error) {
         throw error;
       }
       
+      // Show success message
       toast({
         title: 'Status Updated',
         description: `Work order status changed to ${getStatusLabel(newStatus).toLowerCase()}.`,
+        className: 'bg-[#0485ea]',
       });
       
+      // Close the popover and trigger the onStatusChange callback
       setOpen(false);
       onStatusChange();
     } catch (error: any) {
@@ -100,6 +110,8 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       if (error.message) {
         if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
           errorMessage = 'Authentication error. Your session may have expired. Please refresh the page and try again.';
+        } else if (error.code === '23514' || error.message.includes('violates row level security')) {
+          errorMessage = 'Permission denied. You do not have permission to update this work order status.';
         } else {
           errorMessage = error.message;
         }
