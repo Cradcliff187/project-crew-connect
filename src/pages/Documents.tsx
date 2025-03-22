@@ -46,6 +46,7 @@ const DocumentsPage: React.FC = () => {
     isDetailOpen,
     isDeleteOpen,
     isUploadOpen,
+    deleteError,
     setIsUploadOpen,
     setIsDetailOpen,
     setIsDeleteOpen,
@@ -111,6 +112,7 @@ const DocumentsPage: React.FC = () => {
           open={isDeleteOpen}
           onClose={() => setIsDeleteOpen(false)}
           onConfirm={handleDeleteDocument}
+          error={deleteError}
         />
 
         {/* Upload Dialog */}

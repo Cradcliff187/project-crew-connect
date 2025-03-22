@@ -9,6 +9,7 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleDocumentSelect = (document: Document) => {
@@ -18,6 +19,7 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
 
   const handleDeleteDialogOpen = (document: Document) => {
     setSelectedDocument(document);
+    setDeleteError(null);
     setIsDeleteOpen(true);
   };
 
@@ -25,12 +27,41 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     if (!selectedDocument) return;
     
     try {
-      // Delete from storage first
-      const { error: storageError } = await supabase.storage
-        .from('construction_documents')
-        .remove([selectedDocument.storage_path]);
+      setDeleteError(null);
+      
+      // Check if document is referenced by work_order_materials
+      const { count: materialsCount, error: materialsCheckError } = await supabase
+        .from('work_order_materials')
+        .select('*', { count: 'exact', head: true })
+        .eq('receipt_document_id', selectedDocument.document_id);
         
-      if (storageError) throw storageError;
+      if (materialsCheckError) throw materialsCheckError;
+      
+      if (materialsCount && materialsCount > 0) {
+        setDeleteError(
+          "This document is being used as a receipt for materials in a work order and cannot be deleted. " +
+          "You must first remove the document reference from the work order materials."
+        );
+        
+        toast({
+          title: "Cannot delete document",
+          description: "This document is linked to work order materials and cannot be deleted.",
+          variant: "destructive"
+        });
+        
+        return;
+      }
+      
+      // If we reach here, document is not referenced and can be deleted
+      
+      // Delete from storage first
+      if (selectedDocument.storage_path) {
+        const { error: storageError } = await supabase.storage
+          .from('construction_documents')
+          .remove([selectedDocument.storage_path]);
+          
+        if (storageError) throw storageError;
+      }
       
       // Then delete from database
       const { error: dbError } = await supabase
@@ -52,9 +83,21 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
       
     } catch (error: any) {
       console.error('Error deleting document:', error);
+      
+      let errorMessage = "Failed to delete document";
+      
+      // Look for foreign key constraint violations
+      if (error.code === '23503') {
+        errorMessage = "This document is referenced by another record and cannot be deleted. You need to remove those references first.";
+      } else {
+        errorMessage = error.message || "An unknown error occurred";
+      }
+      
+      setDeleteError(errorMessage);
+      
       toast({
         title: "Failed to delete document",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -74,6 +117,7 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     isDetailOpen,
     isDeleteOpen,
     isUploadOpen,
+    deleteError,
     setIsUploadOpen,
     setIsDetailOpen,
     setIsDeleteOpen,
