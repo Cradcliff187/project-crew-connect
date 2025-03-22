@@ -8,7 +8,7 @@ import MaterialFormFields from './components/MaterialFormFields';
 import TotalPriceDisplay from './components/TotalPriceDisplay';
 
 interface AddMaterialFormProps {
-  workOrderId: string; // Added workOrderId prop
+  workOrderId: string; // The work order ID is required
   vendors: { vendorid: string, vendorname: string }[];
   submitting: boolean;
   onMaterialPrompt: (material: {
@@ -18,11 +18,11 @@ interface AddMaterialFormProps {
     vendorId: string | null;
   }) => void;
   onVendorAdded?: () => void;
-  onSuccess?: () => void; // Added optional onSuccess prop
+  onSuccess?: () => void; // Optional callback for when form submission succeeds
 }
 
 const AddMaterialForm = ({ 
-  workOrderId, // Added to component props
+  workOrderId,
   vendors, 
   submitting,
   onMaterialPrompt,
