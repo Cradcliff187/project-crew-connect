@@ -17,6 +17,12 @@ interface Vendor {
   vendorname: string;
 }
 
+// Create a simpler type for what we actually need in the selector
+interface SubcontractorBasic {
+  subid: string;
+  subname: string;
+}
+
 interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
   watchVendorType: string;
@@ -24,7 +30,7 @@ interface VendorSelectorProps {
 
 const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorType }) => {
   const [vendorOptions, setVendorOptions] = useState<Vendor[]>([]);
-  const [subcontractorOptions, setSubcontractorOptions] = useState<Subcontractor[]>([]);
+  const [subcontractorOptions, setSubcontractorOptions] = useState<SubcontractorBasic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddNew, setShowAddNew] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('vendor');
@@ -57,6 +63,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
           .order('subname');
           
         if (subError) throw subError;
+        // Now we're correctly typing the response as a basic subcontractor type
         setSubcontractorOptions(subcontractors || []);
       } catch (error) {
         console.error('Error fetching vendor data:', error);
