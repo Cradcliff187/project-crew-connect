@@ -1,5 +1,5 @@
 
-import { Clock, AlertCircle, Calendar, DollarSign } from 'lucide-react';
+import { Clock, AlertCircle, Calendar, DollarSign, Hash, CalendarClock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
 import { formatDate, formatCurrency } from '@/lib/utils';
@@ -13,6 +13,18 @@ const WorkOrderInfoCard = ({ workOrder }: WorkOrderInfoCardProps) => {
     <Card>
       <CardContent className="pt-6">
         <div className="space-y-4">
+          {workOrder.work_order_number && (
+            <div className="flex items-start">
+              <Hash className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Work Order Number</p>
+                <p className="text-sm text-muted-foreground">
+                  {workOrder.work_order_number}
+                </p>
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-start">
             <AlertCircle className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
             <div>
@@ -30,6 +42,18 @@ const WorkOrderInfoCard = ({ workOrder }: WorkOrderInfoCardProps) => {
                 <p className="font-medium">Scheduled Date</p>
                 <p className="text-sm text-muted-foreground">
                   {formatDate(workOrder.scheduled_date)}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {workOrder.due_by_date && (
+            <div className="flex items-start">
+              <CalendarClock className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">Due By Date</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(workOrder.due_by_date)}
                 </p>
               </div>
             </div>

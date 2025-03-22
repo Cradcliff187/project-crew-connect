@@ -31,11 +31,13 @@ export const useWorkOrderSubmit = ({
         .from('maintenance_work_orders')
         .insert({
           title: values.title,
+          work_order_number: values.work_order_number,
           description: values.description,
           priority: values.priority,
           po_number: values.po_number,
           time_estimate: values.time_estimate,
           scheduled_date: values.scheduled_date ? values.scheduled_date.toISOString() : null,
+          due_by_date: values.due_by_date ? values.due_by_date.toISOString() : null,
           customer_id: values.customer_id || null,
           location_id: locationId || null,
           assigned_to: values.assigned_to || null,

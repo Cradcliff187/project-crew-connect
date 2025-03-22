@@ -655,6 +655,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           description: string | null
+          due_by_date: string | null
           location_id: string | null
           materials_cost: number | null
           po_number: string | null
@@ -668,6 +669,7 @@ export type Database = {
           total_cost: number | null
           updated_at: string
           work_order_id: string
+          work_order_number: string | null
         }
         Insert: {
           actual_hours?: number | null
@@ -676,6 +678,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           description?: string | null
+          due_by_date?: string | null
           location_id?: string | null
           materials_cost?: number | null
           po_number?: string | null
@@ -689,6 +692,7 @@ export type Database = {
           total_cost?: number | null
           updated_at?: string
           work_order_id?: string
+          work_order_number?: string | null
         }
         Update: {
           actual_hours?: number | null
@@ -697,6 +701,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           description?: string | null
+          due_by_date?: string | null
           location_id?: string | null
           materials_cost?: number | null
           po_number?: string | null
@@ -710,6 +715,7 @@ export type Database = {
           total_cost?: number | null
           updated_at?: string
           work_order_id?: string
+          work_order_number?: string | null
         }
         Relationships: [
           {

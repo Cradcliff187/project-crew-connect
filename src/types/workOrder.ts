@@ -4,10 +4,12 @@ import { StatusType } from './common';
 export interface WorkOrder {
   work_order_id: string;
   title: string;
+  work_order_number?: string;
   description?: string;
   status: StatusType;
   priority?: string;
   scheduled_date?: string;
+  due_by_date?: string;
   customer_id?: string;
   location_id?: string;
   created_at: string;
