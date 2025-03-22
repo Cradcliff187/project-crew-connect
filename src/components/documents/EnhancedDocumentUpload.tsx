@@ -5,7 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
-import { EntityType } from './schemas/documentSchema';
+import { EntityType, PrefillData } from './schemas/documentSchema';
 
 // Import refactored components
 import DropzoneUploader from './components/DropzoneUploader';
@@ -19,11 +19,7 @@ interface EnhancedDocumentUploadProps {
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
   isReceiptUpload?: boolean;
-  prefillData?: {
-    amount?: number;
-    vendorId?: string;
-    materialName?: string;
-  };
+  prefillData?: PrefillData;
 }
 
 const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({

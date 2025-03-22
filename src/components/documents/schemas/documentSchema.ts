@@ -81,3 +81,11 @@ export interface Document {
   vendor_id?: string;
   vendor_type?: string;
 }
+
+// Data that can be prefilled when uploading a document
+export interface PrefillData {
+  amount?: number;
+  vendorId?: string;
+  materialName?: string;
+  vendorType?: string;  // Adding the missing property
+}

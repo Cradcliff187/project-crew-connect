@@ -7,7 +7,8 @@ import { uploadDocument } from '../services/DocumentUploader';
 import { 
   DocumentUploadFormValues, 
   documentUploadSchema, 
-  EntityType 
+  EntityType,
+  PrefillData 
 } from '../schemas/documentSchema';
 
 interface UseDocumentUploadFormProps {
@@ -16,11 +17,7 @@ interface UseDocumentUploadFormProps {
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
   isReceiptUpload?: boolean;
-  prefillData?: {
-    amount?: number;
-    vendorId?: string;
-    materialName?: string;
-  };
+  prefillData?: PrefillData;
 }
 
 export const useDocumentUploadForm = ({
@@ -127,6 +124,10 @@ export const useDocumentUploadForm = ({
         // Add material name as a tag and in notes
         form.setValue('metadata.tags', [prefillData.materialName]);
         form.setValue('metadata.notes', `Receipt for: ${prefillData.materialName}`);
+      }
+
+      if (prefillData.vendorType) {
+        form.setValue('metadata.vendorType', prefillData.vendorType);
       }
     }
   };

@@ -1,206 +1,145 @@
 
 import React, { useState, useEffect } from 'react';
-import { Control, useWatch, useController } from 'react-hook-form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
-import VendorForm from '../vendors/VendorForm';
+import { Control, Controller } from 'react-hook-form';
 import { DocumentUploadFormValues } from './schemas/documentSchema';
-
-interface Vendor {
-  vendorid: string;
-  vendorname: string;
-}
-
-interface Subcontractor {
-  subid: string;
-  subname: string;
-}
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
-  watchVendorType: string;
+  vendorType: string;
+  prefillVendorId?: string;
+  prefillVendorType?: string;
 }
 
-const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorType }) => {
-  const [vendorOptions, setVendorOptions] = useState<Vendor[]>([]);
-  const [subcontractorOptions, setSubcontractorOptions] = useState<Subcontractor[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showAddNew, setShowAddNew] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('vendor');
+const VendorSelector: React.FC<VendorSelectorProps> = ({
+  control,
+  vendorType,
+  prefillVendorId,
+  prefillVendorType
+}) => {
+  const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
+  const [subcontractors, setSubcontractors] = useState<{ id: string; name: string }[]>([]);
+  const [loading, setLoading] = useState(false);
   
-  const vendorType = useWatch({
-    control,
-    name: 'metadata.vendorType',
-    defaultValue: 'vendor'
-  });
+  // Initialize vendor type from prefill if available
+  useEffect(() => {
+    if (prefillVendorType) {
+      console.log('Prefilling vendor type:', prefillVendorType);
+    }
+  }, [prefillVendorType]);
 
   // Fetch vendors and subcontractors
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      
+    const fetchVendors = async () => {
+      setLoading(true);
       try {
         // Fetch vendors
-        const { data: vendors, error: vendorError } = await supabase
+        const { data: vendorData, error: vendorError } = await supabase
           .from('vendors')
           .select('vendorid, vendorname')
           .order('vendorname');
           
         if (vendorError) throw vendorError;
-        setVendorOptions(vendors || []);
         
-        // Fetch subcontractors - using the correct table
-        const { data: subcontractors, error: subError } = await supabase
-          .from('subcontractors')  // Changed from 'subcontractors_new' to 'subcontractors'
+        const formattedVendors = vendorData.map(v => ({
+          id: v.vendorid,
+          name: v.vendorname
+        }));
+        setVendors(formattedVendors);
+        
+        // Fetch subcontractors
+        const { data: subData, error: subError } = await supabase
+          .from('subcontractors')
           .select('subid, subname')
           .order('subname');
           
         if (subError) throw subError;
-        setSubcontractorOptions(subcontractors || []);
+        
+        const formattedSubs = subData.map(s => ({
+          id: s.subid,
+          name: s.subname
+        }));
+        setSubcontractors(formattedSubs);
       } catch (error) {
-        console.error('Error fetching vendor data:', error);
+        console.error('Error fetching vendors and subcontractors:', error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
-    fetchData();
+    fetchVendors();
   }, []);
-
-  const handleVendorAdded = () => {
-    setShowAddNew(false);
-    // Refresh the vendor list
-    supabase
-      .from('vendors')
-      .select('vendorid, vendorname')
-      .order('vendorname')
-      .then(({ data }) => {
-        if (data) setVendorOptions(data);
-      });
-  };
-
+  
   return (
     <div className="space-y-4">
-      <FormField
-        control={control}
-        name="metadata.vendorType"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Vendor Type</FormLabel>
-            <Select 
-              value={field.value} 
-              onValueChange={(value) => {
-                field.onChange(value);
-                // Reset the vendor ID when changing type - use field.onChange for the parent field
-                const vendorTypeController = useController({
-                  control,
-                  name: 'metadata.vendorId',
-                });
-                vendorTypeController.field.onChange('');
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select vendor type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="vendor">Material Vendor</SelectItem>
-                <SelectItem value="subcontractor">Subcontractor</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      
-      {vendorType !== 'other' && (
-        <FormField
+      <div>
+        <Label>Vendor Type</Label>
+        <Controller
+          name="metadata.vendorType"
           control={control}
-          name="metadata.vendorId"
+          defaultValue={prefillVendorType || "vendor"}
           render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>
-                  {vendorType === 'vendor' ? 'Vendor' : 'Subcontractor'}
-                </FormLabel>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-xs text-[#0485ea] hover:text-[#0375d1]"
-                  onClick={() => {
-                    setActiveTab(vendorType);
-                    setShowAddNew(true);
-                  }}
-                >
-                  <PlusCircle className="h-3.5 w-3.5 mr-1" />
-                  Add New
-                </Button>
+            <RadioGroup
+              className="flex space-x-4 mt-1"
+              value={field.value}
+              onValueChange={field.onChange}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="vendor" id="vendor" />
+                <Label htmlFor="vendor" className="cursor-pointer">Material Vendor</Label>
               </div>
-              
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoading 
-                    ? "Loading..." 
-                    : `Select ${vendorType === 'vendor' ? 'vendor' : 'subcontractor'}`
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {vendorType === 'vendor' ? (
-                    vendorOptions.map(vendor => (
-                      <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                        {vendor.vendorname}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    subcontractorOptions.map(sub => (
-                      <SelectItem key={sub.subid} value={sub.subid}>
-                        {sub.subname}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="subcontractor" id="subcontractor" />
+                <Label htmlFor="subcontractor" className="cursor-pointer">Subcontractor</Label>
+              </div>
+            </RadioGroup>
           )}
         />
-      )}
+      </div>
       
-      {/* Add New Vendor/Subcontractor Sheet */}
-      <Sheet open={showAddNew} onOpenChange={setShowAddNew}>
-        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Add New {activeTab === 'vendor' ? 'Vendor' : 'Subcontractor'}</SheetTitle>
-          </SheetHeader>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="vendor">Vendor</TabsTrigger>
-              <TabsTrigger value="subcontractor">Subcontractor</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="vendor" className="space-y-4 mt-4">
-              <VendorForm 
-                onSubmit={() => handleVendorAdded()} 
-                isSubmitting={false} 
-              />
-            </TabsContent>
-            
-            <TabsContent value="subcontractor" className="space-y-4 mt-4">
-              <p className="text-center text-muted-foreground py-8">
-                Subcontractor form integration will be added in a future update. 
-                Please use the Subcontractors section to add a new subcontractor.
-              </p>
-            </TabsContent>
-          </Tabs>
-        </SheetContent>
-      </Sheet>
+      <div>
+        <Label>{vendorType === 'vendor' ? 'Vendor' : 'Subcontractor'}</Label>
+        <Controller
+          name="metadata.vendorId"
+          control={control}
+          defaultValue={prefillVendorId || ""}
+          render={({ field }) => (
+            <Select 
+              value={field.value} 
+              onValueChange={field.onChange}
+              disabled={loading}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder={`Select ${vendorType === 'vendor' ? 'vendor' : 'subcontractor'}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {vendorType === 'vendor' ? (
+                  vendors.map(vendor => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  subcontractors.map(sub => (
+                    <SelectItem key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
     </div>
   );
 };
