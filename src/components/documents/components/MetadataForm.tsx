@@ -1,7 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
+import { DocumentUploadFormValues, VendorType } from '../schemas/documentSchema';
 import { DocumentFormProps, PrefillData } from '../types/documentTypes';
 import DocumentCategorySelector from '../DocumentCategorySelector';
 import ExpenseForm from '../ExpenseForm';
@@ -44,7 +44,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
           control={control}
           vendorType={watchVendorType}
           prefillVendorId={prefillData?.vendorId}
-          prefillVendorType={prefillData?.vendorType}
+          prefillVendorType={prefillData?.vendorType as VendorType}
         />
       )}
     </div>

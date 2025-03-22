@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Control, Controller } from 'react-hook-form';
-import { DocumentUploadFormValues } from './schemas/documentSchema';
+import { DocumentUploadFormValues, VendorType } from './schemas/documentSchema';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
@@ -17,7 +17,7 @@ interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
   vendorType: string;
   prefillVendorId?: string;
-  prefillVendorType?: string;
+  prefillVendorType?: VendorType;
 }
 
 const VendorSelector: React.FC<VendorSelectorProps> = ({
@@ -91,7 +91,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
             <RadioGroup
               className="flex space-x-4 mt-1"
               value={field.value}
-              onValueChange={field.onChange}
+              onValueChange={(value: VendorType) => field.onChange(value)}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="vendor" id="vendor" />

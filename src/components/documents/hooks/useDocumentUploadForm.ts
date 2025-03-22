@@ -8,8 +8,9 @@ import {
   DocumentUploadFormValues, 
   documentUploadSchema, 
   EntityType,
-  PrefillData 
+  VendorType
 } from '../schemas/documentSchema';
+import { PrefillData } from '../types/documentTypes';
 
 interface UseDocumentUploadFormProps {
   entityType: EntityType;
@@ -127,7 +128,9 @@ export const useDocumentUploadForm = ({
       }
 
       if (prefillData.vendorType) {
-        form.setValue('metadata.vendorType', prefillData.vendorType);
+        // Ensure vendorType is a valid VendorType
+        const validVendorType = prefillData.vendorType as VendorType;
+        form.setValue('metadata.vendorType', validVendorType);
       }
     }
   };

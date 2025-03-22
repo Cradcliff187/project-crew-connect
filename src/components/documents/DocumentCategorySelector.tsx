@@ -3,14 +3,14 @@ import React from 'react';
 import { Check, FileText, Receipt, FileBox, Shield, FileImage, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DocumentCategory, documentCategories } from './schemas/documentSchema';
+import { Control, Controller } from 'react-hook-form';
+import { DocumentUploadFormValues } from './schemas/documentSchema';
 
 interface DocumentCategorySelectorProps {
-  value: DocumentCategory;
-  onChange: (category: DocumentCategory) => void;
-  className?: string;
+  control: Control<DocumentUploadFormValues>;
 }
 
-const DocumentCategorySelector = ({ value, onChange, className }: DocumentCategorySelectorProps) => {
+const DocumentCategorySelector = ({ control }: DocumentCategorySelectorProps) => {
   const getCategoryIcon = (category: DocumentCategory) => {
     switch (category) {
       case 'invoice':
@@ -36,27 +36,33 @@ const DocumentCategorySelector = ({ value, onChange, className }: DocumentCatego
   };
 
   return (
-    <div className={cn("grid grid-cols-2 md:grid-cols-4 gap-2", className)}>
-      {documentCategories.map((category) => (
-        <button
-          key={category}
-          type="button"
-          onClick={() => onChange(category)}
-          className={cn(
-            "flex items-center p-2 border rounded-md transition-colors relative overflow-hidden",
-            value === category
-              ? "border-[#0485ea] bg-[#0485ea]/5"
-              : "border-border hover:border-[#0485ea]/50 hover:bg-[#0485ea]/5"
-          )}
-        >
-          <div className="mr-2 flex-shrink-0">{getCategoryIcon(category)}</div>
-          <span className="truncate text-sm">{getCategoryLabel(category)}</span>
-          {value === category && (
-            <Check className="h-4 w-4 absolute top-1 right-1 text-[#0485ea]" />
-          )}
-        </button>
-      ))}
-    </div>
+    <Controller
+      name="metadata.category"
+      control={control}
+      render={({ field }) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {documentCategories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => field.onChange(category)}
+              className={cn(
+                "flex items-center p-2 border rounded-md transition-colors relative overflow-hidden",
+                field.value === category
+                  ? "border-[#0485ea] bg-[#0485ea]/5"
+                  : "border-border hover:border-[#0485ea]/50 hover:bg-[#0485ea]/5"
+              )}
+            >
+              <div className="mr-2 flex-shrink-0">{getCategoryIcon(category)}</div>
+              <span className="truncate text-sm">{getCategoryLabel(category)}</span>
+              {field.value === category && (
+                <Check className="h-4 w-4 absolute top-1 right-1 text-[#0485ea]" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    />
   );
 };
 
