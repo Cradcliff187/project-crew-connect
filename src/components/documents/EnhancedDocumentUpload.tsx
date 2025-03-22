@@ -59,7 +59,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     watchVendorType,
     watchFiles,
     watchCategory,
-    watchCostType
+    watchExpenseType
   } = useDocumentUploadForm({
     entityType,
     entityId,
@@ -97,7 +97,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
           <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
           <CardDescription>
             {isReceiptUpload 
-              ? "Upload receipts for materials or expenses related to this work order."
+              ? "Upload receipts for expenses related to this work order."
               : "Upload and categorize documents for your projects, invoices, and more."}
           </CardDescription>
         </CardHeader>

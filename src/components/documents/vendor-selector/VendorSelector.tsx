@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Control, useWatch } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
+import { Control, useWatch, useController } from 'react-hook-form';
 import { PlusCircle } from 'lucide-react';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
 import { useVendorOptions } from './hooks/useVendorOptions';
@@ -38,12 +38,16 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, defaultVendorI
     setShowAddNew(true);
   };
 
-  // If there's a default vendor ID and we have vendor options
-  React.useEffect(() => {
-    if (defaultVendorId && control) {
-      control.setValue('metadata.vendorId', defaultVendorId);
+  // If there's a default vendor ID, set it using controller
+  useEffect(() => {
+    if (defaultVendorId) {
+      const { field } = useController({
+        control,
+        name: 'metadata.vendorId',
+      });
+      field.onChange(defaultVendorId);
     }
-  }, [defaultVendorId, vendorOptions, control]);
+  }, [defaultVendorId, control]);
 
   return (
     <div className="space-y-4">

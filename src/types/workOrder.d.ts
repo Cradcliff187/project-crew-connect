@@ -20,6 +20,8 @@ export interface WorkOrder {
   actual_hours?: number;
   time_estimate?: number;
   progress: number;
+  work_order_number?: string;
+  due_by_date?: string;
 }
 
 export interface WorkOrderTimelog {
