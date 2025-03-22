@@ -12,6 +12,7 @@ import WorkOrderRow from './components/WorkOrderRow';
 import WorkOrdersTableSkeleton from './components/WorkOrdersTableSkeleton';
 import EmptyWorkOrders from './components/EmptyWorkOrders';
 import WorkOrderError from './components/WorkOrderError';
+import PaginationControl from './components/PaginationControl';
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
@@ -23,6 +24,8 @@ interface WorkOrdersTableProps {
 
 const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChange }: WorkOrdersTableProps) => {
   const [statusFilter, setStatusFilter] = useState<WorkOrderStatus>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   const filteredWorkOrders = workOrders.filter(workOrder => {
     const searchRegex = new RegExp(searchQuery, 'i');
@@ -34,9 +37,22 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
     return matchesSearch && matchesStatus;
   });
 
+  // Calculate pagination
+  const totalItems = filteredWorkOrders.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredWorkOrders.slice(startIndex, endIndex);
+
   const handleStatusFilterChange = (status: WorkOrderStatus) => {
     setStatusFilter(status);
+    // Reset to first page when filter changes
+    setCurrentPage(1);
     onStatusChange();
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   if (error) {
@@ -57,10 +73,10 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
           <TableBody>
             {loading ? (
               <WorkOrdersTableSkeleton rows={5} />
-            ) : filteredWorkOrders.length === 0 ? (
+            ) : currentItems.length === 0 ? (
               <EmptyWorkOrders />
             ) : (
-              filteredWorkOrders.map((workOrder) => (
+              currentItems.map((workOrder) => (
                 <WorkOrderRow 
                   key={workOrder.work_order_id}
                   workOrder={workOrder}
@@ -70,6 +86,17 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
           </TableBody>
         </Table>
       </Card>
+
+      {/* Only show pagination when we have work orders and not loading */}
+      {!loading && filteredWorkOrders.length > 0 && (
+        <div className="mt-4">
+          <PaginationControl 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
+      )}
     </div>
   );
 };
