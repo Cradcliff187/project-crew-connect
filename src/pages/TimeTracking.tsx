@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Search, Clock, Filter, Calendar, Download, Eye, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,8 @@ import {
   DialogTitle,
   DialogDescription 
 } from '@/components/ui/dialog';
+import { ReceiptViewerDialog } from '@/components/timeTracking/dialogs/ReceiptDialog';
+import { useReceiptManager } from '@/components/timeTracking/hooks/useReceiptManager';
 
 const TimeTracking = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +32,14 @@ const TimeTracking = () => {
   const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
   const [currentReceipts, setCurrentReceipts] = useState<any[]>([]);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  
+  // Use receipt manager for viewing receipts
+  const {
+    viewingReceipt,
+    setViewingReceipt,
+    receiptDocument,
+    handleCloseReceiptViewer
+  } = useReceiptManager();
   
   useEffect(() => {
     fetchTimeEntries();
@@ -139,9 +150,9 @@ const TimeTracking = () => {
           }
         }
         
-        const cost = entry.hours_worked && entry.employee_rate 
+        const cost = entry.total_cost || (entry.hours_worked && entry.employee_rate 
           ? entry.hours_worked * entry.employee_rate 
-          : entry.hours_worked * 75;
+          : entry.hours_worked * 75);
         
         return {
           ...entry,
@@ -149,7 +160,7 @@ const TimeTracking = () => {
           entity_location: entityLocation || undefined,
           employee_name: employeeName,
           vendor_name: vendorName,
-          cost
+          total_cost: cost
         };
       }));
       
@@ -455,6 +466,13 @@ const TimeTracking = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Receipt Viewer Dialog */}
+        <ReceiptViewerDialog
+          open={viewingReceipt}
+          onOpenChange={setViewingReceipt}
+          receiptDocument={receiptDocument}
+        />
       </div>
     </PageTransition>
   );

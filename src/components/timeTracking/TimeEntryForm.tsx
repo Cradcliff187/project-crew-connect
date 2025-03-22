@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn, formatTimeRange } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 import EntityTypeSelector from './form/EntityTypeSelector';
@@ -19,7 +19,7 @@ import TimeRangeSelector from './form/TimeRangeSelector';
 import ConfirmationDialog from './form/ConfirmationDialog';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import { useEntityData } from './hooks/useEntityData';
-import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
+import { ReceiptUploadDialog } from './dialogs/ReceiptDialog';
 import { EntityType } from '../documents/schemas/documentSchema';
 
 interface TimeEntryFormProps {
@@ -35,14 +35,11 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     isLoading,
     showConfirmDialog,
     setShowConfirmDialog,
-    selectedFiles,
-    handleFilesSelected,
-    handleFileClear,
     confirmationData,
     handleSubmit,
     confirmSubmit,
-    hasReceipts,
-    setHasReceipts
+    newTimeEntryId,
+    setNewTimeEntryId
   } = useTimeEntryForm(onSuccess);
 
   const {
@@ -69,25 +66,55 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     }
   }, [employeeId, employees]);
 
-  const handleReceiptUploadSuccess = () => {
-    setShowReceiptUpload(false);
-    toast({
-      title: "Receipt uploaded",
-      description: "Your receipt has been added to this time entry."
+  // Handle receipt upload success
+  const handleReceiptUploadSuccess = async (timeEntryId: string, documentId: string) => {
+    try {
+      // Update the time entry to mark it as having receipts
+      const { error } = await supabase
+        .from('time_entries')
+        .update({ has_receipts: true })
+        .eq('id', timeEntryId);
+        
+      if (error) throw error;
+      
+      setShowReceiptUpload(false);
+      toast({
+        title: "Receipt uploaded",
+        description: "Your receipt has been added to this time entry."
+      });
+      
+      // Redirect to the time entries list
+      onSuccess();
+    } catch (error) {
+      console.error("Error updating time entry with receipt:", error);
+      toast({
+        title: "Error",
+        description: "Failed to link receipt to time entry.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle confirmation with receipt
+  const handleConfirmWithReceipt = () => {
+    // First submit the time entry
+    confirmSubmit().then((timeEntryId) => {
+      if (timeEntryId) {
+        setNewTimeEntryId(timeEntryId);
+        setShowConfirmDialog(false);
+        setShowReceiptUpload(true);
+      }
+    });
+  };
+
+  // Handle confirmation without receipt
+  const handleConfirmWithoutReceipt = () => {
+    confirmSubmit().then(() => {
+      onSuccess();
     });
   };
 
   const laborCost = hoursWorked * (selectedEmployeeRate || 75);
-
-  // Updated prefill data to match the PrefillData type expected in EnhancedDocumentUpload
-  const prefillData = {
-    amount: 0,
-    vendorId: undefined,
-    entityType: entityType.toUpperCase() as EntityType,
-    entityId: entityId,
-    expenseDate: form.watch('workDate'),
-    notes: `Receipt for time entry on ${form.watch('workDate') ? format(form.watch('workDate'), 'MMM d, yyyy') : ''}`
-  };
 
   return (
     <div className="space-y-4">
@@ -246,7 +273,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isLoading}
             >
-              {isLoading ? 'Processing...' : 'Review & Submit'}
+              {isLoading ? 'Processing...' : 'Submit Time Entry'}
             </Button>
           </CardFooter>
         </form>
@@ -260,31 +287,28 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         entityType={entityType}
         workOrders={workOrders}
         projects={projects}
-        selectedFiles={selectedFiles}
         isLoading={isLoading}
-        onConfirm={confirmSubmit}
-        onUploadReceipts={() => setShowReceiptUpload(true)}
-        hasReceipts={hasReceipts}
-        setHasReceipts={setHasReceipts}
-        handleFilesSelected={handleFilesSelected}
-        handleFileClear={handleFileClear}
+        onConfirmWithReceipt={handleConfirmWithReceipt}
+        onConfirmWithoutReceipt={handleConfirmWithoutReceipt}
       />
 
-      <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Upload Material Receipt(s)</DialogTitle>
-          </DialogHeader>
-          <EnhancedDocumentUpload
-            entityType={entityType === 'work_order' ? 'WORK_ORDER' as EntityType : 'PROJECT' as EntityType}
-            entityId={entityId}
-            onSuccess={handleReceiptUploadSuccess}
-            onCancel={() => setShowReceiptUpload(false)}
-            isReceiptUpload={true}
-            prefillData={prefillData}
-          />
-        </DialogContent>
-      </Dialog>
+      {showReceiptUpload && newTimeEntryId && (
+        <ReceiptUploadDialog
+          open={showReceiptUpload}
+          timeEntry={newTimeEntryId ? {
+            id: newTimeEntryId,
+            entity_id: entityId,
+            entity_type: entityType,
+            date_worked: form.watch('workDate').toISOString(),
+            vendor_id: null
+          } as any}
+          onSuccess={handleReceiptUploadSuccess}
+          onCancel={() => {
+            setShowReceiptUpload(false);
+            onSuccess();
+          }}
+        />
+      )}
     </div>
   );
 };
