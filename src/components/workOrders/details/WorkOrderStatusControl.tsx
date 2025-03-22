@@ -38,6 +38,8 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   const fetchStatusOptions = async () => {
     try {
       setLoading(true);
+      console.log('Fetching status options from Supabase');
+      
       const { data, error } = await supabase
         .from('status_definitions')
         .select('status_code, label, description')
@@ -53,8 +55,10 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         return;
       }
       
-      setStatusOptions(data || []);
-      console.log('Available statuses:', data);
+      // Ensure we have a valid array of options, even if data is null or undefined
+      const validOptions = Array.isArray(data) ? data : [];
+      setStatusOptions(validOptions);
+      console.log('Available statuses:', validOptions);
     } catch (error: any) {
       console.error('Error fetching status options:', error);
       toast({
@@ -142,6 +146,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       .join(' ');
   };
 
+  // Render a safer version that ensures statusOptions is always an array
   return (
     <div className="flex items-center relative z-10">
       <span className="mr-2 text-sm font-medium">Status:</span>
@@ -162,29 +167,35 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
           align="start"
           sideOffset={5}
         >
-          <Command className="rounded-md overflow-hidden">
-            <CommandGroup>
-              {statusOptions.map((option) => (
-                <CommandItem
-                  key={option.status_code}
-                  value={option.status_code}
-                  onSelect={() => handleStatusChange(option.status_code)}
-                  className="flex items-center cursor-pointer hover:bg-accent transition-colors px-3 py-2"
-                  disabled={loading}
-                >
-                  <div className="flex items-center w-full">
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4 flex-shrink-0",
-                        option.status_code === workOrder.status ? "opacity-100 text-primary" : "opacity-0"
-                      )}
-                    />
-                    <span className="text-sm">{option.label || option.status_code}</span>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
+          {statusOptions.length > 0 ? (
+            <Command className="rounded-md overflow-hidden">
+              <CommandGroup>
+                {statusOptions.map((option) => (
+                  <CommandItem
+                    key={option.status_code}
+                    value={option.status_code}
+                    onSelect={() => handleStatusChange(option.status_code)}
+                    className="flex items-center cursor-pointer hover:bg-accent transition-colors px-3 py-2"
+                    disabled={loading}
+                  >
+                    <div className="flex items-center w-full">
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4 flex-shrink-0",
+                          option.status_code === workOrder.status ? "opacity-100 text-primary" : "opacity-0"
+                        )}
+                      />
+                      <span className="text-sm">{option.label || option.status_code}</span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          ) : (
+            <div className="py-4 px-2 text-center text-sm text-muted-foreground">
+              {loading ? 'Loading statuses...' : 'No status options available'}
+            </div>
+          )}
         </PopoverContent>
       </Popover>
     </div>
