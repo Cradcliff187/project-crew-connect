@@ -1,10 +1,20 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { DocumentBase } from '@/components/documents/types/documentTypes';
 
-// Define the type directly here instead of importing to avoid circular references
-export type SubcontractorDocument = DocumentBase;
+// Define the type directly here to break the circular reference
+interface SubcontractorDocument {
+  document_id: string;
+  file_name: string;
+  category: string | null;
+  created_at: string;
+  file_type: string | null;
+  storage_path?: string;
+  url?: string;
+  is_expense?: boolean;
+  vendor_id?: string;
+  subcontractor_id?: string;
+}
 
 export const useSubcontractorDocuments = (subcontractorId: string) => {
   const [documents, setDocuments] = useState<SubcontractorDocument[]>([]);
