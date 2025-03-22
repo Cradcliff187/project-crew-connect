@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,8 +15,8 @@ import { WorkOrder } from '@/types/workOrder';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 
-interface StatusTransition {
-  to_status: string;
+interface StatusOption {
+  status_code: string;
   label: string;
   description: string;
 }
@@ -28,35 +28,34 @@ interface WorkOrderStatusControlProps {
 
 const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusControlProps) => {
   const [loading, setLoading] = useState(false);
-  const [statusTransitions, setStatusTransitions] = useState<StatusTransition[]>([]);
+  const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
   const { toast } = useToast();
 
-  // Fetch possible status transitions when component mounts
-  const fetchTransitions = useCallback(async () => {
+  // Fetch all possible statuses when component mounts
+  useEffect(() => {
+    fetchStatusOptions();
+  }, []);
+  
+  const fetchStatusOptions = async () => {
     try {
       // Use fully qualified function call with explicit headers
-      const { data: transitionsData, error } = await supabase
-        .rpc('get_next_possible_transitions', {
-          entity_type_param: 'WORK_ORDER',
-          current_status_param: workOrder.status
-        });
+      const { data, error } = await supabase
+        .from('status_definitions')
+        .select('status_code, label, description')
+        .eq('entity_type', 'WORK_ORDER');
       
       if (error) {
-        console.error('Error fetching status transitions:', error);
+        console.error('Error fetching status options:', error);
         return;
       }
       
-      setStatusTransitions(transitionsData || []);
-      console.log('Available transitions:', transitionsData);
+      setStatusOptions(data || []);
+      console.log('Available statuses:', data);
     } catch (error) {
-      console.error('Error fetching status transitions:', error);
+      console.error('Error fetching status options:', error);
     }
-  }, [workOrder.status]);
+  };
   
-  useEffect(() => {
-    fetchTransitions();
-  }, [workOrder.status, fetchTransitions]);
-
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === workOrder.status) {
       toast({
@@ -78,19 +77,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         throw error;
       }
       
-      // Log the activity
-      await supabase.from('activitylog').insert({
-        action: 'Status Change',
-        moduletype: 'WORK_ORDER',
-        referenceid: workOrder.work_order_id,
-        status: newStatus,
-        previousstatus: workOrder.status,
-        detailsjson: JSON.stringify({
-          title: workOrder.title,
-          from: workOrder.status,
-          to: newStatus
-        })
-      });
+      // Log the activity is now handled by the database trigger automatically
       
       toast({
         title: 'Status Updated',
@@ -104,9 +91,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       let errorMessage = 'Failed to update work order status. Please try again.';
       
       if (error.message) {
-        if (error.message.includes('Invalid status transition')) {
-          errorMessage = `Status change not allowed: ${error.message}`;
-        } else if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
+        if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
           errorMessage = 'Authentication error. Your session may have expired. Please refresh the page and try again.';
         } else {
           errorMessage = error.message;
@@ -119,8 +104,6 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         variant: 'destructive',
       });
       
-      // Refresh transitions after error
-      fetchTransitions();
     } finally {
       setLoading(false);
     }
@@ -129,12 +112,14 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   const getStatusActions = (): ActionGroup[] => {
     return [
       {
-        items: statusTransitions.map((transition) => ({
-          label: transition.label,
-          icon: <Edit className="w-4 h-4" />,
-          onClick: () => handleStatusChange(transition.to_status),
-          disabled: loading
-        }))
+        items: statusOptions
+          .filter(option => option.status_code !== workOrder.status) // Don't show current status
+          .map((option) => ({
+            label: option.label || option.status_code,
+            icon: <Edit className="w-4 h-4" />,
+            onClick: () => handleStatusChange(option.status_code),
+            disabled: loading
+          }))
       }
     ];
   };
@@ -146,7 +131,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         <StatusBadge status={workOrder.status} />
       </div>
       
-      {statusTransitions.length > 0 ? (
+      {statusOptions.length > 0 ? (
         <div className="flex gap-2 mt-2 md:mt-0">
           {/* Mobile view */}
           <div className="md:hidden">
@@ -165,11 +150,13 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
                 <SelectValue placeholder="Change status" />
               </SelectTrigger>
               <SelectContent>
-                {statusTransitions.map((transition) => (
-                  <SelectItem key={transition.to_status} value={transition.to_status}>
-                    {transition.label}
-                  </SelectItem>
-                ))}
+                {statusOptions
+                  .filter(option => option.status_code !== workOrder.status) // Don't show current status
+                  .map((option) => (
+                    <SelectItem key={option.status_code} value={option.status_code}>
+                      {option.label || option.status_code}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -179,7 +166,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
           variant="outline"
           size="sm"
           className="ml-0 md:ml-2 mt-2 md:mt-0 text-sm border-[#0485ea]/30 hover:border-[#0485ea] hover:bg-[#0485ea]/10"
-          onClick={fetchTransitions}
+          onClick={fetchStatusOptions}
           disabled={loading}
         >
           {loading ? "Loading..." : "Refresh Status Options"}
