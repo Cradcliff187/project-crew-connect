@@ -26,7 +26,15 @@ export function useMaterialsFetch(workOrderId: string) {
       }
       
       console.log('Fetched materials:', data);
-      setMaterials(data || []);
+      
+      // Transform DB data to match WorkOrderMaterial type
+      const transformedData = data?.map(item => ({
+        ...item,
+        expense_name: item.material_name,
+        material_name: item.material_name // Keep for backward compatibility
+      })) as WorkOrderMaterial[];
+      
+      setMaterials(transformedData || []);
     } catch (error: any) {
       console.error('Error fetching materials:', error);
       setError(error.message);

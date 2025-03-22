@@ -1,28 +1,100 @@
-import { z } from 'zod';
 
-// Add the missing costTypes export for CostTypeSelector component
-export const expenseTypes = ['materials', 'equipment', 'supplies', 'other'];
-export const costTypes = expenseTypes; // Alias for backward compatibility
+import * as z from 'zod';
 
-export const documentSchema = z.object({
-  documentId: z.string().optional(),
-  entityType: z.string(),
-  entityId: z.string(),
-  fileName: z.string(),
-  fileType: z.string(),
-  fileSize: z.number(),
-  storagePath: z.string(),
-  uploadDate: z.string(),
-  description: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
-  createdBy: z.string().optional(),
-  createdAt: z.string().optional(),
-  updatedAt: z.string().optional(),
-  isReceipt: z.boolean().optional(),
+// Define the category options
+export const documentCategories = [
+  'invoice',
+  'receipt',
+  'estimate',
+  'contract',
+  'insurance',
+  'certification',
+  'photo',
+  'other'
+] as const;
+
+// Define the entity types that documents can be related to
+export const entityTypes = [
+  'PROJECT',
+  'CUSTOMER',
+  'ESTIMATE',
+  'WORK_ORDER',
+  'VENDOR',
+  'SUBCONTRACTOR',
+  'EXPENSE'
+] as const;
+
+// Define vendor types
+export const vendorTypes = [
+  'vendor',
+  'subcontractor',
+  'other'
+] as const;
+
+// Define expense types for receipts
+export const expenseTypes = [
+  'materials',
+  'equipment',
+  'supplies',
+  'other'
+] as const;
+
+// For backward compatibility - alias expenseTypes as costTypes
+export const costTypes = expenseTypes;
+
+// Define the document metadata schema
+export const documentMetadataSchema = z.object({
+  category: z.enum(documentCategories),
+  entityType: z.enum(entityTypes),
+  entityId: z.string().optional(),
   amount: z.number().optional(),
+  expenseDate: z.date().optional(),
+  version: z.number().default(1),
+  tags: z.array(z.string()).default([]),
+  notes: z.string().optional(),
+  isExpense: z.boolean().default(false),
   vendorId: z.string().optional(),
-  costType: z.enum(['materials', 'equipment', 'supplies', 'other']).optional(),
-  materialName: z.string().optional(),
+  vendorType: z.enum(vendorTypes).optional(),
+  expenseType: z.enum(expenseTypes).optional(),
 });
 
+// Define the form schema with validation for document upload
+export const documentUploadSchema = z.object({
+  files: z.array(z.instanceof(File)).min(1, "At least one file is required"),
+  metadata: documentMetadataSchema
+});
+
+// Additional schema for internal document structure
+export const documentSchema = z.object({
+  document_id: z.string(),
+  file_name: z.string(),
+  file_type: z.string().nullable(),
+  file_size: z.number().nullable(),
+  storage_path: z.string(),
+  entity_type: z.string(),
+  entity_id: z.string(),
+  uploaded_by: z.string().nullable(),
+  tags: z.array(z.string()).nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  url: z.string().optional(),
+  category: z.string().optional(),
+  amount: z.number().optional(),
+  expense_date: z.string().optional(),
+  version: z.number().optional(),
+  is_expense: z.boolean().optional(),
+  notes: z.string().optional(),
+  vendor_id: z.string().optional(),
+  vendor_type: z.string().optional(),
+  expense_type: z.string().optional(),
+  materialName: z.string().optional(),
+  costType: z.enum(expenseTypes).optional(),
+});
+
+export type DocumentCategory = typeof documentCategories[number];
+export type EntityType = typeof entityTypes[number];
+export type VendorType = typeof vendorTypes[number];
+export type ExpenseType = typeof expenseTypes[number];
+export type DocumentMetadata = z.infer<typeof documentMetadataSchema>;
+export type DocumentUploadFormValues = z.infer<typeof documentUploadSchema>;
 export type Document = z.infer<typeof documentSchema>;

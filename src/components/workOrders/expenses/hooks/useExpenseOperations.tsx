@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,10 +42,10 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         work_order_id: workOrderId,
         vendor_id: expense.vendorId,
         material_name: expense.expenseName, // Using material_name field in DB
+        expense_type: expense.expenseType || 'materials',
         quantity: expense.quantity,
         unit_price: expense.unitPrice,
         total_price: totalPrice,
-        expense_type: expense.expenseType || 'materials',
       });
       
       // Validate that workOrderId is a valid UUID
@@ -77,12 +78,13 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         description: 'Expense has been added successfully.',
       });
       
-      // Transform database response to expense format
-      const addedExpense = data?.[0] ? {
+      // Transform database response to expense format with both field names
+      const addedExpense: WorkOrderExpense = {
         id: data[0].id,
         work_order_id: data[0].work_order_id,
         vendor_id: data[0].vendor_id,
         expense_name: data[0].material_name,
+        material_name: data[0].material_name, // Add for backward compatibility
         quantity: data[0].quantity,
         unit_price: data[0].unit_price,
         total_price: data[0].total_price,
@@ -90,7 +92,7 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
         expense_type: data[0].expense_type || 'materials'
-      } as WorkOrderExpense : null;
+      };
       
       // Return the newly created expense
       return addedExpense;

@@ -75,8 +75,24 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
         description: 'Material has been added successfully.',
       });
       
+      // Transform database response to WorkOrderMaterial format with both fields
+      const addedMaterial: WorkOrderMaterial = {
+        id: data[0].id,
+        work_order_id: data[0].work_order_id,
+        vendor_id: data[0].vendor_id,
+        expense_name: data[0].material_name, // Map material_name to expense_name
+        material_name: data[0].material_name, // Keep material_name for compatibility
+        quantity: data[0].quantity,
+        unit_price: data[0].unit_price,
+        total_price: data[0].total_price,
+        receipt_document_id: data[0].receipt_document_id,
+        created_at: data[0].created_at,
+        updated_at: data[0].updated_at,
+        expense_type: data[0].expense_type || 'materials'
+      };
+      
       // Return the newly created material
-      return data[0] as WorkOrderMaterial;
+      return addedMaterial;
     } catch (error: any) {
       console.error('Error adding material:', error);
       toast({
