@@ -6,10 +6,9 @@ import { Upload, FileText, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
-import { useSubcontractorDocuments } from './hooks/useSubcontractorDocuments';
+import { useSubcontractorDocuments, SubcontractorDocument } from './hooks/useSubcontractorDocuments';
 import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
 import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
-import { SubcontractorDocument } from './hooks/useSubcontractorDocuments';
 
 interface SubcontractorDocumentsProps {
   subcontractorId: string;
