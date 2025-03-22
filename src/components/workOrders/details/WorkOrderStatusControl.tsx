@@ -38,7 +38,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   
   const fetchStatusOptions = async () => {
     try {
-      // Use fully qualified function call with explicit headers
+      setLoading(true);
       const { data, error } = await supabase
         .from('status_definitions')
         .select('status_code, label, description')
@@ -53,6 +53,8 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       console.log('Available statuses:', data);
     } catch (error) {
       console.error('Error fetching status options:', error);
+    } finally {
+      setLoading(false);
     }
   };
   
