@@ -1720,6 +1720,7 @@ export type Database = {
       work_order_materials: {
         Row: {
           created_at: string | null
+          expense_type: string | null
           id: string
           material_name: string
           quantity: number
@@ -1732,6 +1733,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          expense_type?: string | null
           id?: string
           material_name: string
           quantity: number
@@ -1744,6 +1746,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          expense_type?: string | null
           id?: string
           material_name?: string
           quantity?: number

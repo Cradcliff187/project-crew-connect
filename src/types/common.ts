@@ -25,6 +25,7 @@ export type StatusType =
   | 'new'
   | 'not_started'
   | 'not-started'
+  | 'in-progress'
   // Added new status types to match SubcontractorStatusBadge usage
   | 'success'
   | 'info'
