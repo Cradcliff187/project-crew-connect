@@ -16,20 +16,13 @@ const MaterialsTableContent = ({
   onDelete,
   onReceiptClick
 }: MaterialsTableContentProps) => {
-  // Find vendor name by ID
-  const getVendorName = (vendorId: string | null) => {
-    if (!vendorId) return '-';
-    const vendor = vendors.find(v => v.vendorid === vendorId);
-    return vendor ? vendor.vendorname : 'Unknown Vendor';
-  };
-
   return (
     <div className="w-full overflow-x-auto">
       <Table>
         <MaterialsTableHeader />
         <MaterialsTableBody 
           materials={materials} 
-          vendorNameFn={getVendorName} 
+          vendors={vendors} 
           onDelete={onDelete} 
           onReceiptClick={onReceiptClick}
         />
