@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { createRoot } from 'react-dom/client'
+import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
@@ -13,7 +13,7 @@ if (!rootElement) {
 }
 
 // Create a root
-const root = createRoot(rootElement);
+const root = ReactDOM.createRoot(rootElement);
 
 // Render the app
 root.render(
