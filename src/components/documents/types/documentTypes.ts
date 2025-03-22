@@ -10,4 +10,5 @@ export interface PrefillData {
   amount?: number;
   vendorId?: string;
   materialName?: string;
+  vendorType?: string;
 }
