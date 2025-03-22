@@ -1,26 +1,28 @@
 
 import React from 'react';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues, VendorType } from '../schemas/documentSchema';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 import { DocumentFormProps, PrefillData } from '../types/documentTypes';
 import DocumentCategorySelector from '../DocumentCategorySelector';
 import ExpenseForm from '../ExpenseForm';
-import VendorSelector from '../VendorSelector';
+import EntitySelector from '../EntitySelector';
 
 interface MetadataFormProps extends DocumentFormProps {
   watchIsExpense: boolean;
-  watchVendorType: string;
+  watchCategory: string;
   isReceiptUpload?: boolean;
   showVendorSelector: boolean;
+  showSubcontractorSelector: boolean;
   prefillData?: PrefillData;
 }
 
 const MetadataForm: React.FC<MetadataFormProps> = ({
   control,
   watchIsExpense,
-  watchVendorType,
+  watchCategory,
   isReceiptUpload = false,
   showVendorSelector,
+  showSubcontractorSelector,
   prefillData
 }) => {
   return (
@@ -38,13 +40,25 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
         />
       )}
       
-      {/* Vendor Selector - shown based on category or isExpense */}
+      {/* Vendor Selector - shown for material vendor documents */}
       {showVendorSelector && (
-        <VendorSelector 
+        <EntitySelector 
           control={control}
-          vendorType={watchVendorType}
-          prefillVendorId={prefillData?.vendorId}
-          prefillVendorType={prefillData?.vendorType as VendorType}
+          entityType="VENDOR"
+          fieldName="metadata.vendorId"
+          label="Vendor"
+          prefillEntityId={prefillData?.vendorId}
+        />
+      )}
+
+      {/* Subcontractor Selector - shown for subcontractor documents */}
+      {showSubcontractorSelector && (
+        <EntitySelector 
+          control={control}
+          entityType="SUBCONTRACTOR"
+          fieldName="metadata.subcontractorId"
+          label="Subcontractor"
+          prefillEntityId={prefillData?.subcontractorId}
         />
       )}
     </div>

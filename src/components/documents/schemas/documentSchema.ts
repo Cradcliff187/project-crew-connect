@@ -24,13 +24,6 @@ export const entityTypes = [
   'EXPENSE'
 ] as const;
 
-// Define vendor types
-export const vendorTypes = [
-  'vendor',
-  'subcontractor',
-  'other'
-] as const;
-
 // Define the document metadata schema
 export const documentMetadataSchema = z.object({
   category: z.enum(documentCategories),
@@ -42,8 +35,9 @@ export const documentMetadataSchema = z.object({
   tags: z.array(z.string()).default([]),
   notes: z.string().optional(),
   isExpense: z.boolean().default(false),
+  // Replace vendorId and vendorType with separate fields for vendors and subcontractors
   vendorId: z.string().optional(),
-  vendorType: z.enum(vendorTypes).optional(),
+  subcontractorId: z.string().optional(),
 });
 
 // Define the form schema with validation for document upload
@@ -54,7 +48,6 @@ export const documentUploadSchema = z.object({
 
 export type DocumentCategory = typeof documentCategories[number];
 export type EntityType = typeof entityTypes[number];
-export type VendorType = typeof vendorTypes[number];
 export type DocumentMetadata = z.infer<typeof documentMetadataSchema>;
 export type DocumentUploadFormValues = z.infer<typeof documentUploadSchema>;
 
@@ -78,14 +71,15 @@ export interface Document {
   version?: number;
   is_expense?: boolean;
   notes?: string;
+  // Replace vendor_id and vendor_type with separate fields
   vendor_id?: string;
-  vendor_type?: string;
+  subcontractor_id?: string;
 }
 
 // Data that can be prefilled when uploading a document
 export interface PrefillData {
   amount?: number;
   vendorId?: string;
+  subcontractorId?: string;
   materialName?: string;
-  vendorType?: string;  // Adding the missing property
 }

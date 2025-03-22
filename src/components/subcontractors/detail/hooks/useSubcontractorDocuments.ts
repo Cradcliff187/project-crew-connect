@@ -24,12 +24,11 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
         return;
       }
       
-      // Also get documents where this subcontractor is referenced as vendor
+      // Also get documents where this subcontractor is referenced directly
       const { data: referencedDocs, error: refError } = await supabase
         .from('documents')
         .select('document_id, file_name, category, created_at, file_type, storage_path')
-        .eq('vendor_id', subcontractorId)
-        .eq('vendor_type', 'subcontractor');
+        .eq('subcontractor_id', subcontractorId);
       
       if (refError) {
         console.error('Error fetching referenced documents:', refError);

@@ -47,14 +47,15 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     isUploading,
     previewURL,
     showVendorSelector,
+    showSubcontractorSelector,
     setShowVendorSelector,
+    setShowSubcontractorSelector,
     handleFileSelect,
     onSubmit,
     initializeForm,
     watchIsExpense,
-    watchVendorType,
-    watchFiles,
-    watchCategory
+    watchCategory,
+    watchFiles
   } = useDocumentUploadForm({
     entityType,
     entityId,
@@ -72,9 +73,16 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // Auto-show vendor selector when receipt category is selected
   useEffect(() => {
     if (watchCategory === 'receipt' || watchCategory === 'invoice') {
-      setShowVendorSelector(true);
+      // Determine which selector to show based on the context
+      if (entityType === 'SUBCONTRACTOR' || prefillData?.subcontractorId) {
+        setShowSubcontractorSelector(true);
+        setShowVendorSelector(false);
+      } else {
+        setShowVendorSelector(true);
+        setShowSubcontractorSelector(false);
+      }
     }
-  }, [watchCategory]);
+  }, [watchCategory, entityType, prefillData]);
 
   // Handle capture from mobile device
   const handleMobileCapture = (file: File) => {
@@ -123,9 +131,10 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
             <MetadataForm
               control={form.control}
               watchIsExpense={watchIsExpense}
-              watchVendorType={watchVendorType}
+              watchCategory={watchCategory}
               isReceiptUpload={isReceiptUpload}
               showVendorSelector={showVendorSelector}
+              showSubcontractorSelector={showSubcontractorSelector}
               prefillData={prefillData}
             />
           </CardContent>
