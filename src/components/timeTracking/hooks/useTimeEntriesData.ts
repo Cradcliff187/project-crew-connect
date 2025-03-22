@@ -26,7 +26,6 @@ export const useTimeEntriesData = (filterType: string) => {
           employee_rate,
           notes,
           has_receipts,
-          total_cost,
           created_at,
           updated_at
         `)
@@ -48,7 +47,6 @@ export const useTimeEntriesData = (filterType: string) => {
         let entityName = 'Unknown';
         let entityLocation = '';
         let employeeName = '';
-        let vendorName = '';
         
         if (entry.entity_type === 'work_order') {
           const { data: workOrder } = await supabase
@@ -99,16 +97,16 @@ export const useTimeEntriesData = (filterType: string) => {
           }
         }
         
-        const cost = entry.total_cost || (entry.hours_worked && entry.employee_rate 
+        // Calculate total cost here instead of querying it from the database
+        const cost = entry.hours_worked && entry.employee_rate 
           ? entry.hours_worked * entry.employee_rate 
-          : entry.hours_worked * 75);
+          : entry.hours_worked * 75;
         
         return {
           ...entry,
           entity_name: entityName,
           entity_location: entityLocation || undefined,
           employee_name: employeeName,
-          vendor_name: vendorName,
           total_cost: cost
         };
       }));
