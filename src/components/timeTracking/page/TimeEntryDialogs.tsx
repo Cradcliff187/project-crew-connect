@@ -1,16 +1,19 @@
 
 import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { TimeEntry } from '@/types/timeTracking';
 import TimeEntryDetail from '../TimeEntryDetail';
 import TimeEntryEdit from '../TimeEntryEdit';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { DialogContent as ReceiptDialogContent } from '@/components/ui/dialog';
-import { Document, Page, pdfjs } from 'react-pdf';
-import { useToast } from '@/hooks/use-toast';
+import { pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
-interface TimeEntryDialogsProps {
+// Initialize PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+export interface TimeEntryDialogsProps {
   showDetailDialog: boolean;
   setShowDetailDialog: (show: boolean) => void;
   showEditDialog: boolean;
@@ -19,14 +22,15 @@ interface TimeEntryDialogsProps {
   setShowDeleteDialog: (show: boolean) => void;
   showReceiptsDialog: boolean;
   setShowReceiptsDialog: (show: boolean) => void;
-  selectedEntry: any;
-  setSelectedEntry: (entry: any) => void;
+  selectedEntry: TimeEntry | null;
+  setSelectedEntry: (entry: TimeEntry | null) => void;
   currentReceipts: any[];
   viewingReceipt: any;
   setViewingReceipt: (receipt: any) => void;
   receiptDocument: any;
   handleFormSuccess: () => void;
-  handleDeleteEntry: (id: string) => Promise<void>;
+  handleDeleteEntry: (id: string) => void;
+  handleViewReceipts: (id: string) => Promise<void>;
 }
 
 const TimeEntryDialogs: React.FC<TimeEntryDialogsProps> = ({
@@ -45,40 +49,18 @@ const TimeEntryDialogs: React.FC<TimeEntryDialogsProps> = ({
   setViewingReceipt,
   receiptDocument,
   handleFormSuccess,
-  handleDeleteEntry
+  handleDeleteEntry,
+  handleViewReceipts
 }) => {
-  const { toast } = useToast();
-
-  // Handle close detail dialog
-  const handleCloseDetailDialog = () => {
-    setShowDetailDialog(false);
-    setTimeout(() => setSelectedEntry(null), 200);
-  };
-
-  // Handle close edit dialog
-  const handleCloseEditDialog = () => {
-    setShowEditDialog(false);
-    setTimeout(() => setSelectedEntry(null), 200);
-  };
-
-  // Handle view receipts
-  const handleViewReceiptDetail = (receipt: any) => {
-    setViewingReceipt(receipt);
-  };
-
-  // Handle receipt viewer close
-  const handleCloseReceiptViewer = () => {
-    setViewingReceipt(null);
-  };
-
   return (
     <>
       {/* Time Entry Detail Dialog */}
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           {selectedEntry && (
-            <TimeEntryDetail
+            <TimeEntryDetail 
               timeEntry={selectedEntry}
+              onClose={() => setShowDetailDialog(false)}
               onEdit={() => {
                 setShowDetailDialog(false);
                 setShowEditDialog(true);
@@ -87,23 +69,10 @@ const TimeEntryDialogs: React.FC<TimeEntryDialogsProps> = ({
                 setShowDetailDialog(false);
                 setShowDeleteDialog(true);
               }}
-              onClose={handleCloseDetailDialog}
-              onViewReceipts={async () => {
-                try {
-                  // When viewing receipts from the detail dialog,
-                  // we close the detail and open the receipts dialog
-                  setShowDetailDialog(false);
-                  // Use the handleViewReceipts from the parent component
-                  if (selectedEntry) {
-                    await handleViewReceipts(selectedEntry.id);
-                  }
-                } catch (error) {
-                  console.error('Error viewing receipts:', error);
-                  toast({
-                    title: 'Error',
-                    description: 'Could not load receipts.',
-                    variant: 'destructive',
-                  });
+              onViewReceipts={() => {
+                setShowDetailDialog(false);
+                if (selectedEntry) {
+                  handleViewReceipts(selectedEntry.id);
                 }
               }}
             />
@@ -113,11 +82,11 @@ const TimeEntryDialogs: React.FC<TimeEntryDialogsProps> = ({
 
       {/* Time Entry Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           {selectedEntry && (
             <TimeEntryEdit
               timeEntry={selectedEntry}
-              onCancel={handleCloseEditDialog}
+              onCancel={() => setShowEditDialog(false)}
               onSuccess={handleFormSuccess}
             />
           )}
@@ -128,19 +97,18 @@ const TimeEntryDialogs: React.FC<TimeEntryDialogsProps> = ({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this time entry
-              and remove it from our servers.
+              Are you sure you want to delete this time entry? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={async () => {
+              className="bg-red-500 hover:bg-red-600"
+              onClick={() => {
                 if (selectedEntry) {
-                  await handleDeleteEntry(selectedEntry.id);
+                  handleDeleteEntry(selectedEntry.id);
                   setShowDeleteDialog(false);
                   setSelectedEntry(null);
                 }
@@ -153,72 +121,49 @@ const TimeEntryDialogs: React.FC<TimeEntryDialogsProps> = ({
       </AlertDialog>
 
       {/* Receipts Dialog */}
-      <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Receipts & Documents</h3>
-            {currentReceipts.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {currentReceipts.map((receipt) => (
-                  <Button
-                    key={receipt.id}
-                    variant="outline"
-                    className="h-auto p-3 flex flex-col items-center justify-center text-center gap-2"
-                    onClick={() => handleViewReceiptDetail(receipt)}
+      {showReceiptsDialog && selectedEntry && (
+        <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div>
+              <h2 className="text-xl font-bold mb-4">Receipts for {selectedEntry.entity_name}</h2>
+              
+              {viewingReceipt ? (
+                <div className="mb-4">
+                  <Button 
+                    variant="outline" 
+                    className="mb-4"
+                    onClick={() => setViewingReceipt(null)}
                   >
-                    <div className="text-sm font-medium truncate w-full">
-                      {receipt.filename || 'Receipt'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Click to view
-                    </div>
+                    ← Back to receipts
                   </Button>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No receipts available for this entry.
-              </div>
-            )}
-            <div className="flex justify-end">
-              <Button onClick={() => setShowReceiptsDialog(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Receipt Viewer */}
-      <Sheet open={!!viewingReceipt} onOpenChange={(open) => !open && handleCloseReceiptViewer()}>
-        <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col">
-          <div className="px-6 py-4 border-b">
-            <h3 className="text-lg font-medium">
-              {viewingReceipt?.filename || 'Receipt'}
-            </h3>
-          </div>
-          <div className="flex-1 overflow-auto p-6">
-            {receiptDocument ? (
-              <iframe
-                src={receiptDocument}
-                className="w-full h-full"
-                title="Receipt Document"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-muted-foreground">
-                  Loading receipt...
+                  
+                  <div className="border rounded-md p-2 bg-white">
+                    {receiptDocument}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          <div className="px-6 py-4 border-t flex justify-end">
-            <Button onClick={handleCloseReceiptViewer}>
-              Close
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {currentReceipts.map((receipt) => (
+                    <div 
+                      key={receipt.id} 
+                      className="border rounded-md p-4 cursor-pointer hover:shadow-md"
+                      onClick={() => setViewingReceipt(receipt)}
+                    >
+                      <div className="text-sm font-medium">{receipt.file_name || 'Receipt'}</div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(receipt.created_at).toLocaleDateString()}
+                      </div>
+                      {receipt.amount && (
+                        <div className="mt-2 text-sm font-semibold">${receipt.amount.toFixed(2)}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 };
