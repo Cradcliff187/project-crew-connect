@@ -3,6 +3,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderMaterial } from '@/types/workOrder';
 import { MaterialsTableContent } from './components';
+import { Card, CardContent } from '@/components/ui/card';
+import { Package2 } from 'lucide-react';
 
 interface MaterialsTableProps {
   materials: WorkOrderMaterial[];
@@ -35,25 +37,35 @@ const MaterialsTable = ({
   }
   
   return (
-    <div className="space-y-4">
-      <div className="font-medium text-base">Materials</div>
-      
-      <MaterialsTableContent 
-        materials={materials} 
-        vendors={vendors} 
-        onDelete={onDelete}
-        onReceiptClick={onReceiptClick}
-      />
-      
-      {materials.length > 0 && (
-        <div className="flex justify-end">
-          <div className="bg-gray-100 px-4 py-2 rounded flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-600">Total Materials Cost:</span>
-            <span className="text-sm font-bold">{formatCurrency(totalCost)}</span>
+    <Card className="shadow-sm">
+      <CardContent className="p-0">
+        <MaterialsTableContent 
+          materials={materials} 
+          vendors={vendors} 
+          onDelete={onDelete}
+          onReceiptClick={onReceiptClick}
+        />
+        
+        {materials.length > 0 ? (
+          <div className="flex justify-between items-center bg-gray-50 p-4 border-t">
+            <div className="flex items-center gap-2 text-gray-600">
+              <Package2 size={18} />
+              <span className="font-medium">Total Items: {materials.length}</span>
+            </div>
+            <div className="bg-[#0485ea]/10 px-4 py-2 rounded-md flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Total Materials Cost:</span>
+              <span className="text-lg font-bold text-[#0485ea]">{formatCurrency(totalCost)}</span>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          <div className="p-8 text-center text-gray-500 border-t">
+            <Package2 size={36} className="mx-auto mb-3 text-gray-300" />
+            <p className="font-medium">No materials added yet</p>
+            <p className="text-sm mt-1">Use the Add Material button to track materials used in this work order.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

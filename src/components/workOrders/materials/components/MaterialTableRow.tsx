@@ -20,12 +20,12 @@ const MaterialTableRow = ({
   onReceiptClick
 }: MaterialTableRowProps) => {
   return (
-    <TableRow>
-      <TableCell>{material.material_name}</TableCell>
+    <TableRow className="hover:bg-[#0485ea]/5">
+      <TableCell className="font-medium">{material.material_name}</TableCell>
       <TableCell>{vendorName}</TableCell>
       <TableCell>{material.quantity}</TableCell>
       <TableCell>{formatCurrency(material.unit_price)}</TableCell>
-      <TableCell>{formatCurrency(material.total_price)}</TableCell>
+      <TableCell className="font-semibold">{formatCurrency(material.total_price)}</TableCell>
       <TableCell className="flex items-center justify-end gap-2">
         <ReceiptButton 
           material={material} 

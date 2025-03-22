@@ -24,16 +24,16 @@ const MaterialsTableContent = ({
   };
 
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <div className="w-full overflow-x-auto">
       <Table>
-        <TableHeader className="bg-gray-50">
+        <TableHeader className="bg-[#0485ea]/5">
           <TableRow>
-            <TableHead>Material</TableHead>
-            <TableHead>Vendor</TableHead>
-            <TableHead>Quantity</TableHead>
-            <TableHead>Unit Price</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="font-semibold text-[#0485ea]">Material</TableHead>
+            <TableHead className="font-semibold text-[#0485ea]">Vendor</TableHead>
+            <TableHead className="font-semibold text-[#0485ea]">Quantity</TableHead>
+            <TableHead className="font-semibold text-[#0485ea]">Unit Price</TableHead>
+            <TableHead className="font-semibold text-[#0485ea]">Total</TableHead>
+            <TableHead className="text-right font-semibold text-[#0485ea]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -49,7 +49,7 @@ const MaterialsTableContent = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                 No materials have been added to this work order yet.
               </TableCell>
             </TableRow>

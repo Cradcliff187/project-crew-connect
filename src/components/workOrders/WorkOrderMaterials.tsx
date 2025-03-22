@@ -103,7 +103,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
       {/* Error Alert */}
       <MaterialsErrorAlert error={error || vendorsError} />
       
-      {/* Materials Info Section */}
+      {/* Main Materials Section - Now prioritizing the table view */}
       <MaterialsInfoSection 
         materials={materials}
         loading={loading}
@@ -118,7 +118,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
         onReceiptClick={handleReceiptClick}
       />
       
-      {/* Receipt Confirmation Dialog */}
+      {/* Dialogs - no changes needed */}
       <ReceiptConfirmationDialog
         open={showReceiptConfirmation}
         onOpenChange={setShowReceiptConfirmation}
@@ -128,7 +128,6 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
         onConfirmWithoutReceipt={handleConfirmWithoutReceipt}
       />
       
-      {/* Material Receipt Upload Dialog */}
       <ReceiptUploadDialog
         open={showReceiptUpload}
         material={selectedMaterial}
@@ -138,7 +137,6 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
         onCancel={() => setShowReceiptUpload(false)}
       />
       
-      {/* Receipt Viewer Dialog */}
       <ReceiptViewerDialog
         open={viewingReceipt}
         onOpenChange={(open) => !open && handleCloseReceiptViewer()}
