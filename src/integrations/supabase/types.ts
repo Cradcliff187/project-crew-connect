@@ -1189,56 +1189,6 @@ export type Database = {
         }
         Relationships: []
       }
-      subcontractor_compliance: {
-        Row: {
-          contract_expiration: string | null
-          contract_on_file: boolean | null
-          created_at: string
-          id: string
-          insurance_expiration: string | null
-          insurance_policy_number: string | null
-          insurance_provider: string | null
-          last_performance_review: string | null
-          subcontractor_id: string
-          tax_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          contract_expiration?: string | null
-          contract_on_file?: boolean | null
-          created_at?: string
-          id?: string
-          insurance_expiration?: string | null
-          insurance_policy_number?: string | null
-          insurance_provider?: string | null
-          last_performance_review?: string | null
-          subcontractor_id: string
-          tax_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          contract_expiration?: string | null
-          contract_on_file?: boolean | null
-          created_at?: string
-          id?: string
-          insurance_expiration?: string | null
-          insurance_policy_number?: string | null
-          insurance_provider?: string | null
-          last_performance_review?: string | null
-          subcontractor_id?: string
-          tax_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subcontractor_compliance_subcontractor_id_fkey"
-            columns: ["subcontractor_id"]
-            isOneToOne: false
-            referencedRelation: "subcontractors"
-            referencedColumns: ["subid"]
-          },
-        ]
-      }
       subcontractor_invoices: {
         Row: {
           amount: number
@@ -1372,56 +1322,6 @@ export type Database = {
           },
         ]
       }
-      subcontractor_performance: {
-        Row: {
-          created_at: string
-          id: string
-          notes: string | null
-          on_time_percentage: number | null
-          quality_score: number | null
-          rating: number | null
-          response_time_hours: number | null
-          review_date: string | null
-          safety_incidents: number | null
-          subcontractor_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notes?: string | null
-          on_time_percentage?: number | null
-          quality_score?: number | null
-          rating?: number | null
-          response_time_hours?: number | null
-          review_date?: string | null
-          safety_incidents?: number | null
-          subcontractor_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notes?: string | null
-          on_time_percentage?: number | null
-          quality_score?: number | null
-          rating?: number | null
-          response_time_hours?: number | null
-          review_date?: string | null
-          safety_incidents?: number | null
-          subcontractor_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subcontractor_performance_subcontractor_id_fkey"
-            columns: ["subcontractor_id"]
-            isOneToOne: false
-            referencedRelation: "subcontractors"
-            referencedColumns: ["subid"]
-          },
-        ]
-      }
       subcontractor_specialties: {
         Row: {
           created_at: string
@@ -1445,42 +1345,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      subcontractor_specialty_junction: {
-        Row: {
-          created_at: string
-          id: string
-          specialty_id: string
-          subcontractor_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          specialty_id: string
-          subcontractor_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          specialty_id?: string
-          subcontractor_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subcontractor_specialty_junction_specialty_id_fkey"
-            columns: ["specialty_id"]
-            isOneToOne: false
-            referencedRelation: "subcontractor_specialties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subcontractor_specialty_junction_subcontractor_id_fkey"
-            columns: ["subcontractor_id"]
-            isOneToOne: false
-            referencedRelation: "subcontractors"
-            referencedColumns: ["subid"]
-          },
-        ]
       }
       subcontractors: {
         Row: {
@@ -1576,99 +1440,6 @@ export type Database = {
           subname?: string | null
           tax_id?: string | null
           total_completed_amount?: number | null
-          updated_at?: string
-          zip?: string | null
-        }
-        Relationships: []
-      }
-      subcontractors_new: {
-        Row: {
-          address: string | null
-          city: string | null
-          contactemail: string | null
-          contract_expiration: string | null
-          contract_on_file: boolean | null
-          created_at: string
-          hourly_rate: number | null
-          insurance_expiration: string | null
-          insurance_policy_number: string | null
-          insurance_provider: string | null
-          last_performance_review: string | null
-          notes: string | null
-          on_time_percentage: number | null
-          payment_terms: string | null
-          phone: string | null
-          preferred: boolean | null
-          quality_score: number | null
-          rating: number | null
-          response_time_hours: number | null
-          safety_incidents: number | null
-          specialty_ids: string[] | null
-          state: string | null
-          status: string | null
-          subid: string
-          subname: string
-          tax_id: string | null
-          updated_at: string
-          zip: string | null
-        }
-        Insert: {
-          address?: string | null
-          city?: string | null
-          contactemail?: string | null
-          contract_expiration?: string | null
-          contract_on_file?: boolean | null
-          created_at?: string
-          hourly_rate?: number | null
-          insurance_expiration?: string | null
-          insurance_policy_number?: string | null
-          insurance_provider?: string | null
-          last_performance_review?: string | null
-          notes?: string | null
-          on_time_percentage?: number | null
-          payment_terms?: string | null
-          phone?: string | null
-          preferred?: boolean | null
-          quality_score?: number | null
-          rating?: number | null
-          response_time_hours?: number | null
-          safety_incidents?: number | null
-          specialty_ids?: string[] | null
-          state?: string | null
-          status?: string | null
-          subid: string
-          subname: string
-          tax_id?: string | null
-          updated_at?: string
-          zip?: string | null
-        }
-        Update: {
-          address?: string | null
-          city?: string | null
-          contactemail?: string | null
-          contract_expiration?: string | null
-          contract_on_file?: boolean | null
-          created_at?: string
-          hourly_rate?: number | null
-          insurance_expiration?: string | null
-          insurance_policy_number?: string | null
-          insurance_provider?: string | null
-          last_performance_review?: string | null
-          notes?: string | null
-          on_time_percentage?: number | null
-          payment_terms?: string | null
-          phone?: string | null
-          preferred?: boolean | null
-          quality_score?: number | null
-          rating?: number | null
-          response_time_hours?: number | null
-          safety_incidents?: number | null
-          specialty_ids?: string[] | null
-          state?: string | null
-          status?: string | null
-          subid?: string
-          subname?: string
-          tax_id?: string | null
           updated_at?: string
           zip?: string | null
         }

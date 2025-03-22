@@ -8,4 +8,11 @@ export interface SubcontractorDocument {
   storage_path?: string;
   url?: string;
   is_receipt?: boolean;
+  
+  // Additional fields for document management
+  description?: string;
+  size?: number;
+  uploaded_by?: string;
+  expires_at?: string;
+  document_type?: 'insurance' | 'contract' | 'certification' | 'invoice' | 'other';
 }
