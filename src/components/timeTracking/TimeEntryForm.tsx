@@ -295,7 +295,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
       {showReceiptUpload && newTimeEntryId && (
         <ReceiptUploadDialog
           open={showReceiptUpload}
-          timeEntry={newTimeEntryId ? {
+          timeEntry={{
             id: newTimeEntryId,
             entity_id: entityId,
             entity_type: entityType,
