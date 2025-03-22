@@ -79,12 +79,12 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
 
   const laborCost = hoursWorked * (selectedEmployeeRate || 75);
 
-  // Prepare prefill data for the receipt upload to avoid redundant selection
+  // Updated prefill data to match the PrefillData type expected in EnhancedDocumentUpload
   const prefillData = {
-    entityId: entityId,
+    amount: 0,
+    vendorId: undefined,
     entityType: entityType.toUpperCase() as EntityType,
-    isExpense: true,
-    expenseAmount: 0,
+    entityId: entityId,
     expenseDate: form.watch('workDate'),
     notes: `Receipt for time entry on ${form.watch('workDate') ? format(form.watch('workDate'), 'MMM d, yyyy') : ''}`
   };
