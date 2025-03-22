@@ -14,7 +14,7 @@ import {
   WorkOrderProgressCard
 } from './details';
 import WorkOrderTimelogs from './WorkOrderTimelogs';
-import WorkOrderMaterials from './WorkOrderMaterials';
+import WorkOrderExpenses from './WorkOrderExpenses';
 
 interface WorkOrderDetailsProps {
   workOrder: WorkOrder;
@@ -46,7 +46,7 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
           <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
           <TabsTrigger value="documents" className="text-sm">Documents</TabsTrigger>
           <TabsTrigger value="time" className="text-sm">Time Tracking</TabsTrigger>
-          <TabsTrigger value="materials" className="text-sm">Materials</TabsTrigger>
+          <TabsTrigger value="expenses" className="text-sm">Expenses</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
@@ -105,10 +105,10 @@ const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) 
           />
         </TabsContent>
         
-        <TabsContent value="materials">
-          <WorkOrderMaterials 
+        <TabsContent value="expenses">
+          <WorkOrderExpenses 
             workOrderId={workOrder.work_order_id} 
-            onMaterialAdded={handleRefresh}
+            onExpenseAdded={handleRefresh}
           />
         </TabsContent>
       </Tabs>

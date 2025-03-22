@@ -17,7 +17,7 @@ export interface WorkOrder {
   po_number?: string;
   assigned_to?: string;
   total_cost?: number;
-  materials_cost?: number;
+  expenses_cost?: number;
   labor_cost?: number;
   actual_hours?: number;
   time_estimate?: number;
@@ -35,15 +35,16 @@ export interface WorkOrderTimelog {
   updated_at: string;
 }
 
-export interface WorkOrderMaterial {
+export interface WorkOrderExpense {
   id: string;
   work_order_id: string;
   vendor_id: string | null;
-  material_name: string;
+  expense_name: string;
   quantity: number;
   unit_price: number;
   total_price: number;
   receipt_document_id: string | null;
   created_at: string;
   updated_at: string;
+  expense_type?: string;
 }

@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DocumentUploadFormValues } from './schemas/documentSchema';
-import CostTypeSelector from './components/CostTypeSelector';
+import ExpenseTypeSelector from './components/ExpenseTypeSelector';
 
 interface ExpenseFormProps {
   control: Control<DocumentUploadFormValues>;
@@ -53,12 +53,12 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
       {isReceiptUpload && (
         <FormField
           control={control}
-          name="metadata.costType"
+          name="metadata.expenseType"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cost Type</FormLabel>
+              <FormLabel>Expense Type</FormLabel>
               <FormControl>
-                <CostTypeSelector
+                <ExpenseTypeSelector
                   value={field.value || 'materials'}
                   onChange={field.onChange}
                 />

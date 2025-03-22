@@ -31,8 +31,8 @@ export const vendorTypes = [
   'other'
 ] as const;
 
-// Define cost types for receipts
-export const costTypes = [
+// Define expense types for receipts
+export const expenseTypes = [
   'materials',
   'supplies',
   'equipment',
@@ -52,7 +52,7 @@ export const documentMetadataSchema = z.object({
   isExpense: z.boolean().default(false),
   vendorId: z.string().optional(),
   vendorType: z.enum(vendorTypes).optional(),
-  costType: z.enum(costTypes).optional(),
+  expenseType: z.enum(expenseTypes).optional(),
 });
 
 // Define the form schema with validation for document upload
@@ -64,7 +64,7 @@ export const documentUploadSchema = z.object({
 export type DocumentCategory = typeof documentCategories[number];
 export type EntityType = typeof entityTypes[number];
 export type VendorType = typeof vendorTypes[number];
-export type CostType = typeof costTypes[number];
+export type ExpenseType = typeof expenseTypes[number];
 export type DocumentMetadata = z.infer<typeof documentMetadataSchema>;
 export type DocumentUploadFormValues = z.infer<typeof documentUploadSchema>;
 
@@ -90,5 +90,5 @@ export interface Document {
   notes?: string;
   vendor_id?: string;
   vendor_type?: string;
-  cost_type?: string;
+  expense_type?: string;
 }
