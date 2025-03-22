@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define the type directly here to break the circular reference
+// Define a standalone interface to break circular references
 export interface SubcontractorDocument {
   document_id: string;
   file_name: string;

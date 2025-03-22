@@ -1,5 +1,4 @@
 
-import { DocumentBase } from '@/components/documents/types/documentTypes';
-
-// This is just a type alias to avoid circular dependencies
-export type SubcontractorDocument = DocumentBase;
+// This file is now deprecated as we've moved the type definition
+// directly into useSubcontractorDocuments.ts to break circular dependencies
+export {}; // Keep an empty export to satisfy module requirements

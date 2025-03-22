@@ -1,7 +1,8 @@
 
-import { DocumentBase } from '@/components/documents/types/documentTypes';
+import { SubcontractorDocument } from './hooks/useSubcontractorDocuments';
 
-export interface SubcontractorDocument extends DocumentBase {}
+// Re-export the document type
+export type { SubcontractorDocument };
 
 export interface Subcontractor {
   subid: string;
