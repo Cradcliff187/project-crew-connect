@@ -146,7 +146,6 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       .join(' ');
   };
 
-  // Render a safer version that ensures statusOptions is always an array
   return (
     <div className="flex items-center relative z-10">
       <span className="mr-2 text-sm font-medium">Status:</span>
@@ -167,10 +166,9 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
           align="start"
           sideOffset={5}
         >
-          {/* Only render Command component when we have status options */}
           {statusOptions.length > 0 ? (
             <Command className="rounded-md overflow-hidden">
-              <CommandGroup>
+              <CommandGroup heading="Select status">
                 {statusOptions.map((option) => (
                   <CommandItem
                     key={option.status_code}
