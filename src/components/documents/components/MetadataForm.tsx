@@ -2,7 +2,8 @@
 import React from 'react';
 import { Control } from 'react-hook-form';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
-import { DocumentFormProps, PrefillData } from '../types/documentTypes';
+import { DocumentFormProps } from '../types/documentTypes';
+import { PrefillData } from '../schemas/documentSchema';
 import DocumentCategorySelector from '../DocumentCategorySelector';
 import ExpenseForm from '../ExpenseForm';
 import EntitySelector from '../EntitySelector';

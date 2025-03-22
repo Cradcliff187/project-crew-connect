@@ -1,123 +1,128 @@
 
 import React, { useState, useEffect } from 'react';
-import { Control, Controller } from 'react-hook-form';
-import { DocumentUploadFormValues } from './schemas/documentSchema';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useQuery } from '@tanstack/react-query';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
+import { Control } from 'react-hook-form';
+import { DocumentUploadFormValues } from './schemas/documentSchema';
 
 interface EntitySelectorProps {
   control: Control<DocumentUploadFormValues>;
-  entityType: 'VENDOR' | 'SUBCONTRACTOR';
+  entityType: string;
   fieldName: string;
   label: string;
   prefillEntityId?: string;
 }
 
-const EntitySelector: React.FC<EntitySelectorProps> = ({
-  control,
-  entityType,
-  fieldName,
-  label,
-  prefillEntityId
+const EntitySelector: React.FC<EntitySelectorProps> = ({ 
+  control, 
+  entityType, 
+  fieldName, 
+  label, 
+  prefillEntityId 
 }) => {
-  const [entities, setEntities] = useState<{ id: string; name: string }[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  // Initialize entity from prefill if available
-  useEffect(() => {
-    if (prefillEntityId) {
-      console.log(`Prefilling ${entityType.toLowerCase()} ID:`, prefillEntityId);
-    }
-  }, [prefillEntityId, entityType]);
+  const [initialEntity, setInitialEntity] = useState<string | undefined>(prefillEntityId);
 
-  // Fetch entities (vendors or subcontractors)
-  useEffect(() => {
-    const fetchEntities = async () => {
-      setLoading(true);
-      try {
-        let data, error;
-        
-        if (entityType === 'VENDOR') {
-          // Fetch vendors
-          const result = await supabase
+  const { data: entities = [], isLoading } = useQuery({
+    queryKey: [`${entityType.toLowerCase()}-list`],
+    queryFn: async () => {
+      let query;
+      
+      switch (entityType) {
+        case 'VENDOR':
+          query = supabase
             .from('vendors')
             .select('vendorid, vendorname')
             .order('vendorname');
-            
-          data = result.data;
-          error = result.error;
-          
-          if (error) throw error;
-          
-          const formattedEntities = data?.map(v => ({
-            id: v.vendorid,
-            name: v.vendorname
-          }));
-          setEntities(formattedEntities || []);
-        } else if (entityType === 'SUBCONTRACTOR') {
-          // Fetch subcontractors
-          const result = await supabase
+          break;
+        case 'SUBCONTRACTOR':
+          query = supabase
             .from('subcontractors')
             .select('subid, subname')
             .order('subname');
-            
-          data = result.data;
-          error = result.error;
-          
-          if (error) throw error;
-          
-          const formattedEntities = data?.map(s => ({
-            id: s.subid,
-            name: s.subname
-          }));
-          setEntities(formattedEntities || []);
-        }
-      } catch (error) {
-        console.error(`Error fetching ${entityType.toLowerCase()}:`, error);
-      } finally {
-        setLoading(false);
+          break;
+        case 'PROJECT':
+          query = supabase
+            .from('projects')
+            .select('projectid, projectname')
+            .order('projectname');
+          break;
+        case 'CUSTOMER':
+          query = supabase
+            .from('customers')
+            .select('customerid, customername')
+            .order('customername');
+          break;
+        default:
+          return [];
       }
-    };
-    
-    fetchEntities();
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error(`Error fetching ${entityType.toLowerCase()} list:`, error);
+        return [];
+      }
+
+      return data.map(item => ({
+        id: entityType === 'VENDOR' ? item.vendorid : 
+             entityType === 'SUBCONTRACTOR' ? item.subid :
+             entityType === 'PROJECT' ? item.projectid :
+             item.customerid,
+        name: entityType === 'VENDOR' ? item.vendorname : 
+              entityType === 'SUBCONTRACTOR' ? item.subname :
+              entityType === 'PROJECT' ? item.projectname :
+              item.customername
+      }));
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Set initial value if prefillEntityId is provided
+  useEffect(() => {
+    if (prefillEntityId && prefillEntityId !== initialEntity) {
+      setInitialEntity(prefillEntityId);
+    }
+  }, [prefillEntityId]);
+
+  // For updating the value when we navigate to different entities
+  useEffect(() => {
+    // Reset when entityType changes
+    if (!prefillEntityId) {
+      setInitialEntity(undefined);
+    }
   }, [entityType]);
-  
+
   return (
-    <div className="space-y-4">
-      <div>
-        <Label>{label}</Label>
-        <Controller
-          name={fieldName}
-          control={control}
-          defaultValue={prefillEntityId || ""}
-          render={({ field }) => (
-            <Select 
-              value={field.value} 
-              onValueChange={field.onChange}
-              disabled={loading}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
+    <FormField
+      control={control}
+      name={fieldName as any}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <Select
+            value={field.value?.toString() || ''}
+            onValueChange={(value: string) => field.onChange(value)}
+            disabled={isLoading}
+          >
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder={`Select ${label}`} />
               </SelectTrigger>
-              <SelectContent>
-                {entities.map(entity => (
-                  <SelectItem key={entity.id} value={entity.id}>
-                    {entity.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </div>
-    </div>
+            </FormControl>
+            <SelectContent>
+              {entities.map((entity) => (
+                <SelectItem key={entity.id} value={entity.id}>
+                  {entity.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 };
 

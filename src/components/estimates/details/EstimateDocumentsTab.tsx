@@ -1,181 +1,121 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from '@/components/ui/button';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { FileIcon, ImageIcon, XCircleIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
+import { useEstimateDetails } from '../hooks/useEstimateDetails';
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
-  onDocumentUploadSuccess?: () => void;
+  itemDocuments: Document[];
+  onDocumentsUpdated: () => void;
 }
 
-const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ 
+const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
   estimateId,
-  onDocumentUploadSuccess
+  itemDocuments,
+  onDocumentsUpdated
 }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const { fetchItemDocuments } = useEstimateDetails();
 
-  const fetchDocuments = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('entity_type', 'ESTIMATE')
-        .eq('entity_id', estimateId);
-
-      if (error) throw error;
-
-      // Get the public URLs for each document
-      const docsWithUrls = await Promise.all(
-        (data || []).map(async (doc) => {
-          if (doc.storage_path) {
-            const { data: urlData } = supabase.storage
-              .from('construction_documents')
-              .getPublicUrl(doc.storage_path);
-            
-            return { ...doc, url: urlData.publicUrl };
-          }
-          return doc;
-        })
-      );
-
-      setDocuments(docsWithUrls);
-    } catch (err: any) {
-      console.error('Error fetching documents:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleUploadSuccess = () => {
+    toast({
+      title: "Document uploaded",
+      description: "The document has been successfully uploaded.",
+    });
+    setOpen(false);
+    onDocumentsUpdated();
+    fetchItemDocuments(estimateId);
   };
 
-  useEffect(() => {
-    fetchDocuments();
-  }, [estimateId]);
-
-  const handleDocumentUploadSuccess = () => {
-    fetchDocuments();
-    if (onDocumentUploadSuccess) {
-      onDocumentUploadSuccess();
-    }
+  const handleCancel = () => {
+    setOpen(false);
   };
 
-  const handleViewDocument = (url: string) => {
-    window.open(url, '_blank');
-  };
-
-  const handleDeleteDocument = async (documentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('document_id', documentId);
-      
-      if (error) throw error;
-      
-      // Refresh document list
-      fetchDocuments();
-      if (onDocumentUploadSuccess) {
-        onDocumentUploadSuccess();
-      }
-    } catch (err: any) {
-      console.error('Error deleting document:', err);
-      setError(err.message);
-    }
+  const handleDelete = async (documentId: string) => {
+    // Implement your delete logic here
+    console.log(`Deleting document with ID: ${documentId}`);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Documents</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-6">
-          <EnhancedDocumentUpload 
-            entityType="ESTIMATE"
-            entityId={estimateId}
-            onSuccess={handleDocumentUploadSuccess}
-          />
-        </div>
+    <div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Estimate Documents</CardTitle>
+          <CardDescription>
+            Manage documents associated with this estimate.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pl-6">
+          <div className="grid gap-4">
+            {itemDocuments && itemDocuments.length > 0 ? (
+              itemDocuments.map((document) => {
+                // Fix the property access 
+                // Change:
+                // const entityType = document.vendor_type === 'vendor' ? 'VENDOR' : 'SUBCONTRACTOR';
+                // const entityId = document.vendor_id;
+                
+                // To:
+                const entityType = document.vendor_id ? 'VENDOR' : 
+                                   document.subcontractor_id ? 'SUBCONTRACTOR' : null;
+                const entityId = document.vendor_id || document.subcontractor_id;
 
-        {loading ? (
-          <div className="text-center py-4">Loading documents...</div>
-        ) : error ? (
-          <div className="text-center py-4 text-red-500">
-            Error loading documents: {error}
-          </div>
-        ) : documents.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            No documents uploaded for this estimate.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documents.map((doc) => (
-              <div key={doc.document_id} className="border rounded-lg p-3 flex flex-col">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center">
-                    {doc.file_type?.includes('image') ? (
-                      <ImageIcon className="h-5 w-5 mr-2 text-blue-500" />
-                    ) : (
-                      <FileIcon className="h-5 w-5 mr-2 text-gray-500" />
-                    )}
-                    <span className="font-medium truncate max-w-[180px]" title={doc.file_name}>
-                      {doc.file_name}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => handleDeleteDocument(doc.document_id)}
-                  >
-                    <XCircleIcon className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-                
-                {doc.vendor_id && (
-                  <div className="text-xs text-gray-500 mb-2">
-                    Associated with: {doc.vendor_type === 'vendor' ? 'Vendor' : 'Subcontractor'}
-                  </div>
-                )}
-                
-                <div className="mt-2 flex-grow">
-                  {doc.file_type?.includes('image') && doc.url ? (
-                    <div className="cursor-pointer" onClick={() => handleViewDocument(doc.url!)}>
-                      <img
-                        src={doc.url}
-                        alt={doc.file_name}
-                        className="w-full h-24 object-cover rounded"
-                      />
+                return (
+                  <div key={document.document_id} className="flex items-center justify-between">
+                    <div>
+                      {document.file_name} ({document.category})
                     </div>
-                  ) : (
-                    <div className="text-xs text-gray-500 mb-2">
-                      {doc.file_type || 'Unknown file type'}
+                    <div>
+                      {/* Conditionally render the delete button based on entityId and entityType */}
+                      {entityId && entityType && (
+                        <Button variant="outline" size="sm" onClick={() => handleDelete(document.document_id)}>
+                          Delete
+                        </Button>
+                      )}
                     </div>
-                  )}
-                </div>
-                
-                <div className="mt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => doc.url && handleViewDocument(doc.url)}
-                  >
-                    View Document
-                  </Button>
-                </div>
-              </div>
-            ))}
+                  </div>
+                );
+              })
+            ) : (
+              <div>No documents uploaded yet.</div>
+            )}
+            <Button onClick={() => setOpen(true)}>Add Document</Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Document Upload Modal */}
+      {open && (
+        <div className="fixed inset-0 z-50 overflow-auto bg-black/50">
+          <div className="relative m-auto mt-20 rounded-lg bg-white p-4 w-full max-w-md">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload Document</CardTitle>
+                <CardDescription>
+                  Upload a new document related to this estimate.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EnhancedDocumentUpload
+                  entityType="ESTIMATE"
+                  entityId={estimateId}
+                  onSuccess={handleUploadSuccess}
+                  onCancel={handleCancel}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

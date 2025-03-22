@@ -16,3 +16,6 @@ export interface SubcontractorDocument {
   url?: string;
   is_expense?: boolean;
 }
+
+// Export the PrefillData interface to fix the import error
+export type { PrefillData } from '../schemas/documentSchema';

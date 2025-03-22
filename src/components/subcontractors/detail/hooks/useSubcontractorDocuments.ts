@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { SubcontractorDocument } from '../types';
+import { SubcontractorDocument } from '../../detail/types';
 
 export const useSubcontractorDocuments = (subcontractorId: string) => {
   const [documents, setDocuments] = useState<SubcontractorDocument[]>([]);
@@ -24,7 +24,7 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
         return;
       }
       
-      // Also get documents where this subcontractor is referenced directly
+      // Also get documents where this subcontractor is referenced
       const { data: referencedDocs, error: refError } = await supabase
         .from('documents')
         .select('document_id, file_name, category, created_at, file_type, storage_path')

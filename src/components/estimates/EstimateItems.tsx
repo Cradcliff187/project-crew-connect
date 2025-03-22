@@ -1,250 +1,182 @@
-
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { EstimateItem } from "./types/estimateTypes";
-import { Document } from "@/components/documents/schemas/documentSchema";
-import { DownloadIcon, FileIcon, PaperclipIcon, PlusCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import EnhancedDocumentUpload from "@/components/documents/EnhancedDocumentUpload";
+import React, { useState } from 'react';
+import { Trash } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EstimateItem } from '../types/estimateTypes';
+import { useToast } from "@/hooks/use-toast";
+import MaterialReceiptUpload from '@/components/workOrders/materials/components/MaterialReceiptUpload';
+import { PrefillData } from '@/components/documents/schemas/documentSchema';
 
 interface EstimateItemsProps {
   items: EstimateItem[];
-  itemDocuments?: Record<string, Document[]>;
-  estimateId?: string;
-  readOnly?: boolean;
-  onDocumentAdded?: () => void;
+  onChange: (newItems: EstimateItem[]) => void;
 }
 
-const EstimateItems = ({ 
-  items, 
-  itemDocuments = {}, 
-  estimateId,
-  readOnly = false,
-  onDocumentAdded
-}: EstimateItemsProps) => {
-  const [vendorNames, setVendorNames] = useState<Record<string, string>>({});
-  const [subcontractorNames, setSubcontractorNames] = useState<Record<string, string>>({});
+const EstimateItems: React.FC<EstimateItemsProps> = ({ items, onChange }) => {
+  const { toast } = useToast();
+  const [uploadingDocumentId, setUploadingDocumentId] = useState<string | null>(null);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
-  
-  // Fetch vendor and subcontractor names for display
-  useEffect(() => {
-    const fetchAssociatedData = async () => {
-      // Extract unique vendor IDs
-      const vendorIds = items
-        .filter(item => item.vendor_id)
-        .map(item => item.vendor_id as string);
-      
-      // Extract unique subcontractor IDs
-      const subcontractorIds = items
-        .filter(item => item.subcontractor_id)
-        .map(item => item.subcontractor_id as string);
-      
-      // Fetch vendor names if there are any vendor IDs
-      if (vendorIds.length > 0) {
-        const { data: vendorData } = await supabase
-          .from('vendors')
-          .select('vendorid, vendorname')
-          .in('vendorid', vendorIds);
-        
-        if (vendorData) {
-          const vendorMap: Record<string, string> = {};
-          vendorData.forEach(vendor => {
-            vendorMap[vendor.vendorid] = vendor.vendorname;
-          });
-          setVendorNames(vendorMap);
-        }
-      }
-      
-      // Fetch subcontractor names if there are any subcontractor IDs
-      if (subcontractorIds.length > 0) {
-        const { data: subData } = await supabase
-          .from('subcontractors')
-          .select('subid, subname')
-          .in('subid', subcontractorIds);
-        
-        if (subData) {
-          const subMap: Record<string, string> = {};
-          subData.forEach(sub => {
-            subMap[sub.subid] = sub.subname;
-          });
-          setSubcontractorNames(subMap);
-        }
-      }
-    };
-    
-    fetchAssociatedData();
-  }, [items]);
 
-  // Function to get type label with appropriate styling
-  const getTypeLabel = (itemType: string | undefined) => {
-    const type = itemType || 'labor';
-    
-    switch (type.toLowerCase()) {
-      case 'labor':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Labor</Badge>;
-      case 'vendor':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Material</Badge>;
-      case 'subcontractor':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Subcontractor</Badge>;
-      default:
-        return <Badge variant="outline">{type}</Badge>;
+  const handleItemChange = (index: number, field: string, value: string) => {
+    const newItems = [...items];
+    // Ensure quantity and unit_price are parsed as numbers
+    if (field === 'quantity' || field === 'unit_price') {
+      const parsedValue = parseFloat(value);
+      newItems[index][field] = isNaN(parsedValue) ? 0 : parsedValue;
+    } else {
+      newItems[index][field] = value;
     }
+    onChange(newItems);
   };
 
-  // Helper to format currency
-  const formatCurrency = (amount: number | undefined) => {
-    if (amount === undefined) return '$0.00';
-    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const handleAddItem = () => {
+    const newItem: EstimateItem = {
+      id: Math.random().toString(36).substring(2, 9), // Generate a simple unique ID
+      estimate_id: '',
+      description: '',
+      quantity: 1,
+      unit_price: 0,
+      total_price: 0,
+      item_type: 'labor',
+      cost: '0',
+      markup_percentage: '0',
+    };
+    onChange([...items, newItem]);
   };
 
-  // Helper to format percentage
-  const formatPercentage = (percentage: number | undefined) => {
-    if (percentage === undefined) return '0.0%';
-    return `${percentage.toFixed(1)}%`;
+  const handleDeleteItem = (id: string) => {
+    const newItems = items.filter(item => item.id !== id);
+    onChange(newItems);
   };
 
-  const handleAttachDocument = (item: EstimateItem) => {
+  const onUploadDocument = (item: EstimateItem) => {
     setSelectedItem(item);
     setShowDocumentUpload(true);
   };
 
-  const handleDocumentUploadSuccess = () => {
+  const closeDocumentUpload = () => {
     setShowDocumentUpload(false);
-    if (onDocumentAdded) {
-      onDocumentAdded();
-    }
+    setSelectedItem(null);
+  };
+
+  const handleDocumentUploaded = (documentId: string) => {
+    if (!selectedItem) return;
+
+    // Update the item with the document_id
+    const updatedItems = items.map(item =>
+      item.id === selectedItem.id ? { ...item, document_id: documentId } : item
+    );
+    onChange(updatedItems);
+
+    toast({
+      title: "Document Attached",
+      description: "The document has been successfully attached to the item.",
+    });
+    closeDocumentUpload();
   };
 
   return (
-    <>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[40%]">Description</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Quantity</TableHead>
-              <TableHead className="text-right">Unit Price</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              {/* Show margin info if available in any item */}
-              {items.some(item => item.gross_margin !== undefined) && (
-                <TableHead className="text-right">Margin</TableHead>
-              )}
-              {!readOnly && estimateId && (
-                <TableHead className="text-right">Actions</TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={readOnly ? 6 : 7} className="text-center text-muted-foreground py-6">
-                  No items found for this estimate.
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.map((item) => {
-                // Get documents associated with this item
-                const docs = itemDocuments[item.id] || [];
-                // Get vendor or subcontractor name if applicable
-                const vendorName = item.vendor_id ? vendorNames[item.vendor_id] : null;
-                const subcontractorName = item.subcontractor_id ? subcontractorNames[item.subcontractor_id] : null;
-                
-                return (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">
-                      <div>{item.description}</div>
-                      
-                      {/* Show vendor or subcontractor info if available */}
-                      {(vendorName || subcontractorName) && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {vendorName && <span>Vendor: {vendorName}</span>}
-                          {subcontractorName && <span>Subcontractor: {subcontractorName}</span>}
-                        </div>
-                      )}
-                      
-                      {/* Show associated documents */}
-                      {docs.length > 0 && (
-                        <div className="mt-1 flex items-center gap-2">
-                          {docs.map(doc => (
-                            <a 
-                              key={doc.document_id}
-                              href={doc.url || `https://zrxezqllmpdlhiudutme.supabase.co/storage/v1/object/public/construction_documents/${doc.storage_path}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
-                            >
-                              <FileIcon className="h-3 w-3 mr-1" />
-                              {doc.file_name}
-                              <DownloadIcon className="h-3 w-3 ml-1" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>{getTypeLabel(item.item_type)}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.total_price)}</TableCell>
-                    {items.some(item => item.gross_margin !== undefined) && (
-                      <TableCell className="text-right">
-                        {item.gross_margin !== undefined && (
-                          <>
-                            {formatCurrency(item.gross_margin)} 
-                            <span className="text-xs ml-1 text-muted-foreground">
-                              ({formatPercentage(item.gross_margin_percentage)})
-                            </span>
-                          </>
-                        )}
-                      </TableCell>
-                    )}
-                    {!readOnly && estimateId && (
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleAttachDocument(item)}
-                          className="h-8 px-2 text-[#0485ea]"
-                        >
-                          <PaperclipIcon className="h-4 w-4 mr-1" />
-                          Attach
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Document Upload Dialog */}
-      {selectedItem && (
-        <Dialog open={showDocumentUpload} onOpenChange={setShowDocumentUpload}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Attach Document to Item</DialogTitle>
-            </DialogHeader>
-            <EnhancedDocumentUpload
-              entityType="ESTIMATE"
-              entityId={estimateId}
-              onSuccess={handleDocumentUploadSuccess}
-              onCancel={() => setShowDocumentUpload(false)}
-              prefillData={{
-                vendorId: selectedItem.vendor_id || selectedItem.subcontractor_id || '',
-                materialName: selectedItem.description,
-                vendorType: selectedItem.vendor_id ? 'vendor' : selectedItem.subcontractor_id ? 'subcontractor' : undefined
-              }}
+    <div>
+      <h4 className="text-md font-bold mb-2">Estimate Items</h4>
+      {items.map((item, index) => (
+        <div key={item.id} className="grid grid-cols-12 gap-4 mb-4">
+          {/* Description */}
+          <div className="col-span-5">
+            <Label htmlFor={`description-${item.id}`}>Description</Label>
+            <Input
+              type="text"
+              id={`description-${item.id}`}
+              value={item.description}
+              onChange={(e) => handleItemChange(index, 'description', e.target.value)}
             />
-          </DialogContent>
-        </Dialog>
+          </div>
+
+          {/* Item Type */}
+          <div className="col-span-2">
+            <Label htmlFor={`item_type-${item.id}`}>Item Type</Label>
+            <Select
+              value={item.item_type || 'labor'}
+              onValueChange={(value) => handleItemChange(index, 'item_type', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="labor">Labor</SelectItem>
+                <SelectItem value="vendor">Vendor</SelectItem>
+                <SelectItem value="subcontractor">Subcontractor</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Cost */}
+          <div className="col-span-2">
+            <Label htmlFor={`cost-${item.id}`}>Cost</Label>
+            <Input
+              type="number"
+              id={`cost-${item.id}`}
+              value={item.cost}
+              onChange={(e) => handleItemChange(index, 'cost', e.target.value)}
+            />
+          </div>
+
+          {/* Markup Percentage */}
+           <div className="col-span-2">
+            <Label htmlFor={`markup_percentage-${item.id}`}>Markup (%)</Label>
+            <Input
+              type="number"
+              id={`markup_percentage-${item.id}`}
+              value={item.markup_percentage}
+              onChange={(e) => handleItemChange(index, 'markup_percentage', e.target.value)}
+            />
+          </div>
+
+          {/* Quantity */}
+          <div className="col-span-1">
+            <Label htmlFor={`quantity-${item.id}`}>Qty</Label>
+            <Input
+              type="number"
+              id={`quantity-${item.id}`}
+              value={String(item.quantity)}
+              onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="col-span-1 flex items-end justify-between">
+            <Button variant="outline" size="icon" onClick={() => onUploadDocument(item)}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-paperclip">
+                <path d="M10 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>
+                <path d="M12 12a4 4 0 0 0-4-4H4v6l4-4 4 4v-2"/>
+              </svg>
+            </Button>
+            <Button variant="destructive" size="icon" onClick={() => handleDeleteItem(item.id)}>
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ))}
+
+      <Button onClick={handleAddItem}>Add Item</Button>
+
+      {showDocumentUpload && selectedItem && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg">
+            <h2 className="text-lg font-semibold mb-4">Upload Document</h2>
+            <MaterialReceiptUpload
+              workOrderId={selectedItem.estimate_id} // This is not a work order, but we can use the estimate ID here
+              material={selectedItem} // Pass the selected item as material
+              vendorName="" // No vendor name available here
+              onSuccess={handleDocumentUploaded}
+              onCancel={closeDocumentUpload}
+            />
+          </div>
+        </div>
       )}
-    </>
+    </div>
   );
 };
 

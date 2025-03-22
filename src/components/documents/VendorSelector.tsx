@@ -1,146 +1,73 @@
 
-import React, { useState, useEffect } from 'react';
-import { Control, Controller } from 'react-hook-form';
-import { DocumentUploadFormValues, VendorType } from './schemas/documentSchema';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import React from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useQuery } from '@tanstack/react-query';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
+import { Control } from 'react-hook-form';
+import { DocumentUploadFormValues } from './schemas/documentSchema';
 
 interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
-  vendorType: string;
   prefillVendorId?: string;
-  prefillVendorType?: VendorType;
+  disabled?: boolean;
 }
 
-const VendorSelector: React.FC<VendorSelectorProps> = ({
-  control,
-  vendorType,
-  prefillVendorId,
-  prefillVendorType
+const VendorSelector: React.FC<VendorSelectorProps> = ({ 
+  control, 
+  prefillVendorId, 
+  disabled = false 
 }) => {
-  const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
-  const [subcontractors, setSubcontractors] = useState<{ id: string; name: string }[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  // Initialize vendor type from prefill if available
-  useEffect(() => {
-    if (prefillVendorType) {
-      console.log('Prefilling vendor type:', prefillVendorType);
-    }
-  }, [prefillVendorType]);
-
-  // Fetch vendors and subcontractors
-  useEffect(() => {
-    const fetchVendors = async () => {
-      setLoading(true);
-      try {
-        // Fetch vendors
-        const { data: vendorData, error: vendorError } = await supabase
-          .from('vendors')
-          .select('vendorid, vendorname')
-          .order('vendorname');
-          
-        if (vendorError) throw vendorError;
-        
-        const formattedVendors = vendorData.map(v => ({
-          id: v.vendorid,
-          name: v.vendorname
-        }));
-        setVendors(formattedVendors);
-        
-        // Fetch subcontractors
-        const { data: subData, error: subError } = await supabase
-          .from('subcontractors')
-          .select('subid, subname')
-          .order('subname');
-          
-        if (subError) throw subError;
-        
-        const formattedSubs = subData.map(s => ({
-          id: s.subid,
-          name: s.subname
-        }));
-        setSubcontractors(formattedSubs);
-      } catch (error) {
-        console.error('Error fetching vendors and subcontractors:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchVendors();
-  }, []);
-  
-  return (
-    <div className="space-y-4">
-      <div>
-        <Label>Vendor Type</Label>
-        <Controller
-          name="metadata.vendorType"
-          control={control}
-          defaultValue={prefillVendorType || "vendor"}
-          render={({ field }) => (
-            <RadioGroup
-              className="flex space-x-4 mt-1"
-              value={field.value}
-              onValueChange={(value: VendorType) => field.onChange(value)}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="vendor" id="vendor" />
-                <Label htmlFor="vendor" className="cursor-pointer">Material Vendor</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="subcontractor" id="subcontractor" />
-                <Label htmlFor="subcontractor" className="cursor-pointer">Subcontractor</Label>
-              </div>
-            </RadioGroup>
-          )}
-        />
-      </div>
+  const { data: vendors = [], isLoading } = useQuery({
+    queryKey: ['vendors-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('vendorid, vendorname')
+        .order('vendorname');
       
-      <div>
-        <Label>{vendorType === 'vendor' ? 'Vendor' : 'Subcontractor'}</Label>
-        <Controller
-          name="metadata.vendorId"
-          control={control}
-          defaultValue={prefillVendorId || ""}
-          render={({ field }) => (
-            <Select 
-              value={field.value} 
-              onValueChange={field.onChange}
-              disabled={loading}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder={`Select ${vendorType === 'vendor' ? 'vendor' : 'subcontractor'}`} />
+      if (error) {
+        console.error('Error fetching vendors list:', error);
+        return [];
+      }
+      
+      return data.map(vendor => ({
+        id: vendor.vendorid,
+        name: vendor.vendorname
+      }));
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  return (
+    <FormField
+      control={control}
+      name="metadata.vendorId"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Vendor</FormLabel>
+          <Select
+            value={field.value || ''}
+            onValueChange={(value: string) => field.onChange(value)}
+            disabled={isLoading || disabled}
+          >
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Vendor" />
               </SelectTrigger>
-              <SelectContent>
-                {vendorType === 'vendor' ? (
-                  vendors.map(vendor => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                  subcontractors.map(sub => (
-                    <SelectItem key={sub.id} value={sub.id}>
-                      {sub.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </div>
-    </div>
+            </FormControl>
+            <SelectContent>
+              {vendors.map((vendor) => (
+                <SelectItem key={vendor.id} value={vendor.id}>
+                  {vendor.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 };
 
