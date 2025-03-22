@@ -1,21 +1,10 @@
 
 import React from 'react';
 import { format } from 'date-fns';
-import { Eye, Trash2, FileText } from 'lucide-react';
+import { Eye, Trash2, FileText, PenSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel
-} from '@/components/ui/alert-dialog';
 import { TimeEntry } from '@/types/timeTracking';
 import { formatTimeRange } from '@/lib/utils';
 import ReceiptButton from './components/ReceiptButton';
@@ -24,6 +13,7 @@ interface TimeTrackingTableProps {
   entries: TimeEntry[];
   onDelete: (id: string) => void;
   onView: (id: string) => void;
+  onEdit: (id: string) => void;
   onViewReceipts: (id: string) => Promise<void>;
 }
 
@@ -31,10 +21,9 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
   entries,
   onDelete,
   onView,
+  onEdit,
   onViewReceipts
 }) => {
-  const [deletingId, setDeletingId] = React.useState<string | null>(null);
-  
   return (
     <div className="border rounded-md overflow-hidden">
       <div className="overflow-x-auto">
@@ -108,43 +97,43 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>View {entry.entity_type}</p>
+                          <p>View details</p>
                         </TooltipContent>
                       </Tooltip>
                       
-                      <AlertDialog open={deletingId === entry.id} onOpenChange={(open) => !open && setDeletingId(null)}>
-                        <AlertDialogTrigger asChild>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => onEdit(entry.id)}
+                          >
+                            <PenSquare className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit entry</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      
+                      <Tooltip>
+                        <TooltipTrigger asChild>
                           <Button
                             variant="outline"
                             size="icon"
                             className="h-8 w-8 text-red-500 hover:text-red-600"
-                            onClick={() => setDeletingId(entry.id)}
+                            onClick={() => onDelete(entry.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                             <span className="sr-only">Delete</span>
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Time Entry</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this time entry? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-red-500 hover:bg-red-600"
-                              onClick={() => {
-                                onDelete(entry.id);
-                                setDeletingId(null);
-                              }}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete entry</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </TableCell>
                 </TableRow>

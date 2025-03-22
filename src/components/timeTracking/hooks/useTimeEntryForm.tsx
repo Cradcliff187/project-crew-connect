@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { addHours, parse, format } from 'date-fns';
+import { format } from 'date-fns';
 
 export type TimeEntryFormValues = {
   entityType: 'work_order' | 'project';
@@ -47,7 +47,7 @@ const timeEntrySchema = z.object({
   path: ['endTime']
 });
 
-export const useTimeEntryForm = (onSuccess: () => void) => {
+export const useTimeEntryForm = (onSuccess: () => void, isEditMode: boolean = false) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmationData, setConfirmationData] = useState<TimeEntryFormValues | null>(null);
@@ -78,8 +78,14 @@ export const useTimeEntryForm = (onSuccess: () => void) => {
   }
   
   const handleSubmit = (values: TimeEntryFormValues) => {
-    setConfirmationData(values);
-    setShowConfirmDialog(true);
+    if (isEditMode) {
+      // In edit mode, directly return the form values for the component to handle
+      return values;
+    } else {
+      // In create mode, show confirmation dialog
+      setConfirmationData(values);
+      setShowConfirmDialog(true);
+    }
   };
   
   const confirmSubmit = async (): Promise<string | null> => {

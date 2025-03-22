@@ -1,37 +1,51 @@
 
 import { useState, useEffect } from 'react';
-import { Search, Clock, Filter, Calendar, Download, Eye, FileText } from 'lucide-react';
+import { Search, Clock, Filter, Calendar, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, 
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
+
 import PageTransition from '@/components/layout/PageTransition';
 import PageHeader from '@/components/layout/PageHeader';
 import TimeEntryForm from '@/components/timeTracking/TimeEntryForm';
+import TimeEntryEdit from '@/components/timeTracking/TimeEntryEdit';
+import TimeEntryDetail from '@/components/timeTracking/TimeEntryDetail';
 import TimeTrackingTable from '@/components/timeTracking/TimeTrackingTable';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
 import { TimeEntry } from '@/types/timeTracking';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription 
-} from '@/components/ui/dialog';
 import { ReceiptViewerDialog } from '@/components/timeTracking/dialogs/ReceiptDialog';
 import { useReceiptManager } from '@/components/timeTracking/hooks/useReceiptManager';
+import { useTimeEntriesData } from '@/components/timeTracking/hooks/useTimeEntriesData';
 
 const TimeTracking = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  // State for tab and filter management
   const [activeTab, setActiveTab] = useState('list');
   const [filterType, setFilterType] = useState<string>('all');
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // State for time entries management
+  const { 
+    timeEntries, 
+    isLoading, 
+    fetchTimeEntries, 
+    handleDeleteEntry 
+  } = useTimeEntriesData(filterType);
+  
+  // State for detail/edit dialogs
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
+  
+  // State for receipt dialogs
   const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
   const [currentReceipts, setCurrentReceipts] = useState<any[]>([]);
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   
   // Use receipt manager for viewing receipts
   const {
@@ -41,224 +55,55 @@ const TimeTracking = () => {
     handleCloseReceiptViewer
   } = useReceiptManager();
   
+  // Handle search filter
   useEffect(() => {
-    fetchTimeEntries();
-  }, [filterType]);
-  
-  const fetchTimeEntries = async () => {
-    setIsLoading(true);
-    
-    try {
-      let query = supabase
-        .from('time_entries')
-        .select(`
-          id,
-          entity_type,
-          entity_id,
-          date_worked,
-          start_time,
-          end_time,
-          hours_worked,
-          employee_id,
-          employee_rate,
-          notes,
-          has_receipts,
-          receipt_amount,
-          vendor_id,
-          total_cost,
-          created_at,
-          updated_at
-        `)
-        .order('date_worked', { ascending: false });
-      
-      if (filterType === 'work_orders') {
-        query = query.eq('entity_type', 'work_order');
-      } else if (filterType === 'projects') {
-        query = query.eq('entity_type', 'project');
-      }
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      console.log('Fetched time entries:', data);
-      
-      const enhancedEntries = await Promise.all((data || []).map(async (entry: any) => {
-        let entityName = 'Unknown';
-        let entityLocation = '';
-        let employeeName = '';
-        let vendorName = '';
-        
-        if (entry.entity_type === 'work_order') {
-          const { data: workOrder } = await supabase
-            .from('maintenance_work_orders')
-            .select('title, location_id')
-            .eq('work_order_id', entry.entity_id)
-            .maybeSingle();
-          
-          if (workOrder) {
-            entityName = workOrder.title;
-            
-            if (workOrder.location_id) {
-              const { data: location } = await supabase
-                .from('site_locations')
-                .select('location_name, city, state')
-                .eq('location_id', workOrder.location_id)
-                .maybeSingle();
-              
-              if (location) {
-                entityLocation = location.location_name || 
-                  [location.city, location.state].filter(Boolean).join(', ');
-              }
-            }
-          }
-        } else {
-          const { data: project } = await supabase
-            .from('projects')
-            .select('projectname, sitelocationcity, sitelocationstate')
-            .eq('projectid', entry.entity_id)
-            .maybeSingle();
-          
-          if (project) {
-            entityName = project.projectname || `Project ${entry.entity_id}`;
-            entityLocation = [project.sitelocationcity, project.sitelocationstate]
-              .filter(Boolean).join(', ');
-          }
-        }
-        
-        if (entry.employee_id) {
-          const { data: employee } = await supabase
-            .from('employees')
-            .select('first_name, last_name')
-            .eq('employee_id', entry.employee_id)
-            .maybeSingle();
-          
-          if (employee) {
-            employeeName = `${employee.first_name} ${employee.last_name}`;
-          }
-        }
-        
-        if (entry.vendor_id) {
-          const { data: vendor } = await supabase
-            .from('vendors')
-            .select('vendorname')
-            .eq('vendorid', entry.vendor_id)
-            .maybeSingle();
-          
-          if (vendor) {
-            vendorName = vendor.vendorname;
-          }
-        }
-        
-        const cost = entry.total_cost || (entry.hours_worked && entry.employee_rate 
-          ? entry.hours_worked * entry.employee_rate 
-          : entry.hours_worked * 75);
-        
-        return {
-          ...entry,
-          entity_name: entityName,
-          entity_location: entityLocation || undefined,
-          employee_name: employeeName,
-          vendor_name: vendorName,
-          total_cost: cost
-        };
-      }));
-      
-      let filteredEntries = enhancedEntries;
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        filteredEntries = enhancedEntries.filter((entry: any) => 
-          (entry.entity_name && entry.entity_name.toLowerCase().includes(query)) ||
-          (entry.entity_location && entry.entity_location.toLowerCase().includes(query)) ||
-          (entry.employee_name && entry.employee_name.toLowerCase().includes(query)) ||
-          (entry.vendor_name && entry.vendor_name.toLowerCase().includes(query)) ||
-          (entry.notes && entry.notes.toLowerCase().includes(query))
-        );
-      }
-      
-      setTimeEntries(filteredEntries);
-    } catch (error) {
-      console.error('Error fetching time entries:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load time entries.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleDeleteEntry = async (id: string) => {
-    try {
-      const { data: entry, error: fetchError } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-      if (fetchError) throw fetchError;
-      
-      const { error } = await supabase
-        .from('time_entries')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      if (entry.entity_type === 'work_order') {
-        const { error: workOrderLogError } = await supabase
-          .from('work_order_time_logs')
-          .delete()
-          .eq('work_order_id', entry.entity_id)
-          .eq('hours_worked', entry.hours_worked)
-          .eq('employee_id', entry.employee_id || '')
-          .eq('work_date', entry.date_worked);
-          
-        if (workOrderLogError) {
-          console.warn('Warning: Could not clean up associated work order time log:', workOrderLogError);
-        }
-      }
-      
-      const { error: receiptDeleteError } = await supabase
-        .from('time_entry_receipts')
-        .delete()
-        .eq('time_entry_id', id);
-        
-      if (receiptDeleteError) {
-        console.warn('Warning: Could not delete associated receipts:', receiptDeleteError);
-      }
-      
-      toast({
-        title: 'Time entry deleted',
-        description: 'The time entry has been successfully deleted.',
-      });
-      
+    if (searchQuery === '') {
       fetchTimeEntries();
-    } catch (error) {
-      console.error('Error deleting time entry:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete time entry.',
-        variant: 'destructive',
-      });
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filteredEntries = timeEntries.filter((entry: any) => 
+        (entry.entity_name && entry.entity_name.toLowerCase().includes(query)) ||
+        (entry.entity_location && entry.entity_location.toLowerCase().includes(query)) ||
+        (entry.employee_name && entry.employee_name.toLowerCase().includes(query)) ||
+        (entry.vendor_name && entry.vendor_name.toLowerCase().includes(query)) ||
+        (entry.notes && entry.notes.toLowerCase().includes(query))
+      );
+      // No API call, just filter the existing data
     }
-  };
+  }, [searchQuery]);
   
+  // Handle view entry
   const handleViewEntry = (id: string) => {
     const entry = timeEntries.find(e => e.id === id);
     if (entry) {
-      if (entry.entity_type === 'work_order') {
-        console.log('View work order:', entry.entity_id);
-      } else {
-        console.log('View project:', entry.entity_id);
-      }
+      setSelectedEntry(entry);
+      setShowDetailDialog(true);
     }
   };
   
+  // Handle edit entry
+  const handleEditEntry = (id: string) => {
+    const entry = timeEntries.find(e => e.id === id);
+    if (entry) {
+      setSelectedEntry(entry);
+      setShowEditDialog(true);
+    }
+  };
+  
+  // Handle delete entry confirmation
+  const handleConfirmDelete = (id: string) => {
+    const entry = timeEntries.find(e => e.id === id);
+    if (entry) {
+      setSelectedEntry(entry);
+      setShowDeleteDialog(true);
+    }
+  };
+  
+  // Handle view receipts
   const handleViewReceipts = async (id: string) => {
     try {
-      setSelectedEntryId(id);
+      const entry = timeEntries.find(e => e.id === id);
+      setSelectedEntry(entry || null);
       
       const { data: receipts, error } = await supabase
         .from('time_entry_receipts')
@@ -268,8 +113,6 @@ const TimeTracking = () => {
       if (error) throw error;
       
       if (receipts && receipts.length > 0) {
-        console.log('Receipts for time entry:', receipts);
-        
         const receiptsWithUrls = await Promise.all(receipts.map(async (receipt) => {
           const { data, error } = await supabase.storage
             .from('construction_documents')
@@ -299,12 +142,28 @@ const TimeTracking = () => {
     }
   };
   
+  // Handle close detail dialog
+  const handleCloseDetailDialog = () => {
+    setShowDetailDialog(false);
+    setSelectedEntry(null);
+  };
+  
+  // Handle form success
   const handleFormSuccess = () => {
     setActiveTab('list');
     fetchTimeEntries();
+    setShowEditDialog(false);
+    setSelectedEntry(null);
   };
 
-  const entryWithReceipts = timeEntries.find(entry => entry.id === selectedEntryId);
+  // Perform deletion
+  const executeDelete = async () => {
+    if (selectedEntry) {
+      await handleDeleteEntry(selectedEntry.id);
+      setShowDeleteDialog(false);
+      setSelectedEntry(null);
+    }
+  };
   
   return (
     <PageTransition>
@@ -320,17 +179,7 @@ const TimeTracking = () => {
               placeholder="Search entries..." 
               className="pl-9 subtle-input rounded-md"
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                if (e.target.value === '') {
-                  fetchTimeEntries();
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  fetchTimeEntries();
-                }
-              }}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
@@ -380,8 +229,9 @@ const TimeTracking = () => {
               ) : (
                 <TimeTrackingTable 
                   entries={timeEntries}
-                  onDelete={handleDeleteEntry}
+                  onDelete={handleConfirmDelete}
                   onView={handleViewEntry}
+                  onEdit={handleEditEntry}
                   onViewReceipts={handleViewReceipts}
                 />
               )}
@@ -393,76 +243,136 @@ const TimeTracking = () => {
           </Tabs>
         </main>
 
+        {/* Detail Dialog */}
+        <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+          <DialogContent className="max-w-md">
+            {selectedEntry && (
+              <TimeEntryDetail
+                timeEntry={selectedEntry}
+                onEdit={() => {
+                  setShowDetailDialog(false);
+                  setShowEditDialog(true);
+                }}
+                onDelete={() => {
+                  setShowDetailDialog(false);
+                  setShowDeleteDialog(true);
+                }}
+                onClose={() => setShowDetailDialog(false)}
+                onViewReceipts={() => handleViewReceipts(selectedEntry.id)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="max-w-lg">
+            {selectedEntry && (
+              <TimeEntryEdit
+                timeEntry={selectedEntry}
+                onCancel={() => setShowEditDialog(false)}
+                onSuccess={handleFormSuccess}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Time Entry</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this time entry? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-500 hover:bg-red-600"
+                onClick={executeDelete}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Receipts Dialog */}
         <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
           <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Receipt Details</DialogTitle>
-              <DialogDescription>
-                {entryWithReceipts ? (
-                  <>
-                    {entryWithReceipts.entity_name} - {formatDate(entryWithReceipts.date_worked)}
-                    {entryWithReceipts.vendor_name && (
+            <div className="space-y-4">
+              <div className="font-semibold text-lg">
+                Receipt Details
+                {selectedEntry && (
+                  <div className="text-sm font-normal text-muted-foreground">
+                    {selectedEntry.entity_name} - {formatDate(selectedEntry.date_worked)}
+                    {selectedEntry.vendor_name && (
                       <span className="ml-2 text-[#0485ea]">
-                        Vendor: {entryWithReceipts.vendor_name}
-                      </span>
-                    )}
-                  </>
-                ) : "Viewing uploaded receipts"}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-              {currentReceipts.map((receipt, index) => (
-                <div key={index} className="border rounded-md p-3 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-sm truncate">{receipt.file_name}</h3>
-                    {receipt.amount && (
-                      <span className="text-sm font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                        ${receipt.amount.toFixed(2)}
+                        Vendor: {selectedEntry.vendor_name}
                       </span>
                     )}
                   </div>
-                  
-                  {receipt.url ? (
-                    receipt.file_type?.startsWith('image/') ? (
-                      <div className="h-48 flex items-center justify-center border rounded-md overflow-hidden">
-                        <img 
-                          src={receipt.url} 
-                          alt={receipt.file_name} 
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-48 flex items-center justify-center border rounded-md bg-gray-50">
-                        <div className="text-center space-y-2">
-                          <FileText className="h-12 w-12 mx-auto text-gray-400" />
-                          <div className="text-sm text-gray-500">PDF Document</div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                {currentReceipts.map((receipt, index) => (
+                  <div key={index} className="border rounded-md p-3 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-medium text-sm truncate">{receipt.file_name}</h3>
+                      {receipt.amount && (
+                        <span className="text-sm font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                          ${receipt.amount.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {receipt.url ? (
+                      receipt.file_type?.startsWith('image/') ? (
+                        <div className="h-48 flex items-center justify-center border rounded-md overflow-hidden">
+                          <img 
+                            src={receipt.url} 
+                            alt={receipt.file_name} 
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-48 flex items-center justify-center border rounded-md bg-gray-50">
                           <Button 
                             variant="outline" 
                             size="sm" 
                             onClick={() => window.open(receipt.url, '_blank')}
                           >
-                            <Eye className="h-4 w-4 mr-2" />
                             View Document
                           </Button>
                         </div>
+                      )
+                    ) : (
+                      <div className="h-48 flex items-center justify-center border rounded-md bg-gray-50">
+                        <div className="text-sm text-gray-500">Unable to load preview</div>
                       </div>
-                    )
-                  ) : (
-                    <div className="h-48 flex items-center justify-center border rounded-md bg-gray-50">
-                      <div className="text-sm text-gray-500">Unable to load preview</div>
+                    )}
+                    
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>
+                        {(receipt.file_size / 1024 / 1024).toFixed(2)} MB
+                      </span>
+                      <span>
+                        {new Date(receipt.uploaded_at).toLocaleDateString()}
+                      </span>
                     </div>
-                  )}
-                  
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>
-                      {(receipt.file_size / 1024 / 1024).toFixed(2)} MB
-                    </span>
-                    <span>
-                      {new Date(receipt.uploaded_at).toLocaleDateString()}
-                    </span>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  onClick={() => setShowReceiptsDialog(false)}
+                >
+                  Close
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
