@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { formatTimeRange } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Upload } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +37,9 @@ interface ConfirmationDialogProps {
   selectedFiles: File[];
   isLoading: boolean;
   onConfirm: () => void;
+  onUploadReceipts: () => void;
+  hasReceipts: boolean;
+  setHasReceipts: (value: boolean) => void;
 }
 
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
@@ -47,7 +52,10 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   projects,
   selectedFiles,
   isLoading,
-  onConfirm
+  onConfirm,
+  onUploadReceipts,
+  hasReceipts,
+  setHasReceipts
 }) => {
   if (!confirmationData) return null;
 
@@ -103,14 +111,48 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                 <div className="font-medium">{confirmationData.notes}</div>
               </>
             )}
-            
-            {selectedFiles.length > 0 && (
-              <>
-                <div className="text-muted-foreground">Receipts:</div>
-                <div className="font-medium">{selectedFiles.length} file(s) attached</div>
-              </>
-            )}
           </div>
+          
+          {/* Receipt Upload Option */}
+          <div className="flex items-center justify-between space-x-2 rounded-md border p-4 mt-4">
+            <div>
+              <h4 className="font-medium">Include Receipt(s)</h4>
+              <p className="text-sm text-muted-foreground">
+                Do you have any receipts to upload for this time entry?
+              </p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Switch
+                checked={hasReceipts}
+                onCheckedChange={setHasReceipts}
+                className="data-[state=checked]:bg-[#0485ea]"
+              />
+              {hasReceipts && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="gap-1"
+                  onClick={onUploadReceipts}
+                >
+                  <Upload className="h-4 w-4" />
+                  {selectedFiles.length > 0 ? 'Change Receipts' : 'Upload Receipts'}
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {selectedFiles.length > 0 && (
+            <div className="rounded-md bg-muted p-3">
+              <div className="text-sm font-medium">Attached Receipts:</div>
+              <div className="text-xs text-muted-foreground">
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="mt-1">
+                    {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           <DialogFooter className="pt-4">
             <Button variant="outline" onClick={() => onOpenChange(false)}>

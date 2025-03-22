@@ -36,6 +36,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmationData, setConfirmationData] = useState<TimeEntryFormValues | null>(null);
+  const [hasReceipts, setHasReceipts] = useState(false);
   
   const form = useForm<TimeEntryFormValues>({
     resolver: zodResolver(timeEntryFormSchema),
@@ -164,7 +165,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
         employee_id: confirmationData.employeeId || null,
         employee_rate: employeeRate,
         notes: confirmationData.notes,
-        has_receipts: selectedFiles.length > 0,
+        has_receipts: hasReceipts && selectedFiles.length > 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -193,7 +194,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
       }
       
       // Handle receipt uploads if any
-      if (selectedFiles.length > 0 && insertedEntry) {
+      if (hasReceipts && selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -229,6 +230,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
       
       setSelectedFiles([]);
       setShowConfirmDialog(false);
+      setHasReceipts(false);
       
       onSuccess();
     } catch (error: any) {
@@ -254,5 +256,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
     confirmationData,
     handleSubmit,
     confirmSubmit,
+    hasReceipts,
+    setHasReceipts,
   };
 }
