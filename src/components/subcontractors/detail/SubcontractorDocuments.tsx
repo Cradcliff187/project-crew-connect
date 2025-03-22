@@ -103,20 +103,20 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
         </DialogContent>
       </Dialog>
       
-      <Dialog open={!!viewDocument} onOpenChange={(open) => !open && setViewDocument(null)}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>{viewDocument?.file_name}</DialogTitle>
-          </DialogHeader>
-          {viewDocument && (
+      {viewDocument && (
+        <Dialog open={!!viewDocument} onOpenChange={(open) => !open && setViewDocument(null)}>
+          <DialogContent className="sm:max-w-[700px]">
+            <DialogHeader>
+              <DialogTitle>{viewDocument?.file_name}</DialogTitle>
+            </DialogHeader>
             <DocumentViewer 
               document={viewDocument}
               open={!!viewDocument}
               onOpenChange={(open) => !open && setViewDocument(null)}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 };

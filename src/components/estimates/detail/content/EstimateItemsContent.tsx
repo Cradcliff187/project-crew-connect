@@ -43,7 +43,6 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
   // A no-op onChange handler since this is a read-only view
   const handleItemsChange = (newItems: EstimateItem[]) => {
     // This is intentionally empty as we're just displaying items
-    console.log("Items would change to:", newItems);
   };
 
   return (
