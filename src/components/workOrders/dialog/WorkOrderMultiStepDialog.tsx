@@ -105,19 +105,21 @@ const WorkOrderMultiStepDialog = ({
         </DialogHeader>
         
         <div className="mt-2 mb-6">
-          <TabsList className="grid grid-cols-4 w-full">
-            {STEPS.map((step) => (
-              <TabsTrigger
-                key={step.id}
-                value={step.id}
-                disabled={isLoading || isSubmitting}
-                className={currentStep === step.id ? 'bg-[#0485ea] text-white' : ''}
-                onClick={() => setCurrentStep(step.id)}
-              >
-                {step.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <Tabs value={currentStep}>
+            <TabsList className="grid grid-cols-4 w-full">
+              {STEPS.map((step) => (
+                <TabsTrigger
+                  key={step.id}
+                  value={step.id}
+                  disabled={isLoading || isSubmitting}
+                  className={currentStep === step.id ? 'bg-[#0485ea] text-white' : ''}
+                  onClick={() => setCurrentStep(step.id)}
+                >
+                  {step.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="overflow-y-auto flex-grow pr-1 -mr-1 py-4">
