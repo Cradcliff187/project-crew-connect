@@ -15,6 +15,7 @@ interface EstimateItemsContentProps {
     markup_amount?: number;
     gross_margin?: number;
     gross_margin_percentage?: number;
+    item_type?: string; // Make item_type optional
   }[];
   subtotal: number;
   contingencyAmount?: number;
@@ -34,7 +35,7 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
     ...item,
     estimate_id: '', // Adding the required estimate_id property
     // Default values for other required properties in EstimateItem that might be missing
-    item_type: 'labor', // Providing a default value for item_type
+    item_type: item.item_type || 'labor', // Use existing item_type or default to 'labor'
     cost: item.cost || 0,
     markup_percentage: item.markup_percentage || 0
   }));

@@ -9,7 +9,18 @@ import { EntityType } from '@/components/documents/schemas/documentSchema';
 import { useSubcontractorDocuments } from './hooks/useSubcontractorDocuments';
 import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
 import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
-import { SubcontractorDocument } from './types';
+
+// Define a local type for the document structure to avoid circular references
+interface DocumentType {
+  document_id: string;
+  file_name: string;
+  category: string | null;
+  created_at: string;
+  file_type: string | null;
+  storage_path?: string;
+  url?: string;
+  is_expense?: boolean;
+}
 
 interface SubcontractorDocumentsProps {
   subcontractorId: string;
@@ -18,14 +29,14 @@ interface SubcontractorDocumentsProps {
 const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps) => {
   const { documents, loading, fetchDocuments } = useSubcontractorDocuments(subcontractorId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [viewDocument, setViewDocument] = useState<SubcontractorDocument | null>(null);
+  const [viewDocument, setViewDocument] = useState<DocumentType | null>(null);
   
   const handleUploadSuccess = () => {
     setIsUploadOpen(false);
     fetchDocuments();
   };
   
-  const handleViewDocument = (doc: SubcontractorDocument) => {
+  const handleViewDocument = (doc: DocumentType) => {
     setViewDocument(doc);
   };
   
