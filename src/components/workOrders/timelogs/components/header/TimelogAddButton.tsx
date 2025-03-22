@@ -1,6 +1,6 @@
 
-import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface TimelogAddButtonProps {
   onClick: () => void;
@@ -9,11 +9,12 @@ interface TimelogAddButtonProps {
 const TimelogAddButton = ({ onClick }: TimelogAddButtonProps) => {
   return (
     <Button 
-      onClick={onClick} 
-      size="sm" 
       className="bg-[#0485ea] hover:bg-[#0375d1]"
+      size="sm"
+      onClick={onClick}
     >
-      <Plus className="h-4 w-4 mr-1" /> Log Time
+      <Plus className="h-4 w-4 mr-1" />
+      Add Time Log
     </Button>
   );
 };

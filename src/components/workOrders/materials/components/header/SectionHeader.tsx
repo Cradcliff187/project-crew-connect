@@ -1,5 +1,6 @@
 
-import AddMaterialButton from './AddMaterialButton';
+import { Package2 } from 'lucide-react';
+import { AddMaterialButton } from './';
 
 interface SectionHeaderProps {
   onAddClick: () => void;
@@ -8,7 +9,10 @@ interface SectionHeaderProps {
 const SectionHeader = ({ onAddClick }: SectionHeaderProps) => {
   return (
     <div className="flex justify-between items-center mb-4">
-      <h2 className="text-lg font-semibold text-[#0485ea]">Work Order Materials</h2>
+      <div className="flex items-center gap-2">
+        <Package2 className="h-5 w-5 text-[#0485ea]" />
+        <h3 className="text-lg font-medium">Work Order Materials</h3>
+      </div>
       <AddMaterialButton onClick={onAddClick} />
     </div>
   );

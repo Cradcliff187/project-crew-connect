@@ -1,6 +1,6 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { AddMaterialForm } from '../../';
+import EnhancedAddMaterialForm from '../../EnhancedAddMaterialForm';
 
 interface AddMaterialSheetProps {
   open: boolean;
@@ -30,7 +30,7 @@ const AddMaterialSheet = ({
           <SheetTitle>Add Material</SheetTitle>
         </SheetHeader>
         <div className="mt-6">
-          <AddMaterialForm
+          <EnhancedAddMaterialForm
             workOrderId={workOrderId}
             vendors={vendors}
             submitting={submitting}

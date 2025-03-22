@@ -1,16 +1,15 @@
 
-import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
+import { TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const MaterialsTableHeader = () => {
   return (
-    <TableHeader className="bg-[#0485ea]/10">
+    <TableHeader>
       <TableRow>
-        <TableHead className="font-semibold text-[#0485ea]">Material</TableHead>
-        <TableHead className="font-semibold text-[#0485ea]">Vendor</TableHead>
-        <TableHead className="font-semibold text-[#0485ea]">Quantity</TableHead>
-        <TableHead className="font-semibold text-[#0485ea]">Unit Price</TableHead>
-        <TableHead className="font-semibold text-[#0485ea]">Total</TableHead>
-        <TableHead className="text-right font-semibold text-[#0485ea]">Actions</TableHead>
+        <TableHead className="w-[40%]">Material</TableHead>
+        <TableHead className="w-[15%]">Quantity</TableHead>
+        <TableHead className="w-[15%]">Unit Price</TableHead>
+        <TableHead className="w-[15%]">Total</TableHead>
+        <TableHead className="w-[15%] text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );
