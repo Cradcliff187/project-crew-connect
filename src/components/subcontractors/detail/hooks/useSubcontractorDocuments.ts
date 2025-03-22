@@ -2,18 +2,27 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define a standalone interface to break circular references
+// Define a completely standalone interface with all properties explicitly defined
 export interface SubcontractorDocument {
   document_id: string;
   file_name: string;
   category: string | null;
   created_at: string;
   file_type: string | null;
-  storage_path?: string;
+  storage_path: string;
   url?: string;
   is_expense?: boolean;
   vendor_id?: string;
   subcontractor_id?: string;
+  entity_type?: string;
+  entity_id?: string;
+  tags?: string[] | null;
+  amount?: number | null;
+  expense_date?: string | null;
+  notes?: string | null;
+  version?: number;
+  file_size?: number | null;
+  uploaded_by?: string | null;
 }
 
 export const useSubcontractorDocuments = (subcontractorId: string) => {
