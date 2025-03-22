@@ -16,7 +16,7 @@ const FormSection = ({
 }: FormSectionProps) => {
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between h-6">
         <label htmlFor="vendor" className="text-sm font-medium">
           {label} {!optional && '*'}
         </label>
