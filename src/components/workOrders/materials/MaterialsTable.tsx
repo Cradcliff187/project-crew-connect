@@ -37,7 +37,7 @@ const MaterialsTable = ({
   }
   
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm border-[#0485ea]/10">
       <CardContent className="p-0">
         <MaterialsTableContent 
           materials={materials} 
