@@ -6,6 +6,7 @@ import { WorkOrderFormValues } from '../WorkOrderFormSchema';
 
 interface CreateLocationToggleProps {
   form: UseFormReturn<WorkOrderFormValues>;
+  useCustomAddress?: boolean; // Add this prop to the interface
 }
 
 const CreateLocationToggle = ({ form }: CreateLocationToggleProps) => {

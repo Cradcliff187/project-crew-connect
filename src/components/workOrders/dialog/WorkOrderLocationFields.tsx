@@ -86,10 +86,7 @@ const WorkOrderLocationFields = ({
         </Card>
       )}
       
-      <CreateLocationToggle 
-        form={form} 
-        useCustomAddress={useCustomAddress}
-      />
+      <CreateLocationToggle form={form} />
       
       {!useCustomAddress ? (
         <LocationSelect form={form} locations={locations} />
