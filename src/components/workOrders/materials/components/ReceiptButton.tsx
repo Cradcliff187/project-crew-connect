@@ -1,6 +1,7 @@
 
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Eye, Receipt } from 'lucide-react';
+import { FileText, Upload } from 'lucide-react';
 import { WorkOrderMaterial } from '@/types/workOrder';
 
 interface ReceiptButtonProps {
@@ -8,18 +9,29 @@ interface ReceiptButtonProps {
   onClick: (material: WorkOrderMaterial) => void;
 }
 
-const ReceiptButton = ({ material, onClick }: ReceiptButtonProps) => {
-  const hasReceipt = !!material.receipt_document_id;
-  
+const ReceiptButton: React.FC<ReceiptButtonProps> = ({ material, onClick }) => {
   return (
     <Button
-      variant={hasReceipt ? "outline" : "earth"}
+      variant="outline"
       size="sm"
       onClick={() => onClick(material)}
-      className={hasReceipt ? 'text-earth-600 border-earth-300 hover:bg-earth-50' : ''}
+      className={
+        material.receipt_document_id
+          ? "text-green-600 hover:text-green-800 hover:bg-green-50 border-green-200"
+          : "text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
+      }
     >
-      {hasReceipt ? <Eye className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
-      {hasReceipt ? 'View Receipt' : 'Add Receipt'}
+      {material.receipt_document_id ? (
+        <>
+          <FileText className="h-4 w-4 mr-1" />
+          View Receipt
+        </>
+      ) : (
+        <>
+          <Upload className="h-4 w-4 mr-1" />
+          Upload Receipt
+        </>
+      )}
     </Button>
   );
 };

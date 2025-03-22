@@ -26,7 +26,7 @@ const MaterialsTableContent = ({
   return (
     <div className="w-full overflow-x-auto">
       <Table>
-        <TableHeader className="bg-[#0485ea]/5">
+        <TableHeader className="bg-[#0485ea]/10">
           <TableRow>
             <TableHead className="font-semibold text-[#0485ea]">Material</TableHead>
             <TableHead className="font-semibold text-[#0485ea]">Vendor</TableHead>
@@ -49,8 +49,16 @@ const MaterialsTableContent = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                No materials have been added to this work order yet.
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <div className="flex flex-col items-center justify-center space-y-2">
+                  <div className="rounded-full bg-gray-100 p-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                      <path d="M5 8h14M5 12h14M12 16h7"/>
+                    </svg>
+                  </div>
+                  <p className="font-medium">No materials have been added</p>
+                  <p className="text-sm">Click the 'Add Material' button to track materials used in this work order.</p>
+                </div>
               </TableCell>
             </TableRow>
           )}
