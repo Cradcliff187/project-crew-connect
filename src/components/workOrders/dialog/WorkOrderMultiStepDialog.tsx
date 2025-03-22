@@ -86,7 +86,7 @@ const WorkOrderMultiStepDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden bg-white">
+      <DialogContent className="sm:max-w-[650px] md:max-w-[700px] max-h-[90vh] flex flex-col overflow-hidden bg-white shadow-lg border-2 border-gray-100">
         <DialogHeader className="border-b pb-4">
           <DialogTitle className="text-xl font-semibold text-[#0485ea]">
             Create New Work Order
@@ -101,7 +101,7 @@ const WorkOrderMultiStepDialog = ({
           />
         </div>
 
-        <div className="overflow-y-auto flex-grow pr-1 -mr-1 py-4">
+        <div className="overflow-y-auto flex-grow pr-2 -mr-2 py-4">
           {isLoading ? (
             <WorkOrderLoadingState />
           ) : (

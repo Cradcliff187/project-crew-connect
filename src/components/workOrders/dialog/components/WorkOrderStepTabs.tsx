@@ -26,13 +26,17 @@ const WorkOrderStepTabs = ({
 }: WorkOrderStepTabsProps) => {
   return (
     <Tabs value={currentStep}>
-      <TabsList className="grid grid-cols-4 w-full">
+      <TabsList className="grid grid-cols-4 w-full h-12 p-1 bg-gray-50 border border-gray-200 rounded-lg">
         {WORK_ORDER_STEPS.map((step) => (
           <TabsTrigger
             key={step.id}
             value={step.id}
             disabled={isDisabled}
-            className={currentStep === step.id ? 'bg-[#0485ea] text-white' : ''}
+            className={`text-sm font-medium transition-all duration-200 ${
+              currentStep === step.id 
+                ? 'bg-[#0485ea] text-white shadow-md' 
+                : 'hover:bg-gray-100 hover:text-[#0485ea]'
+            }`}
             onClick={() => setCurrentStep(step.id)}
           >
             {step.label}
