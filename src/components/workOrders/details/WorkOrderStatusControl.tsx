@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { WorkOrder } from '@/types/workOrder';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
+import { Button } from '@/components/ui/button';
 
 interface StatusTransition {
   to_status: string;
@@ -139,28 +140,29 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
       <div className="flex items-center">
-        <span className="mr-2">Status:</span>
+        <span className="mr-2 text-sm font-medium">Status:</span>
         <StatusBadge status={workOrder.status} />
       </div>
       
-      {statusTransitions.length > 0 && (
-        <>
-          {/* Mobile and simplified view */}
+      {statusTransitions.length > 0 ? (
+        <div className="flex gap-2 mt-2 md:mt-0">
+          {/* Mobile view */}
           <div className="md:hidden">
             <ActionMenu 
               groups={getStatusActions()} 
               size="sm" 
               variant="outline"
               triggerClassName="bg-muted/50 border border-input hover:bg-[#0485ea]/10"
+              label="Change Status"
             />
           </div>
           
-          {/* Desktop view with Select component */}
+          {/* Desktop view */}
           <div className="hidden md:block">
             <Select onValueChange={handleStatusChange} disabled={loading}>
-              <SelectTrigger className="w-[180px] border-[#0485ea]/30 hover:border-[#0485ea] focus:ring-[#0485ea]/20">
+              <SelectTrigger className="w-[180px] border-[#0485ea]/30 hover:border-[#0485ea] focus:ring-[#0485ea]/20 bg-white">
                 <SelectValue placeholder="Change status" />
               </SelectTrigger>
               <SelectContent>
@@ -172,7 +174,17 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
               </SelectContent>
             </Select>
           </div>
-        </>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-0 md:ml-2 mt-2 md:mt-0 text-sm border-[#0485ea]/30 hover:border-[#0485ea] hover:bg-[#0485ea]/10"
+          onClick={fetchTransitions}
+          disabled={loading}
+        >
+          {loading ? "Loading..." : "Refresh Status Options"}
+        </Button>
       )}
     </div>
   );

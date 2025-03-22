@@ -47,7 +47,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
       case 'on_hold':
         return 'bg-orange-100 text-orange-800';
       case 'new':
-        return 'bg-blue-100 text-blue-800';
+      case 'in_progress':
+        return 'bg-[#0485ea]/10 text-[#0485ea]';
       case 'unknown':
       default:
         return 'bg-gray-100 text-gray-800';
