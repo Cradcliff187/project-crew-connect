@@ -67,3 +67,13 @@ export interface ReceiptMetadata {
   vendorId?: string;
   amount?: number;
 }
+
+// Add a new interface for the entity selector props in the confirmation dialog
+export interface EntitySelectorConfirmProps {
+  entityType: string;
+  entityId: string;
+  label: string;
+  fieldName: string;
+  control: any;
+  required: boolean;
+}

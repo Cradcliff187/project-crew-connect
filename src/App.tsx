@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Index from './pages/Index';
 import Projects from './pages/Projects';
@@ -20,8 +20,15 @@ import SubcontractorDetail from './components/subcontractors/SubcontractorDetail
 import WorkOrderDetail from './components/workOrders/details/WorkOrderDetail';
 import VendorDetail from './components/vendors/detail/VendorDetail';
 
-// Create a client
-const queryClient = new QueryClient();
+// Create a client with proper configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (

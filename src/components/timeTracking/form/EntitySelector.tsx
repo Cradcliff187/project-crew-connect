@@ -1,40 +1,19 @@
 
 import React from 'react';
-import { MapPin } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@/components/ui/hover-card';
 
-interface WorkOrderOrProject {
-  id: string;
-  title: string;
-  location?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  description?: string;
-  status?: string;
-}
-
-interface EntitySelectorProps {
-  entityType: 'work_order' | 'project';
+export interface EntitySelectorProps {
+  entityType: string;
   entityId: string;
-  workOrders: WorkOrderOrProject[];
-  projects: WorkOrderOrProject[];
+  workOrders: { id: string; title: string; location?: string }[];
+  projects: { id: string; title: string; location?: string }[];
   isLoading: boolean;
   onChange: (value: string) => void;
   error?: string;
-  selectedEntity: WorkOrderOrProject | null;
+  selectedEntity?: { id: string; title: string; location?: string } | null;
+  required?: boolean;
+  label?: string;
+  fieldName?: string;
+  control?: any;
 }
 
 const EntitySelector: React.FC<EntitySelectorProps> = ({
@@ -45,75 +24,42 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
   isLoading,
   onChange,
   error,
-  selectedEntity
+  selectedEntity,
+  required = false,
+  label,
 }) => {
-  const getEntityOptions = () => {
-    const entities = entityType === 'work_order' ? workOrders : projects;
-    return entities.map(entity => (
-      <HoverCard key={entity.id}>
-        <HoverCardTrigger asChild>
-          <SelectItem value={entity.id}>
-            {entity.title || `${entityType === 'work_order' ? 'Work Order' : 'Project'} ${entity.id}`}
-          </SelectItem>
-        </HoverCardTrigger>
-        <HoverCardContent className="w-80">
-          <div className="space-y-2">
-            <h4 className="font-medium">{entity.title}</h4>
-            {entity.status && (
-              <div className="text-xs rounded-full bg-amber-100 text-amber-800 inline-block px-2 py-1">
-                {entity.status}
-              </div>
-            )}
-            {entity.description && (
-              <p className="text-sm text-muted-foreground">
-                {entity.description}
-              </p>
-            )}
-            {entity.location && (
-              <div className="flex items-center text-sm">
-                <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                <span>{entity.location}</span>
-              </div>
-            )}
-          </div>
-        </HoverCardContent>
-      </HoverCard>
-    ));
-  };
-
+  const entities = entityType === 'work_order' ? workOrders : projects;
+  
   return (
     <div className="space-y-2">
-      <Label htmlFor="entity">
-        Select {entityType === 'work_order' ? 'Work Order' : 'Project'}
-      </Label>
-      <Select
+      <label htmlFor="entity" className="block text-gray-700 font-medium">
+        {label || (entityType === 'work_order' ? 'Work Order' : 'Project')}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      
+      <select
+        id="entity"
+        className="w-full border border-gray-300 rounded-md p-2"
         value={entityId}
-        onValueChange={onChange}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={isLoading}
+        required={required}
       >
-        <SelectTrigger id="entity" className="w-full">
-          <SelectValue placeholder={`Select a ${entityType === 'work_order' ? 'work order' : 'project'}`} />
-        </SelectTrigger>
-        <SelectContent>
-          {isLoading ? (
-            <SelectItem value="loading" disabled>Loading...</SelectItem>
-          ) : getEntityOptions().length > 0 ? (
-            getEntityOptions()
-          ) : (
-            <SelectItem value="none" disabled>No {entityType === 'work_order' ? 'work orders' : 'projects'} found</SelectItem>
-          )}
-        </SelectContent>
-      </Select>
-      {error && (
-        <p className="text-sm text-red-500 mt-1">{error}</p>
-      )}
+        <option value="">Select a {entityType === 'work_order' ? 'work order' : 'project'}</option>
+        {entities.map((entity) => (
+          <option key={entity.id} value={entity.id}>
+            {entity.title}
+          </option>
+        ))}
+      </select>
+      
+      {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
       
       {selectedEntity && (
-        <div className="mt-2 p-3 bg-muted rounded-md text-sm">
-          <div className="font-medium">{selectedEntity.title}</div>
+        <div className="mt-2 text-sm text-gray-600">
           {selectedEntity.location && (
-            <div className="flex items-center mt-1 text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 mr-1" />
-              <span>{selectedEntity.location}</span>
+            <div className="text-gray-500">
+              Location: {selectedEntity.location}
             </div>
           )}
         </div>
