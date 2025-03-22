@@ -61,3 +61,9 @@ export interface TimeOption {
   display: string;    // 12h format display (e.g. "2:30 PM")
   timeOfDay: TimeOfDay;
 }
+
+// Receipt metadata interface to standardize the data structure
+export interface ReceiptMetadata {
+  vendorId?: string;
+  amount?: number;
+}

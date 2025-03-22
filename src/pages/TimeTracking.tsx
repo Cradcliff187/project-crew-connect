@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Search, Clock, Filter, Calendar, Download } from 'lucide-react';
+import { Search, Clock, Filter, Calendar, Download, Eye, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,13 @@ import TimeTrackingTable from '@/components/timeTracking/TimeTrackingTable';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/utils';
 import { TimeEntry } from '@/types/timeTracking';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription 
+} from '@/components/ui/dialog';
 
 const TimeTracking = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,6 +27,9 @@ const TimeTracking = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
+  const [currentReceipts, setCurrentReceipts] = useState<any[]>([]);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   
   useEffect(() => {
     fetchTimeEntries();
@@ -41,9 +51,14 @@ const TimeTracking = () => {
           end_time,
           hours_worked,
           employee_id,
+          employee_name,
           employee_rate,
           notes,
           has_receipts,
+          receipt_amount,
+          vendor_id,
+          vendor_name,
+          total_cost,
           created_at,
           updated_at
         `)
@@ -66,7 +81,6 @@ const TimeTracking = () => {
       const enhancedEntries = await Promise.all((data || []).map(async (entry: any) => {
         let entityName = 'Unknown';
         let entityLocation = '';
-        let employeeName = '';
         
         // Get entity details (work order or project)
         if (entry.entity_type === 'work_order') {
@@ -106,29 +120,15 @@ const TimeTracking = () => {
           }
         }
         
-        // Get employee name if there's an employee ID
-        if (entry.employee_id) {
-          const { data: employee } = await supabase
-            .from('employees')
-            .select('first_name, last_name')
-            .eq('employee_id', entry.employee_id)
-            .maybeSingle();
-          
-          if (employee) {
-            employeeName = `${employee.first_name} ${employee.last_name}`;
-          }
-        }
-        
         // Calculate cost if there's an employee rate
         const cost = entry.hours_worked && entry.employee_rate 
           ? entry.hours_worked * entry.employee_rate 
-          : undefined;
+          : entry.hours_worked * 75; // Default rate if none specified
         
         return {
           ...entry,
           entity_name: entityName,
           entity_location: entityLocation || undefined,
-          employee_name: employeeName || undefined,
           cost
         };
       }));
@@ -141,6 +141,7 @@ const TimeTracking = () => {
           (entry.entity_name && entry.entity_name.toLowerCase().includes(query)) ||
           (entry.entity_location && entry.entity_location.toLowerCase().includes(query)) ||
           (entry.employee_name && entry.employee_name.toLowerCase().includes(query)) ||
+          (entry.vendor_name && entry.vendor_name.toLowerCase().includes(query)) ||
           (entry.notes && entry.notes.toLowerCase().includes(query))
         );
       }
@@ -178,7 +179,6 @@ const TimeTracking = () => {
       if (error) throw error;
       
       // If the entry was for a work order, also clean up work_order_time_logs
-      // Note: This is a best effort cleanup; database triggers handle the actual cost recalculation
       if (entry.entity_type === 'work_order') {
         const { error: workOrderLogError } = await supabase
           .from('work_order_time_logs')
@@ -191,6 +191,16 @@ const TimeTracking = () => {
         if (workOrderLogError) {
           console.warn('Warning: Could not clean up associated work order time log:', workOrderLogError);
         }
+      }
+      
+      // Delete any associated receipt records
+      const { error: receiptDeleteError } = await supabase
+        .from('time_entry_receipts')
+        .delete()
+        .eq('time_entry_id', id);
+        
+      if (receiptDeleteError) {
+        console.warn('Warning: Could not delete associated receipts:', receiptDeleteError);
       }
       
       toast({
@@ -224,6 +234,8 @@ const TimeTracking = () => {
   
   const handleViewReceipts = async (id: string) => {
     try {
+      setSelectedEntryId(id);
+      
       const { data: receipts, error } = await supabase
         .from('time_entry_receipts')
         .select('*')
@@ -234,12 +246,20 @@ const TimeTracking = () => {
       if (receipts && receipts.length > 0) {
         console.log('Receipts for time entry:', receipts);
         
-        // Here you would typically open a modal to display the receipts
-        // For now, just show a toast with the number of receipts
-        toast({
-          title: 'Receipts found',
-          description: `Found ${receipts.length} receipt(s) for this time entry.`,
-        });
+        // Get public URLs for the receipts
+        const receiptsWithUrls = await Promise.all(receipts.map(async (receipt) => {
+          const { data, error } = await supabase.storage
+            .from('construction_documents')
+            .createSignedUrl(receipt.storage_path, 3600); // 1 hour expiration
+            
+          return {
+            ...receipt,
+            url: error ? null : data?.signedUrl
+          };
+        }));
+        
+        setCurrentReceipts(receiptsWithUrls);
+        setShowReceiptsDialog(true);
       } else {
         toast({
           title: 'No receipts',
@@ -260,6 +280,9 @@ const TimeTracking = () => {
     setActiveTab('list');
     fetchTimeEntries();
   };
+
+  // Get the entry that has receipts being viewed
+  const entryWithReceipts = timeEntries.find(entry => entry.id === selectedEntryId);
   
   return (
     <PageTransition>
@@ -347,6 +370,81 @@ const TimeTracking = () => {
             </TabsContent>
           </Tabs>
         </main>
+
+        {/* Receipts Dialog */}
+        <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Receipt Details</DialogTitle>
+              <DialogDescription>
+                {entryWithReceipts ? (
+                  <>
+                    {entryWithReceipts.entity_name} - {formatDate(entryWithReceipts.date_worked)}
+                    {entryWithReceipts.vendor_name && (
+                      <span className="ml-2 text-[#0485ea]">
+                        Vendor: {entryWithReceipts.vendor_name}
+                      </span>
+                    )}
+                  </>
+                ) : "Viewing uploaded receipts"}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              {currentReceipts.map((receipt, index) => (
+                <div key={index} className="border rounded-md p-3 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium text-sm truncate">{receipt.file_name}</h3>
+                    {receipt.amount && (
+                      <span className="text-sm font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded">
+                        ${receipt.amount.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {receipt.url ? (
+                    receipt.file_type?.startsWith('image/') ? (
+                      <div className="h-48 flex items-center justify-center border rounded-md overflow-hidden">
+                        <img 
+                          src={receipt.url} 
+                          alt={receipt.file_name} 
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-48 flex items-center justify-center border rounded-md bg-gray-50">
+                        <div className="text-center space-y-2">
+                          <FileText className="h-12 w-12 mx-auto text-gray-400" />
+                          <div className="text-sm text-gray-500">PDF Document</div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => window.open(receipt.url, '_blank')}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Document
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="h-48 flex items-center justify-center border rounded-md bg-gray-50">
+                      <div className="text-sm text-gray-500">Unable to load preview</div>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>
+                      {(receipt.file_size / 1024 / 1024).toFixed(2)} MB
+                    </span>
+                    <span>
+                      {new Date(receipt.uploaded_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageTransition>
   );

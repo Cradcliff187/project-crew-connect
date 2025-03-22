@@ -19,7 +19,7 @@ interface WorkOrderOrProject {
 export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
   const [workOrders, setWorkOrders] = useState<WorkOrderOrProject[]>([]);
   const [projects, setProjects] = useState<WorkOrderOrProject[]>([]);
-  const [employees, setEmployees] = useState<{ employee_id: string, name: string }[]>([]);
+  const [employees, setEmployees] = useState<{ employee_id: string, name: string, hourly_rate?: number }[]>([]);
   const [isLoadingEntities, setIsLoadingEntities] = useState(true);
   
   const entityType = form.watch('entityType');
@@ -46,7 +46,7 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
         
         if (projectsError) throw projectsError;
         
-        // Fetch employees
+        // Fetch employees with hourly rates
         const { data: employeesData, error: employeesError } = await supabase
           .from('employees')
           .select('employee_id, first_name, last_name, hourly_rate')
@@ -77,7 +77,8 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
         
         const formattedEmployees = employeesData.map(emp => ({
           employee_id: emp.employee_id,
-          name: `${emp.first_name} ${emp.last_name}`
+          name: `${emp.first_name} ${emp.last_name}`,
+          hourly_rate: emp.hourly_rate
         }));
         
         setWorkOrders(formattedWorkOrders);

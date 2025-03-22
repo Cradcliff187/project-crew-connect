@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Timer } from 'lucide-react';
+import { Calendar as CalendarIcon, Timer, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,7 @@ interface TimeEntryFormProps {
 
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [selectedEmployeeRate, setSelectedEmployeeRate] = useState<number | null>(null);
 
   const {
     form,
@@ -58,6 +59,17 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   const hoursWorked = form.watch('hoursWorked');
+  const employeeId = form.watch('employeeId');
+
+  // Update the selected employee rate when the employee changes
+  useEffect(() => {
+    if (employeeId && employees.length > 0) {
+      const employee = employees.find(emp => emp.employee_id === employeeId);
+      setSelectedEmployeeRate(employee?.hourly_rate || null);
+    } else {
+      setSelectedEmployeeRate(null);
+    }
+  }, [employeeId, employees]);
 
   const handleReceiptUploadSuccess = () => {
     setShowReceiptUpload(false);
@@ -67,10 +79,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     });
   };
 
-  // Direct receipt upload handler for the confirmation dialog
-  const handleDirectReceiptUpload = () => {
-    setShowReceiptUpload(true);
-  };
+  // Calculate labor cost based on hours worked and rate
+  const laborCost = hoursWorked * (selectedEmployeeRate || 75);
 
   return (
     <div className="space-y-4">
@@ -104,12 +114,12 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               <select
                 id="employee"
                 className="w-full border border-gray-300 rounded-md p-2"
-                value={form.watch('employeeId') || ''}
+                value={employeeId || ''}
                 onChange={(e) => form.setValue('employeeId', e.target.value, { shouldValidate: true })}
               >
                 {employees.map(employee => (
                   <option key={employee.employee_id} value={employee.employee_id}>
-                    {employee.name}
+                    {employee.name} {employee.hourly_rate ? `- $${employee.hourly_rate}/hr` : ''}
                   </option>
                 ))}
               </select>
@@ -184,17 +194,38 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
-            {/* Total Hours */}
-            <div className="space-y-2">
-              <Label htmlFor="hoursWorked">Total Hours</Label>
-              <Input
-                id="hoursWorked"
-                type="number"
-                step="0.01"
-                readOnly
-                value={hoursWorked}
-                className="bg-muted"
-              />
+            {/* Total Hours and Labor Cost */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="hoursWorked">Total Hours</Label>
+                <Input
+                  id="hoursWorked"
+                  type="number"
+                  step="0.01"
+                  readOnly
+                  value={hoursWorked}
+                  className="bg-muted"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="laborCost">Estimated Labor Cost</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    <DollarSign className="h-4 w-4" />
+                  </span>
+                  <Input
+                    id="laborCost"
+                    type="text"
+                    readOnly
+                    value={laborCost.toFixed(2)}
+                    className="bg-muted pl-9"
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Based on {selectedEmployeeRate ? `$${selectedEmployeeRate.toFixed(2)}` : '$75.00'}/hr
+                </div>
+              </div>
             </div>
             
             {/* Notes */}
@@ -233,7 +264,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         selectedFiles={selectedFiles}
         isLoading={isLoading}
         onConfirm={confirmSubmit}
-        onUploadReceipts={handleDirectReceiptUpload}
+        onUploadReceipts={() => setShowReceiptUpload(true)}
         hasReceipts={hasReceipts}
         setHasReceipts={setHasReceipts}
         handleFilesSelected={handleFilesSelected}
@@ -244,7 +275,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
       <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Upload Receipt(s)</DialogTitle>
+            <DialogTitle>Upload Material Receipt(s)</DialogTitle>
           </DialogHeader>
           <EnhancedDocumentUpload
             entityType={entityType === 'work_order' ? 'WORK_ORDER' as EntityType : 'PROJECT' as EntityType}

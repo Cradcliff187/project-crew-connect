@@ -4,8 +4,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ReceiptMetadata } from '@/types/timeTracking';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -30,12 +32,6 @@ const defaultFormValues: TimeEntryFormValues = {
   notes: '',
   employeeId: '',
 };
-
-// Receipt metadata interface
-interface ReceiptMetadata {
-  vendorId?: string;
-  amount?: number;
-}
 
 export function useTimeEntryForm(onSuccess: () => void) {
   const [isLoading, setIsLoading] = useState(false);
@@ -150,14 +146,19 @@ export function useTimeEntryForm(onSuccess: () => void) {
     
     try {
       let employeeRate = null;
+      let employeeName = null;
+      
       if (confirmationData.employeeId) {
         const { data: empData } = await supabase
           .from('employees')
-          .select('hourly_rate')
+          .select('hourly_rate, first_name, last_name')
           .eq('employee_id', confirmationData.employeeId)
           .maybeSingle();
         
-        employeeRate = empData?.hourly_rate;
+        if (empData) {
+          employeeRate = empData.hourly_rate;
+          employeeName = `${empData.first_name} ${empData.last_name}`;
+        }
       }
       
       // Get receipt metadata from localStorage if available
@@ -179,6 +180,20 @@ export function useTimeEntryForm(onSuccess: () => void) {
       const laborCost = confirmationData.hoursWorked * (employeeRate || 75);
       const receiptAmount = receiptMetadata.amount || 0;
       const totalCost = laborCost + receiptAmount;
+
+      // Get vendor name for the receipt if vendorId is provided
+      let vendorName = null;
+      if (receiptMetadata.vendorId) {
+        const { data: vendorData } = await supabase
+          .from('vendors')
+          .select('vendorname')
+          .eq('vendorid', receiptMetadata.vendorId)
+          .maybeSingle();
+          
+        if (vendorData) {
+          vendorName = vendorData.vendorname;
+        }
+      }
       
       // Create the main time entry record in time_entries table
       const timeEntry = {
@@ -189,11 +204,13 @@ export function useTimeEntryForm(onSuccess: () => void) {
         end_time: confirmationData.endTime,
         hours_worked: confirmationData.hoursWorked,
         employee_id: confirmationData.employeeId || null,
+        employee_name: employeeName,
         employee_rate: employeeRate,
         notes: confirmationData.notes,
         has_receipts: hasReceipts && selectedFiles.length > 0,
         receipt_amount: receiptMetadata.amount || null,
         vendor_id: receiptMetadata.vendorId || null,
+        vendor_name: vendorName,
         total_cost: totalCost,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -235,7 +252,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
       if (hasReceipts && selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
           const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const fileName = `${Date.now()}-${uuidv4()}.${fileExt}`;
           const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
           
           const { error: uploadError } = await supabase.storage
@@ -303,7 +320,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
         console.log('Successfully uploaded', selectedFiles.length, 'receipt(s)');
         
         // If vendor and amount provided, create a materials or expense record
-        if (receiptMetadata.vendorId && receiptMetadata.amount) {
+        if (receiptMetadata.vendorId && receiptMetadata.amount && receiptMetadata.amount > 0) {
           if (confirmationData.entityType === 'work_order') {
             // Create a material record for the work order
             try {
@@ -334,7 +351,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
                 .from('project_expenses')
                 .insert({
                   project_id: confirmationData.entityId,
-                  description: `Expense from time entry on ${format(confirmationData.workDate, 'MMM d, yyyy')}`,
+                  description: `Material expense from time entry on ${format(confirmationData.workDate, 'MMM d, yyyy')}`,
                   amount: receiptMetadata.amount,
                   expense_date: format(confirmationData.workDate, 'yyyy-MM-dd'),
                   vendor_id: receiptMetadata.vendorId,
