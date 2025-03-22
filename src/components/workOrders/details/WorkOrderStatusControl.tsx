@@ -155,7 +155,6 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
               size="sm" 
               variant="outline"
               triggerClassName="bg-muted/50 border border-input hover:bg-[#0485ea]/10"
-              label="Change Status"
             />
           </div>
           
