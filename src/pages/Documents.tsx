@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { 
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger 
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
 
 import DocumentFilters from '@/components/documents/DocumentFilters';
@@ -47,12 +47,14 @@ const DocumentsPage: React.FC = () => {
     isDeleteOpen,
     isUploadOpen,
     deleteError,
+    hasReferences,
     setIsUploadOpen,
     setIsDetailOpen,
     setIsDeleteOpen,
     handleDocumentSelect,
     handleDeleteDialogOpen,
     handleDeleteDocument,
+    handleForceDelete,
     handleUploadSuccess
   } = useDocumentActions(fetchDocuments);
 
@@ -103,7 +105,7 @@ const DocumentsPage: React.FC = () => {
           onClose={() => setIsDetailOpen(false)}
           onDelete={() => {
             setIsDetailOpen(false);
-            setIsDeleteOpen(true);
+            handleDeleteDialogOpen(selectedDocument!);
           }}
         />
 
@@ -112,7 +114,9 @@ const DocumentsPage: React.FC = () => {
           open={isDeleteOpen}
           onClose={() => setIsDeleteOpen(false)}
           onConfirm={handleDeleteDocument}
+          onForceDelete={handleForceDelete}
           error={deleteError}
+          hasReferences={hasReferences}
         />
 
         {/* Upload Dialog */}

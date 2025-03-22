@@ -14,10 +14,19 @@ interface DeleteConfirmationProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  onForceDelete?: () => void;
   error?: string | null;
+  hasReferences?: boolean;
 }
 
-const DeleteConfirmation = ({ open, onClose, onConfirm, error }: DeleteConfirmationProps) => {
+const DeleteConfirmation = ({ 
+  open, 
+  onClose, 
+  onConfirm, 
+  onForceDelete,
+  error,
+  hasReferences 
+}: DeleteConfirmationProps) => {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
@@ -38,13 +47,28 @@ const DeleteConfirmation = ({ open, onClose, onConfirm, error }: DeleteConfirmat
           </div>
         )}
         
+        {hasReferences && (
+          <div className="flex items-start gap-2 p-3 bg-yellow-100 rounded-md mt-2 text-sm text-yellow-800">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              This document is linked to work order materials. You can force delete, 
+              which will remove the document reference from those materials.
+            </div>
+          </div>
+        )}
+        
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={onClose}>
-            {error ? "Close" : "Cancel"}
+            {error && !hasReferences ? "Close" : "Cancel"}
           </Button>
-          {!error && (
+          {!error && !hasReferences && (
             <Button variant="destructive" onClick={onConfirm}>
               Delete
+            </Button>
+          )}
+          {hasReferences && onForceDelete && (
+            <Button variant="destructive" onClick={onForceDelete}>
+              Force Delete
             </Button>
           )}
         </div>
