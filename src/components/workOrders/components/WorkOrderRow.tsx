@@ -1,7 +1,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { TableRow, TableCell } from "@/components/ui/table";
-import { Calendar, DollarSign, Hash, Eye, Edit } from 'lucide-react';
+import { Calendar, Eye, Edit } from 'lucide-react';
 import { WorkOrder } from '@/types/workOrder';
 import { formatDate } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -29,24 +29,18 @@ const WorkOrderRow = ({ workOrder }: WorkOrderRowProps) => {
       }}
     >
       <TableCell>
-        <div className="font-medium text-[#0485ea] flex items-center">
+        <div className="font-medium text-[#0485ea]">
           {workOrder.work_order_number ? (
-            <>
-              <Hash className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-              {workOrder.work_order_number}
-            </>
+            workOrder.work_order_number
           ) : (
             <span className="text-muted-foreground italic">No WO #</span>
           )}
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center">
+        <div>
           {workOrder.po_number ? (
-            <>
-              <DollarSign className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-              {workOrder.po_number}
-            </>
+            workOrder.po_number
           ) : (
             <span className="text-muted-foreground italic">No PO #</span>
           )}
