@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Timer, DollarSign } from 'lucide-react';
@@ -53,7 +52,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     getSelectedEntityDetails
   } = useEntityData(form);
 
-  // Watch form values
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
   const startTime = form.watch('startTime');
@@ -61,7 +59,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const hoursWorked = form.watch('hoursWorked');
   const employeeId = form.watch('employeeId');
 
-  // Update the selected employee rate when the employee changes
   useEffect(() => {
     if (employeeId && employees.length > 0) {
       const employee = employees.find(emp => emp.employee_id === employeeId);
@@ -79,7 +76,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     });
   };
 
-  // Calculate labor cost based on hours worked and rate
   const laborCost = hoursWorked * (selectedEmployeeRate || 75);
 
   return (
@@ -90,13 +86,11 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         </CardHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)}>
           <CardContent className="space-y-6">
-            {/* Entity Type Selection */}
             <EntityTypeSelector 
               entityType={entityType} 
               onChange={(value) => form.setValue('entityType', value, { shouldValidate: true })}
             />
             
-            {/* Entity Selection */}
             <EntitySelector
               entityType={entityType}
               entityId={entityId}
@@ -106,9 +100,9 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               onChange={(value) => form.setValue('entityId', value, { shouldValidate: true })}
               error={form.formState.errors.entityId?.message}
               selectedEntity={getSelectedEntityDetails()}
+              required={true}
             />
             
-            {/* Employee Selection */}
             <div className="space-y-2">
               <Label htmlFor="employee">Employee</Label>
               <select
@@ -125,7 +119,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               </select>
             </div>
             
-            {/* Date Selection */}
             <div className="space-y-2">
               <Label>Date</Label>
               <Popover>
@@ -156,7 +149,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               </Popover>
             </div>
             
-            {/* Time Range */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label>Time Range</Label>
@@ -173,7 +165,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                 endTime={endTime}
                 onStartTimeChange={(value) => {
                   form.setValue('startTime', value, { shouldValidate: true });
-                  // Automatically adjust end time if needed
                   if (endTime) {
                     const [startHour, startMinute] = value.split(':').map(Number);
                     const [endHour, endMinute] = endTime.split(':').map(Number);
@@ -194,7 +185,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
-            {/* Total Hours and Labor Cost */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="hoursWorked">Total Hours</Label>
@@ -228,7 +218,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               </div>
             </div>
             
-            {/* Notes */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
@@ -252,7 +241,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         </form>
       </Card>
       
-      {/* Confirmation Dialog */}
       <ConfirmationDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
@@ -271,7 +259,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         handleFileClear={handleFileClear}
       />
 
-      {/* Receipt Upload Dialog */}
       <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>

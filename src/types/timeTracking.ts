@@ -68,12 +68,19 @@ export interface ReceiptMetadata {
   amount?: number;
 }
 
-// Add a new interface for the entity selector props in the confirmation dialog
+// Update the interface for the entity selector props in the confirmation dialog
+// to match what we're using in our components
 export interface EntitySelectorConfirmProps {
   entityType: string;
   entityId: string;
+  workOrders: any[];
+  projects: any[];
+  isLoading: boolean;
+  onChange: (value: string) => void;
   label: string;
   fieldName: string;
   control: any;
   required: boolean;
+  error?: string;
+  selectedEntity?: any;
 }

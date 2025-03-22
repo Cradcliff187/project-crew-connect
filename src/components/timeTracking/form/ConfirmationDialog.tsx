@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { formatTimeRange } from '@/lib/utils';
@@ -15,7 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { FileUpload } from '@/components/ui/file-upload';
 import { TimeEntryFormValues } from '../hooks/useTimeEntryForm';
-import EntitySelector from '@/components/documents/EntitySelector';
 import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { FormField, FormItem, FormLabel, FormDescription, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
+import EntitySelector from '@/components/timeTracking/form/EntitySelector';
 
 interface WorkOrderOrProject {
   id: string;
@@ -53,7 +52,6 @@ interface ConfirmationDialogProps {
   handleFileClear: (index: number) => void;
 }
 
-// Schema for receipt metadata - making vendor required for receipts
 const receiptMetadataSchema = z.object({
   vendorId: z.string().min(1, "A vendor is required for material receipts"),
   amount: z.number().min(0.01, "Amount must be greater than 0").optional(),
@@ -81,7 +79,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   
-  // Form for receipt metadata
   const receiptForm = useForm<ReceiptMetadata>({
     resolver: zodResolver(receiptMetadataSchema),
     defaultValues: {
@@ -90,7 +87,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     }
   });
 
-  // Reset the form when dialog opens/closes
   useEffect(() => {
     if (open) {
       setValidationError(null);
@@ -124,7 +120,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     setShowFileUpload(!showFileUpload);
   };
 
-  // Get receipt metadata for passing to the parent
   const getReceiptMetadata = () => {
     const formData = receiptForm.getValues();
     return {
@@ -133,9 +128,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     };
   };
 
-  // Handle the confirmation with receipt metadata
   const handleConfirm = () => {
-    // If we have receipts, we need a vendor
     if (hasReceipts && selectedFiles.length > 0) {
       const isValid = receiptForm.trigger();
       if (!isValid) {
@@ -144,7 +137,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       }
 
       const metadata = getReceiptMetadata();
-      // Store metadata in localStorage temporarily to access in useTimeEntryForm
       localStorage.setItem('timeEntryReceiptMetadata', JSON.stringify(metadata));
     } else {
       localStorage.removeItem('timeEntryReceiptMetadata');
@@ -153,10 +145,9 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     onConfirm();
   };
 
-  // Calculate the expected cost of the time entry
   const laborCost = employeeRate 
     ? confirmationData.hoursWorked * employeeRate 
-    : confirmationData.hoursWorked * 75; // Default rate if none specified
+    : confirmationData.hoursWorked * 75;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -225,7 +216,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             )}
           </div>
           
-          {/* Receipt Upload Option */}
           <div className="flex items-center justify-between space-x-2 rounded-md border p-4 mt-4">
             <div>
               <h4 className="font-medium">Include Material Receipt(s)</h4>
@@ -259,7 +249,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             </div>
           </div>
           
-          {/* File Upload Component (shown conditionally) */}
           {hasReceipts && showFileUpload && (
             <div className="p-3 border rounded-md bg-muted/30">
               <h4 className="text-sm font-medium mb-2">Upload Material Receipts</h4>
@@ -274,13 +263,11 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             </div>
           )}
           
-          {/* Receipt Metadata (vendor and amount) - only shown when files are selected */}
           {hasReceipts && selectedFiles.length > 0 && (
             <FormProvider {...receiptForm}>
               <div className="p-3 border rounded-md">
                 <h4 className="text-sm font-medium mb-2">Receipt Details</h4>
                 <div className="space-y-3">
-                  {/* Vendor Selector - Required for material receipts */}
                   <FormField
                     control={receiptForm.control}
                     name="vendorId"
@@ -288,11 +275,16 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                       <FormItem>
                         <FormLabel>Vendor (Required) <span className="text-red-500">*</span></FormLabel>
                         <EntitySelector
-                          control={receiptForm.control as any}
+                          control={receiptForm.control}
                           entityType="VENDOR"
+                          entityId={field.value}
                           fieldName="vendorId"
                           label=""
                           required={true}
+                          workOrders={[]}
+                          projects={[]}
+                          isLoading={false}
+                          onChange={field.onChange}
                         />
                         <FormDescription>
                           Select the vendor who supplied the materials
@@ -302,7 +294,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                     )}
                   />
                   
-                  {/* Amount Input */}
                   <FormField
                     control={receiptForm.control}
                     name="amount"
@@ -336,7 +327,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             </FormProvider>
           )}
           
-          {/* Display selected files if any, and not showing the upload component */}
           {selectedFiles.length > 0 && !showFileUpload && (
             <div className="rounded-md bg-muted p-3">
               <div className="text-sm font-medium">Attached Receipts:</div>
@@ -350,7 +340,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             </div>
           )}
           
-          {/* Show validation error if any */}
           {validationError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
