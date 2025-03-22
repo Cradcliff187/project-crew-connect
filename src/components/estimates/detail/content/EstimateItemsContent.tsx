@@ -34,7 +34,7 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
     ...item,
     estimate_id: '', // Adding the required estimate_id property
     // Default values for other required properties in EstimateItem that might be missing
-    item_type: item.item_type || 'labor',
+    item_type: 'labor', // Providing a default value for item_type
     cost: item.cost || 0,
     markup_percentage: item.markup_percentage || 0
   }));

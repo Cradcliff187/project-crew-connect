@@ -30,6 +30,12 @@ const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({
       onDocumentsUpdated();
     }
   };
+  
+  // Add a no-op onChange handler since this is primarily a display component
+  const handleItemsChange = (newItems: EstimateItem[]) => {
+    console.log("Items would change to:", newItems);
+    // This is intentionally empty as we're just displaying items
+  };
 
   return (
     <Card>
@@ -51,6 +57,7 @@ const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({
           itemDocuments={itemDocuments} 
           estimateId={estimateId}
           onDocumentAdded={onDocumentsUpdated}
+          onChange={handleItemsChange} // Add the required onChange prop
         />
       </CardContent>
 

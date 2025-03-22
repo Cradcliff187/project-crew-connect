@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SubcontractorDocument } from '../types/documentTypes';
 
-// Define the SubcontractorDocument type directly in this file to avoid circular references
-interface DocumentTypes {
+// Define a local document type to avoid circular references
+interface LocalDocumentType {
   document_id: string;
   file_name: string;
   category: string | null;
@@ -16,7 +16,7 @@ interface DocumentTypes {
 }
 
 export const useSubcontractorDocuments = (subcontractorId: string) => {
-  const [documents, setDocuments] = useState<DocumentTypes[]>([]);
+  const [documents, setDocuments] = useState<SubcontractorDocument[]>([]);
   const [loading, setLoading] = useState(true);
   
   const fetchDocuments = async () => {
@@ -73,7 +73,7 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
         })
       );
       
-      setDocuments(enhancedDocuments);
+      setDocuments(enhancedDocuments as SubcontractorDocument[]);
     } catch (error) {
       console.error('Error processing subcontractor documents:', error);
     } finally {
