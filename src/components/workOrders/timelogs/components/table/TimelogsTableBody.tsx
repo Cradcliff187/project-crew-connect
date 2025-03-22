@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { WorkOrderTimelog } from '@/types/workOrder';
+import { EmptyState } from './';
 
 interface TimelogsTableBodyProps {
   timelogs: WorkOrderTimelog[];
@@ -12,20 +13,24 @@ interface TimelogsTableBodyProps {
 }
 
 const TimelogsTableBody = ({ timelogs, employeeNameFn, onDelete }: TimelogsTableBodyProps) => {
+  if (timelogs.length === 0) {
+    return <EmptyState />;
+  }
+  
   return (
     <TableBody>
       {timelogs.map((log) => (
-        <TableRow key={log.id}>
+        <TableRow key={log.id} className="hover:bg-[#0485ea]/5 transition-colors">
           <TableCell>{formatDate(log.work_date)}</TableCell>
           <TableCell>{employeeNameFn(log.employee_id)}</TableCell>
-          <TableCell>{log.hours_worked}</TableCell>
+          <TableCell className="font-medium">{log.hours_worked}</TableCell>
           <TableCell className="max-w-[200px] truncate">{log.notes || '-'}</TableCell>
           <TableCell className="text-right">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onDelete(log.id)}
-              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

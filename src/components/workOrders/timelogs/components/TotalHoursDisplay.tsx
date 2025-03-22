@@ -1,6 +1,5 @@
 
 import { Clock } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface TotalHoursDisplayProps {
   totalHours: number;
@@ -8,17 +7,15 @@ interface TotalHoursDisplayProps {
 
 const TotalHoursDisplay = ({ totalHours }: TotalHoursDisplayProps) => {
   return (
-    <Card className="mt-4">
-      <CardContent className="p-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-[#0485ea]" />
-            <span className="font-medium">Total Hours</span>
-          </div>
-          <div className="text-lg font-bold">{totalHours.toFixed(2)}</div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex justify-between items-center bg-gray-50 p-4 border rounded-md mt-4">
+      <div className="flex items-center gap-2 text-gray-600">
+        <Clock size={18} />
+        <span className="font-medium">Total Hours Logged</span>
+      </div>
+      <div className="bg-[#0485ea]/10 px-4 py-2 rounded-md">
+        <span className="text-lg font-bold text-[#0485ea]">{totalHours.toFixed(1)} hrs</span>
+      </div>
+    </div>
   );
 };
 

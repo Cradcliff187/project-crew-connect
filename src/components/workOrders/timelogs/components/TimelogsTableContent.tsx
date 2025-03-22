@@ -2,6 +2,7 @@
 import { Table } from '@/components/ui/table';
 import { WorkOrderTimelog } from '@/types/workOrder';
 import { TimelogsTableHeader, TimelogsTableBody } from './table';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface TimelogsTableContentProps {
   timelogs: WorkOrderTimelog[];
@@ -22,16 +23,20 @@ const TimelogsTableContent = ({
   };
 
   return (
-    <div className="w-full overflow-x-auto">
-      <Table>
-        <TimelogsTableHeader />
-        <TimelogsTableBody 
-          timelogs={timelogs} 
-          employeeNameFn={getEmployeeName} 
-          onDelete={onDelete} 
-        />
-      </Table>
-    </div>
+    <Card className="shadow-sm border-[#0485ea]/10">
+      <CardContent className="p-0">
+        <div className="w-full overflow-x-auto">
+          <Table>
+            <TimelogsTableHeader />
+            <TimelogsTableBody 
+              timelogs={timelogs} 
+              employeeNameFn={getEmployeeName} 
+              onDelete={onDelete} 
+            />
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

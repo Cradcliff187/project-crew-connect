@@ -6,6 +6,7 @@ import { TimelogSectionHeader, TimelogAddSheet } from './header';
 import { EmptyState } from './table';
 import TotalHoursDisplay from './TotalHoursDisplay';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface TimelogsInfoSectionProps {
   timelogs: WorkOrderTimelog[];
@@ -40,13 +41,10 @@ const TimelogsInfoSection = ({
       
       {/* Timelogs Table or Empty State */}
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-2">
           <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
-      ) : timelogs.length === 0 ? (
-        <EmptyState />
       ) : (
         <>
           <TimelogsTableContent
@@ -55,8 +53,10 @@ const TimelogsInfoSection = ({
             onDelete={onDelete}
           />
           
-          {/* Display total hours */}
-          <TotalHoursDisplay totalHours={totalHours} />
+          {/* Display total hours if there are timelogs */}
+          {timelogs.length > 0 && (
+            <TotalHoursDisplay totalHours={totalHours} />
+          )}
         </>
       )}
       
