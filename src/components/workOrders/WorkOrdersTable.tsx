@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -13,15 +13,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { WorkOrder } from '@/types/workOrder';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Circle, AlertCircle, Calendar, Clock, DollarSign, Hash, ChevronRight, Eye, Edit, MoreVertical } from 'lucide-react';
-import { formatDate, formatCurrency } from '@/lib/utils';
+import { Calendar, DollarSign, Hash, MoreVertical } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { StatusType } from '@/types/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
-import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
+import ActionMenu from '@/components/ui/action-menu';
 
 type WorkOrderStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'ALL';
 
@@ -60,22 +58,22 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Work Order</TableHead>
-              <TableHead>Details</TableHead>
+              <TableHead>WO Number</TableHead>
+              <TableHead>PO Number</TableHead>
+              <TableHead>Due Date</TableHead>
+              <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Schedule</TableHead>
-              <TableHead>Progress</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={`skeleton-${index}`}>
-                <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-64" /></TableCell>
-                <TableCell><Skeleton className="h-8 w-24 rounded-full" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-8 w-24 rounded-full" /></TableCell>
                 <TableCell className="text-right"><Skeleton className="h-9 w-20 ml-auto" /></TableCell>
               </TableRow>
             ))}
@@ -130,11 +128,11 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Work Order</TableHead>
-              <TableHead>Details</TableHead>
+              <TableHead>WO Number</TableHead>
+              <TableHead>PO Number</TableHead>
+              <TableHead>Due Date</TableHead>
+              <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Schedule</TableHead>
-              <TableHead>Progress</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -157,70 +155,48 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
                   }}
                 >
                   <TableCell>
-                    <div className="font-medium text-[#0485ea]">{workOrder.title}</div>
-                    {workOrder.work_order_number && (
-                      <div className="text-sm text-muted-foreground">
-                        #{workOrder.work_order_number}
-                      </div>
-                    )}
+                    <div className="font-medium text-[#0485ea] flex items-center">
+                      {workOrder.work_order_number ? (
+                        <>
+                          <Hash className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                          {workOrder.work_order_number}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground italic">No WO #</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">
-                      {workOrder.description ? (
-                        <span className="line-clamp-2">{workOrder.description}</span>
+                    <div className="flex items-center">
+                      {workOrder.po_number ? (
+                        <>
+                          <DollarSign className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                          {workOrder.po_number}
+                        </>
                       ) : (
-                        <span className="text-muted-foreground italic">No description</span>
+                        <span className="text-muted-foreground italic">No PO #</span>
                       )}
                     </div>
-                    <div className="flex items-center mt-1 text-xs text-muted-foreground">
-                      {workOrder.po_number && (
-                        <div className="flex items-center mr-3">
-                          <Hash className="h-3 w-3 mr-1" />
-                          PO #{workOrder.po_number}
-                        </div>
-                      )}
-                      {workOrder.total_cost !== undefined && workOrder.total_cost > 0 && (
-                        <div className="flex items-center">
-                          <DollarSign className="h-3 w-3 mr-1" />
-                          {formatCurrency(workOrder.total_cost)}
-                        </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                      {workOrder.due_by_date ? (
+                        formatDate(workOrder.due_by_date)
+                      ) : (
+                        <span className="text-muted-foreground">Not set</span>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {workOrder.priority ? (
+                      <div className="capitalize">{workOrder.priority.toLowerCase()}</div>
+                    ) : (
+                      <span className="text-muted-foreground italic">None</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={workOrder.status} />
-                    {workOrder.priority && (
-                      <div className="text-xs mt-1 capitalize">
-                        {workOrder.priority.toLowerCase()} priority
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center text-sm">
-                      <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                      {workOrder.scheduled_date ? (
-                        formatDate(workOrder.scheduled_date)
-                      ) : (
-                        <span className="text-muted-foreground">Not scheduled</span>
-                      )}
-                    </div>
-                    {workOrder.time_estimate && (
-                      <div className="flex items-center text-xs mt-1 text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {workOrder.time_estimate} hrs estimated
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="w-full bg-muted rounded-full h-2.5 dark:bg-gray-200">
-                      <div 
-                        className="bg-[#0485ea] h-2.5 rounded-full" 
-                        style={{ width: `${workOrder.progress || 0}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-xs mt-1 text-right">
-                      {workOrder.progress || 0}% complete
-                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2 actions-menu" onClick={(e) => e.stopPropagation()}>
