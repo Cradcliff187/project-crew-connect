@@ -8,22 +8,26 @@ import MaterialFormFields from './components/MaterialFormFields';
 import TotalPriceDisplay from './components/TotalPriceDisplay';
 
 interface AddMaterialFormProps {
+  workOrderId: string; // Added workOrderId prop
   vendors: { vendorid: string, vendorname: string }[];
-  onSubmit: (material: {
+  submitting: boolean;
+  onMaterialPrompt: (material: {
     materialName: string;
     quantity: number;
     unitPrice: number;
     vendorId: string | null;
   }) => void;
-  submitting: boolean;
   onVendorAdded?: () => void;
+  onSuccess?: () => void; // Added optional onSuccess prop
 }
 
 const AddMaterialForm = ({ 
+  workOrderId, // Added to component props
   vendors, 
-  onSubmit, 
   submitting,
-  onVendorAdded
+  onMaterialPrompt,
+  onVendorAdded,
+  onSuccess
 }: AddMaterialFormProps) => {
   // Form state
   const [materialName, setMaterialName] = useState('');
@@ -46,7 +50,12 @@ const AddMaterialForm = ({
     };
     
     // Submit the form data
-    onSubmit(materialData);
+    onMaterialPrompt(materialData);
+    
+    // Call onSuccess if provided
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   const handleVendorAdded = () => {
