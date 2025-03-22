@@ -1,10 +1,8 @@
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import { WorkOrderMaterial } from '@/types/workOrder';
-import { MaterialsTable, AddMaterialForm } from '..';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { MaterialsTable } from '..';
+import { SectionHeader, AddMaterialSheet } from './header';
 
 interface MaterialsInfoSectionProps {
   materials: WorkOrderMaterial[];
@@ -37,17 +35,10 @@ const MaterialsInfoSection = ({
 
   return (
     <div className="space-y-4">
-      {/* Materials Table - Highlighted as the main component */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-[#0485ea]">Work Order Materials</h2>
-        <Button 
-          onClick={() => setShowAddForm(true)} 
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-        >
-          <Plus className="h-4 w-4 mr-1" /> Add Material
-        </Button>
-      </div>
+      {/* Section Header */}
+      <SectionHeader onAddClick={() => setShowAddForm(true)} />
       
+      {/* Materials Table */}
       <MaterialsTable
         materials={materials}
         loading={loading}
@@ -59,24 +50,17 @@ const MaterialsInfoSection = ({
         onReceiptClick={onReceiptClick}
       />
       
-      {/* Sheet/Slide-out panel for adding materials */}
-      <Sheet open={showAddForm} onOpenChange={setShowAddForm}>
-        <SheetContent className="sm:max-w-md w-full overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Add Material</SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
-            <AddMaterialForm
-              workOrderId={workOrderId}
-              vendors={vendors}
-              submitting={submitting}
-              onMaterialPrompt={onMaterialPrompt}
-              onVendorAdded={onVendorAdded}
-              onSuccess={() => setShowAddForm(false)}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Add Material Sheet */}
+      <AddMaterialSheet
+        open={showAddForm}
+        onOpenChange={setShowAddForm}
+        workOrderId={workOrderId}
+        vendors={vendors}
+        submitting={submitting}
+        onMaterialPrompt={onMaterialPrompt}
+        onVendorAdded={onVendorAdded}
+        onSuccess={() => setShowAddForm(false)}
+      />
     </div>
   );
 };

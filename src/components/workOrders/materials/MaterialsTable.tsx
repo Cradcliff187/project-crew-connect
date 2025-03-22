@@ -57,13 +57,7 @@ const MaterialsTable = ({
               <span className="text-lg font-bold text-[#0485ea]">{formatCurrency(totalCost)}</span>
             </div>
           </div>
-        ) : (
-          <div className="p-8 text-center text-gray-500 border-t">
-            <Package2 size={36} className="mx-auto mb-3 text-gray-300" />
-            <p className="font-medium">No materials added yet</p>
-            <p className="text-sm mt-1">Use the Add Material button to track materials used in this work order.</p>
-          </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Table } from '@/components/ui/table';
 import { WorkOrderMaterial } from '@/types/workOrder';
-import { MaterialTableRow } from './';
+import { MaterialsTableHeader, MaterialsTableBody } from './table';
 
 interface MaterialsTableContentProps {
   materials: WorkOrderMaterial[];
@@ -26,29 +26,13 @@ const MaterialsTableContent = ({
   return (
     <div className="w-full overflow-x-auto">
       <Table>
-        <TableHeader className="bg-[#0485ea]/10">
-          <TableRow>
-            <TableHead className="font-semibold text-[#0485ea]">Material</TableHead>
-            <TableHead className="font-semibold text-[#0485ea]">Vendor</TableHead>
-            <TableHead className="font-semibold text-[#0485ea]">Quantity</TableHead>
-            <TableHead className="font-semibold text-[#0485ea]">Unit Price</TableHead>
-            <TableHead className="font-semibold text-[#0485ea]">Total</TableHead>
-            <TableHead className="text-right font-semibold text-[#0485ea]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {materials.length > 0 ? (
-            materials.map((material) => (
-              <MaterialTableRow
-                key={material.id}
-                material={material}
-                vendorName={getVendorName(material.vendor_id)}
-                onDelete={onDelete}
-                onReceiptClick={onReceiptClick}
-              />
-            ))
-          ) : null}
-        </TableBody>
+        <MaterialsTableHeader />
+        <MaterialsTableBody 
+          materials={materials} 
+          vendorNameFn={getVendorName} 
+          onDelete={onDelete} 
+          onReceiptClick={onReceiptClick}
+        />
       </Table>
     </div>
   );
