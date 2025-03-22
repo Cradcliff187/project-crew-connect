@@ -22,7 +22,6 @@ const MaterialTableRow = ({
   return (
     <TableRow className="hover:bg-[#0485ea]/5 transition-colors">
       <TableCell className="font-medium">{material.material_name}</TableCell>
-      <TableCell>{vendorName || 'No vendor specified'}</TableCell>
       <TableCell>{material.quantity}</TableCell>
       <TableCell>{formatCurrency(material.unit_price)}</TableCell>
       <TableCell className="font-semibold">{formatCurrency(material.total_price)}</TableCell>

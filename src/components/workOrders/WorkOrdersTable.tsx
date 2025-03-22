@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -66,25 +66,27 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
         <StatusFilter onStatusChange={handleStatusFilterChange} defaultValue="ALL" />
       </div>
       
-      <Card className="border shadow-sm">
-        <Table>
-          <WorkOrderTableHeader />
-          
-          <TableBody>
-            {loading ? (
-              <WorkOrdersTableSkeleton rows={5} />
-            ) : currentItems.length === 0 ? (
-              <EmptyWorkOrders />
-            ) : (
-              currentItems.map((workOrder) => (
-                <WorkOrderRow 
-                  key={workOrder.work_order_id}
-                  workOrder={workOrder}
-                />
-              ))
-            )}
-          </TableBody>
-        </Table>
+      <Card className="shadow-sm border-[#0485ea]/10">
+        <CardContent className="p-0">
+          <Table>
+            <WorkOrderTableHeader />
+            
+            <TableBody>
+              {loading ? (
+                <WorkOrdersTableSkeleton rows={5} />
+              ) : currentItems.length === 0 ? (
+                <EmptyWorkOrders />
+              ) : (
+                currentItems.map((workOrder) => (
+                  <WorkOrderRow 
+                    key={workOrder.work_order_id}
+                    workOrder={workOrder}
+                  />
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
 
       {/* Only show pagination when we have work orders and not loading */}

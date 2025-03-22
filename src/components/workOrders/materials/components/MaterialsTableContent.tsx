@@ -2,6 +2,7 @@
 import { Table } from '@/components/ui/table';
 import { WorkOrderMaterial } from '@/types/workOrder';
 import { MaterialsTableHeader, MaterialsTableBody } from './table';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface MaterialsTableContentProps {
   materials: WorkOrderMaterial[];
@@ -17,17 +18,21 @@ const MaterialsTableContent = ({
   onReceiptClick
 }: MaterialsTableContentProps) => {
   return (
-    <div className="w-full overflow-x-auto">
-      <Table>
-        <MaterialsTableHeader />
-        <MaterialsTableBody 
-          materials={materials} 
-          vendors={vendors} 
-          onDelete={onDelete} 
-          onReceiptClick={onReceiptClick}
-        />
-      </Table>
-    </div>
+    <Card className="shadow-sm border-[#0485ea]/10">
+      <CardContent className="p-0">
+        <div className="w-full overflow-x-auto">
+          <Table>
+            <MaterialsTableHeader />
+            <MaterialsTableBody 
+              materials={materials} 
+              vendors={vendors} 
+              onDelete={onDelete} 
+              onReceiptClick={onReceiptClick}
+            />
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

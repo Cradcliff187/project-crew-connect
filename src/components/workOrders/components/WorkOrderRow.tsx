@@ -21,7 +21,7 @@ const WorkOrderRow = ({ workOrder }: WorkOrderRowProps) => {
   return (
     <TableRow 
       key={workOrder.work_order_id} 
-      className="cursor-pointer hover:bg-muted/50"
+      className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors"
       onClick={(e) => {
         // Don't navigate if clicking on the actions menu
         if ((e.target as HTMLElement).closest('.actions-menu')) return;
@@ -33,7 +33,7 @@ const WorkOrderRow = ({ workOrder }: WorkOrderRowProps) => {
           {workOrder.work_order_number ? (
             workOrder.work_order_number
           ) : (
-            <span className="text-muted-foreground italic">No WO #</span>
+            <span className="text-muted-foreground italic">No WO</span>
           )}
         </div>
       </TableCell>
@@ -42,7 +42,7 @@ const WorkOrderRow = ({ workOrder }: WorkOrderRowProps) => {
           {workOrder.po_number ? (
             workOrder.po_number
           ) : (
-            <span className="text-muted-foreground italic">No PO #</span>
+            <span className="text-muted-foreground italic">No PO</span>
           )}
         </div>
       </TableCell>
