@@ -31,6 +31,12 @@ const defaultFormValues: TimeEntryFormValues = {
   employeeId: '',
 };
 
+// Receipt metadata interface
+interface ReceiptMetadata {
+  vendorId?: string;
+  amount?: number;
+}
+
 export function useTimeEntryForm(onSuccess: () => void) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -154,6 +160,26 @@ export function useTimeEntryForm(onSuccess: () => void) {
         employeeRate = empData?.hourly_rate;
       }
       
+      // Get receipt metadata from localStorage if available
+      let receiptMetadata: ReceiptMetadata = {};
+      try {
+        const storedMetadata = localStorage.getItem('timeEntryReceiptMetadata');
+        if (storedMetadata) {
+          receiptMetadata = JSON.parse(storedMetadata);
+          // Clear after reading
+          localStorage.removeItem('timeEntryReceiptMetadata');
+        }
+      } catch (e) {
+        console.error('Error parsing receipt metadata:', e);
+      }
+      
+      console.log('Receipt metadata:', receiptMetadata);
+      
+      // Calculate total amount for tracking
+      const laborCost = confirmationData.hoursWorked * (employeeRate || 75);
+      const receiptAmount = receiptMetadata.amount || 0;
+      const totalCost = laborCost + receiptAmount;
+      
       // Create the main time entry record in time_entries table
       const timeEntry = {
         entity_type: confirmationData.entityType,
@@ -166,6 +192,9 @@ export function useTimeEntryForm(onSuccess: () => void) {
         employee_rate: employeeRate,
         notes: confirmationData.notes,
         has_receipts: hasReceipts && selectedFiles.length > 0,
+        receipt_amount: receiptMetadata.amount || null,
+        vendor_id: receiptMetadata.vendorId || null,
+        total_cost: totalCost,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -226,6 +255,8 @@ export function useTimeEntryForm(onSuccess: () => void) {
               file_type: file.type,
               file_size: file.size,
               storage_path: filePath,
+              amount: receiptMetadata.amount || null,
+              vendor_id: receiptMetadata.vendorId || null,
               uploaded_at: new Date().toISOString()
             });
             
@@ -233,9 +264,91 @@ export function useTimeEntryForm(onSuccess: () => void) {
             console.error('Error recording receipt:', receiptError);
             throw receiptError;
           }
+          
+          // If vendor is selected, also create a document record for better integration with the document system
+          if (receiptMetadata.vendorId) {
+            try {
+              const documentData = {
+                file_name: file.name,
+                file_type: file.type,
+                file_size: file.size,
+                storage_path: filePath,
+                entity_type: confirmationData.entityType.toUpperCase(),
+                entity_id: confirmationData.entityId,
+                tags: ['receipt', 'time-entry'],
+                category: 'receipt',
+                amount: receiptMetadata.amount || null,
+                expense_date: format(confirmationData.workDate, 'yyyy-MM-dd'),
+                version: 1,
+                is_expense: true,
+                notes: `Receipt for time entry on ${format(confirmationData.workDate, 'MMM d, yyyy')}`,
+                vendor_id: receiptMetadata.vendorId,
+              };
+              
+              const { error: docError } = await supabase
+                .from('documents')
+                .insert(documentData);
+                
+              if (docError) {
+                console.error('Error creating document record:', docError);
+                // Continue execution even if this fails
+              }
+            } catch (docError) {
+              console.error('Error in document creation:', docError);
+              // Continue execution even if this fails
+            }
+          }
         }
         
         console.log('Successfully uploaded', selectedFiles.length, 'receipt(s)');
+        
+        // If vendor and amount provided, create a materials or expense record
+        if (receiptMetadata.vendorId && receiptMetadata.amount) {
+          if (confirmationData.entityType === 'work_order') {
+            // Create a material record for the work order
+            try {
+              const { error: materialError } = await supabase
+                .from('work_order_materials')
+                .insert({
+                  work_order_id: confirmationData.entityId,
+                  material_name: 'Receipt Expense',
+                  quantity: 1,
+                  unit_price: receiptMetadata.amount,
+                  total_price: receiptMetadata.amount,
+                  vendor_id: receiptMetadata.vendorId,
+                  notes: `Expense from time entry on ${format(confirmationData.workDate, 'MMM d, yyyy')}`,
+                  purchase_date: format(confirmationData.workDate, 'yyyy-MM-dd'),
+                  has_receipt: true
+                });
+                
+              if (materialError) {
+                console.error('Error creating work order material:', materialError);
+              }
+            } catch (materialError) {
+              console.error('Error in work order material creation:', materialError);
+            }
+          } else if (confirmationData.entityType === 'project') {
+            // Create an expense record for the project
+            try {
+              const { error: expenseError } = await supabase
+                .from('project_expenses')
+                .insert({
+                  project_id: confirmationData.entityId,
+                  description: `Expense from time entry on ${format(confirmationData.workDate, 'MMM d, yyyy')}`,
+                  amount: receiptMetadata.amount,
+                  expense_date: format(confirmationData.workDate, 'yyyy-MM-dd'),
+                  vendor_id: receiptMetadata.vendorId,
+                  has_receipt: true
+                });
+                
+              if (expenseError) {
+                console.error('Error creating project expense:', expenseError);
+              }
+            } catch (expenseError) {
+              console.error('Error in project expense creation:', expenseError);
+            }
+          }
+        }
       }
       
       toast({

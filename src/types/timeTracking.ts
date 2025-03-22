@@ -1,3 +1,4 @@
+
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
@@ -15,6 +16,10 @@ export interface TimeEntry {
   employee_rate?: number;
   cost?: number;
   has_receipts?: boolean;
+  receipt_amount?: number;
+  vendor_id?: string;
+  vendor_name?: string;
+  total_cost?: number;
   location_data?: any;
   created_at: string;
   updated_at: string;
@@ -32,6 +37,8 @@ export interface TimeEntryFormData {
   employee_id?: string;
   receipts?: File[];
   location_data?: any;
+  vendor_id?: string;
+  receipt_amount?: number;
 }
 
 export interface TimeEntryReceipt {
@@ -41,6 +48,8 @@ export interface TimeEntryReceipt {
   file_type?: string;
   file_size?: number;
   storage_path: string;
+  amount?: number;
+  vendor_id?: string;
   uploaded_at: string;
 }
 

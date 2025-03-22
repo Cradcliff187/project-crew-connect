@@ -15,6 +15,12 @@ import {
 } from '@/components/ui/dialog';
 import { FileUpload } from '@/components/ui/file-upload';
 import { TimeEntryFormValues } from '../hooks/useTimeEntryForm';
+import EntitySelector from '@/components/documents/EntitySelector';
+import { FormProvider, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Input } from '@/components/ui/input';
+import { FormField, FormItem, FormLabel } from '@/components/ui/form';
 
 interface WorkOrderOrProject {
   id: string;
@@ -45,6 +51,14 @@ interface ConfirmationDialogProps {
   handleFileClear: (index: number) => void;
 }
 
+// Schema for receipt metadata
+const receiptMetadataSchema = z.object({
+  vendorId: z.string().optional(),
+  amount: z.number().optional(),
+});
+
+type ReceiptMetadata = z.infer<typeof receiptMetadataSchema>;
+
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   open,
   onOpenChange,
@@ -63,6 +77,15 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   handleFileClear
 }) => {
   const [showFileUpload, setShowFileUpload] = useState(false);
+  
+  // Form for receipt metadata
+  const receiptForm = useForm<ReceiptMetadata>({
+    resolver: zodResolver(receiptMetadataSchema),
+    defaultValues: {
+      vendorId: '',
+      amount: undefined,
+    }
+  });
 
   if (!confirmationData) return null;
 
@@ -83,6 +106,28 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
   const toggleFileUpload = () => {
     setShowFileUpload(!showFileUpload);
+  };
+
+  // Get receipt metadata for passing to the parent
+  const getReceiptMetadata = () => {
+    const formData = receiptForm.getValues();
+    return {
+      vendorId: formData.vendorId || undefined,
+      amount: formData.amount || undefined
+    };
+  };
+
+  // Handle the confirmation with receipt metadata
+  const handleConfirm = () => {
+    // Pass the receipt metadata to the parent component
+    if (hasReceipts && selectedFiles.length > 0) {
+      const metadata = getReceiptMetadata();
+      // Store metadata in localStorage temporarily to access in useTimeEntryForm
+      localStorage.setItem('timeEntryReceiptMetadata', JSON.stringify(metadata));
+    } else {
+      localStorage.removeItem('timeEntryReceiptMetadata');
+    }
+    onConfirm();
   };
 
   return (
@@ -185,6 +230,51 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             </div>
           )}
           
+          {/* Receipt Metadata (vendor and amount) - only shown when files are selected */}
+          {hasReceipts && selectedFiles.length > 0 && (
+            <FormProvider {...receiptForm}>
+              <div className="p-3 border rounded-md">
+                <h4 className="text-sm font-medium mb-2">Receipt Details</h4>
+                <div className="space-y-3">
+                  {/* Vendor Selector */}
+                  <EntitySelector
+                    control={receiptForm.control as any}
+                    entityType="VENDOR"
+                    fieldName="vendorId"
+                    label="Vendor"
+                  />
+                  
+                  {/* Amount Input */}
+                  <FormField
+                    control={receiptForm.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Amount</FormLabel>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                          <Input
+                            {...field}
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // Only allow numbers and decimal points
+                              if (/^(\d*\.)?\d*$/.test(value)) {
+                                field.onChange(value === '' ? undefined : parseFloat(value));
+                              }
+                            }}
+                            placeholder="0.00"
+                            className="pl-8"
+                          />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </FormProvider>
+          )}
+          
           {/* Display selected files if any, and not showing the upload component */}
           {selectedFiles.length > 0 && !showFileUpload && (
             <div className="rounded-md bg-muted p-3">
@@ -204,7 +294,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
               Cancel
             </Button>
             <Button 
-              onClick={onConfirm} 
+              onClick={handleConfirm} 
               className="bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isLoading}
             >
