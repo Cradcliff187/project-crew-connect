@@ -1,19 +1,17 @@
 
 import { useState, useEffect } from 'react';
-import { Edit } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Check, ChevronDown } from 'lucide-react';
 import { WorkOrder } from '@/types/workOrder';
-import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
 
 interface StatusOption {
   status_code: string;
@@ -29,6 +27,7 @@ interface WorkOrderStatusControlProps {
 const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusControlProps) => {
   const [loading, setLoading] = useState(false);
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
+  const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
   // Fetch all possible statuses when component mounts
@@ -46,6 +45,11 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       
       if (error) {
         console.error('Error fetching status options:', error);
+        toast({
+          title: 'Error loading statuses',
+          description: 'Could not load available statuses. Please try again.',
+          variant: 'destructive',
+        });
         return;
       }
       
@@ -53,6 +57,11 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       console.log('Available statuses:', data);
     } catch (error) {
       console.error('Error fetching status options:', error);
+      toast({
+        title: 'Error loading statuses',
+        description: 'Could not load available statuses. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -60,10 +69,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === workOrder.status) {
-      toast({
-        title: 'Status unchanged',
-        description: `Work order is already in ${newStatus.replace('_', ' ')} status.`,
-      });
+      setOpen(false);
       return;
     }
     
@@ -79,13 +85,12 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         throw error;
       }
       
-      // Log the activity is now handled by the database trigger automatically
-      
       toast({
         title: 'Status Updated',
-        description: `Work order status changed to ${newStatus.replace('_', ' ').toLowerCase()}.`,
+        description: `Work order status changed to ${getStatusLabel(newStatus).toLowerCase()}.`,
       });
       
+      setOpen(false);
       onStatusChange();
     } catch (error: any) {
       console.error('Error updating status:', error);
@@ -111,69 +116,62 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
     }
   };
 
-  const getStatusActions = (): ActionGroup[] => {
-    return [
-      {
-        items: statusOptions
-          .filter(option => option.status_code !== workOrder.status) // Don't show current status
-          .map((option) => ({
-            label: option.label || option.status_code,
-            icon: <Edit className="w-4 h-4" />,
-            onClick: () => handleStatusChange(option.status_code),
-            disabled: loading
-          }))
-      }
-    ];
+  // Helper function to get a user-friendly status label
+  const getStatusLabel = (statusCode: string): string => {
+    const option = statusOptions.find(opt => opt.status_code === statusCode);
+    if (option?.label) {
+      return option.label;
+    }
+    
+    // Fallback to formatting the status code
+    return statusCode
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
       <div className="flex items-center">
         <span className="mr-2 text-sm font-medium">Status:</span>
-        <StatusBadge status={workOrder.status} />
-      </div>
-      
-      {statusOptions.length > 0 ? (
-        <div className="flex gap-2 mt-2 md:mt-0">
-          {/* Mobile view */}
-          <div className="md:hidden">
-            <ActionMenu 
-              groups={getStatusActions()} 
-              size="sm" 
-              variant="outline"
-              triggerClassName="bg-muted/50 border border-input hover:bg-[#0485ea]/10"
-            />
-          </div>
-          
-          {/* Desktop view */}
-          <div className="hidden md:block">
-            <Select onValueChange={handleStatusChange} disabled={loading}>
-              <SelectTrigger className="w-[180px] border-[#0485ea]/30 hover:border-[#0485ea] focus:ring-[#0485ea]/20 bg-white">
-                <SelectValue placeholder="Change status" />
-              </SelectTrigger>
-              <SelectContent>
+        
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <button 
+              className="flex items-center cursor-pointer gap-1 hover:opacity-80 transition-opacity disabled:opacity-50"
+              disabled={loading || statusOptions.length === 0}
+              aria-label="Change status"
+            >
+              <StatusBadge status={workOrder.status} />
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="p-0 w-[200px]" align="start">
+            <Command>
+              <CommandGroup>
                 {statusOptions
-                  .filter(option => option.status_code !== workOrder.status) // Don't show current status
                   .map((option) => (
-                    <SelectItem key={option.status_code} value={option.status_code}>
+                    <CommandItem
+                      key={option.status_code}
+                      value={option.status_code}
+                      onSelect={() => handleStatusChange(option.status_code)}
+                      className="cursor-pointer"
+                      disabled={loading}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          option.status_code === workOrder.status ? "opacity-100" : "opacity-0"
+                        )}
+                      />
                       {option.label || option.status_code}
-                    </SelectItem>
+                    </CommandItem>
                   ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-0 md:ml-2 mt-2 md:mt-0 text-sm border-[#0485ea]/30 hover:border-[#0485ea] hover:bg-[#0485ea]/10"
-          onClick={fetchStatusOptions}
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "Refresh Status Options"}
-        </Button>
-      )}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   );
 };
