@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Timer, DollarSign } from 'lucide-react';
@@ -77,6 +78,16 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   };
 
   const laborCost = hoursWorked * (selectedEmployeeRate || 75);
+
+  // Prepare prefill data for the receipt upload to avoid redundant selection
+  const prefillData = {
+    entityId: entityId,
+    entityType: entityType.toUpperCase() as EntityType,
+    isExpense: true,
+    expenseAmount: 0,
+    expenseDate: form.watch('workDate'),
+    notes: `Receipt for time entry on ${form.watch('workDate') ? format(form.watch('workDate'), 'MMM d, yyyy') : ''}`
+  };
 
   return (
     <div className="space-y-4">
@@ -270,6 +281,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
             onSuccess={handleReceiptUploadSuccess}
             onCancel={() => setShowReceiptUpload(false)}
             isReceiptUpload={true}
+            prefillData={prefillData}
           />
         </DialogContent>
       </Dialog>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Search, Clock, Filter, Calendar, Download, Eye, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,7 +38,6 @@ const TimeTracking = () => {
     setIsLoading(true);
     
     try {
-      // Query time_entries table directly, which should now have all entries
       let query = supabase
         .from('time_entries')
         .select(`
@@ -51,20 +49,17 @@ const TimeTracking = () => {
           end_time,
           hours_worked,
           employee_id,
-          employee_name,
           employee_rate,
           notes,
           has_receipts,
           receipt_amount,
           vendor_id,
-          vendor_name,
           total_cost,
           created_at,
           updated_at
         `)
         .order('date_worked', { ascending: false });
       
-      // Apply entity type filter if selected
       if (filterType === 'work_orders') {
         query = query.eq('entity_type', 'work_order');
       } else if (filterType === 'projects') {
@@ -77,12 +72,12 @@ const TimeTracking = () => {
       
       console.log('Fetched time entries:', data);
       
-      // Enhance the data with entity names and other details
       const enhancedEntries = await Promise.all((data || []).map(async (entry: any) => {
         let entityName = 'Unknown';
         let entityLocation = '';
+        let employeeName = '';
+        let vendorName = '';
         
-        // Get entity details (work order or project)
         if (entry.entity_type === 'work_order') {
           const { data: workOrder } = await supabase
             .from('maintenance_work_orders')
@@ -120,20 +115,44 @@ const TimeTracking = () => {
           }
         }
         
-        // Calculate cost if there's an employee rate
+        if (entry.employee_id) {
+          const { data: employee } = await supabase
+            .from('employees')
+            .select('first_name, last_name')
+            .eq('employee_id', entry.employee_id)
+            .maybeSingle();
+          
+          if (employee) {
+            employeeName = `${employee.first_name} ${employee.last_name}`;
+          }
+        }
+        
+        if (entry.vendor_id) {
+          const { data: vendor } = await supabase
+            .from('vendors')
+            .select('vendorname')
+            .eq('vendorid', entry.vendor_id)
+            .maybeSingle();
+          
+          if (vendor) {
+            vendorName = vendor.vendorname;
+          }
+        }
+        
         const cost = entry.hours_worked && entry.employee_rate 
           ? entry.hours_worked * entry.employee_rate 
-          : entry.hours_worked * 75; // Default rate if none specified
+          : entry.hours_worked * 75;
         
         return {
           ...entry,
           entity_name: entityName,
           entity_location: entityLocation || undefined,
+          employee_name: employeeName,
+          vendor_name: vendorName,
           cost
         };
       }));
       
-      // Apply search filter if needed
       let filteredEntries = enhancedEntries;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -161,7 +180,6 @@ const TimeTracking = () => {
   
   const handleDeleteEntry = async (id: string) => {
     try {
-      // Get the entry details before deleting
       const { data: entry, error: fetchError } = await supabase
         .from('time_entries')
         .select('*')
@@ -170,7 +188,6 @@ const TimeTracking = () => {
         
       if (fetchError) throw fetchError;
       
-      // Delete the time entry
       const { error } = await supabase
         .from('time_entries')
         .delete()
@@ -178,7 +195,6 @@ const TimeTracking = () => {
         
       if (error) throw error;
       
-      // If the entry was for a work order, also clean up work_order_time_logs
       if (entry.entity_type === 'work_order') {
         const { error: workOrderLogError } = await supabase
           .from('work_order_time_logs')
@@ -193,7 +209,6 @@ const TimeTracking = () => {
         }
       }
       
-      // Delete any associated receipt records
       const { error: receiptDeleteError } = await supabase
         .from('time_entry_receipts')
         .delete()
@@ -224,10 +239,8 @@ const TimeTracking = () => {
     if (entry) {
       if (entry.entity_type === 'work_order') {
         console.log('View work order:', entry.entity_id);
-        // You could add navigation to the work order page here
       } else {
         console.log('View project:', entry.entity_id);
-        // You could add navigation to the project page here
       }
     }
   };
@@ -246,11 +259,10 @@ const TimeTracking = () => {
       if (receipts && receipts.length > 0) {
         console.log('Receipts for time entry:', receipts);
         
-        // Get public URLs for the receipts
         const receiptsWithUrls = await Promise.all(receipts.map(async (receipt) => {
           const { data, error } = await supabase.storage
             .from('construction_documents')
-            .createSignedUrl(receipt.storage_path, 3600); // 1 hour expiration
+            .createSignedUrl(receipt.storage_path, 3600);
             
           return {
             ...receipt,
@@ -281,7 +293,6 @@ const TimeTracking = () => {
     fetchTimeEntries();
   };
 
-  // Get the entry that has receipts being viewed
   const entryWithReceipts = timeEntries.find(entry => entry.id === selectedEntryId);
   
   return (
@@ -371,7 +382,6 @@ const TimeTracking = () => {
           </Tabs>
         </main>
 
-        {/* Receipts Dialog */}
         <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
