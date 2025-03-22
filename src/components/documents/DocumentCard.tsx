@@ -16,19 +16,20 @@ interface DocumentCardProps {
 const DocumentCard: React.FC<DocumentCardProps> = ({ document, onView, onDelete }) => {
   const getDocumentIcon = () => {
     if (document.file_type?.startsWith('image/')) {
-      return <FileImage className="h-10 w-10 text-blue-400" />;
+      return <FileImage className="h-10 w-10 text-sage-500" />;
     }
 
     switch (document.category) {
       case 'invoice':
       case 'receipt':
+        return <FileText className="h-10 w-10 text-earth-500" />;
       case 'estimate':
       case 'contract':
-        return <FileText className="h-10 w-10 text-[#0485ea]" />;
+        return <FileText className="h-10 w-10 text-construction-600" />;
       case 'photo':
-        return <FileImage className="h-10 w-10 text-green-500" />;
+        return <FileImage className="h-10 w-10 text-sage-500" />;
       default:
-        return <File className="h-10 w-10 text-gray-400" />;
+        return <File className="h-10 w-10 text-warmgray-400" />;
     }
   };
 
@@ -83,7 +84,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onView, onDelete 
               </span>
             </div>
             {document.is_expense && document.amount && (
-              <p className="text-xs font-medium text-green-600 mt-1">
+              <p className="text-xs font-medium text-sage-600 mt-1">
                 ${document.amount.toFixed(2)}
               </p>
             )}

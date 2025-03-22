@@ -15,15 +15,15 @@ const WorkOrderStatus: React.FC<WorkOrderStatusProps> = ({
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-sage-100 text-sage-800 border-sage-200';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-construction-100 text-construction-800 border-construction-200';
       case 'on_hold':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-earth-100 text-earth-800 border-earth-200';
       case 'new':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-warmgray-100 text-warmgray-800 border-warmgray-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-secondary text-secondary-foreground border-secondary';
     }
   };
 

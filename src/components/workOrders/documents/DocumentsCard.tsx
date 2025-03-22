@@ -9,14 +9,14 @@ interface DocumentsCardProps {
 
 const DocumentsCard = ({ onUploadClick }: DocumentsCardProps) => {
   return (
-    <Card>
-      <CardHeader>
+    <Card className="shadow-md">
+      <CardHeader className="bg-warmgray-50/50">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-base">Documents</CardTitle>
+          <CardTitle className="text-base font-montserrat">Documents</CardTitle>
           <Button 
             onClick={onUploadClick}
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
             size="sm"
+            variant="earth"
           >
             <Upload className="h-4 w-4 mr-2" />
             Upload Document

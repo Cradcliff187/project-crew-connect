@@ -8,9 +8,9 @@ interface ProgressDisplayProps {
 const ProgressDisplay = ({ progressValue }: ProgressDisplayProps) => {
   // Function to determine progress bar color based on value
   const getProgressColor = (value: number): string => {
-    if (value >= 80) return 'bg-green-500';
-    if (value >= 40) return 'bg-[#0485ea]';
-    return 'bg-amber-500';
+    if (value >= 80) return 'bg-sage-500';
+    if (value >= 40) return 'bg-construction-600';
+    return 'bg-earth-500';
   };
 
   const progressColor = getProgressColor(progressValue);
@@ -23,19 +23,19 @@ const ProgressDisplay = ({ progressValue }: ProgressDisplayProps) => {
       <div className="flex items-center gap-2">
         <Progress 
           value={progressValue} 
-          className="h-4 bg-gray-100" 
+          className="h-4 bg-warmgray-100" 
           indicatorClassName={progressColor}
         />
       </div>
       
       {progressValue === 100 && (
-        <p className="text-xs text-green-600 mt-1">Work order is complete!</p>
+        <p className="text-xs text-sage-600 mt-1">Work order is complete!</p>
       )}
       {progressValue > 0 && progressValue < 100 && (
-        <p className="text-xs text-[#0485ea] mt-1">Work is in progress</p>
+        <p className="text-xs text-construction-600 mt-1">Work is in progress</p>
       )}
       {progressValue === 0 && (
-        <p className="text-xs text-gray-500 mt-1">Work has not started</p>
+        <p className="text-xs text-warmgray-600 mt-1">Work has not started</p>
       )}
     </div>
   );

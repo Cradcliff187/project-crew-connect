@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -81,6 +82,45 @@ export default {
 					800: '#0a5799',
 					900: '#0c487d',
 				},
+				earth: {
+					DEFAULT: '#d2691e', // Terracotta
+					50: '#fdf6f0',
+					100: '#f8e8dc',
+					200: '#f2d1b3',
+					300: '#eab282',
+					400: '#e28a4f',
+					500: '#d2691e',
+					600: '#b85117',
+					700: '#973d15',
+					800: '#7a3116',
+					900: '#652a16',
+				},
+				sage: {
+					DEFAULT: '#87a878',
+					50: '#f3f7f1',
+					100: '#e4ede0',
+					200: '#cddcc6',
+					300: '#b0c7a6',
+					400: '#87a878',
+					500: '#699054',
+					600: '#537343',
+					700: '#415b36',
+					800: '#35482e',
+					900: '#2d3d28',
+				},
+				warmgray: {
+					DEFAULT: '#f5f3f2',
+					50: '#f5f3f2',
+					100: '#e5e1de',
+					200: '#ccc5bf',
+					300: '#b2a79f',
+					400: '#968a7f',
+					500: '#837567',
+					600: '#6f6258',
+					700: '#5a5046',
+					800: '#4a423a',
+					900: '#3d3630',
+				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -130,6 +170,8 @@ export default {
 				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
 				'card': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025)',
 				'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+				'construction': '0 4px 12px -2px rgba(4, 133, 234, 0.15)',
+				'earth': '0 4px 12px -2px rgba(210, 105, 30, 0.15)',
 			},
 			typography: {
 				DEFAULT: {
@@ -139,6 +181,10 @@ export default {
 						lineHeight: '1.75',
 					},
 				},
+			},
+			backgroundImage: {
+				'gradient-card': 'linear-gradient(to bottom right, var(--tw-gradient-stops))',
+				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
 			},
 		}
 	},

@@ -13,14 +13,10 @@ const ReceiptButton = ({ material, onClick }: ReceiptButtonProps) => {
   
   return (
     <Button
-      variant={hasReceipt ? "outline" : "default"}
+      variant={hasReceipt ? "outline" : "earth"}
       size="sm"
       onClick={() => onClick(material)}
-      className={`flex items-center gap-1 ${
-        hasReceipt 
-          ? 'text-[#0485ea] hover:bg-blue-50 border-[#0485ea]/30' 
-          : 'bg-[#0485ea] text-white hover:bg-[#0375d1]'
-      }`}
+      className={hasReceipt ? 'text-earth-600 border-earth-300 hover:bg-earth-50' : ''}
     >
       {hasReceipt ? <Eye className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
       {hasReceipt ? 'View Receipt' : 'Add Receipt'}

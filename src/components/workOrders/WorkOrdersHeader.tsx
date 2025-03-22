@@ -45,7 +45,6 @@ const WorkOrdersHeader = ({
           </Button>
           <Button
             size="sm"
-            className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]"
             onClick={() => setShowAddDialog(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
