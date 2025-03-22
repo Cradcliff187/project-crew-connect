@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, Plus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
 import { useSubcontractorDocuments, SubcontractorDocument } from './hooks/useSubcontractorDocuments';
@@ -81,6 +81,9 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Upload and categorize documents for this subcontractor.
+            </DialogDescription>
           </DialogHeader>
           <EnhancedDocumentUpload 
             entityType={"SUBCONTRACTOR" as EntityType}
@@ -95,7 +98,10 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
         <Dialog open={!!viewDocument} onOpenChange={(open) => !open && setViewDocument(null)}>
           <DialogContent className="sm:max-w-[700px]">
             <DialogHeader>
-              <DialogTitle>{viewDocument?.file_name}</DialogTitle>
+              <DialogTitle>{viewDocument?.file_name || 'Document Viewer'}</DialogTitle>
+              <DialogDescription>
+                {viewDocument?.category ? `Category: ${viewDocument.category}` : 'View document details'}
+              </DialogDescription>
             </DialogHeader>
             <DocumentViewer 
               document={viewDocument}

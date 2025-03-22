@@ -6,7 +6,7 @@ import { EstimateItem } from '../types/estimateTypes';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
 interface EstimateItemsTabProps {
@@ -66,6 +66,9 @@ const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Document to Estimate</DialogTitle>
+            <DialogDescription>
+              Upload and categorize documents for this estimate.
+            </DialogDescription>
           </DialogHeader>
           <EnhancedDocumentUpload
             entityType="ESTIMATE"

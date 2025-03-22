@@ -12,6 +12,7 @@ import { Document } from '@/components/documents/schemas/documentSchema';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { toast } from '@/hooks/use-toast';
 import { useEstimateDetails } from '../hooks/useEstimateDetails';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
@@ -91,28 +92,22 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
       </Card>
 
       {/* Document Upload Modal */}
-      {open && (
-        <div className="fixed inset-0 z-50 overflow-auto bg-black/50">
-          <div className="relative m-auto mt-20 rounded-lg bg-white p-4 w-full max-w-md">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload Document</CardTitle>
-                <CardDescription>
-                  Upload a new document related to this estimate.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <EnhancedDocumentUpload
-                  entityType="ESTIMATE"
-                  entityId={estimateId}
-                  onSuccess={handleUploadSuccess}
-                  onCancel={handleCancel}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="relative m-auto rounded-lg bg-white p-4 w-full max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Upload a new document related to this estimate.
+            </DialogDescription>
+          </DialogHeader>
+          <EnhancedDocumentUpload
+            entityType="ESTIMATE"
+            entityId={estimateId}
+            onSuccess={handleUploadSuccess}
+            onCancel={handleCancel}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

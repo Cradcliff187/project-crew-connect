@@ -37,7 +37,7 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
       // Get documents directly related to the subcontractor
       const { data: subDocs, error: subError } = await supabase
         .from('documents')
-        .select('*')  // Select all fields to ensure we get everything we need
+        .select('*')
         .eq('entity_type', 'SUBCONTRACTOR')
         .eq('entity_id', subcontractorId);
       
@@ -46,34 +46,21 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
         return;
       }
       
-      // Try to fetch documents that have subcontractor_id field
-      const { data: referencedDocs, error: refError } = await supabase
+      // Try to fetch documents that might be linked via vendor_id
+      const { data: vendorDocs, error: vendorError } = await supabase
         .from('documents')
-        .select('*')  // Select all fields to ensure we get everything we need
-        .eq('subcontractor_id', subcontractorId);
-      
-      if (refError) {
-        console.error('Error fetching referenced documents by subcontractor_id:', refError);
+        .select('*')
+        .eq('vendor_id', subcontractorId)
+        .eq('entity_type', 'SUBCONTRACTOR');
         
-        // If the above query fails, try the alternative path with vendor_id
-        const { data: vendorDocs, error: vendorError } = await supabase
-          .from('documents')
-          .select('*')  // Select all fields to ensure we get everything we need
-          .eq('vendor_id', subcontractorId)
-          .eq('entity_type', 'SUBCONTRACTOR');
-          
-        if (vendorError) {
-          console.error('Error fetching documents using vendor_id:', vendorError);
-        } else {
-          // Use vendor documents if available
-          const allDocs = [...(subDocs || []), ...(vendorDocs || [])];
-          processDocuments(allDocs);
-        }
-      } else {
-        // Successfully fetched with subcontractor_id
-        const allDocs = [...(subDocs || []), ...(referencedDocs || [])];
-        processDocuments(allDocs);
-      }
+      if (vendorError) {
+        console.error('Error fetching vendor documents:', vendorError);
+      } 
+      
+      // Combine all documents
+      const allDocs = [...(subDocs || []), ...(vendorDocs || [])];
+      await processDocuments(allDocs);
+      
     } catch (error) {
       console.error('Error processing subcontractor documents:', error);
     } finally {
@@ -111,7 +98,7 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
       })
     );
     
-    setDocuments(enhancedDocuments as SubcontractorDocument[]);
+    setDocuments(enhancedDocuments);
   };
   
   useEffect(() => {

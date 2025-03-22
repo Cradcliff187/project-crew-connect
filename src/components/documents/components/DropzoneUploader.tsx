@@ -25,7 +25,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   watchFiles,
   label = "Upload Files",
   maxFileSize = 10,
-  acceptedFileTypes = "image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
+  acceptedFileTypes = "image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain"
 }) => {
   const [error, setError] = useState<string | null>(null);
   const dropzoneRef = useRef<HTMLDivElement>(null);
@@ -45,22 +45,45 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
     onFileSelect([...watchFiles, ...validationResult.validFiles]);
   }, [maxFileSize, acceptedFileTypes, onFileSelect, watchFiles]);
 
+  // Create a proper accept object for react-dropzone
+  const getAcceptObject = () => {
+    const acceptMap: Record<string, string[]> = {};
+    
+    acceptedFileTypes.split(',').forEach(type => {
+      // Handle mapping from extension to MIME type
+      if (type.startsWith('.')) {
+        switch (type) {
+          case '.doc':
+            acceptMap['application/msword'] = [];
+            break;
+          case '.docx':
+            acceptMap['application/vnd.openxmlformats-officedocument.wordprocessingml.document'] = [];
+            break;
+          case '.xls':
+            acceptMap['application/vnd.ms-excel'] = [];
+            break;
+          case '.xlsx':
+            acceptMap['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'] = [];
+            break;
+          case '.txt':
+            acceptMap['text/plain'] = [];
+            break;
+          default:
+            // For other extensions, store them as they are
+            acceptMap[type] = [];
+        }
+      } else {
+        // For MIME types, store them directly
+        acceptMap[type] = [];
+      }
+    });
+    
+    return acceptMap;
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: acceptedFileTypes.split(',').reduce((acc, type) => {
-      // Convert to object format required by react-dropzone
-      if (type.includes('*')) {
-        // Handle wildcard MIME types like image/* -> { 'image/*': [] }
-        acc[type] = [];
-      } else if (type.startsWith('.')) {
-        // Handle file extensions like .pdf -> { '.pdf': [] }
-        acc[type] = [];
-      } else {
-        // Handle specific MIME types like application/pdf -> { 'application/pdf': [] }
-        acc[type] = [];
-      }
-      return acc;
-    }, {} as Record<string, string[]>),
+    accept: getAcceptObject(),
     maxSize: maxFileSize * 1024 * 1024,
     multiple: true
   });
@@ -69,6 +92,18 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
     const newFiles = [...watchFiles];
     newFiles.splice(index, 1);
     onFileSelect(newFiles);
+  };
+
+  const getFileTypeDisplay = () => {
+    // Convert technical MIME types to human-readable format
+    return acceptedFileTypes
+      .replace(/image\/\*/g, 'Images')
+      .replace(/application\/pdf/g, 'PDF')
+      .replace(/application\/msword/g, 'Word (.doc)')
+      .replace(/application\/vnd.openxmlformats-officedocument.wordprocessingml.document/g, 'Word (.docx)')
+      .replace(/application\/vnd.ms-excel/g, 'Excel (.xls)')
+      .replace(/application\/vnd.openxmlformats-officedocument.spreadsheetml.sheet/g, 'Excel (.xlsx)')
+      .replace(/text\/plain/g, 'Text (.txt)');
   };
 
   return (
@@ -91,7 +126,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
               <Dropzone
                 isDragging={isDragActive}
                 dropzoneText={isDragActive ? "Drop the files here" : "Drag & drop files here, or click to select"}
-                acceptedFileTypes={acceptedFileTypes.replace(/\*/g, 'all ')}
+                acceptedFileTypes={getFileTypeDisplay()}
                 maxFileSize={maxFileSize}
                 onClick={() => {}}
               />
