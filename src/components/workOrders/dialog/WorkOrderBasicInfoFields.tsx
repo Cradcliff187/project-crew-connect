@@ -55,24 +55,6 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
         />
       </div>
       
-      <FormField
-        control={form.control}
-        name="description"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="font-medium">Description</FormLabel>
-            <FormControl>
-              <Textarea 
-                {...field}
-                placeholder="Enter work order description" 
-                rows={3}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
@@ -119,6 +101,24 @@ const WorkOrderBasicInfoFields = ({ form }: WorkOrderBasicInfoFieldsProps) => {
           )}
         />
       </div>
+      
+      <FormField
+        control={form.control}
+        name="description"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="font-medium">Description</FormLabel>
+            <FormControl>
+              <Textarea 
+                {...field}
+                placeholder="Enter work order description" 
+                rows={3}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };
