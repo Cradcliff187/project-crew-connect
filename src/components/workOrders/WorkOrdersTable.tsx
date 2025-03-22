@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -14,13 +14,14 @@ import {
 } from "@/components/ui/table"
 import { WorkOrder } from '@/types/workOrder';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Circle, AlertCircle, Calendar, Clock, DollarSign, Hash, ChevronRight, Eye, Edit } from 'lucide-react';
+import { CheckCircle, Circle, AlertCircle, Calendar, Clock, DollarSign, Hash, ChevronRight, Eye, Edit, MoreVertical } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusType } from '@/types/common';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 type WorkOrderStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'ALL';
 
@@ -34,6 +35,7 @@ interface WorkOrdersTableProps {
 
 const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChange }: WorkOrdersTableProps) => {
   const [statusFilter, setStatusFilter] = useState<WorkOrderStatus>('ALL');
+  const navigate = useNavigate();
   
   const filteredWorkOrders = workOrders.filter(workOrder => {
     const searchRegex = new RegExp(searchQuery, 'i');
@@ -43,6 +45,10 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
     
     return matchesSearch && matchesStatus;
   });
+
+  const handleRowClick = (workOrderId: string) => {
+    navigate(`/work-orders/${workOrderId}`);
+  };
 
   if (loading) {
     return (
@@ -141,7 +147,15 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
               </TableRow>
             ) : (
               filteredWorkOrders.map((workOrder) => (
-                <TableRow key={workOrder.work_order_id}>
+                <TableRow 
+                  key={workOrder.work_order_id} 
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={(e) => {
+                    // Don't navigate if clicking on the actions menu
+                    if ((e.target as HTMLElement).closest('.actions-menu')) return;
+                    handleRowClick(workOrder.work_order_id);
+                  }}
+                >
                   <TableCell>
                     <div className="font-medium text-[#0485ea]">{workOrder.title}</div>
                     {workOrder.work_order_number && (
@@ -209,13 +223,29 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Link to={`/work-orders/${workOrder.work_order_id}`}>
-                        <Button size="sm" variant="outline" className="h-8 px-2">
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only md:not-sr-only md:ml-2">View</span>
-                        </Button>
-                      </Link>
+                    <div className="flex justify-end space-x-2 actions-menu" onClick={(e) => e.stopPropagation()}>
+                      <ActionMenu 
+                        groups={[
+                          {
+                            items: [
+                              {
+                                label: "View Details",
+                                icon: <Eye className="h-4 w-4" />,
+                                onClick: () => navigate(`/work-orders/${workOrder.work_order_id}`)
+                              },
+                              {
+                                label: "Edit Work Order",
+                                icon: <Edit className="h-4 w-4" />,
+                                onClick: () => {
+                                  // Implementation for editing would go here
+                                  console.log(`Edit work order ${workOrder.work_order_id}`);
+                                }
+                              }
+                            ]
+                          }
+                        ]}
+                        size="sm"
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
