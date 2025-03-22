@@ -131,47 +131,43 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-      <div className="flex items-center">
-        <span className="mr-2 text-sm font-medium">Status:</span>
-        
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <button 
-              className="flex items-center cursor-pointer gap-1 hover:opacity-80 transition-opacity disabled:opacity-50"
-              disabled={loading || statusOptions.length === 0}
-              aria-label="Change status"
-            >
-              <StatusBadge status={workOrder.status} />
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="p-0 w-[200px]" align="start">
-            <Command>
-              <CommandGroup>
-                {statusOptions
-                  .map((option) => (
-                    <CommandItem
-                      key={option.status_code}
-                      value={option.status_code}
-                      onSelect={() => handleStatusChange(option.status_code)}
-                      className="cursor-pointer"
-                      disabled={loading}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          option.status_code === workOrder.status ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {option.label || option.status_code}
-                    </CommandItem>
-                  ))}
-              </CommandGroup>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
+    <div className="flex items-center">
+      <span className="mr-2 text-sm font-medium">Status:</span>
+      
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button 
+            className="flex items-center cursor-pointer gap-1 hover:opacity-80 transition-opacity disabled:opacity-50"
+            disabled={loading || statusOptions.length === 0}
+            aria-label="Change status"
+          >
+            <StatusBadge status={workOrder.status} />
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-[200px]" align="start">
+          <Command>
+            <CommandGroup>
+              {statusOptions.map((option) => (
+                <CommandItem
+                  key={option.status_code}
+                  value={option.status_code}
+                  onSelect={() => handleStatusChange(option.status_code)}
+                  className="cursor-pointer flex items-center"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      option.status_code === workOrder.status ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label || option.status_code}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
