@@ -75,7 +75,7 @@ const WorkOrderInfoCard = ({ workOrder }: WorkOrderInfoCardProps) => {
             <div>
               <p className="font-medium">Costs</p>
               <p className="text-sm text-muted-foreground">
-                {workOrder.materials_cost ? `Materials: ${formatCurrency(workOrder.materials_cost)}` : 'No materials'} 
+                {workOrder.expenses_cost ? `Expenses: ${formatCurrency(workOrder.expenses_cost)}` : 'No expenses'} 
                 {workOrder.total_cost ? ` • Total: ${formatCurrency(workOrder.total_cost)}` : ''}
               </p>
             </div>

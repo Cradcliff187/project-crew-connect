@@ -49,7 +49,7 @@ export const useDocumentUploadForm = ({
         isExpense: isReceiptUpload ? true : false,
         vendorId: '',
         vendorType: 'vendor',
-        costType: 'materials', // Default to materials for receipt uploads
+        expenseType: 'materials', // Default to materials for receipt uploads
       }
     }
   });
@@ -81,7 +81,7 @@ export const useDocumentUploadForm = ({
       toast({
         title: isReceiptUpload ? "Receipt uploaded successfully" : "Document uploaded successfully",
         description: isReceiptUpload 
-          ? "Your receipt has been attached to this material." 
+          ? "Your receipt has been attached to this expense." 
           : "Your document has been uploaded and indexed."
       });
       
@@ -111,7 +111,7 @@ export const useDocumentUploadForm = ({
     if (isReceiptUpload) {
       form.setValue('metadata.category', 'receipt');
       form.setValue('metadata.isExpense', true);
-      form.setValue('metadata.costType', 'materials'); // Default value
+      form.setValue('metadata.expenseType', 'materials'); // Default value
       setShowVendorSelector(true);
     }
     
@@ -146,6 +146,6 @@ export const useDocumentUploadForm = ({
     watchVendorType: form.watch('metadata.vendorType'),
     watchFiles: form.watch('files'),
     watchCategory: form.watch('metadata.category'),
-    watchCostType: form.watch('metadata.costType')
+    watchExpenseType: form.watch('metadata.expenseType')
   };
 };

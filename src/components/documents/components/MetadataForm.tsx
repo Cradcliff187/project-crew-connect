@@ -20,7 +20,7 @@ interface MetadataFormProps {
   prefillData?: {
     amount?: number;
     vendorId?: string;
-    expenseName?: string;
+    materialName?: string;
   };
 }
 
@@ -115,8 +115,8 @@ const MetadataForm = ({
 
       {/* Show vendor selector if needed */}
       {(showVendorSelector || (watchIsExpense && !simplifiedForm)) && (
-        <VendorSelector
-          control={control}
+        <VendorSelector 
+          control={control} 
           defaultVendorId={prefillData?.vendorId}
         />
       )}

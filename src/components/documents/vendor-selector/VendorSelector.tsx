@@ -11,10 +11,10 @@ import AddNewVendorSheet from './components/AddNewVendorSheet';
 
 interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
-  watchVendorType: string;
+  defaultVendorId?: string;
 }
 
-const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorType }) => {
+const VendorSelector: React.FC<VendorSelectorProps> = ({ control, defaultVendorId }) => {
   const [showAddNew, setShowAddNew] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('vendor');
   
@@ -37,6 +37,13 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, watchVendorTyp
     setActiveTab(vendorType);
     setShowAddNew(true);
   };
+
+  // If there's a default vendor ID and we have vendor options
+  React.useEffect(() => {
+    if (defaultVendorId && control) {
+      control.setValue('metadata.vendorId', defaultVendorId);
+    }
+  }, [defaultVendorId, vendorOptions, control]);
 
   return (
     <div className="space-y-4">
