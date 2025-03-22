@@ -46,49 +46,67 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
         return;
       }
       
-      // Also get documents where this subcontractor is referenced
+      // Check if the documents table has subcontractor_id column
       const { data: referencedDocs, error: refError } = await supabase
         .from('documents')
         .select('document_id, file_name, category, created_at, file_type, storage_path')
         .eq('subcontractor_id', subcontractorId);
       
       if (refError) {
-        console.error('Error fetching referenced documents:', refError);
-        return;
-      }
-      
-      // Combine all documents
-      const allDocs = [...(subDocs || []), ...(referencedDocs || [])];
-      
-      // Remove duplicates based on document_id
-      const uniqueDocs = Array.from(
-        new Map(allDocs.map(doc => [doc.document_id, doc])).values()
-      );
-      
-      // Get public URLs for documents
-      const enhancedDocuments = await Promise.all(
-        uniqueDocs.map(async (doc) => {
-          let url = '';
-          if (doc.storage_path) {
-            const { data } = supabase.storage
-              .from('construction_documents')
-              .getPublicUrl(doc.storage_path);
-            url = data.publicUrl;
-          }
+        console.error('Error fetching referenced documents by subcontractor_id:', refError);
+        
+        // If the above query fails, try the alternative path with vendor_id (treating subcontractor as a vendor)
+        const { data: vendorDocs, error: vendorError } = await supabase
+          .from('documents')
+          .select('document_id, file_name, category, created_at, file_type, storage_path')
+          .eq('vendor_id', subcontractorId);
           
-          return {
-            ...doc,
-            url
-          };
-        })
-      );
-      
-      setDocuments(enhancedDocuments);
+        if (vendorError) {
+          console.error('Error fetching documents using vendor_id:', vendorError);
+          return;
+        }
+        
+        // Use vendor documents if available
+        const allDocs = [...(subDocs || []), ...(vendorDocs || [])];
+        processDocuments(allDocs);
+      } else {
+        // Successfully fetched with subcontractor_id
+        const allDocs = [...(subDocs || []), ...(referencedDocs || [])];
+        processDocuments(allDocs);
+      }
     } catch (error) {
       console.error('Error processing subcontractor documents:', error);
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Helper function to process document data
+  const processDocuments = async (docs: any[]) => {
+    // Remove duplicates based on document_id
+    const uniqueDocs = Array.from(
+      new Map(docs.map(doc => [doc.document_id, doc])).values()
+    );
+    
+    // Get public URLs for documents
+    const enhancedDocuments = await Promise.all(
+      uniqueDocs.map(async (doc) => {
+        let url = '';
+        if (doc.storage_path) {
+          const { data } = supabase.storage
+            .from('construction_documents')
+            .getPublicUrl(doc.storage_path);
+          url = data.publicUrl;
+        }
+        
+        return {
+          ...doc,
+          url
+        };
+      })
+    );
+    
+    setDocuments(enhancedDocuments);
   };
   
   useEffect(() => {
