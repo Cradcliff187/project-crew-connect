@@ -1,83 +1,61 @@
 
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import EstimateItems from '../EstimateItems';
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { formatCurrency } from "@/lib/utils";
 import { EstimateItem } from '../types/estimateTypes';
-import { Document } from '@/components/documents/schemas/documentSchema';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
-interface EstimateItemsTabProps {
+type EstimateItemsTabProps = {
   items: EstimateItem[];
-  itemDocuments?: Record<string, Document[]>;
-  estimateId: string;
-  onDocumentsUpdated?: () => void;
-}
+};
 
-const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ 
-  items, 
-  itemDocuments = {},
-  estimateId,
-  onDocumentsUpdated
-}) => {
-  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
-
-  const handleDocumentUploadSuccess = () => {
-    setShowDocumentUpload(false);
-    if (onDocumentsUpdated) {
-      onDocumentsUpdated();
-    }
-  };
-  
-  // Add a no-op onChange handler since this is primarily a display component
-  const handleItemsChange = (newItems: EstimateItem[]) => {
-    console.log("Items would change to:", newItems);
-    // This is intentionally empty as we're just displaying items
+const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items }) => {
+  const calculateTotal = () => {
+    return items.reduce((sum, item) => sum + Number(item.total_price), 0);
   };
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Line Items</CardTitle>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => setShowDocumentUpload(true)}
-          className="text-[#0485ea] border-[#0485ea] hover:bg-[#0485ea]/10"
-        >
-          <PlusCircle className="h-4 w-4 mr-1" />
-          Add Document
-        </Button>
+      <CardHeader>
+        <CardTitle>Estimate Line Items</CardTitle>
+        <CardDescription>Detailed breakdown of estimate costs</CardDescription>
       </CardHeader>
       <CardContent>
-        <EstimateItems 
-          items={items} 
-          itemDocuments={itemDocuments} 
-          estimateId={estimateId}
-          onDocumentAdded={onDocumentsUpdated}
-          onChange={handleItemsChange} // Add the required onChange prop
-        />
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50%]">Description</TableHead>
+              <TableHead>Quantity</TableHead>
+              <TableHead>Unit Price</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.length > 0 ? (
+              <>
+                {items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.description}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{formatCurrency(item.unit_price)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(item.total_price)}</TableCell>
+                  </TableRow>
+                ))}
+                <TableRow>
+                  <TableCell colSpan={3} className="text-right font-bold">Total</TableCell>
+                  <TableCell className="text-right font-bold">{formatCurrency(calculateTotal())}</TableCell>
+                </TableRow>
+              </>
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                  No line items found for this estimate.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
-
-      {/* General Document Upload Dialog */}
-      <Dialog open={showDocumentUpload} onOpenChange={setShowDocumentUpload}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Document to Estimate</DialogTitle>
-            <DialogDescription>
-              Upload and categorize documents for this estimate.
-            </DialogDescription>
-          </DialogHeader>
-          <EnhancedDocumentUpload
-            entityType="ESTIMATE"
-            entityId={estimateId}
-            onSuccess={handleDocumentUploadSuccess}
-            onCancel={() => setShowDocumentUpload(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 };

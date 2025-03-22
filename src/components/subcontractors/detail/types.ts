@@ -1,29 +1,11 @@
 
-import { SubcontractorDocument } from './hooks/useSubcontractorDocuments';
-
-// Re-export the document type
-export type { SubcontractorDocument };
-
-export interface Subcontractor {
-  subid: string;
-  subname: string;
-  contactemail: string | null;
-  phone: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  status: string | null;
-  specialty_ids: string[]; 
+export interface SubcontractorDocument {
+  document_id: string;
+  file_name: string;
+  category: string | null;
   created_at: string;
-  payment_terms: string | null;
-  notes: string | null;
-  insurance_expiration?: string | null;
-  insurance_provider?: string | null;
-  insurance_policy_number?: string | null;
-  tax_id?: string | null;
-  hourly_rate?: number | null;
-  contract_on_file?: boolean;
-  contract_expiration?: string | null;
-  preferred?: boolean;
+  file_type: string | null;
+  storage_path?: string;
+  url?: string;
+  is_receipt?: boolean;
 }

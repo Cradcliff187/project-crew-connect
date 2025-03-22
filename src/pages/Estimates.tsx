@@ -14,10 +14,8 @@ const Estimates = () => {
   const { estimates, loading, fetchEstimates } = useEstimates();
   const { 
     estimateItems, 
-    estimateRevisions,
-    itemDocuments,
+    estimateRevisions, 
     fetchEstimateDetails,
-    fetchItemDocuments,
     setEstimateItems,
     setEstimateRevisions
   } = useEstimateDetails();
@@ -32,12 +30,6 @@ const Estimates = () => {
     setEstimateItems([]);
     setEstimateRevisions([]);
     fetchEstimates(); // Refresh the list when the dialog is closed
-  };
-
-  const handleDocumentsUpdated = () => {
-    if (selectedEstimate) {
-      fetchItemDocuments(selectedEstimate.id);
-    }
   };
   
   const formatDate = (dateString: string) => {
@@ -72,10 +64,8 @@ const Estimates = () => {
           estimate={selectedEstimate}
           items={estimateItems}
           revisions={estimateRevisions}
-          itemDocuments={itemDocuments}
           open={!!selectedEstimate}
           onClose={closeEstimateDetails}
-          onDocumentsUpdated={handleDocumentsUpdated}
         />
       )}
     </PageTransition>

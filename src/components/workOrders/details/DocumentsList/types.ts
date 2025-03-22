@@ -1,4 +1,11 @@
 
-import { DocumentBase } from '@/components/documents/types/documentTypes';
-
-export type WorkOrderDocument = DocumentBase;
+export interface WorkOrderDocument {
+  document_id: string;
+  file_name: string;
+  category: string | null;
+  created_at: string;
+  file_type: string | null;
+  storage_path?: string;
+  url?: string;
+  is_receipt?: boolean;
+}

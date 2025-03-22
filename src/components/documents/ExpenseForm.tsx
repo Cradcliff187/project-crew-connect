@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Control } from 'react-hook-form';
 import { Calendar } from '@/components/ui/calendar';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -12,17 +12,9 @@ import { DocumentUploadFormValues } from './schemas/documentSchema';
 
 interface ExpenseFormProps {
   control: Control<DocumentUploadFormValues>;
-  prefillAmount?: number;
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, prefillAmount }) => {
-  // Set prefill amount if provided
-  useEffect(() => {
-    if (prefillAmount !== undefined) {
-      // This effect intentionally left empty as the prefill is handled by the parent
-    }
-  }, [prefillAmount]);
-
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ control }) => {
   return (
     <div className="space-y-4 border rounded-md p-4 bg-gray-50">
       <h3 className="text-sm font-medium">Expense Details</h3>

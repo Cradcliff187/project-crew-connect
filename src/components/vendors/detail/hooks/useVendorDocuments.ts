@@ -28,7 +28,8 @@ export const useVendorDocuments = (vendorId: string) => {
       const { data: referencedDocs, error: refError } = await supabase
         .from('documents')
         .select('document_id, file_name, category, created_at, file_type, storage_path')
-        .eq('vendor_id', vendorId);
+        .eq('vendor_id', vendorId)
+        .eq('vendor_type', 'vendor');
       
       if (refError) {
         console.error('Error fetching referenced documents:', refError);

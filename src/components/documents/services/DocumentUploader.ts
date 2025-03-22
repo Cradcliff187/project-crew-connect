@@ -66,9 +66,8 @@ export const uploadDocument = async (
         version: metadata.version || 1,
         is_expense: metadata.isExpense || false,
         notes: metadata.notes || null,
-        // Use separate ID fields for vendor and subcontractor
         vendor_id: metadata.vendorId || null,
-        subcontractor_id: metadata.subcontractorId || null,
+        vendor_type: metadata.vendorType || null,
       };
       
       console.log('Inserting document metadata:', documentData);

@@ -18,7 +18,6 @@ import PageHeader from '@/components/layout/PageHeader';
 
 import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
-import { DocumentFilterFormValues } from '@/components/documents/types/documentTypes';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -56,33 +55,6 @@ const DocumentsPage: React.FC = () => {
     handleUploadSuccess
   } = useDocumentActions(fetchDocuments);
 
-  // Convert document filter state to form values
-  const handleFilterChangeAdapter = (formFilters: DocumentFilterFormValues) => {
-    // Map from form values to document filter state
-    handleFilterChange({
-      search: formFilters.searchTerm || '',
-      category: formFilters.category as any, // Type assertion
-      isExpense: formFilters.isExpense,
-      dateRange: formFilters.dateFrom || formFilters.dateTo ? {
-        from: formFilters.dateFrom ? new Date(formFilters.dateFrom) : undefined,
-        to: formFilters.dateTo ? new Date(formFilters.dateTo) : undefined
-      } : undefined,
-      entityType: undefined, // Not in the form
-      sortBy: 'newest'  // Default
-    });
-  };
-
-  // Convert from filter state to form values for initialFilters
-  const getInitialFilters = (): DocumentFilterFormValues => {
-    return {
-      searchTerm: filters.search,
-      category: filters.category as string, // Type assertion
-      isExpense: filters.isExpense,
-      dateFrom: filters.dateRange?.from?.toISOString().substring(0, 10),
-      dateTo: filters.dateRange?.to?.toISOString().substring(0, 10)
-    };
-  };
-
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
@@ -105,8 +77,10 @@ const DocumentsPage: React.FC = () => {
         
         {/* Unified Filter Area */}
         <DocumentFilters
-          onFilterChange={handleFilterChangeAdapter}
-          initialFilters={getInitialFilters()}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilters}
+          activeFiltersCount={activeFiltersCount}
         />
 
         {/* Documents Content Area */}

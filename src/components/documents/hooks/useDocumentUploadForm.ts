@@ -1,15 +1,14 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
-import { 
-  documentUploadSchema, 
-  DocumentUploadFormValues, 
-  EntityType,
-  PrefillData
-} from '../schemas/documentSchema';
 import { uploadDocument } from '../services/DocumentUploader';
+import { 
+  DocumentUploadFormValues, 
+  documentUploadSchema, 
+  EntityType 
+} from '../schemas/documentSchema';
 
 interface UseDocumentUploadFormProps {
   entityType: EntityType;
@@ -17,7 +16,11 @@ interface UseDocumentUploadFormProps {
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
   isReceiptUpload?: boolean;
-  prefillData?: PrefillData;
+  prefillData?: {
+    amount?: number;
+    vendorId?: string;
+    materialName?: string;
+  };
 }
 
 export const useDocumentUploadForm = ({
@@ -31,9 +34,8 @@ export const useDocumentUploadForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
-  const [showSubcontractorSelector, setShowSubcontractorSelector] = useState(false);
-  
-  // Initialize the form with react-hook-form and zod validation
+
+  // Initialize form with default values
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
@@ -41,149 +43,106 @@ export const useDocumentUploadForm = ({
       metadata: {
         category: isReceiptUpload ? 'receipt' : 'other',
         entityType: entityType,
-        entityId: entityId,
-        isExpense: isReceiptUpload || false,
-        tags: [],
+        entityId: entityId || '',
         version: 1,
-        // Initialize with prefill data if available
-        amount: prefillData?.amount,
-        vendorId: prefillData?.vendorId,
-        subcontractorId: prefillData?.subcontractorId,
+        tags: [],
+        isExpense: isReceiptUpload ? true : false,
+        vendorId: '',
+        vendorType: 'vendor'
       }
     }
   });
-  
-  // Get form values to watch
-  const watchIsExpense = form.watch('metadata.isExpense');
-  const watchCategory = form.watch('metadata.category');
-  const watchFiles = form.watch('files') || [];
-  
-  // Initialize form based on prefill data and receipt mode
-  const initializeForm = () => {
-    console.log('Initializing document upload form with:', { 
-      entityType, 
-      entityId, 
-      isReceiptUpload, 
-      prefillData 
-    });
-    
-    form.reset({
-      files: [],
-      metadata: {
-        category: isReceiptUpload ? 'receipt' : 'other',
-        entityType: entityType,
-        entityId: entityId,
-        isExpense: isReceiptUpload || false,
-        tags: [],
-        version: 1,
-        amount: prefillData?.amount,
-        vendorId: prefillData?.vendorId,
-        subcontractorId: prefillData?.subcontractorId,
-      }
-    });
-    
-    // If this is a receipt upload, automatically show vendor selector
-    if (isReceiptUpload) {
-      if (prefillData?.vendorId) {
-        setShowVendorSelector(true);
-        setShowSubcontractorSelector(false);
-      } else if (prefillData?.subcontractorId) {
-        setShowVendorSelector(false);
-        setShowSubcontractorSelector(true);
-      } else {
-        // Default to vendor for receipt uploads
-        setShowVendorSelector(true);
-      }
-    }
-  };
-  
-  // Handle file selection
+
+  // Handle file selection and preview
   const handleFileSelect = (files: File[]) => {
-    if (!files.length) return;
+    form.setValue('files', files);
     
-    form.setValue('files', files, { shouldValidate: true });
-    
-    // Generate preview URL for the first file
-    if (files[0] && files[0].type.startsWith('image/')) {
-      const url = URL.createObjectURL(files[0]);
-      setPreviewURL(url);
+    // Create preview URL for the first image if it's an image
+    if (files.length > 0 && files[0].type.startsWith('image/')) {
+      const previewUrl = URL.createObjectURL(files[0]);
+      setPreviewURL(previewUrl);
     } else {
       setPreviewURL(null);
     }
-    
-    // If it's a receipt, automatically set isExpense to true
-    if (files[0] && /receipt|invoice/i.test(files[0].name)) {
-      form.setValue('metadata.isExpense', true);
-      form.setValue('metadata.category', 'receipt');
-      setShowVendorSelector(true);
-    }
   };
-  
+
   // Handle form submission
   const onSubmit = async (data: DocumentUploadFormValues) => {
-    console.log('Submitting document upload form with data:', data);
-    setIsUploading(true);
-    
     try {
+      setIsUploading(true);
+      
       const result = await uploadDocument(data);
       
       if (!result.success) {
-        throw new Error('Failed to upload document');
+        throw result.error || new Error('Upload failed');
       }
-      
-      console.log('Document uploaded successfully with ID:', result.documentId);
       
       toast({
-        title: "Document uploaded",
-        description: "Your document has been uploaded successfully.",
+        title: isReceiptUpload ? "Receipt uploaded successfully" : "Document uploaded successfully",
+        description: isReceiptUpload 
+          ? "Your receipt has been attached to this material." 
+          : "Your document has been uploaded and indexed."
       });
       
-      // Clear the preview URL
-      if (previewURL) {
-        URL.revokeObjectURL(previewURL);
-        setPreviewURL(null);
-      }
-      
-      // Call the onSuccess callback with the document ID
       if (onSuccess) {
+        console.log('Calling onSuccess with document ID:', result.documentId);
         onSuccess(result.documentId);
       }
       
-    } catch (error: any) {
-      console.error('Error uploading document:', error);
+      // Reset form
+      form.reset();
+      setPreviewURL(null);
       
+    } catch (error: any) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload failed",
-        description: error.message || "There was a problem uploading your document.",
-        variant: "destructive",
+        description: error.message || "There was an error uploading your document.",
+        variant: "destructive"
       });
     } finally {
       setIsUploading(false);
     }
   };
-  
-  // Clean up preview URL on unmount
-  useEffect(() => {
-    return () => {
-      if (previewURL) {
-        URL.revokeObjectURL(previewURL);
+
+  // Set up receipts category and expense type
+  const initializeForm = () => {
+    if (isReceiptUpload) {
+      form.setValue('metadata.category', 'receipt');
+      form.setValue('metadata.isExpense', true);
+      setShowVendorSelector(true);
+    }
+    
+    // If prefill data is provided, use it
+    if (prefillData) {
+      if (prefillData.amount) {
+        form.setValue('metadata.amount', prefillData.amount);
       }
-    };
-  }, [previewURL]);
-  
+      
+      if (prefillData.vendorId) {
+        form.setValue('metadata.vendorId', prefillData.vendorId);
+      }
+      
+      if (prefillData.materialName) {
+        // Add material name as a tag and in notes
+        form.setValue('metadata.tags', [prefillData.materialName]);
+        form.setValue('metadata.notes', `Receipt for: ${prefillData.materialName}`);
+      }
+    }
+  };
+
   return {
     form,
     isUploading,
     previewURL,
     showVendorSelector,
-    showSubcontractorSelector,
     setShowVendorSelector,
-    setShowSubcontractorSelector,
     handleFileSelect,
     onSubmit,
     initializeForm,
-    watchIsExpense,
-    watchCategory,
-    watchFiles
+    watchIsExpense: form.watch('metadata.isExpense'),
+    watchVendorType: form.watch('metadata.vendorType'),
+    watchFiles: form.watch('files'),
+    watchCategory: form.watch('metadata.category')
   };
 };

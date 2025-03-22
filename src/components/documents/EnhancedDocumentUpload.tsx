@@ -5,7 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
-import { EntityType, PrefillData } from './schemas/documentSchema';
+import { EntityType } from './schemas/documentSchema';
 
 // Import refactored components
 import DropzoneUploader from './components/DropzoneUploader';
@@ -19,7 +19,11 @@ interface EnhancedDocumentUploadProps {
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
   isReceiptUpload?: boolean;
-  prefillData?: PrefillData;
+  prefillData?: {
+    amount?: number;
+    vendorId?: string;
+    materialName?: string;
+  };
 }
 
 const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
@@ -47,15 +51,14 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     isUploading,
     previewURL,
     showVendorSelector,
-    showSubcontractorSelector,
     setShowVendorSelector,
-    setShowSubcontractorSelector,
     handleFileSelect,
     onSubmit,
     initializeForm,
     watchIsExpense,
-    watchCategory,
-    watchFiles
+    watchVendorType,
+    watchFiles,
+    watchCategory
   } = useDocumentUploadForm({
     entityType,
     entityId,
@@ -73,16 +76,9 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // Auto-show vendor selector when receipt category is selected
   useEffect(() => {
     if (watchCategory === 'receipt' || watchCategory === 'invoice') {
-      // Determine which selector to show based on the context
-      if (entityType === 'SUBCONTRACTOR' || prefillData?.subcontractorId) {
-        setShowSubcontractorSelector(true);
-        setShowVendorSelector(false);
-      } else {
-        setShowVendorSelector(true);
-        setShowSubcontractorSelector(false);
-      }
+      setShowVendorSelector(true);
     }
-  }, [watchCategory, entityType, prefillData]);
+  }, [watchCategory]);
 
   // Handle capture from mobile device
   const handleMobileCapture = (file: File) => {
@@ -131,10 +127,9 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
             <MetadataForm
               control={form.control}
               watchIsExpense={watchIsExpense}
-              watchCategory={watchCategory}
+              watchVendorType={watchVendorType}
               isReceiptUpload={isReceiptUpload}
               showVendorSelector={showVendorSelector}
-              showSubcontractorSelector={showSubcontractorSelector}
               prefillData={prefillData}
             />
           </CardContent>

@@ -1,52 +1,48 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/utils";
 import { EstimateRevision } from '../types/estimateTypes';
 
-export interface EstimateRevisionsTabProps {
+type EstimateRevisionsTabProps = {
   revisions: EstimateRevision[];
   formatDate: (dateString: string) => string;
-}
+};
 
 const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, formatDate }) => {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Revision History</CardTitle>
+        <CardDescription>Track changes to this estimate over time</CardDescription>
       </CardHeader>
       <CardContent>
-        {revisions.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            No revisions for this estimate.
+        {revisions.length > 0 ? (
+          <div className="space-y-6">
+            {revisions.map((revision) => (
+              <div key={revision.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">Version {revision.version}</h4>
+                  <span className="text-sm text-muted-foreground">{formatDate(revision.revision_date)}</span>
+                </div>
+                {revision.notes && <p className="text-sm mb-2">{revision.notes}</p>}
+                {revision.amount && (
+                  <p className="text-sm font-medium">
+                    Amount: {formatCurrency(revision.amount)}
+                  </p>
+                )}
+                {revision.revision_by && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Revised by: {revision.revision_by}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Version</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead>By</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {revisions.map((revision) => (
-                <TableRow key={revision.id}>
-                  <TableCell className="font-medium">v{revision.version}</TableCell>
-                  <TableCell>{formatDate(revision.revision_date)}</TableCell>
-                  <TableCell>
-                    {revision.amount !== undefined 
-                      ? `$${revision.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}` 
-                      : 'N/A'}
-                  </TableCell>
-                  <TableCell>{revision.notes || 'No notes'}</TableCell>
-                  <TableCell>{revision.revision_by || 'Unknown'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="text-center py-4 text-muted-foreground">
+            No revision history available for this estimate.
+          </div>
         )}
       </CardContent>
     </Card>

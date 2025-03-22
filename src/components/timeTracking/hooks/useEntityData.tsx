@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -19,21 +19,11 @@ interface WorkOrderOrProject {
 export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
   const [workOrders, setWorkOrders] = useState<WorkOrderOrProject[]>([]);
   const [projects, setProjects] = useState<WorkOrderOrProject[]>([]);
-  const [employees, setEmployees] = useState<{ employee_id: string, name: string, hourly_rate?: number }[]>([]);
+  const [employees, setEmployees] = useState<{ employee_id: string, name: string }[]>([]);
   const [isLoadingEntities, setIsLoadingEntities] = useState(true);
   
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
-  
-  const getSelectedEntityDetails = useCallback(() => {
-    if (!entityId) return null;
-    
-    if (entityType === 'work_order') {
-      return workOrders.find(wo => wo.id === entityId);
-    } else {
-      return projects.find(proj => proj.id === entityId);
-    }
-  }, [entityType, entityId, workOrders, projects]);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -56,7 +46,7 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
         
         if (projectsError) throw projectsError;
         
-        // Fetch employees with hourly rates
+        // Fetch employees
         const { data: employeesData, error: employeesError } = await supabase
           .from('employees')
           .select('employee_id, first_name, last_name, hourly_rate')
@@ -87,8 +77,7 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
         
         const formattedEmployees = employeesData.map(emp => ({
           employee_id: emp.employee_id,
-          name: `${emp.first_name} ${emp.last_name}`,
-          hourly_rate: emp.hourly_rate
+          name: `${emp.first_name} ${emp.last_name}`
         }));
         
         setWorkOrders(formattedWorkOrders);
@@ -97,10 +86,7 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
         
         // Set default employee if there's any
         if (formattedEmployees.length > 0 && !form.getValues('employeeId')) {
-          // We cannot use setValue here in a way that causes re-renders during rendering
-          setTimeout(() => {
-            form.setValue('employeeId', formattedEmployees[0].employee_id);
-          }, 0);
+          form.setValue('employeeId', formattedEmployees[0].employee_id);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -116,6 +102,16 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
     
     fetchData();
   }, [form]);
+  
+  const getSelectedEntityDetails = () => {
+    if (!entityId) return null;
+    
+    if (entityType === 'work_order') {
+      return workOrders.find(wo => wo.id === entityId);
+    } else {
+      return projects.find(proj => proj.id === entityId);
+    }
+  };
   
   return {
     workOrders,

@@ -1,15 +1,27 @@
 
 import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { Calendar as CalendarIcon, Timer, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn, formatTimeRange } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 
+import EntityTypeSelector from './form/EntityTypeSelector';
+import EntitySelector from './form/EntitySelector';
+import TimeRangeSelector from './form/TimeRangeSelector';
 import ConfirmationDialog from './form/ConfirmationDialog';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import { useEntityData } from './hooks/useEntityData';
-import { ReceiptUploadDialog } from './dialogs/ReceiptDialog';
-import TimeEntryFormFields from './form/TimeEntryFormFields';
+import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
+import { EntityType } from '../documents/schemas/documentSchema';
 
 interface TimeEntryFormProps {
   onSuccess: () => void;
@@ -17,17 +29,19 @@ interface TimeEntryFormProps {
 
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
-  const [selectedEmployeeRate, setSelectedEmployeeRate] = useState<number | null>(null);
-  const [newTimeEntryId, setNewTimeEntryId] = useState<string | null>(null);
+  const [hasReceipts, setHasReceipts] = useState(false);
 
   const {
     form,
     isLoading,
     showConfirmDialog,
     setShowConfirmDialog,
+    selectedFiles,
+    handleFilesSelected,
+    handleFileClear,
     confirmationData,
     handleSubmit,
-    confirmSubmit
+    confirmSubmit,
   } = useTimeEntryForm(onSuccess);
 
   const {
@@ -38,54 +52,18 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     getSelectedEntityDetails
   } = useEntityData(form);
 
+  // Watch form values
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
+  const startTime = form.watch('startTime');
+  const endTime = form.watch('endTime');
+  const hoursWorked = form.watch('hoursWorked');
 
-  // Handle receipt upload success
-  const handleReceiptUploadSuccess = async (timeEntryId: string, documentId: string) => {
-    try {
-      // Update the time entry to mark it as having receipts
-      const { error } = await supabase
-        .from('time_entries')
-        .update({ has_receipts: true })
-        .eq('id', timeEntryId);
-        
-      if (error) throw error;
-      
-      setShowReceiptUpload(false);
-      toast({
-        title: "Receipt uploaded",
-        description: "Your receipt has been added to this time entry."
-      });
-      
-      // Redirect to the time entries list
-      onSuccess();
-    } catch (error) {
-      console.error("Error updating time entry with receipt:", error);
-      toast({
-        title: "Error",
-        description: "Failed to link receipt to time entry.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Handle confirmation with receipt
-  const handleConfirmWithReceipt = () => {
-    // First submit the time entry
-    confirmSubmit().then((timeEntryId) => {
-      if (timeEntryId) {
-        setNewTimeEntryId(timeEntryId);
-        setShowConfirmDialog(false);
-        setShowReceiptUpload(true);
-      }
-    });
-  };
-
-  // Handle confirmation without receipt
-  const handleConfirmWithoutReceipt = () => {
-    confirmSubmit().then(() => {
-      onSuccess();
+  const handleReceiptUploadSuccess = () => {
+    setShowReceiptUpload(false);
+    toast({
+      title: "Receipt uploaded",
+      description: "Your receipt has been added to this time entry."
     });
   };
 
@@ -96,16 +74,163 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
           <CardTitle>Log Time</CardTitle>
         </CardHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)}>
-          <TimeEntryFormFields
-            form={form}
-            workOrders={workOrders}
-            projects={projects}
-            employees={employees}
-            isLoadingEntities={isLoadingEntities}
-            getSelectedEntityDetails={getSelectedEntityDetails}
-            selectedEmployeeRate={selectedEmployeeRate}
-            setSelectedEmployeeRate={setSelectedEmployeeRate}
-          />
+          <CardContent className="space-y-6">
+            {/* Entity Type Selection */}
+            <EntityTypeSelector 
+              entityType={entityType} 
+              onChange={(value) => form.setValue('entityType', value, { shouldValidate: true })}
+            />
+            
+            {/* Entity Selection */}
+            <EntitySelector
+              entityType={entityType}
+              entityId={entityId}
+              workOrders={workOrders}
+              projects={projects}
+              isLoading={isLoadingEntities}
+              onChange={(value) => form.setValue('entityId', value, { shouldValidate: true })}
+              error={form.formState.errors.entityId?.message}
+              selectedEntity={getSelectedEntityDetails()}
+            />
+            
+            {/* Employee Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="employee">Employee</Label>
+              <select
+                id="employee"
+                className="w-full border border-gray-300 rounded-md p-2"
+                value={form.watch('employeeId') || ''}
+                onChange={(e) => form.setValue('employeeId', e.target.value, { shouldValidate: true })}
+              >
+                {employees.map(employee => (
+                  <option key={employee.employee_id} value={employee.employee_id}>
+                    {employee.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Date Selection */}
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !form.watch('workDate') && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {form.watch('workDate') ? (
+                      format(form.watch('workDate'), "MMMM d, yyyy")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={form.watch('workDate')}
+                    onSelect={(date) => date && form.setValue('workDate', date, { shouldValidate: true })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            {/* Time Range */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label>Time Range</Label>
+                {startTime && endTime && (
+                  <div className="flex items-center text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
+                    <Timer className="h-3.5 w-3.5 mr-1" />
+                    <span>Duration: {hoursWorked.toFixed(2)} hours</span>
+                  </div>
+                )}
+              </div>
+              
+              <TimeRangeSelector
+                startTime={startTime}
+                endTime={endTime}
+                onStartTimeChange={(value) => {
+                  form.setValue('startTime', value, { shouldValidate: true });
+                  // Automatically adjust end time if needed
+                  if (endTime) {
+                    const [startHour, startMinute] = value.split(':').map(Number);
+                    const [endHour, endMinute] = endTime.split(':').map(Number);
+                    const startTotal = startHour * 60 + startMinute;
+                    const endTotal = endHour * 60 + endMinute;
+                    
+                    if (endTotal <= startTotal && endTotal > startTotal - 120) {
+                      let newEndHour = startHour + 1;
+                      if (newEndHour >= 24) newEndHour -= 24;
+                      const newEndTime = `${newEndHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+                      form.setValue('endTime', newEndTime, { shouldValidate: true });
+                    }
+                  }
+                }}
+                onEndTimeChange={(value) => form.setValue('endTime', value, { shouldValidate: true })}
+                startTimeError={form.formState.errors.startTime?.message}
+                endTimeError={form.formState.errors.endTime?.message}
+              />
+            </div>
+            
+            {/* Total Hours */}
+            <div className="space-y-2">
+              <Label htmlFor="hoursWorked">Total Hours</Label>
+              <Input
+                id="hoursWorked"
+                type="number"
+                step="0.01"
+                readOnly
+                value={hoursWorked}
+                className="bg-muted"
+              />
+            </div>
+            
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add any notes about the work performed..."
+                {...form.register('notes')}
+                rows={3}
+              />
+            </div>
+            
+            {/* Receipts Option */}
+            <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
+              <div>
+                <h4 className="font-medium">Attach Receipt(s)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Do you have any receipts to upload for this time entry?
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Switch
+                  checked={hasReceipts}
+                  onCheckedChange={setHasReceipts}
+                  className="data-[state=checked]:bg-[#0485ea]"
+                />
+                {hasReceipts && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="gap-1"
+                    onClick={() => setShowReceiptUpload(true)}
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Receipts
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
           
           <CardFooter>
             <Button 
@@ -113,12 +238,13 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isLoading}
             >
-              {isLoading ? 'Processing...' : 'Submit Time Entry'}
+              {isLoading ? 'Processing...' : 'Review & Submit'}
             </Button>
           </CardFooter>
         </form>
       </Card>
       
+      {/* Confirmation Dialog */}
       <ConfirmationDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
@@ -127,27 +253,26 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         entityType={entityType}
         workOrders={workOrders}
         projects={projects}
+        selectedFiles={selectedFiles}
         isLoading={isLoading}
-        onConfirmWithReceipt={handleConfirmWithReceipt}
-        onConfirmWithoutReceipt={handleConfirmWithoutReceipt}
+        onConfirm={confirmSubmit}
       />
 
-      {showReceiptUpload && newTimeEntryId && (
-        <ReceiptUploadDialog
-          open={showReceiptUpload}
-          timeEntry={{
-            id: newTimeEntryId,
-            entity_id: entityId,
-            entity_type: entityType,
-            date_worked: form.watch('workDate').toISOString()
-          } as any}
-          onSuccess={(timeEntryId, documentId) => handleReceiptUploadSuccess(timeEntryId, documentId)}
-          onCancel={() => {
-            setShowReceiptUpload(false);
-            onSuccess();
-          }}
-        />
-      )}
+      {/* Receipt Upload Dialog */}
+      <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Upload Receipt(s)</DialogTitle>
+          </DialogHeader>
+          <EnhancedDocumentUpload
+            entityType={entityType === 'work_order' ? 'WORK_ORDER' as EntityType : 'PROJECT' as EntityType}
+            entityId={entityId}
+            onSuccess={handleReceiptUploadSuccess}
+            onCancel={() => setShowReceiptUpload(false)}
+            isReceiptUpload={true}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

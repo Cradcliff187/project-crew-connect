@@ -15,8 +15,6 @@ import {
   calculateItemGrossMargin, 
   calculateItemGrossMarginPercentage 
 } from '../utils/estimateCalculations';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 
 // Types for vendors and subcontractors
 type Vendor = { vendorid: string; vendorname: string };
@@ -42,17 +40,15 @@ const EstimateItemFields = () => {
         const { data: vendorData, error: vendorError } = await supabase
           .from('vendors')
           .select('vendorid, vendorname')
-          .eq('status', 'active')
           .order('vendorname');
           
         if (vendorError) throw vendorError;
         setVendors(vendorData || []);
         
-        // Fetch subcontractors - Using the correct table and query
+        // Fetch subcontractors
         const { data: subData, error: subError } = await supabase
-          .from('subcontractors')
+          .from('subcontractors_new')
           .select('subid, subname')
-          .eq('status', 'ACTIVE')
           .order('subname');
           
         if (subError) throw subError;
@@ -81,20 +77,6 @@ const EstimateItemFields = () => {
     });
   };
 
-  // Get item type label with appropriate styling
-  const getTypeLabel = (itemType: string) => {
-    switch (itemType) {
-      case 'labor':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Labor</Badge>;
-      case 'vendor':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Material</Badge>;
-      case 'subcontractor':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Subcontractor</Badge>;
-      default:
-        return <Badge variant="outline">{itemType}</Badge>;
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -104,20 +86,11 @@ const EstimateItemFields = () => {
           variant="outline" 
           size="sm" 
           onClick={addNewItem}
-          className="text-[#0485ea] border-[#0485ea] hover:bg-[#0485ea]/10"
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Item
         </Button>
       </div>
-
-      {loading && fields.length === 0 && (
-        <div className="space-y-3">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      )}
 
       {fields.map((field, index) => {
         // Get current values for calculations
@@ -148,33 +121,12 @@ const EstimateItemFields = () => {
         // Calculate derived values for display
         const item = { cost, markup_percentage: markupPercentage, quantity };
         const itemPrice = calculateItemPrice(item);
-        const itemCost = calculateItemCost(item);
-        const markupAmount = calculateItemMarkup(item);
         const grossMargin = calculateItemGrossMargin(item);
         const grossMarginPercentage = calculateItemGrossMarginPercentage(item);
 
         return (
-          <div key={field.id} className="grid grid-cols-12 gap-2 items-start p-3 border rounded-md bg-white shadow-sm">
-            <div className="col-span-12 mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Item #{index + 1}</span>
-                {getTypeLabel(itemType)}
-              </div>
-              {fields.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => remove(index)}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2"
-                >
-                  <Trash className="h-4 w-4 mr-1" />
-                  Remove
-                </Button>
-              )}
-            </div>
-
-            <div className="col-span-12">
+          <div key={field.id} className="grid grid-cols-12 gap-2 items-start p-3 border rounded-md">
+            <div className="col-span-12 mb-2">
               <FormField
                 control={form.control}
                 name={`items.${index}.description`}
@@ -241,19 +193,15 @@ const EstimateItemFields = () => {
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={loading ? "Loading vendors..." : "Select vendor"} />
+                            <SelectValue placeholder={loading ? "Loading..." : "Select vendor"} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {vendors.length === 0 ? (
-                            <SelectItem value="no-vendors" disabled>No vendors available</SelectItem>
-                          ) : (
-                            vendors.map(vendor => (
-                              <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                                {vendor.vendorname}
-                              </SelectItem>
-                            ))
-                          )}
+                          {vendors.map(vendor => (
+                            <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
+                              {vendor.vendorname}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -275,19 +223,15 @@ const EstimateItemFields = () => {
                       <Select value={field.value} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={loading ? "Loading subcontractors..." : "Select subcontractor"} />
+                            <SelectValue placeholder={loading ? "Loading..." : "Select subcontractor"} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {subcontractors.length === 0 ? (
-                            <SelectItem value="no-subs" disabled>No subcontractors available</SelectItem>
-                          ) : (
-                            subcontractors.map(sub => (
-                              <SelectItem key={sub.subid} value={sub.subid}>
-                                {sub.subname}
-                              </SelectItem>
-                            ))
-                          )}
+                          {subcontractors.map(sub => (
+                            <SelectItem key={sub.subid} value={sub.subid}>
+                              {sub.subname}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -300,28 +244,12 @@ const EstimateItemFields = () => {
             <div className="col-span-6 md:col-span-2">
               <FormField
                 control={form.control}
-                name={`items.${index}.quantity`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="1" type="number" step="0.01" min="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="col-span-6 md:col-span-2">
-              <FormField
-                control={form.control}
                 name={`items.${index}.cost`}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cost*</FormLabel>
                     <FormControl>
-                      <Input placeholder="0.00" type="number" step="0.01" min="0" {...field} />
+                      <Input placeholder="0.00" type="number" step="0.01" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -337,7 +265,7 @@ const EstimateItemFields = () => {
                   <FormItem>
                     <FormLabel>Markup %</FormLabel>
                     <FormControl>
-                      <Input placeholder="0" type="number" step="0.1" min="0" {...field} />
+                      <Input placeholder="0" type="number" step="0.1" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -345,59 +273,41 @@ const EstimateItemFields = () => {
               />
             </div>
 
-            <div className="col-span-12 md:col-span-12 grid grid-cols-4 gap-4 mt-2">
-              <div className="col-span-1">
-                <FormItem>
-                  <FormLabel className="text-xs text-gray-500">Total Cost</FormLabel>
-                  <div className="h-8 px-3 py-1 rounded-md border border-input bg-gray-50 text-right text-sm">
-                    ${itemCost.toFixed(2)}
-                  </div>
-                </FormItem>
-              </div>
-              
-              <div className="col-span-1">
-                <FormItem>
-                  <FormLabel className="text-xs text-gray-500">Markup Amount</FormLabel>
-                  <div className="h-8 px-3 py-1 rounded-md border border-input bg-gray-50 text-right text-sm">
-                    ${markupAmount.toFixed(2)}
-                  </div>
-                </FormItem>
-              </div>
-              
-              <div className="col-span-1">
-                <FormItem>
-                  <FormLabel className="text-xs text-gray-500">Price</FormLabel>
-                  <div className="h-8 px-3 py-1 rounded-md border border-input bg-gray-50 text-right text-sm">
-                    ${itemPrice.toFixed(2)}
-                  </div>
-                </FormItem>
-              </div>
+            <div className="col-span-6 md:col-span-2">
+              <FormItem>
+                <FormLabel>Price</FormLabel>
+                <div className="h-10 px-3 py-2 rounded-md border border-input bg-gray-50 text-right">
+                  ${itemPrice.toFixed(2)}
+                </div>
+              </FormItem>
+            </div>
 
-              <div className="col-span-1">
-                <FormItem>
-                  <FormLabel className="text-xs text-gray-500">Gross Margin</FormLabel>
-                  <div className="h-8 px-3 py-1 rounded-md border border-input bg-gray-50 text-right text-sm">
-                    ${grossMargin.toFixed(2)} ({grossMarginPercentage.toFixed(1)}%)
-                  </div>
-                </FormItem>
-              </div>
+            <div className="col-span-6 md:col-span-2">
+              <FormItem>
+                <FormLabel>Gross Margin</FormLabel>
+                <div className="h-10 px-3 py-2 rounded-md border border-input bg-gray-50 text-right">
+                  ${grossMargin.toFixed(2)} ({grossMarginPercentage.toFixed(1)}%)
+                </div>
+              </FormItem>
+            </div>
+
+            <div className="col-span-12 flex justify-end">
+              {fields.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => remove(index)}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash className="h-4 w-4 mr-1" />
+                  Remove Item
+                </Button>
+              )}
             </div>
           </div>
         );
       })}
-
-      {/* Add a button at the bottom for adding more items if there are already items */}
-      {fields.length > 0 && (
-        <Button 
-          type="button" 
-          variant="outline" 
-          className="w-full mt-2 border-dashed text-[#0485ea] border-[#0485ea] hover:bg-[#0485ea]/10"
-          onClick={addNewItem}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Add Another Item
-        </Button>
-      )}
     </div>
   );
 };
