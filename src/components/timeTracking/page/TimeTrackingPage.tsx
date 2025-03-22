@@ -60,6 +60,49 @@ const TimeTrackingPage = () => {
     setSelectedEntry(null);
   };
   
+  // Handle viewing receipts for a time entry
+  const handleViewReceipts = async (id: string) => {
+    try {
+      const entry = timeEntries.find(e => e.id === id);
+      setSelectedEntry(entry || null);
+      
+      const { data: receipts, error } = await supabase
+        .from('time_entry_receipts')
+        .select('*')
+        .eq('time_entry_id', id);
+        
+      if (error) throw error;
+      
+      if (receipts && receipts.length > 0) {
+        const receiptsWithUrls = await Promise.all(receipts.map(async (receipt) => {
+          const { data, error } = await supabase.storage
+            .from('construction_documents')
+            .createSignedUrl(receipt.storage_path, 3600);
+            
+          return {
+            ...receipt,
+            url: error ? null : data?.signedUrl
+          };
+        }));
+        
+        setCurrentReceipts(receiptsWithUrls);
+        setShowReceiptsDialog(true);
+      } else {
+        toast({
+          title: 'No receipts',
+          description: 'No receipts were found for this time entry.',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching receipts:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load receipts for this time entry.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
@@ -97,47 +140,7 @@ const TimeTrackingPage = () => {
                 setShowDeleteDialog(true);
               }
             }}
-            onViewReceipts={async (id) => {
-              try {
-                const entry = timeEntries.find(e => e.id === id);
-                setSelectedEntry(entry || null);
-                
-                const { data: receipts, error } = await supabase
-                  .from('time_entry_receipts')
-                  .select('*')
-                  .eq('time_entry_id', id);
-                  
-                if (error) throw error;
-                
-                if (receipts && receipts.length > 0) {
-                  const receiptsWithUrls = await Promise.all(receipts.map(async (receipt) => {
-                    const { data, error } = await supabase.storage
-                      .from('construction_documents')
-                      .createSignedUrl(receipt.storage_path, 3600);
-                      
-                    return {
-                      ...receipt,
-                      url: error ? null : data?.signedUrl
-                    };
-                  }));
-                  
-                  setCurrentReceipts(receiptsWithUrls);
-                  setShowReceiptsDialog(true);
-                } else {
-                  toast({
-                    title: 'No receipts',
-                    description: 'No receipts were found for this time entry.',
-                  });
-                }
-              } catch (error) {
-                console.error('Error fetching receipts:', error);
-                toast({
-                  title: 'Error',
-                  description: 'Failed to load receipts for this time entry.',
-                  variant: 'destructive',
-                });
-              }
-            }}
+            onViewReceipts={handleViewReceipts}
             onSuccess={handleFormSuccess}
           />
         </main>
@@ -159,6 +162,7 @@ const TimeTrackingPage = () => {
           receiptDocument={receiptDocument}
           handleFormSuccess={handleFormSuccess}
           handleDeleteEntry={handleDeleteEntry}
+          handleViewReceipts={handleViewReceipts}
         />
       </div>
     </PageTransition>

@@ -1,15 +1,14 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, 
-  AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { formatDate } from '@/lib/utils';
-import { TimeEntry } from '@/types/timeTracking';
-import { ReceiptViewerDialog } from '../dialogs/ReceiptDialog';
 import TimeEntryDetail from '../TimeEntryDetail';
 import TimeEntryEdit from '../TimeEntryEdit';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { DialogContent as ReceiptDialogContent } from '@/components/ui/dialog';
+import { Document, Page, pdfjs } from 'react-pdf';
+import { useToast } from '@/hooks/use-toast';
 
 interface TimeEntryDialogsProps {
   showDetailDialog: boolean;
@@ -20,17 +19,17 @@ interface TimeEntryDialogsProps {
   setShowDeleteDialog: (show: boolean) => void;
   showReceiptsDialog: boolean;
   setShowReceiptsDialog: (show: boolean) => void;
-  selectedEntry: TimeEntry | null;
-  setSelectedEntry: (entry: TimeEntry | null) => void;
+  selectedEntry: any;
+  setSelectedEntry: (entry: any) => void;
   currentReceipts: any[];
-  viewingReceipt: boolean;
-  setViewingReceipt: (viewing: boolean) => void;
+  viewingReceipt: any;
+  setViewingReceipt: (receipt: any) => void;
   receiptDocument: any;
   handleFormSuccess: () => void;
   handleDeleteEntry: (id: string) => Promise<void>;
 }
 
-const TimeEntryDialogs = ({
+const TimeEntryDialogs: React.FC<TimeEntryDialogsProps> = ({
   showDetailDialog,
   setShowDetailDialog,
   showEditDialog,
@@ -47,28 +46,36 @@ const TimeEntryDialogs = ({
   receiptDocument,
   handleFormSuccess,
   handleDeleteEntry
-}: TimeEntryDialogsProps) => {
-  
+}) => {
+  const { toast } = useToast();
+
   // Handle close detail dialog
   const handleCloseDetailDialog = () => {
     setShowDetailDialog(false);
-    setSelectedEntry(null);
+    setTimeout(() => setSelectedEntry(null), 200);
   };
 
-  // Execute delete operation
-  const executeDelete = async () => {
-    if (selectedEntry) {
-      await handleDeleteEntry(selectedEntry.id);
-      setShowDeleteDialog(false);
-      setSelectedEntry(null);
-    }
+  // Handle close edit dialog
+  const handleCloseEditDialog = () => {
+    setShowEditDialog(false);
+    setTimeout(() => setSelectedEntry(null), 200);
   };
-  
+
+  // Handle view receipts
+  const handleViewReceiptDetail = (receipt: any) => {
+    setViewingReceipt(receipt);
+  };
+
+  // Handle receipt viewer close
+  const handleCloseReceiptViewer = () => {
+    setViewingReceipt(null);
+  };
+
   return (
     <>
-      {/* Detail Dialog */}
+      {/* Time Entry Detail Dialog */}
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-lg">
           {selectedEntry && (
             <TimeEntryDetail
               timeEntry={selectedEntry}
@@ -80,45 +87,23 @@ const TimeEntryDialogs = ({
                 setShowDetailDialog(false);
                 setShowDeleteDialog(true);
               }}
-              onClose={() => setShowDetailDialog(false)}
+              onClose={handleCloseDetailDialog}
               onViewReceipts={async () => {
-                if (selectedEntry) {
-                  try {
-                    const { data: receipts, error } = await supabase
-                      .from('time_entry_receipts')
-                      .select('*')
-                      .eq('time_entry_id', selectedEntry.id);
-                      
-                    if (error) throw error;
-                    
-                    if (receipts && receipts.length > 0) {
-                      const receiptsWithUrls = await Promise.all(receipts.map(async (receipt) => {
-                        const { data, error } = await supabase.storage
-                          .from('construction_documents')
-                          .createSignedUrl(receipt.storage_path, 3600);
-                          
-                        return {
-                          ...receipt,
-                          url: error ? null : data?.signedUrl
-                        };
-                      }));
-                      
-                      setCurrentReceipts(receiptsWithUrls);
-                      setShowReceiptsDialog(true);
-                    } else {
-                      toast({
-                        title: 'No receipts',
-                        description: 'No receipts were found for this time entry.',
-                      });
-                    }
-                  } catch (error) {
-                    console.error('Error fetching receipts:', error);
-                    toast({
-                      title: 'Error',
-                      description: 'Failed to load receipts for this time entry.',
-                      variant: 'destructive',
-                    });
+                try {
+                  // When viewing receipts from the detail dialog,
+                  // we close the detail and open the receipts dialog
+                  setShowDetailDialog(false);
+                  // Use the handleViewReceipts from the parent component
+                  if (selectedEntry) {
+                    await handleViewReceipts(selectedEntry.id);
                   }
+                } catch (error) {
+                  console.error('Error viewing receipts:', error);
+                  toast({
+                    title: 'Error',
+                    description: 'Could not load receipts.',
+                    variant: 'destructive',
+                  });
                 }
               }}
             />
@@ -126,13 +111,13 @@ const TimeEntryDialogs = ({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
+      {/* Time Entry Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           {selectedEntry && (
             <TimeEntryEdit
               timeEntry={selectedEntry}
-              onCancel={() => setShowEditDialog(false)}
+              onCancel={handleCloseEditDialog}
               onSuccess={handleFormSuccess}
             />
           )}
@@ -143,16 +128,23 @@ const TimeEntryDialogs = ({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Time Entry</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this time entry? This action cannot be undone.
+              This action cannot be undone. This will permanently delete this time entry
+              and remove it from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-500 hover:bg-red-600"
-              onClick={executeDelete}
+              className="bg-red-600 hover:bg-red-700"
+              onClick={async () => {
+                if (selectedEntry) {
+                  await handleDeleteEntry(selectedEntry.id);
+                  setShowDeleteDialog(false);
+                  setSelectedEntry(null);
+                }
+              }}
             >
               Delete
             </AlertDialogAction>
@@ -162,71 +154,34 @@ const TimeEntryDialogs = ({
 
       {/* Receipts Dialog */}
       <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="sm:max-w-lg">
           <div className="space-y-4">
-            <div className="font-semibold text-lg">
-              Receipt Details
-              {selectedEntry && (
-                <div className="text-sm font-normal text-muted-foreground">
-                  {selectedEntry.entity_name} - {formatDate(selectedEntry.date_worked)}
-                </div>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-              {currentReceipts.map((receipt, index) => (
-                <div key={index} className="border rounded-md p-3 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-sm truncate">{receipt.file_name}</h3>
-                    {receipt.amount && (
-                      <span className="text-sm font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                        ${receipt.amount.toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {receipt.url ? (
-                    receipt.file_type?.startsWith('image/') ? (
-                      <div className="h-48 flex items-center justify-center border rounded-md overflow-hidden">
-                        <img 
-                          src={receipt.url} 
-                          alt={receipt.file_name} 
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-48 flex items-center justify-center border rounded-md bg-gray-50">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => window.open(receipt.url, '_blank')}
-                        >
-                          View Document
-                        </Button>
-                      </div>
-                    )
-                  ) : (
-                    <div className="h-48 flex items-center justify-center border rounded-md bg-gray-50">
-                      <div className="text-sm text-gray-500">Unable to load preview</div>
+            <h3 className="text-lg font-medium">Receipts & Documents</h3>
+            {currentReceipts.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {currentReceipts.map((receipt) => (
+                  <Button
+                    key={receipt.id}
+                    variant="outline"
+                    className="h-auto p-3 flex flex-col items-center justify-center text-center gap-2"
+                    onClick={() => handleViewReceiptDetail(receipt)}
+                  >
+                    <div className="text-sm font-medium truncate w-full">
+                      {receipt.filename || 'Receipt'}
                     </div>
-                  )}
-                  
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>
-                      {(receipt.file_size / 1024 / 1024).toFixed(2)} MB
-                    </span>
-                    <span>
-                      {new Date(receipt.uploaded_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
+                    <div className="text-xs text-muted-foreground">
+                      Click to view
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No receipts available for this entry.
+              </div>
+            )}
             <div className="flex justify-end">
-              <Button 
-                onClick={() => setShowReceiptsDialog(false)}
-              >
+              <Button onClick={() => setShowReceiptsDialog(false)}>
                 Close
               </Button>
             </div>
@@ -234,12 +189,36 @@ const TimeEntryDialogs = ({
         </DialogContent>
       </Dialog>
 
-      {/* Receipt Viewer Dialog */}
-      <ReceiptViewerDialog
-        open={viewingReceipt}
-        onOpenChange={setViewingReceipt}
-        receiptDocument={receiptDocument}
-      />
+      {/* Receipt Viewer */}
+      <Sheet open={!!viewingReceipt} onOpenChange={(open) => !open && handleCloseReceiptViewer()}>
+        <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col">
+          <div className="px-6 py-4 border-b">
+            <h3 className="text-lg font-medium">
+              {viewingReceipt?.filename || 'Receipt'}
+            </h3>
+          </div>
+          <div className="flex-1 overflow-auto p-6">
+            {receiptDocument ? (
+              <iframe
+                src={receiptDocument}
+                className="w-full h-full"
+                title="Receipt Document"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center text-muted-foreground">
+                  Loading receipt...
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="px-6 py-4 border-t flex justify-end">
+            <Button onClick={handleCloseReceiptViewer}>
+              Close
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };

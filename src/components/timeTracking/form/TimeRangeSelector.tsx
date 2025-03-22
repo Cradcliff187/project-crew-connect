@@ -21,13 +21,21 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   endTimeError
 }) => {
   // Generate time options in 15-minute intervals (96 options for 24 hours)
+  // but display them in 12-hour format with AM/PM
   const generateTimeOptions = () => {
     const options = [];
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
         const formattedHour = hour.toString().padStart(2, '0');
         const formattedMinute = minute.toString().padStart(2, '0');
-        options.push(`${formattedHour}:${formattedMinute}`);
+        const value = `${formattedHour}:${formattedMinute}`; // 24-hour format as value
+        
+        // Convert to 12-hour format for display
+        const displayHour = hour % 12 || 12;
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const display = `${displayHour}:${formattedMinute.padStart(2, '0')} ${period}`;
+        
+        options.push({ value, display });
       }
     }
     return options;
@@ -45,8 +53,8 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
           </SelectTrigger>
           <SelectContent>
             {timeOptions.map((time) => (
-              <SelectItem key={`start-${time}`} value={time}>
-                {time}
+              <SelectItem key={`start-${time.value}`} value={time.value}>
+                {time.display}
               </SelectItem>
             ))}
           </SelectContent>
@@ -64,8 +72,8 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
           </SelectTrigger>
           <SelectContent>
             {timeOptions.map((time) => (
-              <SelectItem key={`end-${time}`} value={time}>
-                {time}
+              <SelectItem key={`end-${time.value}`} value={time.value}>
+                {time.display}
               </SelectItem>
             ))}
           </SelectContent>
