@@ -48,9 +48,9 @@ const EstimateItemFields = () => {
         if (vendorError) throw vendorError;
         setVendors(vendorData || []);
         
-        // Fetch subcontractors - Using the correct table name and case-insensitive comparison
+        // Fetch subcontractors - Using the correct table and query
         const { data: subData, error: subError } = await supabase
-          .from('subcontractors')  // Ensure we're using the correct table
+          .from('subcontractors')
           .select('subid, subname')
           .eq('status', 'ACTIVE')
           .order('subname');
