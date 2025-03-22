@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/layout/PageTransition';
@@ -8,6 +8,7 @@ import WorkOrdersTable from '@/components/workOrders/WorkOrdersTable';
 import { WorkOrder } from '@/types/workOrder';
 import { StatusType } from '@/types/common';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const fetchWorkOrders = async () => {
   const { data, error } = await supabase
@@ -30,6 +31,19 @@ const fetchWorkOrders = async () => {
 
 const WorkOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Check for openNewWorkOrder query parameter
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    if (queryParams.get('openNewWorkOrder') === 'true') {
+      setShowAddDialog(true);
+      // Remove the query parameter from the URL to prevent reopening on refresh
+      navigate('/work-orders', { replace: true });
+    }
+  }, [location, navigate]);
   
   const { 
     data: workOrders = [], 
@@ -70,6 +84,8 @@ const WorkOrders = () => {
           searchQuery={searchQuery} 
           setSearchQuery={setSearchQuery} 
           onWorkOrderAdded={handleWorkOrderAdded}
+          showAddDialog={showAddDialog}
+          setShowAddDialog={setShowAddDialog}
         />
         
         <div className="mt-6">

@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,15 +9,17 @@ interface WorkOrdersHeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onWorkOrderAdded: () => void;
+  showAddDialog: boolean;
+  setShowAddDialog: (show: boolean) => void;
 }
 
 const WorkOrdersHeader = ({
   searchQuery,
   setSearchQuery,
-  onWorkOrderAdded
+  onWorkOrderAdded,
+  showAddDialog,
+  setShowAddDialog
 }: WorkOrdersHeaderProps) => {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  
   return (
     <>
       <PageHeader
