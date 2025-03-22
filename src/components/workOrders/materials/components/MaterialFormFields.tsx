@@ -61,13 +61,13 @@ const MaterialFormFields = ({
         >
           <Select 
             value={selectedVendor || ""} 
-            onValueChange={(value) => setSelectedVendor(value === "none" ? null : value)}
+            onValueChange={(value) => setSelectedVendor(value === "no-vendor" ? null : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select vendor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="no-vendor">None</SelectItem>
               {vendors.map((vendor) => (
                 <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
                   {vendor.vendorname}

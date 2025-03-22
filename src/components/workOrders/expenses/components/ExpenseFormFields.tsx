@@ -72,13 +72,13 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
         <div className="flex gap-2">
           <Select
             value={selectedVendor || ""}
-            onValueChange={(value) => setSelectedVendor(value || null)}
+            onValueChange={(value) => setSelectedVendor(value === "no-vendor" ? null : value)}
           >
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Select vendor" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="no-vendor">None</SelectItem>
               {vendors.map((vendor) => (
                 <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
                   {vendor.vendorname}
