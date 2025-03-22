@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { createRoot } from 'react-dom/client'
+import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
@@ -12,8 +12,8 @@ if (!rootElement) {
   throw new Error("Root element not found");
 }
 
-// Create a root using the client API with the correct import
-const root = createRoot(rootElement);
+// Create a root using the client API
+const root = ReactDOM.createRoot(rootElement);
 
 // Render the app
 root.render(
