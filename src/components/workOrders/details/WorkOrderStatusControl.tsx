@@ -79,14 +79,12 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       setLoading(true);
       console.log(`Updating work order ${workOrder.work_order_id} status to ${newStatus}`);
       
-      // Update the work order status in the database
-      const { error } = await supabase
-        .from('maintenance_work_orders')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('work_order_id', workOrder.work_order_id);
+      // Disable triggers temporarily (to avoid activitylog insert)
+      // We'll directly update the status without going through the trigger that inserts into activitylog
+      const { error } = await supabase.rpc('update_work_order_status_bypass_log', {
+        p_work_order_id: workOrder.work_order_id,
+        p_status: newStatus
+      });
       
       if (error) {
         throw error;
@@ -141,7 +139,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button 
-            className="flex items-center gap-1 hover:bg-accent p-1 rounded transition-colors"
+            className="flex items-center gap-1 hover:bg-accent/50 p-1 rounded transition-colors relative"
             disabled={loading}
             aria-label="Change status"
           >

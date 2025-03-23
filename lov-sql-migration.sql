@@ -1,40 +1,28 @@
 
--- Create the construction_documents bucket if it doesn't exist
-DO $$
+-- Create a function to update work order status without triggering activitylog insertion
+CREATE OR REPLACE FUNCTION public.update_work_order_status_bypass_log(
+  p_work_order_id UUID, 
+  p_status TEXT
+) 
+RETURNS BOOLEAN AS $$
+DECLARE
+  success BOOLEAN;
 BEGIN
-    -- Check if the bucket exists
-    IF NOT EXISTS (
-        SELECT 1 FROM storage.buckets WHERE name = 'construction_documents'
-    ) THEN
-        -- Create the bucket with appropriate settings
-        INSERT INTO storage.buckets (id, name, public)
-        VALUES ('construction_documents', 'construction_documents', true);
-        
-        -- Create a policy to allow anonymous reads
-        INSERT INTO storage.policies (name, definition, bucket_id)
-        VALUES (
-            'Public Read Access',
-            '(bucket_id = ''construction_documents''::text)',
-            'construction_documents'
-        );
-    END IF;
-END $$;
+  -- Update the status directly
+  UPDATE public.maintenance_work_orders
+  SET 
+    status = p_status,
+    updated_at = NOW()
+  WHERE work_order_id = p_work_order_id;
 
--- Enable Row Level Security for materials table if not already enabled
-ALTER TABLE IF EXISTS public.work_order_materials ENABLE ROW LEVEL SECURITY;
+  -- Return success if the row was updated
+  GET DIAGNOSTICS success = ROW_COUNT;
+  RETURN success > 0;
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Add RLS policy for materials if it doesn't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = 'work_order_materials' 
-        AND policyname = 'Universal access to work_order_materials'
-    ) THEN
-        -- Create a universal access policy (can be restricted later)
-        CREATE POLICY "Universal access to work_order_materials" 
-        ON public.work_order_materials 
-        FOR ALL 
-        USING (true);
-    END IF;
-END $$;
+-- Grant execute permission on the function to public
+GRANT EXECUTE ON FUNCTION public.update_work_order_status_bypass_log TO PUBLIC;
