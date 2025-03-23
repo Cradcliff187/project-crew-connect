@@ -16,10 +16,22 @@ export function useExpensesFetch(workOrderId: string) {
     try {
       console.log('Fetching expenses for work order:', workOrderId);
       
-      // Direct query to the expenses table instead of the unified view
+      // Direct query to the expenses table
       const { data, error } = await supabase
         .from('expenses')
-        .select('*')
+        .select(`
+          id,
+          entity_id,
+          vendor_id,
+          description,
+          expense_type,
+          quantity,
+          unit_price,
+          amount,
+          document_id,
+          created_at,
+          updated_at
+        `)
         .eq('entity_id', workOrderId)
         .eq('entity_type', 'WORK_ORDER')
         .order('created_at', { ascending: false });

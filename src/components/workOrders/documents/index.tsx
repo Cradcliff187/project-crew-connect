@@ -6,6 +6,7 @@ import { useState } from 'react';
 import DocumentUpload from '@/components/documents/DocumentUpload';
 import DocumentsTableContent from '../details/DocumentsList/DocumentsTableContent';
 import { useWorkOrderDocumentsEmbed } from './useWorkOrderDocumentsEmbed';
+import { WorkOrderDocument } from '../details/DocumentsList/types';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;
@@ -21,7 +22,7 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
     setShowUpload(false);
   };
   
-  const handleViewDocument = (document: any) => {
+  const handleViewDocument = (document: WorkOrderDocument) => {
     // View document logic here
     window.open(document.url, '_blank');
   };

@@ -21,6 +21,20 @@ export function useReceiptOperations(fetchExpenses: () => Promise<void>) {
     try {
       console.log('Attaching receipt document to expense:', { expenseId, documentId });
       
+      // Update the document to mark it as an expense/receipt
+      const { error: docError } = await supabase
+        .from('documents')
+        .update({ 
+          is_expense: true,
+          category: 'receipt'
+        })
+        .eq('document_id', documentId);
+        
+      if (docError) {
+        console.error('Error updating document:', docError);
+      }
+      
+      // Update the expense with the document ID
       const { error } = await supabase
         .from('expenses')
         .update({ document_id: documentId })
