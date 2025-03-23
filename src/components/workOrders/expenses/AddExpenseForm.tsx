@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Save, Loader2 } from 'lucide-react';
+import { ArrowRight, X, Loader2 } from 'lucide-react';
 import VendorDialog from '@/components/vendors/VendorDialog';
 import ExpenseFormFields from './components/ExpenseFormFields';
 import TotalPriceDisplay from './components/TotalPriceDisplay';
@@ -16,9 +16,11 @@ interface AddExpenseFormProps {
     quantity: number;
     unitPrice: number;
     vendorId: string | null;
+    expenseType: string;
   }) => void;
   onVendorAdded?: () => void;
   onSuccess?: () => void; // Optional callback for when form submission succeeds
+  onCancel?: () => void; // Optional callback for when the user cancels
 }
 
 const AddExpenseForm = ({ 
@@ -27,13 +29,15 @@ const AddExpenseForm = ({
   submitting,
   onExpensePrompt,
   onVendorAdded,
-  onSuccess
+  onSuccess,
+  onCancel
 }: AddExpenseFormProps) => {
   // Form state
   const [expenseName, setExpenseName] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [unitPrice, setUnitPrice] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+  const [expenseType, setExpenseType] = useState('materials'); // Default to materials
   const [showVendorDialog, setShowVendorDialog] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +50,8 @@ const AddExpenseForm = ({
       expenseName,
       quantity: qtyValue,
       unitPrice: priceValue,
-      vendorId: selectedVendor
+      vendorId: selectedVendor,
+      expenseType
     };
     
     // Submit the form data
@@ -68,6 +73,12 @@ const AddExpenseForm = ({
     }
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -84,27 +95,38 @@ const AddExpenseForm = ({
             setUnitPrice={setUnitPrice}
             selectedVendor={selectedVendor}
             setSelectedVendor={setSelectedVendor}
+            expenseType={expenseType}
+            setExpenseType={setExpenseType}
             vendors={vendors}
             onAddVendorClick={() => setShowVendorDialog(true)}
           />
           
           <TotalPriceDisplay unitPrice={unitPrice} quantity={quantity} />
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-between space-x-2">
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={handleCancel}
+            disabled={submitting}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
           <Button 
             type="submit" 
-            className="w-full md:w-auto bg-[#0485ea] hover:bg-[#0375d1]"
+            className="bg-[#0485ea] hover:bg-[#0375d1]"
             disabled={submitting}
           >
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
+                Processing...
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
-                Submit
+                Continue to Receipt
+                <ArrowRight className="h-4 w-4 ml-2" />
               </>
             )}
           </Button>

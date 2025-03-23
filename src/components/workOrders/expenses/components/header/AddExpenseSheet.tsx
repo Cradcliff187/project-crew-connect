@@ -37,6 +37,7 @@ const AddExpenseSheet = ({
             onExpensePrompt={onExpensePrompt}
             onVendorAdded={onVendorAdded}
             onSuccess={onSuccess}
+            onCancel={() => onOpenChange(false)}
           />
         </div>
       </SheetContent>

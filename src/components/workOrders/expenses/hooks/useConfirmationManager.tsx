@@ -9,7 +9,7 @@ export function useConfirmationManager(handleAddExpense: Function, handleReceipt
     quantity: number;
     unitPrice: number;
     vendorId: string | null;
-    expenseType?: string;
+    expenseType: string;
   } | null>(null);
   
   // For setting up selected expense
@@ -21,7 +21,7 @@ export function useConfirmationManager(handleAddExpense: Function, handleReceipt
     quantity: number;
     unitPrice: number;
     vendorId: string | null;
-    expenseType?: string;
+    expenseType: string;
   }) => {
     setPendingExpense(expense);
     setShowReceiptConfirmation(true);

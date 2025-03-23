@@ -21,6 +21,7 @@ interface ReceiptConfirmationDialogProps {
     quantity: number;
     unitPrice: number;
     vendorId: string | null;
+    expenseType: string;
   } | null;
   vendorName: string;
   onConfirmWithReceipt: () => void;
@@ -53,6 +54,9 @@ const ReceiptConfirmationDialog = ({
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="text-muted-foreground">Expense:</div>
             <div className="font-medium">{expenseData.expenseName}</div>
+            
+            <div className="text-muted-foreground">Type:</div>
+            <div className="font-medium capitalize">{expenseData.expenseType}</div>
             
             <div className="text-muted-foreground">Quantity:</div>
             <div className="font-medium">{expenseData.quantity}</div>
