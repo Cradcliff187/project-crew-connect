@@ -4,6 +4,7 @@ import { Form } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
 import { EntityType } from './schemas/documentSchema';
 
@@ -106,38 +107,42 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6 pt-4">
-            {/* File Uploader Component */}
-            <DropzoneUploader 
-              control={form.control}
-              onFileSelect={handleFileSelect}
-              previewURL={previewURL}
-              watchFiles={watchFiles}
-              label={isReceiptUpload ? "Upload Receipt" : "Upload Document"}
-            />
-            
-            {/* Mobile Capture Component */}
-            <MobileCaptureWrapper
-              onCapture={handleMobileCapture}
-              isMobile={isMobile}
-              hasCamera={hasCamera}
-              showMobileCapture={showMobileCapture}
-              setShowMobileCapture={setShowMobileCapture}
-            />
-            
-            {/* Metadata Form Component */}
-            <MetadataForm
-              form={form}
-              control={form.control}
-              watchIsExpense={watchIsExpense}
-              watchVendorType={watchVendorType}
-              isReceiptUpload={isReceiptUpload}
-              showVendorSelector={showVendorSelector}
-              prefillData={prefillData}
-            />
+          <CardContent className="p-0">
+            <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
+              <div className="space-y-6">
+                {/* File Uploader Component */}
+                <DropzoneUploader 
+                  control={form.control}
+                  onFileSelect={handleFileSelect}
+                  previewURL={previewURL}
+                  watchFiles={watchFiles}
+                  label={isReceiptUpload ? "Upload Receipt" : "Upload Document"}
+                />
+                
+                {/* Mobile Capture Component */}
+                <MobileCaptureWrapper
+                  onCapture={handleMobileCapture}
+                  isMobile={isMobile}
+                  hasCamera={hasCamera}
+                  showMobileCapture={showMobileCapture}
+                  setShowMobileCapture={setShowMobileCapture}
+                />
+                
+                {/* Metadata Form Component */}
+                <MetadataForm
+                  form={form}
+                  control={form.control}
+                  watchIsExpense={watchIsExpense}
+                  watchVendorType={watchVendorType}
+                  isReceiptUpload={isReceiptUpload}
+                  showVendorSelector={showVendorSelector}
+                  prefillData={prefillData}
+                />
+              </div>
+            </ScrollArea>
           </CardContent>
           
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex justify-between mt-4">
             {onCancel && (
               <Button
                 type="button"
