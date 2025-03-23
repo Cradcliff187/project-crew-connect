@@ -2,8 +2,7 @@
 import { useState } from 'react';
 import { useWorkOrderExpenses } from './expenses/hooks/useWorkOrderExpenses';
 import { ExpensesInfoSection } from './expenses/components';
-import { WorkOrderExpense } from '@/types/workOrder';
-import { DocumentViewerDialog } from '@/components/documents';
+import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
 
 interface WorkOrderExpensesProps {
   workOrderId: string;
@@ -71,17 +70,20 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
         <DocumentViewerDialog
           open={receiptDialogOpen}
           onOpenChange={handleReceiptClosed}
-          documentId={selectedExpense.receipt_document_id}
+          document={selectedExpense.receipt_document_id ? {
+            document_id: selectedExpense.receipt_document_id,
+            file_name: `Receipt for ${selectedExpense.expense_name}`,
+            file_type: 'application/pdf', // Default type, will be determined by the component
+            url: '', // Will be populated by the component
+            storage_path: '',
+            entity_type: 'WORK_ORDER',
+            entity_id: workOrderId,
+            created_at: '',
+            updated_at: '',
+            tags: []
+          } : null}
           title={`Receipt for ${selectedExpense.expense_name}`}
-          entityId={workOrderId}
-          entityType="WORK_ORDER"
-          onDocumentUploaded={(documentId) => {
-            handleReceiptAttached(selectedExpense.id, documentId);
-            handleReceiptClosed();
-          }}
-          allowUploads={!selectedExpense.receipt_document_id}
-          uploadCategory="receipt"
-          uploadLabel="Upload Receipt"
+          description="Receipt document preview"
         />
       )}
     </>
