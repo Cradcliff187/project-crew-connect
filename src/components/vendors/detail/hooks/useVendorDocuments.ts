@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { VendorDocument } from '../types';
+import { toast } from '@/hooks/use-toast';
 
 export const useVendorDocuments = (vendorId: string) => {
   const [documents, setDocuments] = useState<VendorDocument[]>([]);

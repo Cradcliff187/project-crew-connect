@@ -71,9 +71,18 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
         allDocuments.map(async (doc) => {
           let url = '';
           if (doc.storage_path) {
+            const options = {
+              download: false,
+              transform: {
+                width: 800,
+                height: 800,
+                quality: 80
+              }
+            };
+            
             const { data, error } = await supabase.storage
               .from('construction_documents') // Using the correct bucket name
-              .createSignedUrl(doc.storage_path, 300); // 5 minutes expiration
+              .createSignedUrl(doc.storage_path, 300, options); // 5 minutes expiration
               
             if (error) {
               console.error('Error generating signed URL for', doc.document_id, error);

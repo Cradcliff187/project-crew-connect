@@ -751,63 +751,6 @@ export type Database = {
           },
         ]
       }
-      materialsreceipts: {
-        Row: {
-          amount: number | null
-          created_at: string
-          createdon: string | null
-          foruseremail: string | null
-          projectid: string | null
-          receiptdocurl: string | null
-          receiptid: string | null
-          submittinguser: string | null
-          updated_at: string
-          vendorid: string | null
-          vendorname: string | null
-        }
-        Insert: {
-          amount?: number | null
-          created_at?: string
-          createdon?: string | null
-          foruseremail?: string | null
-          projectid?: string | null
-          receiptdocurl?: string | null
-          receiptid?: string | null
-          submittinguser?: string | null
-          updated_at?: string
-          vendorid?: string | null
-          vendorname?: string | null
-        }
-        Update: {
-          amount?: number | null
-          created_at?: string
-          createdon?: string | null
-          foruseremail?: string | null
-          projectid?: string | null
-          receiptdocurl?: string | null
-          receiptid?: string | null
-          submittinguser?: string | null
-          updated_at?: string
-          vendorid?: string | null
-          vendorname?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_materialsreceipts_projectid"
-            columns: ["projectid"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["projectid"]
-          },
-          {
-            foreignKeyName: "fk_materialsreceipts_vendorid"
-            columns: ["vendorid"]
-            isOneToOne: false
-            referencedRelation: "vendors"
-            referencedColumns: ["vendorid"]
-          },
-        ]
-      }
       project_budget_items: {
         Row: {
           actual_amount: number | null
@@ -1454,56 +1397,6 @@ export type Database = {
         }
         Relationships: []
       }
-      subinvoices: {
-        Row: {
-          created_at: string
-          createdon: string | null
-          invoiceamount: number | null
-          invoicedocurl: string | null
-          projectid: string | null
-          projectname: string | null
-          subid: string | null
-          subinvoiceid: string
-          submittinguser: string | null
-          subname: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          createdon?: string | null
-          invoiceamount?: number | null
-          invoicedocurl?: string | null
-          projectid?: string | null
-          projectname?: string | null
-          subid?: string | null
-          subinvoiceid: string
-          submittinguser?: string | null
-          subname?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          createdon?: string | null
-          invoiceamount?: number | null
-          invoicedocurl?: string | null
-          projectid?: string | null
-          projectname?: string | null
-          subid?: string | null
-          subinvoiceid?: string
-          submittinguser?: string | null
-          subname?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_subinvoices_projectid"
-            columns: ["projectid"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["projectid"]
-          },
-        ]
-      }
       time_entries: {
         Row: {
           created_at: string
@@ -1560,44 +1453,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["employee_id"]
-          },
-        ]
-      }
-      time_entry_receipts: {
-        Row: {
-          file_name: string
-          file_size: number | null
-          file_type: string | null
-          id: string
-          storage_path: string
-          time_entry_id: string
-          uploaded_at: string
-        }
-        Insert: {
-          file_name: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          storage_path: string
-          time_entry_id: string
-          uploaded_at?: string
-        }
-        Update: {
-          file_name?: string
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          storage_path?: string
-          time_entry_id?: string
-          uploaded_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "time_entry_receipts_time_entry_id_fkey"
-            columns: ["time_entry_id"]
-            isOneToOne: false
-            referencedRelation: "time_entries"
-            referencedColumns: ["id"]
           },
         ]
       }
