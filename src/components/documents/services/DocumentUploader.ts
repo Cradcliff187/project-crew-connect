@@ -68,6 +68,7 @@ export const uploadDocument = async (
         notes: metadata.notes || null,
         vendor_id: metadata.vendorId || null,
         vendor_type: metadata.vendorType || null,
+        expense_type: metadata.expenseType || null, // Add the expense_type field
       };
       
       console.log('Inserting document metadata:', documentData);
