@@ -52,10 +52,11 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
           description: 'Could not load available statuses. Please try again.',
           variant: 'destructive',
         });
+        setStatusOptions([]); // Ensure we always have an array, even if empty
         return;
       }
       
-      // Ensure we have a valid array of options, even if data is null or undefined
+      // Always set a valid array (empty array if no data)
       const validOptions = Array.isArray(data) ? data : [];
       setStatusOptions(validOptions);
       console.log('Available statuses:', validOptions);
@@ -66,6 +67,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         description: 'Could not load available statuses. Please try again.',
         variant: 'destructive',
       });
+      setStatusOptions([]); // Ensure we always have an array, even if empty
     } finally {
       setLoading(false);
     }
@@ -134,7 +136,10 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
 
   // Helper function to get a user-friendly status label
   const getStatusLabel = (statusCode: string): string => {
-    const option = statusOptions.find(opt => opt.status_code === statusCode);
+    // Make sure statusOptions is an array before trying to find an element
+    const options = Array.isArray(statusOptions) ? statusOptions : [];
+    const option = options.find(opt => opt.status_code === statusCode);
+    
     if (option?.label) {
       return option.label;
     }
@@ -146,6 +151,9 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       .join(' ');
   };
 
+  // Ensure we have a valid status to display (use lowercase 'new' as fallback)
+  const currentStatus = workOrder.status || 'new';
+  
   return (
     <div className="flex items-center relative z-10">
       <span className="mr-2 text-sm font-medium">Status:</span>
@@ -154,10 +162,10 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         <PopoverTrigger asChild>
           <button 
             className="flex items-center cursor-pointer gap-1 hover:bg-accent p-1 rounded transition-colors"
-            disabled={loading || statusOptions.length === 0}
+            disabled={loading}
             aria-label="Change status"
           >
-            <StatusBadge status={workOrder.status} />
+            <StatusBadge status={currentStatus} />
             <ChevronDown className="h-4 w-4 ml-1 text-primary" />
           </button>
         </PopoverTrigger>
@@ -166,7 +174,11 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
           align="start"
           sideOffset={5}
         >
-          {statusOptions.length > 0 ? (
+          {loading ? (
+            <div className="py-4 px-2 text-center text-sm text-muted-foreground">
+              Loading statuses...
+            </div>
+          ) : statusOptions.length > 0 ? (
             <Command className="rounded-md overflow-hidden">
               <CommandGroup heading="Select status">
                 {statusOptions.map((option) => (
@@ -181,7 +193,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4 flex-shrink-0",
-                          option.status_code === workOrder.status ? "opacity-100 text-primary" : "opacity-0"
+                          option.status_code === currentStatus ? "opacity-100 text-primary" : "opacity-0"
                         )}
                       />
                       <span className="text-sm">{option.label || option.status_code}</span>
@@ -192,7 +204,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
             </Command>
           ) : (
             <div className="py-4 px-2 text-center text-sm text-muted-foreground">
-              {loading ? 'Loading statuses...' : 'No status options available'}
+              No status options available
             </div>
           )}
         </PopoverContent>
