@@ -15,6 +15,7 @@ export function useReceiptManager() {
     url: string;
     fileName: string;
     fileType: string;
+    document_id?: string;
   } | null>(null);
   
   // Handle receipt button click
@@ -28,7 +29,7 @@ export function useReceiptManager() {
       try {
         const { data, error } = await supabase
           .from('documents')
-          .select('file_name, file_type, storage_path')
+          .select('*')
           .eq('document_id', material.receipt_document_id)
           .single();
         
@@ -55,8 +56,9 @@ export function useReceiptManager() {
           
           setReceiptDocument({
             url: urlData.signedUrl,
-            fileName: data.file_name,
-            fileType: data.file_type
+            fileName: data.file_name || 'receipt.png',
+            fileType: data.file_type || 'application/octet-stream',
+            document_id: data.document_id
           });
           
           setViewingReceipt(true);

@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, AlertTriangle } from 'lucide-react';
+import { Download, AlertTriangle, FileText, ExternalLink } from 'lucide-react';
 import { WorkOrderDocument } from './types';
 import { useState } from 'react';
 
@@ -17,6 +17,15 @@ const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) =
   const handleError = () => {
     console.log('Error loading document:', document?.url);
     setError(true);
+  };
+  
+  const determineDisplayType = () => {
+    if (!document?.file_type) return 'unknown';
+    
+    const fileType = document.file_type.toLowerCase();
+    if (fileType.startsWith('image/')) return 'image';
+    if (fileType.includes('pdf')) return 'pdf';
+    return 'unknown';
   };
   
   return (
@@ -35,30 +44,41 @@ const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) =
                   <p className="text-sm text-muted-foreground mb-3 text-center">
                     The document could not be loaded directly in this preview.
                   </p>
-                  <Button 
-                    variant="outline"
-                    onClick={() => window.open(document.url, '_blank')}
-                  >
-                    Open in new tab
-                  </Button>
+                  <div className="flex flex-col space-y-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => window.open(document.url, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Open in new tab
+                    </Button>
+                  </div>
                 </div>
-              ) : document.file_type?.startsWith('image/') ? (
+              ) : determineDisplayType() === 'image' ? (
                 <img
                   src={document.url}
-                  alt={document.file_name}
+                  alt={document.file_name || 'Document preview'}
                   className="w-full h-full object-contain"
                   onError={handleError}
                 />
-              ) : document.file_type?.includes('pdf') ? (
+              ) : determineDisplayType() === 'pdf' ? (
                 <iframe
                   src={document.url}
-                  title={document.file_name}
+                  title={document.file_name || 'PDF document'}
                   className="w-full h-full"
                   onError={handleError}
                 />
               ) : (
-                <div className="flex items-center justify-center h-full bg-gray-50">
-                  <p>Preview not available</p>
+                <div className="flex flex-col items-center justify-center h-full bg-gray-50">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground mb-3">Preview not available</p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => window.open(document.url, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    Open document
+                  </Button>
                 </div>
               )}
             </div>

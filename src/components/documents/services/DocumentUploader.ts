@@ -65,7 +65,6 @@ export const uploadDocument = async (
           message: uploadError.message,
           error: uploadError,
           name: uploadError.name,
-          // Remove properties that don't exist on StorageError type
           stack: uploadError.stack
         });
         throw uploadError;

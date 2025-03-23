@@ -33,7 +33,7 @@ export function useReceiptManager() {
         throw new Error('Document has no storage path');
       }
       
-      // Generate signed URL using the correct bucket name - construction_documents
+      // Generate signed URL using the correct bucket name
       const { data: urlData, error: urlError } = await supabase
         .storage
         .from('construction_documents')
@@ -46,8 +46,13 @@ export function useReceiptManager() {
       
       console.log('Generated signed URL:', urlData);
       
-      // Return the document with URL
-      return { ...data, url: urlData.signedUrl } as Document;
+      // Return the document with URL and additional properties
+      return { 
+        ...data, 
+        url: urlData.signedUrl,
+        file_type: data.file_type || 'application/octet-stream', // Ensure we have a file type
+        file_name: data.file_name || 'receipt.png' // Ensure we have a file name
+      } as Document;
     } catch (error: any) {
       console.error('Error fetching receipt document:', error);
       toast({
