@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { TableRow, TableCell } from '@/components/ui/table';
@@ -5,7 +6,7 @@ import { formatDate } from '@/lib/utils';
 import { Pencil, MessageSquare, CalendarClock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
-import StatusBadge from '@/components/ui/status-badge';
+import StatusBadge from '@/components/ui/StatusBadge';
 
 interface WorkOrderRowProps {
   workOrder: WorkOrder;
