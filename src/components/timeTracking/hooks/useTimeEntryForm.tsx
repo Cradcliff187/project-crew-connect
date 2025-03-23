@@ -160,7 +160,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
             
           if (documentError) throw documentError;
           
-          // Use the new function to link document to time entry
+          // Use the fixed function to link document to time entry
           const { data: linkResult, error: linkError } = await supabase
             .rpc('attach_document_to_time_entry', {
               p_time_entry_id: insertedEntry.id,

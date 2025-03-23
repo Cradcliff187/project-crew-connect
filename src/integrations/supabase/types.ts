@@ -1415,6 +1415,7 @@ export type Database = {
           location_data: Json | null
           notes: string | null
           start_time: string
+          total_cost: number | null
           updated_at: string
         }
         Insert: {
@@ -1431,6 +1432,7 @@ export type Database = {
           location_data?: Json | null
           notes?: string | null
           start_time: string
+          total_cost?: number | null
           updated_at?: string
         }
         Update: {
@@ -1447,6 +1449,7 @@ export type Database = {
           location_data?: Json | null
           notes?: string | null
           start_time?: string
+          total_cost?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -1914,6 +1917,7 @@ export type Database = {
         | "CUSTOMER"
         | "WORK_ORDER"
         | "CONTACT"
+        | "TIME_ENTRY"
     }
     CompositeTypes: {
       [_ in never]: never

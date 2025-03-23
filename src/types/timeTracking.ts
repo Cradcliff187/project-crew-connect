@@ -14,6 +14,7 @@ export interface TimeEntry {
   employee_name?: string;
   employee_rate?: number;
   cost?: number;
+  total_cost?: number; // Added to match database
   has_receipts?: boolean;
   location_data?: any;
   created_at: string;

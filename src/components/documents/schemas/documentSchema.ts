@@ -1,4 +1,3 @@
-
 import * as z from 'zod';
 
 // Define the category options
@@ -21,7 +20,8 @@ export const entityTypes = [
   'WORK_ORDER',
   'VENDOR',
   'SUBCONTRACTOR',
-  'EXPENSE'
+  'EXPENSE',
+  'TIME_ENTRY'
 ] as const;
 
 // Define vendor types
