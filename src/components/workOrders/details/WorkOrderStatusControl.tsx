@@ -180,7 +180,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
             </div>
           ) : statusOptions.length > 0 ? (
             <Command className="rounded-md overflow-hidden">
-              <CommandGroup heading="Select status">
+              <CommandGroup className="overflow-hidden" heading="Select status">
                 {statusOptions.map((option) => (
                   <CommandItem
                     key={option.status_code}
