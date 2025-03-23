@@ -10,7 +10,7 @@ import TotalHoursDisplay from './TotalHoursDisplay';
 interface TimelogsInfoSectionProps {
   timelogs: TimeEntry[];
   loading: boolean;
-  employees: { id: string; name: string }[];
+  employees: { employee_id: string; name: string }[];
   workOrderId: string;
   onDelete: (id: string) => Promise<void>;
   onTimeLogAdded: () => void;
@@ -32,7 +32,7 @@ const TimelogsInfoSection = ({
   // Find employee name by ID
   const getEmployeeName = (employeeId: string | null) => {
     if (!employeeId) return "Unassigned";
-    const employee = employees.find(e => e.id === employeeId);
+    const employee = employees.find(e => e.employee_id === employeeId);
     return employee ? employee.name : "Unknown Employee";
   };
   

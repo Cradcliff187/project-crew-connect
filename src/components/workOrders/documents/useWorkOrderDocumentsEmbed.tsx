@@ -33,11 +33,11 @@ export const useWorkOrderDocumentsEmbed = (workOrderId: string, entityType: stri
             const { data: urlData } = await supabase
               .storage
               .from('documents')
-              .getPublicUrl(doc.file_path);
+              .getPublicUrl(doc.storage_path);
             
             return {
               ...doc,
-              document_id: doc.id,
+              document_id: doc.document_id,
               url: urlData.publicUrl
             } as WorkOrderDocument;
           })

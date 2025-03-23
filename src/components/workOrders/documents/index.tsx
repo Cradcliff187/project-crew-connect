@@ -5,7 +5,7 @@ import { FileUp, FileText } from 'lucide-react';
 import { useState } from 'react';
 import DocumentUpload from '@/components/documents/DocumentUpload';
 import DocumentsTableContent from '../details/DocumentsList/DocumentsTableContent';
-import { useWorkOrderDocuments } from '../details/DocumentsList/useWorkOrderDocuments';
+import { useWorkOrderDocumentsEmbed } from './useWorkOrderDocumentsEmbed';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;
@@ -13,11 +13,11 @@ interface WorkOrderDocumentsProps {
 }
 
 const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps) => {
-  const { documents, loading, fetchDocuments } = useWorkOrderDocuments(workOrderId);
+  const { documents, loading, refetchDocuments } = useWorkOrderDocumentsEmbed(workOrderId, entityType);
   const [showUpload, setShowUpload] = useState(false);
   
   const handleUploadComplete = () => {
-    fetchDocuments();
+    refetchDocuments();
     setShowUpload(false);
   };
   
@@ -56,7 +56,7 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
       
       {showUpload && (
         <DocumentUpload
-          entityType={entityType}
+          entityId={workOrderId}
           onClose={() => setShowUpload(false)}
           onUploadComplete={handleUploadComplete}
           isOpen={showUpload}

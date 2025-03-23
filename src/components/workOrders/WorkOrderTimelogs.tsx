@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { useWorkOrderTimelogs } from './hooks/useWorkOrderTimelogs';
 import { TimelogsInfoSection } from './timelogs/components';
 
@@ -17,11 +16,7 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     handleDeleteTimelog
   } = useWorkOrderTimelogs(workOrderId);
   
-  // Map employee data structure to match what TimelogsInfoSection expects
-  const mappedEmployees = employees.map(emp => ({
-    id: emp.employee_id,
-    name: emp.name
-  }));
+  // We don't need to map the employee structure since it's already in the correct format
   
   const handleSuccessfulAdd = () => {
     fetchTimelogs();
@@ -32,7 +27,7 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     <TimelogsInfoSection
       timelogs={timelogs}
       loading={loading}
-      employees={mappedEmployees}
+      employees={employees}
       workOrderId={workOrderId}
       onDelete={handleDeleteTimelog}
       onTimeLogAdded={handleSuccessfulAdd}
