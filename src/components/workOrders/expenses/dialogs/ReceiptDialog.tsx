@@ -5,7 +5,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { WorkOrderExpense } from '@/types/workOrder';
 import { Document } from '@/components/documents/schemas/documentSchema';
@@ -13,7 +14,7 @@ import ExpenseReceiptUpload from '../components/ExpenseReceiptUpload';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, FileText, ExternalLink, File } from 'lucide-react';
+import { AlertTriangle, FileText, ExternalLink, File, X, Download } from 'lucide-react';
 
 interface ReceiptUploadDialogProps {
   open: boolean;
@@ -78,11 +79,22 @@ export const ReceiptViewerDialog = ({
   const [error, setError] = useState(false);
   const [loadAttempted, setLoadAttempted] = useState(false);
   const mountedRef = useRef(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Handle component unmounting
   useEffect(() => {
     return () => {
       mountedRef.current = false;
+      
+      // Clean up any iframe resources
+      if (iframeRef.current) {
+        try {
+          // Clear src to stop any ongoing loads
+          iframeRef.current.src = 'about:blank';
+        } catch (e) {
+          console.log('Error cleaning up iframe:', e);
+        }
+      }
     };
   }, []);
 
@@ -91,6 +103,16 @@ export const ReceiptViewerDialog = ({
     if (mountedRef.current) {
       setError(false);
       setLoadAttempted(false);
+    }
+    
+    // When dialog is closed, perform additional cleanup
+    if (!open && iframeRef.current) {
+      try {
+        // Clear src to stop any ongoing loads
+        iframeRef.current.src = 'about:blank';
+      } catch (e) {
+        console.log('Error cleaning up iframe on close:', e);
+      }
     }
   }, [receiptDocument, open]);
   
@@ -140,12 +162,26 @@ export const ReceiptViewerDialog = ({
   // Handle closing dialog explicitly to avoid UI lockups
   const handleClose = () => {
     if (mountedRef.current) {
-      onOpenChange(false);
+      // Explicitly clean up iframe
+      if (iframeRef.current) {
+        try {
+          iframeRef.current.src = 'about:blank';
+        } catch (e) {
+          console.log('Error cleaning up iframe in handleClose:', e);
+        }
+      }
+      
+      // Small delay to ensure cleanup happens before dialog state changes
+      setTimeout(() => {
+        if (mountedRef.current) {
+          onOpenChange(false);
+        }
+      }, 10);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Receipt: {receiptDocument.file_name}</DialogTitle>
@@ -167,7 +203,8 @@ export const ReceiptViewerDialog = ({
                 className="text-blue-600 hover:text-blue-800"
                 onClick={() => window.open(receiptDocument.url, '_blank')}
               >
-                Click here to open the receipt in a new tab
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open in new tab
               </Button>
             </div>
           ) : fileType === 'image' ? (
@@ -181,6 +218,7 @@ export const ReceiptViewerDialog = ({
             </AspectRatio>
           ) : fileType === 'pdf' ? (
             <iframe
+              ref={iframeRef}
               src={receiptDocument.url}
               className="w-full h-[60vh]"
               title="Receipt PDF"
@@ -198,17 +236,26 @@ export const ReceiptViewerDialog = ({
                 className="text-blue-600 hover:text-blue-800"
                 onClick={() => window.open(receiptDocument.url, '_blank')}
               >
-                <ExternalLink className="h-4 w-4 mr-1" />
+                <ExternalLink className="h-4 w-4 mr-2" />
                 Open document
               </Button>
             </div>
           )}
         </div>
-        <div className="flex justify-end mt-4">
-          <Button onClick={handleClose} variant="outline">
+        <DialogFooter className="flex items-center justify-between mt-4">
+          <Button
+            variant="outline"
+            onClick={() => window.open(receiptDocument.url, '_blank')}
+            size="sm"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
+          <Button onClick={handleClose} variant="outline" size="sm">
+            <X className="h-4 w-4 mr-2" />
             Close
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Document } from './schemas/documentSchema';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,16 +16,46 @@ interface DocumentDetailViewProps {
 const DocumentDetailView = ({ document, open, onClose, onDelete }: DocumentDetailViewProps) => {
   const [viewError, setViewError] = useState(false);
   const [loadAttempted, setLoadAttempted] = useState(false);
+  const mountedRef = useRef(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Track component mount status
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      
+      // Clean up iframe resources
+      if (iframeRef.current) {
+        try {
+          iframeRef.current.src = 'about:blank';
+        } catch (e) {
+          console.log('Error cleaning up iframe on unmount:', e);
+        }
+      }
+    };
+  }, []);
 
   // Reset state when document changes or dialog opens/closes
   useEffect(() => {
-    setViewError(false);
-    setLoadAttempted(false);
+    if (mountedRef.current) {
+      setViewError(false);
+      setLoadAttempted(false);
+    }
+    
+    // When dialog is closed, perform additional cleanup
+    if (!open && iframeRef.current) {
+      try {
+        iframeRef.current.src = 'about:blank';
+      } catch (e) {
+        console.log('Error cleaning up iframe on dialog close:', e);
+      }
+    }
   }, [document, open]);
   
   // Force load attempt after component mount
   useEffect(() => {
-    if (open && !loadAttempted && document) {
+    if (open && !loadAttempted && document && mountedRef.current) {
       setLoadAttempted(true);
       console.log('Document detail view - document loaded:', {
         id: document.document_id,
@@ -39,9 +69,11 @@ const DocumentDetailView = ({ document, open, onClose, onDelete }: DocumentDetai
   if (!document) return null;
 
   const handleViewError = () => {
-    console.log('Error loading document preview:', document.file_name);
-    console.log('Document type:', document.file_type);
-    setViewError(true);
+    if (mountedRef.current) {
+      console.log('Error loading document preview:', document.file_name);
+      console.log('Document type:', document.file_type);
+      setViewError(true);
+    }
   };
 
   // Determine the type of content for appropriate display
@@ -58,11 +90,25 @@ const DocumentDetailView = ({ document, open, onClose, onDelete }: DocumentDetai
 
   // Handle closing dialog to avoid UI lockups
   const handleClose = () => {
-    onClose();
+    // Clean up iframe resources first
+    if (iframeRef.current) {
+      try {
+        iframeRef.current.src = 'about:blank';
+      } catch (e) {
+        console.log('Error cleaning up iframe in handleClose:', e);
+      }
+    }
+    
+    // Small delay to ensure cleanup happens before dialog state changes
+    setTimeout(() => {
+      if (mountedRef.current) {
+        onClose();
+      }
+    }, 10);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>{document.file_name}</DialogTitle>
@@ -98,6 +144,7 @@ const DocumentDetailView = ({ document, open, onClose, onDelete }: DocumentDetai
             </div>
           ) : contentType === 'pdf' ? (
             <iframe
+              ref={iframeRef}
               src={document.url}
               className="w-full h-full border-0"
               title={document.file_name}
@@ -121,7 +168,7 @@ const DocumentDetailView = ({ document, open, onClose, onDelete }: DocumentDetai
           )}
         </div>
         
-        <DialogFooter className="flex justify-between">
+        <DialogFooter className="flex justify-between mt-4">
           <Button variant="destructive" onClick={onDelete} size="sm">
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
