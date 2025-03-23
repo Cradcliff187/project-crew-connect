@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -74,25 +74,33 @@ export const ReceiptViewerDialog = ({
 }: ReceiptViewerDialogProps) => {
   const [error, setError] = useState(false);
   const [loadAttempted, setLoadAttempted] = useState(false);
+  const mountedRef = useRef(true);
 
-  if (!receiptDocument) return null;
+  // Handle component unmounting
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Reset state when document changes or dialog opens/closes
   useEffect(() => {
-    setError(false);
-    setLoadAttempted(false);
+    if (mountedRef.current) {
+      setError(false);
+      setLoadAttempted(false);
+    }
   }, [receiptDocument, open]);
   
   // Force load attempt after component mount
   useEffect(() => {
-    if (open && !loadAttempted) {
+    if (open && !loadAttempted && mountedRef.current) {
       setLoadAttempted(true);
     }
   }, [open, loadAttempted]);
 
   // Log document info for debugging
   useEffect(() => {
-    if (receiptDocument) {
+    if (receiptDocument && open) {
       console.log('Viewing receipt document:', {
         id: receiptDocument.document_id,
         fileName: receiptDocument.file_name,
@@ -100,7 +108,9 @@ export const ReceiptViewerDialog = ({
         url: receiptDocument.url
       });
     }
-  }, [receiptDocument]);
+  }, [receiptDocument, open]);
+
+  if (!receiptDocument) return null;
 
   // Check file type to determine display method
   const getFileType = () => {
@@ -115,9 +125,11 @@ export const ReceiptViewerDialog = ({
   };
 
   const handleImageError = () => {
-    console.log('Error loading document:', receiptDocument.url);
-    console.log('Document type:', receiptDocument.file_type);
-    setError(true);
+    if (mountedRef.current) {
+      console.log('Error loading document:', receiptDocument.url);
+      console.log('Document type:', receiptDocument.file_type);
+      setError(true);
+    }
   };
 
   const fileType = getFileType();

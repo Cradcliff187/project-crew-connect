@@ -25,8 +25,7 @@ export const uploadDocument = async (
       const fileExt = file.name.split('.').pop();
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       
-      // CRITICAL FIX: Ensure proper path format
-      // In Supabase, folder paths should use lowercase entity types and have proper structure
+      // Format entity type for path to ensure consistency
       const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
       const filePath = `${entityTypePath}/${metadata.entityId || 'general'}/${fileName}`;
       
@@ -46,7 +45,7 @@ export const uploadDocument = async (
       // Enhanced logging for Content-Type debugging
       console.log('File MIME type from browser:', file.type);
       
-      // CRITICAL FIX: Explicitly set contentType based on file extension if type is missing or generic
+      // Determine the proper content type based on file extension if needed
       let contentType = file.type;
       if (!contentType || contentType === 'application/octet-stream') {
         // Map common extensions to MIME types
@@ -73,7 +72,7 @@ export const uploadDocument = async (
       console.log('About to execute upload with params:', {
         bucket: 'construction_documents',
         path: filePath,
-        fileType: contentType, // Using our possibly corrected contentType
+        fileType: contentType,
         fileSize: file.size,
         upsert: true
       });
@@ -82,8 +81,8 @@ export const uploadDocument = async (
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file, {
-          contentType: contentType, // FIXED: Use our determined content type
-          upsert: true // Override existing files with same name if needed
+          contentType: contentType, // CRITICAL: Ensure proper content type is used
+          upsert: true
         });
         
       if (uploadError) {
@@ -97,9 +96,6 @@ export const uploadDocument = async (
       }
       
       console.log('File uploaded successfully:', uploadData);
-      
-      // REMOVED PROBLEMATIC CODE: The direct query to storage.objects
-      // Instead, we'll log what we know about the file from the upload response
       console.log('Upload response:', uploadData);
       
       // Get public URL for the uploaded file
@@ -112,7 +108,7 @@ export const uploadDocument = async (
       // Now insert document metadata to Supabase
       const documentData = {
         file_name: file.name,
-        file_type: contentType, // FIXED: Use our determined content type
+        file_type: contentType, // Use our determined content type
         file_size: file.size,
         storage_path: filePath,
         entity_type: metadata.entityType,

@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Download, AlertTriangle, FileText, ExternalLink, File, FileArchive } from 'lucide-react';
 import { WorkOrderDocument } from './types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface DocumentViewerProps {
   document: WorkOrderDocument | null;
@@ -14,17 +14,29 @@ interface DocumentViewerProps {
 const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) => {
   const [error, setError] = useState(false);
   const [loadAttempted, setLoadAttempted] = useState(false);
+  const mountedRef = useRef(true);
+  
+  // Set up cleanup for component unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   
   // Reset error state when document changes
   useEffect(() => {
-    setError(false);
-    setLoadAttempted(false);
+    if (mountedRef.current) {
+      setError(false);
+      setLoadAttempted(false);
+    }
   }, [document]);
   
   const handleError = () => {
-    console.log('Error loading document:', document?.url);
-    console.log('Document type:', document?.file_type);
-    setError(true);
+    if (mountedRef.current) {
+      console.log('Error loading document:', document?.url);
+      console.log('Document type:', document?.file_type);
+      setError(true);
+    }
   };
   
   const getFileIcon = () => {
@@ -52,18 +64,22 @@ const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) =
   
   // Force load attempt after component mount if no error has occurred
   useEffect(() => {
-    if (open && !loadAttempted && !error) {
+    if (open && !loadAttempted && !error && mountedRef.current) {
       setLoadAttempted(true);
     }
   }, [open, loadAttempted, error]);
   
   // Log document info for debugging
-  console.log('Viewing document:', {
-    id: document.document_id,
-    name: document.file_name,
-    type: document.file_type,
-    url: document.url
-  });
+  useEffect(() => {
+    if (document && open) {
+      console.log('Viewing document:', {
+        id: document.document_id,
+        name: document.file_name,
+        type: document.file_type,
+        url: document.url
+      });
+    }
+  }, [document, open]);
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
