@@ -77,6 +77,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   // Show full metadata form for other document uploads
   return (
     <div className="space-y-4">
+      {/* Fix for the first TypeScript error - Using the correct path */}
       <FormField
         control={control}
         name="metadata.title"
@@ -87,6 +88,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
               <Input 
                 placeholder="Enter document title..." 
                 {...field}
+                // Fix for the second TypeScript error - Ensure the value is a string
                 value={field.value || ''}
               />
             </FormControl>
