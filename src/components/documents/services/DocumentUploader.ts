@@ -51,10 +51,8 @@ export const uploadDocument = async (
         console.error('Storage upload error:', {
           message: uploadError.message,
           error: uploadError,
-          // Use safely typed properties
-          status: uploadError.status,
-          name: uploadError.name,
-          cause: uploadError.cause
+          // FIX: Remove properties that don't exist on StorageError
+          name: uploadError.name
         });
         throw uploadError;
       }
@@ -122,11 +120,8 @@ export const uploadDocument = async (
       errorObject: error,
       // Only include properties that definitely exist
       name: error.name,
-      stack: error.stack,
-      cause: error.cause,
-      // For Supabase errors
-      status: error.status,
-      additionalInfo: error.details || 'No additional details'
+      stack: error.stack
+      // FIX: Remove properties that don't exist on the error object
     });
     
     return {
