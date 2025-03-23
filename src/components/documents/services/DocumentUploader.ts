@@ -24,30 +24,45 @@ export const uploadDocument = async (
       const timestamp = new Date().getTime();
       const fileExt = file.name.split('.').pop();
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      const filePath = `${metadata.entityType.toLowerCase()}/${metadata.entityId || 'general'}/${fileName}`;
       
-      // FIXED: Using the correctly formatted bucket name
-      // In Supabase, bucket names can have spaces in the UI but should be used without spaces in the code
+      // CRITICAL FIX: Ensure proper path format
+      // In Supabase, folder paths should use lowercase entity types and have proper structure
+      const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
+      const filePath = `${entityTypePath}/${metadata.entityId || 'general'}/${fileName}`;
+      
+      // CRITICAL FIX: Verify bucket name exists in Supabase exactly as written here
+      // NOTE: Bucket names in Supabase should match exactly what's in the UI
       const bucketName = 'construction_documents';
       
-      console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
-      console.log(`File object:`, {
-        name: file.name,
-        type: file.type,
-        size: file.size
+      console.log(`Preparing to upload file:`, {
+        bucketName,
+        filePath,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size
       });
       
-      // CRITICAL FIX: Ensure we're uploading the actual file and not JSON
-      // Set proper content type and force binary upload
+      // Check if file is actually a File object
+      if (!(file instanceof File)) {
+        console.error('Not a valid File object:', file);
+        throw new Error('Invalid file object provided');
+      }
+      
+      // CRITICAL FIX: Use explicit file handling to ensure proper binary upload
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
           contentType: file.type, // Set the correct content type
-          upsert: false // Don't override existing files
+          upsert: true // Override existing files with same name if needed
         });
         
       if (uploadError) {
-        console.error('Storage upload error:', uploadError);
+        console.error('Storage upload error (detailed):', {
+          message: uploadError.message,
+          error: uploadError,
+          statusCode: uploadError.statusCode, 
+          details: uploadError.details
+        });
         throw uploadError;
       }
       
@@ -108,7 +123,14 @@ export const uploadDocument = async (
     };
     
   } catch (error) {
-    console.error('Upload error:', error);
+    // Enhanced error logging
+    console.error('Upload error (detailed):', {
+      errorMessage: error.message,
+      errorObject: error,
+      statusCode: error.statusCode,
+      details: error.details || 'No additional details'
+    });
+    
     return {
       success: false,
       error

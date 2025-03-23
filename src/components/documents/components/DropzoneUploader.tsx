@@ -22,6 +22,19 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   watchFiles,
   label = 'Upload Document'
 }) => {
+  // Log to verify component is rendering with correct props
+  console.log('DropzoneUploader rendering with files:', watchFiles);
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // Ensure we're passing proper File objects
+      const fileArray = Array.from(files);
+      console.log('Files selected:', fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
+      onFileSelect(fileArray);
+    }
+  };
+  
   return (
     <FormField
       control={control}
@@ -84,12 +97,10 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   multiple={false}
                   accept="image/*,application/pdf"
                   onChange={(e) => {
-                    const files = e.target.files;
-                    if (files && files.length > 0) {
-                      // CRITICAL FIX: Ensure we're passing the actual File objects
-                      const fileArray = Array.from(files);
-                      field.onChange(fileArray);
-                      onFileSelect(fileArray);
+                    handleFileChange(e);
+                    // Make sure field.onChange is still called for React Hook Form
+                    if (e.target.files && e.target.files.length > 0) {
+                      field.onChange(Array.from(e.target.files));
                     }
                   }}
                 />
