@@ -37,6 +37,15 @@ interface ProjectExpensesProps {
   onRefresh?: () => void;
 }
 
+/**
+ * Helper function to safely extract the budget item category
+ */
+const getBudgetItemCategory = (budgetItem: any): string | null => {
+  if (!budgetItem) return null;
+  if (typeof budgetItem !== 'object') return null;
+  return budgetItem.category || null;
+};
+
 const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh }) => {
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
@@ -89,8 +98,8 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
           document_id: expense.document_id,
           created_at: expense.created_at,
           updated_at: expense.updated_at,
-          // Handle the budget_item property which might be null or an error object
-          budget_item_category: expense.budget_item && typeof expense.budget_item === 'object' && expense.budget_item !== null ? expense.budget_item.category : null,
+          // Use the helper function to safely extract the category
+          budget_item_category: getBudgetItemCategory(expense.budget_item),
           vendor_name: vendorName
         };
       }));
