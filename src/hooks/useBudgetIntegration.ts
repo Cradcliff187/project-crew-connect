@@ -9,9 +9,9 @@ export const useBudgetIntegration = () => {
   const createBudgetFromEstimate = async (projectId: string, estimateId: string) => {
     setIsLoading(true);
     try {
-      const success = await budgetIntegrationService.createBudgetFromEstimate(projectId, estimateId);
+      const result = await budgetIntegrationService.createBudgetFromEstimate(projectId, estimateId);
       
-      if (success) {
+      if (result.success) {
         toast({
           title: 'Budget Created',
           description: 'Initial budget items have been created from the estimate.',
@@ -20,7 +20,7 @@ export const useBudgetIntegration = () => {
       } else {
         toast({
           title: 'Budget Creation Failed',
-          description: 'Could not create budget items from the estimate.',
+          description: result.message || 'Could not create budget items from the estimate.',
           variant: 'destructive'
         });
         return false;
@@ -77,9 +77,9 @@ export const useBudgetIntegration = () => {
   const importWorkOrderCosts = async (workOrderId: string, projectId: string) => {
     setIsLoading(true);
     try {
-      const success = await budgetIntegrationService.importWorkOrderCostsToProject(workOrderId, projectId);
+      const result = await budgetIntegrationService.importWorkOrderCostsToProject(workOrderId, projectId);
       
-      if (success) {
+      if (result.success) {
         toast({
           title: 'Costs Imported',
           description: 'Work order costs have been imported to the project budget.',
@@ -88,7 +88,7 @@ export const useBudgetIntegration = () => {
       } else {
         toast({
           title: 'Import Failed',
-          description: 'Could not import work order costs to the project budget.',
+          description: result.message || 'Could not import work order costs to the project budget.',
           variant: 'destructive'
         });
         return false;

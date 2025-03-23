@@ -27,17 +27,22 @@ export interface WorkOrder {
 
 export interface WorkOrderExpense {
   id: string;
-  work_order_id: string;
+  work_order_id?: string;
+  entity_id?: string; // For expenses table compatibility
+  entity_type?: string; // For expenses table compatibility
   vendor_id?: string | null;
   expense_name: string;
   material_name?: string; // For backward compatibility
+  description?: string; // For expenses table compatibility
   quantity: number;
   unit_price: number;
   total_price: number;
+  amount?: number; // For expenses table compatibility 
   receipt_document_id?: string | null;
+  document_id?: string | null; // For expenses table compatibility
   created_at: string;
   updated_at: string;
-  expense_type: string; // 'material', 'labor', etc.
+  expense_type: string; // 'MATERIAL', 'LABOR', etc.
   source_type: 'material' | 'time_entry' | string; // Updated to allow string for type safety
   time_entry_id?: string | null;
 }

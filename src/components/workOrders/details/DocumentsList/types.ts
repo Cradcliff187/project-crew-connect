@@ -13,4 +13,15 @@ export interface VendorDocument {
   updated_at: string;
   category?: string;
   tags?: string[];
+  mime_type?: string | null;
+  file_size?: number | null;
+  uploaded_by?: string | null;
+  version?: number;
+  amount?: number | null;
+  vendor_id?: string | null;
+  vendor_type?: string | null;
+  expense_type?: string | null;
+  notes?: string | null;
+  expense_date?: string | null;
+  is_expense?: boolean;
 }

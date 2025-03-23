@@ -38,12 +38,14 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
     try {
       // Detailed logging to help debug the issue
       console.log('Adding material with payload:', {
-        work_order_id: workOrderId,
-        vendor_id: material.vendorId,
-        material_name: material.materialName,
+        entity_id: workOrderId,
+        entity_type: 'WORK_ORDER',
+        description: material.materialName,
+        expense_type: 'MATERIAL',
         quantity: material.quantity,
         unit_price: material.unitPrice,
-        total_price: totalPrice,
+        amount: totalPrice,
+        vendor_id: material.vendorId,
       });
       
       // Validate that workOrderId is a valid UUID
@@ -51,16 +53,18 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
         throw new Error(`Invalid work order ID format: ${workOrderId}`);
       }
       
-      const { data, error } = await (supabase as any)
-        .from('work_order_materials')
+      // Insert into the expenses table
+      const { data, error } = await supabase
+        .from('expenses')
         .insert({
-          work_order_id: workOrderId,
-          vendor_id: material.vendorId,
-          material_name: material.materialName,
+          entity_id: workOrderId,
+          entity_type: 'WORK_ORDER',
+          description: material.materialName,
+          expense_type: 'MATERIAL',
           quantity: material.quantity,
           unit_price: material.unitPrice,
-          total_price: totalPrice,
-          expense_type: 'materials',
+          amount: totalPrice,
+          vendor_id: material.vendorId,
         })
         .select();
       
@@ -76,20 +80,20 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
         description: 'Material has been added successfully.',
       });
       
-      // Transform database response to WorkOrderMaterial format with both fields
+      // Transform database response to WorkOrderMaterial format
       const addedMaterial: WorkOrderMaterial = {
         id: data[0].id,
-        work_order_id: data[0].work_order_id,
+        work_order_id: data[0].entity_id,
         vendor_id: data[0].vendor_id,
-        expense_name: data[0].material_name, // Map material_name to expense_name
-        material_name: data[0].material_name, // Keep material_name for compatibility
+        expense_name: data[0].description, 
+        material_name: data[0].description, // Keep material_name for compatibility
         quantity: data[0].quantity,
         unit_price: data[0].unit_price,
-        total_price: data[0].total_price,
-        receipt_document_id: data[0].receipt_document_id,
+        total_price: data[0].amount,
+        receipt_document_id: data[0].document_id,
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
-        expense_type: data[0].expense_type || 'materials',
+        expense_type: data[0].expense_type || 'MATERIAL',
         source_type: 'material' as const
       };
       
@@ -114,10 +118,10 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
     }
     
     try {
-      // First, fetch the material to get the receipt_document_id if it exists
-      const { data: material, error: fetchError } = await (supabase as any)
-        .from('work_order_materials')
-        .select('receipt_document_id, material_name')
+      // First, fetch the material to get the document_id if it exists
+      const { data: material, error: fetchError } = await supabase
+        .from('expenses')
+        .select('document_id, description')
         .eq('id', id)
         .single();
       
@@ -125,14 +129,14 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
         throw fetchError;
       }
       
-      console.log('Deleting material with ID:', id, 'Receipt document ID:', material?.receipt_document_id);
+      console.log('Deleting material with ID:', id, 'Receipt document ID:', material?.document_id);
       
       // If there's a receipt document, fetch its storage_path
-      if (material?.receipt_document_id) {
+      if (material?.document_id) {
         const { data: document, error: docError } = await supabase
           .from('documents')
           .select('storage_path')
-          .eq('document_id', material.receipt_document_id)
+          .eq('document_id', material.document_id)
           .single();
         
         if (docError && docError.code !== 'PGRST116') { // PGRST116 is "Not found" which might happen if the document was already deleted
@@ -150,13 +154,18 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
             console.warn('Error deleting file from storage:', storageError);
             // Continue with deletion even if we can't delete the file
           }
+          
+          // Delete the document record
+          await supabase
+            .from('documents')
+            .delete()
+            .eq('document_id', material.document_id);
         }
       }
       
-      // Delete the material record from the database
-      // The database trigger will handle deleting the document record
-      const { error } = await (supabase as any)
-        .from('work_order_materials')
+      // Delete the expense record from the database
+      const { error } = await supabase
+        .from('expenses')
         .delete()
         .eq('id', id);
       
@@ -166,7 +175,7 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
       
       toast({
         title: 'Material Deleted',
-        description: `The material "${material?.material_name || ''}" has been deleted successfully.`,
+        description: `The material "${material?.description || ''}" has been deleted successfully.`,
       });
       
       // Refresh materials list

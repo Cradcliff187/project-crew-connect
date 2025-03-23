@@ -26,13 +26,13 @@ export type StatusType =
   | 'not_started'
   | 'not-started'
   | 'in-progress'
-  // Added new status types to match WorkOrder status
+  // Work order status types (uppercase for consistency with the database)
   | 'NEW'
   | 'IN_PROGRESS'
   | 'ON_HOLD'
   | 'COMPLETED'
   | 'CANCELLED'
-  // Added new status types to match SubcontractorStatusBadge usage
+  // UI status types for badges
   | 'success'
   | 'info'
   | 'error'

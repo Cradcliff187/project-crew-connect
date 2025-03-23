@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { TimeEntryFormValues } from './useTimeEntryForm';
 import { toast } from '@/hooks/use-toast';
@@ -92,6 +93,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           }
           
           if (data.entityType === 'work_order') {
+            // Create an expense entry for the time entry receipt
             const { error: expenseError } = await supabase
               .from('expenses')
               .insert({
@@ -105,13 +107,40 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 quantity: 1,
-                unit_price: 0
+                unit_price: 0,
+                vendor_id: null
               });
               
             if (expenseError) {
               console.error('Error creating expense for receipt:', expenseError);
             }
           }
+        }
+      }
+      
+      // Create expense entry for the labor time
+      if (data.entityType === 'work_order' && data.hoursWorked > 0) {
+        const hourlyRate = employeeRate || 75; // Default to $75/hour if no employee rate
+        const totalAmount = data.hoursWorked * hourlyRate;
+        
+        const { error: laborExpenseError } = await supabase
+          .from('expenses')
+          .insert({
+            entity_type: 'WORK_ORDER',
+            entity_id: data.entityId,
+            description: `Labor: ${data.hoursWorked} hours`,
+            expense_type: 'LABOR',
+            amount: totalAmount,
+            time_entry_id: insertedEntry.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            quantity: data.hoursWorked,
+            unit_price: hourlyRate,
+            vendor_id: null
+          });
+          
+        if (laborExpenseError) {
+          console.error('Error creating labor expense:', laborExpenseError);
         }
       }
       
