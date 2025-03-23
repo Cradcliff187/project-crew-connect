@@ -1,10 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/layout/PageTransition';
 import ProjectsHeader from '@/components/projects/ProjectsHeader';
-import ProjectsTable, { Project } from '@/components/projects/ProjectsTable';
+import ProjectsTable from '@/components/projects/ProjectsTable';
 import { useQuery } from '@tanstack/react-query';
+import PageHeader from '@/components/layout/PageHeader';
 
 const fetchProjects = async () => {
   // First, fetch all projects
@@ -50,6 +52,7 @@ const fetchProjects = async () => {
 
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddDialog, setShowAddDialog] = useState(false);
   
   const { 
     data: projects = [], 
@@ -62,20 +65,14 @@ const Projects = () => {
     meta: {
       onError: (error: any) => {
         console.error('Error fetching projects:', error);
+        toast({
+          title: 'Error fetching projects',
+          description: error.message,
+          variant: 'destructive'
+        });
       }
     }
   });
-
-  // Handle errors outside the query to show toast
-  useEffect(() => {
-    if (queryError) {
-      toast({
-        title: 'Error fetching projects',
-        description: (queryError as Error).message,
-        variant: 'destructive'
-      });
-    }
-  }, [queryError]);
 
   const error = queryError ? (queryError as Error).message : null;
   
@@ -87,18 +84,27 @@ const Projects = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <ProjectsHeader 
-          searchQuery={searchQuery} 
-          setSearchQuery={setSearchQuery}
-          onProjectAdded={handleProjectAdded}
-        />
+        <PageHeader
+          title="Projects"
+          description="Manage construction and maintenance projects"
+        >
+          <ProjectsHeader 
+            searchQuery={searchQuery} 
+            setSearchQuery={setSearchQuery}
+            onProjectAdded={handleProjectAdded}
+            showAddDialog={showAddDialog}
+            setShowAddDialog={setShowAddDialog}
+          />
+        </PageHeader>
         
-        <ProjectsTable 
-          projects={projects}
-          loading={loading}
-          error={error}
-          searchQuery={searchQuery}
-        />
+        <div className="mt-6">
+          <ProjectsTable 
+            projects={projects}
+            loading={loading}
+            error={error}
+            searchQuery={searchQuery}
+          />
+        </div>
       </div>
     </PageTransition>
   );
