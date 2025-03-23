@@ -112,7 +112,47 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
     }
     
     try {
-      console.log('Deleting material with ID:', id);
+      // First, fetch the material to get the receipt_document_id if it exists
+      const { data: material, error: fetchError } = await supabase
+        .from('work_order_materials')
+        .select('receipt_document_id, material_name')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      console.log('Deleting material with ID:', id, 'Receipt document ID:', material?.receipt_document_id);
+      
+      // If there's a receipt document, fetch its storage_path
+      if (material?.receipt_document_id) {
+        const { data: document, error: docError } = await supabase
+          .from('documents')
+          .select('storage_path')
+          .eq('document_id', material.receipt_document_id)
+          .single();
+        
+        if (docError && docError.code !== 'PGRST116') { // PGRST116 is "Not found" which might happen if the document was already deleted
+          console.warn('Error fetching document:', docError);
+          // Continue with deletion even if we can't fetch the document
+        } else if (document?.storage_path) {
+          console.log('Deleting file from storage:', document.storage_path);
+          
+          // Delete the file from storage
+          const { error: storageError } = await supabase.storage
+            .from('construction_documents')
+            .remove([document.storage_path]);
+          
+          if (storageError) {
+            console.warn('Error deleting file from storage:', storageError);
+            // Continue with deletion even if we can't delete the file
+          }
+        }
+      }
+      
+      // Delete the material record from the database
+      // The database trigger will handle deleting the document record
       const { error } = await supabase
         .from('work_order_materials')
         .delete()
@@ -124,7 +164,7 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
       
       toast({
         title: 'Material Deleted',
-        description: 'The material has been deleted successfully.',
+        description: `The material "${material?.material_name || ''}" has been deleted successfully.`,
       });
       
       // Refresh materials list

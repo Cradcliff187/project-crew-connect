@@ -115,7 +115,47 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
     }
     
     try {
-      console.log('Deleting expense with ID:', id);
+      // First, fetch the expense to get the receipt_document_id if it exists
+      const { data: expense, error: fetchError } = await supabase
+        .from('work_order_materials')
+        .select('receipt_document_id, material_name')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      console.log('Deleting expense with ID:', id, 'Receipt document ID:', expense?.receipt_document_id);
+      
+      // If there's a receipt document, fetch its storage_path
+      if (expense?.receipt_document_id) {
+        const { data: document, error: docError } = await supabase
+          .from('documents')
+          .select('storage_path')
+          .eq('document_id', expense.receipt_document_id)
+          .single();
+        
+        if (docError && docError.code !== 'PGRST116') { // PGRST116 is "Not found" which might happen if the document was already deleted
+          console.warn('Error fetching document:', docError);
+          // Continue with deletion even if we can't fetch the document
+        } else if (document?.storage_path) {
+          console.log('Deleting file from storage:', document.storage_path);
+          
+          // Delete the file from storage
+          const { error: storageError } = await supabase.storage
+            .from('construction_documents')
+            .remove([document.storage_path]);
+          
+          if (storageError) {
+            console.warn('Error deleting file from storage:', storageError);
+            // Continue with deletion even if we can't delete the file
+          }
+        }
+      }
+      
+      // Delete the expense record from the database
+      // The database trigger will handle deleting the document record
       const { error } = await supabase
         .from('work_order_materials')
         .delete()
@@ -127,7 +167,7 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
       
       toast({
         title: 'Expense Deleted',
-        description: 'The expense has been deleted successfully.',
+        description: `The expense "${expense?.material_name || ''}" has been deleted successfully.`,
       });
       
       // Refresh expenses list
