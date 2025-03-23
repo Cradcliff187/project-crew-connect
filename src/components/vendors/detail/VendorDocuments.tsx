@@ -57,7 +57,13 @@ const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
             {documents.map(doc => (
               <DocumentCard 
                 key={doc.document_id} 
-                document={doc} 
+                document={{
+                  ...doc,
+                  entity_id: doc.entity_id || vendorId,
+                  entity_type: doc.entity_type || 'VENDOR',
+                  updated_at: doc.updated_at || doc.created_at,
+                  url: doc.url || ''
+                }} 
                 onViewDocument={() => handleViewDocument(doc)} 
               />
             ))}
@@ -99,7 +105,13 @@ const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
           </DialogHeader>
           {viewDocument && (
             <DocumentViewer 
-              document={viewDocument}
+              document={{
+                ...viewDocument,
+                entity_id: viewDocument.entity_id || vendorId,
+                entity_type: viewDocument.entity_type || 'VENDOR',
+                updated_at: viewDocument.updated_at || viewDocument.created_at,
+                url: viewDocument.url || ''
+              }}
               open={!!viewDocument}
               onOpenChange={(open) => !open && setViewDocument(null)}
             />

@@ -57,7 +57,13 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
             {documents.map(doc => (
               <DocumentCard 
                 key={doc.document_id} 
-                document={doc} 
+                document={{
+                  ...doc,
+                  entity_id: doc.entity_id || subcontractorId,
+                  entity_type: doc.entity_type || 'SUBCONTRACTOR',
+                  updated_at: doc.updated_at || doc.created_at,
+                  url: doc.url || ''
+                }} 
                 onViewDocument={() => handleViewDocument(doc)} 
               />
             ))}
@@ -99,7 +105,13 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
           </DialogHeader>
           {viewDocument && (
             <DocumentViewer 
-              document={viewDocument}
+              document={{
+                ...viewDocument,
+                entity_id: viewDocument.entity_id || subcontractorId,
+                entity_type: viewDocument.entity_type || 'SUBCONTRACTOR',
+                updated_at: viewDocument.updated_at || viewDocument.created_at,
+                url: viewDocument.url || ''
+              }}
               open={!!viewDocument}
               onOpenChange={(open) => !open && setViewDocument(null)}
             />

@@ -13,3 +13,16 @@ export interface WorkOrderDocument {
   is_receipt?: boolean;
   url: string;
 }
+
+// A more generic document interface that can be extended by different entity types
+export interface BaseDocument {
+  document_id: string;
+  file_name: string;
+  file_type: string | null;
+  file_size?: number;
+  storage_path?: string;
+  category?: string | null;
+  created_at: string;
+  url?: string;
+  is_receipt?: boolean;
+}
