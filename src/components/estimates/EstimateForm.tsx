@@ -142,7 +142,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-2xl font-semibold">
+          <DialogTitle className="text-2xl font-semibold text-[#0485ea]">
             {step === 'edit' ? 'Create New Estimate' : 'Review Estimate'}
             {step === 'preview' && (
               <Button 

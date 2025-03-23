@@ -1,9 +1,11 @@
 
 import { useState } from 'react';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import BasicInfoStep from './BasicInfoStep';
 import LocationFields from '../LocationFields';
 import EstimateItemFields from '../EstimateItemFields';
 import EstimateSummary from '../EstimateSummary';
+import EstimateStepTabs from './EstimateStepTabs';
 import FormActions from './FormActions';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -19,6 +21,13 @@ interface EditFormContentProps {
   onCancel: () => void;
 }
 
+export const ESTIMATE_STEPS = [
+  { id: 'basic-info', label: 'Basic Info' },
+  { id: 'items', label: 'Line Items' },
+  { id: 'summary', label: 'Summary' },
+  { id: 'preview', label: 'Preview' }
+];
+
 const EditFormContent = ({
   customers,
   selectedCustomerAddress,
@@ -32,30 +41,97 @@ const EditFormContent = ({
   const form = useFormContext<EstimateFormValues>();
   const isNewCustomer = form.watch('isNewCustomer');
   const showSiteLocation = form.watch('showSiteLocation');
+  
+  const [currentStep, setCurrentStep] = useState(ESTIMATE_STEPS[0].id);
+
+  const goToNextStep = () => {
+    const currentIndex = ESTIMATE_STEPS.findIndex(step => step.id === currentStep);
+    if (currentIndex < ESTIMATE_STEPS.length - 1) {
+      setCurrentStep(ESTIMATE_STEPS[currentIndex + 1].id);
+    }
+  };
+
+  const goToPreviousStep = () => {
+    const currentIndex = ESTIMATE_STEPS.findIndex(step => step.id === currentStep);
+    if (currentIndex > 0) {
+      setCurrentStep(ESTIMATE_STEPS[currentIndex - 1].id);
+    }
+  };
+
+  const validateCurrentStep = async () => {
+    switch (currentStep) {
+      case 'basic-info':
+        return form.trigger(['project', 'customer']);
+      case 'items':
+        return form.trigger('items');
+      case 'summary':
+        return form.trigger(['contingency_percentage']);
+      default:
+        return Promise.resolve(true);
+    }
+  };
+
+  const handleNext = async () => {
+    const isValid = await validateCurrentStep();
+    if (isValid) {
+      if (currentStep === 'summary') {
+        onPreview();
+      } else {
+        goToNextStep();
+      }
+    }
+  };
+
+  const isLastStep = currentStep === ESTIMATE_STEPS[ESTIMATE_STEPS.length - 2].id;
 
   return (
-    <>
-      <BasicInfoStep 
-        customers={customers}
-        selectedCustomerAddress={selectedCustomerAddress}
-        selectedCustomerName={selectedCustomerName}
-        onNewCustomer={onNewCustomer}
-        onExistingCustomer={onExistingCustomer}
-        customerTab={customerTab}
-        isNewCustomer={isNewCustomer}
-        showSiteLocation={showSiteLocation}
-      />
+    <div className="flex flex-col h-full">
+      <div className="mb-6">
+        <EstimateStepTabs 
+          steps={ESTIMATE_STEPS} 
+          currentStep={currentStep} 
+          setCurrentStep={setCurrentStep} 
+        />
+      </div>
 
-      {(showSiteLocation || isNewCustomer || !selectedCustomerAddress) && (
-        <LocationFields />
-      )}
+      <Tabs value={currentStep} className="flex-grow">
+        <TabsContent value="basic-info" className="mt-0">
+          <BasicInfoStep 
+            customers={customers}
+            selectedCustomerAddress={selectedCustomerAddress}
+            selectedCustomerName={selectedCustomerName}
+            onNewCustomer={onNewCustomer}
+            onExistingCustomer={onExistingCustomer}
+            customerTab={customerTab}
+            isNewCustomer={isNewCustomer}
+            showSiteLocation={showSiteLocation}
+          />
+          
+          {(showSiteLocation || isNewCustomer || !selectedCustomerAddress) && (
+            <LocationFields />
+          )}
+        </TabsContent>
 
-      <EstimateItemFields />
+        <TabsContent value="items" className="mt-0">
+          <EstimateItemFields />
+        </TabsContent>
 
-      <EstimateSummary />
+        <TabsContent value="summary" className="mt-0">
+          <EstimateSummary />
+        </TabsContent>
+      </Tabs>
 
-      <FormActions onCancel={onCancel} onPreview={onPreview} />
-    </>
+      <div className="mt-6">
+        <FormActions 
+          onCancel={onCancel} 
+          onPrevious={goToPreviousStep}
+          onNext={handleNext}
+          isLastStep={isLastStep}
+          currentStep={currentStep}
+          isPreviewStep={false}
+        />
+      </div>
+    </div>
   );
 };
 
