@@ -37,6 +37,7 @@ export const useDocumentUploadForm = ({
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
@@ -98,6 +99,7 @@ export const useDocumentUploadForm = ({
   const onSubmit = async (data: DocumentUploadFormValues) => {
     try {
       setIsUploading(true);
+      setUploadError(null);
       
       // Always assume the bucket exists since we've created it via SQL
       // This prevents the "Storage bucket not properly configured" error
@@ -124,21 +126,32 @@ export const useDocumentUploadForm = ({
           : "Your document has been uploaded and indexed."
       });
       
+      // Reset form state
+      form.reset();
+      setPreviewURL(null);
+      
+      // Call success callback with documentId
       if (onSuccess) {
         console.log('Calling onSuccess with document ID:', result.documentId);
         onSuccess(result.documentId);
       }
       
-      form.reset();
-      setPreviewURL(null);
-      
     } catch (error: any) {
       console.error('Upload error:', error);
+      setUploadError(error.message || "There was an error uploading your document.");
+      
       toast({
         title: "Upload failed",
         description: error.message || "There was an error uploading your document.",
         variant: "destructive"
       });
+      
+      // Even on error, callback to parent to clean up UI
+      if (onCancel) {
+        setTimeout(() => {
+          onCancel();
+        }, 2000); // Wait for toast to be visible
+      }
     } finally {
       setIsUploading(false);
     }
@@ -169,6 +182,23 @@ export const useDocumentUploadForm = ({
     }
   };
 
+  const handleCancel = () => {
+    // Clean up before cancelling
+    if (previewURL) {
+      URL.revokeObjectURL(previewURL);
+      setPreviewURL(null);
+    }
+    
+    // Reset form
+    form.reset();
+    setUploadError(null);
+    
+    // Call parent cancel handler
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
   return {
     form,
     isUploading,
@@ -179,6 +209,8 @@ export const useDocumentUploadForm = ({
     onSubmit,
     initializeForm,
     bucketInfo,
+    uploadError,
+    handleCancel,
     watchIsExpense: form.watch('metadata.isExpense'),
     watchVendorType: form.watch('metadata.vendorType'),
     watchFiles: form.watch('files'),

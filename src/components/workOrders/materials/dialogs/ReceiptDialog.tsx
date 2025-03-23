@@ -37,6 +37,9 @@ export const ReceiptUploadDialog = ({
   const handleReceiptSuccess = (documentId?: string) => {
     if (documentId) {
       onSuccess(material.id, documentId);
+    } else {
+      // Even if no documentId, still call onCancel to close the dialog
+      onCancel();
     }
   };
 
@@ -134,6 +137,13 @@ export const ReceiptViewerDialog = ({
 
   const fileType = getFileType();
 
+  // Handle closing dialog explicitly to avoid UI lockups
+  const handleClose = () => {
+    if (mountedRef.current) {
+      onOpenChange(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
@@ -193,6 +203,11 @@ export const ReceiptViewerDialog = ({
               </Button>
             </div>
           )}
+        </div>
+        <div className="flex justify-end mt-4">
+          <Button onClick={handleClose} variant="outline">
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
