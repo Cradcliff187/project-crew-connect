@@ -80,8 +80,9 @@ export function useActiveWorkData(limit?: number) {
       // Ensure we properly type the work orders to match the WorkOrder interface
       const typedWorkOrders = data?.map(order => ({
         ...order,
-        status: order.status as WorkOrder['status'],
-        priority: order.priority as WorkOrder['priority']
+        // No need to cast status or priority as we've updated the StatusType to include these values
+        status: order.status,
+        priority: order.priority
       })) as WorkOrder[];
       
       return typedWorkOrders;

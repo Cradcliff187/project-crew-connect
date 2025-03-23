@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,7 +40,6 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   
-  // Fetch expenses with budget item and vendor info
   const { 
     data: expenses = [], 
     isLoading, 
@@ -51,23 +49,48 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
     queryKey: ['project-expenses', projectId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('project_expenses')
+        .from('expenses')
         .select(`
           *,
-          budget_item:budget_item_id(category),
-          vendor:vendor_id(vendorname)
+          budget_item:budget_item_id(category)
         `)
-        .eq('project_id', projectId)
+        .eq('entity_type', 'PROJECT')
+        .eq('entity_id', projectId)
         .order('expense_date', { ascending: false });
         
       if (error) throw error;
       
-      // Transform data to include budget item category and vendor name
-      return data.map(expense => ({
-        ...expense,
-        budget_item_category: expense.budget_item?.category || null,
-        vendor_name: expense.vendor?.vendorname || null
-      })) as Expense[];
+      return data.map(expense => {
+        let vendorName = null;
+        
+        if (expense.vendor_id) {
+          const vendorData = async () => {
+            const { data } = await supabase
+              .from('vendors')
+              .select('vendorname')
+              .eq('vendorid', expense.vendor_id)
+              .single();
+            return data?.vendorname;
+          };
+          
+          vendorName = vendorData() || null;
+        }
+        
+        return {
+          id: expense.id,
+          project_id: expense.entity_id,
+          budget_item_id: expense.budget_item_id,
+          expense_date: expense.expense_date,
+          amount: expense.amount,
+          vendor_id: expense.vendor_id,
+          description: expense.description,
+          document_id: expense.document_id,
+          created_at: expense.created_at,
+          updated_at: expense.updated_at,
+          budget_item_category: expense.budget_item?.category || null,
+          vendor_name: vendorName
+        };
+      });
     },
     meta: {
       onError: (error: any) => {
@@ -97,11 +120,11 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
     setShowFormDialog(true);
   };
 
-  const handleDeleteExpense = async (expense: Expense) => {
+  const handleDeleteExpense = async (expense: any) => {
     if (confirm(`Are you sure you want to delete this expense?`)) {
       try {
         const { error } = await supabase
-          .from('project_expenses')
+          .from('expenses')
           .delete()
           .eq('id', expense.id);
           
@@ -124,7 +147,6 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
     }
   };
 
-  // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -134,7 +156,6 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
     }).format(amount);
   };
 
-  // Format date
   const formatExpenseDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM d, yyyy');
@@ -143,10 +164,8 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
     }
   };
 
-  // View document
   const handleViewDocument = async (documentId: string) => {
     try {
-      // Fetch document details
       const { data, error } = await supabase
         .from('documents')
         .select('document_id, file_name, storage_path')
@@ -155,13 +174,11 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
         
       if (error) throw error;
       
-      // Get public URL
       const { data: { publicUrl } } = supabase
         .storage
         .from('construction_documents')
         .getPublicUrl(data.storage_path);
       
-      // Open in new tab
       window.open(publicUrl, '_blank');
     } catch (error: any) {
       toast({

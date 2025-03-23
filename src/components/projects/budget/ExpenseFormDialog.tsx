@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -47,7 +46,6 @@ interface ExpenseFormDialogProps {
   onCancel: () => void;
 }
 
-// Form schema
 const expenseFormSchema = z.object({
   budget_item_id: z.string().optional().nullable(),
   expense_date: z.date({
@@ -75,7 +73,6 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   
-  // Default form values
   const defaultValues: ExpenseFormValues = {
     budget_item_id: expense?.budget_item_id || null,
     expense_date: expense?.expense_date ? new Date(expense.expense_date) : new Date(),
@@ -90,7 +87,6 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
     defaultValues,
   });
   
-  // Fetch budget items and vendors
   useEffect(() => {
     const fetchBudgetItems = async () => {
       try {
@@ -137,32 +133,39 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
   const onSubmit = async (values: ExpenseFormValues) => {
     try {
       if (isEditing) {
-        // Update existing expense
         const { error } = await supabase
-          .from('project_expenses')
+          .from('expenses')
           .update({
+            entity_id: projectId,
+            entity_type: 'PROJECT',
             budget_item_id: values.budget_item_id,
             expense_date: values.expense_date.toISOString(),
             amount: values.amount,
+            expense_type: 'project_expense',
             vendor_id: values.vendor_id,
             description: values.description,
             document_id: values.document_id,
+            unit_price: values.amount,
+            quantity: 1
           })
           .eq('id', expense.id);
           
         if (error) throw error;
       } else {
-        // Insert new expense
         const { error } = await supabase
-          .from('project_expenses')
+          .from('expenses')
           .insert({
-            project_id: projectId,
+            entity_id: projectId,
+            entity_type: 'PROJECT',
             budget_item_id: values.budget_item_id,
             expense_date: values.expense_date.toISOString(),
             amount: values.amount,
+            expense_type: 'project_expense',
             vendor_id: values.vendor_id,
             description: values.description,
             document_id: values.document_id,
+            unit_price: values.amount,
+            quantity: 1
           });
           
         if (error) throw error;
@@ -179,7 +182,6 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
     }
   };
   
-  // Handle document upload success
   const handleDocumentUploaded = async (documentId: string) => {
     form.setValue('document_id', documentId);
     setShowDocumentUpload(false);

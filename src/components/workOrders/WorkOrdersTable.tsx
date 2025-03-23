@@ -1,18 +1,18 @@
 
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
-} from "@/components/ui/table";
+  TableCaption,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { WorkOrder } from '@/types/workOrder';
-import StatusFilter, { WorkOrderStatus } from './components/StatusFilter';
-import WorkOrderTableHeader from './components/WorkOrderTableHeader';
 import WorkOrderRow from './components/WorkOrderRow';
-import WorkOrdersTableSkeleton from './components/WorkOrdersTableSkeleton';
-import EmptyWorkOrders from './components/EmptyWorkOrders';
-import WorkOrderError from './components/WorkOrderError';
-import PaginationControl from './components/PaginationControl';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
@@ -22,85 +22,87 @@ interface WorkOrdersTableProps {
   onStatusChange: () => void;
 }
 
-const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChange }: WorkOrdersTableProps) => {
-  const [statusFilter, setStatusFilter] = useState<WorkOrderStatus>('ALL');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+const WorkOrdersTable = ({
+  workOrders,
+  loading,
+  error,
+  searchQuery,
+  onStatusChange
+}: WorkOrdersTableProps) => {
+  const [expandedWorkOrderId, setExpandedWorkOrderId] = useState<string | null>(null);
   
-  const filteredWorkOrders = workOrders.filter(workOrder => {
-    const searchRegex = new RegExp(searchQuery, 'i');
-    const matchesSearch = searchRegex.test(workOrder.title) || 
-                          (workOrder.work_order_number ? searchRegex.test(workOrder.work_order_number) : false);
+  // Filter work orders by search query
+  const filteredWorkOrders = workOrders.filter((workOrder) => {
+    const query = searchQuery.toLowerCase();
     
-    const matchesStatus = statusFilter === 'ALL' || workOrder.status === statusFilter.toLowerCase().replace('_', '-');
-    
-    return matchesSearch && matchesStatus;
+    // Search by work order number, title, and status
+    return (
+      (workOrder.work_order_number && workOrder.work_order_number.toLowerCase().includes(query)) ||
+      workOrder.title.toLowerCase().includes(query) ||
+      (workOrder.status && workOrder.status.toLowerCase().includes(query))
+    );
   });
-
-  // Calculate pagination
-  const totalItems = filteredWorkOrders.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredWorkOrders.slice(startIndex, endIndex);
-
-  const handleStatusFilterChange = (status: WorkOrderStatus) => {
-    setStatusFilter(status);
-    // Reset to first page when filter changes
-    setCurrentPage(1);
-    onStatusChange();
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
+  
+  // Handle error state
   if (error) {
-    return <WorkOrderError error={error} />;
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to load work orders: {error}
+        </AlertDescription>
+      </Alert>
+    );
   }
-
-  return (
-    <div className="container mx-auto">
-      {/* Status Filter */}
-      <div className="mb-4 flex items-center space-x-2">
-        <StatusFilter onStatusChange={handleStatusFilterChange} defaultValue="ALL" />
+  
+  // Handle loading state
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
       </div>
-      
-      <Card className="shadow-sm border-[#0485ea]/10">
-        <CardContent className="p-0">
-          <Table>
-            <WorkOrderTableHeader />
-            
-            <TableBody>
-              {loading ? (
-                <WorkOrdersTableSkeleton rows={5} />
-              ) : currentItems.length === 0 ? (
-                <EmptyWorkOrders />
-              ) : (
-                currentItems.map((workOrder) => (
-                  <WorkOrderRow 
-                    key={workOrder.work_order_id}
-                    workOrder={workOrder}
-                    onStatusChange={onStatusChange}
-                  />
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Only show pagination when we have work orders and not loading */}
-      {!loading && filteredWorkOrders.length > 0 && (
-        <div className="mt-4">
-          <PaginationControl 
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
+    );
+  }
+  
+  // Empty state when no work orders found
+  if (filteredWorkOrders.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <h3 className="text-lg font-medium text-gray-600">No work orders found</h3>
+        <p className="text-sm text-gray-500 mt-2">
+          {searchQuery ? 'Try changing your search query.' : 'Create a new work order to get started.'}
+        </p>
+      </div>
+    );
+  }
+  
+  return (
+    <Table>
+      <TableCaption>List of all work orders</TableCaption>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[120px]">Work Order #</TableHead>
+          <TableHead>Title</TableHead>
+          <TableHead>Created</TableHead>
+          <TableHead>Scheduled</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {filteredWorkOrders.map((workOrder) => (
+          <WorkOrderRow 
+            key={workOrder.work_order_id} 
+            workOrder={workOrder}
           />
-        </div>
-      )}
-    </div>
+        ))}
+      </TableBody>
+    </Table>
   );
 };
 

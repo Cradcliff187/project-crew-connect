@@ -23,7 +23,7 @@ export const useVendorAssociatedData = () => {
         console.error('Error fetching vendor project associations:', projectError);
       } else if (projectData && projectData.length > 0) {
         // Get unique project IDs
-        const uniqueProjectIds = [...new Set(projectData.map(item => item.entity_id))].filter(Boolean);
+        const uniqueProjectIds = [...new Set(projectData.map(item => item.entity_id))].filter(Boolean) as string[];
         
         if (uniqueProjectIds.length > 0) {
           // Fetch detailed project information
@@ -48,7 +48,7 @@ export const useVendorAssociatedData = () => {
         console.error('Error fetching vendor work order associations:', woMaterialsError);
       } else if (woMaterialsData && woMaterialsData.length > 0) {
         // Get unique work order IDs
-        const uniqueWorkOrderIds = [...new Set(woMaterialsData.map(item => item.work_order_id))].filter(Boolean);
+        const uniqueWorkOrderIds = [...new Set(woMaterialsData.map(item => item.work_order_id))].filter(Boolean) as string[];
         
         if (uniqueWorkOrderIds.length > 0) {
           // Fetch detailed work order information

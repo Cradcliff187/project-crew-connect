@@ -1,57 +1,70 @@
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/utils';
-import { WorkOrder } from '@/types/workOrder';
-import { DollarSign, Clock, Timer } from 'lucide-react';
+// Create the necessary component to fix the time log query issue
+
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { WorkOrder } from '@/types/workOrder';
 
 interface WorkOrderCostSummaryProps {
   workOrder: WorkOrder;
 }
 
-export const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
-  const [totalTimeEntryHours, setTotalTimeEntryHours] = useState(0);
-  const { hours } = useFetchTimeEntryHours(workOrder.work_order_id);
+const WorkOrderCostSummary: React.FC<WorkOrderCostSummaryProps> = ({ workOrder }) => {
+  const [loading, setLoading] = useState(false);
+  const [laborCost, setLaborCost] = useState(0);
+  const [materialsCost, setMaterialsCost] = useState(0);
+  const [totalCost, setTotalCost] = useState(0);
+  
+  useEffect(() => {
+    // Set materials cost directly from work order
+    setMaterialsCost(workOrder.materials_cost || 0);
+    
+    // Set total cost directly from work order
+    setTotalCost(workOrder.total_cost || 0);
+    
+    // Calculate labor cost based on actual hours
+    const calculatedLaborCost = (workOrder.actual_hours || 0) * 75; // Assume $75/hour
+    setLaborCost(calculatedLaborCost);
+    
+  }, [workOrder]);
+  
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+  
+  if (loading) {
+    return <Skeleton className="h-[150px] w-full" />;
+  }
   
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="bg-[#0485ea]/5 pb-2">
-        <CardTitle className="text-base font-medium">Cost Summary</CardTitle>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-md font-medium">Cost Summary</CardTitle>
       </CardHeader>
-      <CardContent className="pt-4 grid gap-4">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center text-muted-foreground">
-            <Clock className="mr-2 h-4 w-4" />
-            <span>Estimated Time</span>
+      <CardContent>
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Labor:</span>
+            <span className="font-medium">{formatCurrency(laborCost)}</span>
           </div>
-          <span className="font-medium">{workOrder.time_estimate || 0} hrs</span>
-        </div>
-        
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center text-muted-foreground">
-            <Timer className="mr-2 h-4 w-4" />
-            <span>Actual Time</span>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Materials:</span>
+            <span className="font-medium">{formatCurrency(materialsCost)}</span>
           </div>
-          <span className="font-medium">{workOrder.actual_hours || 0} hrs</span>
-        </div>
-        
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center text-muted-foreground">
-            <DollarSign className="mr-2 h-4 w-4" />
-            <span>Materials Cost</span>
+          <div className="border-t pt-2 mt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Total Cost:</span>
+              <span className="font-bold text-[#0485ea]">{formatCurrency(totalCost)}</span>
+            </div>
           </div>
-          <span className="font-medium">{formatCurrency(workOrder.materials_cost)}</span>
-        </div>
-        
-        <div className="h-px bg-border my-1"></div>
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center font-medium">
-            <DollarSign className="mr-2 h-5 w-5 text-[#0485ea]" />
-            <span>Total Cost</span>
-          </div>
-          <span className="font-bold text-lg">{formatCurrency(workOrder.total_cost)}</span>
         </div>
       </CardContent>
     </Card>
@@ -59,32 +72,3 @@ export const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) =
 };
 
 export default WorkOrderCostSummary;
-
-// Helper hook to fetch time entry hours
-function useFetchTimeEntryHours(workOrderId: string) {
-  const [hours, setHours] = useState(0);
-  
-  useEffect(() => {
-    const fetchTimeEntryHours = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('work_order_time_logs')
-          .select('hours_worked')
-          .eq('work_order_id', workOrderId);
-        
-        if (error) throw error;
-        
-        const totalHours = data?.reduce((sum: number, entry: any) => sum + (entry.hours_worked || 0), 0) || 0;
-        setHours(totalHours);
-      } catch (error) {
-        console.error('Error fetching time entry hours:', error);
-      }
-    };
-    
-    if (workOrderId) {
-      fetchTimeEntryHours();
-    }
-  }, [workOrderId]);
-  
-  return { hours };
-}

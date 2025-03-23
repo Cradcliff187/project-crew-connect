@@ -7,15 +7,29 @@ import { EstimateItem, EstimateRevision } from '@/components/estimates/types/est
 
 const fetchEstimateItems = async (estimateId: string) => {
   const { data, error } = await supabase
-    .from('estimate_items')
+    .from('expenses')
     .select('*')
-    .eq('estimate_id', estimateId);
+    .eq('entity_type', 'ESTIMATE')
+    .eq('entity_id', estimateId);
   
   if (error) {
     throw error;
   }
   
-  return data || [];
+  // Transform to EstimateItem format
+  const items = data.map(expense => ({
+    id: expense.id,
+    estimate_id: expense.entity_id,
+    description: expense.description,
+    quantity: expense.quantity || 1,
+    unit_price: expense.unit_price || 0,
+    total_price: expense.amount || 0,
+    cost: expense.unit_price || 0,
+    markup_percentage: 0,
+    item_type: expense.expense_type
+  })) as EstimateItem[];
+  
+  return items;
 };
 
 const fetchEstimateRevisions = async (estimateId: string) => {

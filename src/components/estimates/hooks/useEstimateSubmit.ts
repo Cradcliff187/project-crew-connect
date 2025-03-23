@@ -83,8 +83,8 @@ export const useEstimateSubmit = () => {
       console.log("Estimate created:", insertedData);
       const estimateId = insertedData[0].estimateid;
 
-      // Prepare and insert the estimate items with the new fields
-      const estimateItems = data.items.map(item => {
+      // Prepare and insert the estimate items as expenses
+      const estimateExpenses = data.items.map(item => {
         const typedItem: EstimateItem = {
           cost: item.cost,
           markup_percentage: item.markup_percentage,
@@ -99,30 +99,26 @@ export const useEstimateSubmit = () => {
         const grossMarginPercentage = calculateItemGrossMarginPercentage(typedItem);
         
         return {
-          estimate_id: estimateId,
+          entity_type: 'ESTIMATE',
+          entity_id: estimateId,
+          expense_type: item.item_type || 'material',
           description: item.description,
           quantity: parseFloat(item.quantity || '1'),
           unit_price: totalPrice / (parseFloat(item.quantity || '1') || 1), // Unit price is the price per unit
-          total_price: totalPrice,
-          item_type: item.item_type,
-          cost: cost,
-          markup_percentage: parseFloat(item.markup_percentage || '0'),
-          markup_amount: markupAmount,
-          gross_margin: grossMargin,
-          gross_margin_percentage: grossMarginPercentage,
+          amount: totalPrice,
           vendor_id: item.item_type === 'vendor' ? item.vendor_id : null,
-          subcontractor_id: item.item_type === 'subcontractor' ? item.subcontractor_id : null
+          notes: `Markup: ${item.markup_percentage || 0}%, Gross Margin: ${grossMarginPercentage}%`
         };
       });
 
-      console.log("Inserting estimate items:", estimateItems);
-      const { error: itemsError } = await supabase
-        .from('estimate_items')
-        .insert(estimateItems);
+      console.log("Inserting estimate expenses:", estimateExpenses);
+      const { error: expensesError } = await supabase
+        .from('expenses')
+        .insert(estimateExpenses);
 
-      if (itemsError) {
-        console.error("Error inserting estimate items:", itemsError);
-        throw itemsError;
+      if (expensesError) {
+        console.error("Error inserting estimate expenses:", expensesError);
+        throw expensesError;
       }
 
       // Show success message
