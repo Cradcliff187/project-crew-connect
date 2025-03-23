@@ -1799,6 +1799,24 @@ export type Database = {
         }
         Relationships: []
       }
+      unified_work_order_expenses: {
+        Row: {
+          created_at: string | null
+          expense_name: string | null
+          expense_type: string | null
+          id: string | null
+          quantity: number | null
+          receipt_document_id: string | null
+          source_type: string | null
+          time_entry_id: string | null
+          total_price: number | null
+          unit_price: number | null
+          updated_at: string | null
+          vendor_id: string | null
+          work_order_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       attach_document_to_time_entry: {

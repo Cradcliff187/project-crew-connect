@@ -47,6 +47,8 @@ export interface WorkOrderExpense {
   created_at: string;
   updated_at: string;
   expense_type?: string;
+  source_type?: 'material' | 'time_entry';
+  time_entry_id?: string | null;
   // Add material_name for backward compatibility
   material_name?: string;
 }

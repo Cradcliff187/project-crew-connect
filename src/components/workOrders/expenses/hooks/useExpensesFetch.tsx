@@ -15,8 +15,10 @@ export function useExpensesFetch(workOrderId: string) {
     
     try {
       console.log('Fetching expenses for work order:', workOrderId);
+      
+      // Fetch from the unified view instead of direct table
       const { data, error } = await supabase
-        .from('work_order_materials')
+        .from('unified_work_order_expenses')
         .select('*')
         .eq('work_order_id', workOrderId)
         .order('created_at', { ascending: false });
@@ -25,23 +27,14 @@ export function useExpensesFetch(workOrderId: string) {
         throw error;
       }
       
-      // Transform material data to expense data format
+      console.log('Fetched unified expenses:', data);
+      
+      // Ensure material_name is set for backward compatibility
       const transformedData = data?.map(item => ({
-        id: item.id,
-        work_order_id: item.work_order_id,
-        vendor_id: item.vendor_id,
-        expense_name: item.material_name,
-        material_name: item.material_name, // Keep for backward compatibility
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-        receipt_document_id: item.receipt_document_id,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        expense_type: item.expense_type || 'materials'
+        ...item,
+        material_name: item.expense_name // Keep for backward compatibility
       })) as WorkOrderExpense[];
       
-      console.log('Fetched and transformed expenses:', transformedData);
       setExpenses(transformedData || []);
     } catch (error: any) {
       console.error('Error fetching expenses:', error);
