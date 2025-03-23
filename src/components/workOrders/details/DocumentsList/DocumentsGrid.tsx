@@ -1,8 +1,9 @@
 
 import { WorkOrderDocument } from './types';
 import DocumentCard from './DocumentCard';
-import EmptyState from './EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { FileText, Plus } from 'lucide-react';
 
 interface DocumentsGridProps {
   documents: WorkOrderDocument[];
@@ -27,7 +28,22 @@ const DocumentsGrid = ({
   }
   
   if (documents.length === 0) {
-    return <EmptyState onToggleUploadForm={onToggleUploadForm} />;
+    return (
+      <div className="text-center py-8">
+        <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+        <h3 className="font-medium mb-2">No Documents</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          There are no documents attached to this work order yet.
+        </p>
+        <Button 
+          onClick={onToggleUploadForm}
+          className="bg-[#0485ea] hover:bg-[#0375d1]"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add Document
+        </Button>
+      </div>
+    );
   }
   
   return (
