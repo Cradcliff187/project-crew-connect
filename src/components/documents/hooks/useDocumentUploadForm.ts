@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
 import { uploadDocument } from '../services/DocumentUploader';
+import { testBucketAccess } from '../services/BucketTest';
 import { 
   DocumentUploadFormValues, 
   documentUploadSchema, 
@@ -34,8 +35,8 @@ export const useDocumentUploadForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
+  const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
 
-  // Initialize form with default values
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
@@ -54,12 +55,30 @@ export const useDocumentUploadForm = ({
     }
   });
 
-  // Handle file selection and preview
+  useEffect(() => {
+    const checkBucket = async () => {
+      const result = await testBucketAccess();
+      if (result.success && result.bucketId) {
+        console.log(`✅ Successfully connected to bucket: ${result.bucketId}`);
+        setBucketInfo({id: result.bucketId, name: result.bucketName || result.bucketId});
+      } else {
+        console.error('❌ Failed to connect to storage bucket:', result.error);
+        toast({
+          title: "Storage configuration issue",
+          description: "There's a problem with the file storage system. Please contact support.",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    checkBucket();
+  }, []);
+
   const handleFileSelect = (files: File[]) => {
-    // CRITICAL FIX: Make sure we keep the actual File objects
+    console.log('Files selected in handleFileSelect:', files);
+    
     form.setValue('files', files);
     
-    // Create preview URL for the first image if it's an image
     if (files.length > 0 && files[0].type.startsWith('image/')) {
       const previewUrl = URL.createObjectURL(files[0]);
       setPreviewURL(previewUrl);
@@ -68,13 +87,22 @@ export const useDocumentUploadForm = ({
     }
   };
 
-  // Handle form submission
   const onSubmit = async (data: DocumentUploadFormValues) => {
     try {
       setIsUploading(true);
       
-      // CRITICAL FIX: Log the data being sent to ensure it contains actual File objects
+      if (!bucketInfo) {
+        throw new Error('Storage bucket not properly configured');
+      }
+      
       console.log('Submitting files:', data.files);
+      console.log('File objects detail:', data.files.map(f => ({
+        name: f.name,
+        type: f.type,
+        size: f.size,
+        lastModified: f.lastModified,
+        isFile: f instanceof File
+      })));
       
       const result = await uploadDocument(data);
       
@@ -94,7 +122,6 @@ export const useDocumentUploadForm = ({
         onSuccess(result.documentId);
       }
       
-      // Reset form
       form.reset();
       setPreviewURL(null);
       
@@ -110,7 +137,6 @@ export const useDocumentUploadForm = ({
     }
   };
 
-  // Set up receipts category and expense type
   const initializeForm = () => {
     if (isReceiptUpload) {
       form.setValue('metadata.category', 'receipt');
@@ -119,7 +145,6 @@ export const useDocumentUploadForm = ({
       setShowVendorSelector(true);
     }
     
-    // If prefill data is provided, use it
     if (prefillData) {
       if (prefillData.amount) {
         form.setValue('metadata.amount', prefillData.amount);
@@ -129,10 +154,8 @@ export const useDocumentUploadForm = ({
         form.setValue('metadata.vendorId', prefillData.vendorId);
       }
       
-      // Handle either materialName or expenseName
       const itemName = prefillData.expenseName || prefillData.materialName;
       if (itemName) {
-        // Add material/expense name as a tag and in notes
         form.setValue('metadata.tags', [itemName]);
         form.setValue('metadata.notes', `Receipt for: ${itemName}`);
       }
@@ -148,6 +171,7 @@ export const useDocumentUploadForm = ({
     handleFileSelect,
     onSubmit,
     initializeForm,
+    bucketInfo,
     watchIsExpense: form.watch('metadata.isExpense'),
     watchVendorType: form.watch('metadata.vendorType'),
     watchFiles: form.watch('files'),

@@ -30,17 +30,8 @@ export const uploadDocument = async (
       const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
       const filePath = `${entityTypePath}/${metadata.entityId || 'general'}/${fileName}`;
       
-      // CRITICAL FIX: Verify bucket name exists in Supabase exactly as written here
-      // NOTE: Bucket names in Supabase should match exactly what's in the UI
-      const bucketName = 'construction_documents';
-      
-      console.log(`Preparing to upload file:`, {
-        bucketName,
-        filePath,
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size
-      });
+      console.log(`Uploading file to construction_documents bucket, path: ${filePath}`);
+      console.log(`File object:`, file);
       
       // Check if file is actually a File object
       if (!(file instanceof File)) {
@@ -50,18 +41,20 @@ export const uploadDocument = async (
       
       // CRITICAL FIX: Use explicit file handling to ensure proper binary upload
       const { error: uploadError, data: uploadData } = await supabase.storage
-        .from(bucketName)
+        .from('construction_documents')
         .upload(filePath, file, {
           contentType: file.type, // Set the correct content type
           upsert: true // Override existing files with same name if needed
         });
         
       if (uploadError) {
-        console.error('Storage upload error (detailed):', {
+        console.error('Storage upload error:', {
           message: uploadError.message,
           error: uploadError,
-          statusCode: uploadError.statusCode, 
-          details: uploadError.details
+          // Use safely typed properties
+          status: uploadError.status,
+          name: uploadError.name,
+          cause: uploadError.cause
         });
         throw uploadError;
       }
@@ -70,7 +63,7 @@ export const uploadDocument = async (
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
+        .from('construction_documents')
         .getPublicUrl(filePath);
         
       console.log('Public URL generated:', publicUrl);
@@ -122,13 +115,18 @@ export const uploadDocument = async (
       documentId: uploadedDocumentId
     };
     
-  } catch (error) {
+  } catch (error: any) {
     // Enhanced error logging
     console.error('Upload error (detailed):', {
       errorMessage: error.message,
       errorObject: error,
-      statusCode: error.statusCode,
-      details: error.details || 'No additional details'
+      // Only include properties that definitely exist
+      name: error.name,
+      stack: error.stack,
+      cause: error.cause,
+      // For Supabase errors
+      status: error.status,
+      additionalInfo: error.details || 'No additional details'
     });
     
     return {
