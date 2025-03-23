@@ -11,7 +11,6 @@ import {
 import { Check, ChevronDown } from 'lucide-react';
 import { WorkOrder } from '@/types/workOrder';
 import { cn } from '@/lib/utils';
-import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
 
 interface StatusOption {
   status_code: string;
@@ -55,7 +54,6 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         return;
       }
       
-      // Ensure we always set a valid array
       setStatusOptions(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error fetching status options:', error);
@@ -163,29 +161,26 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
               Loading statuses...
             </div>
           ) : statusOptions.length > 0 ? (
-            <Command className="rounded-md overflow-hidden">
-              <CommandGroup className="overflow-hidden">
-                {statusOptions.map((option) => (
-                  <CommandItem
-                    key={option.status_code}
-                    value={option.status_code}
-                    onSelect={() => handleStatusChange(option.status_code)}
-                    className="flex items-center cursor-pointer hover:bg-accent transition-colors px-3 py-2"
-                    disabled={loading}
-                  >
-                    <div className="flex items-center w-full">
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4 flex-shrink-0",
-                          option.status_code === currentStatus ? "opacity-100 text-primary" : "opacity-0"
-                        )}
-                      />
-                      <span className="text-sm">{option.label || option.status_code}</span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </Command>
+            <div className="overflow-hidden py-1">
+              {statusOptions.map((option) => (
+                <button
+                  key={option.status_code}
+                  onClick={() => handleStatusChange(option.status_code)}
+                  className="flex items-center w-full hover:bg-accent px-3 py-2 text-left cursor-pointer transition-colors"
+                  disabled={loading}
+                >
+                  <div className="flex items-center w-full">
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4 flex-shrink-0",
+                        option.status_code === currentStatus ? "opacity-100 text-primary" : "opacity-0"
+                      )}
+                    />
+                    <span className="text-sm">{option.label || option.status_code}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
           ) : (
             <div className="py-4 px-2 text-center text-sm text-muted-foreground">
               No status options available
