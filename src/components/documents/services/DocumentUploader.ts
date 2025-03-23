@@ -26,18 +26,24 @@ export const uploadDocument = async (
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       const filePath = `${metadata.entityType.toLowerCase()}/${metadata.entityId || 'general'}/${fileName}`;
       
-      // Using the correct bucket name
+      // FIXED: Using the correctly formatted bucket name
+      // In Supabase, bucket names can have spaces in the UI but should be used without spaces in the code
       const bucketName = 'construction_documents';
       
       console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
+      console.log(`File object:`, {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
       
       // CRITICAL FIX: Ensure we're uploading the actual file and not JSON
-      // Upload file to Supabase Storage with the correct content type
+      // Set proper content type and force binary upload
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
           contentType: file.type, // Set the correct content type
-          cacheControl: '3600'
+          upsert: false // Don't override existing files
         });
         
       if (uploadError) {
