@@ -28,12 +28,12 @@ const MaterialTableRow = ({
           onClick: () => onReceiptClick(material),
           className: material.receipt_document_id 
             ? "text-green-600 hover:text-green-700" 
-            : "text-blue-600 hover:text-blue-700"
+            : "text-[#0485ea] hover:text-[#0375d1]"
         },
         {
           label: "Edit Material",
           icon: <Edit className="h-4 w-4" />,
-          onClick: () => console.log("Edit material:", material.id), // Placeholder for edit functionality
+          onClick: () => console.log("Edit material:", material.id),
           className: "text-gray-600 hover:text-gray-800"
         }
       ]

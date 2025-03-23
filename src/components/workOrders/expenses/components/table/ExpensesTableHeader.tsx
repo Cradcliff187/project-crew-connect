@@ -3,14 +3,14 @@ import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 const ExpensesTableHeader = () => {
   return (
-    <TableHeader>
+    <TableHeader className="bg-[#0485ea]/10">
       <TableRow>
-        <TableHead>Expense</TableHead>
-        <TableHead>Vendor</TableHead>
-        <TableHead>Quantity</TableHead>
-        <TableHead>Unit Price</TableHead>
-        <TableHead>Total</TableHead>
-        <TableHead className="text-right">Actions</TableHead>
+        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Expense</TableHead>
+        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Vendor</TableHead>
+        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Quantity</TableHead>
+        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Unit Price</TableHead>
+        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Total</TableHead>
+        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

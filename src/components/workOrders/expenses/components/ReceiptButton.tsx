@@ -26,7 +26,7 @@ const ReceiptButton: React.FC<ReceiptButtonProps> = ({ expense, onClick }) => {
       className={
         hasReceipt
           ? "text-green-600 hover:text-green-800 hover:bg-green-50 border-green-200"
-          : "text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
+          : "text-[#0485ea] hover:text-[#0485ea]/80 hover:bg-[#0485ea]/10 border-[#0485ea]/20"
       }
       disabled={isTimeEntryExpense && !hasReceipt}
     >

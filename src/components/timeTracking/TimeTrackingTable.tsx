@@ -34,7 +34,7 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
   const formatEntityTypeIcon = (type: string) => {
     switch (type) {
       case 'work_order':
-        return <FileClock className="h-4 w-4 text-indigo-500" />;
+        return <FileClock className="h-4 w-4 text-[#0485ea]" />;
       case 'project':
         return <Building className="h-4 w-4 text-green-500" />;
       default:
@@ -50,7 +50,11 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
   if (entries.length === 0) {
     return (
       <div className="text-center py-10 border rounded-md bg-muted/20">
-        <p className="text-muted-foreground">No time entries found</p>
+        <div className="rounded-full bg-muted p-3 mx-auto w-fit mb-3">
+          <FileClock className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg font-medium mb-2">No time entries found</h3>
+        <p className="text-sm text-muted-foreground">Use the Log Time button to track your work hours.</p>
       </div>
     );
   }
@@ -59,8 +63,8 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
     <>
       <div className="rounded-md border overflow-hidden">
         <Table>
-          <TableHeader>
-            <TableRow className="bg-[#0485ea]/10">
+          <TableHeader className="bg-[#0485ea]/10">
+            <TableRow>
               <TableHead className="font-montserrat font-semibold text-[#0485ea]">Date</TableHead>
               <TableHead className="font-montserrat font-semibold text-[#0485ea]">Type</TableHead>
               <TableHead className="font-montserrat font-semibold text-[#0485ea]">Name</TableHead>

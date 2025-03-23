@@ -30,7 +30,7 @@ const ExpenseTableRow = ({
           onClick: () => onReceiptClick(expense),
           className: expense.receipt_document_id 
             ? "text-green-600 hover:text-green-700" 
-            : "text-blue-600 hover:text-blue-700"
+            : "text-[#0485ea] hover:text-[#0375d1]"
         },
         ...(!isTimeEntryExpense ? [{
           label: "Edit Expense",
@@ -46,7 +46,7 @@ const ExpenseTableRow = ({
           label: "View Time Entry",
           icon: <Clock className="h-4 w-4" />,
           onClick: () => console.log("View time entry:", expense.time_entry_id),
-          className: "text-indigo-600 hover:text-indigo-700"
+          className: "text-[#0485ea] hover:text-[#0375d1]"
         }] : []),
         ...(!isTimeEntryExpense ? [{
           label: "Delete",
@@ -63,7 +63,7 @@ const ExpenseTableRow = ({
       <TableCell className="font-medium">
         {expense.expense_name}
         {isTimeEntryExpense && (
-          <span className="ml-2 text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+          <span className="ml-2 text-xs bg-[#0485ea]/10 text-[#0485ea] px-2 py-0.5 rounded-full">
             Time Entry
           </span>
         )}

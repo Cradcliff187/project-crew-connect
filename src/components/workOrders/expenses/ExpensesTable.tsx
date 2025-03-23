@@ -62,7 +62,7 @@ const ExpensesTable = ({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="ml-2 inline-flex items-center">
-                          <Info className="h-4 w-4 text-blue-500" />
+                          <Info className="h-4 w-4 text-[#0485ea]" />
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
