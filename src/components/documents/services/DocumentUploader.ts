@@ -43,7 +43,7 @@ export const uploadDocument = async (
         throw new Error('Invalid file object provided');
       }
       
-      // CRITICAL FIX: Create an explicit uploading method that works correctly
+      // Upload the file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file, {
@@ -55,7 +55,6 @@ export const uploadDocument = async (
         console.error('Storage upload error:', {
           message: uploadError.message,
           error: uploadError,
-          // FIX: Remove properties that don't exist on StorageError
           name: uploadError.name
         });
         throw uploadError;
@@ -122,10 +121,8 @@ export const uploadDocument = async (
     console.error('Upload error (detailed):', {
       errorMessage: error.message,
       errorObject: error,
-      // Only include properties that definitely exist
       name: error.name,
       stack: error.stack
-      // FIX: Remove properties that don't exist on the error object
     });
     
     return {
