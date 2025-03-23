@@ -4,7 +4,7 @@ import * as z from 'zod';
 // Define the form schema with validation
 export const estimateFormSchema = z.object({
   project: z.string().min(1, { message: "Project name is required" }),
-  customer: z.string().min(1, { message: "Customer is required" }),
+  customer: z.string().min(1, { message: "Customer is required" }).optional().or(z.literal('')),
   description: z.string().optional(),
   location: z.object({
     address: z.string().optional(),
@@ -23,6 +23,17 @@ export const estimateFormSchema = z.object({
     vendor_id: z.string().optional(),
     subcontractor_id: z.string().optional(),
   })).min(1, { message: "At least one item is required" }),
+  showSiteLocation: z.boolean().default(false),
+  newCustomer: z.object({
+    name: z.string().optional(),
+    email: z.string().email("Invalid email address").optional().or(z.literal('')),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    zip: z.string().optional(),
+  }).optional(),
+  isNewCustomer: z.boolean().default(false),
 });
 
 export type EstimateFormValues = z.infer<typeof estimateFormSchema>;
@@ -44,4 +55,3 @@ export type ItemCalculationResult = {
   grossMargin: number;
   grossMarginPercentage: number;
 };
-
