@@ -15,7 +15,7 @@ export function useMaterialsFetch(workOrderId: string) {
     
     try {
       console.log('Fetching materials for work order:', workOrderId);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('work_order_materials')
         .select('*')
         .eq('work_order_id', workOrderId)
@@ -29,9 +29,19 @@ export function useMaterialsFetch(workOrderId: string) {
       
       // Transform DB data to match WorkOrderMaterial type
       const transformedData = data?.map(item => ({
-        ...item,
+        id: item.id,
+        work_order_id: item.work_order_id,
+        vendor_id: item.vendor_id,
         expense_name: item.material_name,
-        material_name: item.material_name // Keep for backward compatibility
+        material_name: item.material_name, // Keep for backward compatibility
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        receipt_document_id: item.receipt_document_id,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        expense_type: item.expense_type || 'materials',
+        source_type: 'material' as const
       })) as WorkOrderMaterial[];
       
       setMaterials(transformedData || []);

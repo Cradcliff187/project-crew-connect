@@ -39,8 +39,8 @@ export const useVendorAssociatedData = () => {
       }
 
       // Fetch work orders associated with this vendor
-      const { data: woMaterialsData, error: woMaterialsError } = await supabase
-        .from('work_order_materials')
+      const { data: woMaterialsData, error: woMaterialsError } = await (supabase as any)
+        .from('unified_work_order_expenses')
         .select('work_order_id')
         .eq('vendor_id', vendorId);
       

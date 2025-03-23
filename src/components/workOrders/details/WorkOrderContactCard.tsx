@@ -1,76 +1,73 @@
 
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
-import { User, MapPin, Building, Phone, Mail } from 'lucide-react';
+import { User, Building2 } from 'lucide-react';
 
-interface WorkOrderContactCardProps {
+export interface WorkOrderContactCardProps {
   workOrder: WorkOrder;
   customer: { name: string; email: string; phone: string } | null;
   location: { name: string; address: string } | null;
   assignee: { name: string } | null;
 }
 
-const WorkOrderContactCard = ({ 
-  workOrder,
+export const WorkOrderContactCard = ({ 
+  workOrder, 
   customer,
   location,
   assignee
 }: WorkOrderContactCardProps) => {
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          {assignee && (
-            <div className="flex items-start">
-              <User className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Assigned To</p>
-                <p className="text-sm text-muted-foreground">{assignee.name}</p>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          Contacts
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {customer && (
+          <div className="flex items-start space-x-2.5">
+            <div className="mt-0.5">
+              <User className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="space-y-0.5">
+              <h4 className="text-sm font-medium">Customer</h4>
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">{customer.name}</p>
+                <p>{customer.email}</p>
+                <p>{customer.phone}</p>
               </div>
             </div>
-          )}
-          
-          {customer && (
-            <div className="flex items-start">
-              <Building className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Customer</p>
-                <p className="text-sm text-muted-foreground">{customer.name}</p>
-                
-                {(customer.email || customer.phone) && (
-                  <div className="mt-1 space-y-1">
-                    {customer.email && (
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Mail className="h-3 w-3 mr-1" />
-                        <span>{customer.email}</span>
-                      </div>
-                    )}
-                    
-                    {customer.phone && (
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Phone className="h-3 w-3 mr-1" />
-                        <span>{customer.phone}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+          </div>
+        )}
+
+        {location && (
+          <div className="flex items-start space-x-2.5">
+            <div className="mt-0.5">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="space-y-0.5">
+              <h4 className="text-sm font-medium">Location</h4>
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">{location.name}</p>
+                <p>{location.address}</p>
               </div>
             </div>
-          )}
-          
-          {location && (
-            <div className="flex items-start">
-              <MapPin className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Location</p>
-                <p className="text-sm text-muted-foreground">{location.name}</p>
-                {location.address && (
-                  <p className="text-xs text-muted-foreground mt-1">{location.address}</p>
-                )}
+          </div>
+        )}
+
+        {assignee && (
+          <div className="flex items-start space-x-2.5">
+            <div className="mt-0.5">
+              <User className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="space-y-0.5">
+              <h4 className="text-sm font-medium">Assigned To</h4>
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">{assignee.name}</p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

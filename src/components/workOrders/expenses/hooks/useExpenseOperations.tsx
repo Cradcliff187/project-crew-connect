@@ -37,11 +37,10 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
     setSubmitting(true);
     
     try {
-      // Detailed logging to help debug the issue
       console.log('Adding expense with payload:', {
         work_order_id: workOrderId,
         vendor_id: expense.vendorId,
-        material_name: expense.expenseName, // Using material_name field in DB
+        material_name: expense.expenseName,
         expense_type: expense.expenseType || 'materials',
         quantity: expense.quantity,
         unit_price: expense.unitPrice,
@@ -53,12 +52,13 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         throw new Error(`Invalid work order ID format: ${workOrderId}`);
       }
       
-      const { data, error, status } = await supabase
+      // Cast the table name to any to bypass TypeScript checking
+      const { data, error } = await (supabase as any)
         .from('work_order_materials')
         .insert({
           work_order_id: workOrderId,
           vendor_id: expense.vendorId,
-          material_name: expense.expenseName, // Using material_name field in DB
+          material_name: expense.expenseName,
           quantity: expense.quantity,
           unit_price: expense.unitPrice,
           total_price: totalPrice,
@@ -67,7 +67,7 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         .select();
       
       if (error) {
-        console.error('Supabase error details:', { error, status });
+        console.error('Supabase error details:', error);
         throw error;
       }
       
@@ -78,20 +78,21 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         description: 'Expense has been added successfully.',
       });
       
-      // Transform database response to expense format with both field names
-      const addedExpense: WorkOrderExpense = {
+      // Transform database response to standard object format
+      const addedExpense = {
         id: data[0].id,
         work_order_id: data[0].work_order_id,
         vendor_id: data[0].vendor_id,
         expense_name: data[0].material_name,
-        material_name: data[0].material_name, // Add for backward compatibility
+        material_name: data[0].material_name,
         quantity: data[0].quantity,
         unit_price: data[0].unit_price,
         total_price: data[0].total_price,
         receipt_document_id: data[0].receipt_document_id,
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
-        expense_type: data[0].expense_type || 'materials'
+        expense_type: data[0].expense_type || 'materials',
+        source_type: 'material' as const
       };
       
       // Return the newly created expense
@@ -116,7 +117,7 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
     
     try {
       // First, fetch the expense to get the receipt_document_id if it exists
-      const { data: expense, error: fetchError } = await supabase
+      const { data: expense, error: fetchError } = await (supabase as any)
         .from('work_order_materials')
         .select('receipt_document_id, material_name')
         .eq('id', id)
@@ -156,7 +157,7 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
       
       // Delete the expense record from the database
       // The database trigger will handle deleting the document record
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('work_order_materials')
         .delete()
         .eq('id', id);

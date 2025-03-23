@@ -25,8 +25,8 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     
     try {
       // Check if document is referenced by work_order_materials
-      const { count, error: materialsCheckError } = await supabase
-        .from('work_order_materials')
+      const { count, error: materialsCheckError } = await (supabase as any)
+        .from('unified_work_order_expenses')
         .select('*', { count: 'exact', head: true })
         .eq('receipt_document_id', document.document_id);
         
@@ -58,8 +58,8 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
       setDeleteError(null);
       
       // Check if document is referenced by work_order_materials
-      const { count: materialsCount, error: materialsCheckError } = await supabase
-        .from('work_order_materials')
+      const { count: materialsCount, error: materialsCheckError } = await (supabase as any)
+        .from('unified_work_order_expenses')
         .select('*', { count: 'exact', head: true })
         .eq('receipt_document_id', selectedDocument.document_id);
         
@@ -117,7 +117,7 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
       setDeleteError(null);
       
       // First remove references from work_order_materials
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('work_order_materials')
         .update({ receipt_document_id: null })
         .eq('receipt_document_id', selectedDocument.document_id);

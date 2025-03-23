@@ -25,8 +25,8 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
       }
       
       // Fetch receipt documents linked to work order materials
-      const { data: materialsData, error: materialsError } = await supabase
-        .from('work_order_materials')
+      const { data: materialsData, error: materialsError } = await (supabase as any)
+        .from('unified_work_order_expenses')
         .select('receipt_document_id')
         .eq('work_order_id', workOrderId)
         .not('receipt_document_id', 'is', null);
@@ -37,9 +37,9 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
       }
       
       // Extract document IDs from materials
-      const receiptDocumentIds = materialsData
+      const receiptDocumentIds = (materialsData || [])
         .map(material => material.receipt_document_id)
-        .filter(id => id !== null);
+        .filter(Boolean);
       
       // If we have receipt documents, fetch them
       let receiptDocuments: any[] = [];
@@ -55,7 +55,7 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
           console.error('Error fetching receipt documents:', receiptsError);
         } else {
           // Mark these as receipts for display purposes
-          receiptDocuments = receiptsData.map(doc => ({
+          receiptDocuments = (receiptsData || []).map(doc => ({
             ...doc,
             is_receipt: true
           }));

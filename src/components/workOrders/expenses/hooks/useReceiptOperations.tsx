@@ -21,18 +21,18 @@ export function useReceiptOperations(fetchExpenses: () => Promise<void>) {
     try {
       console.log('Attaching receipt document to expense:', { expenseId, documentId });
       
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('work_order_materials')
         .update({ receipt_document_id: documentId })
         .eq('id', expenseId);
-      
+        
       if (error) {
         throw error;
       }
       
       toast({
         title: 'Receipt Attached',
-        description: 'Receipt has been attached to the expense.',
+        description: 'Receipt has been attached to the expense successfully.',
       });
       
       // Refresh expenses list

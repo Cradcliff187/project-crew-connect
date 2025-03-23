@@ -51,7 +51,7 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
         throw new Error(`Invalid work order ID format: ${workOrderId}`);
       }
       
-      const { data, error, status } = await supabase
+      const { data, error } = await (supabase as any)
         .from('work_order_materials')
         .insert({
           work_order_id: workOrderId,
@@ -60,11 +60,12 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
           quantity: material.quantity,
           unit_price: material.unitPrice,
           total_price: totalPrice,
+          expense_type: 'materials',
         })
         .select();
       
       if (error) {
-        console.error('Supabase error details:', { error, status });
+        console.error('Supabase error details:', error);
         throw error;
       }
       
@@ -88,7 +89,8 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
         receipt_document_id: data[0].receipt_document_id,
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
-        expense_type: data[0].expense_type || 'materials'
+        expense_type: data[0].expense_type || 'materials',
+        source_type: 'material' as const
       };
       
       // Return the newly created material
@@ -113,7 +115,7 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
     
     try {
       // First, fetch the material to get the receipt_document_id if it exists
-      const { data: material, error: fetchError } = await supabase
+      const { data: material, error: fetchError } = await (supabase as any)
         .from('work_order_materials')
         .select('receipt_document_id, material_name')
         .eq('id', id)
@@ -153,7 +155,7 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
       
       // Delete the material record from the database
       // The database trigger will handle deleting the document record
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('work_order_materials')
         .delete()
         .eq('id', id);
