@@ -1,78 +1,24 @@
 
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import PageTransition from '@/components/layout/PageTransition';
-
-import WorkOrderDetails from '../WorkOrderDetails';
-import { WorkOrder } from '@/types/workOrder';
-import WorkOrderDocuments from '@/components/workOrders/documents';
+import { useWorkOrderDetail } from './hooks/useWorkOrderDetail';
+import WorkOrderDetailContent from './WorkOrderDetailContent';
 
 const WorkOrderDetail = () => {
   const { workOrderId } = useParams<{ workOrderId: string }>();
-  const navigate = useNavigate();
-  const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchWorkOrder = async () => {
-      if (!workOrderId) return;
-      
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('maintenance_work_orders')
-          .select('*')
-          .eq('work_order_id', workOrderId)
-          .single();
-        
-        if (error) throw error;
-        
-        setWorkOrder(data as WorkOrder);
-      } catch (error: any) {
-        console.error('Error fetching work order:', error);
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to load work order details.',
-          variant: 'destructive'
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchWorkOrder();
-  }, [workOrderId]);
-  
-  const handleBackClick = () => {
-    navigate('/work-orders');
-  };
-  
-  const handleRefresh = () => {
-    if (workOrderId) {
-      setLoading(true);
-      supabase
-        .from('maintenance_work_orders')
-        .select('*')
-        .eq('work_order_id', workOrderId)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error('Error refreshing work order:', error);
-            return;
-          }
-          
-          setWorkOrder(data as WorkOrder);
-          setLoading(false);
-        });
-    }
-  };
+  const {
+    workOrder,
+    loading,
+    customer,
+    location,
+    assignee,
+    fetchWorkOrder,
+    handleBackClick
+  } = useWorkOrderDetail(workOrderId);
   
   return (
     <PageTransition>
@@ -104,9 +50,12 @@ const WorkOrderDetail = () => {
             </div>
           </Card>
         ) : (
-          <WorkOrderDetails 
-            workOrder={workOrder} 
-            onStatusChange={handleRefresh} 
+          <WorkOrderDetailContent 
+            workOrder={workOrder}
+            customer={customer}
+            location={location}
+            assignee={assignee}
+            onStatusChange={fetchWorkOrder}
           />
         )}
       </div>
