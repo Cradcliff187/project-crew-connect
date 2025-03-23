@@ -1,7 +1,6 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { WorkOrderMaterial } from '@/types/workOrder';
-import { Document } from '@/components/documents/schemas/documentSchema';
 import { useDocumentViewer } from '@/hooks/useDocumentViewer';
 import { toast } from '@/hooks/use-toast';
 
@@ -14,6 +13,7 @@ export function useReceiptManager() {
     viewDocument, 
     closeViewer, 
     isViewerOpen, 
+    setIsViewerOpen,
     currentDocument, 
     isLoading 
   } = useDocumentViewer({
@@ -21,6 +21,9 @@ export function useReceiptManager() {
       width: 1200,
       height: 1200,
       quality: 90
+    },
+    onClose: () => {
+      console.log('Document viewer closed via hook callback');
     }
   });
   
@@ -32,12 +35,20 @@ export function useReceiptManager() {
     // Check if material has a receipt
     if (material.receipt_document_id) {
       // View existing receipt using the document viewer hook
-      viewDocument(material.receipt_document_id);
+      await viewDocument(material.receipt_document_id);
     } else {
       // Show upload dialog for new receipt
       setShowReceiptUpload(true);
     }
   };
+  
+  const handleCloseReceiptViewer = useCallback(() => {
+    closeViewer();
+    // Add delay before clearing selected material
+    setTimeout(() => {
+      setSelectedMaterial(null);
+    }, 100);
+  }, [closeViewer]);
   
   return {
     showReceiptUpload,
@@ -45,10 +56,16 @@ export function useReceiptManager() {
     selectedMaterial,
     setSelectedMaterial,
     viewingReceipt: isViewerOpen,
-    setViewingReceipt: (isOpen: boolean) => !isOpen && closeViewer(),
+    setViewingReceipt: (isOpen: boolean) => {
+      if (!isOpen) {
+        handleCloseReceiptViewer();
+      } else {
+        setIsViewerOpen(true);
+      }
+    },
     receiptDocument: currentDocument,
     isLoading,
     handleReceiptClick,
-    handleCloseReceiptViewer: closeViewer
+    handleCloseReceiptViewer
   };
 }

@@ -36,18 +36,11 @@ const DocumentViewerDialog = ({
 
   // Handle component unmounting
   useEffect(() => {
+    mountedRef.current = true;
+    
     return () => {
       mountedRef.current = false;
-      
-      // Clean up any iframe resources
-      if (iframeRef.current) {
-        try {
-          // Clear src to stop any ongoing loads
-          iframeRef.current.src = 'about:blank';
-        } catch (e) {
-          console.log('Error cleaning up iframe:', e);
-        }
-      }
+      cleanupIframe();
     };
   }, []);
 
@@ -59,13 +52,8 @@ const DocumentViewerDialog = ({
     }
     
     // When dialog is closed, perform additional cleanup
-    if (!open && iframeRef.current) {
-      try {
-        // Clear src to stop any ongoing loads
-        iframeRef.current.src = 'about:blank';
-      } catch (e) {
-        console.log('Error cleaning up iframe on close:', e);
-      }
+    if (!open) {
+      cleanupIframe();
     }
   }, [document, open]);
   
@@ -87,6 +75,18 @@ const DocumentViewerDialog = ({
       });
     }
   }, [document, open]);
+
+  // Helper function to clean up iframe
+  const cleanupIframe = () => {
+    if (iframeRef.current) {
+      try {
+        // Clear src to stop any ongoing loads
+        iframeRef.current.src = 'about:blank';
+      } catch (e) {
+        console.log('Error cleaning up iframe:', e);
+      }
+    }
+  };
 
   if (!document) return null;
 
@@ -115,21 +115,14 @@ const DocumentViewerDialog = ({
   // Handle closing dialog explicitly to avoid UI lockups
   const handleClose = () => {
     if (mountedRef.current) {
-      // Explicitly clean up iframe
-      if (iframeRef.current) {
-        try {
-          iframeRef.current.src = 'about:blank';
-        } catch (e) {
-          console.log('Error cleaning up iframe in handleClose:', e);
-        }
-      }
+      cleanupIframe();
       
       // Small delay to ensure cleanup happens before dialog state changes
       setTimeout(() => {
         if (mountedRef.current) {
           onOpenChange(false);
         }
-      }, 10);
+      }, 50);
     }
   };
 
@@ -205,7 +198,7 @@ const DocumentViewerDialog = ({
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>
-          <Button onClick={handleClose} variant="outline" size="sm">
+          <Button onClick={handleClose} variant="default" size="sm">
             <X className="h-4 w-4 mr-2" />
             Close
           </Button>

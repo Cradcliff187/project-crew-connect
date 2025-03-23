@@ -2,8 +2,10 @@
 import { WorkOrderExpense } from '@/types/workOrder';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import ExpenseReceiptUpload from '../components/ExpenseReceiptUpload';
-import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
-import BaseReceiptUploadDialog from '@/components/documents/ReceiptUploadDialog';
+import { 
+  ReceiptUploadDialog as SharedReceiptUploadDialog,
+  ReceiptViewerDialog as SharedReceiptViewerDialog
+} from '../../common/ReceiptDialogManager';
 
 interface ReceiptUploadDialogProps {
   open: boolean;
@@ -24,30 +26,24 @@ export const ReceiptUploadDialog = ({
 }: ReceiptUploadDialogProps) => {
   if (!expense) return null;
 
-  const handleReceiptSuccess = (documentId?: string) => {
-    if (documentId) {
-      onSuccess(expense.id, documentId);
-    } else {
-      // Even if no documentId, still call onCancel to close the dialog
-      onCancel();
-    }
-  };
-
   return (
-    <BaseReceiptUploadDialog
+    <SharedReceiptUploadDialog
       open={open}
-      onOpenChange={(open) => !open && onCancel()}
-      title="Upload Receipt"
-      description="Upload a receipt for this expense item"
+      workOrderId={workOrderId}
+      vendorName={vendorName}
+      itemName="expense item"
+      itemId={expense.id}
+      onSuccess={onSuccess}
+      onCancel={onCancel}
     >
       <ExpenseReceiptUpload
         workOrderId={workOrderId}
         expense={expense}
         vendorName={vendorName}
-        onSuccess={handleReceiptSuccess}
+        onSuccess={(documentId) => documentId && onSuccess(expense.id, documentId)}
         onCancel={onCancel}
       />
-    </BaseReceiptUploadDialog>
+    </SharedReceiptUploadDialog>
   );
 };
 
@@ -62,15 +58,11 @@ export const ReceiptViewerDialog = ({
   onOpenChange,
   receiptDocument,
 }: ReceiptViewerDialogProps) => {
-  if (!receiptDocument) return null;
-
   return (
-    <DocumentViewerDialog
+    <SharedReceiptViewerDialog
       open={open}
       onOpenChange={onOpenChange}
-      document={receiptDocument}
-      title={`Receipt: ${receiptDocument.file_name}`}
-      description={`${receiptDocument.file_type || 'Document'} preview`}
+      receiptDocument={receiptDocument}
     />
   );
 };
