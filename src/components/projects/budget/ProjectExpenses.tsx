@@ -88,6 +88,7 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
           document_id: expense.document_id,
           created_at: expense.created_at,
           updated_at: expense.updated_at,
+          // Fixed: Safely access the category property, handling when budget_item might be null
           budget_item_category: expense.budget_item?.category || null,
           vendor_name: vendorName
         };
