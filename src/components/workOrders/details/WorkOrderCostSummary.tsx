@@ -14,14 +14,15 @@ const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
   const [materialsTotal, setMaterialsTotal] = useState<number | null>(null);
   const [laborTotal, setLaborTotal] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [materialCount, setMaterialCount] = useState(0);
   
   const fetchCostData = async () => {
     setIsLoading(true);
     try {
       // Fetch materials total
-      const { data: materialsData, error: materialsError } = await supabase
+      const { data: materialsData, error: materialsError, count } = await supabase
         .from('work_order_materials')
-        .select('total_price')
+        .select('total_price', { count: 'exact' })
         .eq('work_order_id', workOrder.work_order_id);
         
       if (materialsError) {
@@ -29,6 +30,7 @@ const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
       } else {
         const total = (materialsData || []).reduce((sum, item) => sum + (item.total_price || 0), 0);
         setMaterialsTotal(total);
+        setMaterialCount(count || 0);
       }
       
       // Fetch labor total
@@ -55,6 +57,12 @@ const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
     fetchCostData();
   }, [workOrder.work_order_id]);
   
+  // Calculate the total cost - use our fetched data instead of relying on workOrder.total_cost
+  const calculatedTotalCost = (laborTotal || 0) + (materialsTotal || 0);
+  
+  // Detect discrepancy between calculated and stored totals
+  const hasCostDiscrepancy = calculatedTotalCost !== (workOrder.total_cost || 0);
+  
   return (
     <Card>
       <CardContent className="pt-4">
@@ -67,7 +75,7 @@ const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
         ) : (
           <div className="space-y-4">
             <div className="flex justify-between items-center pb-2 border-b">
-              <span className="text-muted-foreground">Materials Cost</span>
+              <span className="text-muted-foreground">Materials Cost ({materialCount} items)</span>
               <span className="font-medium">{formatCurrency(materialsTotal || 0)}</span>
             </div>
             
@@ -78,8 +86,14 @@ const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
             
             <div className="flex justify-between items-center pt-2 text-lg font-bold">
               <span>Total Cost</span>
-              <span className="text-[#0485ea]">{formatCurrency(workOrder.total_cost || 0)}</span>
+              <span className="text-[#0485ea]">{formatCurrency(calculatedTotalCost)}</span>
             </div>
+            
+            {hasCostDiscrepancy && (
+              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+                <p>The displayed costs reflect the current materials and labor.</p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
