@@ -99,7 +99,10 @@ const WorkOrderDetailContent = ({
         </TabsContent>
         
         <TabsContent value="documents">
-          <WorkOrderDocuments workOrderId={workOrder.work_order_id} />
+          <WorkOrderDocuments 
+            workOrderId={workOrder.work_order_id} 
+            entityType="WORK_ORDER"
+          />
         </TabsContent>
         
         <TabsContent value="time">
