@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
@@ -24,19 +24,19 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
       title: '',
       description: '',
       priority: 'MEDIUM',
-      status: 'NEW',
+      status: 'new',
       progress: 0
     }
   });
 
   // Reset form when dialog opens/closes or when workOrder changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       reset(workOrder || {
         title: '',
         description: '',
         priority: 'MEDIUM',
-        status: 'NEW',
+        status: 'new',
         progress: 0
       });
     }
@@ -74,7 +74,7 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
             title: data.title,
             description: data.description,
             priority: data.priority,
-            status: 'NEW',
+            status: 'new',
             progress: 0
           });
           

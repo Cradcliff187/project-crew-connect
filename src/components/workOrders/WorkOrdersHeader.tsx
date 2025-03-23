@@ -3,7 +3,7 @@ import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PageHeader from '@/components/layout/PageHeader';
-import WorkOrderDialog from './WorkOrderDialog';
+import WorkOrderDialog from './dialog/WorkOrderDialog';
 
 interface WorkOrdersHeaderProps {
   searchQuery: string;
@@ -54,9 +54,9 @@ const WorkOrdersHeader = ({
       </PageHeader>
 
       <WorkOrderDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onWorkOrderAdded={onWorkOrderAdded}
+        isOpen={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onWorkOrderSaved={onWorkOrderAdded}
       />
     </>
   );
