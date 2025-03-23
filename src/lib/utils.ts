@@ -1,7 +1,6 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
+import { formatDistanceToNow, format, isToday, isYesterday, differenceInDays } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -114,4 +113,24 @@ export function getTimeOfDayLabel(hours: number): string {
   if (hours >= 12 && hours < 17) return 'Afternoon';
   if (hours >= 17 && hours < 21) return 'Evening';
   return 'Night';
+}
+
+// Calculate the number of days until a due date
+export function calculateDaysUntilDue(dueDate: string | null | undefined): number | null {
+  if (!dueDate) return null;
+  
+  try {
+    const due = new Date(dueDate);
+    const today = new Date();
+    
+    // Reset time to compare just the date portions
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    
+    const diff = differenceInDays(due, today);
+    return diff;
+  } catch (error) {
+    console.error("Error calculating days until due:", error);
+    return null;
+  }
 }

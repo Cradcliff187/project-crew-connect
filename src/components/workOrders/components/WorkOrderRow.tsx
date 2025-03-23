@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Calendar, Eye, Edit } from 'lucide-react';
 import { WorkOrder } from '@/types/workOrder';
-import { formatDate } from '@/lib/utils';
+import { formatDate, calculateDaysUntilDue } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ActionMenu from '@/components/ui/action-menu';
 import WorkOrderDialog from '../WorkOrderDialog';
+import DueStatusBadge from './DueStatusBadge';
 
 interface WorkOrderRowProps {
   workOrder: WorkOrder;
@@ -17,6 +18,7 @@ interface WorkOrderRowProps {
 const WorkOrderRow = ({ workOrder, onStatusChange }: WorkOrderRowProps) => {
   const navigate = useNavigate();
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const daysUntilDue = calculateDaysUntilDue(workOrder.due_by_date);
 
   const handleRowClick = () => {
     navigate(`/work-orders/${workOrder.work_order_id}`);
@@ -67,6 +69,9 @@ const WorkOrderRow = ({ workOrder, onStatusChange }: WorkOrderRowProps) => {
               <span className="text-muted-foreground">Not set</span>
             )}
           </div>
+        </TableCell>
+        <TableCell>
+          <DueStatusBadge daysUntilDue={daysUntilDue} />
         </TableCell>
         <TableCell>
           {workOrder.priority ? (

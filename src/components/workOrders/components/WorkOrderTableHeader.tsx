@@ -8,6 +8,7 @@ const WorkOrderTableHeader = () => {
         <TableHead className="font-semibold text-[#0485ea]">WO Number</TableHead>
         <TableHead className="font-semibold text-[#0485ea]">PO Number</TableHead>
         <TableHead className="font-semibold text-[#0485ea]">Due Date</TableHead>
+        <TableHead className="font-semibold text-[#0485ea]">Days Until Due</TableHead>
         <TableHead className="font-semibold text-[#0485ea]">Priority</TableHead>
         <TableHead className="font-semibold text-[#0485ea]">Status</TableHead>
         <TableHead className="text-right font-semibold text-[#0485ea]">Actions</TableHead>
