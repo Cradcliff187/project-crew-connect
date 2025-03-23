@@ -31,10 +31,12 @@ export const uploadDocument = async (
       
       console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
       
-      // Upload file to Supabase Storage
+      // Upload file to Supabase Storage - ensure we're passing the actual file, not JSON
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          contentType: file.type // Explicitly set the content type based on the file
+        });
         
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
@@ -68,7 +70,7 @@ export const uploadDocument = async (
         notes: metadata.notes || null,
         vendor_id: metadata.vendorId || null,
         vendor_type: metadata.vendorType || null,
-        expense_type: metadata.expenseType || null, // Add the expense_type field
+        expense_type: metadata.expenseType || null,
       };
       
       console.log('Inserting document metadata:', documentData);

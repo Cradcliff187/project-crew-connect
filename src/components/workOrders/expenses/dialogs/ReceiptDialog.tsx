@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { WorkOrderExpense } from '@/types/workOrder';
 import { Document } from '@/components/documents/schemas/documentSchema';
@@ -42,6 +43,9 @@ export const ReceiptUploadDialog = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Upload Receipt</DialogTitle>
+          <DialogDescription>
+            Upload a receipt for this expense item
+          </DialogDescription>
         </DialogHeader>
         <ExpenseReceiptUpload
           workOrderId={workOrderId}
@@ -83,6 +87,9 @@ export const ReceiptViewerDialog = ({
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Receipt: {receiptDocument.file_name}</DialogTitle>
+          <DialogDescription>
+            Preview of the receipt document
+          </DialogDescription>
         </DialogHeader>
         <Separator />
         <div className="min-h-[60vh] flex flex-col items-center justify-center">
