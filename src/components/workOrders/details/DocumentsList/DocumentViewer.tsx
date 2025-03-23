@@ -112,6 +112,7 @@ const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) =
                 alt={document.file_name || 'Document preview'}
                 className="w-full h-full object-contain"
                 onError={handleError}
+                loading="lazy"
               />
             ) : determineDisplayType() === 'pdf' ? (
               <iframe

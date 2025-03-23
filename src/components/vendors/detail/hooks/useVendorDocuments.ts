@@ -58,11 +58,20 @@ export const useVendorDocuments = (vendorId: string) => {
           if (doc.storage_path) {
             console.log('Getting signed URL for document:', doc.document_id, 'Path:', doc.storage_path);
             
-            // Using createSignedUrl instead of getPublicUrl for better security
+            // Using createSignedUrl with correct content type option
+            const options = {
+              download: false,
+              transform: {
+                width: 800, // Optional: limit size for images
+                height: 800,
+                quality: 80
+              }
+            };
+
             // Using the correct bucket name - construction_documents
             const { data, error } = await supabase.storage
               .from('construction_documents')
-              .createSignedUrl(doc.storage_path, 300); // 5 minutes expiration
+              .createSignedUrl(doc.storage_path, 300, options); // 5 minutes expiration
               
             if (error) {
               console.error('Error generating signed URL for', doc.document_id, error);

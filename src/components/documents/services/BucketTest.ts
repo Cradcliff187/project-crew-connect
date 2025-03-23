@@ -40,6 +40,10 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     } else {
       console.log('Target bucket not found in list, but will attempt uploads anyway');
       
+      // If bucket doesn't exist yet, let's try to create it
+      // But we'll only log it since the SQL migration should handle this
+      console.log('Note: The construction_documents bucket should be created via SQL migration');
+      
       // Just return the expected bucket ID
       return {
         success: true,

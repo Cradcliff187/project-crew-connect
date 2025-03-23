@@ -68,22 +68,26 @@ export const uploadDocument = async (
         }
       }
       
+      // Create file options with proper headers to preserve content type
+      const fileOptions = {
+        contentType: contentType,
+        cacheControl: '3600',
+        upsert: true
+      };
+      
       // Enhanced debugging for upload
       console.log('About to execute upload with params:', {
         bucket: 'construction_documents',
         path: filePath,
         fileType: contentType,
         fileSize: file.size,
-        upsert: true
+        options: fileOptions
       });
       
       // Upload the file to Supabase Storage with explicit content type
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
-        .upload(filePath, file, {
-          contentType: contentType, // CRITICAL: Ensure proper content type is used
-          upsert: true
-        });
+        .upload(filePath, file, fileOptions);
         
       if (uploadError) {
         console.error('Storage upload error:', {
@@ -170,3 +174,4 @@ export const uploadDocument = async (
     };
   }
 };
+

@@ -34,11 +34,20 @@ export function useReceiptManager() {
         throw new Error('Document has no storage path');
       }
       
-      // Generate signed URL for the document with the correct bucket name
+      // Generate signed URL for the document with the correct bucket name and options
+      const options = {
+        download: false,
+        transform: {
+          width: 1200, // Optional: limit size for images
+          height: 1200,
+          quality: 90
+        }
+      };
+      
       const { data: urlData, error: urlError } = await supabase
         .storage
         .from('construction_documents')
-        .createSignedUrl(data.storage_path, 300); // 5 minutes expiration
+        .createSignedUrl(data.storage_path, 300, options); // 5 minutes expiration
       
       if (urlError) {
         console.error('Error creating signed URL:', urlError);
