@@ -3,11 +3,11 @@ import { TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { WorkOrderTimelog } from '@/types/workOrder';
+import { TimeEntry } from '@/types/timeTracking';
 import { EmptyState } from './';
 
 interface TimelogsTableBodyProps {
-  timelogs: WorkOrderTimelog[];
+  timelogs: TimeEntry[];
   employeeNameFn: (employeeId: string | null) => string;
   onDelete: (id: string) => Promise<void>;
 }
@@ -23,7 +23,7 @@ const TimelogsTableBody = ({ timelogs, employeeNameFn, onDelete }: TimelogsTable
     <TableBody>
       {timelogs.map((log) => (
         <TableRow key={log.id} className="hover:bg-[#0485ea]/5 transition-colors">
-          <TableCell>{formatDate(log.work_date)}</TableCell>
+          <TableCell>{formatDate(log.date_worked)}</TableCell>
           <TableCell>{employeeNameFn(log.employee_id)}</TableCell>
           <TableCell className="font-medium">{log.hours_worked}</TableCell>
           <TableCell className="max-w-[200px] truncate">{log.notes || '-'}</TableCell>

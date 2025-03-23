@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { WorkOrderTimelog } from '@/types/workOrder';
+import { TimeEntry } from '@/types/timeTracking';
 import { TimelogsInfoSection } from './timelogs/components';
 
 interface WorkOrderTimelogsProps {
@@ -11,7 +11,7 @@ interface WorkOrderTimelogsProps {
 }
 
 const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsProps) => {
-  const [timelogs, setTimelogs] = useState<WorkOrderTimelog[]>([]);
+  const [timelogs, setTimelogs] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<{ employee_id: string, name: string }[]>([]);
   
@@ -20,12 +20,13 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     try {
       console.log('Fetching time logs for work order ID:', workOrderId);
       
-      // Use descending order to show most recent first
+      // Get time entries for this work order, ordered by most recent first
       const { data, error } = await supabase
-        .from('work_order_time_logs')
+        .from('time_entries')
         .select('*')
-        .eq('work_order_id', workOrderId)
-        .order('work_date', { ascending: false });
+        .eq('entity_type', 'work_order')
+        .eq('entity_id', workOrderId)
+        .order('date_worked', { ascending: false });
       
       if (error) {
         throw error;
@@ -81,7 +82,7 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     
     try {
       const { error } = await supabase
-        .from('work_order_time_logs')
+        .from('time_entries')
         .delete()
         .eq('id', id);
       

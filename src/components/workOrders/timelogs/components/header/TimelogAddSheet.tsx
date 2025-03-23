@@ -60,21 +60,26 @@ const TimelogAddSheet = ({
     
     try {
       console.log('Submitting time log with data:', {
-        work_order_id: workOrderId,
+        entity_type: 'work_order',
+        entity_id: workOrderId,
         employee_id: selectedEmployee,
         hours_worked: parseFloat(hours),
         notes,
-        work_date: new Date().toISOString(),
+        date_worked: new Date().toISOString().split('T')[0], // Just the date part
       });
       
+      // Insert directly into time_entries table
       const { data, error } = await supabase
-        .from('work_order_time_logs')
+        .from('time_entries')
         .insert({
-          work_order_id: workOrderId,
+          entity_type: 'work_order',
+          entity_id: workOrderId,
           employee_id: selectedEmployee,
           hours_worked: parseFloat(hours),
           notes,
-          work_date: new Date().toISOString(),
+          date_worked: new Date().toISOString().split('T')[0], // Just the date part
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select();
       

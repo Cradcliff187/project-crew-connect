@@ -1,15 +1,14 @@
 
 import { useState, useEffect } from 'react';
-import { WorkOrderTimelog } from '@/types/workOrder';
+import { TimeEntry } from '@/types/timeTracking';
 import { TimelogsTableContent } from '../components';
 import { TimelogSectionHeader, TimelogAddSheet } from './header';
 import { EmptyState } from './table';
 import TotalHoursDisplay from './TotalHoursDisplay';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 
 interface TimelogsInfoSectionProps {
-  timelogs: WorkOrderTimelog[];
+  timelogs: TimeEntry[];
   loading: boolean;
   employees: { employee_id: string; name: string }[];
   workOrderId: string;

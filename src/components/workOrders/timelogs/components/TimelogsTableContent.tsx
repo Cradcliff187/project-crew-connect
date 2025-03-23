@@ -1,11 +1,11 @@
 
 import { Table } from '@/components/ui/table';
-import { WorkOrderTimelog } from '@/types/workOrder';
+import { TimeEntry } from '@/types/timeTracking';
 import { TimelogsTableHeader, TimelogsTableBody } from './table';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface TimelogsTableContentProps {
-  timelogs: WorkOrderTimelog[];
+  timelogs: TimeEntry[];
   employees: { employee_id: string; name: string }[];
   onDelete: (id: string) => Promise<void>;
 }
