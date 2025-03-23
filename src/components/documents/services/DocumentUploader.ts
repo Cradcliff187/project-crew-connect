@@ -43,6 +43,15 @@ export const uploadDocument = async (
         throw new Error('Invalid file object provided');
       }
       
+      // Enhanced debugging for upload
+      console.log('About to execute upload with params:', {
+        bucket: 'construction_documents',
+        path: filePath,
+        fileType: file.type,
+        fileSize: file.size,
+        upsert: true
+      });
+      
       // Upload the file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
@@ -55,7 +64,11 @@ export const uploadDocument = async (
         console.error('Storage upload error:', {
           message: uploadError.message,
           error: uploadError,
-          name: uploadError.name
+          name: uploadError.name,
+          code: uploadError.code,
+          details: uploadError.details,
+          hint: uploadError.hint,
+          stack: uploadError.stack
         });
         throw uploadError;
       }
@@ -99,7 +112,13 @@ export const uploadDocument = async (
         .single();
         
       if (insertError) {
-        console.error('Document metadata insert error:', insertError);
+        console.error('Document metadata insert error:', {
+          message: insertError.message,
+          error: insertError,
+          code: insertError.code,
+          details: insertError.details,
+          hint: insertError.hint
+        });
         throw insertError;
       }
       
@@ -122,6 +141,9 @@ export const uploadDocument = async (
       errorMessage: error.message,
       errorObject: error,
       name: error.name,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
       stack: error.stack
     });
     

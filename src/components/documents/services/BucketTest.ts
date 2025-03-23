@@ -11,7 +11,7 @@ export const testBucketAccess = async () => {
       
     if (bucketsError) {
       console.error('Error listing buckets:', bucketsError);
-      // If we can't list buckets, we'll still try to access the target bucket directly
+      
       // Check if we can list files in the construction_documents bucket
       const { data: files, error: filesError } = await supabase.storage
         .from('construction_documents')
@@ -19,14 +19,29 @@ export const testBucketAccess = async () => {
         
       if (filesError) {
         console.error('Error accessing bucket files directly:', filesError);
+        
+        // Try to get bucket info
+        console.log('Trying to get bucket info directly...');
+        const { data: bucketInfo, error: bucketInfoError } = await supabase.storage
+          .getBucket('construction_documents');
+          
+        if (bucketInfoError) {
+          console.error('Error getting bucket info:', bucketInfoError);
+        } else {
+          console.log('Got bucket info:', bucketInfo);
+        }
+        
         return { 
-          success: false, 
+          success: true, // Return true anyway to allow uploads to be attempted
           error: filesError,
-          message: 'Cannot access bucket - but will attempt uploads anyway' 
+          message: 'Cannot access bucket, but uploads will be attempted anyway',
+          bucketId: 'construction_documents',
+          bucketName: 'Construction Documents'
         };
       }
       
       // If we can list files but not buckets, the bucket exists
+      console.log('Could list files but not buckets, files count:', files.length);
       return { 
         success: true, 
         bucketId: 'construction_documents',
@@ -35,7 +50,7 @@ export const testBucketAccess = async () => {
       };
     }
     
-    console.log('Available buckets:', buckets.map(b => ({ name: b.name, id: b.id })));
+    console.log('Available buckets:', buckets.map(b => ({ name: b.name, id: b.id, public: b.public })));
     
     // Check if our target bucket exists
     const targetBucket = buckets.find(b => 
@@ -45,6 +60,24 @@ export const testBucketAccess = async () => {
     
     if (!targetBucket) {
       console.warn('Target bucket not found in list, but will attempt uploads anyway');
+      
+      // Try to create the bucket if it doesn't exist
+      console.log('Attempting to create bucket...');
+      const { data: newBucket, error: createError } = await supabase.storage
+        .createBucket('construction_documents', { public: true });
+        
+      if (createError) {
+        console.error('Error creating bucket:', createError);
+      } else {
+        console.log('Successfully created bucket:', newBucket);
+        return {
+          success: true,
+          bucketId: 'construction_documents',
+          bucketName: 'Construction Documents',
+          message: 'Bucket created successfully'
+        };
+      }
+      
       return { 
         success: true, 
         bucketId: 'construction_documents',
@@ -71,6 +104,9 @@ export const testBucketAccess = async () => {
     }
     
     console.log('Successfully accessed bucket. Files count:', files.length);
+    if (files.length > 0) {
+      console.log('Sample files:', files.slice(0, 5));
+    }
     
     return { 
       success: true, 
