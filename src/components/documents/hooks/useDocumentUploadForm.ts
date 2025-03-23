@@ -20,6 +20,7 @@ interface UseDocumentUploadFormProps {
     amount?: number;
     vendorId?: string;
     materialName?: string;
+    expenseName?: string;
   };
 }
 
@@ -125,10 +126,12 @@ export const useDocumentUploadForm = ({
         form.setValue('metadata.vendorId', prefillData.vendorId);
       }
       
-      if (prefillData.materialName) {
-        // Add material name as a tag and in notes
-        form.setValue('metadata.tags', [prefillData.materialName]);
-        form.setValue('metadata.notes', `Receipt for: ${prefillData.materialName}`);
+      // Handle either materialName or expenseName
+      const itemName = prefillData.expenseName || prefillData.materialName;
+      if (itemName) {
+        // Add material/expense name as a tag and in notes
+        form.setValue('metadata.tags', [itemName]);
+        form.setValue('metadata.notes', `Receipt for: ${itemName}`);
       }
     }
   };

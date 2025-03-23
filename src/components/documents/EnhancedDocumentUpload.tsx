@@ -23,6 +23,7 @@ interface EnhancedDocumentUploadProps {
     amount?: number;
     vendorId?: string;
     materialName?: string;
+    expenseName?: string;
   };
 }
 
@@ -126,6 +127,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
             
             {/* Metadata Form Component */}
             <MetadataForm
+              form={form}
               control={form.control}
               watchIsExpense={watchIsExpense}
               watchVendorType={watchVendorType}
