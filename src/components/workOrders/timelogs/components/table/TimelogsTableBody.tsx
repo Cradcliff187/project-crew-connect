@@ -4,7 +4,7 @@ import { formatDate } from '@/lib/utils';
 import { TimeEntry } from '@/types/timeTracking';
 import { EmptyState } from './';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
-import { Clock, Trash2, FileText } from 'lucide-react';
+import { Clock, Trash2 } from 'lucide-react';
 
 interface TimelogsTableBodyProps {
   timelogs: TimeEntry[];

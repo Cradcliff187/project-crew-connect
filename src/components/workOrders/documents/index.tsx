@@ -1,11 +1,11 @@
 
 import { Card, CardContent } from '@/components/ui/card';
-import { useWorkOrderDocumentsEmbed } from './useWorkOrderDocumentsEmbed';
-import { DocumentsGrid } from '../details/DocumentsList';
 import { Button } from '@/components/ui/button';
 import { FileUp, FileText } from 'lucide-react';
 import { useState } from 'react';
 import DocumentUpload from '@/components/documents/DocumentUpload';
+import DocumentsTableContent from '../details/DocumentsList/DocumentsTableContent';
+import { useWorkOrderDocuments } from '../details/DocumentsList/useWorkOrderDocuments';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;
@@ -13,12 +13,17 @@ interface WorkOrderDocumentsProps {
 }
 
 const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps) => {
-  const { documents, loading, error, refetchDocuments } = useWorkOrderDocumentsEmbed(workOrderId, entityType);
+  const { documents, loading, fetchDocuments } = useWorkOrderDocuments(workOrderId);
   const [showUpload, setShowUpload] = useState(false);
   
   const handleUploadComplete = () => {
-    refetchDocuments();
+    fetchDocuments();
     setShowUpload(false);
+  };
+  
+  const handleViewDocument = (document: any) => {
+    // View document logic here
+    window.open(document.url, '_blank');
   };
   
   return (
@@ -40,30 +45,21 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
       
       <Card className="shadow-sm border-[#0485ea]/10">
         <CardContent className="p-0">
-          <DocumentsGrid 
+          <DocumentsTableContent 
             documents={documents} 
             loading={loading} 
-            error={error} 
+            onViewDocument={handleViewDocument}
+            onToggleUploadForm={() => setShowUpload(true)}
           />
-          
-          {documents.length > 0 ? (
-            <div className="flex justify-between items-center bg-gray-50 p-4 border-t">
-              <div className="flex items-center gap-2 text-gray-600">
-                <FileText size={18} />
-                <span className="font-medium">Total Documents: {documents.length}</span>
-              </div>
-            </div>
-          ) : null}
         </CardContent>
       </Card>
       
       {showUpload && (
         <DocumentUpload
-          entityId={workOrderId}
           entityType={entityType}
-          isOpen={showUpload}
           onClose={() => setShowUpload(false)}
           onUploadComplete={handleUploadComplete}
+          isOpen={showUpload}
         />
       )}
     </div>

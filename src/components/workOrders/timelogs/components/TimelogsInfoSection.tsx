@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { TimeEntry } from '@/types/timeTracking';
 import { Card, CardContent } from '@/components/ui/card';
-import { TimelogSectionHeader, TimelogsTableContent } from './';
+import { TimelogSectionHeader } from './header';
+import TimelogsTableContent from './TimelogsTableContent';
 import TimelogAddSheet from './header/TimelogAddSheet';
 import TotalHoursDisplay from './TotalHoursDisplay';
 
