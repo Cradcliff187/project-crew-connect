@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +5,6 @@ import PageTransition from '@/components/layout/PageTransition';
 import WorkOrdersHeader from '@/components/workOrders/WorkOrdersHeader';
 import WorkOrdersTable from '@/components/workOrders/WorkOrdersTable';
 import { WorkOrder } from '@/types/workOrder';
-import { StatusType } from '@/types/common';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -20,11 +18,11 @@ const fetchWorkOrders = async () => {
     throw error;
   }
   
-  // Cast the status to StatusType to satisfy TypeScript
+  // Cast the data properly to match the WorkOrder type
   const typedWorkOrders = data?.map(order => ({
     ...order,
-    status: order.status as StatusType
-  })) || [];
+    status: order.status as WorkOrder['status'] // Use the proper type from WorkOrder
+  })) as WorkOrder[];
   
   return typedWorkOrders;
 };

@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrder } from '@/types/workOrder';
-import { DollarSign, Clock, Timer, Clock4 } from 'lucide-react';
+import { DollarSign, Clock, Timer } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WorkOrderCostSummaryProps {
   workOrder: WorkOrder;
@@ -11,7 +12,7 @@ interface WorkOrderCostSummaryProps {
 
 export const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
   const [totalTimeEntryHours, setTotalTimeEntryHours] = useState(0);
-  const { supabase } = useFetchTimeEntryHours(workOrder.work_order_id);
+  const { hours } = useFetchTimeEntryHours(workOrder.work_order_id);
   
   return (
     <Card className="overflow-hidden">
@@ -66,7 +67,7 @@ function useFetchTimeEntryHours(workOrderId: string) {
   useEffect(() => {
     const fetchTimeEntryHours = async () => {
       try {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('work_order_time_logs')
           .select('hours_worked')
           .eq('work_order_id', workOrderId);
@@ -85,5 +86,5 @@ function useFetchTimeEntryHours(workOrderId: string) {
     }
   }, [workOrderId]);
   
-  return { hours, supabase };
+  return { hours };
 }

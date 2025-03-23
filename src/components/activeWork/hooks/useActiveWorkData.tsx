@@ -2,7 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { WorkItem, projectToWorkItem, workOrderToWorkItem } from '@/types/activeWork';
+import { WorkItem, projectToWorkItem } from '@/types/activeWork';
+import { WorkOrder } from '@/types/workOrder';
 
 export function useActiveWorkData(limit?: number) {
   // Fetch projects
@@ -76,10 +77,12 @@ export function useActiveWorkData(limit?: number) {
       
       if (error) throw error;
       
+      // Ensure we properly type the work orders to match the WorkOrder interface
       const typedWorkOrders = data?.map(order => ({
         ...order,
-        status: order.status as any
-      })) || [];
+        status: order.status as WorkOrder['status'],
+        priority: order.priority as WorkOrder['priority']
+      })) as WorkOrder[];
       
       return typedWorkOrders;
     },
@@ -95,9 +98,23 @@ export function useActiveWorkData(limit?: number) {
     }
   });
 
+  // Helper function to convert work orders to WorkItem type
+  const workOrderToWorkItem = (workOrder: WorkOrder): WorkItem => {
+    return {
+      id: workOrder.work_order_id,
+      title: workOrder.title,
+      type: 'workOrder',
+      status: workOrder.status,
+      dueDate: workOrder.due_by_date,
+      customerName: '',  // This would need to be populated from customer data
+      progress: workOrder.progress,
+      href: `/work-orders/${workOrder.work_order_id}`
+    };
+  };
+
   // Convert projects and work orders to unified WorkItem format
   const projectItems = projects.map(projectToWorkItem);
-  const workOrderItems = workOrders.map(workOrderToWorkItem);
+  const workOrderItems = workOrders.map((wo) => workOrderToWorkItem(wo));
   
   // Combined items
   const allItems = [...projectItems, ...workOrderItems];

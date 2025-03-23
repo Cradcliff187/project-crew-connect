@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { TimeEntryFormValues } from './useTimeEntryForm';
 import { toast } from '@/hooks/use-toast';
@@ -47,9 +46,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
       if (error) throw error;
       
       if (selectedFiles.length > 0 && insertedEntry) {
-        // Process receipts as expenses
         for (const file of selectedFiles) {
-          // First upload file to storage
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
@@ -60,10 +57,8 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             
           if (uploadError) throw uploadError;
           
-          // Determine MIME type from file
           const mimeType = file.type || `application/${fileExt}`;
           
-          // Then create document record
           const { data: documentData, error: documentError } = await supabase
             .from('documents')
             .insert({
@@ -86,7 +81,6 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             
           if (documentError) throw documentError;
           
-          // Link document to time entry
           const { data: linkResult, error: linkError } = await supabase
             .rpc('attach_document_to_time_entry', {
               p_time_entry_id: insertedEntry.id,
@@ -97,9 +91,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             console.error('Error linking document to time entry:', linkError);
           }
           
-          // Create expense record for this receipt
           if (data.entityType === 'work_order') {
-            // Only create expense records for work order time entries
             const { error: expenseError } = await supabase
               .from('expenses')
               .insert({
@@ -107,11 +99,13 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 entity_id: data.entityId,
                 description: `Time entry receipt: ${file.name}`,
                 expense_type: 'TIME_RECEIPT',
-                amount: 0, // No direct cost, it's just documentation
+                amount: 0,
                 document_id: documentData.document_id,
                 time_entry_id: insertedEntry.id,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                quantity: 1,
+                unit_price: 0
               });
               
             if (expenseError) {

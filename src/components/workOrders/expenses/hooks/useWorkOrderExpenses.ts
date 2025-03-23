@@ -7,19 +7,16 @@ import { WorkOrderExpense } from '@/types/workOrder';
 export function useWorkOrderExpenses(workOrderId: string) {
   const [expenses, setExpenses] = useState<WorkOrderExpense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [vendors, setVendors] = useState<{ vendorid: string, vendorname: string }[]>([]);
-  const [totalExpensesCost, setTotalExpensesCost] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Fetch all expenses for this work order from the unified view
   const fetchExpenses = async () => {
     if (!workOrderId) return;
     
     setLoading(true);
+    setError(null);
+    
     try {
-      console.log('Fetching expenses for work order:', workOrderId);
-      
-      // Query from the unified expenses view
+      console.log("Fetching expenses for work order:", workOrderId);
       const { data, error } = await supabase
         .from('unified_work_order_expenses')
         .select('*')
@@ -28,21 +25,38 @@ export function useWorkOrderExpenses(workOrderId: string) {
       
       if (error) throw error;
       
-      console.log('Found', data?.length || 0, 'expenses');
+      console.log("Fetched expenses:", data);
       
-      // Set expenses and calculate total
-      setExpenses(data || []);
-      
-      const total = (data || []).reduce((sum, expense) => sum + (expense.total_price || 0), 0);
-      setTotalExpensesCost(total);
-      
-      // Fetch vendors for displaying names
-      await fetchVendors();
+      if (data) {
+        // Transform data to ensure types match our WorkOrderExpense interface
+        const transformedData = data.map(item => ({
+          id: item.id,
+          work_order_id: item.work_order_id,
+          vendor_id: item.vendor_id,
+          expense_name: item.expense_name || '',
+          material_name: item.expense_name || '', // For backward compatibility
+          quantity: item.quantity || 0,
+          unit_price: item.unit_price || 0,
+          total_price: item.total_price || 0,
+          receipt_document_id: item.receipt_document_id,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          expense_type: item.expense_type || 'materials',
+          // Cast as the expected union type
+          source_type: (item.source_type || 'material') as 'material' | 'time_entry',
+          time_entry_id: item.time_entry_id
+        })) as WorkOrderExpense[];
+        
+        setExpenses(transformedData);
+      } else {
+        setExpenses([]);
+      }
     } catch (error: any) {
-      console.error('Error fetching work order expenses:', error);
+      console.error("Error fetching expenses:", error);
+      setError(error.message);
       toast({
         title: 'Error',
-        description: 'Failed to load expenses. ' + error.message,
+        description: 'Failed to load expenses: ' + error.message,
         variant: 'destructive',
       });
     } finally {
@@ -50,164 +64,14 @@ export function useWorkOrderExpenses(workOrderId: string) {
     }
   };
   
-  // Fetch vendors for dropdown and display
-  const fetchVendors = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('vendorid, vendorname')
-        .eq('status', 'ACTIVE')
-        .order('vendorname');
-      
-      if (error) throw error;
-      
-      setVendors(data || []);
-    } catch (error) {
-      console.error('Error fetching vendors:', error);
-    }
-  };
-  
-  // Add a new expense
-  const handleAddExpense = async (expenseData: {
-    expenseName: string;
-    quantity: number;
-    unitPrice: number;
-    vendorId: string | null;
-    expenseType?: string;
-  }) => {
-    if (!workOrderId) return;
-    
-    setSubmitting(true);
-    try {
-      const totalPrice = expenseData.quantity * expenseData.unitPrice;
-      
-      const { data, error } = await supabase
-        .from('expenses')
-        .insert({
-          entity_id: workOrderId,
-          entity_type: 'WORK_ORDER',
-          description: expenseData.expenseName,
-          expense_type: expenseData.expenseType || 'MATERIAL',
-          quantity: expenseData.quantity,
-          unit_price: expenseData.unitPrice,
-          amount: totalPrice,
-          vendor_id: expenseData.vendorId,
-        })
-        .select('id')
-        .single();
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Expense Added',
-        description: 'The expense has been added successfully.',
-      });
-      
-      await fetchExpenses();
-    } catch (error: any) {
-      console.error('Error adding expense:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add expense. ' + error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-  
-  // Delete an expense
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this expense?')) {
-      return;
-    }
-    
-    try {
-      // First check if this is a time entry expense
-      const expense = expenses.find(e => e.id === id);
-      
-      // Only allow deletion of non-time-entry expenses
-      if (expense?.source_type === 'time_entry') {
-        toast({
-          title: 'Cannot Delete',
-          description: 'Time entry expenses cannot be deleted directly.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      const { error } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Expense Deleted',
-        description: 'The expense has been deleted successfully.',
-      });
-      
-      // Remove the deleted expense from state
-      setExpenses(prevExpenses => prevExpenses.filter(exp => exp.id !== id));
-      
-      // Recalculate total
-      setTotalExpensesCost(prev => {
-        const deletedExpense = expenses.find(e => e.id === id);
-        return prev - (deletedExpense?.total_price || 0);
-      });
-    } catch (error: any) {
-      console.error('Error deleting expense:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete expense. ' + error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  // Handle receipt attachment
-  const handleReceiptAttached = async (expenseId: string, documentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('expenses')
-        .update({ document_id: documentId })
-        .eq('id', expenseId);
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Receipt Attached',
-        description: 'Receipt has been attached successfully.',
-      });
-      
-      await fetchExpenses();
-    } catch (error: any) {
-      console.error('Error attaching receipt:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to attach receipt. ' + error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  // Fetch expenses on component mount
   useEffect(() => {
-    if (workOrderId) {
-      fetchExpenses();
-    }
+    fetchExpenses();
   }, [workOrderId]);
   
   return {
     expenses,
     loading,
-    vendors,
-    totalExpensesCost,
-    submitting,
-    handleAddExpense,
-    handleDelete,
-    handleReceiptAttached,
+    error,
     fetchExpenses
   };
 }

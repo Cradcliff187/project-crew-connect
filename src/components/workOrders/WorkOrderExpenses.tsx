@@ -50,6 +50,12 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
     setSelectedExpense(null);
   };
   
+  // Handle receipt upload and handle the boolean return, but we don't need to return anything
+  const handleReceiptUpload = async (expenseId: string, documentId: string) => {
+    await handleReceiptUploaded(expenseId, documentId);
+    // We don't need to return anything here, void is fine
+  };
+  
   return (
     <>
       <ExpensesInfoSection
@@ -61,7 +67,7 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
         workOrderId={workOrderId}
         onExpensePrompt={handleExpensePrompt}
         onDelete={handleDelete}
-        onReceiptAttached={handleReceiptUploaded}
+        onReceiptAttached={handleReceiptUpload}
         onVendorAdded={handleVendorAdded}
         onReceiptClick={handleReceiptClick}
       />
