@@ -1,8 +1,6 @@
-
 import React from 'react';
-import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import MobileDocumentCapture from '../MobileDocumentCapture';
+import { Camera } from 'lucide-react';
 
 interface MobileCaptureWrapperProps {
   onCapture: (file: File) => void;
@@ -19,27 +17,48 @@ const MobileCaptureWrapper: React.FC<MobileCaptureWrapperProps> = ({
   showMobileCapture,
   setShowMobileCapture
 }) => {
-  if (!isMobile || !hasCamera) {
-    return null;
-  }
-
-  return (
-    <div className="space-y-4">
-      {!showMobileCapture ? (
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => setShowMobileCapture(true)}
-          className="w-full flex items-center justify-center gap-2"
+  // Simple file input ref for capturing images on mobile
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Handle file selection from camera
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      onCapture(e.target.files[0]);
+    }
+  };
+  
+  // If this is a mobile device with a camera, show the capture button
+  if (isMobile && hasCamera) {
+    return (
+      <div>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => {
+            if (fileInputRef.current) {
+              fileInputRef.current.click();
+            }
+          }}
         >
-          <Camera className="h-4 w-4" />
-          Take Photo Instead
+          <Camera className="h-4 w-4 mr-2" />
+          Take Photo
         </Button>
-      ) : (
-        <MobileDocumentCapture onCapture={onCapture} />
-      )}
-    </div>
-  );
+        
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+    );
+  }
+  
+  // Otherwise, don't render anything
+  return null;
 };
 
 export default MobileCaptureWrapper;

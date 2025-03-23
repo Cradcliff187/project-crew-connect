@@ -31,7 +31,11 @@ export const uploadDocument = async (
       const filePath = `${entityTypePath}/${metadata.entityId || 'general'}/${fileName}`;
       
       console.log(`Uploading file to construction_documents bucket, path: ${filePath}`);
-      console.log(`File object:`, file);
+      console.log(`File object:`, { 
+        name: file.name, 
+        type: file.type, 
+        size: file.size 
+      });
       
       // Check if file is actually a File object
       if (!(file instanceof File)) {
@@ -39,7 +43,7 @@ export const uploadDocument = async (
         throw new Error('Invalid file object provided');
       }
       
-      // CRITICAL FIX: Use explicit file handling to ensure proper binary upload
+      // CRITICAL FIX: Create an explicit uploading method that works correctly
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file, {

@@ -34,7 +34,7 @@ export const testBucketAccess = async () => {
     
     // Try to list files in the bucket to confirm we have access
     const { data: files, error: filesError } = await supabase.storage
-      .from(targetBucket.id)
+      .from('construction_documents')
       .list();
       
     if (filesError) {
@@ -42,12 +42,41 @@ export const testBucketAccess = async () => {
       return { success: false, error: filesError };
     }
     
-    console.log('Successfully accessed bucket. Files:', files);
+    console.log('Successfully accessed bucket. Files count:', files.length);
+    
+    // Test creating a tiny test file to validate write permissions
+    const testContent = new Blob(['test'], { type: 'text/plain' });
+    const testFile = new File([testContent], 'permission-test.txt', { type: 'text/plain' });
+    
+    const { data: testUpload, error: testUploadError } = await supabase.storage
+      .from('construction_documents')
+      .upload('__test/permission-test.txt', testFile, { upsert: true });
+      
+    if (testUploadError) {
+      console.error('Error testing write permissions:', testUploadError);
+      return { 
+        success: false, 
+        error: testUploadError,
+        message: 'Cannot write to bucket - check permissions'
+      };
+    }
+    
+    console.log('Write permissions test successful');
+    
+    // Clean up test file
+    const { error: cleanupError } = await supabase.storage
+      .from('construction_documents')
+      .remove(['__test/permission-test.txt']);
+      
+    if (cleanupError) {
+      console.warn('Could not clean up test file:', cleanupError);
+    }
     
     return { 
       success: true, 
       bucketId: targetBucket.id,
-      bucketName: targetBucket.name
+      bucketName: targetBucket.name,
+      filesCount: files.length
     };
     
   } catch (error) {
