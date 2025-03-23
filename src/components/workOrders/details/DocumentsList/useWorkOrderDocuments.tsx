@@ -24,22 +24,55 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
         return;
       }
       
-      // Fetch receipt documents linked to work order materials
-      const { data: materialsData, error: materialsError } = await (supabase as any)
-        .from('unified_work_order_expenses')
-        .select('receipt_document_id')
-        .eq('work_order_id', workOrderId)
-        .not('receipt_document_id', 'is', null);
+      // Fetch receipt documents linked to expenses
+      const { data: expensesData, error: expensesError } = await supabase
+        .from('expenses')
+        .select('document_id')
+        .eq('entity_id', workOrderId)
+        .eq('entity_type', 'WORK_ORDER')
+        .not('document_id', 'is', null);
       
-      if (materialsError) {
-        console.error('Error fetching material receipts:', materialsError);
+      if (expensesError) {
+        console.error('Error fetching expense receipts:', expensesError);
         return;
       }
       
-      // Extract document IDs from materials
-      const receiptDocumentIds = (materialsData || [])
-        .map(material => material.receipt_document_id)
+      // Fetch receipt documents linked to time entries
+      const { data: timeEntriesData, error: timeEntriesError } = await supabase
+        .from('time_entries')
+        .select('id')
+        .eq('entity_id', workOrderId)
+        .eq('entity_type', 'work_order')
+        .eq('has_receipts', true);
+        
+      if (timeEntriesError) {
+        console.error('Error fetching time entries with receipts:', timeEntriesError);
+        return;
+      }
+      
+      let timeEntryReceiptDocumentIds: string[] = [];
+      if (timeEntriesData && timeEntriesData.length > 0) {
+        const timeEntryIds = timeEntriesData.map(entry => entry.id);
+        
+        const { data: timeEntryDocs, error: timeEntryDocsError } = await supabase
+          .from('time_entry_document_links')
+          .select('document_id')
+          .in('time_entry_id', timeEntryIds);
+          
+        if (timeEntryDocsError) {
+          console.error('Error fetching time entry document links:', timeEntryDocsError);
+        } else {
+          timeEntryReceiptDocumentIds = timeEntryDocs.map(doc => doc.document_id);
+        }
+      }
+      
+      // Extract document IDs from expenses and time entries
+      const expenseDocumentIds = (expensesData || [])
+        .map(expense => expense.document_id)
         .filter(Boolean);
+      
+      // Combine all document IDs
+      const receiptDocumentIds = [...expenseDocumentIds, ...timeEntryReceiptDocumentIds].filter(Boolean);
       
       // If we have receipt documents, fetch them
       let receiptDocuments: any[] = [];
@@ -93,7 +126,9 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
           
           return {
             ...doc,
-            url
+            url,
+            entity_id: workOrderId,
+            entity_type: 'WORK_ORDER'
           };
         })
       );

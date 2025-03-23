@@ -21,9 +21,9 @@ export function useReceiptOperations(fetchExpenses: () => Promise<void>) {
     try {
       console.log('Attaching receipt document to expense:', { expenseId, documentId });
       
-      const { error } = await (supabase as any)
-        .from('work_order_materials')
-        .update({ receipt_document_id: documentId })
+      const { error } = await supabase
+        .from('expenses')
+        .update({ document_id: documentId })
         .eq('id', expenseId);
         
       if (error) {

@@ -24,19 +24,30 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     setHasReferences(false);
     
     try {
-      // Check if document is referenced by work_order_materials
-      const { count, error: materialsCheckError } = await (supabase as any)
-        .from('unified_work_order_expenses')
+      // Check if document is referenced by expenses or time entries
+      const { count: expensesCount, error: expensesCheckError } = await supabase
+        .from('expenses')
         .select('*', { count: 'exact', head: true })
-        .eq('receipt_document_id', document.document_id);
+        .eq('document_id', document.document_id);
         
-      if (materialsCheckError) {
-        console.error('Error checking references:', materialsCheckError);
-        throw materialsCheckError;
+      if (expensesCheckError) {
+        console.error('Error checking expenses references:', expensesCheckError);
+        throw expensesCheckError;
+      }
+      
+      // Check if document is referenced by time entries
+      const { count: timeEntriesCount, error: timeEntriesCheckError } = await supabase
+        .from('time_entry_document_links')
+        .select('*', { count: 'exact', head: true })
+        .eq('document_id', document.document_id);
+        
+      if (timeEntriesCheckError) {
+        console.error('Error checking time entries references:', timeEntriesCheckError);
+        throw timeEntriesCheckError;
       }
       
       // If document is referenced, show the appropriate UI
-      if (count && count > 0) {
+      if ((expensesCount && expensesCount > 0) || (timeEntriesCount && timeEntriesCount > 0)) {
         setHasReferences(true);
       }
       
@@ -57,18 +68,26 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     try {
       setDeleteError(null);
       
-      // Check if document is referenced by work_order_materials
-      const { count: materialsCount, error: materialsCheckError } = await (supabase as any)
-        .from('unified_work_order_expenses')
+      // Check if document is referenced by expenses
+      const { count: expensesCount, error: expensesCheckError } = await supabase
+        .from('expenses')
         .select('*', { count: 'exact', head: true })
-        .eq('receipt_document_id', selectedDocument.document_id);
+        .eq('document_id', selectedDocument.document_id);
         
-      if (materialsCheckError) throw materialsCheckError;
+      if (expensesCheckError) throw expensesCheckError;
       
-      if (materialsCount && materialsCount > 0) {
+      // Check if document is referenced by time entries
+      const { count: timeEntriesCount, error: timeEntriesCheckError } = await supabase
+        .from('time_entry_document_links')
+        .select('*', { count: 'exact', head: true })
+        .eq('document_id', selectedDocument.document_id);
+        
+      if (timeEntriesCheckError) throw timeEntriesCheckError;
+      
+      if ((expensesCount && expensesCount > 0) || (timeEntriesCount && timeEntriesCount > 0)) {
         setHasReferences(true);
         setDeleteError(
-          "This document is being used as a receipt for materials in a work order and cannot be deleted. " +
+          "This document is being used as a receipt and cannot be deleted. " +
           "Use 'Force Delete' to remove the references and delete the document."
         );
         
@@ -116,13 +135,21 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     try {
       setDeleteError(null);
       
-      // First remove references from work_order_materials
-      const { error: updateError } = await (supabase as any)
-        .from('work_order_materials')
-        .update({ receipt_document_id: null })
-        .eq('receipt_document_id', selectedDocument.document_id);
+      // First remove references from expenses
+      const { error: expensesUpdateError } = await supabase
+        .from('expenses')
+        .update({ document_id: null })
+        .eq('document_id', selectedDocument.document_id);
         
-      if (updateError) throw updateError;
+      if (expensesUpdateError) throw expensesUpdateError;
+      
+      // Remove references from time entry document links
+      const { error: timeEntryLinksError } = await supabase
+        .from('time_entry_document_links')
+        .delete()
+        .eq('document_id', selectedDocument.document_id);
+        
+      if (timeEntryLinksError) throw timeEntryLinksError;
       
       // Then delete the document
       await deleteDocumentFromStorage();

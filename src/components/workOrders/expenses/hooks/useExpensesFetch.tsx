@@ -16,7 +16,7 @@ export function useExpensesFetch(workOrderId: string) {
     try {
       console.log('Fetching expenses for work order:', workOrderId);
       
-      // Use the unified view with a cast to text
+      // Use the unified view
       const { data, error } = await supabase
         .from('unified_work_order_expenses')
         .select('*')
@@ -43,7 +43,8 @@ export function useExpensesFetch(workOrderId: string) {
         created_at: item.created_at,
         updated_at: item.updated_at,
         expense_type: item.expense_type || 'materials',
-        source_type: item.source_type as "material" | "time_entry" || "material"
+        source_type: item.source_type as "material" | "time_entry" || "material",
+        time_entry_id: item.time_entry_id
       })) as WorkOrderExpense[];
       
       setExpenses(transformedData || []);

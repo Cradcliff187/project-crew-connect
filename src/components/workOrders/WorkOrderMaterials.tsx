@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { WorkOrderMaterial } from '@/types/workOrder';
+import { WorkOrderExpense } from '@/types/workOrder';
 
 // Import hooks
 import { useMaterials, useVendors } from './materials/hooks';
@@ -8,8 +8,8 @@ import { useReceiptManager } from './materials/hooks/useReceiptManager';
 import { useConfirmationManager } from './materials/hooks/useConfirmationManager';
 
 // Import components
-import { MaterialsErrorAlert, MaterialsInfoSection, ReceiptConfirmationDialog } from './materials/components';
-import { ReceiptViewerDialog, ReceiptUploadDialog } from './materials/dialogs/ReceiptDialog';
+import { ExpensesInfoSection } from './expenses/components';
+import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
 
 interface WorkOrderMaterialsProps {
   workOrderId: string;
@@ -17,19 +17,21 @@ interface WorkOrderMaterialsProps {
 }
 
 const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterialsProps) => {
+  const [selectedExpense, setSelectedExpense] = useState<WorkOrderExpense | null>(null);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  
   const { 
-    materials, 
+    expenses: materials, 
     loading, 
     submitting, 
     error,
-    totalMaterialsCost,
-    handleAddMaterial, 
+    vendors,
+    totalExpensesCost: totalMaterialsCost,
+    handleAddExpense: handleAddMaterial, 
     handleDelete,
     handleReceiptUploaded,
-    fetchMaterials
+    fetchExpenses: fetchMaterials
   } = useMaterials(workOrderId);
-  
-  const { vendors, loading: vendorsLoading, error: vendorsError, fetchVendors } = useVendors();
   
   // Handle material added
   const handleMaterialAdded = () => {
@@ -44,104 +46,79 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   
   // Handle vendor added
   const handleVendorAdded = () => {
-    // Refresh vendors list
-    fetchVendors();
+    // Refresh materials list to get updated vendor information
+    fetchMaterials();
   };
   
-  // Use the receipt manager hook
-  const {
-    showReceiptUpload,
-    setShowReceiptUpload,
-    selectedMaterial,
-    setSelectedMaterial,
-    viewingReceipt,
-    setViewingReceipt,
-    receiptDocument,
-    handleReceiptClick,
-    handleCloseReceiptViewer
-  } = useReceiptManager();
-  
-  // Use the confirmation manager hook
-  const {
-    showReceiptConfirmation,
-    setShowReceiptConfirmation,
-    pendingMaterial,
-    handlePromptForReceipt,
-    handleConfirmWithReceipt,
-    handleConfirmWithoutReceipt
-  } = useConfirmationManager(handleAddMaterial, handleReceiptUploaded, handleMaterialAdded);
-  
-  // Find vendor name by ID
-  const getVendorName = (vendorId: string | null) => {
-    if (!vendorId) return "";
-    const vendor = vendors.find(v => v.vendorid === vendorId);
-    return vendor ? vendor.vendorname : "Unknown Vendor";
+  // Handle material receipt clicks
+  const handleReceiptClick = (material: WorkOrderExpense) => {
+    setSelectedExpense(material);
+    setReceiptDialogOpen(true);
   };
   
-  // Handle confirmation to add material with receipt
-  const confirmWithReceipt = async () => {
-    const result = await handleConfirmWithReceipt();
-    if (result?.showReceiptUpload) {
-      setShowReceiptUpload(true);
-      setSelectedMaterial(result.selectedMaterial);
-      setShowReceiptConfirmation(false);
+  // Handle receipt dialog closed
+  const handleReceiptClosed = () => {
+    setReceiptDialogOpen(false);
+    setSelectedExpense(null);
+  };
+  
+  // Handle material adding with confirmation
+  const handleMaterialPrompt = async (expenseData: any) => {
+    const result = await handleAddMaterial({
+      ...expenseData,
+      expenseName: expenseData.materialName,
+      expenseType: 'materials'
+    });
+    
+    if (result) {
+      handleMaterialAdded();
     }
   };
   
-  // Handle receipt uploaded
+  // Handle receipt attached to material
   const handleReceiptAttached = async (materialId: string, documentId: string) => {
-    console.log("Receipt attached. Material ID:", materialId, "Document ID:", documentId);
     await handleReceiptUploaded(materialId, documentId);
-    setShowReceiptUpload(false);
-    
-    // Refresh the materials list
     handleMaterialAdded();
   };
   
   return (
     <div className="space-y-6">
-      {/* Error Alert */}
-      <MaterialsErrorAlert error={error || vendorsError} />
-      
-      {/* Main Materials Section - Now prioritizing the table view */}
-      <MaterialsInfoSection 
-        materials={materials}
+      {/* Main Materials Section */}
+      <ExpensesInfoSection
+        expenses={materials.filter(m => m.expense_type === 'materials' || !m.source_type || m.source_type === 'material')}
         loading={loading}
         submitting={submitting}
         vendors={vendors}
-        totalMaterialsCost={totalMaterialsCost}
+        totalExpensesCost={totalMaterialsCost}
         workOrderId={workOrderId}
-        onMaterialPrompt={handlePromptForReceipt}
+        onExpensePrompt={handleMaterialPrompt}
         onDelete={handleDelete}
         onReceiptAttached={handleReceiptAttached}
         onVendorAdded={handleVendorAdded}
         onReceiptClick={handleReceiptClick}
       />
       
-      {/* Dialogs - no changes needed */}
-      <ReceiptConfirmationDialog
-        open={showReceiptConfirmation}
-        onOpenChange={setShowReceiptConfirmation}
-        materialData={pendingMaterial}
-        vendorName={pendingMaterial?.vendorId ? getVendorName(pendingMaterial.vendorId) : ""}
-        onConfirmWithReceipt={confirmWithReceipt}
-        onConfirmWithoutReceipt={handleConfirmWithoutReceipt}
-      />
-      
-      <ReceiptUploadDialog
-        open={showReceiptUpload}
-        material={selectedMaterial}
-        workOrderId={workOrderId}
-        vendorName={selectedMaterial?.vendor_id ? getVendorName(selectedMaterial.vendor_id) : ""}
-        onSuccess={handleReceiptAttached}
-        onCancel={() => setShowReceiptUpload(false)}
-      />
-      
-      <ReceiptViewerDialog
-        open={viewingReceipt}
-        onOpenChange={(open) => !open && handleCloseReceiptViewer()}
-        receiptDocument={receiptDocument}
-      />
+      {/* Receipt Document Viewer Dialog */}
+      {selectedExpense && (
+        <DocumentViewerDialog
+          open={receiptDialogOpen}
+          onOpenChange={handleReceiptClosed}
+          document={selectedExpense.receipt_document_id ? {
+            document_id: selectedExpense.receipt_document_id,
+            file_name: `Receipt for ${selectedExpense.expense_name}`,
+            file_type: 'application/pdf', // Default type, will be determined by the component
+            url: '', // Will be populated by the component
+            storage_path: '',
+            entity_type: 'WORK_ORDER',
+            entity_id: workOrderId,
+            created_at: '',
+            updated_at: '',
+            tags: []
+          } : null}
+          title={`Receipt for ${selectedExpense.expense_name}`}
+          description="Receipt document preview"
+        />
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useWorkOrderExpenses } from './expenses/hooks/useWorkOrderExpenses';
+import { useExpenses } from './expenses/hooks/useExpenses';
 import { ExpensesInfoSection } from './expenses/components';
 import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
 
@@ -21,9 +21,9 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
     submitting,
     handleAddExpense,
     handleDelete,
-    handleReceiptAttached,
+    handleReceiptUploaded,
     fetchExpenses
-  } = useWorkOrderExpenses(workOrderId);
+  } = useExpenses(workOrderId);
   
   const handleVendorAdded = () => {
     fetchExpenses();
@@ -60,7 +60,7 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
         workOrderId={workOrderId}
         onExpensePrompt={handleExpensePrompt}
         onDelete={handleDelete}
-        onReceiptAttached={handleReceiptAttached}
+        onReceiptAttached={handleReceiptUploaded}
         onVendorAdded={handleVendorAdded}
         onReceiptClick={handleReceiptClick}
       />

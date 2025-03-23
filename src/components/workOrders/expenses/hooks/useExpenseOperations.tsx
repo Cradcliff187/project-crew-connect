@@ -38,13 +38,14 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
     
     try {
       console.log('Adding expense with payload:', {
-        work_order_id: workOrderId,
-        vendor_id: expense.vendorId,
-        material_name: expense.expenseName,
-        expense_type: expense.expenseType || 'materials',
+        entity_id: workOrderId,
+        entity_type: 'WORK_ORDER',
+        description: expense.expenseName,
+        expense_type: expense.expenseType || 'MATERIAL',
         quantity: expense.quantity,
         unit_price: expense.unitPrice,
-        total_price: totalPrice,
+        amount: totalPrice,
+        vendor_id: expense.vendorId,
       });
       
       // Validate that workOrderId is a valid UUID
@@ -52,17 +53,18 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         throw new Error(`Invalid work order ID format: ${workOrderId}`);
       }
       
-      // Cast the table name to any to bypass TypeScript checking
-      const { data, error } = await (supabase as any)
-        .from('work_order_materials')
+      // Insert into the expenses table
+      const { data, error } = await supabase
+        .from('expenses')
         .insert({
-          work_order_id: workOrderId,
-          vendor_id: expense.vendorId,
-          material_name: expense.expenseName,
+          entity_id: workOrderId,
+          entity_type: 'WORK_ORDER',
+          description: expense.expenseName,
+          expense_type: expense.expenseType || 'MATERIAL',
           quantity: expense.quantity,
           unit_price: expense.unitPrice,
-          total_price: totalPrice,
-          expense_type: expense.expenseType || 'materials',
+          amount: totalPrice,
+          vendor_id: expense.vendorId,
         })
         .select();
       
@@ -78,25 +80,12 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         description: 'Expense has been added successfully.',
       });
       
-      // Transform database response to standard object format
-      const addedExpense = {
-        id: data[0].id,
-        work_order_id: data[0].work_order_id,
-        vendor_id: data[0].vendor_id,
-        expense_name: data[0].material_name,
-        material_name: data[0].material_name,
-        quantity: data[0].quantity,
-        unit_price: data[0].unit_price,
-        total_price: data[0].total_price,
-        receipt_document_id: data[0].receipt_document_id,
-        created_at: data[0].created_at,
-        updated_at: data[0].updated_at,
-        expense_type: data[0].expense_type || 'materials',
-        source_type: 'material' as const
-      };
+      // Refresh expenses list to reflect the new addition
+      await fetchExpenses();
       
-      // Return the newly created expense
-      return addedExpense;
+      // Return success but don't try to transform the expense
+      // as it will be loaded via the unified view in fetchExpenses
+      return { success: true };
     } catch (error: any) {
       console.error('Error adding expense:', error);
       toast({
@@ -116,10 +105,26 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
     }
     
     try {
+      // Check if this is a time entry expense
+      const { data: expenseData } = await supabase
+        .from('unified_work_order_expenses')
+        .select('source_type')
+        .eq('id', id)
+        .single();
+      
+      if (expenseData?.source_type === 'time_entry') {
+        toast({
+          title: 'Cannot Delete',
+          description: 'Time entry expenses cannot be deleted directly.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       // First, fetch the expense to get the receipt_document_id if it exists
-      const { data: expense, error: fetchError } = await (supabase as any)
-        .from('work_order_materials')
-        .select('receipt_document_id, material_name')
+      const { data: expense, error: fetchError } = await supabase
+        .from('expenses')
+        .select('document_id, description')
         .eq('id', id)
         .single();
       
@@ -127,14 +132,14 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         throw fetchError;
       }
       
-      console.log('Deleting expense with ID:', id, 'Receipt document ID:', expense?.receipt_document_id);
+      console.log('Deleting expense with ID:', id, 'Receipt document ID:', expense?.document_id);
       
       // If there's a receipt document, fetch its storage_path
-      if (expense?.receipt_document_id) {
+      if (expense?.document_id) {
         const { data: document, error: docError } = await supabase
           .from('documents')
           .select('storage_path')
-          .eq('document_id', expense.receipt_document_id)
+          .eq('document_id', expense.document_id)
           .single();
         
         if (docError && docError.code !== 'PGRST116') { // PGRST116 is "Not found" which might happen if the document was already deleted
@@ -156,9 +161,8 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
       }
       
       // Delete the expense record from the database
-      // The database trigger will handle deleting the document record
-      const { error } = await (supabase as any)
-        .from('work_order_materials')
+      const { error } = await supabase
+        .from('expenses')
         .delete()
         .eq('id', id);
       
@@ -168,7 +172,7 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
       
       toast({
         title: 'Expense Deleted',
-        description: `The expense "${expense?.material_name || ''}" has been deleted successfully.`,
+        description: `The expense "${expense?.description || ''}" has been deleted successfully.`,
       });
       
       // Refresh expenses list

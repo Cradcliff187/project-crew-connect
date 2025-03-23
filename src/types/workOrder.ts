@@ -15,6 +15,7 @@ export interface WorkOrder {
   actual_hours: number;
   materials_cost: number;
   total_cost: number;
+  expenses_cost?: number;
   progress: number;
   created_at: string;
   updated_at: string;
@@ -27,17 +28,18 @@ export interface WorkOrder {
 export interface WorkOrderExpense {
   id: string;
   work_order_id: string;
-  vendor_id?: string;
+  vendor_id?: string | null;
   expense_name: string;
   material_name?: string; // For backward compatibility
   quantity: number;
   unit_price: number;
   total_price: number;
-  receipt_document_id?: string;
+  receipt_document_id?: string | null;
   created_at: string;
   updated_at: string;
   expense_type: string; // 'material', 'labor', etc.
   source_type: 'material' | 'time_entry';
+  time_entry_id?: string | null;
 }
 
 // Alias for backward compatibility
