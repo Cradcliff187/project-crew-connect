@@ -50,7 +50,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
           description: 'Could not load available statuses. Please try again.',
           variant: 'destructive',
         });
-        setStatusOptions([]); 
+        setStatusOptions([]);
         return;
       }
       
@@ -62,22 +62,21 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         description: 'Could not load available statuses. Please try again.',
         variant: 'destructive',
       });
-      setStatusOptions([]); 
+      setStatusOptions([]);
     } finally {
       setLoading(false);
     }
   };
   
   const handleStatusChange = async (newStatus: string) => {
-    // If the status hasn't changed, just close the popover and return
-    if (newStatus === workOrder.status) {
-      setOpen(false);
-      return;
-    }
-    
-    setLoading(true);
-    
     try {
+      // If the status hasn't changed, just close the popover and return
+      if (newStatus === workOrder.status) {
+        setOpen(false);
+        return;
+      }
+      
+      setLoading(true);
       console.log(`Updating work order ${workOrder.work_order_id} status to ${newStatus}`);
       
       // Update the work order status in the database
@@ -112,7 +111,6 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         description: error.message || 'Failed to update work order status. Please try again.',
         variant: 'destructive',
       });
-      
     } finally {
       setLoading(false);
     }
@@ -143,7 +141,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button 
-            className="flex items-center cursor-pointer gap-1 hover:bg-accent p-1 rounded transition-colors"
+            className="flex items-center gap-1 hover:bg-accent p-1 rounded transition-colors"
             disabled={loading}
             aria-label="Change status"
           >
