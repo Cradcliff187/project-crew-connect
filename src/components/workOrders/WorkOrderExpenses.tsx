@@ -10,7 +10,7 @@ interface WorkOrderExpensesProps {
 }
 
 const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesProps) => {
-  const [selectedExpense, setSelectedExpense] = useState<WorkOrderExpense | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<any | null>(null);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
 
   const {
@@ -39,7 +39,7 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
     handleExpenseAdded();
   };
   
-  const handleReceiptClick = (expense: WorkOrderExpense) => {
+  const handleReceiptClick = (expense: any) => {
     setSelectedExpense(expense);
     setReceiptDialogOpen(true);
   };
