@@ -32,7 +32,7 @@ export const useWorkOrderDocumentsEmbed = (workOrderId: string, entityType: stri
           data.map(async (doc) => {
             const { data: urlData } = await supabase
               .storage
-              .from('documents')
+              .from('construction_documents') // Using the correct bucket name
               .getPublicUrl(doc.storage_path);
             
             return {

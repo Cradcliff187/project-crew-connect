@@ -56,10 +56,9 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
       
       {showUpload && (
         <DocumentUpload
-          entityId={workOrderId}
-          onClose={() => setShowUpload(false)}
-          onUploadComplete={handleUploadComplete}
-          isOpen={showUpload}
+          projectId={workOrderId} // Using projectId instead of entityId as per DocumentUpload props
+          onSuccess={handleUploadComplete} // Using onSuccess instead of onUploadComplete
+          onCancel={() => setShowUpload(false)} // Using onCancel instead of onClose
         />
       )}
     </div>
