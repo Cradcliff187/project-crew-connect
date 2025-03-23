@@ -27,9 +27,9 @@ export function filterWorkItems(
       const titleMatch = item.title.toLowerCase().includes(query);
       const customerMatch = item.customerName?.toLowerCase().includes(query) || false;
       const idMatch = item.id.toLowerCase().includes(query);
-      const poMatch = item.type === 'workOrder' && item.poNumber?.toLowerCase().includes(query);
+      const poMatch = item.poNumber && item.poNumber.toLowerCase().includes(query);
       
-      return titleMatch || customerMatch || idMatch || (poMatch || false);
+      return titleMatch || customerMatch || idMatch || poMatch;
     });
   }
   

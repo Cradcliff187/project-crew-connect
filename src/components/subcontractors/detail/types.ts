@@ -9,4 +9,3 @@ export interface SubcontractorDocument extends BaseDocument {
   expires_at?: string;
   document_type?: 'insurance' | 'contract' | 'certification' | 'invoice' | 'other';
 }
-

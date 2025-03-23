@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -109,7 +108,14 @@ export function useActiveWorkData(limit?: number) {
       dueDate: workOrder.due_by_date,
       customerName: '',  // This would need to be populated from customer data
       progress: workOrder.progress,
-      href: `/work-orders/${workOrder.work_order_id}`
+      href: `/work-orders/${workOrder.work_order_id}`,
+      description: workOrder.description,
+      priority: workOrder.priority,
+      customerId: workOrder.customer_id,
+      location: workOrder.location_id,
+      createdAt: workOrder.created_at,
+      poNumber: workOrder.po_number,
+      assignedTo: workOrder.assigned_to
     };
   };
 

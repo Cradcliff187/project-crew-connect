@@ -9,7 +9,16 @@ export interface WorkItem {
   dueDate?: string | null;
   customerName?: string;
   progress?: number;
-  href?: string; // Adding href property to WorkItem type
+  href?: string;
+  description?: string;
+  priority?: string;
+  customerId?: string;
+  location?: string;
+  createdAt?: string;
+  poNumber?: string;
+  assignedTo?: string;
+  budget?: number;
+  spent?: number;
 }
 
 export const projectToWorkItem = (project: any): WorkItem => {
@@ -21,6 +30,9 @@ export const projectToWorkItem = (project: any): WorkItem => {
     dueDate: project.due_date,
     customerName: project.customername || '',
     progress: project.progress || 0,
-    href: `/projects/${project.projectid}`
+    href: `/projects/${project.projectid}`,
+    budget: project.budget || 0,
+    spent: project.spent || 0,
+    createdAt: project.createdon
   };
 };

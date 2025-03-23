@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,7 +53,7 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
         .from('expenses')
         .select(`
           *,
-          budget_item:budget_item_id(*)
+          budget_item:budget_item_id(category)
         `)
         .eq('entity_type', 'PROJECT')
         .eq('entity_id', projectId)
