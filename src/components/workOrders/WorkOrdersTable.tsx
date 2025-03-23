@@ -3,12 +3,10 @@ import { useState } from 'react';
 import {
   Table,
   TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from '@/components/ui/table';
 import { WorkOrder } from '@/types/workOrder';
 import WorkOrderRow from './components/WorkOrderRow';
+import WorkOrderTableHeader from './components/WorkOrderTableHeader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,9 +32,10 @@ const WorkOrdersTable = ({
   const filteredWorkOrders = workOrders.filter((workOrder) => {
     const query = searchQuery.toLowerCase();
     
-    // Search by work order number, title, and status
+    // Search by work order number, PO number, title, and status
     return (
       (workOrder.work_order_number && workOrder.work_order_number.toLowerCase().includes(query)) ||
+      (workOrder.po_number && workOrder.po_number.toLowerCase().includes(query)) ||
       workOrder.title.toLowerCase().includes(query) ||
       (workOrder.status && workOrder.status.toLowerCase().includes(query))
     );
@@ -82,16 +81,7 @@ const WorkOrdersTable = ({
   
   return (
     <Table className="border rounded-md">
-      <TableHeader className="bg-[#0485ea]/10">
-        <TableRow>
-          <TableHead className="w-[120px] font-montserrat font-semibold text-[#0485ea]">Work Order #</TableHead>
-          <TableHead className="font-montserrat font-semibold text-[#0485ea]">Title</TableHead>
-          <TableHead className="font-montserrat font-semibold text-[#0485ea]">Created</TableHead>
-          <TableHead className="font-montserrat font-semibold text-[#0485ea]">Scheduled</TableHead>
-          <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-          <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
+      <WorkOrderTableHeader />
       <TableBody>
         {filteredWorkOrders.map((workOrder) => (
           <WorkOrderRow 

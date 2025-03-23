@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { formatDate } from '@/lib/utils';
+import { formatDate, calculateDaysUntilDue } from '@/lib/utils';
 import { Pencil, MessageSquare, CalendarClock, Eye } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
 import StatusBadge from '@/components/ui/StatusBadge';
+import DueStatusBadge from './DueStatusBadge';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface WorkOrderRowProps {
@@ -14,6 +15,7 @@ interface WorkOrderRowProps {
 
 const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
   const navigate = useNavigate();
+  const daysUntilDue = calculateDaysUntilDue(workOrder.due_by_date);
 
   const handleViewDetails = () => {
     navigate(`/work-orders/${workOrder.work_order_id}`);
@@ -62,12 +64,25 @@ const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
         </Link>
       </TableCell>
       <TableCell>
-        <Link to={`/work-orders/${workOrder.work_order_id}`} className="hover:text-[#0485ea]">
-          {workOrder.title}
-        </Link>
+        {workOrder.po_number ? (
+          <span className="text-gray-700">{workOrder.po_number}</span>
+        ) : (
+          <span className="text-gray-400 italic">No PO</span>
+        )}
       </TableCell>
-      <TableCell>{formatDate(workOrder.created_at)}</TableCell>
-      <TableCell>{workOrder.scheduled_date ? formatDate(workOrder.scheduled_date) : '-'}</TableCell>
+      <TableCell>{workOrder.due_by_date ? formatDate(workOrder.due_by_date) : '-'}</TableCell>
+      <TableCell>
+        <DueStatusBadge daysUntilDue={daysUntilDue} />
+      </TableCell>
+      <TableCell>
+        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+          workOrder.priority === 'HIGH' ? 'bg-red-100 text-red-800' : 
+          workOrder.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-800' : 
+          'bg-blue-100 text-blue-800'
+        }`}>
+          {workOrder.priority || 'MEDIUM'}
+        </span>
+      </TableCell>
       <TableCell>
         <StatusBadge status={workOrder.status} />
       </TableCell>
