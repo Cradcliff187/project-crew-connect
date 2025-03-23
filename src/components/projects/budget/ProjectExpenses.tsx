@@ -61,20 +61,21 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
         
       if (error) throw error;
       
-      return data.map(expense => {
+      return Promise.all(data.map(async expense => {
         let vendorName = null;
         
         if (expense.vendor_id) {
-          const vendorData = async () => {
+          try {
             const { data } = await supabase
               .from('vendors')
               .select('vendorname')
               .eq('vendorid', expense.vendor_id)
               .single();
-            return data?.vendorname;
-          };
-          
-          vendorName = vendorData() || null;
+            vendorName = data?.vendorname || null;
+          } catch (err) {
+            console.log('Error fetching vendor:', err);
+            vendorName = null;
+          }
         }
         
         return {
@@ -88,11 +89,11 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
           document_id: expense.document_id,
           created_at: expense.created_at,
           updated_at: expense.updated_at,
-          // Fixed: Safely access the category property, handling when budget_item might be null
-          budget_item_category: expense.budget_item?.category || null,
+          // Handle the budget_item property which might be null or an error object
+          budget_item_category: expense.budget_item && typeof expense.budget_item === 'object' ? expense.budget_item.category : null,
           vendor_name: vendorName
         };
-      });
+      }));
     },
     meta: {
       onError: (error: any) => {
