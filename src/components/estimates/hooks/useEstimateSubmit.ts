@@ -54,15 +54,15 @@ export const useEstimateSubmit = () => {
         .from('documents')
         .insert({
           document_id: documentId,
-          document_name: documentName,
-          document_type: 'estimate',
-          reference_id: estimateId,
-          reference_type: 'estimate',
+          entity_id: estimateId,
+          entity_type: 'estimate',
+          file_name: documentName,
+          storage_path: `estimates/${estimateId}/${documentId}.json`,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          document_content: documentContent,
-          document_status: 'active',
-          customer_name: customerName
+          tags: ['estimate'],
+          category: 'estimate',
+          mime_type: 'application/json'
         });
       
       return documentId;
