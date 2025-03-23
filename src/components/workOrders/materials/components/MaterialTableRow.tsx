@@ -1,10 +1,9 @@
 
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Upload, FileText, Edit } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderMaterial } from '@/types/workOrder';
-import { ReceiptButton } from './';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface MaterialTableRowProps {
   material: WorkOrderMaterial;
@@ -19,25 +18,52 @@ const MaterialTableRow = ({
   onDelete,
   onReceiptClick
 }: MaterialTableRowProps) => {
+  // Define actions for the menu based on receipt status
+  const actionGroups: ActionGroup[] = [
+    {
+      items: [
+        {
+          label: material.receipt_document_id ? "View Receipt" : "Upload Receipt",
+          icon: material.receipt_document_id ? <FileText className="h-4 w-4" /> : <Upload className="h-4 w-4" />,
+          onClick: () => onReceiptClick(material),
+          className: material.receipt_document_id 
+            ? "text-green-600 hover:text-green-700" 
+            : "text-blue-600 hover:text-blue-700"
+        },
+        {
+          label: "Edit Material",
+          icon: <Edit className="h-4 w-4" />,
+          onClick: () => console.log("Edit material:", material.id), // Placeholder for edit functionality
+          className: "text-gray-600 hover:text-gray-800"
+        }
+      ]
+    },
+    {
+      items: [
+        {
+          label: "Delete",
+          icon: <Trash2 className="h-4 w-4" />,
+          onClick: () => onDelete(material.id),
+          className: "text-red-500 hover:text-red-700"
+        }
+      ]
+    }
+  ];
+
   return (
     <TableRow className="hover:bg-[#0485ea]/5 transition-colors">
       <TableCell className="font-medium">{material.material_name}</TableCell>
+      <TableCell>{vendorName}</TableCell>
       <TableCell>{material.quantity}</TableCell>
       <TableCell>{formatCurrency(material.unit_price)}</TableCell>
       <TableCell className="font-semibold">{formatCurrency(material.total_price)}</TableCell>
-      <TableCell className="flex items-center justify-end gap-2">
-        <ReceiptButton 
-          material={material} 
-          onClick={onReceiptClick} 
+      <TableCell className="text-right">
+        <ActionMenu 
+          groups={actionGroups}
+          size="sm" 
+          align="end"
+          triggerClassName="ml-auto"
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onDelete(material.id)}
-          className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
       </TableCell>
     </TableRow>
   );
