@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const workOrderFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -149,113 +150,90 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={isMobile ? "max-w-[95vw] p-4" : "sm:max-w-[600px]"}>
-        <DialogHeader>
+      <DialogContent 
+        className={isMobile 
+          ? "max-w-[95vw] p-0 max-h-[90vh] flex flex-col overflow-hidden" 
+          : "sm:max-w-[600px] max-h-[85vh] flex flex-col overflow-hidden"
+        }
+      >
+        <DialogHeader className="p-4 border-b">
           <DialogTitle className="text-xl font-semibold text-[#0485ea]">
             {isEditing ? 'Edit Work Order' : 'Create New Work Order'}
           </DialogTitle>
         </DialogHeader>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter work order title" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <ScrollArea className="flex-1 overflow-auto p-4">
+          <Form {...form}>
+            <form id="work-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter work order title" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="work_order_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Work Order #</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="WO number (optional)" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="po_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>PO Number</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="PO number (optional)" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      {...field} 
-                      placeholder="Describe the work order"
-                      className="min-h-[120px]" 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Priority</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="LOW">Low</SelectItem>
-                        <SelectItem value="MEDIUM">Medium</SelectItem>
-                        <SelectItem value="HIGH">High</SelectItem>
-                        <SelectItem value="URGENT">Urgent</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {isEditing && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="status"
+                  name="work_order_number"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
+                      <FormLabel>Work Order #</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="WO number (optional)" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="po_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PO Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="PO number (optional)" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Describe the work order"
+                        className="min-h-[120px]" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="priority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Priority</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
                         defaultValue={field.value}
@@ -263,41 +241,85 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
+                            <SelectValue placeholder="Select priority" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="NEW">New</SelectItem>
-                          <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                          <SelectItem value="ON_HOLD">On Hold</SelectItem>
-                          <SelectItem value="COMPLETED">Completed</SelectItem>
-                          <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                          <SelectItem value="LOW">Low</SelectItem>
+                          <SelectItem value="MEDIUM">Medium</SelectItem>
+                          <SelectItem value="HIGH">High</SelectItem>
+                          <SelectItem value="URGENT">Urgent</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
-            </div>
-            
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading} className="bg-[#0485ea] hover:bg-[#0373d1]">
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isEditing ? 'Updating...' : 'Creating...'}
-                  </>
-                ) : (
-                  isEditing ? 'Update Work Order' : 'Create Work Order'
+                
+                {isEditing && (
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="NEW">New</SelectItem>
+                            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                            <SelectItem value="ON_HOLD">On Hold</SelectItem>
+                            <SelectItem value="COMPLETED">Completed</SelectItem>
+                            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              </div>
+              
+              {/* Adding extra space at bottom to ensure content doesn't get hidden behind the footer */}
+              <div className="h-4"></div>
+            </form>
+          </Form>
+        </ScrollArea>
+        
+        <DialogFooter className="p-4 border-t mt-auto flex justify-end space-x-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose} 
+            disabled={loading}
+            className="min-w-[80px]"
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit"
+            form="work-order-form"
+            disabled={loading} 
+            className="bg-[#0485ea] hover:bg-[#0373d1] min-w-[120px]"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isEditing ? 'Updating...' : 'Creating...'}
+              </>
+            ) : (
+              isEditing ? 'Update Work Order' : 'Create Work Order'
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
