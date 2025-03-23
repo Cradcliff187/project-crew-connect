@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { WorkOrderMaterial } from '@/types/workOrder';
+import { Document } from '@/components/documents/schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -11,12 +12,61 @@ export function useReceiptManager() {
   
   // State for viewing receipt
   const [viewingReceipt, setViewingReceipt] = useState(false);
-  const [receiptDocument, setReceiptDocument] = useState<{
-    url: string;
-    fileName: string;
-    fileType: string;
-    document_id?: string;
-  } | null>(null);
+  const [receiptDocument, setReceiptDocument] = useState<Document | null>(null);
+  
+  const fetchReceiptDocument = async (documentId: string) => {
+    try {
+      console.log('Fetching receipt document:', documentId);
+      
+      // First get the document data from the database
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('document_id', documentId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching document record:', error);
+        throw error;
+      }
+      
+      console.log('Retrieved document data:', data);
+      
+      if (!data.storage_path) {
+        console.error('Document has no storage path:', data);
+        throw new Error('Document has no storage path');
+      }
+      
+      // Generate signed URL for the document with the correct bucket name
+      const { data: urlData, error: urlError } = await supabase
+        .storage
+        .from('construction_documents')
+        .createSignedUrl(data.storage_path, 300); // 5 minutes expiration
+      
+      if (urlError) {
+        console.error('Error creating signed URL:', urlError);
+        throw urlError;
+      }
+      
+      console.log('Generated signed URL:', urlData);
+      
+      // Return the document with URL and additional properties
+      return { 
+        ...data, 
+        url: urlData.signedUrl,
+        file_type: data.file_type || 'application/octet-stream', // Ensure we have a file type
+        file_name: data.file_name || 'receipt.png' // Ensure we have a file name
+      } as Document;
+    } catch (error: any) {
+      console.error('Error fetching receipt document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load receipt: ' + error.message,
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
   
   // Handle receipt button click
   const handleReceiptClick = async (material: WorkOrderMaterial) => {
@@ -25,51 +75,11 @@ export function useReceiptManager() {
     
     // Check if material has a receipt
     if (material.receipt_document_id) {
-      // Fetch receipt document data
-      try {
-        const { data, error } = await supabase
-          .from('documents')
-          .select('*')
-          .eq('document_id', material.receipt_document_id)
-          .single();
-        
-        if (error) {
-          console.error('Error retrieving document data:', error);
-          throw error;
-        }
-        
-        console.log('Retrieved document data:', data);
-        
-        if (data) {
-          // Generate signed URL for better security and access control
-          // Use the correct bucket name - construction_documents
-          const { data: urlData, error: urlError } = await supabase.storage
-            .from('construction_documents')
-            .createSignedUrl(data.storage_path, 300); // 5 minutes expiration
-          
-          if (urlError) {
-            console.error('Error generating signed URL:', urlError);
-            throw urlError;
-          }
-          
-          console.log('Generated signed URL:', urlData);
-          
-          setReceiptDocument({
-            url: urlData.signedUrl,
-            fileName: data.file_name || 'receipt.png',
-            fileType: data.file_type || 'application/octet-stream',
-            document_id: data.document_id
-          });
-          
-          setViewingReceipt(true);
-        }
-      } catch (error) {
-        console.error("Error fetching receipt document:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load receipt document. Please try again.",
-          variant: "destructive"
-        });
+      // Fetch and view existing receipt
+      const document = await fetchReceiptDocument(material.receipt_document_id);
+      if (document) {
+        setReceiptDocument(document);
+        setViewingReceipt(true);
       }
     } else {
       // Show upload dialog for new receipt

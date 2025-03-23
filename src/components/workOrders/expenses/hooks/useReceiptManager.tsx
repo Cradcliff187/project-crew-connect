@@ -15,6 +15,7 @@ export function useReceiptManager() {
     try {
       console.log('Fetching receipt document:', documentId);
       
+      // First get the document data from the database
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -33,7 +34,7 @@ export function useReceiptManager() {
         throw new Error('Document has no storage path');
       }
       
-      // Generate signed URL using the correct bucket name
+      // Generate signed URL for the document with the correct bucket name
       const { data: urlData, error: urlError } = await supabase
         .storage
         .from('construction_documents')
