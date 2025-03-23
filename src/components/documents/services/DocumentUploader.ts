@@ -98,16 +98,9 @@ export const uploadDocument = async (
       
       console.log('File uploaded successfully:', uploadData);
       
-      // Verify the content type was properly set
-      const { data: objectData, error: objectError } = await supabase
-        .from('storage.objects')
-        .select('metadata')
-        .eq('name', filePath)
-        .single();
-        
-      if (!objectError && objectData) {
-        console.log('Uploaded object metadata:', objectData);
-      }
+      // REMOVED PROBLEMATIC CODE: The direct query to storage.objects
+      // Instead, we'll log what we know about the file from the upload response
+      console.log('Upload response:', uploadData);
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
