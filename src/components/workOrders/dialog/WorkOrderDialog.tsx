@@ -13,6 +13,7 @@ import { WorkOrder } from '@/types/workOrder';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const workOrderFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -36,6 +37,7 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const isEditing = !!workOrder;
+  const isMobile = useIsMobile();
   
   const form = useForm<WorkOrderFormValues>({
     resolver: zodResolver(workOrderFormSchema),
@@ -85,7 +87,7 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
     try {
       setLoading(true);
       
-      if (isEditing) {
+      if (isEditing && workOrder) {
         // Update existing work order
         const { error } = await supabase
           .from('maintenance_work_orders')
@@ -147,7 +149,7 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className={isMobile ? "max-w-[95vw] p-4" : "sm:max-w-[600px]"}>
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-[#0485ea]">
             {isEditing ? 'Edit Work Order' : 'Create New Work Order'}
@@ -170,7 +172,7 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="work_order_number"
@@ -218,7 +220,7 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="priority"
@@ -275,8 +277,8 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
                       <FormMessage />
                     </FormItem>
                   )}
-                />
-              )}
+                )}
+              />
             </div>
             
             <DialogFooter>
