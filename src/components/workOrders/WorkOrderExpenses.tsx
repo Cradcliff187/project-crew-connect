@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useExpenses } from './expenses/hooks/useExpenses';
 import { ExpensesInfoSection } from './expenses/components';
 import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
+import { WorkOrderExpense } from '@/types/workOrder';
 
 interface WorkOrderExpensesProps {
   workOrderId: string;
@@ -10,7 +11,7 @@ interface WorkOrderExpensesProps {
 }
 
 const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesProps) => {
-  const [selectedExpense, setSelectedExpense] = useState<any | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<WorkOrderExpense | null>(null);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
 
   const {
@@ -39,7 +40,7 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
     handleExpenseAdded();
   };
   
-  const handleReceiptClick = (expense: any) => {
+  const handleReceiptClick = (expense: WorkOrderExpense) => {
     setSelectedExpense(expense);
     setReceiptDialogOpen(true);
   };

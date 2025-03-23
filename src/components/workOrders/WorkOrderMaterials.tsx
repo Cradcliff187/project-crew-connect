@@ -4,8 +4,6 @@ import { WorkOrderExpense } from '@/types/workOrder';
 
 // Import hooks
 import { useMaterials, useVendors } from './materials/hooks';
-import { useReceiptManager } from './materials/hooks/useReceiptManager';
-import { useConfirmationManager } from './materials/hooks/useConfirmationManager';
 
 // Import components
 import { ExpensesInfoSection } from './expenses/components';
@@ -66,8 +64,8 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
   const handleMaterialPrompt = async (expenseData: any) => {
     const result = await handleAddMaterial({
       ...expenseData,
-      expenseName: expenseData.materialName,
-      expenseType: 'materials'
+      expenseName: expenseData.expenseName || expenseData.materialName,
+      expenseType: 'MATERIAL'
     });
     
     if (result) {
@@ -85,7 +83,7 @@ const WorkOrderMaterials = ({ workOrderId, onMaterialAdded }: WorkOrderMaterials
     <div className="space-y-6">
       {/* Main Materials Section */}
       <ExpensesInfoSection
-        expenses={materials.filter(m => m.expense_type === 'materials' || !m.source_type || m.source_type === 'material')}
+        expenses={materials.filter(m => m.expense_type.toUpperCase() === 'MATERIAL' || !m.source_type || m.source_type === 'material')}
         loading={loading}
         submitting={submitting}
         vendors={vendors}

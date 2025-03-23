@@ -38,7 +38,7 @@ const AddExpenseForm = ({
   const [quantity, setQuantity] = useState('1');
   const [unitPrice, setUnitPrice] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
-  const [expenseType, setExpenseType] = useState('materials'); // Default to materials
+  const [expenseType, setExpenseType] = useState('MATERIAL'); // Default to materials
   const [showVendorDialog, setShowVendorDialog] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {

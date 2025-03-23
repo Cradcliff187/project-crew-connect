@@ -35,7 +35,7 @@ export function useExpensesFetch(workOrderId: string) {
         work_order_id: item.work_order_id,
         vendor_id: item.vendor_id,
         expense_name: item.expense_name || '',
-        material_name: item.material_name || '', // For backward compatibility
+        material_name: item.expense_name || '', // For backward compatibility
         quantity: item.quantity || 0,
         unit_price: item.unit_price || 0,
         total_price: item.total_price || 0,
