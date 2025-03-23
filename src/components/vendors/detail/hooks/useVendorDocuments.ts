@@ -18,7 +18,7 @@ export const useVendorDocuments = (vendorId: string) => {
       // Get documents directly related to the vendor
       const { data: vendorDocs, error: vendorError } = await supabase
         .from('documents')
-        .select('document_id, file_name, category, created_at, file_type, storage_path')
+        .select('document_id, file_name, category, created_at, updated_at, file_type, storage_path, entity_id, entity_type')
         .eq('entity_type', 'VENDOR')
         .eq('entity_id', vendorId);
       
@@ -30,7 +30,7 @@ export const useVendorDocuments = (vendorId: string) => {
       // Also get documents where this entity is referenced as vendor
       const { data: referencedDocs, error: refError } = await supabase
         .from('documents')
-        .select('document_id, file_name, category, created_at, file_type, storage_path')
+        .select('document_id, file_name, category, created_at, updated_at, file_type, storage_path, entity_id, entity_type')
         .eq('vendor_id', vendorId)
         .eq('vendor_type', 'vendor');
       
@@ -84,10 +84,17 @@ export const useVendorDocuments = (vendorId: string) => {
             console.warn('Document has no storage path:', doc.document_id);
           }
           
+          // Make sure we return a document with all required fields
           return {
             ...doc,
-            url
-          };
+            url,
+            // Ensure all required fields from BaseDocument are present
+            entity_id: doc.entity_id || vendorId,
+            entity_type: doc.entity_type || 'VENDOR',
+            updated_at: doc.updated_at || doc.created_at,
+            file_type: doc.file_type || null,
+            storage_path: doc.storage_path
+          } as VendorDocument;
         })
       );
       

@@ -2,9 +2,8 @@
 import { BaseDocument } from '@/components/workOrders/details/DocumentsList/types';
 
 export interface SubcontractorDocument extends BaseDocument {
-  entity_id?: string;
-  entity_type?: string;
-  updated_at?: string;
+  // Since BaseDocument now requires updated_at, entity_id, and entity_type,
+  // we don't need to redefine them here, but we must include them in our data
   
   // Additional fields for document management
   description?: string;
