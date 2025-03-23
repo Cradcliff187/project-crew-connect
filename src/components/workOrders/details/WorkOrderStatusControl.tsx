@@ -38,7 +38,6 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
   const fetchStatusOptions = async () => {
     try {
       setLoading(true);
-      console.log('Fetching status options from Supabase');
       
       const { data, error } = await supabase
         .from('status_definitions')
@@ -52,14 +51,12 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
           description: 'Could not load available statuses. Please try again.',
           variant: 'destructive',
         });
-        setStatusOptions([]); // Ensure we always have an array, even if empty
+        setStatusOptions([]); 
         return;
       }
       
-      // Always set a valid array (empty array if no data)
-      const validOptions = Array.isArray(data) ? data : [];
-      setStatusOptions(validOptions);
-      console.log('Available statuses:', validOptions);
+      // Ensure we always set a valid array
+      setStatusOptions(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error fetching status options:', error);
       toast({
@@ -67,7 +64,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         description: 'Could not load available statuses. Please try again.',
         variant: 'destructive',
       });
-      setStatusOptions([]); // Ensure we always have an array, even if empty
+      setStatusOptions([]); 
     } finally {
       setLoading(false);
     }
@@ -86,7 +83,6 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       console.log(`Updating work order ${workOrder.work_order_id} status to ${newStatus}`);
       
       // Update the work order status in the database
-      // No validation is performed - any status change is allowed
       const { error } = await supabase
         .from('maintenance_work_orders')
         .update({ 
@@ -113,21 +109,9 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
     } catch (error: any) {
       console.error('Error updating status:', error);
       
-      let errorMessage = 'Failed to update work order status. Please try again.';
-      
-      if (error.message) {
-        if (error.code === '401' || error.code === 401 || error.message.includes('auth') || error.message.includes('API key')) {
-          errorMessage = 'Authentication error. Your session may have expired. Please refresh the page and try again.';
-        } else if (error.code === '23514' || error.message.includes('violates row level security')) {
-          errorMessage = 'Permission denied. You do not have permission to update this work order status.';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
       toast({
         title: 'Error Updating Status',
-        description: errorMessage,
+        description: error.message || 'Failed to update work order status. Please try again.',
         variant: 'destructive',
       });
       
@@ -138,9 +122,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
 
   // Helper function to get a user-friendly status label
   const getStatusLabel = (statusCode: string): string => {
-    // Make sure statusOptions is an array before trying to find an element
-    const options = Array.isArray(statusOptions) ? statusOptions : [];
-    const option = options.find(opt => opt.status_code === statusCode);
+    const option = statusOptions.find(opt => opt.status_code === statusCode);
     
     if (option?.label) {
       return option.label;
