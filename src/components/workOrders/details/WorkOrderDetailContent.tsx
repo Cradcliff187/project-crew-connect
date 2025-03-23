@@ -45,7 +45,7 @@ const WorkOrderDetailContent = ({
           <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
           <TabsTrigger value="documents" className="text-sm">Documents</TabsTrigger>
           <TabsTrigger value="time" className="text-sm">Time Tracking</TabsTrigger>
-          <TabsTrigger value="expenses" className="text-sm">Expenses/Materials</TabsTrigger>
+          <TabsTrigger value="expenses" className="text-sm">Expenses</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
@@ -87,6 +87,12 @@ const WorkOrderDetailContent = ({
                   {workOrder.scheduled_date && (
                     <p className="text-sm text-muted-foreground mt-2">
                       Scheduled for completion by {new Date(workOrder.scheduled_date).toLocaleDateString()}.
+                    </p>
+                  )}
+                  
+                  {workOrder.actual_hours > 0 && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Total hours worked: <span className="font-medium">{workOrder.actual_hours.toFixed(1)} hrs</span>
                     </p>
                   )}
                 </CardContent>

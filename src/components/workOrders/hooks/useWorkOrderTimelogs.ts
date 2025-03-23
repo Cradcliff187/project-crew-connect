@@ -9,8 +9,14 @@ export function useWorkOrderTimelogs(workOrderId: string) {
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<{ employee_id: string, name: string }[]>([]);
   const [totalHours, setTotalHours] = useState(0);
+  const [totalLaborCost, setTotalLaborCost] = useState(0);
   
   const fetchTimelogs = async () => {
+    if (!workOrderId) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       console.log('Fetching time logs for work order ID:', workOrderId);
@@ -18,7 +24,7 @@ export function useWorkOrderTimelogs(workOrderId: string) {
       // Get time entries for this work order, ordered by most recent first
       const { data, error } = await supabase
         .from('time_entries')
-        .select('*')
+        .select('*, employees(first_name, last_name, hourly_rate)')
         .eq('entity_type', 'work_order')
         .eq('entity_id', workOrderId)
         .order('date_worked', { ascending: false });
@@ -32,19 +38,40 @@ export function useWorkOrderTimelogs(workOrderId: string) {
       // Ensure entity_type is properly typed for TimeEntry[]
       const typedTimelogs = (data || []).map(entry => ({
         ...entry,
-        entity_type: entry.entity_type as 'work_order' | 'project'
+        entity_type: entry.entity_type as 'work_order' | 'project',
+        employee_name: entry.employees ? 
+          `${entry.employees.first_name} ${entry.employees.last_name}` : 
+          'Unassigned'
       }));
       
       setTimelogs(typedTimelogs);
       
-      // Calculate total hours
-      const total = typedTimelogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
-      setTotalHours(total);
+      // Calculate total hours and cost
+      const hours = typedTimelogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
+      setTotalHours(hours);
+      
+      const cost = typedTimelogs.reduce((sum, log) => sum + (log.total_cost || 0), 0);
+      setTotalLaborCost(cost);
+      
+      // Update the work order with the total hours and cost
+      if (typedTimelogs.length > 0) {
+        const { error: updateError } = await supabase
+          .from('maintenance_work_orders')
+          .update({ 
+            actual_hours: hours, 
+            updated_at: new Date().toISOString()
+          })
+          .eq('work_order_id', workOrderId);
+          
+        if (updateError) {
+          console.error('Error updating work order hours:', updateError);
+        }
+      }
     } catch (error: any) {
       console.error('Error fetching timelogs:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load time logs.',
+        description: 'Failed to load time logs: ' + error.message,
         variant: 'destructive',
       });
     } finally {
@@ -100,7 +127,7 @@ export function useWorkOrderTimelogs(workOrderId: string) {
       console.error('Error deleting time log:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete time log. Please try again.',
+        description: 'Failed to delete time log: ' + error.message,
         variant: 'destructive',
       });
     }
@@ -118,6 +145,7 @@ export function useWorkOrderTimelogs(workOrderId: string) {
     loading,
     employees,
     totalHours,
+    totalLaborCost,
     fetchTimelogs,
     handleDeleteTimelog
   };
