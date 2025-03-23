@@ -154,14 +154,14 @@ export const useProjectExpenses = (projectId: string) => {
       if (error) throw error;
       if (!data) throw new Error('Document not found');
       
-      const { data: { publicUrl }, error: storageError } = supabase
+      // Fixed: The createSignedUrl method returns { data: { publicUrl: string } } without an error property
+      const { data: urlData } = supabase
         .storage
         .from('construction_documents')
         .getPublicUrl(data.storage_path);
       
-      if (storageError) throw storageError;
-      
-      window.open(publicUrl, '_blank');
+      // No need to check for storageError since getPublicUrl doesn't have an error return
+      window.open(urlData.publicUrl, '_blank');
       return true;
     } catch (error: any) {
       console.error('Error accessing document:', error);
