@@ -12,6 +12,8 @@ export const useVendorDocuments = (vendorId: string) => {
     
     setLoading(true);
     try {
+      console.log('Fetching documents for vendor:', vendorId);
+      
       // Get documents directly related to the vendor
       const { data: vendorDocs, error: vendorError } = await supabase
         .from('documents')
@@ -36,6 +38,9 @@ export const useVendorDocuments = (vendorId: string) => {
         return;
       }
       
+      console.log('Vendor documents:', vendorDocs?.length || 0);
+      console.log('Referenced documents:', referencedDocs?.length || 0);
+      
       // Combine all documents
       const allDocs = [...(vendorDocs || []), ...(referencedDocs || [])];
       
@@ -44,21 +49,29 @@ export const useVendorDocuments = (vendorId: string) => {
         new Map(allDocs.map(doc => [doc.document_id, doc])).values()
       );
       
+      console.log('Total unique documents:', uniqueDocs.length);
+      
       // Get signed URLs for documents for better security
       const enhancedDocuments = await Promise.all(
         uniqueDocs.map(async (doc) => {
           let url = '';
           if (doc.storage_path) {
+            console.log('Getting signed URL for document:', doc.document_id, 'Path:', doc.storage_path);
+            
             // Using createSignedUrl instead of getPublicUrl for better security
+            // Using the correct bucket name - construction_documents
             const { data, error } = await supabase.storage
-              .from('construction_documents') // Using the correct bucket name
+              .from('construction_documents')
               .createSignedUrl(doc.storage_path, 300); // 5 minutes expiration
               
             if (error) {
               console.error('Error generating signed URL for', doc.document_id, error);
             } else {
               url = data.signedUrl;
+              console.log('Successfully generated signed URL for', doc.document_id);
             }
+          } else {
+            console.warn('Document has no storage path:', doc.document_id);
           }
           
           return {

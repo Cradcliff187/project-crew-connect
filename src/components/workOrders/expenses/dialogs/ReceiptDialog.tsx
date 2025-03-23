@@ -12,6 +12,8 @@ import { Document } from '@/components/documents/schemas/documentSchema';
 import ExpenseReceiptUpload from '../components/ExpenseReceiptUpload';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
 interface ReceiptUploadDialogProps {
   open: boolean;
@@ -79,6 +81,7 @@ export const ReceiptViewerDialog = ({
   const isImage = receiptDocument.file_type?.includes('image');
 
   const handleImageError = () => {
+    console.log('Image failed to load:', receiptDocument.url);
     setError(true);
   };
 
@@ -95,21 +98,25 @@ export const ReceiptViewerDialog = ({
         <div className="min-h-[60vh] flex flex-col items-center justify-center">
           {error ? (
             <div className="text-center p-4">
-              <p className="text-destructive mb-2">Error loading receipt</p>
-              <a
-                href={receiptDocument.url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-blue-600 hover:underline"
+              <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-4" />
+              <p className="text-destructive mb-2 font-semibold">Error loading receipt</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                The receipt image could not be loaded directly in this view.
+              </p>
+              <Button
+                variant="outline"
+                className="text-blue-600 hover:text-blue-800"
+                onClick={() => window.open(receiptDocument.url, '_blank')}
               >
                 Click here to open the receipt in a new tab
-              </a>
+              </Button>
             </div>
           ) : isPDF ? (
             <iframe
               src={receiptDocument.url}
               className="w-full h-[60vh]"
               title="Receipt PDF"
+              onError={handleImageError}
             />
           ) : isImage ? (
             <AspectRatio ratio={4 / 5} className="flex items-center justify-center">
@@ -123,14 +130,13 @@ export const ReceiptViewerDialog = ({
           ) : (
             <div className="text-center p-4">
               <p className="mb-2">This file type cannot be previewed</p>
-              <a
-                href={receiptDocument.url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-blue-600 hover:underline"
+              <Button
+                variant="outline"
+                className="text-blue-600 hover:text-blue-800"
+                onClick={() => window.open(receiptDocument.url, '_blank')}
               >
                 Click here to download the file
-              </a>
+              </Button>
             </div>
           )}
         </div>

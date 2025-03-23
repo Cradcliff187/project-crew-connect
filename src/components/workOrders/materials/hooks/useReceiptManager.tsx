@@ -33,6 +33,7 @@ export function useReceiptManager() {
           .single();
         
         if (error) {
+          console.error('Error retrieving document data:', error);
           throw error;
         }
         
@@ -40,14 +41,17 @@ export function useReceiptManager() {
         
         if (data) {
           // Generate signed URL for better security and access control
+          // Use the correct bucket name - construction_documents
           const { data: urlData, error: urlError } = await supabase.storage
-            .from('construction_documents') // Using the correct bucket name
+            .from('construction_documents')
             .createSignedUrl(data.storage_path, 300); // 5 minutes expiration
           
           if (urlError) {
             console.error('Error generating signed URL:', urlError);
             throw urlError;
           }
+          
+          console.log('Generated signed URL:', urlData);
           
           setReceiptDocument({
             url: urlData.signedUrl,
@@ -61,7 +65,7 @@ export function useReceiptManager() {
         console.error("Error fetching receipt document:", error);
         toast({
           title: "Error",
-          description: "Failed to load receipt document",
+          description: "Failed to load receipt document. Please try again.",
           variant: "destructive"
         });
       }

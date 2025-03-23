@@ -22,20 +22,22 @@ export function useReceiptManager() {
         .single();
       
       if (error) {
+        console.error('Error fetching document record:', error);
         throw error;
       }
       
       console.log('Retrieved document data:', data);
       
       if (!data.storage_path) {
+        console.error('Document has no storage path:', data);
         throw new Error('Document has no storage path');
       }
       
-      // Use the correct bucket name - construction_documents instead of documents
+      // Generate signed URL using the correct bucket name - construction_documents
       const { data: urlData, error: urlError } = await supabase
         .storage
-        .from('construction_documents') // Changed from 'documents' to 'construction_documents'
-        .createSignedUrl(data.storage_path, 60); // 60 seconds expiration
+        .from('construction_documents')
+        .createSignedUrl(data.storage_path, 300); // 5 minutes expiration
       
       if (urlError) {
         console.error('Error creating signed URL:', urlError);
@@ -59,6 +61,7 @@ export function useReceiptManager() {
   
   const handleReceiptClick = async (expense: WorkOrderExpense) => {
     if (expense.receipt_document_id) {
+      console.log('Viewing existing receipt for expense:', expense.id);
       // Fetch and view existing receipt
       const document = await fetchReceiptDocument(expense.receipt_document_id);
       if (document) {
@@ -66,6 +69,7 @@ export function useReceiptManager() {
         setViewingReceipt(true);
       }
     } else {
+      console.log('Setting up receipt upload for expense:', expense.id);
       // Upload new receipt
       setSelectedExpense(expense);
       setShowReceiptUpload(true);
