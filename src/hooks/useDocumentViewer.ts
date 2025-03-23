@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { fetchDocumentWithUrl } from '@/components/documents/services/DocumentFetcher';
+import { toast } from '@/hooks/use-toast';
 
 export interface UseDocumentViewerOptions {
   onView?: (document: Document) => void;
@@ -11,23 +12,29 @@ export interface UseDocumentViewerOptions {
     height?: number;
     quality?: number;
   };
+  expiresIn?: number; // URL expiration time in seconds
 }
 
 export function useDocumentViewer(options: UseDocumentViewerOptions = {}) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const viewDocument = async (documentId: string) => {
     try {
       setIsLoading(true);
+      setError(null);
+      
+      console.log('Viewing document with ID:', documentId);
       
       const document = await fetchDocumentWithUrl(documentId, {
         imageOptions: options.imageOptions || {
           width: 1200,
           height: 1200,
           quality: 90
-        }
+        },
+        expiresIn: options.expiresIn || 300 // Default to 5 minutes
       });
       
       if (document) {
@@ -37,9 +44,24 @@ export function useDocumentViewer(options: UseDocumentViewerOptions = {}) {
         if (options.onView) {
           options.onView(document);
         }
+        
+        console.log('Document loaded successfully:', document.file_name);
+      } else {
+        setError('Could not load document');
+        toast({
+          title: 'Error',
+          description: 'Could not load document',
+          variant: 'destructive',
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error viewing document:', error);
+      setError(error.message || 'An error occurred while loading the document');
+      toast({
+        title: 'Error',
+        description: error.message || 'An error occurred while loading the document',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -48,6 +70,7 @@ export function useDocumentViewer(options: UseDocumentViewerOptions = {}) {
   const closeViewer = () => {
     setIsViewerOpen(false);
     setCurrentDocument(null);
+    setError(null);
     
     if (options.onClose) {
       options.onClose();
@@ -60,6 +83,7 @@ export function useDocumentViewer(options: UseDocumentViewerOptions = {}) {
     isViewerOpen,
     setIsViewerOpen,
     currentDocument,
-    isLoading
+    isLoading,
+    error
   };
 }

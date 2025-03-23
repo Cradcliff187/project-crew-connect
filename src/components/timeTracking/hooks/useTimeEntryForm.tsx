@@ -121,7 +121,9 @@ export function useTimeEntryForm(onSuccess: () => void) {
       if (error) throw error;
       
       if (selectedFiles.length > 0 && insertedEntry) {
+        // Use the improved document upload approach
         for (const file of selectedFiles) {
+          // First upload file to storage
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
@@ -132,18 +134,42 @@ export function useTimeEntryForm(onSuccess: () => void) {
             
           if (uploadError) throw uploadError;
           
-          const { error: receiptError } = await supabase
-            .from('time_entry_receipts')
+          // Determine MIME type from file
+          const mimeType = file.type || `application/${fileExt}`;
+          
+          // Then create document record
+          const { data: documentData, error: documentError } = await supabase
+            .from('documents')
             .insert({
-              time_entry_id: insertedEntry.id,
               file_name: file.name,
               file_type: file.type,
+              mime_type: mimeType,
               file_size: file.size,
               storage_path: filePath,
-              uploaded_at: new Date().toISOString()
+              entity_type: 'TIME_ENTRY',
+              entity_id: insertedEntry.id,
+              category: 'receipt',
+              is_expense: true,
+              uploaded_by: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              tags: ['receipt', 'time-entry']
+            })
+            .select('document_id')
+            .single();
+            
+          if (documentError) throw documentError;
+          
+          // Use the new function to link document to time entry
+          const { data: linkResult, error: linkError } = await supabase
+            .rpc('attach_document_to_time_entry', {
+              p_time_entry_id: insertedEntry.id,
+              p_document_id: documentData.document_id
             });
             
-          if (receiptError) throw receiptError;
+          if (linkError) {
+            console.error('Error linking document to time entry:', linkError);
+          }
         }
       }
       

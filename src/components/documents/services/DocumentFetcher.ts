@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
@@ -36,10 +35,13 @@ export async function fetchDocumentWithUrl(documentId: string, options: FetchDoc
       throw new Error('Document has no storage path');
     }
     
+    // Determine MIME type for proper handling
+    const mimeType = data.mime_type || determineMimeType(data.file_name, data.file_type);
+    
     // Generate signed URL for the document with the correct bucket name and options
     const supabaseOptions = {
       download: options.download ?? false,
-      transform: options.imageOptions ? {
+      transform: options.imageOptions && isImageType(mimeType) ? {
         width: options.imageOptions.width || 1200,
         height: options.imageOptions.height || 1200,
         quality: options.imageOptions.quality || 90
@@ -65,7 +67,7 @@ export async function fetchDocumentWithUrl(documentId: string, options: FetchDoc
     return { 
       ...data, 
       url: urlData.signedUrl,
-      file_type: data.file_type || 'application/octet-stream', // Ensure we have a file type
+      file_type: mimeType || 'application/octet-stream', // Ensure we have a proper MIME type
       file_name: data.file_name || 'document.pdf' // Ensure we have a file name
     } as Document;
   } catch (error: any) {
@@ -77,6 +79,38 @@ export async function fetchDocumentWithUrl(documentId: string, options: FetchDoc
     });
     return null;
   }
+}
+
+// Helper to determine MIME type from file extension if not provided
+function determineMimeType(fileName: string = '', existingType: string = ''): string {
+  // If we already have a valid MIME type, use it
+  if (existingType && existingType.includes('/')) {
+    return existingType;
+  }
+  
+  // Otherwise, try to determine from file extension
+  const extension = fileName.split('.').pop()?.toLowerCase() || '';
+  
+  // Common MIME type mappings
+  const mimeMap: Record<string, string> = {
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'txt': 'text/plain'
+  };
+  
+  return mimeMap[extension] || 'application/octet-stream';
+}
+
+// Helper to check if a MIME type is an image
+function isImageType(mimeType: string): boolean {
+  return mimeType.startsWith('image/');
 }
 
 export async function fetchDocumentsByEntityId(entityType: string, entityId: string): Promise<Document[]> {
@@ -96,9 +130,13 @@ export async function fetchDocumentsByEntityId(entityType: string, entityId: str
     
     console.log(`Retrieved ${data?.length || 0} documents`);
     
-    // Return documents without URLs to avoid excessive storage calls
-    // URLs can be fetched on demand when viewing specific documents
-    return data as Document[];
+    // Process documents to ensure they have proper MIME types
+    const processedDocuments = data?.map(doc => ({
+      ...doc,
+      file_type: doc.mime_type || determineMimeType(doc.file_name, doc.file_type)
+    })) || [];
+    
+    return processedDocuments as Document[];
   } catch (error: any) {
     console.error('Error fetching entity documents:', error);
     toast({

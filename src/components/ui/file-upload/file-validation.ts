@@ -50,6 +50,13 @@ export const validateFiles = (
         if (mimeMap[extension]) {
           fileType = mimeMap[extension];
           console.log(`Using extension-based type for ${file.name}: ${fileType}`);
+          
+          // Patch the file object to ensure correct type detection elsewhere
+          // This is a workaround since File objects are read-only
+          Object.defineProperty(file, 'type', {
+            value: fileType,
+            writable: false
+          });
         }
       }
     }

@@ -324,6 +324,7 @@ export type Database = {
           file_size: number | null
           file_type: string | null
           is_expense: boolean | null
+          mime_type: string | null
           notes: string | null
           storage_path: string
           tags: string[] | null
@@ -346,6 +347,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           is_expense?: boolean | null
+          mime_type?: string | null
           notes?: string | null
           storage_path: string
           tags?: string[] | null
@@ -368,6 +370,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           is_expense?: boolean | null
+          mime_type?: string | null
           notes?: string | null
           storage_path?: string
           tags?: string[] | null
@@ -1456,6 +1459,42 @@ export type Database = {
           },
         ]
       }
+      time_entry_document_links: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          time_entry_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          time_entry_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          time_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entry_document_links_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "time_entry_document_links_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: false
+            referencedRelation: "time_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timelogs: {
         Row: {
           created_at: string
@@ -1759,6 +1798,13 @@ export type Database = {
       }
     }
     Functions: {
+      attach_document_to_time_entry: {
+        Args: {
+          p_time_entry_id: string
+          p_document_id: string
+        }
+        Returns: boolean
+      }
       calculate_vendor_score: {
         Args: {
           p_rating: number
