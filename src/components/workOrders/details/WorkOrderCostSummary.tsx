@@ -19,16 +19,16 @@ const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
   const fetchCostData = async () => {
     setIsLoading(true);
     try {
-      // Fetch materials total
-      const { data: materialsData, error: materialsError, count } = await supabase
-        .from('work_order_materials')
+      // Fetch expenses total (materials + time entry expenses)
+      const { data: expensesData, error: expensesError, count } = await supabase
+        .from('unified_work_order_expenses')
         .select('total_price', { count: 'exact' })
         .eq('work_order_id', workOrder.work_order_id);
         
-      if (materialsError) {
-        console.error('Error fetching materials:', materialsError);
+      if (expensesError) {
+        console.error('Error fetching expenses:', expensesError);
       } else {
-        const total = (materialsData || []).reduce((sum, item) => sum + (item.total_price || 0), 0);
+        const total = (expensesData || []).reduce((sum, item) => sum + (item.total_price || 0), 0);
         setMaterialsTotal(total);
         setMaterialCount(count || 0);
       }
