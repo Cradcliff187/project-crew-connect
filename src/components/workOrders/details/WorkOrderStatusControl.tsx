@@ -79,14 +79,21 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       setLoading(true);
       console.log(`Updating work order ${workOrder.work_order_id} status to ${newStatus}`);
       
+      // Prepare the update data
+      const updateData: { status: string; updated_at: string; progress?: number } = {
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+      
+      // If the new status is "COMPLETED", automatically set progress to 100%
+      if (newStatus === "COMPLETED") {
+        updateData.progress = 100;
+      }
+      
       // Update the work order status in the database using the standard update method
-      // Now that RLS has been disabled on the activitylog table, this will work properly
       const { error } = await supabase
         .from('maintenance_work_orders')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('work_order_id', workOrder.work_order_id);
       
       if (error) {
@@ -97,7 +104,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       const statusLabel = getStatusLabel(newStatus);
       toast({
         title: 'Status Updated',
-        description: `Work order status changed to ${statusLabel.toLowerCase()}.`,
+        description: `Work order status changed to ${statusLabel.toLowerCase()}.${newStatus === "COMPLETED" ? ' Progress automatically set to 100%.' : ''}`,
         className: 'bg-[#0485ea]',
       });
       
