@@ -79,12 +79,7 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         description: 'Expense has been added successfully.',
       });
       
-      // Refresh expenses list to reflect the new addition
-      await fetchExpenses();
-      
-      // Return success but don't try to transform the expense
-      // as it will be loaded via the unified view in fetchExpenses
-      return { success: true };
+      return { success: true, data };
     } catch (error: any) {
       console.error('Error adding expense:', error);
       toast({
@@ -104,22 +99,6 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
     }
     
     try {
-      // Check if this is a time entry expense
-      const { data: expenseData } = await supabase
-        .from('unified_work_order_expenses')
-        .select('source_type')
-        .eq('id', id)
-        .single();
-      
-      if (expenseData?.source_type === 'time_entry') {
-        toast({
-          title: 'Cannot Delete',
-          description: 'Time entry expenses cannot be deleted directly.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
       // Delete the expense record from the database
       const { error } = await supabase
         .from('expenses')

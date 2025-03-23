@@ -27,20 +27,24 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
   } = useExpenses(workOrderId);
   
   const handleVendorAdded = () => {
+    console.log('Vendor added, refreshing expenses...');
     fetchExpenses();
   };
   
   const handleExpenseAdded = () => {
+    console.log('Expense added, refreshing expenses...');
     fetchExpenses();
     if (onExpenseAdded) onExpenseAdded();
   };
   
   const handleExpensePrompt = async (expenseData: any) => {
+    console.log('Adding expense with data:', expenseData);
     await handleAddExpense(expenseData);
     handleExpenseAdded();
   };
   
   const handleReceiptClick = (expense: WorkOrderExpense) => {
+    console.log('Receipt clicked for expense:', expense);
     setSelectedExpense(expense);
     setReceiptDialogOpen(true);
   };
@@ -50,10 +54,10 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
     setSelectedExpense(null);
   };
   
-  // Handle receipt upload and handle the boolean return, but we don't need to return anything
   const handleReceiptUpload = async (expenseId: string, documentId: string) => {
+    console.log('Uploading receipt for expense:', expenseId, 'with document ID:', documentId);
     await handleReceiptUploaded(expenseId, documentId);
-    // We don't need to return anything here, void is fine
+    fetchExpenses();
   };
   
   return (

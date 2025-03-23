@@ -15,6 +15,9 @@ export const useWorkOrderDocumentsEmbed = (workOrderId: string, entityType: stri
         setLoading(true);
         setError(null);
         
+        console.log('Fetching documents for work order:', workOrderId, 'and entity type:', entityType);
+        
+        // Fetch documents for the work order
         const { data, error } = await supabase
           .from('documents')
           .select('*')
@@ -27,12 +30,14 @@ export const useWorkOrderDocumentsEmbed = (workOrderId: string, entityType: stri
           return;
         }
         
+        console.log('Fetched documents:', data);
+        
         // Process the documents to get public URLs
         const docsWithUrls = await Promise.all(
           data.map(async (doc) => {
             const { data: urlData } = await supabase
               .storage
-              .from('construction_documents') // Using the correct bucket name
+              .from('construction_documents')
               .getPublicUrl(doc.storage_path);
             
             return {
@@ -43,6 +48,7 @@ export const useWorkOrderDocumentsEmbed = (workOrderId: string, entityType: stri
           })
         );
         
+        console.log('Documents with URLs:', docsWithUrls);
         setDocuments(docsWithUrls);
       } catch (err) {
         console.error('Error in useWorkOrderDocumentsEmbed:', err);

@@ -13,7 +13,7 @@ export function useReceiptOperations(fetchExpenses: () => Promise<void>) {
         description: 'Missing expense ID or document ID.',
         variant: 'destructive',
       });
-      return;
+      return false;
     }
     
     setSubmitting(true);
@@ -30,13 +30,15 @@ export function useReceiptOperations(fetchExpenses: () => Promise<void>) {
         throw error;
       }
       
+      console.log('Receipt attached successfully');
+      
       toast({
         title: 'Receipt Attached',
         description: 'Receipt has been attached to the expense successfully.',
       });
       
       // Refresh expenses list
-      fetchExpenses();
+      await fetchExpenses();
       
       return true;
     } catch (error: any) {

@@ -16,35 +16,35 @@ export function useExpensesFetch(workOrderId: string) {
     try {
       console.log('Fetching expenses for work order:', workOrderId);
       
-      // Use the unified view
+      // Direct query to the expenses table instead of the unified view
       const { data, error } = await supabase
-        .from('unified_work_order_expenses')
+        .from('expenses')
         .select('*')
-        .eq('work_order_id', workOrderId)
+        .eq('entity_id', workOrderId)
+        .eq('entity_type', 'WORK_ORDER')
         .order('created_at', { ascending: false });
       
       if (error) {
         throw error;
       }
       
-      console.log('Fetched unified expenses:', data);
+      console.log('Fetched expenses directly:', data);
       
       // Transform data to ensure types match
       const transformedData = data?.map(item => ({
         id: item.id,
-        work_order_id: item.work_order_id,
+        work_order_id: item.entity_id,
         vendor_id: item.vendor_id,
-        expense_name: item.expense_name || '',
-        material_name: item.expense_name || '', // For backward compatibility
+        expense_name: item.description || '',
+        material_name: item.description || '', // For backward compatibility
         quantity: item.quantity || 0,
         unit_price: item.unit_price || 0,
-        total_price: item.total_price || 0,
-        receipt_document_id: item.receipt_document_id,
+        total_price: item.amount || 0,
+        receipt_document_id: item.document_id,
         created_at: item.created_at,
         updated_at: item.updated_at,
-        expense_type: item.expense_type || 'materials',
-        source_type: item.source_type as "material" | "time_entry" || "material",
-        time_entry_id: item.time_entry_id
+        expense_type: item.expense_type || 'MATERIAL',
+        source_type: "material" as const
       })) as WorkOrderExpense[];
       
       setExpenses(transformedData || []);
