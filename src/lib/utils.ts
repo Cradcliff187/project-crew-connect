@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, isToday, isYesterday, differenceInDays } from "date-fns";
+import { format, isToday, isYesterday, differenceInDays, formatDistance } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,7 +32,7 @@ export function formatRelativeTime(dateString: string | Date): string {
   
   if (isNaN(date.getTime())) return 'Invalid date';
   
-  return formatDistanceToNow(date, { addSuffix: true });
+  return formatDistance(date, new Date(), { addSuffix: true });
 }
 
 export function formatCurrency(amount: number): string {
