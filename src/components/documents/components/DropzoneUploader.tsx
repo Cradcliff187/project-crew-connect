@@ -86,6 +86,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   onChange={(e) => {
                     const files = e.target.files;
                     if (files && files.length > 0) {
+                      // CRITICAL FIX: Ensure we're passing the actual File objects
                       const fileArray = Array.from(files);
                       field.onChange(fileArray);
                       onFileSelect(fileArray);

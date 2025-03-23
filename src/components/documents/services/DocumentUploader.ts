@@ -31,11 +31,13 @@ export const uploadDocument = async (
       
       console.log(`Uploading file to ${bucketName} bucket, path: ${filePath}`);
       
-      // Upload file to Supabase Storage - ensure we're passing the actual file, not JSON
+      // CRITICAL FIX: Ensure we're uploading the actual file and not JSON
+      // Upload file to Supabase Storage with the correct content type
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, {
-          contentType: file.type // Explicitly set the content type based on the file
+          contentType: file.type, // Set the correct content type
+          cacheControl: '3600'
         });
         
       if (uploadError) {

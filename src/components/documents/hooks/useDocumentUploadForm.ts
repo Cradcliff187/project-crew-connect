@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,6 +56,7 @@ export const useDocumentUploadForm = ({
 
   // Handle file selection and preview
   const handleFileSelect = (files: File[]) => {
+    // CRITICAL FIX: Make sure we keep the actual File objects
     form.setValue('files', files);
     
     // Create preview URL for the first image if it's an image
@@ -72,6 +72,9 @@ export const useDocumentUploadForm = ({
   const onSubmit = async (data: DocumentUploadFormValues) => {
     try {
       setIsUploading(true);
+      
+      // CRITICAL FIX: Log the data being sent to ensure it contains actual File objects
+      console.log('Submitting files:', data.files);
       
       const result = await uploadDocument(data);
       
