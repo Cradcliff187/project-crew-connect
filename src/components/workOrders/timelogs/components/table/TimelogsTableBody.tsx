@@ -2,7 +2,6 @@
 import { TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { formatDate } from '@/lib/utils';
 import { TimeEntry } from '@/types/timeTracking';
-import { EmptyState } from './';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { Clock, Trash2 } from 'lucide-react';
 
@@ -13,10 +12,7 @@ interface TimelogsTableBodyProps {
 }
 
 const TimelogsTableBody = ({ timelogs, employeeNameFn, onDelete }: TimelogsTableBodyProps) => {
-  if (!timelogs || timelogs.length === 0) {
-    return <EmptyState />;
-  }
-  
+  // The parent components will handle empty states, so we'll just render the rows here
   return (
     <TableBody>
       {timelogs.map((log) => {

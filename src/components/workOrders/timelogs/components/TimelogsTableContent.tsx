@@ -16,9 +16,6 @@ const TimelogsTableContent = ({
   employeeNameFn,
   onDelete
 }: TimelogsTableContentProps) => {
-  // Calculate total hours
-  const totalHours = timelogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
-
   if (loading) {
     return (
       <div className="py-8 text-center">
