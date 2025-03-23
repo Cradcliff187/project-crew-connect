@@ -13,6 +13,7 @@ import {
 import WorkOrderDocuments from '../documents';
 import WorkOrderTimelogs from '../WorkOrderTimelogs';
 import WorkOrderExpenses from '../WorkOrderExpenses';
+import WorkOrderMaterials from '../WorkOrderMaterials';
 
 interface WorkOrderDetailContentProps {
   workOrder: WorkOrder;
@@ -41,11 +42,12 @@ const WorkOrderDetailContent = ({
       </div>
       
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
+        <TabsList className="grid grid-cols-5 mb-4">
           <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
           <TabsTrigger value="documents" className="text-sm">Documents</TabsTrigger>
           <TabsTrigger value="time" className="text-sm">Time Tracking</TabsTrigger>
           <TabsTrigger value="expenses" className="text-sm">Expenses</TabsTrigger>
+          <TabsTrigger value="materials" className="text-sm">Materials</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
@@ -116,6 +118,13 @@ const WorkOrderDetailContent = ({
           <WorkOrderExpenses 
             workOrderId={workOrder.work_order_id} 
             onExpenseAdded={onStatusChange}
+          />
+        </TabsContent>
+        
+        <TabsContent value="materials">
+          <WorkOrderMaterials 
+            workOrderId={workOrder.work_order_id} 
+            onMaterialAdded={onStatusChange}
           />
         </TabsContent>
       </Tabs>
