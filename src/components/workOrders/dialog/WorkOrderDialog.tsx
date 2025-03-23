@@ -277,8 +277,8 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
                       <FormMessage />
                     </FormItem>
                   )}
-                )}
-              />
+                />
+              )}
             </div>
             
             <DialogFooter>
