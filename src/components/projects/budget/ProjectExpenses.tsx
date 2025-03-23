@@ -90,7 +90,7 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
           created_at: expense.created_at,
           updated_at: expense.updated_at,
           // Handle the budget_item property which might be null or an error object
-          budget_item_category: expense.budget_item && typeof expense.budget_item === 'object' ? expense.budget_item.category : null,
+          budget_item_category: expense.budget_item && typeof expense.budget_item === 'object' && expense.budget_item !== null ? expense.budget_item.category : null,
           vendor_name: vendorName
         };
       }));
