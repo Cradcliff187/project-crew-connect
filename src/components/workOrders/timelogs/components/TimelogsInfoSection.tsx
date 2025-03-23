@@ -1,16 +1,15 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { TimeEntry } from '@/types/timeTracking';
-import { TimelogsTableContent } from '../components';
-import { TimelogSectionHeader, TimelogAddSheet } from './header';
-import { EmptyState } from './table';
+import { Card, CardContent } from '@/components/ui/card';
+import { TimelogSectionHeader, TimelogsTableContent } from './';
+import TimelogAddSheet from './header/TimelogAddSheet';
 import TotalHoursDisplay from './TotalHoursDisplay';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface TimelogsInfoSectionProps {
   timelogs: TimeEntry[];
   loading: boolean;
-  employees: { employee_id: string; name: string }[];
+  employees: { id: string; name: string }[];
   workOrderId: string;
   onDelete: (id: string) => Promise<void>;
   onTimeLogAdded: () => void;
@@ -22,53 +21,52 @@ const TimelogsInfoSection = ({
   employees,
   workOrderId,
   onDelete,
-  onTimeLogAdded
+  onTimeLogAdded,
 }: TimelogsInfoSectionProps) => {
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [totalHours, setTotalHours] = useState(0);
-
-  // Calculate total hours whenever timelogs change
-  useEffect(() => {
-    const total = timelogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
-    setTotalHours(total);
-  }, [timelogs]);
-
+  const [showAddSheet, setShowAddSheet] = useState(false);
+  
+  // Calculate total hours
+  const totalHours = timelogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
+  
+  // Find employee name by ID
+  const getEmployeeName = (employeeId: string | null) => {
+    if (!employeeId) return "Unassigned";
+    const employee = employees.find(e => e.id === employeeId);
+    return employee ? employee.name : "Unknown Employee";
+  };
+  
   return (
     <div className="space-y-4">
-      {/* Section Header */}
-      <TimelogSectionHeader onAddClick={() => setShowAddForm(true)} />
+      <TimelogSectionHeader 
+        onAddClick={() => setShowAddSheet(true)}
+      />
       
-      {/* Timelogs Table or Empty State */}
-      {loading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      ) : (
-        <>
+      <Card className="shadow-sm border-[#0485ea]/10">
+        <CardContent className="p-0">
           <TimelogsTableContent
             timelogs={timelogs}
-            employees={employees}
+            loading={loading}
+            employeeNameFn={getEmployeeName}
             onDelete={onDelete}
           />
           
-          {/* Display total hours if there are timelogs */}
-          {timelogs.length > 0 && (
-            <TotalHoursDisplay totalHours={totalHours} />
-          )}
-        </>
-      )}
+          {timelogs.length > 0 ? (
+            <div className="flex justify-between items-center bg-gray-50 p-4 border-t">
+              <div className="flex items-center gap-2 text-gray-600">
+                <span className="font-medium">Total Entries: {timelogs.length}</span>
+              </div>
+              <TotalHoursDisplay totalHours={totalHours} />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
       
-      {/* Add Timelog Sheet */}
       <TimelogAddSheet
-        open={showAddForm}
-        onOpenChange={setShowAddForm}
         workOrderId={workOrderId}
+        open={showAddSheet}
+        onOpenChange={setShowAddSheet}
+        onSuccess={onTimeLogAdded}
         employees={employees}
-        onSuccess={() => {
-          onTimeLogAdded();
-          setShowAddForm(false);
-        }}
       />
     </div>
   );

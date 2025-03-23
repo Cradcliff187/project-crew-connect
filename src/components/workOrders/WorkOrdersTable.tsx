@@ -3,7 +3,6 @@ import { useState } from 'react';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableHead,
   TableHeader,
   TableRow,
@@ -82,16 +81,15 @@ const WorkOrdersTable = ({
   }
   
   return (
-    <Table>
-      <TableCaption>List of all work orders</TableCaption>
-      <TableHeader>
+    <Table className="border rounded-md">
+      <TableHeader className="bg-[#0485ea]/10">
         <TableRow>
-          <TableHead className="w-[120px]">Work Order #</TableHead>
-          <TableHead>Title</TableHead>
-          <TableHead>Created</TableHead>
-          <TableHead>Scheduled</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
+          <TableHead className="w-[120px] font-montserrat font-semibold text-[#0485ea]">Work Order #</TableHead>
+          <TableHead className="font-montserrat font-semibold text-[#0485ea]">Title</TableHead>
+          <TableHead className="font-montserrat font-semibold text-[#0485ea]">Created</TableHead>
+          <TableHead className="font-montserrat font-semibold text-[#0485ea]">Scheduled</TableHead>
+          <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
+          <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

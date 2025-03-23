@@ -1,5 +1,5 @@
 
-import { TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 const TimelogsTableHeader = () => {
   return (
