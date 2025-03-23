@@ -65,9 +65,7 @@ export const uploadDocument = async (
           message: uploadError.message,
           error: uploadError,
           name: uploadError.name,
-          code: uploadError.code,
-          details: uploadError.details,
-          hint: uploadError.hint,
+          // Remove properties that don't exist on StorageError type
           stack: uploadError.stack
         });
         throw uploadError;
@@ -114,10 +112,7 @@ export const uploadDocument = async (
       if (insertError) {
         console.error('Document metadata insert error:', {
           message: insertError.message,
-          error: insertError,
-          code: insertError.code,
-          details: insertError.details,
-          hint: insertError.hint
+          error: insertError
         });
         throw insertError;
       }
@@ -141,9 +136,6 @@ export const uploadDocument = async (
       errorMessage: error.message,
       errorObject: error,
       name: error.name,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
       stack: error.stack
     });
     

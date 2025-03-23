@@ -36,14 +36,21 @@ export function useReceiptManager() {
           throw error;
         }
         
+        console.log('Retrieved document data:', data);
+        
         if (data) {
-          // Generate public URL
-          const { data: urlData } = supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(data.storage_path);
+          // Generate signed URL for better security and access control
+          const { data: urlData, error: urlError } = await supabase.storage
+            .from('construction_documents') // Using the correct bucket name
+            .createSignedUrl(data.storage_path, 300); // 5 minutes expiration
+          
+          if (urlError) {
+            console.error('Error generating signed URL:', urlError);
+            throw urlError;
+          }
           
           setReceiptDocument({
-            url: urlData.publicUrl,
+            url: urlData.signedUrl,
             fileName: data.file_name,
             fileType: data.file_type
           });

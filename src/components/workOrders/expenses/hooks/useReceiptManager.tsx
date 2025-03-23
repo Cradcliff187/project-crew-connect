@@ -25,15 +25,24 @@ export function useReceiptManager() {
         throw error;
       }
       
-      // Get the URL for the document
+      console.log('Retrieved document data:', data);
+      
+      if (!data.storage_path) {
+        throw new Error('Document has no storage path');
+      }
+      
+      // Use the correct bucket name - construction_documents instead of documents
       const { data: urlData, error: urlError } = await supabase
         .storage
-        .from('documents')
+        .from('construction_documents') // Changed from 'documents' to 'construction_documents'
         .createSignedUrl(data.storage_path, 60); // 60 seconds expiration
       
       if (urlError) {
+        console.error('Error creating signed URL:', urlError);
         throw urlError;
       }
+      
+      console.log('Generated signed URL:', urlData);
       
       // Return the document with URL
       return { ...data, url: urlData.signedUrl } as Document;

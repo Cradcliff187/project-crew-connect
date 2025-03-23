@@ -44,6 +44,8 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
       // If we have receipt documents, fetch them
       let receiptDocuments: any[] = [];
       if (receiptDocumentIds.length > 0) {
+        console.log('Fetching receipt documents with IDs:', receiptDocumentIds);
+        
         const { data: receiptsData, error: receiptsError } = await supabase
           .from('documents')
           .select('document_id, file_name, category, created_at, file_type, storage_path')
@@ -62,16 +64,22 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
       
       // Combine all documents
       const allDocuments = [...(documentsData || []), ...receiptDocuments];
+      console.log('Combined documents before URL generation:', allDocuments);
       
-      // Get public URLs for documents
+      // Get signed URLs for documents for better security
       const enhancedDocuments = await Promise.all(
         allDocuments.map(async (doc) => {
           let url = '';
           if (doc.storage_path) {
-            const { data } = supabase.storage
-              .from('construction_documents')
-              .getPublicUrl(doc.storage_path);
-            url = data.publicUrl;
+            const { data, error } = await supabase.storage
+              .from('construction_documents') // Using the correct bucket name
+              .createSignedUrl(doc.storage_path, 300); // 5 minutes expiration
+              
+            if (error) {
+              console.error('Error generating signed URL for', doc.document_id, error);
+            } else {
+              url = data.signedUrl;
+            }
           }
           
           return {
@@ -81,7 +89,7 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
         })
       );
       
-      console.log('Fetched documents:', enhancedDocuments);
+      console.log('Fetched documents with URLs:', enhancedDocuments);
       setDocuments(enhancedDocuments);
     } catch (error) {
       console.error('Error processing documents:', error);

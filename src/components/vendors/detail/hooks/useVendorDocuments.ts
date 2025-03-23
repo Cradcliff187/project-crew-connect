@@ -44,15 +44,21 @@ export const useVendorDocuments = (vendorId: string) => {
         new Map(allDocs.map(doc => [doc.document_id, doc])).values()
       );
       
-      // Get public URLs for documents
+      // Get signed URLs for documents for better security
       const enhancedDocuments = await Promise.all(
         uniqueDocs.map(async (doc) => {
           let url = '';
           if (doc.storage_path) {
-            const { data } = supabase.storage
-              .from('construction_documents')
-              .getPublicUrl(doc.storage_path);
-            url = data.publicUrl;
+            // Using createSignedUrl instead of getPublicUrl for better security
+            const { data, error } = await supabase.storage
+              .from('construction_documents') // Using the correct bucket name
+              .createSignedUrl(doc.storage_path, 300); // 5 minutes expiration
+              
+            if (error) {
+              console.error('Error generating signed URL for', doc.document_id, error);
+            } else {
+              url = data.signedUrl;
+            }
           }
           
           return {
