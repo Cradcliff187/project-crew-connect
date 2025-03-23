@@ -13,7 +13,9 @@ interface TimelogsTableBodyProps {
 }
 
 const TimelogsTableBody = ({ timelogs, employeeNameFn, onDelete }: TimelogsTableBodyProps) => {
-  if (timelogs.length === 0) {
+  console.log('Rendering TimelogsTableBody with logs:', timelogs);
+  
+  if (!timelogs || timelogs.length === 0) {
     return <EmptyState />;
   }
   

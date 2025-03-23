@@ -18,6 +18,8 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
   const fetchTimelogs = async () => {
     setLoading(true);
     try {
+      console.log('Fetching time logs for work order ID:', workOrderId);
+      
       // Use descending order to show most recent first
       const { data, error } = await supabase
         .from('work_order_time_logs')
@@ -29,6 +31,7 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
         throw error;
       }
       
+      console.log('Time logs data:', data);
       setTimelogs(data || []);
     } catch (error: any) {
       console.error('Error fetching timelogs:', error);
@@ -65,8 +68,10 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
   };
   
   useEffect(() => {
-    fetchTimelogs();
-    fetchEmployees();
+    if (workOrderId) {
+      fetchTimelogs();
+      fetchEmployees();
+    }
   }, [workOrderId]);
   
   const handleDelete = async (id: string) => {

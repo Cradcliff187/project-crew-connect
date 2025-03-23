@@ -1,3 +1,4 @@
+
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;

@@ -24,6 +24,7 @@ interface WorkOrderDetailsProps {
 const WorkOrderDetails = ({ workOrder, onStatusChange }: WorkOrderDetailsProps) => {
   // Function to handle refreshing the work order data
   const handleRefresh = () => {
+    console.log('Refreshing work order data');
     onStatusChange();
   };
   

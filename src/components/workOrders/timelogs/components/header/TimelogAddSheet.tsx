@@ -59,7 +59,15 @@ const TimelogAddSheet = ({
     setSubmitting(true);
     
     try {
-      const { error } = await supabase
+      console.log('Submitting time log with data:', {
+        work_order_id: workOrderId,
+        employee_id: selectedEmployee,
+        hours_worked: parseFloat(hours),
+        notes,
+        work_date: new Date().toISOString(),
+      });
+      
+      const { data, error } = await supabase
         .from('work_order_time_logs')
         .insert({
           work_order_id: workOrderId,
@@ -67,11 +75,14 @@ const TimelogAddSheet = ({
           hours_worked: parseFloat(hours),
           notes,
           work_date: new Date().toISOString(),
-        });
+        })
+        .select();
       
       if (error) {
         throw error;
       }
+      
+      console.log('Time log created successfully:', data);
       
       toast({
         title: 'Time Logged',
