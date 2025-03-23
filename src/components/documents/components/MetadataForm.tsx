@@ -77,7 +77,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   // Show full metadata form for other document uploads
   return (
     <div className="space-y-4">
-      {/* Using proper field name structure that matches the form schema */}
+      {/* Document Title Field */}
       <FormField
         control={control}
         name="metadata.category"
@@ -88,7 +88,24 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
               <Input 
                 placeholder="Enter document title..." 
                 value={documentName || ''} 
-                onChange={(e) => form.setValue('metadata.title', e.target.value, { shouldValidate: true })}
+                onChange={(e) => {
+                  // Instead of trying to set a non-existent field, store title in tags or notes
+                  const title = e.target.value;
+                  // Update tags array with the title as first tag
+                  form.setValue('metadata.tags', [title, ...form.watch('metadata.tags').filter((_, i) => i > 0)], { shouldValidate: true });
+                  // Also update notes to include the title
+                  const currentNotes = form.watch('metadata.notes') || '';
+                  if (!currentNotes.includes('Title:')) {
+                    form.setValue('metadata.notes', `Title: ${title}\n${currentNotes}`, { shouldValidate: true });
+                  } else {
+                    // Replace existing title in notes
+                    form.setValue(
+                      'metadata.notes', 
+                      currentNotes.replace(/Title:.*(\n|$)/, `Title: ${title}\n`),
+                      { shouldValidate: true }
+                    );
+                  }
+                }}
               />
             </FormControl>
             <FormMessage />
