@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Control, useWatch, useController } from 'react-hook-form';
+import { Control, useWatch, UseFormReturn } from 'react-hook-form';
 import { PlusCircle } from 'lucide-react';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
 import { useVendorOptions } from './hooks/useVendorOptions';
@@ -11,24 +11,32 @@ import AddNewVendorSheet from './components/AddNewVendorSheet';
 
 interface VendorSelectorProps {
   form: UseFormReturn<DocumentUploadFormValues>;
-  control: Control<DocumentUploadFormValues>;
-  initialVendorId?: string;
-  vendorType: string;
-  isExpense: boolean;
+  prefillVendorId?: string;
 }
 
 const VendorSelector: React.FC<VendorSelectorProps> = ({ 
   form, 
-  control,
-  initialVendorId, 
-  vendorType,
-  isExpense 
+  prefillVendorId
 }) => {
   const [showAddNew, setShowAddNew] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('vendor');
   
   // Use our custom hook to fetch vendor and subcontractor options
   const { vendorOptions, subcontractorOptions, isLoading, refreshVendors } = useVendorOptions();
+  
+  // Get the current vendor type from the form
+  const vendorType = useWatch({
+    control: form.control,
+    name: 'metadata.vendorType',
+    defaultValue: 'vendor'
+  });
+  
+  // Get the current expense status from the form
+  const isExpense = useWatch({
+    control: form.control,
+    name: 'metadata.isExpense',
+    defaultValue: false
+  });
 
   const handleVendorAdded = () => {
     setShowAddNew(false);
@@ -43,27 +51,27 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
 
   // If there's a default vendor ID, set it using controller
   useEffect(() => {
-    if (initialVendorId) {
-      form.setValue('metadata.vendorId', initialVendorId);
+    if (prefillVendorId) {
+      form.setValue('metadata.vendorId', prefillVendorId);
     }
-  }, [initialVendorId, form]);
+  }, [prefillVendorId, form]);
 
   return (
     <div className="space-y-4">
-      <VendorTypeSelector control={control} />
+      <VendorTypeSelector control={form.control} />
       
       {vendorType !== 'other' && (
         <>
           {vendorType === 'vendor' ? (
             <VendorSelect 
-              control={control}
+              control={form.control}
               vendors={vendorOptions}
               isLoading={isLoading}
               onAddNewClick={handleAddNewClick}
             />
           ) : (
             <SubcontractorSelect
-              control={control}
+              control={form.control}
               subcontractors={subcontractorOptions}
               isLoading={isLoading}
               onAddNewClick={handleAddNewClick}
@@ -83,7 +91,5 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
     </div>
   );
 };
-
-import { UseFormReturn } from 'react-hook-form';
 
 export default VendorSelector;
