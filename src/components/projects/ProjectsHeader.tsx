@@ -65,8 +65,8 @@ const ProjectsHeader = ({
       
       {showAddDialog && (
         <ProjectDialog
-          isOpen={showAddDialog}
-          onClose={closeAddDialog}
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
           onProjectSaved={onProjectAdded}
         />
       )}

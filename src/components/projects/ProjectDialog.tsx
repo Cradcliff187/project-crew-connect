@@ -16,7 +16,7 @@ import { useProjectSubmit } from './hooks/useProjectSubmit';
 interface ProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProjectAdded: () => void;
+  onProjectSaved: () => void;
   estimateData?: {
     id: string;
     name: string;
@@ -35,12 +35,12 @@ interface ProjectDialogProps {
 const ProjectDialog = ({
   open,
   onOpenChange,
-  onProjectAdded,
+  onProjectSaved,
   estimateData
 }: ProjectDialogProps) => {
   const handleSuccess = () => {
     onOpenChange(false); // Close dialog
-    onProjectAdded(); // Refresh projects list
+    onProjectSaved(); // Refresh projects list
   };
   
   const { isSubmitting, handleSubmit } = useProjectSubmit(handleSuccess);
