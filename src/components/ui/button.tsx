@@ -10,7 +10,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-construction-600 text-white hover:bg-construction-700 shadow-sm",
+        default: "bg-[#0485ea] text-white hover:bg-[#0375d1] shadow-sm",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
@@ -18,7 +18,7 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-secondary hover:text-secondary-foreground",
-        link: "text-construction-600 underline-offset-4 hover:underline",
+        link: "text-[#0485ea] underline-offset-4 hover:underline",
         earth: "bg-earth-500 text-white hover:bg-earth-600 shadow-sm",
         sage: "bg-sage-400 text-white hover:bg-sage-500 shadow-sm",
       },
