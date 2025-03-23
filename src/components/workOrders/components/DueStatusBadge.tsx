@@ -11,7 +11,7 @@ interface DueStatusBadgeProps {
 const DueStatusBadge: React.FC<DueStatusBadgeProps> = ({ daysUntilDue, className }) => {
   if (daysUntilDue === null) {
     return (
-      <div className={cn("flex items-center text-muted-foreground", className)}>
+      <div className={cn("flex items-center text-muted-foreground font-opensans", className)}>
         <Calendar className="h-3.5 w-3.5 mr-1.5" />
         <span>No due date</span>
       </div>
@@ -20,15 +20,15 @@ const DueStatusBadge: React.FC<DueStatusBadgeProps> = ({ daysUntilDue, className
   
   const getBadgeStyle = () => {
     if (daysUntilDue < 0) {
-      return "bg-red-100 text-red-800"; // Overdue
+      return "bg-red-100 text-red-800 border border-red-200"; // Overdue
     } else if (daysUntilDue === 0) {
-      return "bg-orange-100 text-orange-800"; // Due today
+      return "bg-orange-100 text-orange-800 border border-orange-200"; // Due today
     } else if (daysUntilDue <= 2) {
-      return "bg-amber-100 text-amber-800"; // Due soon (within 2 days)
+      return "bg-amber-100 text-amber-800 border border-amber-200"; // Due soon (within 2 days)
     } else if (daysUntilDue <= 7) {
-      return "bg-yellow-100 text-yellow-800"; // Due this week
+      return "bg-construction-100 text-construction-800 border border-construction-200"; // Due this week - using brand blue
     } else {
-      return "bg-green-100 text-green-800"; // Due later
+      return "bg-green-100 text-green-800 border border-green-200"; // Due later
     }
   };
   
@@ -55,7 +55,11 @@ const DueStatusBadge: React.FC<DueStatusBadgeProps> = ({ daysUntilDue, className
   };
   
   return (
-    <div className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", getBadgeStyle(), className)}>
+    <div className={cn(
+      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium font-opensans", 
+      getBadgeStyle(), 
+      className
+    )}>
       {getIcon()}
       <span>{getLabel()}</span>
     </div>

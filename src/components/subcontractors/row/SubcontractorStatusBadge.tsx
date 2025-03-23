@@ -2,13 +2,29 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { StatusType } from '@/types/common';
+import { CheckCircle2, AlertCircle, CircleDashed, Clock } from 'lucide-react';
 
 interface SubcontractorStatusBadgeProps {
   status: string | null;
 }
 
 const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => {
-  if (!status) return <Badge variant="outline">Unknown</Badge>;
+  if (!status) return <Badge variant="outline" className="font-opensans flex items-center">
+    <CircleDashed className="mr-1.5 h-3.5 w-3.5" />Unknown
+  </Badge>;
+  
+  const getStatusIcon = (statusType: StatusType) => {
+    switch (statusType) {
+      case 'success':
+        return <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />;
+      case 'warning':
+        return <Clock className="mr-1.5 h-3.5 w-3.5" />;
+      case 'error':
+        return <AlertCircle className="mr-1.5 h-3.5 w-3.5" />;
+      default:
+        return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
+    }
+  };
   
   const mapStatusToType = (status: string): StatusType => {
     const statusUpperCase = status.toUpperCase();
@@ -41,7 +57,7 @@ const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => 
       className = 'bg-green-50 text-green-700 border-green-200';
       break;
     case 'info':
-      className = 'bg-blue-50 text-blue-700 border-blue-200';
+      className = 'bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20';
       break;
     case 'warning':
       className = 'bg-yellow-50 text-yellow-700 border-yellow-200';
@@ -57,7 +73,12 @@ const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => 
       break;
   }
   
-  return <Badge variant="outline" className={className}>{status}</Badge>;
+  return (
+    <Badge variant="outline" className={`font-opensans flex items-center ${className}`}>
+      {getStatusIcon(statusType)}
+      {status}
+    </Badge>
+  );
 };
 
 export default SubcontractorStatusBadge;

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { WorkOrder } from '@/types/workOrder';
+import { CheckCircle2, Clock, CircleDashed, AlertCircle } from 'lucide-react';
 
 interface WorkOrderStatusProps {
   workOrder: WorkOrder;
@@ -12,6 +13,21 @@ const WorkOrderStatus: React.FC<WorkOrderStatusProps> = ({
   workOrder, 
   onStatusChange 
 }) => {
+  const getStatusIcon = () => {
+    const status = workOrder.status.toLowerCase();
+    
+    switch (status) {
+      case 'completed':
+        return <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />;
+      case 'on_hold':
+        return <Clock className="mr-1.5 h-3.5 w-3.5" />;
+      case 'cancelled':
+        return <AlertCircle className="mr-1.5 h-3.5 w-3.5" />;
+      default:
+        return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
+    }
+  };
+  
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -28,8 +44,9 @@ const WorkOrderStatus: React.FC<WorkOrderStatusProps> = ({
   };
 
   return (
-    <Badge className={`text-xs px-2 py-1 ${getStatusColor(workOrder.status)}`}>
-      {workOrder.status.replace('_', ' ')}
+    <Badge className={`text-xs px-2 py-1 flex items-center font-opensans ${getStatusColor(workOrder.status)}`}>
+      {getStatusIcon()}
+      <span className="capitalize">{workOrder.status.replace('_', ' ')}</span>
     </Badge>
   );
 };
