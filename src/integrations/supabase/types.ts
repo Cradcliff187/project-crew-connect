@@ -653,6 +653,78 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          budget_item_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          document_id: string | null
+          entity_id: string
+          entity_type: string
+          expense_date: string
+          expense_type: string
+          id: string
+          is_billable: boolean | null
+          is_receipt: boolean | null
+          notes: string | null
+          parent_expense_id: string | null
+          quantity: number
+          status: string | null
+          time_entry_id: string | null
+          unit_price: number
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          amount: number
+          budget_item_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          document_id?: string | null
+          entity_id: string
+          entity_type: string
+          expense_date?: string
+          expense_type: string
+          id?: string
+          is_billable?: boolean | null
+          is_receipt?: boolean | null
+          notes?: string | null
+          parent_expense_id?: string | null
+          quantity?: number
+          status?: string | null
+          time_entry_id?: string | null
+          unit_price: number
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          amount?: number
+          budget_item_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          document_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          expense_date?: string
+          expense_type?: string
+          id?: string
+          is_billable?: boolean | null
+          is_receipt?: boolean | null
+          notes?: string | null
+          parent_expense_id?: string | null
+          quantity?: number
+          status?: string | null
+          time_entry_id?: string | null
+          unit_price?: number
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
       maintenance_work_orders: {
         Row: {
           actual_hours: number | null
@@ -1814,6 +1886,36 @@ export type Database = {
           updated_at: string | null
           vendor_id: string | null
           work_order_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expense_name?: string | null
+          expense_type?: string | null
+          id?: string | null
+          quantity?: number | null
+          receipt_document_id?: string | null
+          source_type?: never
+          time_entry_id?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+          vendor_id?: string | null
+          work_order_id?: never
+        }
+        Update: {
+          created_at?: string | null
+          expense_name?: string | null
+          expense_type?: string | null
+          id?: string | null
+          quantity?: number | null
+          receipt_document_id?: string | null
+          source_type?: never
+          time_entry_id?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string | null
+          vendor_id?: string | null
+          work_order_id?: never
         }
         Relationships: []
       }

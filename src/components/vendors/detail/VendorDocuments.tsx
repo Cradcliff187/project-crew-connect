@@ -9,7 +9,7 @@ import { EntityType } from '@/components/documents/schemas/documentSchema';
 import { useVendorDocuments } from './hooks/useVendorDocuments';
 import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
 import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
-import { VendorDocument } from './types';
+import { VendorDocument } from '@/components/workOrders/details/DocumentsList/types';
 import { WorkOrderDocument } from '@/components/workOrders/details/DocumentsList/types';
 
 interface VendorDocumentsProps {
