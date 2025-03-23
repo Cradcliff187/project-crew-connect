@@ -2,10 +2,28 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrder } from '@/types/workOrder';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Loader2 } from 'lucide-react';
+
+const workOrderFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  priority: z.string().default("MEDIUM"),
+  status: z.string().default("NEW"),
+  po_number: z.string().optional(),
+  work_order_number: z.string().optional(),
+});
+
+type WorkOrderFormValues = z.infer<typeof workOrderFormSchema>;
 
 interface WorkOrderDialogProps {
   isOpen: boolean;
@@ -19,30 +37,51 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
   const { toast } = useToast();
   const isEditing = !!workOrder;
   
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: workOrder || {
+  const form = useForm<WorkOrderFormValues>({
+    resolver: zodResolver(workOrderFormSchema),
+    defaultValues: isEditing ? {
+      title: workOrder.title || '',
+      description: workOrder.description || '',
+      priority: workOrder.priority || 'MEDIUM',
+      status: workOrder.status || 'NEW',
+      po_number: workOrder.po_number || '',
+      work_order_number: workOrder.work_order_number || '',
+    } : {
       title: '',
       description: '',
       priority: 'MEDIUM',
-      status: 'new',
-      progress: 0
-    }
+      status: 'NEW',
+      po_number: '',
+      work_order_number: '',
+    },
   });
 
   // Reset form when dialog opens/closes or when workOrder changes
   useEffect(() => {
     if (isOpen) {
-      reset(workOrder || {
-        title: '',
-        description: '',
-        priority: 'MEDIUM',
-        status: 'new',
-        progress: 0
-      });
+      if (isEditing) {
+        form.reset({
+          title: workOrder.title || '',
+          description: workOrder.description || '',
+          priority: workOrder.priority || 'MEDIUM', 
+          status: workOrder.status || 'NEW',
+          po_number: workOrder.po_number || '',
+          work_order_number: workOrder.work_order_number || '',
+        });
+      } else {
+        form.reset({
+          title: '',
+          description: '',
+          priority: 'MEDIUM',
+          status: 'NEW',
+          po_number: '',
+          work_order_number: '',
+        });
+      }
     }
-  }, [isOpen, workOrder, reset]);
+  }, [isOpen, workOrder, form, isEditing]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: WorkOrderFormValues) => {
     try {
       setLoading(true);
       
@@ -55,6 +94,8 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
             description: data.description,
             priority: data.priority,
             status: data.status,
+            po_number: data.po_number,
+            work_order_number: data.work_order_number,
             updated_at: new Date().toISOString()
           })
           .eq('work_order_id', workOrder.work_order_id);
@@ -74,8 +115,9 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
             title: data.title,
             description: data.description,
             priority: data.priority,
-            status: 'new',
-            progress: 0
+            status: data.status,
+            po_number: data.po_number,
+            work_order_number: data.work_order_number,
           });
           
         if (error) throw error;
@@ -107,56 +149,153 @@ const WorkOrderDialog = ({ isOpen, onClose, workOrder, onWorkOrderSaved }: WorkO
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Work Order' : 'Create New Work Order'}</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-[#0485ea]">
+            {isEditing ? 'Edit Work Order' : 'Create New Work Order'}
+          </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="title" className="text-sm font-medium">Title</label>
-              <input
-                id="title"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register("title", { required: "Title is required" })}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Enter work order title" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="work_order_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Work Order #</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="WO number (optional)" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {errors.title && (
-                <span className="text-sm text-destructive">{errors.title.message?.toString()}</span>
+              
+              <FormField
+                control={form.control}
+                name="po_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PO Number</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="PO number (optional)" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      {...field} 
+                      placeholder="Describe the work order"
+                      className="min-h-[120px]" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="LOW">Low</SelectItem>
+                        <SelectItem value="MEDIUM">Medium</SelectItem>
+                        <SelectItem value="HIGH">High</SelectItem>
+                        <SelectItem value="URGENT">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {isEditing && (
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="NEW">New</SelectItem>
+                          <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                          <SelectItem value="ON_HOLD">On Hold</SelectItem>
+                          <SelectItem value="COMPLETED">Completed</SelectItem>
+                          <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
             </div>
             
-            <div className="grid gap-2">
-              <label htmlFor="description" className="text-sm font-medium">Description</label>
-              <textarea
-                id="description"
-                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register("description")}
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <label htmlFor="priority" className="text-sm font-medium">Priority</label>
-              <select
-                id="priority"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                {...register("priority")}
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : (isEditing ? 'Update' : 'Create')}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="bg-[#0485ea] hover:bg-[#0373d1]">
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditing ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  isEditing ? 'Update Work Order' : 'Create Work Order'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

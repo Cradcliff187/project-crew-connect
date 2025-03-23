@@ -81,6 +81,7 @@ const WorkOrdersTable = ({ workOrders, loading, error, searchQuery, onStatusChan
                   <WorkOrderRow 
                     key={workOrder.work_order_id}
                     workOrder={workOrder}
+                    onStatusChange={onStatusChange}
                   />
                 ))
               )}
