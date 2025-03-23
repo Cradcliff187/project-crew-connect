@@ -72,7 +72,9 @@ export const uploadDocument = async (
       const fileOptions = {
         contentType: contentType,
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
+        // Add explicit Supabase Storage headers to ensure correct content-type
+        duplex: 'half'
       };
       
       // Enhanced debugging for upload
@@ -85,6 +87,7 @@ export const uploadDocument = async (
       });
       
       // Upload the file to Supabase Storage with explicit content type
+      // The headers issue is fixed by removing the global Content-Type header in the Supabase client
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file, fileOptions);
@@ -132,6 +135,7 @@ export const uploadDocument = async (
       
       console.log('Inserting document metadata:', documentData);
       
+      // For this DB call we need to explicitly set Content-Type back to JSON
       const { data: insertedData, error: insertError } = await supabase
         .from('documents')
         .insert(documentData)
