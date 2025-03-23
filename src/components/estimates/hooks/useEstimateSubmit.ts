@@ -39,6 +39,40 @@ export const useEstimateSubmit = () => {
     }
   };
 
+  const createEstimateDocument = async (estimateId: string, estimateData: EstimateFormValues, customerName: string) => {
+    try {
+      const documentId = uuidv4();
+      
+      // Format the document name
+      const documentName = `Estimate-${estimateId}-${new Date().toLocaleDateString().replace(/\//g, '-')}`;
+      
+      // Create the document content (simplified for this example)
+      const documentContent = JSON.stringify(estimateData);
+      
+      // Insert the document record
+      await supabase
+        .from('documents')
+        .insert({
+          document_id: documentId,
+          document_name: documentName,
+          document_type: 'estimate',
+          reference_id: estimateId,
+          reference_type: 'estimate',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          document_content: documentContent,
+          document_status: 'active',
+          customer_name: customerName
+        });
+      
+      return documentId;
+    } catch (error) {
+      console.error('Error creating estimate document:', error);
+      // We'll continue even if document creation fails
+      return null;
+    }
+  };
+
   const submitEstimate = async (
     formData: EstimateFormValues, 
     customers: { id: string; name: string }[],
@@ -97,6 +131,9 @@ export const useEstimateSubmit = () => {
         });
 
       if (error) throw error;
+      
+      // Create a document record for the estimate
+      await createEstimateDocument(estimateId, formData, customerName);
       
       toast({ 
         title: "Estimate created successfully",
