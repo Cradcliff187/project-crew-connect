@@ -1,11 +1,9 @@
 
-import { BaseDocument } from '@/components/workOrders/details/DocumentsList/types';
+// Update this file to use the VendorDocument from the main types
+import { VendorDocument as WorkOrderVendorDocument } from '@/components/workOrders/details/DocumentsList/types';
 
-export interface VendorDocument extends BaseDocument {
-  entity_id?: string;
-  entity_type?: string;
-  updated_at?: string;
-}
+// Re-export the type to maintain backwards compatibility
+export type VendorDocument = WorkOrderVendorDocument;
 
 export interface VendorProject {
   project_id: string;

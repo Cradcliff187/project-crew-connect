@@ -9,8 +9,7 @@ import { EntityType } from '@/components/documents/schemas/documentSchema';
 import { useVendorDocuments } from './hooks/useVendorDocuments';
 import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
 import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
-import { VendorDocument } from '@/components/workOrders/details/DocumentsList/types';
-import { WorkOrderDocument } from '@/components/workOrders/details/DocumentsList/types';
+import { VendorDocument } from './types';
 
 interface VendorDocumentsProps {
   vendorId: string;
@@ -31,14 +30,14 @@ const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
   };
   
   // Convert vendor document to work order document format for compatibility
-  const convertToWorkOrderDocument = (doc: VendorDocument): WorkOrderDocument => {
+  const convertToWorkOrderDocument = (doc: VendorDocument) => {
     return {
       ...doc,
-      entity_id: doc.entity_id || vendorId,
-      entity_type: doc.entity_type || 'VENDOR',
-      updated_at: doc.updated_at || doc.created_at,
+      entity_id: doc.entity_id, // This is now required by the type definition
+      entity_type: doc.entity_type, // This is now required by the type definition
+      updated_at: doc.updated_at, // This is now required by the type definition
       url: doc.url || '',
-      storage_path: doc.storage_path || '',
+      storage_path: doc.storage_path,
       file_type: doc.file_type || ''
     };
   };
@@ -71,7 +70,7 @@ const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
             {documents.map(doc => (
               <DocumentCard 
                 key={doc.document_id} 
-                document={convertToWorkOrderDocument(doc)} 
+                document={convertToWorkOrderDocument(doc)}
                 onViewDocument={() => handleViewDocument(doc)} 
               />
             ))}

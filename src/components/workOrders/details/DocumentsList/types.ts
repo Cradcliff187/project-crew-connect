@@ -23,17 +23,19 @@ export interface BaseDocument {
   storage_path: string; // Making this required to match WorkOrderDocument
   category?: string | null;
   created_at: string;
+  updated_at: string; // Make this required to fix the error
   url?: string;
   is_receipt?: boolean;
   vendor_id?: string; // Added to support vendor document relations
   expense_type?: string; // Added to track expense types
-  entity_id?: string; // Optional in base but required in specific implementations
-  entity_type?: string; // Optional in base but required in specific implementations
+  entity_id: string; // Make this required for consistency
+  entity_type: string; // Make this required for consistency
 }
 
 // Vendor-specific document interface
 export interface VendorDocument extends BaseDocument {
-  entity_id: string; // The vendor ID
-  entity_type: 'VENDOR';
+  // No need to redefine these as they're now required in BaseDocument
+  // entity_id is already required in BaseDocument
+  // entity_type is already required in BaseDocument
   vendor_type?: string;
 }
