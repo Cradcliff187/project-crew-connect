@@ -52,7 +52,7 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
         .from('expenses')
         .select(`
           *,
-          budget_item:budget_item_id(category)
+          budget_item:budget_item_id(*)
         `)
         .eq('entity_type', 'PROJECT')
         .eq('entity_id', projectId)

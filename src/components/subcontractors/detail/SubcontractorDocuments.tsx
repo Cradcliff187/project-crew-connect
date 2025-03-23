@@ -31,16 +31,9 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
   };
   
   // Convert subcontractor document to work order document format for compatibility
+  // All properties required by WorkOrderDocument are already present in SubcontractorDocument
   const convertToWorkOrderDocument = (doc: SubcontractorDocument): WorkOrderDocument => {
-    return {
-      ...doc,
-      entity_id: doc.entity_id || subcontractorId,
-      entity_type: doc.entity_type || 'SUBCONTRACTOR',
-      updated_at: doc.updated_at || doc.created_at,
-      url: doc.url || '',
-      storage_path: doc.storage_path || '',
-      file_type: doc.file_type || ''
-    };
+    return doc as unknown as WorkOrderDocument;
   };
   
   return (
