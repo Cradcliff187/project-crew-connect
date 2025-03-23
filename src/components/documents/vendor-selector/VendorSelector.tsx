@@ -10,20 +10,23 @@ import SubcontractorSelect from './components/SubcontractorSelect';
 import AddNewVendorSheet from './components/AddNewVendorSheet';
 
 interface VendorSelectorProps {
+  form: UseFormReturn<DocumentUploadFormValues>;
   control: Control<DocumentUploadFormValues>;
-  defaultVendorId?: string;
+  initialVendorId?: string;
+  vendorType: string;
+  isExpense: boolean;
 }
 
-const VendorSelector: React.FC<VendorSelectorProps> = ({ control, defaultVendorId }) => {
+const VendorSelector: React.FC<VendorSelectorProps> = ({ 
+  form, 
+  control,
+  initialVendorId, 
+  vendorType,
+  isExpense 
+}) => {
   const [showAddNew, setShowAddNew] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('vendor');
   
-  const vendorType = useWatch({
-    control,
-    name: 'metadata.vendorType',
-    defaultValue: 'vendor'
-  });
-
   // Use our custom hook to fetch vendor and subcontractor options
   const { vendorOptions, subcontractorOptions, isLoading, refreshVendors } = useVendorOptions();
 
@@ -40,14 +43,10 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, defaultVendorI
 
   // If there's a default vendor ID, set it using controller
   useEffect(() => {
-    if (defaultVendorId) {
-      const { field } = useController({
-        control,
-        name: 'metadata.vendorId',
-      });
-      field.onChange(defaultVendorId);
+    if (initialVendorId) {
+      form.setValue('metadata.vendorId', initialVendorId);
     }
-  }, [defaultVendorId, control]);
+  }, [initialVendorId, form]);
 
   return (
     <div className="space-y-4">
@@ -84,5 +83,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ control, defaultVendorI
     </div>
   );
 };
+
+import { UseFormReturn } from 'react-hook-form';
 
 export default VendorSelector;

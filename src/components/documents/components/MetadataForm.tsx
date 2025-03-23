@@ -4,9 +4,9 @@ import { Control, UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { DocumentCategorySelector } from '../DocumentCategorySelector';
-import { ExpenseTypeSelector } from './ExpenseTypeSelector';
-import { VendorSelector } from '../vendor-selector/VendorSelector';
+import DocumentCategorySelector from '../DocumentCategorySelector';
+import ExpenseTypeSelector from './ExpenseTypeSelector';
+import VendorSelector from '../vendor-selector/VendorSelector';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface MetadataFormProps {
@@ -63,6 +63,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
           <div className="pt-2">
             <VendorSelector
               form={form}
+              control={control}
               initialVendorId={prefillData?.vendorId}
               vendorType={watchVendorType}
               isExpense={true}
@@ -86,6 +87,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
               <Input 
                 placeholder="Enter document title..." 
                 {...field}
+                value={field.value || ''}
               />
             </FormControl>
             <FormMessage />
@@ -93,11 +95,26 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
         )}
       />
       
-      <DocumentCategorySelector control={control} />
+      <DocumentCategorySelector value={form.watch('metadata.category')} onChange={(value) => form.setValue('metadata.category', value)} />
       
       {watchIsExpense && (
         <>
-          <ExpenseTypeSelector control={control} />
+          <FormField
+            control={control}
+            name="metadata.expenseType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Expense Type</FormLabel>
+                <FormControl>
+                  <ExpenseTypeSelector 
+                    value={field.value || 'materials'} 
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
           <FormField
             control={control}
@@ -109,7 +126,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
                   <Input 
                     type="number" 
                     placeholder="0.00" 
-                    {...field}
+                    value={field.value?.toString() || ''}
                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                   />
                 </FormControl>
@@ -123,6 +140,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
       {showVendorSelector && (
         <VendorSelector
           form={form}
+          control={control}
           initialVendorId={prefillData?.vendorId}
           vendorType={watchVendorType}
           isExpense={watchIsExpense}
