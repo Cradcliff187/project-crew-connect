@@ -33,7 +33,14 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
       }
       
       console.log('Time logs data:', data);
-      setTimelogs(data || []);
+      
+      // Ensure entity_type is properly typed for TimeEntry[]
+      const typedTimelogs = (data || []).map(entry => ({
+        ...entry,
+        entity_type: entry.entity_type as 'work_order' | 'project'
+      }));
+      
+      setTimelogs(typedTimelogs);
     } catch (error: any) {
       console.error('Error fetching timelogs:', error);
       toast({

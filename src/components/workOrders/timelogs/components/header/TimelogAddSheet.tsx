@@ -59,25 +59,40 @@ const TimelogAddSheet = ({
     setSubmitting(true);
     
     try {
+      // Get the current time to use as both start and end times
+      const now = new Date();
+      const currentTime = now.toTimeString().substring(0, 5); // HH:MM format
+      
+      const hoursValue = parseFloat(hours);
+      // Calculate a reasonable end time based on hours worked
+      const startTime = "09:00"; // Default start time (9 AM)
+      const endHours = Math.floor(9 + hoursValue);
+      const endMinutes = Math.floor((hoursValue % 1) * 60);
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+      
       console.log('Submitting time log with data:', {
-        entity_type: 'work_order',
+        entity_type: 'work_order' as 'work_order' | 'project',
         entity_id: workOrderId,
         employee_id: selectedEmployee,
-        hours_worked: parseFloat(hours),
+        hours_worked: hoursValue,
+        start_time: startTime,
+        end_time: endTime,
         notes,
-        date_worked: new Date().toISOString().split('T')[0], // Just the date part
+        date_worked: new Date().toISOString().split('T')[0],
       });
       
       // Insert directly into time_entries table
       const { data, error } = await supabase
         .from('time_entries')
         .insert({
-          entity_type: 'work_order',
+          entity_type: 'work_order' as 'work_order' | 'project',
           entity_id: workOrderId,
           employee_id: selectedEmployee,
-          hours_worked: parseFloat(hours),
+          hours_worked: hoursValue,
           notes,
           date_worked: new Date().toISOString().split('T')[0], // Just the date part
+          start_time: startTime,
+          end_time: endTime,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
