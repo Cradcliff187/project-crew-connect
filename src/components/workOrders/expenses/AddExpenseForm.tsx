@@ -6,6 +6,7 @@ import { ArrowRight, X, Loader2 } from 'lucide-react';
 import VendorDialog from '@/components/vendors/VendorDialog';
 import ExpenseFormFields from './components/ExpenseFormFields';
 import TotalPriceDisplay from './components/TotalPriceDisplay';
+import { toast } from '@/hooks/use-toast';
 
 interface AddExpenseFormProps {
   workOrderId: string; // The work order ID is required
@@ -42,6 +43,34 @@ const AddExpenseForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate the form
+    if (!expenseName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an expense name",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!selectedVendor) {
+      toast({
+        title: "Error",
+        description: "Please select a vendor",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!unitPrice || parseFloat(unitPrice) <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid unit price",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const qtyValue = parseFloat(quantity);
     const priceValue = parseFloat(unitPrice);

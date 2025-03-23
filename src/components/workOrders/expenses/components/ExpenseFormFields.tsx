@@ -3,7 +3,6 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { expenseTypes } from '@/components/documents/schemas/documentSchema';
 
@@ -55,7 +54,7 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
           onValueChange={setExpenseType}
         >
           <SelectTrigger id="expense-type">
-            <SelectValue placeholder="Select expense type" />
+            <SelectValue placeholder="Choose expense type" />
           </SelectTrigger>
           <SelectContent>
             {expenseTypes.map((type) => (
@@ -92,35 +91,34 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
       </div>
       
       <div>
-        <Label htmlFor="vendor">Vendor (Optional)</Label>
-        <div className="flex gap-2">
-          <Select
-            value={selectedVendor || ""}
-            onValueChange={(value) => setSelectedVendor(value === "no-vendor" ? null : value)}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Select vendor" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="no-vendor">None</SelectItem>
-              {vendors.map((vendor) => (
-                <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                  {vendor.vendorname}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onAddVendorClick}
-            title="Add New Vendor"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+        <Label htmlFor="vendor">Vendor</Label>
+        <Select
+          value={selectedVendor || ""}
+          onValueChange={(value) => {
+            if (value === "add-new-vendor") {
+              onAddVendorClick();
+            } else {
+              setSelectedVendor(value);
+            }
+          }}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a vendor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="add-new-vendor" className="font-medium text-[#0485ea]">
+              <div className="flex items-center">
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Vendor
+              </div>
+            </SelectItem>
+            {vendors.map((vendor) => (
+              <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
+                {vendor.vendorname}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

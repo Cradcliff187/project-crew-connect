@@ -44,9 +44,9 @@ const ReceiptConfirmationDialog = ({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Do you need to upload a receipt?</AlertDialogTitle>
+          <AlertDialogTitle>Would you like to attach a receipt?</AlertDialogTitle>
           <AlertDialogDescription>
-            Would you like to attach a receipt for this expense?
+            Your expense has been created. You can attach a receipt now or add it later from the expenses list.
           </AlertDialogDescription>
         </AlertDialogHeader>
         
@@ -78,7 +78,7 @@ const ReceiptConfirmationDialog = ({
         
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onConfirmWithoutReceipt}>
-            No Receipt
+            Skip for Now
           </AlertDialogCancel>
           <AlertDialogAction onClick={onConfirmWithReceipt} className="bg-[#0485ea] text-white">
             <Receipt className="h-4 w-4 mr-2" />
