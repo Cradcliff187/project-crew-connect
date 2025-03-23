@@ -86,6 +86,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
       console.log(`Updating work order ${workOrder.work_order_id} status to ${newStatus}`);
       
       // Update the work order status in the database
+      // No validation is performed - any status change is allowed
       const { error } = await supabase
         .from('maintenance_work_orders')
         .update({ 
@@ -98,10 +99,11 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         throw error;
       }
       
-      // Show success message
+      // Show success message with the new status label
+      const statusLabel = getStatusLabel(newStatus);
       toast({
         title: 'Status Updated',
-        description: `Work order status changed to ${getStatusLabel(newStatus).toLowerCase()}.`,
+        description: `Work order status changed to ${statusLabel.toLowerCase()}.`,
         className: 'bg-[#0485ea]',
       });
       
