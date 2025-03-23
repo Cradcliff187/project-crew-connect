@@ -10,6 +10,7 @@ import { useVendorDocuments } from './hooks/useVendorDocuments';
 import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
 import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
 import { VendorDocument } from './types';
+import { WorkOrderDocument } from '@/components/workOrders/details/DocumentsList/types';
 
 interface VendorDocumentsProps {
   vendorId: string;
@@ -27,6 +28,19 @@ const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
   
   const handleViewDocument = (doc: VendorDocument) => {
     setViewDocument(doc);
+  };
+  
+  // Convert vendor document to work order document format for compatibility
+  const convertToWorkOrderDocument = (doc: VendorDocument): WorkOrderDocument => {
+    return {
+      ...doc,
+      entity_id: doc.entity_id || vendorId,
+      entity_type: doc.entity_type || 'VENDOR',
+      updated_at: doc.updated_at || doc.created_at,
+      url: doc.url || '',
+      storage_path: doc.storage_path || '',
+      file_type: doc.file_type || ''
+    };
   };
   
   return (
@@ -57,13 +71,7 @@ const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
             {documents.map(doc => (
               <DocumentCard 
                 key={doc.document_id} 
-                document={{
-                  ...doc,
-                  entity_id: doc.entity_id || vendorId,
-                  entity_type: doc.entity_type || 'VENDOR',
-                  updated_at: doc.updated_at || doc.created_at,
-                  url: doc.url || ''
-                }} 
+                document={convertToWorkOrderDocument(doc)} 
                 onViewDocument={() => handleViewDocument(doc)} 
               />
             ))}
@@ -105,13 +113,7 @@ const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
           </DialogHeader>
           {viewDocument && (
             <DocumentViewer 
-              document={{
-                ...viewDocument,
-                entity_id: viewDocument.entity_id || vendorId,
-                entity_type: viewDocument.entity_type || 'VENDOR',
-                updated_at: viewDocument.updated_at || viewDocument.created_at,
-                url: viewDocument.url || ''
-              }}
+              document={convertToWorkOrderDocument(viewDocument)}
               open={!!viewDocument}
               onOpenChange={(open) => !open && setViewDocument(null)}
             />

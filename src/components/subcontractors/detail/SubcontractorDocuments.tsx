@@ -10,6 +10,7 @@ import { useSubcontractorDocuments } from './hooks/useSubcontractorDocuments';
 import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
 import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
 import { SubcontractorDocument } from './types';
+import { WorkOrderDocument } from '@/components/workOrders/details/DocumentsList/types';
 
 interface SubcontractorDocumentsProps {
   subcontractorId: string;
@@ -27,6 +28,19 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
   
   const handleViewDocument = (doc: SubcontractorDocument) => {
     setViewDocument(doc);
+  };
+  
+  // Convert subcontractor document to work order document format for compatibility
+  const convertToWorkOrderDocument = (doc: SubcontractorDocument): WorkOrderDocument => {
+    return {
+      ...doc,
+      entity_id: doc.entity_id || subcontractorId,
+      entity_type: doc.entity_type || 'SUBCONTRACTOR',
+      updated_at: doc.updated_at || doc.created_at,
+      url: doc.url || '',
+      storage_path: doc.storage_path || '',
+      file_type: doc.file_type || ''
+    };
   };
   
   return (
@@ -57,13 +71,7 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
             {documents.map(doc => (
               <DocumentCard 
                 key={doc.document_id} 
-                document={{
-                  ...doc,
-                  entity_id: doc.entity_id || subcontractorId,
-                  entity_type: doc.entity_type || 'SUBCONTRACTOR',
-                  updated_at: doc.updated_at || doc.created_at,
-                  url: doc.url || ''
-                }} 
+                document={convertToWorkOrderDocument(doc)} 
                 onViewDocument={() => handleViewDocument(doc)} 
               />
             ))}
@@ -105,13 +113,7 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
           </DialogHeader>
           {viewDocument && (
             <DocumentViewer 
-              document={{
-                ...viewDocument,
-                entity_id: viewDocument.entity_id || subcontractorId,
-                entity_type: viewDocument.entity_type || 'SUBCONTRACTOR',
-                updated_at: viewDocument.updated_at || viewDocument.created_at,
-                url: viewDocument.url || ''
-              }}
+              document={convertToWorkOrderDocument(viewDocument)}
               open={!!viewDocument}
               onOpenChange={(open) => !open && setViewDocument(null)}
             />

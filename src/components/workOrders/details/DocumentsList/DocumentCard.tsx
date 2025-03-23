@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, Download, FileText } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { WorkOrderDocument } from './types';
+import { WorkOrderDocument, BaseDocument } from './types';
 
 interface DocumentCardProps {
   document: WorkOrderDocument;

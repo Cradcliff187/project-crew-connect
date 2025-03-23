@@ -20,7 +20,7 @@ export interface BaseDocument {
   file_name: string;
   file_type: string | null;
   file_size?: number;
-  storage_path?: string;
+  storage_path: string; // Making this required to match WorkOrderDocument
   category?: string | null;
   created_at: string;
   url?: string;
