@@ -43,20 +43,46 @@ export const uploadDocument = async (
         throw new Error('Invalid file object provided');
       }
       
+      // Enhanced logging for Content-Type debugging
+      console.log('File MIME type from browser:', file.type);
+      
+      // CRITICAL FIX: Explicitly set contentType based on file extension if type is missing or generic
+      let contentType = file.type;
+      if (!contentType || contentType === 'application/octet-stream') {
+        // Map common extensions to MIME types
+        const mimeMap: Record<string, string> = {
+          'pdf': 'application/pdf',
+          'doc': 'application/msword',
+          'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'xls': 'application/vnd.ms-excel',
+          'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'png': 'image/png',
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'gif': 'image/gif',
+          'txt': 'text/plain'
+        };
+        
+        if (fileExt && mimeMap[fileExt.toLowerCase()]) {
+          contentType = mimeMap[fileExt.toLowerCase()];
+          console.log(`File type not provided, using extension-based type: ${contentType}`);
+        }
+      }
+      
       // Enhanced debugging for upload
       console.log('About to execute upload with params:', {
         bucket: 'construction_documents',
         path: filePath,
-        fileType: file.type,
+        fileType: contentType, // Using our possibly corrected contentType
         fileSize: file.size,
         upsert: true
       });
       
-      // Upload the file to Supabase Storage
+      // Upload the file to Supabase Storage with explicit content type
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file, {
-          contentType: file.type, // Set the correct content type
+          contentType: contentType, // FIXED: Use our determined content type
           upsert: true // Override existing files with same name if needed
         });
         
@@ -72,6 +98,17 @@ export const uploadDocument = async (
       
       console.log('File uploaded successfully:', uploadData);
       
+      // Verify the content type was properly set
+      const { data: objectData, error: objectError } = await supabase
+        .from('storage.objects')
+        .select('metadata')
+        .eq('name', filePath)
+        .single();
+        
+      if (!objectError && objectData) {
+        console.log('Uploaded object metadata:', objectData);
+      }
+      
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('construction_documents')
@@ -82,7 +119,7 @@ export const uploadDocument = async (
       // Now insert document metadata to Supabase
       const documentData = {
         file_name: file.name,
-        file_type: file.type,
+        file_type: contentType, // FIXED: Use our determined content type
         file_size: file.size,
         storage_path: filePath,
         entity_type: metadata.entityType,

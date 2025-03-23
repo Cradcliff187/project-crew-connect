@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, AlertTriangle, FileText, ExternalLink } from 'lucide-react';
+import { Download, AlertTriangle, FileText, ExternalLink, File, FileArchive } from 'lucide-react';
 import { WorkOrderDocument } from './types';
 import { useState, useEffect } from 'react';
 
@@ -13,15 +13,29 @@ interface DocumentViewerProps {
 
 const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) => {
   const [error, setError] = useState(false);
+  const [loadAttempted, setLoadAttempted] = useState(false);
   
   // Reset error state when document changes
   useEffect(() => {
     setError(false);
+    setLoadAttempted(false);
   }, [document]);
   
   const handleError = () => {
     console.log('Error loading document:', document?.url);
+    console.log('Document type:', document?.file_type);
     setError(true);
+  };
+  
+  const getFileIcon = () => {
+    if (!document?.file_type) return <FileText className="h-12 w-12 text-muted-foreground" />;
+    
+    const fileType = document.file_type.toLowerCase();
+    if (fileType.includes('pdf')) return <FileText className="h-12 w-12 text-red-500" />;
+    if (fileType.includes('word') || fileType.includes('doc')) return <FileText className="h-12 w-12 text-blue-500" />;
+    if (fileType.includes('excel') || fileType.includes('sheet')) return <FileText className="h-12 w-12 text-green-500" />;
+    if (fileType.includes('zip') || fileType.includes('rar')) return <FileArchive className="h-12 w-12 text-yellow-500" />;
+    return <File className="h-12 w-12 text-muted-foreground" />;
   };
   
   const determineDisplayType = () => {
@@ -35,6 +49,21 @@ const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) =
   
   // If the document is null, don't render anything
   if (!document) return null;
+  
+  // Force load attempt after component mount if no error has occurred
+  useEffect(() => {
+    if (open && !loadAttempted && !error) {
+      setLoadAttempted(true);
+    }
+  }, [open, loadAttempted, error]);
+  
+  // Log document info for debugging
+  console.log('Viewing document:', {
+    id: document.document_id,
+    name: document.file_name,
+    type: document.file_type,
+    url: document.url
+  });
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,8 +106,11 @@ const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) =
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-                <FileText className="h-12 w-12 text-muted-foreground mb-3" />
-                <p className="text-muted-foreground mb-3">Preview not available</p>
+                {getFileIcon()}
+                <p className="text-muted-foreground mt-3 mb-2">Preview not available for this file type</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {document.file_type || 'Unknown file type'}
+                </p>
                 <Button 
                   variant="outline"
                   onClick={() => window.open(document.url, '_blank')}

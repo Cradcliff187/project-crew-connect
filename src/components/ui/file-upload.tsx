@@ -26,7 +26,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     selectedFiles = [],
     allowCamera = true,
     allowMultiple = false,
-    acceptedFileTypes = "image/*,application/pdf",
+    acceptedFileTypes = "image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain",
     maxFileSize = 10, // 10MB default
     className,
     dropzoneText = "Drag files here or click to upload",
@@ -40,6 +40,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files.length > 0) {
         const fileArray = Array.from(e.target.files);
+        console.log('Files selected via input:', fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
         validateAndProcessFiles(fileArray);
       }
     };
@@ -50,6 +51,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
       setErrors(validation.errors);
       
       if (validation.validFiles.length > 0) {
+        console.log('Valid files being passed to onFilesSelected:', validation.validFiles.map(f => f.name));
         onFilesSelected(validation.validFiles);
       }
       
@@ -72,6 +74,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
       
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const fileArray = Array.from(e.dataTransfer.files);
+        console.log('Files dropped:', fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
         validateAndProcessFiles(fileArray);
       }
     };
