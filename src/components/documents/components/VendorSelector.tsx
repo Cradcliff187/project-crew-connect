@@ -1,9 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues, VendorType } from '../schemas/documentSchema';
-import { Input } from '@/components/ui/input';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { 
   Select, 
   SelectContent, 
@@ -11,81 +9,84 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { DocumentUploadFormValues, VendorType } from '../schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
-
-interface VendorOption {
-  id: string;
-  name: string;
-  type: VendorType;
-}
+import { Loader2, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
   vendorType: VendorType;
   prefillVendorId?: string;
+  onAddVendorClick?: () => void;
+}
+
+interface Vendor {
+  id: string;
+  name: string;
 }
 
 const VendorSelector: React.FC<VendorSelectorProps> = ({ 
   control, 
   vendorType, 
-  prefillVendorId 
+  prefillVendorId,
+  onAddVendorClick
 }) => {
-  const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(false);
-  const [noVendors, setNoVendors] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchVendors = async () => {
       setLoading(true);
-      setError(null);
       try {
-        let vendorData: VendorOption[] = [];
+        let data: Vendor[] = [];
         
         if (vendorType === 'vendor') {
-          const { data, error } = await supabase
+          const { data: vendorsData } = await supabase
             .from('vendors')
             .select('vendorid, vendorname')
             .order('vendorname', { ascending: true });
-            
-          if (error) throw error;
           
-          vendorData = (data || []).map(v => ({
+          data = (vendorsData || []).map(v => ({
             id: v.vendorid,
-            name: v.vendorname || v.vendorid,
-            type: 'vendor'
+            name: v.vendorname || v.vendorid
           }));
         } else if (vendorType === 'subcontractor') {
-          const { data, error } = await supabase
+          const { data: subcontractorsData } = await supabase
             .from('subcontractors')
             .select('subid, subname')
             .order('subname', { ascending: true });
-            
-          if (error) throw error;
           
-          vendorData = (data || []).map(s => ({
+          data = (subcontractorsData || []).map(s => ({
             id: s.subid,
-            name: s.subname || s.subid,
-            type: 'subcontractor'
+            name: s.subname || s.subid
           }));
         }
         
-        setVendors(vendorData);
-        setNoVendors(vendorData.length === 0);
-      } catch (err: any) {
-        console.error('Error fetching vendors:', err);
-        setError(err.message);
+        setVendors(data);
+      } catch (error) {
+        console.error(`Error fetching ${vendorType}s:`, error);
       } finally {
         setLoading(false);
       }
     };
     
-    if (vendorType) {
-      fetchVendors();
-    }
+    fetchVendors();
   }, [vendorType]);
   
-  const title = vendorType === 'vendor' ? 'Supplier' : 'Subcontractor';
+  useEffect(() => {
+    if (prefillVendorId) {
+      // Wait for vendors to be loaded before setting the value
+      if (vendors.length > 0 && vendors.some(v => v.id === prefillVendorId)) {
+        // If we find the vendor in our list, we'll set it
+        console.log(`Setting prefilled vendor ID: ${prefillVendorId}`);
+      }
+    }
+  }, [prefillVendorId, vendors]);
+  
+  const entityLabel = vendorType === 'vendor' ? 'Vendor' : 
+                     vendorType === 'subcontractor' ? 'Subcontractor' : 
+                     'Supplier';
   
   return (
     <FormField
@@ -93,55 +94,61 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
       name="metadata.vendorId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{title}</FormLabel>
-          {loading ? (
-            <FormControl>
-              <Input disabled value="Loading..." />
-            </FormControl>
-          ) : noVendors ? (
-            <>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder={`Enter ${title.toLowerCase()} name`}
-                />
-              </FormControl>
-              <FormDescription>
-                No {title.toLowerCase()}s found in the system. Enter a name manually.
-              </FormDescription>
-            </>
-          ) : error ? (
-            <>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder={`Enter ${title.toLowerCase()} name`}
-                />
-              </FormControl>
-              <FormDescription className="text-destructive">
-                Error loading {title.toLowerCase()}s: {error}
-              </FormDescription>
-            </>
-          ) : (
-            <FormControl>
-              <Select
-                value={field.value || ''}
-                defaultValue={prefillVendorId || field.value || ''}
-                onValueChange={field.onChange}
-                disabled={!!prefillVendorId}
+          <div className="flex justify-between items-center">
+            <FormLabel>{entityLabel}</FormLabel>
+            {onAddVendorClick && (
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 text-xs text-[#0485ea]"
+                onClick={onAddVendorClick}
               >
+                <Plus className="h-3 w-3 mr-1" />
+                Add New
+              </Button>
+            )}
+          </div>
+          {loading ? (
+            <div className="flex items-center space-x-2 h-10 px-3 border rounded-md">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Loading {entityLabel.toLowerCase()}s...</span>
+            </div>
+          ) : vendors.length > 0 ? (
+            <Select
+              value={field.value}
+              onValueChange={field.onChange}
+              defaultValue={prefillVendorId}
+            >
+              <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder={`Select ${title.toLowerCase()}`} />
+                  <SelectValue placeholder={`Select ${entityLabel.toLowerCase()}`} />
                 </SelectTrigger>
-                <SelectContent>
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormControl>
+              </FormControl>
+              <SelectContent>
+                {vendors.map((vendor) => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="flex items-center justify-between h-10 px-4 border rounded-md bg-muted/20">
+              <span className="text-sm text-muted-foreground">No {entityLabel.toLowerCase()}s found</span>
+              {onAddVendorClick && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-xs text-[#0485ea]"
+                  onClick={onAddVendorClick}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+              )}
+            </div>
           )}
           <FormMessage />
         </FormItem>
