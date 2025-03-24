@@ -154,7 +154,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
             name="metadata.entityId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{`${entityType ? entityType.replace(/_/g, ' ') : 'Entity'} ID`}</FormLabel>
+                <FormLabel>
+                  {entityType ? `${entityType.replace(/_/g, ' ')} ID` : 'Entity ID'}
+                </FormLabel>
                 {entities.length > 0 ? (
                   <Select
                     value={field.value}
@@ -163,7 +165,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={`Select a ${entityType ? entityType.toLowerCase() : 'entity'}`} />
+                        <SelectValue placeholder={`Select a ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'}`} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -178,7 +180,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder={loading ? "Loading..." : `Enter ${entityType ? entityType.toLowerCase() : 'entity'} ID`}
+                      placeholder={loading ? "Loading..." : `Enter ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'} ID`}
                       disabled={loading || (isReceiptUpload && !!field.value)}
                     />
                   </FormControl>
