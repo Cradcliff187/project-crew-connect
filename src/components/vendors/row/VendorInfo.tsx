@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Vendor } from '../VendorsTable';
 import { FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useDocumentCount } from '@/hooks/useDocumentCount';
+import { Vendor } from '../table/VendorTableRow';
 
 interface VendorInfoProps {
   vendor: Vendor;

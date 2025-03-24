@@ -58,6 +58,7 @@ const SubcontractorTableRow = ({
           : subcontractor.city || subcontractor.state || '-'}
       </TableCell>
       <TableCell>
+        {/* Check if rating exists before accessing it */}
         {subcontractor.rating ? (
           <span className="text-sm">{subcontractor.rating}/5 rating</span>
         ) : (

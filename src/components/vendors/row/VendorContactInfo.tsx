@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Vendor } from '../VendorsTable';
 import { Mail, Phone } from 'lucide-react';
+import { Vendor } from '../table/VendorTableRow';
 
 interface VendorContactInfoProps {
   vendor: Vendor;
