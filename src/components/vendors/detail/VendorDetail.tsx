@@ -29,9 +29,17 @@ const VendorDetail = () => {
     fetchAssociatedData 
   } = useVendorAssociatedData();
 
+  // Use a more stable approach for fetching data
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchVendor = async () => {
-      if (!vendorId) return;
+      if (!vendorId) {
+        if (isMounted) {
+          setLoading(false);
+        }
+        return;
+      }
 
       try {
         setLoading(true);
@@ -39,29 +47,41 @@ const VendorDetail = () => {
           .from('vendors')
           .select('*')
           .eq('vendorid', vendorId)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to prevent errors
 
         if (error) {
           throw error;
         }
 
-        setVendor(data);
-        
-        // Fetch associated data after vendor data is loaded
-        fetchAssociatedData(vendorId);
+        if (isMounted) {
+          setVendor(data);
+          // Only fetch associated data if we have vendor data
+          if (data) {
+            fetchAssociatedData(vendorId);
+          }
+        }
       } catch (error) {
         console.error('Error fetching vendor:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load vendor details.',
-          variant: 'destructive',
-        });
+        if (isMounted) {
+          toast({
+            title: 'Error',
+            description: 'Failed to load vendor details.',
+            variant: 'destructive',
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchVendor();
+    
+    // Clean up function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
   }, [vendorId, fetchAssociatedData]);
 
   const handleEdit = () => {
@@ -71,12 +91,14 @@ const VendorDetail = () => {
   const handleVendorUpdated = () => {
     // Refetch vendor data after update
     const fetchUpdatedVendor = async () => {
+      if (!vendorId) return;
+      
       try {
         const { data, error } = await supabase
           .from('vendors')
           .select('*')
           .eq('vendorid', vendorId)
-          .single();
+          .maybeSingle();
 
         if (error) {
           throw error;
@@ -95,6 +117,7 @@ const VendorDetail = () => {
     fetchUpdatedVendor();
   };
 
+  // Loading state with skeleton UI to reduce flicker
   if (loading) {
     return (
       <PageTransition>
@@ -114,6 +137,7 @@ const VendorDetail = () => {
     );
   }
 
+  // Not found state
   if (!vendor) {
     return (
       <PageTransition>
@@ -136,6 +160,7 @@ const VendorDetail = () => {
     );
   }
 
+  // Render vendor details once loaded
   return (
     <PageTransition>
       <div className="container py-6">

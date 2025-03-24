@@ -2,7 +2,7 @@
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, MoreHorizontal, Tag } from 'lucide-react';
+import { MoreHorizontal, Tag } from 'lucide-react';
 import { getStatusColor } from '../utils/statusUtils';
 import { Subcontractor } from '../utils/types';
 import { Link } from 'react-router-dom';
@@ -26,6 +26,10 @@ const SubcontractorTableRow = ({
   onEditSubcontractor 
 }: SubcontractorTableRowProps) => {
   const { specialties, loading } = useSpecialties();
+  
+  const handleView = () => {
+    onViewDetails(subcontractor);
+  };
   
   const handleEdit = () => {
     if (onEditSubcontractor) {
@@ -115,17 +119,7 @@ const SubcontractorTableRow = ({
         </div>
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onViewDetails(subcontractor)}
-            className="text-[#0485ea] hover:bg-[#0485ea]/10"
-          >
-            <Eye className="h-4 w-4" />
-            <span className="sr-only">View</span>
-          </Button>
-          
+        <div className="flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -134,7 +128,7 @@ const SubcontractorTableRow = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white shadow-md">
-              <DropdownMenuItem onClick={() => onViewDetails(subcontractor)}>
+              <DropdownMenuItem onClick={handleView}>
                 View Details
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleEdit}>

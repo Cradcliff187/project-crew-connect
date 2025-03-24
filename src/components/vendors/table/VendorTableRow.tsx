@@ -1,6 +1,6 @@
 
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Package, Eye, Edit, MoreHorizontal } from 'lucide-react';
+import { Package, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Link } from 'react-router-dom';
@@ -43,6 +43,14 @@ const VendorTableRow = ({
   onViewDetails,
   onEditVendor
 }: VendorTableRowProps) => {
+  const handleViewDetails = () => {
+    onViewDetails(vendor);
+  };
+  
+  const handleEditVendor = () => {
+    onEditVendor(vendor);
+  };
+  
   return (
     <TableRow 
       key={vendor.vendorid}
@@ -64,17 +72,7 @@ const VendorTableRow = ({
         <StatusBadge status={mapStatusToStatusBadge(vendor.status)} />
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onViewDetails(vendor)}
-            className="text-[#0485ea] hover:bg-[#0485ea]/10"
-          >
-            <Eye className="h-4 w-4" />
-            <span className="sr-only">View</span>
-          </Button>
-          
+        <div className="flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -83,10 +81,10 @@ const VendorTableRow = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white shadow-md">
-              <DropdownMenuItem onClick={() => onViewDetails(vendor)}>
+              <DropdownMenuItem onClick={handleViewDetails}>
                 View Details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEditVendor(vendor)}>
+              <DropdownMenuItem onClick={handleEditVendor}>
                 Edit Vendor
               </DropdownMenuItem>
             </DropdownMenuContent>
