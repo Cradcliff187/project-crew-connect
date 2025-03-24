@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { Table, TableBody, TableHeader, TableRow } from '@/components/ui/table';
 import { filterSubcontractors } from '../utils/filterUtils';
 import { Subcontractor } from '../utils/types';
@@ -42,7 +41,7 @@ const SubcontractorsTable = ({
   return (
     <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
-        <TableHeader className="bg-gray-50">
+        <TableHeader className="bg-[#0485ea]/10">
           <TableRow>
             <SubcontractorsTableHeader />
           </TableRow>

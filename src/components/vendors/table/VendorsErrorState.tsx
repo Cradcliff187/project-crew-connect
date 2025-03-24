@@ -3,31 +3,30 @@ import { AlertCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 
-interface SubcontractorsErrorStateProps {
+interface VendorsErrorStateProps {
   error: string;
 }
 
-const SubcontractorsErrorState = ({ error }: SubcontractorsErrorStateProps) => {
+const VendorsErrorState = ({ error }: VendorsErrorStateProps) => {
   return (
     <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
         <TableHeader className="bg-[#0485ea]/10">
           <TableRow>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Name</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Specialties</TableHead>
+            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Vendor</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Details</TableHead>
+            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Added</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
             <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-8">
+            <TableCell colSpan={6} className="text-center py-8">
               <div className="flex flex-col items-center">
                 <AlertCircle className="h-8 w-8 text-red-500 mb-2" />
-                <h3 className="font-semibold text-lg mb-1">Error Loading Subcontractors</h3>
+                <h3 className="font-semibold text-lg mb-1">Error Loading Vendors</h3>
                 <p className="text-muted-foreground mb-4">{error}</p>
                 <Button 
                   variant="outline"
@@ -45,4 +44,4 @@ const SubcontractorsErrorState = ({ error }: SubcontractorsErrorStateProps) => {
   );
 };
 
-export default SubcontractorsErrorState;
+export default VendorsErrorState;

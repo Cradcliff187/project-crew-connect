@@ -1,9 +1,10 @@
 
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, MoreHorizontal } from 'lucide-react';
+import { Eye, MoreHorizontal } from 'lucide-react';
 import { getStatusColor } from '../utils/statusUtils';
 import { Subcontractor } from '../utils/types';
+import { Link } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,8 +31,19 @@ const SubcontractorTableRow = ({
   };
   
   return (
-    <TableRow key={subcontractor.subid} className="hover:bg-muted/50">
-      <TableCell className="font-medium">{subcontractor.subname}</TableCell>
+    <TableRow key={subcontractor.subid} className="hover:bg-[#0485ea]/5 transition-colors">
+      <TableCell className="font-medium">
+        <Link to={`/subcontractors/${subcontractor.subid}`} className="text-[#0485ea] hover:underline">
+          {subcontractor.subname}
+        </Link>
+      </TableCell>
+      <TableCell>
+        {subcontractor.specialty_ids && subcontractor.specialty_ids.length > 0 ? (
+          <span className="text-sm">{subcontractor.specialty_ids.length} specialties</span>
+        ) : (
+          <span className="text-gray-400 italic">No specialties</span>
+        )}
+      </TableCell>
       <TableCell>
         {subcontractor.contactemail && (
           <div className="text-sm">{subcontractor.contactemail}</div>
@@ -44,6 +56,13 @@ const SubcontractorTableRow = ({
         {subcontractor.city && subcontractor.state
           ? `${subcontractor.city}, ${subcontractor.state}`
           : subcontractor.city || subcontractor.state || '-'}
+      </TableCell>
+      <TableCell>
+        {subcontractor.rating ? (
+          <span className="text-sm">{subcontractor.rating}/5 rating</span>
+        ) : (
+          <span className="text-gray-400 italic">No rating</span>
+        )}
       </TableCell>
       <TableCell>
         <div
