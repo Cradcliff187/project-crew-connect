@@ -3,26 +3,13 @@ import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, MoreHorizontal } from 'lucide-react';
 import { getStatusColor } from '../utils/statusUtils';
+import { Subcontractor } from '../utils/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-interface Subcontractor {
-  subid: string;
-  subname: string;
-  contactemail?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  status?: string;
-  specialty_ids?: string[];
-  createdon?: string;
-}
 
 interface SubcontractorTableRowProps {
   subcontractor: Subcontractor;

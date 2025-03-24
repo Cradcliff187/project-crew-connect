@@ -1,26 +1,13 @@
 
 import { useState } from 'react';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableHeader, TableRow } from '@/components/ui/table';
 import { filterSubcontractors } from '../utils/filterUtils';
+import { Subcontractor } from '../utils/types';
 import SubcontractorsTableHeader from './SubcontractorsTableHeader';
 import SubcontractorsTableBody from './SubcontractorsTableBody';
 import SubcontractorsEmptyState from './SubcontractorsEmptyState';
 import SubcontractorsLoadingState from './SubcontractorsLoadingState';
 import SubcontractorsErrorState from './SubcontractorsErrorState';
-
-interface Subcontractor {
-  subid: string;
-  subname: string;
-  contactemail?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  status?: string;
-  specialty_ids?: string[];
-  createdon?: string;
-}
 
 interface SubcontractorsTableProps {
   subcontractors: Subcontractor[];

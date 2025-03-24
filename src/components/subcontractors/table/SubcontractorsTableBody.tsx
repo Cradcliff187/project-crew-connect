@@ -1,21 +1,8 @@
 
 import { useNavigate } from 'react-router-dom';
 import { TableRow } from '@/components/ui/table';
+import { Subcontractor } from '../utils/types';
 import SubcontractorTableRow from './SubcontractorTableRow';
-
-interface Subcontractor {
-  subid: string;
-  subname: string;
-  contactemail?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  status?: string;
-  specialty_ids?: string[];
-  createdon?: string;
-}
 
 interface SubcontractorsTableBodyProps {
   subcontractors: Subcontractor[];
