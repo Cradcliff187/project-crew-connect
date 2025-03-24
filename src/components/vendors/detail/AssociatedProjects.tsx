@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Folder } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate } from '../utils/vendorUtils';
@@ -23,56 +22,46 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Folder className="h-5 w-5" />
-            Associated Projects
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex justify-between items-center pb-4 border-b">
-              <div className="space-y-1">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <Skeleton className="h-8 w-20" />
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Folder className="h-5 w-5" />
+          Associated Projects
+        </h3>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex justify-between items-center pb-4 border-b">
+            <div className="space-y-1">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-24" />
             </div>
-          ))}
-        </CardContent>
-      </Card>
+            <Skeleton className="h-8 w-20" />
+          </div>
+        ))}
+      </div>
     );
   }
 
   if (projects.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Folder className="h-5 w-5" />
-            Associated Projects
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 text-muted-foreground">
-            <Folder className="h-12 w-12 mx-auto mb-2 opacity-20" />
-            <p>No projects are associated with this vendor yet.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div>
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Folder className="h-5 w-5" />
+          Associated Projects
+        </h3>
+        <div className="text-center py-6 text-muted-foreground">
+          <Folder className="h-12 w-12 mx-auto mb-2 opacity-20" />
+          <p>No projects are associated with this vendor yet.</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Folder className="h-5 w-5" />
-          Associated Projects
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div>
+      <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+        <Folder className="h-5 w-5" />
+        Associated Projects
+      </h3>
+      <div className="space-y-4">
         {projects.map((project) => (
           <div 
             key={project.project_id} 
@@ -98,8 +87,8 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
             </div>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

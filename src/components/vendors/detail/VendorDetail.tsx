@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Building, MapPin, Phone, Mail, FileText, Package, Edit } from 'lucide-react';
+import { ArrowLeft, Building, MapPin, Phone, Mail, Edit } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import PageTransition from '@/components/layout/PageTransition';

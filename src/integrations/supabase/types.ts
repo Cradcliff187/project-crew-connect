@@ -1439,6 +1439,45 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_associations: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          description: string | null
+          document_id: string | null
+          entity_id: string | null
+          entity_type: string | null
+          expense_type: string | null
+          id: string | null
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          document_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expense_type?: string | null
+          id?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          document_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expense_type?: string | null
+          id?: string | null
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       attach_document_to_time_entry: {
@@ -1495,6 +1534,29 @@ export type Database = {
           status_code_param: string
         }
         Returns: string
+      }
+      get_vendor_projects: {
+        Args: {
+          p_vendor_id: string
+        }
+        Returns: {
+          project_id: string
+          project_name: string
+          status: string
+          created_at: string
+        }[]
+      }
+      get_vendor_work_orders: {
+        Args: {
+          p_vendor_id: string
+        }
+        Returns: {
+          work_order_id: string
+          title: string
+          status: string
+          materials_cost: number
+          created_at: string
+        }[]
       }
       get_work_order_project_link: {
         Args: {

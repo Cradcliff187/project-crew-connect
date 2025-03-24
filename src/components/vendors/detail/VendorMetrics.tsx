@@ -1,12 +1,13 @@
 
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BriefcaseBusiness, Folder, Wrench } from 'lucide-react';
+import { BriefcaseBusiness } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import useVendorAssociatedData from '../hooks/useVendorAssociatedData';
+import AssociatedProjects from './AssociatedProjects';
+import AssociatedWorkOrders from './AssociatedWorkOrders';
 
 interface VendorMetricsProps {
   vendorId: string;
@@ -38,8 +39,8 @@ const VendorMetrics: React.FC<VendorMetricsProps> = ({ vendorId }) => {
       <Card className="transition hover:shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-[#0485ea]">
-            <Folder className="h-5 w-5" />
-            Projects
+            <BriefcaseBusiness className="h-5 w-5" />
+            Vendor Associations
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -49,69 +50,77 @@ const VendorMetrics: React.FC<VendorMetricsProps> = ({ vendorId }) => {
               <Skeleton className="h-8 w-full" />
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-6">
               <div className="flex flex-col">
-                <span className="text-3xl font-bold">{projects.length}</span>
+                <span className="text-3xl font-bold">{projects.length + workOrders.length}</span>
                 <span className="text-sm text-muted-foreground">
-                  Associated Projects
+                  Total Associated Items
                 </span>
               </div>
-              {projects.length > 0 ? (
+              <div className="flex gap-2">
                 <Button 
                   variant="outline" 
-                  className="w-full border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea] hover:text-white"
+                  className="flex-1 border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea] hover:text-white"
                   onClick={navigateToProjects}
                 >
-                  View All Projects
+                  Projects ({projects.length})
                 </Button>
-              ) : (
-                <div className="text-sm text-muted-foreground py-2">
-                  No projects are currently associated with this vendor.
-                </div>
-              )}
+                <Button 
+                  variant="outline" 
+                  className="flex-1 border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea] hover:text-white"
+                  onClick={navigateToWorkOrders}
+                >
+                  Work Orders ({workOrders.length})
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card className="transition hover:shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-[#0485ea]">
-            <Wrench className="h-5 w-5" />
-            Work Orders
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingAssociations ? (
-            <div className="space-y-3">
-              <Skeleton className="h-12 w-24" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex flex-col">
-                <span className="text-3xl font-bold">{workOrders.length}</span>
-                <span className="text-sm text-muted-foreground">
-                  Associated Work Orders
-                </span>
-              </div>
-              {workOrders.length > 0 ? (
-                <Button 
-                  variant="outline" 
-                  className="w-full border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea] hover:text-white"
-                  onClick={navigateToWorkOrders}
-                >
-                  View All Work Orders
-                </Button>
-              ) : (
-                <div className="text-sm text-muted-foreground py-2">
-                  No work orders are currently associated with this vendor.
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="md:hidden">
+        <Card className="transition hover:shadow-md">
+          <CardContent className="pt-6">
+            <AssociatedProjects 
+              projects={projects} 
+              loading={loadingAssociations}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="md:hidden">
+        <Card className="transition hover:shadow-md">
+          <CardContent className="pt-6">
+            <AssociatedWorkOrders 
+              workOrders={workOrders} 
+              loading={loadingAssociations}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="hidden md:block">
+        <Card className="transition hover:shadow-md">
+          <CardContent className="pt-6">
+            <AssociatedProjects 
+              projects={projects} 
+              loading={loadingAssociations}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="hidden md:block">
+        <Card className="transition hover:shadow-md">
+          <CardContent className="pt-6">
+            <AssociatedWorkOrders 
+              workOrders={workOrders} 
+              loading={loadingAssociations}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

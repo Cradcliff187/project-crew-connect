@@ -35,13 +35,13 @@ export function formatRelativeTime(dateString: string | Date): string {
   return formatDistance(date, new Date(), { addSuffix: true });
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(amount);
+  }).format(value);
 }
 
 export function calculateHoursWorked(startTime: string, endTime: string): number {
