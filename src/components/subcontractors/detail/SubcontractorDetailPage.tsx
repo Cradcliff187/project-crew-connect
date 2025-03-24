@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import SubcontractorDialog from '../SubcontractorDialog';
 import useSubcontractorData from './useSubcontractorData';
+import { getPaymentTermsLabel } from '../utils/performanceUtils';
 
 // Import refactored components
 import SubcontractorDetailHeader from './SubcontractorDetailHeader';
