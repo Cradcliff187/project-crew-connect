@@ -53,14 +53,8 @@ const NotesAndStatusSection: React.FC<FormSectionProps> = ({ control }) => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="QUALIFIED">Qualified</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
                 <SelectItem value="INACTIVE">Inactive</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="VERIFIED">Verified</SelectItem>
-                <SelectItem value="PREFERRED">Preferred</SelectItem>
-                <SelectItem value="REVIEW_NEEDED">Review Needed</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />

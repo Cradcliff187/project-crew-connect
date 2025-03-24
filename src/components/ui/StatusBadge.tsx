@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { StatusType } from '@/types/common';
 import React from 'react';
@@ -21,6 +20,10 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   
   const getStatusIcon = () => {
     switch (statusLower) {
+      case 'active':
+        return <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />;
+      case 'inactive':
+        return <AlertCircle className="h-3.5 w-3.5 mr-1.5" />;
       case 'completed':
         return <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />;
       case 'cancelled':
@@ -36,6 +39,10 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   
   const getStatusColor = () => {
     switch (statusLower) {
+      case 'active':
+        return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+      case 'inactive':
+        return 'bg-slate-100 text-slate-800 border border-slate-200';
       case 'draft':
         return 'bg-gray-100 text-gray-800 border border-gray-200';
       case 'sent':
@@ -46,12 +53,6 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
         return 'bg-red-100 text-red-800 border border-red-200';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-      case 'active':
-        return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
-      case 'inactive':
-        return 'bg-slate-100 text-slate-800 border border-slate-200';
-      case 'qualified':
-        return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
       case 'potential':
         return 'bg-purple-100 text-purple-800 border border-purple-200';
       case 'prospect':

@@ -68,7 +68,7 @@ const VendorForm = ({
       city: initialData?.city || '',
       state: initialData?.state || '',
       zip: initialData?.zip || '',
-      status: initialData?.status || 'PENDING',
+      status: initialData?.status || 'ACTIVE',
       payment_terms: initialData?.payment_terms || 'NET30',
       tax_id: initialData?.tax_id || '',
       notes: initialData?.notes || '',
@@ -248,14 +248,8 @@ const VendorForm = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="QUALIFIED">Qualified</SelectItem>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="INACTIVE">Inactive</SelectItem>
-                    <SelectItem value="REJECTED">Rejected</SelectItem>
-                    <SelectItem value="VERIFIED">Verified</SelectItem>
-                    <SelectItem value="PREFERRED">Preferred</SelectItem>
-                    <SelectItem value="REVIEW_NEEDED">Review Needed</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
