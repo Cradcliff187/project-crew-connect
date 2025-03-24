@@ -1558,6 +1558,7 @@ export type Database = {
         | "WORK_ORDER"
         | "CONTACT"
         | "TIME_ENTRY"
+        | "EMPLOYEE"
     }
     CompositeTypes: {
       [_ in never]: never

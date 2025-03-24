@@ -27,7 +27,8 @@ export const uploadDocument = async (
       
       // Format entity type for path to ensure consistency
       const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
-      const filePath = `${entityTypePath}/${metadata.entityId || 'general'}/${fileName}`;
+      const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
+      const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
       console.log(`Uploading file to construction_documents bucket, path: ${filePath}`);
       console.log(`File object:`, { 
@@ -103,7 +104,6 @@ export const uploadDocument = async (
       }
       
       console.log('File uploaded successfully:', uploadData);
-      console.log('Upload response:', uploadData);
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
@@ -119,7 +119,7 @@ export const uploadDocument = async (
         file_size: file.size,
         storage_path: filePath,
         entity_type: metadata.entityType,
-        entity_id: metadata.entityId || null,
+        entity_id: entityId, // Use the sanitized entity ID
         tags: metadata.tags || [],
         // Additional metadata fields
         category: metadata.category,

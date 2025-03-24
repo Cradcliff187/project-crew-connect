@@ -1,10 +1,11 @@
+
 import * as z from 'zod';
 
 // Define the category options
 export const documentCategories = [
   'invoice',
   'receipt',
-  'estimate',
+  '3rd_party_estimate',
   'contract',
   'insurance',
   'certification',
@@ -21,7 +22,8 @@ export const entityTypes = [
   'VENDOR',
   'SUBCONTRACTOR',
   'EXPENSE',
-  'TIME_ENTRY'
+  'TIME_ENTRY',
+  'EMPLOYEE'
 ] as const;
 
 // Define vendor types
@@ -46,7 +48,7 @@ export const costTypes = expenseTypes;
 export const documentMetadataSchema = z.object({
   category: z.enum(documentCategories),
   entityType: z.enum(entityTypes),
-  entityId: z.string().optional(),
+  entityId: z.string(), // Now required as per our database change
   amount: z.number().optional(),
   expenseDate: z.date().optional(),
   version: z.number().default(1),

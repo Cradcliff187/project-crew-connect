@@ -1,16 +1,32 @@
 
-import React from 'react';
-import { Control, UseFormReturn } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import React, { useState } from 'react';
+import { Control, Controller, UseFormReturn } from 'react-hook-form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { DatePicker } from '@/components/ui/date-picker';
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import VendorSelector from '../vendor-selector/VendorSelector';
-import { DocumentUploadFormValues, documentCategories, expenseTypes } from '../schemas/documentSchema';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+
+import { 
+  documentCategories, 
+  entityTypes, 
+  DocumentUploadFormValues 
+} from '../schemas/documentSchema';
+import VendorSelector from './VendorSelector';
+import EntitySelector from './EntitySelector';
+import ExpenseForm from '../ExpenseForm';
+import TagsInput from './TagsInput';
 
 interface MetadataFormProps {
   form: UseFormReturn<DocumentUploadFormValues>;
@@ -27,81 +43,43 @@ interface MetadataFormProps {
   };
 }
 
-const MetadataForm: React.FC<MetadataFormProps> = ({
-  form,
-  control,
-  watchIsExpense,
+const MetadataForm: React.FC<MetadataFormProps> = ({ 
+  form, 
+  control, 
+  watchIsExpense, 
   watchVendorType,
   isReceiptUpload = false,
   showVendorSelector,
   prefillData
 }) => {
+  const [showTags, setShowTags] = useState(false);
+  
+  const watchEntityType = form.watch('metadata.entityType');
+  
   return (
     <div className="space-y-4">
-      {/* Document Category */}
-      <FormField
-        control={control}
-        name="metadata.category"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Document Category</FormLabel>
-            <Select 
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select document category" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {documentCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      
-      {/* Is Expense Toggle */}
-      {!isReceiptUpload && (
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="is-expense"
-            checked={watchIsExpense}
-            onCheckedChange={(checked) => {
-              form.setValue('metadata.isExpense', checked);
-            }}
-          />
-          <Label htmlFor="is-expense">This is an expense document</Label>
-        </div>
-      )}
-      
-      {/* Expense Type - only show for receipts/expenses */}
-      {(watchIsExpense || isReceiptUpload) && (
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+        {/* Document Category */}
         <FormField
           control={control}
-          name="metadata.expenseType"
+          name="metadata.category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Expense Type</FormLabel>
-              <Select 
+              <FormLabel>Category</FormLabel>
+              <Select
+                value={field.value}
                 onValueChange={field.onChange}
-                defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select expense type" />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {expenseTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                  {documentCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category === '3rd_party_estimate' ? '3rd Party Estimate' : 
+                        category.charAt(0).toUpperCase() + category.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -110,86 +88,81 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
             </FormItem>
           )}
         />
-      )}
-      
-      {/* Amount - only show for receipts/expenses */}
-      {(watchIsExpense || isReceiptUpload) && (
+        
+        {/* Entity Type */}
         <FormField
           control={control}
-          name="metadata.amount"
+          name="metadata.entityType"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  step="0.01" 
-                  placeholder="0.00" 
-                  {...field} 
-                  value={field.value || prefillData?.amount || ''} 
-                  onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                />
-              </FormControl>
+              <FormLabel>Related To</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+                disabled={isReceiptUpload}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select entity type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {entityTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.replace(/_/g, ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
+      </div>
+      
+      {/* Entity ID Selector */}
+      <EntitySelector 
+        control={control} 
+        entityType={watchEntityType} 
+        isReceiptUpload={isReceiptUpload}
+      />
+      
+      {/* "Is Expense" Switch */}
+      {!isReceiptUpload && (
+        <div className="flex items-center space-x-2 pt-2">
+          <Switch
+            id="is-expense"
+            checked={watchIsExpense}
+            onCheckedChange={(checked) => {
+              form.setValue('metadata.isExpense', checked);
+              if (checked) {
+                form.setValue('metadata.expenseType', 'materials');
+              }
+            }}
+          />
+          <Label htmlFor="is-expense">This document is an expense record</Label>
+        </div>
       )}
       
-      {/* Date (for expenses) */}
+      {/* Expense Details (conditional) */}
       {(watchIsExpense || isReceiptUpload) && (
-        <FormField
-          control={control}
-          name="metadata.expenseDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Expense Date</FormLabel>
-              <DatePicker
-                date={field.value}
-                setDate={field.onChange}
-              />
-              <FormMessage />
-            </FormItem>
-          )}
+        <ExpenseForm 
+          control={control} 
+          isReceiptUpload={isReceiptUpload} 
         />
       )}
       
-      {/* Vendor Selector - only show when needed */}
-      {showVendorSelector && (
-        <>
-          <Separator />
+      {/* Vendor Section (conditional) */}
+      {(showVendorSelector || watchIsExpense) && (
+        <div className="pt-2">
+          <Separator className="my-2" />
           <VendorSelector 
-            form={form} 
+            control={control} 
+            vendorType={watchVendorType} 
             prefillVendorId={prefillData?.vendorId}
           />
-        </>
+        </div>
       )}
-      
-      {/* Tags */}
-      <FormField
-        control={control}
-        name="metadata.tags"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Tags (comma separated)</FormLabel>
-            <FormControl>
-              <Input
-                placeholder="Enter tags, separated by commas"
-                value={field.value?.join(', ') || ''}
-                onChange={(e) => {
-                  const tagsString = e.target.value;
-                  const tagsArray = tagsString
-                    .split(',')
-                    .map(tag => tag.trim())
-                    .filter(tag => tag.length > 0);
-                  field.onChange(tagsArray);
-                }}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
       
       {/* Notes */}
       <FormField
@@ -200,7 +173,8 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
             <FormLabel>Notes</FormLabel>
             <FormControl>
               <Textarea
-                placeholder="Additional notes about this document"
+                placeholder="Add any additional notes about this document"
+                className="resize-none"
                 {...field}
                 value={field.value || ''}
               />
@@ -209,6 +183,40 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
           </FormItem>
         )}
       />
+      
+      {/* Tags (expandable) */}
+      <div>
+        {!showTags ? (
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowTags(true)}
+            className="flex items-center text-muted-foreground"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Tags
+          </Button>
+        ) : (
+          <FormField
+            control={control}
+            name="metadata.tags"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tags</FormLabel>
+                <FormControl>
+                  <TagsInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Add tags and press Enter"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+      </div>
     </div>
   );
 };
