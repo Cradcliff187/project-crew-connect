@@ -9,7 +9,7 @@ const LocationFields = () => {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-lg font-medium">Location</h3>
+      <h3 className="text-lg font-medium">Site Location</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}

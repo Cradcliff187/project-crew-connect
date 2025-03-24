@@ -1,14 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import BasicInfoStep from './BasicInfoStep';
-import LocationFields from '../LocationFields';
 import EstimateItemFields from '../EstimateItemFields';
 import EstimateSummary from '../EstimateSummary';
 import EstimateStepTabs from './EstimateStepTabs';
 import FormActions from './FormActions';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
+import { toast } from "@/hooks/use-toast";
 
 interface EditFormContentProps {
   customers: { id: string; name: string; address?: string; city?: string; state?: string; zip?: string; }[];
@@ -41,8 +41,14 @@ const EditFormContent = ({
   const form = useFormContext<EstimateFormValues>();
   const isNewCustomer = form.watch('isNewCustomer');
   const showSiteLocation = form.watch('showSiteLocation');
+  const selectedCustomer = form.watch('customer');
   
   const [currentStep, setCurrentStep] = useState(ESTIMATE_STEPS[0].id);
+
+  // Reset showSiteLocation when customer changes or when isNewCustomer changes
+  useEffect(() => {
+    form.setValue('showSiteLocation', false);
+  }, [selectedCustomer, isNewCustomer, form]);
 
   const goToNextStep = () => {
     const currentIndex = ESTIMATE_STEPS.findIndex(step => step.id === currentStep);
@@ -61,11 +67,46 @@ const EditFormContent = ({
   const validateCurrentStep = async () => {
     switch (currentStep) {
       case 'basic-info':
-        return form.trigger(['project', 'customer']);
+        const isBasicInfoValid = await form.trigger(['project']);
+        
+        // Check if customer is valid based on the customer type
+        let isCustomerValid = true;
+        if (isNewCustomer) {
+          isCustomerValid = await form.trigger(['newCustomer.name']);
+          if (!isCustomerValid) {
+            toast({
+              title: "Customer name required",
+              description: "Please provide a name for the new customer",
+              variant: "destructive"
+            });
+          }
+        } else {
+          isCustomerValid = await form.trigger(['customer']);
+          if (!isCustomerValid) {
+            toast({
+              title: "Customer selection required",
+              description: "Please select a customer for this estimate",
+              variant: "destructive"
+            });
+          }
+        }
+        
+        return isBasicInfoValid && isCustomerValid;
+        
       case 'items':
-        return form.trigger('items');
+        const isItemsValid = await form.trigger('items');
+        if (!isItemsValid) {
+          toast({
+            title: "Line items validation failed",
+            description: "Please check that all line items have descriptions and costs",
+            variant: "destructive"
+          });
+        }
+        return isItemsValid;
+        
       case 'summary':
         return form.trigger(['contingency_percentage']);
+        
       default:
         return Promise.resolve(true);
     }
@@ -106,10 +147,6 @@ const EditFormContent = ({
             isNewCustomer={isNewCustomer}
             showSiteLocation={showSiteLocation}
           />
-          
-          {(showSiteLocation || isNewCustomer || !selectedCustomerAddress) && (
-            <LocationFields />
-          )}
         </TabsContent>
 
         <TabsContent value="items" className="mt-0">

@@ -87,8 +87,33 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     if (open) {
       fetchCustomers();
       setStep('edit');
+      // Reset form when dialog opens
+      form.reset({
+        project: '',
+        customer: '',
+        description: '',
+        contingency_percentage: '0',
+        location: {
+          address: '',
+          city: '',
+          state: '',
+          zip: '',
+        },
+        items: [{ description: '', quantity: '1', unitPrice: '0', cost: '0', markup_percentage: '0' }],
+        showSiteLocation: false,
+        isNewCustomer: false,
+        newCustomer: {
+          name: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          zip: '',
+        },
+      });
     }
-  }, [open]);
+  }, [open, form]);
 
   // Fetch customer address when customer is selected
   useEffect(() => {
