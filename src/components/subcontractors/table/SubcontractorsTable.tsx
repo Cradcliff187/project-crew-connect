@@ -40,9 +40,9 @@ const SubcontractorsTable = ({
   }
   
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-gray-50">
           <TableRow>
             <SubcontractorsTableHeader />
           </TableRow>

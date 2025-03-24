@@ -91,12 +91,10 @@ const Vendors = () => {
   };
 
   const handleViewVendorDetails = (vendor: Vendor) => {
-    console.log('View vendor details:', vendor);
     navigate(`/vendors/${vendor.vendorid}`);
   };
 
   const handleEditVendor = (vendor: Vendor) => {
-    console.log('Edit vendor:', vendor);
     setSelectedVendor(vendor);
     setEditSheetOpen(true);
   };

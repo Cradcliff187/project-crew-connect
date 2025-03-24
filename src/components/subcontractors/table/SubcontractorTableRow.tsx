@@ -30,7 +30,7 @@ const SubcontractorTableRow = ({
   };
   
   return (
-    <TableRow key={subcontractor.subid}>
+    <TableRow key={subcontractor.subid} className="hover:bg-muted/50">
       <TableCell className="font-medium">{subcontractor.subname}</TableCell>
       <TableCell>
         {subcontractor.contactemail && (
@@ -60,6 +60,7 @@ const SubcontractorTableRow = ({
             variant="ghost"
             size="sm"
             onClick={() => onViewDetails(subcontractor)}
+            className="text-[#0485ea] hover:bg-[#0485ea]/10"
           >
             <Eye className="h-4 w-4" />
             <span className="sr-only">View</span>
@@ -72,7 +73,7 @@ const SubcontractorTableRow = ({
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-white shadow-md">
               <DropdownMenuItem onClick={() => onViewDetails(subcontractor)}>
                 View Details
               </DropdownMenuItem>

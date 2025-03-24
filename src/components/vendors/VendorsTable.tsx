@@ -4,7 +4,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { StatusType } from '@/types/common';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { formatDate, mapStatusToStatusBadge } from './utils/vendorUtils';
 import VendorInfo from './row/VendorInfo';
@@ -110,7 +109,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onE
   // Table loading skeleton
   if (loading) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+      <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
         <Table>
           <TableHeader className="bg-gray-50">
             <TableRow>
@@ -147,7 +146,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onE
   // Error state
   if (error) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+      <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
         <Table>
           <TableHeader className="bg-gray-50">
             <TableRow>
@@ -182,7 +181,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onE
   // Empty state
   if (filteredVendors.length === 0) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+      <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
         <Table>
           <TableHeader className="bg-gray-50">
             <TableRow>
@@ -209,7 +208,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onE
 
   // Data loaded with results
   return (
-    <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+    <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
         <TableHeader className="bg-gray-50">
           <TableRow>
@@ -241,7 +240,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onE
               <TableCell>
                 <StatusBadge status={mapStatusToStatusBadge(vendor.status)} />
               </TableCell>
-              <TableCell>
+              <TableCell onClick={(e) => e.stopPropagation()}>
                 <ActionMenu groups={getVendorActions(vendor)} />
               </TableCell>
             </TableRow>

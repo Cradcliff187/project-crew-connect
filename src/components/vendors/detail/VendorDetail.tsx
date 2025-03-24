@@ -10,7 +10,6 @@ import { Separator } from '@/components/ui/separator';
 import PageTransition from '@/components/layout/PageTransition';
 import VendorSheet from '@/components/vendors/VendorSheet';
 import VendorDocuments from './VendorDocuments';
-import VendorMetrics from './VendorMetrics';
 import { getPaymentTermsLabel } from '../utils/vendorUtils';
 import useVendorAssociatedData from '../hooks/useVendorAssociatedData';
 import AssociatedProjects from './AssociatedProjects';
@@ -100,8 +99,16 @@ const VendorDetail = () => {
     return (
       <PageTransition>
         <div className="container py-6 space-y-4">
-          <div className="h-8 w-48 animate-pulse bg-gray-200 rounded"></div>
-          <div className="h-64 animate-pulse bg-gray-100 rounded-lg"></div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" disabled>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="h-64 bg-gray-100 rounded-lg animate-pulse"></div>
+            <div className="h-64 bg-gray-100 rounded-lg animate-pulse"></div>
+          </div>
         </div>
       </PageTransition>
     );
@@ -141,16 +148,16 @@ const VendorDetail = () => {
             </Button>
             <h1 className="text-2xl font-bold">{vendor.vendorname}</h1>
           </div>
-          <Button onClick={handleEdit}>
+          <Button onClick={handleEdit} className="bg-[#0485ea] hover:bg-[#0370c9]">
             <Edit className="h-4 w-4 mr-2" />
             Edit Vendor
           </Button>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-[#0485ea]">
                 <Building className="h-5 w-5" />
                 Vendor Information
               </CardTitle>
@@ -187,9 +194,9 @@ const VendorDetail = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-[#0485ea]">
                 <MapPin className="h-5 w-5" />
                 Contact Information
               </CardTitle>
@@ -232,7 +239,7 @@ const VendorDetail = () => {
 
         {/* Associated Projects & Work Orders */}
         <div className="mt-6 grid gap-6 md:grid-cols-2">
-          <Card>
+          <Card className="shadow-sm">
             <CardContent className="pt-6">
               <AssociatedProjects 
                 projects={projects} 
@@ -241,7 +248,7 @@ const VendorDetail = () => {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-sm">
             <CardContent className="pt-6">
               <AssociatedWorkOrders 
                 workOrders={workOrders} 
@@ -252,11 +259,11 @@ const VendorDetail = () => {
         </div>
 
         <div className="mt-6">
-          <VendorMetrics vendorId={vendor.vendorid} />
-        </div>
-
-        <div className="mt-6">
-          <VendorDocuments vendorId={vendor.vendorid} />
+          <Card className="shadow-sm">
+            <CardContent className="pt-6">
+              <VendorDocuments vendorId={vendor.vendorid} />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Edit Vendor Sheet */}
