@@ -1,112 +1,69 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, DollarSign, Wrench } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { formatDate } from '@/components/subcontractors/utils/formatUtils';
-import StatusBadge from '@/components/ui/StatusBadge';
+import { LayoutList } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 
+interface WorkOrder {
+  work_order_id: string;
+  title: string;
+  status: string;
+}
+
 interface AssociatedWorkOrdersProps {
-  workOrders: any[];
+  workOrders: WorkOrder[];
   loading: boolean;
 }
 
-const AssociatedWorkOrders: React.FC<AssociatedWorkOrdersProps> = ({ workOrders, loading }) => {
+const AssociatedWorkOrders = ({ workOrders, loading }: AssociatedWorkOrdersProps) => {
   const navigate = useNavigate();
-
-  const handleWorkOrderClick = (workOrderId: string) => {
-    navigate(`/work-orders/${workOrderId}`);
-  };
-
-  if (loading) {
+  
+  if (workOrders.length === 0 && !loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
-            Associated Work Orders
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex justify-between items-center pb-4 border-b">
-              <div className="space-y-1">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <Skeleton className="h-8 w-20" />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (workOrders.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5" />
-            Associated Work Orders
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 text-muted-foreground">
-            <Wrench className="h-12 w-12 mx-auto mb-2 opacity-20" />
-            <p>No work orders are associated with this subcontractor yet.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Work Orders</h3>
+        <div className="text-muted-foreground italic">No associated work orders</div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wrench className="h-5 w-5" />
-          Associated Work Orders
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {workOrders.map((workOrder) => (
-          <div 
-            key={workOrder.work_order_id} 
-            className="flex justify-between items-center pb-4 border-b last:border-b-0 last:pb-0"
-          >
-            <div className="space-y-1">
-              <h4 className="font-medium">{workOrder.title}</h4>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {formatDate(workOrder.created_at)}
-                </div>
-                {workOrder.labor_cost > 0 && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <DollarSign className="h-3 w-3 mr-1" />
-                    ${workOrder.labor_cost.toFixed(2)}
+    <div className="space-y-4">
+      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Work Orders</h3>
+      <div className="grid gap-2">
+        {loading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : (
+          workOrders.map((workOrder) => (
+            <Card key={workOrder.work_order_id} className="p-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-2">
+                  <LayoutList className="h-4 w-4 text-[#0485ea] mt-0.5" />
+                  <div>
+                    <div className="font-medium">{workOrder.title}</div>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-xs bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]">
+                        {workOrder.status}
+                      </Badge>
+                    </div>
                   </div>
-                )}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate(`/workorders/${workOrder.work_order_id}`)}
+                >
+                  View Work Order
+                </Button>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <StatusBadge status={workOrder.status || 'unknown'} size="sm" />
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs h-8"
-                onClick={() => handleWorkOrderClick(workOrder.work_order_id)}
-              >
-                View
-              </Button>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -10,7 +10,7 @@ interface ContactInformationCardProps {
 const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) => {
   return (
     <div>
-      <h3 className="text-lg font-montserrat font-semibold mb-3 text-construction-600">Contact Information</h3>
+      <h3 className="text-lg font-montserrat font-semibold mb-3 text-[#0485ea]">Contact Information</h3>
       <div className="space-y-3">
         {subcontractor.contactname && (
           <div className="text-foreground">
@@ -19,17 +19,17 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
           </div>
         )}
         
-        {subcontractor.contactemail && (
+        {subcontractor.email && (
           <div className="flex items-start gap-2">
-            <Mail className="h-4 w-4 mt-1 text-construction-500" />
+            <Mail className="h-4 w-4 mt-1 text-[#0485ea]" />
             <div>
               <span className="font-medium">Email:</span>
               <div>
                 <a 
-                  href={`mailto:${subcontractor.contactemail}`}
-                  className="text-construction-600 hover:text-construction-700 hover:underline"
+                  href={`mailto:${subcontractor.email}`}
+                  className="text-[#0485ea] hover:text-[#0375d1] hover:underline"
                 >
-                  {subcontractor.contactemail}
+                  {subcontractor.email}
                 </a>
               </div>
             </div>
@@ -38,13 +38,13 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
         
         {subcontractor.phone && (
           <div className="flex items-start gap-2">
-            <Phone className="h-4 w-4 mt-1 text-construction-500" />
+            <Phone className="h-4 w-4 mt-1 text-[#0485ea]" />
             <div>
               <span className="font-medium">Phone:</span>
               <div className="text-foreground">
                 <a 
                   href={`tel:${subcontractor.phone}`}
-                  className="hover:text-construction-600"
+                  className="hover:text-[#0485ea]"
                 >
                   {subcontractor.phone}
                 </a>
@@ -55,7 +55,7 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
         
         {(subcontractor.address || subcontractor.city || subcontractor.state || subcontractor.zip) && (
           <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 mt-1 text-construction-500" />
+            <MapPin className="h-4 w-4 mt-1 text-[#0485ea]" />
             <div>
               <span className="font-medium">Address:</span>
               <div className="text-foreground">
@@ -74,7 +74,7 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
           </div>
         )}
         
-        {!subcontractor.contactname && !subcontractor.contactemail && !subcontractor.phone && 
+        {!subcontractor.email && !subcontractor.phone && 
          !subcontractor.address && !subcontractor.city && !subcontractor.state && !subcontractor.zip && (
           <div className="text-muted-foreground italic">No contact information available</div>
         )}

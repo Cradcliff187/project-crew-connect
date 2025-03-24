@@ -1,104 +1,63 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Folder } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { formatDate } from '@/components/subcontractors/utils/formatUtils';
-import StatusBadge from '@/components/ui/StatusBadge';
+import { Briefcase } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 
+interface Project {
+  projectid: string;
+  projectname?: string;
+}
+
 interface AssociatedProjectsProps {
-  projects: any[];
+  projects: Project[];
   loading: boolean;
 }
 
-const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loading }) => {
+const AssociatedProjects = ({ projects, loading }: AssociatedProjectsProps) => {
   const navigate = useNavigate();
-
-  const handleProjectClick = (projectId: string) => {
-    navigate(`/projects/${projectId}`);
-  };
-
-  if (loading) {
+  
+  if (projects.length === 0 && !loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Folder className="h-5 w-5" />
-            Associated Projects
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex justify-between items-center pb-4 border-b">
-              <div className="space-y-1">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <Skeleton className="h-8 w-20" />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (projects.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Folder className="h-5 w-5" />
-            Associated Projects
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 text-muted-foreground">
-            <Folder className="h-12 w-12 mx-auto mb-2 opacity-20" />
-            <p>No projects are associated with this subcontractor yet.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Associated Projects</h3>
+        <div className="text-muted-foreground italic">No associated projects</div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Folder className="h-5 w-5" />
-          Associated Projects
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {projects.map((project) => (
-          <div 
-            key={project.projectid} 
-            className="flex justify-between items-center pb-4 border-b last:border-b-0 last:pb-0"
-          >
-            <div className="space-y-1">
-              <h4 className="font-medium">{project.projectname}</h4>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Calendar className="h-3 w-3 mr-1" />
-                {formatDate(project.createdon)}
+    <div className="space-y-4">
+      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Associated Projects</h3>
+      <div className="grid gap-2">
+        {loading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : (
+          projects.map((project) => (
+            <Card key={project.projectid} className="p-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-2">
+                  <Briefcase className="h-4 w-4 text-[#0485ea] mt-0.5" />
+                  <div>
+                    <div className="font-medium">{project.projectname || 'Unnamed Project'}</div>
+                    <div className="text-xs text-muted-foreground">{project.projectid}</div>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate(`/projects/${project.projectid}`)}
+                >
+                  View Project
+                </Button>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <StatusBadge status={project.status || 'unknown'} size="sm" />
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs h-8"
-                onClick={() => handleProjectClick(project.projectid)}
-              >
-                View
-              </Button>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import SubcontractorDialog from '../SubcontractorDialog';
@@ -71,79 +71,106 @@ const SubcontractorDetailPage = () => {
   
   return (
     <PageTransition>
-      <div className="container max-w-4xl mx-auto py-6 text-foreground">
+      <div className="container py-6 text-foreground">
         <SubcontractorDetailHeader 
           subcontractor={subcontractor} 
           loading={loading} 
           onEdit={handleEdit} 
         />
         
-        <Card className="mb-6">
-          <SubcontractorDetailCard subcontractor={subcontractor} />
-          
-          <div className="px-6 pt-0 pb-6 grid gap-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Contact Information */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Main Info Card */}
+          <Card>
+            <SubcontractorDetailCard subcontractor={subcontractor} />
+            <CardContent>
+              <div className="space-y-4">
+                {subcontractor.tax_id && (
+                  <div>
+                    <p className="text-sm font-medium">Tax ID</p>
+                    <p>{subcontractor.tax_id}</p>
+                  </div>
+                )}
+                
+                {subcontractor.payment_terms && (
+                  <div>
+                    <p className="text-sm font-medium">Payment Terms</p>
+                    <p>{getPaymentTermsLabel(subcontractor.payment_terms)}</p>
+                  </div>
+                )}
+                
+                {subcontractor.notes && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium">Notes</p>
+                      <p className="whitespace-pre-wrap">{subcontractor.notes}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Information Card */}
+          <Card>
+            <CardContent className="pt-6">
               <ContactInformationCard subcontractor={subcontractor} />
-              
-              {/* Financial Information */}
-              <FinancialInformationCard subcontractor={subcontractor} />
-            </div>
-            
-            <Separator />
-            
-            {/* Associated Data Section */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Associated Projects Section */}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Compliance Information */}
+        <div className="mt-6">
+          <Card>
+            <CardContent className="pt-6">
+              <ComplianceInformationCard subcontractor={subcontractor} />
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Associated Projects & Work Orders */}
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardContent className="pt-6">
               <AssociatedProjects 
                 projects={projects} 
                 loading={loadingAssociations} 
               />
-              
-              {/* Associated Work Orders Section */}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
               <AssociatedWorkOrders 
                 workOrders={workOrders} 
                 loading={loadingAssociations} 
               />
-            </div>
-            
-            <Separator />
-            
-            {/* Compliance Information */}
-            <ComplianceInformationCard subcontractor={subcontractor} />
-            
-            {/* Rate Information (only if hourly_rate exists) */}
-            {subcontractor.hourly_rate && (
-              <>
-                <Separator />
-                <RateInformationCard subcontractor={subcontractor} />
-              </>
-            )}
-            
-            {/* Specialties */}
-            {subcontractor.specialty_ids && subcontractor.specialty_ids.length > 0 && (
-              <>
-                <Separator />
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Specialties */}
+        {subcontractor.specialty_ids && subcontractor.specialty_ids.length > 0 && (
+          <div className="mt-6">
+            <Card>
+              <CardContent className="pt-6">
                 <SpecialtiesSection 
                   subcontractor={subcontractor} 
                   specialtyIds={specialtyIds} 
                 />
-              </>
-            )}
-            
-            {/* Notes */}
-            {subcontractor.notes && (
-              <>
-                <Separator />
-                <NotesSection notes={subcontractor.notes} />
-              </>
-            )}
-            
-            {/* Documents Section - Moved to bottom */}
-            <Separator />
-            <SubcontractorDocuments subcontractorId={subcontractor.subid} />
+              </CardContent>
+            </Card>
           </div>
-        </Card>
+        )}
+        
+        {/* Documents Section */}
+        <div className="mt-6">
+          <Card>
+            <CardContent className="pt-6">
+              <SubcontractorDocuments subcontractorId={subcontractor.subid} />
+            </CardContent>
+          </Card>
+        </div>
         
         {/* Edit Subcontractor Dialog */}
         {subcontractor && (

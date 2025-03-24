@@ -10,7 +10,7 @@ const NotesSection = ({ notes }: NotesSectionProps) => {
   
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Notes</h3>
+      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Notes</h3>
       <div className="whitespace-pre-line bg-muted p-4 rounded-md">
         {notes}
       </div>

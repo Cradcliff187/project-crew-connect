@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Subcontractor } from '../utils/subcontractorUtils';
+import { Subcontractor } from '../utils/types';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SpecialtiesSectionProps {
@@ -56,11 +56,11 @@ const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionP
     }
 
     return (
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-2">
         {subcontractor.specialty_ids.map(id => {
           const specialty = specialties[id];
           return specialty ? (
-            <Badge key={id} variant="secondary" className="text-xs">
+            <Badge key={id} variant="secondary" className="text-xs font-medium bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]">
               {specialty.specialty}
             </Badge>
           ) : null;
@@ -71,7 +71,7 @@ const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionP
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Specialties</h3>
+      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Specialties</h3>
       <div>
         {renderSpecialties()}
       </div>

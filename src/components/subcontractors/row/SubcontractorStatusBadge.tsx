@@ -57,7 +57,7 @@ const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => 
       className = 'bg-green-50 text-green-700 border-green-200 font-medium';
       break;
     case 'info':
-      className = 'bg-construction-50 text-construction-700 border-construction-200 font-medium';
+      className = 'bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd] font-medium';
       break;
     case 'warning':
       className = 'bg-yellow-50 text-yellow-700 border-yellow-200 font-medium';

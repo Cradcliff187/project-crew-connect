@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -37,14 +37,17 @@ const SubcontractorDetailHeader = ({ subcontractor, loading, onEdit }: Subcontra
 
   return (
     <div className="flex justify-between items-center mb-6">
-      <Button variant="ghost" size="sm" onClick={handleBack}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Subcontractors
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-2xl font-bold">{subcontractor.subname}</h1>
+      </div>
       <Button 
         onClick={handleEdit} 
         className="bg-[#0485ea] hover:bg-[#0375d1] text-white"
       >
+        <Edit className="h-4 w-4 mr-2" />
         Edit Subcontractor
       </Button>
     </div>
