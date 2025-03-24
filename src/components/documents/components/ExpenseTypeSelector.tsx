@@ -9,6 +9,7 @@ interface ExpenseTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
 }
 
+// Component for use within a form with react-hook-form
 const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ control }) => {
   return (
     <FormField

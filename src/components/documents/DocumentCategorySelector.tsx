@@ -17,7 +17,7 @@ const DocumentCategorySelector = ({ value, onChange, className }: DocumentCatego
         return <FileText className="h-5 w-5" />;
       case 'receipt':
         return <Receipt className="h-5 w-5" />;
-      case 'estimate':
+      case '3rd_party_estimate':
         return <FileText className="h-5 w-5 text-construction-600" />;
       case 'contract':
         return <FileBox className="h-5 w-5" />;
@@ -32,6 +32,7 @@ const DocumentCategorySelector = ({ value, onChange, className }: DocumentCatego
   };
 
   const getCategoryLabel = (category: DocumentCategory) => {
+    if (category === '3rd_party_estimate') return 'Estimate';
     return category.charAt(0).toUpperCase() + category.slice(1);
   };
 

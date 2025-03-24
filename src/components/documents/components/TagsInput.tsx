@@ -9,21 +9,21 @@ import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface TagsInputProps {
   control: Control<DocumentUploadFormValues>;
-  name: `metadata.${string}`;
-  label: string;
+  name?: string;
+  label?: string;
   description?: string;
 }
 
 const TagsInput: React.FC<TagsInputProps> = ({ 
   control, 
-  name, 
-  label, 
-  description 
+  name = "metadata.tags", 
+  label = "Tags", 
+  description = "Add tags to help organize and search for this document later" 
 }) => {
   return (
     <FormField
       control={control}
-      name={name}
+      name="metadata.tags"
       render={({ field }) => (
         <FormItem>
           <FormLabel>{label}</FormLabel>

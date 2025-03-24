@@ -107,8 +107,6 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
       <TagsInput
         control={control}
         name="metadata.tags"
-        label="Tags"
-        description="Add tags to help organize and search for this document later"
       />
       
       <NotesField 

@@ -8,8 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DocumentUploadFormValues } from './schemas/documentSchema';
-import ExpenseTypeSelector from './components/ExpenseTypeSelector';
+import { DocumentUploadFormValues, ExpenseType } from './schemas/documentSchema';
 
 interface ExpenseFormProps {
   control: Control<DocumentUploadFormValues>;
@@ -58,10 +57,17 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
             <FormItem>
               <FormLabel>Expense Type</FormLabel>
               <FormControl>
-                <ExpenseTypeSelector
-                  value={field.value || 'materials'}
+                <select
+                  className="w-full border rounded-md px-3 py-2"
+                  value={field.value}
                   onChange={field.onChange}
-                />
+                >
+                  {['materials', 'equipment', 'supplies', 'other'].map((type) => (
+                    <option key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </option>
+                  ))}
+                </select>
               </FormControl>
               <FormMessage />
             </FormItem>
