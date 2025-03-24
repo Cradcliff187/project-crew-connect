@@ -23,6 +23,7 @@ export interface Subcontractor {
   contract_on_file?: boolean;
   contract_expiration?: string | null;
   preferred?: boolean;
+  rating?: number | null; // Added the rating property
 }
 
 export interface Specialty {
