@@ -1,10 +1,9 @@
 
 import { useState } from 'react';
-import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import VendorDialog from './VendorDialog';
-import PageHeader from '@/components/layout/PageHeader';
+import { Plus, Search } from 'lucide-react';
+import VendorSheet from './VendorSheet';
 
 interface VendorsHeaderProps {
   searchQuery: string;
@@ -12,50 +11,44 @@ interface VendorsHeaderProps {
   onVendorAdded: () => void;
 }
 
-const VendorsHeader = ({ searchQuery, setSearchQuery, onVendorAdded }: VendorsHeaderProps) => {
-  const [showVendorDialog, setShowVendorDialog] = useState(false);
+const VendorsHeader = ({ 
+  searchQuery, 
+  setSearchQuery, 
+  onVendorAdded 
+}: VendorsHeaderProps) => {
+  const [addVendorOpen, setAddVendorOpen] = useState(false);
   
   return (
-    <>
-      <PageHeader
-        title="Vendors"
-        description="Manage your suppliers and material vendors"
-      >
-        <div className="relative w-full md:w-auto flex-1 max-w-sm">
+    <div className="flex justify-between items-center flex-wrap gap-4">
+      <h1 className="text-2xl font-bold">Vendors</h1>
+      
+      <div className="flex gap-2 items-center">
+        <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            type="search" 
-            placeholder="Search vendors..." 
-            className="pl-9 subtle-input rounded-md"
+          <Input
+            type="search"
+            placeholder="Search vendors..."
+            className="w-[180px] sm:w-[300px] pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Filter className="h-4 w-4 mr-1" />
-            Filter
-            <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
-          </Button>
-          <Button 
-            size="sm" 
-            className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]"
-            onClick={() => setShowVendorDialog(true)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            New Vendor
-          </Button>
-        </div>
-      </PageHeader>
+        <Button 
+          onClick={() => setAddVendorOpen(true)}
+          className="bg-[#0485ea] hover:bg-[#0375d1]"
+        >
+          <Plus className="h-4 w-4 mr-2" /> 
+          Add Vendor
+        </Button>
+      </div>
       
-      {/* Vendor Dialog */}
-      <VendorDialog 
-        open={showVendorDialog} 
-        onOpenChange={setShowVendorDialog} 
-        onVendorAdded={onVendorAdded} 
+      <VendorSheet
+        open={addVendorOpen}
+        onOpenChange={setAddVendorOpen}
+        onVendorAdded={onVendorAdded}
       />
-    </>
+    </div>
   );
 };
 

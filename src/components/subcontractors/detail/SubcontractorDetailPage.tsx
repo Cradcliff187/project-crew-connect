@@ -5,7 +5,7 @@ import PageTransition from '@/components/layout/PageTransition';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import SubcontractorDialog from '../SubcontractorDialog';
+import SubcontractorSheet from '../SubcontractorSheet';
 import useSubcontractorData from './useSubcontractorData';
 import { getPaymentTermsLabel } from '../utils/performanceUtils';
 
@@ -26,7 +26,7 @@ import SubcontractorDocuments from './SubcontractorDocuments';
 
 const SubcontractorDetailPage = () => {
   const { subcontractorId } = useParams<{ subcontractorId: string }>();
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
   
   // Use the custom hook to fetch subcontractor data
   const { 
@@ -41,8 +41,8 @@ const SubcontractorDetailPage = () => {
   
   const handleEdit = () => {
     if (subcontractor) {
-      console.log('Opening edit dialog with data:', subcontractor);
-      setEditDialogOpen(true);
+      console.log('Opening edit sheet with data:', subcontractor);
+      setEditSheetOpen(true);
     } else {
       toast({
         title: "Error",
@@ -173,11 +173,11 @@ const SubcontractorDetailPage = () => {
           </Card>
         </div>
         
-        {/* Edit Subcontractor Dialog */}
+        {/* Edit Subcontractor Sheet */}
         {subcontractor && (
-          <SubcontractorDialog
-            open={editDialogOpen}
-            onOpenChange={setEditDialogOpen}
+          <SubcontractorSheet
+            open={editSheetOpen}
+            onOpenChange={setEditSheetOpen}
             onSubcontractorAdded={handleSubcontractorUpdated}
             initialData={subcontractor}
             isEditing={true}

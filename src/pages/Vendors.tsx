@@ -7,7 +7,7 @@ import PageTransition from '@/components/layout/PageTransition';
 import VendorsHeader from '@/components/vendors/VendorsHeader';
 import VendorsTable, { Vendor } from '@/components/vendors/VendorsTable';
 import { useNavigate } from 'react-router-dom';
-import VendorDialog from '@/components/vendors/VendorDialog';
+import VendorSheet from '@/components/vendors/VendorSheet';
 
 const fetchVendors = async () => {
   try {
@@ -30,7 +30,7 @@ const fetchVendors = async () => {
 
 const Vendors = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const navigate = useNavigate();
   
@@ -98,11 +98,11 @@ const Vendors = () => {
   const handleEditVendor = (vendor: Vendor) => {
     console.log('Edit vendor:', vendor);
     setSelectedVendor(vendor);
-    setEditDialogOpen(true);
+    setEditSheetOpen(true);
   };
 
-  const handleEditDialogClose = () => {
-    setEditDialogOpen(false);
+  const handleEditSheetClose = () => {
+    setEditSheetOpen(false);
     setSelectedVendor(null);
   };
 
@@ -126,11 +126,11 @@ const Vendors = () => {
           />
         </div>
 
-        {/* Edit Vendor Dialog */}
-        {editDialogOpen && selectedVendor && (
-          <VendorDialog
-            open={editDialogOpen}
-            onOpenChange={handleEditDialogClose}
+        {/* Edit Vendor Sheet */}
+        {editSheetOpen && selectedVendor && (
+          <VendorSheet
+            open={editSheetOpen}
+            onOpenChange={handleEditSheetClose}
             onVendorAdded={handleVendorAdded}
             initialData={selectedVendor}
             isEditing={true}

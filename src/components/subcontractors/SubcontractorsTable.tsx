@@ -1,188 +1,201 @@
 
-import React, { useState, useEffect } from 'react';
-import { Hammer } from 'lucide-react';
-import { Table, TableHeader, TableRow, TableHead, TableBody } from '@/components/ui/table';
-import SubcontractorRow from './SubcontractorRow';
-import SubcontractorEmptyState from './SubcontractorEmptyState';
-import SubcontractorLoadingState from './SubcontractorLoadingState';
-import SubcontractorErrorState from './SubcontractorErrorState';
-import { useSpecialties } from './hooks/useSpecialties';
-import { Subcontractor } from './utils/types';
-import { filterSubcontractors } from './utils/filterUtils';
-import SubcontractorDialog from './SubcontractorDialog';
-import { toast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Eye, Edit, MoreHorizontal } from 'lucide-react';
+import { getStatusColor } from './utils/statusUtils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+interface Subcontractor {
+  subid: string;
+  subname: string;
+  contactemail?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  status?: string;
+  specialty_ids?: string[];
+  createdon?: string;
+}
 
 interface SubcontractorsTableProps {
   subcontractors: Subcontractor[];
   loading: boolean;
   error: string | null;
   searchQuery: string;
+  onEditSubcontractor?: (subcontractor: Subcontractor) => void;
 }
 
-const SubcontractorsTable: React.FC<SubcontractorsTableProps> = ({
-  subcontractors,
-  loading,
-  error,
-  searchQuery
-}) => {
+const SubcontractorsTable = ({ 
+  subcontractors, 
+  loading, 
+  error, 
+  searchQuery,
+  onEditSubcontractor
+}: SubcontractorsTableProps) => {
   const navigate = useNavigate();
   
-  // Get specialties
-  const { specialties, loading: loadingSpecialties, error: specialtiesError } = useSpecialties();
+  const filteredSubcontractors = subcontractors.filter(sub => {
+    const query = searchQuery.toLowerCase();
+    return (
+      sub.subname?.toLowerCase().includes(query) ||
+      sub.contactemail?.toLowerCase().includes(query) ||
+      sub.phone?.toLowerCase().includes(query) ||
+      (sub.city && sub.state && (`${sub.city}, ${sub.state}`).toLowerCase().includes(query))
+    );
+  });
   
-  // State for specialty map (id -> Specialty)
-  const [specialtyMap, setSpecialtyMap] = useState<Record<string, any>>({});
-  
-  // State for edit dialog
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedSubcontractor, setSelectedSubcontractor] = useState<Subcontractor | null>(null);
-  
-  // Process specialties into a map for easy lookup
-  useEffect(() => {
-    if (specialties && Object.keys(specialties).length > 0) {
-      setSpecialtyMap(specialties);
-    }
-  }, [specialties]);
-  
-  // Filter subcontractors based on search query
-  const filteredSubcontractors = filterSubcontractors(subcontractors, searchQuery);
-  
-  const handleEditClick = (subcontractor: Subcontractor) => {
-    console.log('Edit subcontractor clicked:', subcontractor);
-    setSelectedSubcontractor(subcontractor);
-    setEditDialogOpen(true);
-  };
-  
-  const handleDeleteClick = (subcontractor: Subcontractor) => {
-    toast({
-      title: "Not implemented",
-      description: "Delete functionality is not implemented yet",
-      variant: "destructive"
-    });
-  };
-  
-  const handleViewClick = (subcontractor: Subcontractor) => {
+  const handleViewDetails = (subcontractor: Subcontractor) => {
     navigate(`/subcontractors/${subcontractor.subid}`);
   };
   
-  const handleSubcontractorUpdated = () => {
-    toast({
-      title: "Subcontractor updated",
-      description: "The subcontractor has been updated successfully"
-    });
-    window.location.reload(); // Simple reload to refresh data
+  const handleEdit = (subcontractor: Subcontractor) => {
+    if (onEditSubcontractor) {
+      onEditSubcontractor(subcontractor);
+    }
   };
   
-  // Show error state if there's an error
-  if (error || specialtiesError) {
+  if (loading) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+      <div className="rounded-md border">
         <Table>
-          <TableHeader className="bg-gray-50">
+          <TableHeader>
             <TableRow>
-              <TableHead>Subcontractor</TableHead>
-              <TableHead>Specialties</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Location</TableHead>
-              <TableHead>Added</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-[60px]"></TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <SubcontractorErrorState error={error || specialtiesError || "Unknown error"} />
+            {[...Array(5)].map((_, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <div className="h-5 w-40 bg-gray-200 rounded animate-pulse"></div>
+                </TableCell>
+                <TableCell>
+                  <div className="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
+                </TableCell>
+                <TableCell>
+                  <div className="h-5 w-28 bg-gray-200 rounded animate-pulse"></div>
+                </TableCell>
+                <TableCell>
+                  <div className="h-5 w-20 bg-gray-200 rounded animate-pulse"></div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="h-9 w-24 bg-gray-200 rounded animate-pulse ml-auto"></div>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>
     );
   }
   
-  // Table loading skeleton
-  if (loading || loadingSpecialties) {
+  if (error) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
-        <Table>
-          <TableHeader className="bg-gray-50">
-            <TableRow>
-              <TableHead>Subcontractor</TableHead>
-              <TableHead>Specialties</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Added</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[60px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <SubcontractorLoadingState />
-        </Table>
+      <div className="rounded-md border p-8 text-center">
+        <p className="text-red-500">Error: {error}</p>
+        <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
       </div>
     );
   }
   
-  // Empty state
-  if (!filteredSubcontractors || filteredSubcontractors.length === 0) {
+  if (filteredSubcontractors.length === 0) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
-        <Table>
-          <TableHeader className="bg-gray-50">
-            <TableRow>
-              <TableHead>Subcontractor</TableHead>
-              <TableHead>Specialties</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Added</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[60px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <SubcontractorEmptyState />
-          </TableBody>
-        </Table>
+      <div className="rounded-md border p-8 text-center">
+        <p className="text-muted-foreground">
+          {searchQuery
+            ? `No subcontractors found matching "${searchQuery}"`
+            : "No subcontractors found. Add your first subcontractor to get started."}
+        </p>
       </div>
     );
   }
   
-  // Data loaded with results
   return (
-    <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+    <div className="rounded-md border">
       <Table>
-        <TableHeader className="bg-gray-50">
+        <TableHeader>
           <TableRow>
-            <TableHead>Subcontractor</TableHead>
-            <TableHead>Specialties</TableHead>
+            <TableHead>Name</TableHead>
             <TableHead>Contact</TableHead>
             <TableHead>Location</TableHead>
-            <TableHead>Added</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="w-[60px]"></TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredSubcontractors.map((subcontractor) => (
-            <SubcontractorRow
-              key={subcontractor.subid}
-              subcontractor={subcontractor}
-              specialties={specialtyMap}
-              onEdit={handleEditClick}
-              onDelete={handleDeleteClick}
-              onView={handleViewClick}
-            />
+            <TableRow key={subcontractor.subid}>
+              <TableCell className="font-medium">{subcontractor.subname}</TableCell>
+              <TableCell>
+                {subcontractor.contactemail && (
+                  <div className="text-sm">{subcontractor.contactemail}</div>
+                )}
+                {subcontractor.phone && (
+                  <div className="text-sm text-muted-foreground">{subcontractor.phone}</div>
+                )}
+              </TableCell>
+              <TableCell>
+                {subcontractor.city && subcontractor.state
+                  ? `${subcontractor.city}, ${subcontractor.state}`
+                  : subcontractor.city || subcontractor.state || '-'}
+              </TableCell>
+              <TableCell>
+                <div
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(
+                    subcontractor.status || "PENDING"
+                  )}`}
+                >
+                  {subcontractor.status || "Pending"}
+                </div>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewDetails(subcontractor)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span className="sr-only">View</span>
+                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleViewDetails(subcontractor)}>
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEdit(subcontractor)}>
+                        Edit Subcontractor
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableCell>
+            </TableRow>
           ))}
         </TableBody>
       </Table>
-      
-      {/* Edit Subcontractor Dialog */}
-      {selectedSubcontractor && (
-        <SubcontractorDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          onSubcontractorAdded={handleSubcontractorUpdated}
-          initialData={selectedSubcontractor}
-          isEditing={true}
-        />
-      )}
     </div>
   );
 };

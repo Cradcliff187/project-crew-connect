@@ -8,16 +8,27 @@ import { ArrowLeft, Building, MapPin, Phone, Mail, Edit } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import PageTransition from '@/components/layout/PageTransition';
-import VendorDialog from '@/components/vendors/VendorDialog';
+import VendorSheet from '@/components/vendors/VendorSheet';
 import VendorDocuments from './VendorDocuments';
 import VendorMetrics from './VendorMetrics';
 import { getPaymentTermsLabel } from '../utils/vendorUtils';
+import useVendorAssociatedData from '../hooks/useVendorAssociatedData';
+import AssociatedProjects from './AssociatedProjects';
+import AssociatedWorkOrders from './AssociatedWorkOrders';
 
 const VendorDetail = () => {
   const { vendorId } = useParams<{ vendorId: string }>();
   const [vendor, setVendor] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+  
+  // Fetch associated data
+  const { 
+    projects, 
+    workOrders, 
+    loadingAssociations, 
+    fetchAssociatedData 
+  } = useVendorAssociatedData();
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -36,6 +47,9 @@ const VendorDetail = () => {
         }
 
         setVendor(data);
+        
+        // Fetch associated data after vendor data is loaded
+        fetchAssociatedData(vendorId);
       } catch (error) {
         console.error('Error fetching vendor:', error);
         toast({
@@ -49,10 +63,10 @@ const VendorDetail = () => {
     };
 
     fetchVendor();
-  }, [vendorId]);
+  }, [vendorId, fetchAssociatedData]);
 
   const handleEdit = () => {
-    setEditDialogOpen(true);
+    setEditSheetOpen(true);
   };
 
   const handleVendorUpdated = () => {
@@ -216,6 +230,27 @@ const VendorDetail = () => {
           </Card>
         </div>
 
+        {/* Associated Projects & Work Orders */}
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardContent className="pt-6">
+              <AssociatedProjects 
+                projects={projects} 
+                loading={loadingAssociations} 
+              />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <AssociatedWorkOrders 
+                workOrders={workOrders} 
+                loading={loadingAssociations} 
+              />
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="mt-6">
           <VendorMetrics vendorId={vendor.vendorid} />
         </div>
@@ -224,10 +259,10 @@ const VendorDetail = () => {
           <VendorDocuments vendorId={vendor.vendorid} />
         </div>
 
-        {/* Edit Vendor Dialog */}
-        <VendorDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
+        {/* Edit Vendor Sheet */}
+        <VendorSheet
+          open={editSheetOpen}
+          onOpenChange={setEditSheetOpen}
           onVendorAdded={handleVendorUpdated}
           initialData={vendor}
           isEditing={true}
