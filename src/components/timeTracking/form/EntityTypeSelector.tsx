@@ -1,7 +1,6 @@
 
-import React from 'react';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Button } from '@/components/ui/button';
+import { Briefcase, Wrench } from 'lucide-react';
 
 interface EntityTypeSelectorProps {
   entityType: 'work_order' | 'project';
@@ -11,21 +10,28 @@ interface EntityTypeSelectorProps {
 const EntityTypeSelector: React.FC<EntityTypeSelectorProps> = ({ entityType, onChange }) => {
   return (
     <div className="space-y-2">
-      <Label>What are you logging time for?</Label>
-      <RadioGroup
-        value={entityType}
-        onValueChange={(value: 'work_order' | 'project') => onChange(value)}
-        className="flex space-x-4"
-      >
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="work_order" id="work_order" />
-          <Label htmlFor="work_order" className="cursor-pointer">Work Order</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="project" id="project" />
-          <Label htmlFor="project" className="cursor-pointer">Project</Label>
-        </div>
-      </RadioGroup>
+      <label className="text-sm font-medium">Time Entry Type</label>
+      <div className="grid grid-cols-2 gap-3">
+        <Button
+          type="button"
+          variant={entityType === 'work_order' ? 'default' : 'outline'}
+          className={entityType === 'work_order' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
+          onClick={() => onChange('work_order')}
+        >
+          <Wrench className="h-4 w-4 mr-2" />
+          Work Order
+        </Button>
+        
+        <Button
+          type="button"
+          variant={entityType === 'project' ? 'default' : 'outline'}
+          className={entityType === 'project' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
+          onClick={() => onChange('project')}
+        >
+          <Briefcase className="h-4 w-4 mr-2" />
+          Project
+        </Button>
+      </div>
     </div>
   );
 };

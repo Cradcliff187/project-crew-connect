@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { format, isToday, isYesterday, differenceInDays, formatDistance } from "date-fns";
@@ -68,14 +67,13 @@ export function calculateHoursWorked(startTime: string, endTime: string): number
 }
 
 export function formatTimeRange(startTime: string, endTime: string): string {
-  if (!startTime || !endTime) return '';
-  
-  // Convert from 24h to 12h format
   const formatTime = (time: string) => {
+    if (!time) return '';
+    
     const [hours, minutes] = time.split(':').map(Number);
     const period = hours >= 12 ? 'PM' : 'AM';
-    const hour12 = hours % 12 || 12;
-    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
   
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;

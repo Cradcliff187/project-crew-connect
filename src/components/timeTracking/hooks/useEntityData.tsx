@@ -1,117 +1,126 @@
 
 import { useState, useEffect } from 'react';
-import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { UseFormReturn } from 'react-hook-form';
 import { TimeEntryFormValues } from './useTimeEntryForm';
 
-interface WorkOrderOrProject {
-  id: string;
-  title: string;
-  location?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  description?: string;
-  status?: string;
-}
-
 export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
-  const [workOrders, setWorkOrders] = useState<WorkOrderOrProject[]>([]);
-  const [projects, setProjects] = useState<WorkOrderOrProject[]>([]);
-  const [employees, setEmployees] = useState<{ employee_id: string, name: string }[]>([]);
+  const [workOrders, setWorkOrders] = useState<{id: string; title: string; location?: string}[]>([]);
+  const [projects, setProjects] = useState<{id: string; title: string; location?: string}[]>([]);
+  const [employees, setEmployees] = useState<{employee_id: string; name: string}[]>([]);
   const [isLoadingEntities, setIsLoadingEntities] = useState(true);
   
+  // Watch the entity type to fetch appropriate data
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
   
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoadingEntities(true);
+  // Fetch work orders
+  const fetchWorkOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('maintenance_work_orders')
+        .select(`
+          work_order_id,
+          title,
+          description,
+          status
+        `)
+        .in('status', ['NEW', 'IN_PROGRESS'])
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
       
-      try {
-        // Fetch work orders
-        const { data: workOrdersData, error: workOrdersError } = await supabase
-          .from('maintenance_work_orders')
-          .select('work_order_id, title, description, status, customer_id, location_id')
-          .order('created_at', { ascending: false });
-        
-        if (workOrdersError) throw workOrdersError;
-        
-        // Fetch projects
-        const { data: projectsData, error: projectsError } = await supabase
-          .from('projects')
-          .select('projectid, projectname, jobdescription, status, customerid, sitelocationaddress, sitelocationcity, sitelocationstate')
-          .order('created_at', { ascending: false });
-        
-        if (projectsError) throw projectsError;
-        
-        // Fetch employees
-        const { data: employeesData, error: employeesError } = await supabase
-          .from('employees')
-          .select('employee_id, first_name, last_name, hourly_rate')
-          .eq('status', 'ACTIVE')
-          .order('last_name', { ascending: true });
-          
-        if (employeesError) throw employeesError;
-        
-        // Format data
-        const formattedWorkOrders = workOrdersData.map(wo => ({
-          id: wo.work_order_id,
-          title: wo.title,
-          description: wo.description,
-          status: wo.status,
-          location: 'Location details will be fetched',
-        }));
-        
-        const formattedProjects = projectsData.map(project => ({
-          id: project.projectid,
-          title: project.projectname,
-          description: project.jobdescription,
-          status: project.status,
-          address: project.sitelocationaddress,
-          city: project.sitelocationcity,
-          state: project.sitelocationstate,
-          location: [project.sitelocationcity, project.sitelocationstate].filter(Boolean).join(', '),
-        }));
-        
-        const formattedEmployees = employeesData.map(emp => ({
-          employee_id: emp.employee_id,
-          name: `${emp.first_name} ${emp.last_name}`
-        }));
-        
-        setWorkOrders(formattedWorkOrders);
-        setProjects(formattedProjects);
-        setEmployees(formattedEmployees);
-        
-        // Set default employee if there's any
-        if (formattedEmployees.length > 0 && !form.getValues('employeeId')) {
-          form.setValue('employeeId', formattedEmployees[0].employee_id);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast({
-          title: 'Error loading data',
-          description: 'Could not load work orders and projects.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoadingEntities(false);
-      }
-    };
-    
-    fetchData();
-  }, [form]);
+      setWorkOrders(data.map(wo => ({
+        id: wo.work_order_id,
+        title: wo.title,
+        description: wo.description
+      })));
+    } catch (error) {
+      console.error('Error fetching work orders:', error);
+    }
+  };
   
+  // Fetch projects
+  const fetchProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select(`
+          projectid,
+          projectname,
+          sitelocationaddress,
+          sitelocationcity,
+          sitelocationstate
+        `)
+        .in('status', ['active', 'in progress', 'in-progress', 'pending'])
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      setProjects(data.map(project => ({
+        id: project.projectid,
+        title: project.projectname,
+        location: [
+          project.sitelocationaddress,
+          project.sitelocationcity,
+          project.sitelocationstate
+        ].filter(Boolean).join(', ')
+      })));
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
+  
+  // Fetch employees
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select(`
+          employee_id,
+          first_name,
+          last_name,
+          hourly_rate
+        `)
+        .eq('status', 'ACTIVE')
+        .order('first_name', { ascending: true });
+        
+      if (error) throw error;
+      
+      setEmployees(data.map(employee => ({
+        employee_id: employee.employee_id,
+        name: `${employee.first_name} ${employee.last_name}`
+      })));
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  };
+  
+  // Get detailed information about the selected entity
   const getSelectedEntityDetails = () => {
     if (!entityId) return null;
     
     if (entityType === 'work_order') {
       return workOrders.find(wo => wo.id === entityId);
     } else {
-      return projects.find(proj => proj.id === entityId);
+      return projects.find(p => p.id === entityId);
     }
   };
+  
+  // Load all entities
+  useEffect(() => {
+    const loadEntities = async () => {
+      setIsLoadingEntities(true);
+      await Promise.all([
+        fetchWorkOrders(),
+        fetchProjects(),
+        fetchEmployees()
+      ]);
+      setIsLoadingEntities(false);
+    };
+    
+    loadEntities();
+  }, []);
   
   return {
     workOrders,

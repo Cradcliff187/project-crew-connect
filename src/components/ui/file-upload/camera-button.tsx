@@ -7,15 +7,17 @@ interface CameraButtonProps {
   onCameraCapture: () => void;
 }
 
-export const CameraButton: React.FC<CameraButtonProps> = ({ onCameraCapture }) => {
+export const CameraButton: React.FC<CameraButtonProps> = ({ 
+  onCameraCapture 
+}) => {
   return (
-    <Button 
-      type="button" 
-      variant="outline" 
-      onClick={onCameraCapture} 
-      className="w-full"
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onCameraCapture}
+      className="flex items-center gap-2 w-full"
     >
-      <Camera className="h-4 w-4 mr-2" />
+      <Camera className="h-4 w-4" />
       Take Photo
     </Button>
   );
