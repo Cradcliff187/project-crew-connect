@@ -54,17 +54,18 @@ export const formatDate = (dateString: string | null): string => {
 };
 
 // Map status to StatusBadge variant
-export const mapStatusToStatusBadge = (status: string | null): any => {
-  if (!status) return { variant: 'default', label: 'Unknown' };
+export const mapStatusToStatusBadge = (status: string | null): string => {
+  if (!status) return 'unknown';
   
-  const statusKey = typeof status === 'string' ? status.toUpperCase() : String(status);
+  // Convert to lowercase for case-insensitive comparison
+  const statusLower = status.toLowerCase();
   
-  const statusMap: Record<string, any> = {
-    'ACTIVE': { variant: 'success', label: 'Active' },
-    'INACTIVE': { variant: 'destructive', label: 'Inactive' },
-    'PENDING': { variant: 'warning', label: 'Pending' },
-    'ARCHIVED': { variant: 'outline', label: 'Archived' }
-  };
-  
-  return statusMap[statusKey] || { variant: 'default', label: status };
+  switch (statusLower) {
+    case 'active':
+      return 'active';
+    case 'inactive':
+      return 'inactive';
+    default:
+      return 'unknown';
+  }
 };

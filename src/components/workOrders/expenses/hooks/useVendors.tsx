@@ -17,6 +17,7 @@ export function useVendors() {
       const { data, error } = await supabase
         .from('vendors')
         .select('vendorid, vendorname')
+        .eq('status', 'ACTIVE')  // Only fetch active vendors
         .order('vendorname', { ascending: true });
       
       if (error) {
