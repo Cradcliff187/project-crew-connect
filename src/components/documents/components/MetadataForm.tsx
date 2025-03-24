@@ -1,38 +1,23 @@
 
-import React, { useState } from 'react';
-import { Control, Controller, UseFormReturn } from 'react-hook-form';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
-
-import { 
-  documentCategories, 
-  entityTypes, 
-  DocumentUploadFormValues 
-} from '../schemas/documentSchema';
-import VendorSelector from './VendorSelector';
+import React, { useEffect } from 'react';
+import { UseFormReturn, Control } from 'react-hook-form';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 import EntitySelector from './EntitySelector';
-import ExpenseForm from '../ExpenseForm';
+import ExpenseTypeSelector from './ExpenseTypeSelector';
+import DocumentCategorySelector from './DocumentCategorySelector';
 import TagsInput from './TagsInput';
+import AmountField from './AmountField';
+import ExpenseDatePicker from './ExpenseDatePicker';
+import VendorTypeSelector from './VendorTypeSelector';
+import VendorSelector from './VendorSelector';
+import NotesField from './NotesField';
+import { FormDescription } from '@/components/ui/form';
 
 interface MetadataFormProps {
   form: UseFormReturn<DocumentUploadFormValues>;
   control: Control<DocumentUploadFormValues>;
   watchIsExpense: boolean;
-  watchVendorType: string | undefined;
+  watchVendorType: 'vendor' | 'subcontractor' | 'other' | undefined;
   isReceiptUpload?: boolean;
   showVendorSelector: boolean;
   prefillData?: {
@@ -43,180 +28,99 @@ interface MetadataFormProps {
   };
 }
 
-const MetadataForm: React.FC<MetadataFormProps> = ({ 
-  form, 
-  control, 
-  watchIsExpense, 
+const MetadataForm: React.FC<MetadataFormProps> = ({
+  form,
+  control,
+  watchIsExpense,
   watchVendorType,
   isReceiptUpload = false,
   showVendorSelector,
   prefillData
 }) => {
-  const [showTags, setShowTags] = useState(false);
+  // Set initial values from prefillData
+  useEffect(() => {
+    if (prefillData) {
+      if (prefillData.amount) {
+        form.setValue('metadata.amount', prefillData.amount);
+      }
+      if (prefillData.vendorId) {
+        form.setValue('metadata.vendorId', prefillData.vendorId);
+      }
+      
+      // Add any notes with material name if available
+      if (prefillData.materialName || prefillData.expenseName) {
+        const itemName = prefillData.materialName || prefillData.expenseName;
+        form.setValue('metadata.notes', `Receipt for: ${itemName}`);
+      }
+    }
+  }, [prefillData, form]);
   
+  // Get the watchCategory value
+  const watchCategory = form.watch('metadata.category');
   const watchEntityType = form.watch('metadata.entityType');
+  
+  // Helper to determine if we should show expense fields
+  const showExpenseFields = isReceiptUpload || watchIsExpense || 
+                          watchCategory === 'receipt' || watchCategory === 'invoice';
   
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-        {/* Document Category */}
-        <FormField
-          control={control}
-          name="metadata.category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={field.onChange}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {documentCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category === '3rd_party_estimate' ? '3rd Party Estimate' : 
-                        category.charAt(0).toUpperCase() + category.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        {/* Entity Type */}
-        <FormField
-          control={control}
-          name="metadata.entityType"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Related To</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={field.onChange}
-                disabled={isReceiptUpload}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select entity type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {entityTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.replace(/_/g, ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-      
-      {/* Entity ID Selector */}
-      <EntitySelector 
-        control={control} 
-        entityType={watchEntityType} 
-        isReceiptUpload={isReceiptUpload}
-      />
-      
-      {/* "Is Expense" Switch */}
       {!isReceiptUpload && (
-        <div className="flex items-center space-x-2 pt-2">
-          <Switch
-            id="is-expense"
-            checked={watchIsExpense}
-            onCheckedChange={(checked) => {
-              form.setValue('metadata.isExpense', checked);
-              if (checked) {
-                form.setValue('metadata.expenseType', 'materials');
-              }
-            }}
-          />
-          <Label htmlFor="is-expense">This document is an expense record</Label>
-        </div>
-      )}
-      
-      {/* Expense Details (conditional) */}
-      {(watchIsExpense || isReceiptUpload) && (
-        <ExpenseForm 
+        <DocumentCategorySelector 
           control={control} 
           isReceiptUpload={isReceiptUpload} 
         />
       )}
       
-      {/* Vendor Section (conditional) */}
-      {(showVendorSelector || watchIsExpense) && (
-        <div className="pt-2">
-          <Separator className="my-2" />
-          <VendorSelector 
-            control={control} 
-            vendorType={watchVendorType} 
-            prefillVendorId={prefillData?.vendorId}
-          />
-        </div>
-      )}
-      
-      {/* Notes */}
-      <FormField
-        control={control}
-        name="metadata.notes"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Notes</FormLabel>
-            <FormControl>
-              <Textarea
-                placeholder="Add any additional notes about this document"
-                className="resize-none"
-                {...field}
-                value={field.value || ''}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
+      <EntitySelector 
+        control={control} 
+        isReceiptUpload={isReceiptUpload} 
       />
       
-      {/* Tags (expandable) */}
-      <div>
-        {!showTags ? (
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm"
-            onClick={() => setShowTags(true)}
-            className="flex items-center text-muted-foreground"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Tags
-          </Button>
-        ) : (
-          <FormField
-            control={control}
-            name="metadata.tags"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tags</FormLabel>
-                <FormControl>
-                  <TagsInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Add tags and press Enter"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-      </div>
+      {!isReceiptUpload && showExpenseFields && (
+        <VendorTypeSelector control={control} />
+      )}
+      
+      {showVendorSelector && watchVendorType && (
+        <VendorSelector 
+          control={control} 
+          vendorType={watchVendorType} 
+          prefillVendorId={prefillData?.vendorId} 
+        />
+      )}
+      
+      {showExpenseFields && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <AmountField 
+              control={control}
+              isReceiptUpload={isReceiptUpload}
+              prefillAmount={prefillData?.amount}
+            />
+            <ExpenseDatePicker control={control} />
+          </div>
+          
+          <ExpenseTypeSelector control={control} />
+        </>
+      )}
+      
+      <TagsInput
+        control={control}
+        name="metadata.tags"
+        label="Tags"
+        description="Add tags to help organize and search for this document later"
+      />
+      
+      <NotesField 
+        control={control} 
+        prefillText={prefillData?.materialName ? `Receipt for: ${prefillData.materialName}` : undefined} 
+      />
+      
+      {watchEntityType && (
+        <FormDescription>
+          This document will be associated with {watchEntityType.replace(/_/g, ' ').toLowerCase()} records.
+        </FormDescription>
+      )}
     </div>
   );
 };

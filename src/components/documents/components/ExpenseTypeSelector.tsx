@@ -1,30 +1,45 @@
 
 import React from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { expenseTypes } from '../schemas/documentSchema';
+import { Control } from 'react-hook-form';
+import { DocumentUploadFormValues, expenseTypes } from '../schemas/documentSchema';
 
 interface ExpenseTypeSelectorProps {
-  value: string;
-  onChange: (value: string) => void;
+  control: Control<DocumentUploadFormValues>;
 }
 
-const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ value, onChange }) => {
+const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ control }) => {
   return (
-    <RadioGroup
-      value={value}
-      onValueChange={onChange}
-      className="flex flex-col space-y-1"
-    >
-      {expenseTypes.map((type) => (
-        <div key={type} className="flex items-center space-x-2">
-          <RadioGroupItem value={type} id={`expense-type-${type}`} />
-          <Label htmlFor={`expense-type-${type}`} className="capitalize">
-            {type}
-          </Label>
-        </div>
-      ))}
-    </RadioGroup>
+    <FormField
+      control={control}
+      name="metadata.expenseType"
+      render={({ field }) => (
+        <FormItem className="space-y-1">
+          <FormLabel>Expense Type</FormLabel>
+          <FormControl>
+            <RadioGroup
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+              className="flex flex-wrap gap-4"
+            >
+              {expenseTypes.map((type) => (
+                <div key={type} className="flex items-center space-x-2">
+                  <RadioGroupItem value={type} id={`expense-type-${type}`} />
+                  <label 
+                    htmlFor={`expense-type-${type}`} 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </label>
+                </div>
+              ))}
+            </RadioGroup>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 };
 

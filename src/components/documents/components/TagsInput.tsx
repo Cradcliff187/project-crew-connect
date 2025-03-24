@@ -1,19 +1,61 @@
 
-import React, { useState, KeyboardEvent } from 'react';
-import { Input } from '@/components/ui/input';
+import React, { useState } from 'react';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Control } from 'react-hook-form';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface TagsInputProps {
+  control: Control<DocumentUploadFormValues>;
+  name: `metadata.${string}`;
+  label: string;
+  description?: string;
+}
+
+const TagsInput: React.FC<TagsInputProps> = ({ 
+  control, 
+  name, 
+  label, 
+  description 
+}) => {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <TagsInputField
+              value={field.value || []}
+              onChange={field.onChange}
+              placeholder="Type and press Enter to add a tag"
+            />
+          </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
+
+export interface TagsInputFieldProps {
   value: string[];
   onChange: (value: string[]) => void;
   placeholder?: string;
 }
 
-const TagsInput: React.FC<TagsInputProps> = ({ value = [], onChange, placeholder = "Add tag..." }) => {
+export const TagsInputField: React.FC<TagsInputFieldProps> = ({ 
+  value = [], 
+  onChange, 
+  placeholder = "Add tag..." 
+}) => {
   const [inputValue, setInputValue] = useState('');
   
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputValue.trim()) {
       e.preventDefault();
       if (!value.includes(inputValue.trim())) {
