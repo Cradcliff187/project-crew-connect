@@ -92,11 +92,6 @@ const SubcontractorDetailPage = () => {
             
             <Separator />
             
-            {/* Documents Section */}
-            <SubcontractorDocuments subcontractorId={subcontractor.subid} />
-            
-            <Separator />
-            
             {/* Associated Data Section */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Associated Projects Section */}
@@ -143,6 +138,10 @@ const SubcontractorDetailPage = () => {
                 <NotesSection notes={subcontractor.notes} />
               </>
             )}
+            
+            {/* Documents Section - Moved to bottom */}
+            <Separator />
+            <SubcontractorDocuments subcontractorId={subcontractor.subid} />
           </div>
         </Card>
         
