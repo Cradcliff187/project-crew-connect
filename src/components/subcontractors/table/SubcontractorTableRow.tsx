@@ -1,7 +1,8 @@
 
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Eye, MoreHorizontal } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Eye, MoreHorizontal, Tag } from 'lucide-react';
 import { getStatusColor } from '../utils/statusUtils';
 import { Subcontractor } from '../utils/types';
 import { Link } from 'react-router-dom';
@@ -11,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import useSpecialties from '../hooks/useSpecialties';
 
 interface SubcontractorTableRowProps {
   subcontractor: Subcontractor;
@@ -23,11 +25,54 @@ const SubcontractorTableRow = ({
   onViewDetails, 
   onEditSubcontractor 
 }: SubcontractorTableRowProps) => {
+  const { specialties, loading } = useSpecialties();
   
   const handleEdit = () => {
     if (onEditSubcontractor) {
       onEditSubcontractor(subcontractor);
     }
+  };
+  
+  // Function to render specialties as badges
+  const renderSpecialties = () => {
+    if (loading) {
+      return <span className="text-xs text-muted-foreground">Loading...</span>;
+    }
+    
+    if (!subcontractor.specialty_ids || subcontractor.specialty_ids.length === 0) {
+      return <span className="text-gray-400 italic">No specialties</span>;
+    }
+    
+    // Show up to 2 specialties, with a count badge if more exist
+    const specialtiesToShow = subcontractor.specialty_ids.slice(0, 2);
+    const remainingCount = subcontractor.specialty_ids.length - 2;
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {specialtiesToShow.map(id => {
+          const specialty = specialties[id];
+          return specialty ? (
+            <Badge 
+              key={id} 
+              variant="secondary" 
+              className="text-xs bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd] whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px]"
+            >
+              {specialty.specialty}
+            </Badge>
+          ) : null;
+        })}
+        
+        {remainingCount > 0 && (
+          <Badge 
+            variant="outline" 
+            className="text-xs flex items-center gap-1"
+          >
+            <Tag className="h-3 w-3" />
+            +{remainingCount} more
+          </Badge>
+        )}
+      </div>
+    );
   };
   
   return (
@@ -38,11 +83,7 @@ const SubcontractorTableRow = ({
         </Link>
       </TableCell>
       <TableCell>
-        {subcontractor.specialty_ids && subcontractor.specialty_ids.length > 0 ? (
-          <span className="text-sm">{subcontractor.specialty_ids.length} specialties</span>
-        ) : (
-          <span className="text-gray-400 italic">No specialties</span>
-        )}
+        {renderSpecialties()}
       </TableCell>
       <TableCell>
         {subcontractor.contactemail && (
@@ -58,8 +99,7 @@ const SubcontractorTableRow = ({
           : subcontractor.city || subcontractor.state || '-'}
       </TableCell>
       <TableCell>
-        {/* Check if rating exists before accessing it */}
-        {subcontractor.rating ? (
+        {subcontractor.rating !== undefined && subcontractor.rating !== null ? (
           <span className="text-sm">{subcontractor.rating}/5 rating</span>
         ) : (
           <span className="text-gray-400 italic">No rating</span>
