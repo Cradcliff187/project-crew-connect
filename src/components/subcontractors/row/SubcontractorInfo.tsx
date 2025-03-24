@@ -31,7 +31,7 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="inline-flex">
-                  <FileCheck className="h-4 w-4 text-[#0485ea]" />
+                  <FileCheck className="h-4 w-4 text-construction-600" />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -62,7 +62,7 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
 
   return (
     <div className="flex flex-col">
-      <div className="font-medium text-[#0485ea]">{subcontractor.subname || 'Unnamed Subcontractor'}</div>
+      <div className="font-medium text-construction-600">{subcontractor.subname || 'Unnamed Subcontractor'}</div>
       <div className="flex items-center gap-2">
         <div className="text-xs text-muted-foreground">{subcontractor.subid}</div>
         {renderComplianceIndicators()}

@@ -54,22 +54,22 @@ const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => 
   
   switch (statusType) {
     case 'success':
-      className = 'bg-green-50 text-green-700 border-green-200';
+      className = 'bg-green-50 text-green-700 border-green-200 font-medium';
       break;
     case 'info':
-      className = 'bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20';
+      className = 'bg-construction-50 text-construction-700 border-construction-200 font-medium';
       break;
     case 'warning':
-      className = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      className = 'bg-yellow-50 text-yellow-700 border-yellow-200 font-medium';
       break;
     case 'error':
-      className = 'bg-red-50 text-red-700 border-red-200';
+      className = 'bg-red-50 text-red-700 border-red-200 font-medium';
       break;
     case 'neutral':
-      className = 'bg-gray-50 text-gray-700 border-gray-200';
+      className = 'bg-gray-50 text-gray-700 border-gray-200 font-medium';
       break;
     case 'purple':
-      className = 'bg-purple-50 text-purple-700 border-purple-200';
+      className = 'bg-purple-50 text-purple-700 border-purple-200 font-medium';
       break;
   }
   

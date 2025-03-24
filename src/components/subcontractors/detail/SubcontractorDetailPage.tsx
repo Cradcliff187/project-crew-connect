@@ -71,7 +71,7 @@ const SubcontractorDetailPage = () => {
   
   return (
     <PageTransition>
-      <div className="container max-w-4xl mx-auto py-6">
+      <div className="container max-w-4xl mx-auto py-6 text-foreground">
         <SubcontractorDetailHeader 
           subcontractor={subcontractor} 
           loading={loading} 
