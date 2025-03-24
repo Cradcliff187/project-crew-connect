@@ -17,28 +17,44 @@ const useVendorAssociatedData = () => {
     setLoadingAssociations(true);
     
     try {
-      // Fetch associated projects
+      // Fetch associated projects using the vendor_associations table
       const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .contains('vendor_ids', [vendorId]);
+        .from('vendor_associations')
+        .select('entity_id')
+        .eq('vendor_id', vendorId)
+        .eq('entity_type', 'PROJECT');
       
       if (projectsError) {
-        console.error('Error fetching vendor projects:', projectsError);
+        console.error('Error fetching vendor project associations:', projectsError);
         toast({
           title: 'Error',
           description: 'Failed to load associated projects.',
           variant: 'destructive',
         });
+      } else if (projectsData && projectsData.length > 0) {
+        // Get the project IDs from the associations
+        const projectIds = projectsData.map(item => item.entity_id);
+        
+        // Fetch the actual project data
+        const { data: projects, error: projectsFetchError } = await supabase
+          .from('projects')
+          .select('*')
+          .in('projectid', projectIds);
+          
+        if (projectsFetchError) {
+          console.error('Error fetching project details:', projectsFetchError);
+        } else {
+          setProjects(projects || []);
+        }
       } else {
-        setProjects(projectsData || []);
+        setProjects([]);
       }
       
-      // Fetch associated work orders
+      // Fetch associated work orders from maintenance_work_orders table
       const { data: workOrdersData, error: workOrdersError } = await supabase
-        .from('work_orders')
+        .from('maintenance_work_orders')
         .select('*')
-        .eq('vendor_id', vendorId);
+        .eq('customer_id', vendorId);
       
       if (workOrdersError) {
         console.error('Error fetching vendor work orders:', workOrdersError);
