@@ -13,6 +13,6 @@ export const filterSubcontractors = (
     (sub.subname?.toLowerCase() || '').includes(query) ||
     (sub.contactemail?.toLowerCase() || '').includes(query) ||
     (sub.phone?.toLowerCase() || '').includes(query) ||
-    (sub.subid?.toLowerCase() || '').includes(query)
+    (sub.city && sub.state && (`${sub.city}, ${sub.state}`).toLowerCase().includes(query))
   );
 };

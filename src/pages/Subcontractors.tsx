@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import SubcontractorsHeader from '@/components/subcontractors/SubcontractorsHeader';
-import SubcontractorsTable from '@/components/subcontractors/SubcontractorsTable';
+import SubcontractorsTable from '@/components/subcontractors/table/SubcontractorsTable';
 import useSubcontractors from '@/components/subcontractors/hooks/useSubcontractors';
 import SubcontractorSheet from '@/components/subcontractors/SubcontractorSheet';
 
