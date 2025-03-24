@@ -38,12 +38,10 @@ const TimeTracking = () => {
   const fetchTimeEntries = async () => {
     const dateString = format(selectedDate, 'yyyy-MM-dd');
     
-    const { data, error } = await supabase
+    // First fetch the time entries
+    const { data: timeEntries, error } = await supabase
       .from('time_entries')
-      .select(`
-        *,
-        documents(*)
-      `)
+      .select('*')
       .eq('date_worked', dateString)
       .order('created_at', { ascending: false });
       
@@ -51,8 +49,8 @@ const TimeTracking = () => {
       throw error;
     }
     
-    // Fetch entity names (projects or work orders)
-    const enhancedData = await Promise.all(data.map(async (entry) => {
+    // For each time entry, fetch its receipts through the junction table
+    const enhancedData = await Promise.all((timeEntries || []).map(async (entry) => {
       let entityName = "Unknown";
       let entityLocation = "";
       
@@ -97,11 +95,31 @@ const TimeTracking = () => {
         }
       }
       
+      // Fetch the receipt documents through the junction table
+      let documents = [];
+      if (entry.has_receipts) {
+        const { data: documentLinks } = await supabase
+          .from('time_entry_document_links')
+          .select('document_id')
+          .eq('time_entry_id', entry.id);
+          
+        if (documentLinks && documentLinks.length > 0) {
+          const documentIds = documentLinks.map(link => link.document_id);
+          const { data: docs } = await supabase
+            .from('documents')
+            .select('*')
+            .in('document_id', documentIds);
+            
+          documents = docs || [];
+        }
+      }
+      
       return {
         ...entry,
         entity_name: entityName,
         entity_location: entityLocation,
-        employee_name: employeeName
+        employee_name: employeeName,
+        documents: documents
       };
     }));
     
