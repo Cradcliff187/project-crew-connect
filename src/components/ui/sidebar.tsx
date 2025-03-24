@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
@@ -65,8 +66,28 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const isMobile = useIsMobile()
+    // Use window measurement inside the component function
+    const [isMobileState, setIsMobileState] = React.useState(false)
     const [openMobile, setOpenMobile] = React.useState(false)
+
+    // Set up mobile detection in an effect
+    React.useEffect(() => {
+      // Function to check if we're on mobile
+      const checkMobile = () => {
+        // Check window width as a simple measure
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+        setIsMobileState(isMobile)
+      }
+      
+      // Initial check
+      checkMobile()
+      
+      // Set up listener
+      window.addEventListener('resize', checkMobile)
+      
+      // Clean up
+      return () => window.removeEventListener('resize', checkMobile)
+    }, [])
 
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
@@ -85,10 +106,10 @@ const SidebarProvider = React.forwardRef<
     )
 
     const toggleSidebar = React.useCallback(() => {
-      return isMobile
+      return isMobileState
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile])
+    }, [isMobileState, setOpen, setOpenMobile])
 
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
@@ -112,12 +133,12 @@ const SidebarProvider = React.forwardRef<
         state,
         open,
         setOpen,
-        isMobile,
+        isMobile: isMobileState,
         openMobile,
         setOpenMobile,
         toggleSidebar,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobileState, openMobile, setOpenMobile, toggleSidebar]
     )
 
     return (

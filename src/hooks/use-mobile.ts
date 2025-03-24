@@ -8,7 +8,8 @@ const MOBILE_BREAKPOINT = 768;
  * Hook that detects if the current device is mobile based on user agent and screen size
  */
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+  // Only call hooks in the component context - check if window exists first
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   useEffect(() => {
     // Initial check: First check user agent, then screen size as fallback
@@ -40,7 +41,7 @@ export function useIsMobile() {
     };
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }
 
 /**
