@@ -45,9 +45,12 @@ const EditFormContent = ({
   
   const [currentStep, setCurrentStep] = useState(ESTIMATE_STEPS[0].id);
 
-  // Reset showSiteLocation when customer changes or when isNewCustomer changes
+  // Modified to ensure we're not causing unnecessary re-renders or DOM manipulations
   useEffect(() => {
-    form.setValue('showSiteLocation', false);
+    if (selectedCustomer || isNewCustomer) {
+      // Only reset when it makes logical sense
+      form.setValue('showSiteLocation', false, { shouldValidate: false });
+    }
   }, [selectedCustomer, isNewCustomer, form]);
 
   const goToNextStep = () => {

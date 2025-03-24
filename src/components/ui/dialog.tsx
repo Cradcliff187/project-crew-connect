@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
@@ -31,28 +32,9 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  React.useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        document.querySelectorAll('[role="dialog"]').forEach(dialog => {
-          if (!dialog.contains(document.activeElement)) {
-            dialog.remove();
-          }
-        });
-      }
-    };
-
-    window.addEventListener('keydown', handleEscape);
-    return () => {
-      window.removeEventListener('keydown', handleEscape);
-      document.querySelectorAll('[role="dialog"]').forEach(dialog => {
-        if (!dialog.contains(document.activeElement)) {
-          dialog.remove();
-        }
-      });
-    };
-  }, []);
-
+  // Remove the problematic useEffect that was manually removing dialogs
+  // when Escape key is pressed - this is already handled by RadixUI
+  
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -60,6 +42,7 @@ const DialogContent = React.forwardRef<
         ref={ref}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
+          // Only reset these styles, but don't manipulate DOM nodes directly
           document.body.style.pointerEvents = '';
           document.body.style.overflow = '';
         }}
@@ -76,6 +59,7 @@ const DialogContent = React.forwardRef<
         <DialogPrimitive.Close 
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
           onClick={() => {
+            // Only reset these styles, don't manipulate DOM
             document.body.style.pointerEvents = '';
             document.body.style.overflow = '';
           }}

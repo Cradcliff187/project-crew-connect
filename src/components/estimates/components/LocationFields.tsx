@@ -6,6 +6,10 @@ import { EstimateFormValues } from '../schemas/estimateFormSchema';
 
 const LocationFields = () => {
   const form = useFormContext<EstimateFormValues>();
+  const showSiteLocation = form.watch('showSiteLocation');
+
+  // Only render if site location should be shown
+  if (!showSiteLocation) return null;
 
   return (
     <div className="space-y-2">
