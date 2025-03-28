@@ -3,7 +3,7 @@ import { EstimateItem } from '../schemas/estimateFormSchema';
 
 // Calculate the total cost for a single item
 export const calculateItemCost = (item: EstimateItem): number => {
-  const cost = parseFloat(item.cost) || 0;
+  const cost = parseFloat(item.cost || '0') || 0;
   const quantity = parseFloat(item.quantity || "1") || 1; // Default to 1 if not provided
   return cost * quantity;
 };
@@ -11,7 +11,7 @@ export const calculateItemCost = (item: EstimateItem): number => {
 // Calculate the markup amount for a single item
 export const calculateItemMarkup = (item: EstimateItem): number => {
   const cost = calculateItemCost(item);
-  const markupPercentage = parseFloat(item.markup_percentage) || 0;
+  const markupPercentage = parseFloat(item.markup_percentage || '0') || 0;
   return (cost * markupPercentage) / 100;
 };
 
@@ -93,7 +93,7 @@ export const calculateGrandTotal = (
   return calculateSubtotal(items) + calculateContingencyAmount(items, contingencyPercentage);
 };
 
-// Add the missing function for calculateEstimateTotals
+// Calculate the estimate totals
 export const calculateEstimateTotals = (
   items: EstimateItem[],
   contingencyPercentage: string

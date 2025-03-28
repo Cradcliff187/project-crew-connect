@@ -40,13 +40,16 @@ export const estimateFormSchema = z.object({
 
 export type EstimateFormValues = z.infer<typeof estimateFormSchema>;
 
-// Define a type for calculation functions to ensure consistency
+// Define EstimateItem type for calculations - make all properties optional with defaults
 export type EstimateItem = {
   item_type?: string;
-  cost: string;
-  markup_percentage: string;
+  cost: string; // This stays required
+  markup_percentage: string; // This stays required
   quantity?: string;
   unitPrice?: string;
+  vendor_id?: string;
+  subcontractor_id?: string;
+  document_id?: string;
 };
 
 // Types for calculation results

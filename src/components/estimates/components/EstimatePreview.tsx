@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { EstimateFormValues } from '../schemas/estimateFormSchema';
+import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
 import { calculateEstimateTotals } from '../utils/estimateCalculations';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
@@ -53,12 +52,20 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
     }
   }, [formData, selectedCustomerName, selectedCustomerAddress]);
   
+  // Convert form items to calculation items with required properties
+  const calculationItems: EstimateItem[] = formData.items.map(item => ({
+    cost: item.cost || '0',
+    markup_percentage: item.markup_percentage || '0',
+    quantity: item.quantity || '1',
+    item_type: item.item_type
+  }));
+  
   // Calculate totals
   const { 
     totalPrice, 
     contingencyAmount, 
     grandTotal 
-  } = calculateEstimateTotals(formData.items, formData.contingency_percentage || '0');
+  } = calculateEstimateTotals(calculationItems, formData.contingency_percentage || '0');
   
   // Fetch document information
   useEffect(() => {
