@@ -1,9 +1,13 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
-import { useSummaryCalculations } from '../hooks/useSummaryCalculations';
+import { calculateEstimateTotals } from '../utils/estimateCalculations';
+import { supabase } from '@/integrations/supabase/client';
+import { Document } from '@/components/documents/schemas/documentSchema';
+import { FileIcon, PaperclipIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface EstimatePreviewProps {
   formData: EstimateFormValues;
@@ -12,125 +16,241 @@ interface EstimatePreviewProps {
 }
 
 const EstimatePreview: React.FC<EstimatePreviewProps> = ({ 
-  formData, 
+  formData,
   selectedCustomerName,
-  selectedCustomerAddress 
+  selectedCustomerAddress
 }) => {
-  const {
-    totalCost,
-    totalMarkup,
-    subtotal,
-    contingencyAmount,
-    grandTotal
-  } = useSummaryCalculations();
-
-  const formatAddress = () => {
-    if (formData.showSiteLocation || !selectedCustomerAddress) {
-      const { address, city, state, zip } = formData.location;
-      return address && city ? `${address}, ${city}, ${state || ''} ${zip || ''}`.trim() : 'No address provided';
-    } else {
-      return selectedCustomerAddress || 'No address provided';
-    }
+  const [customerName, setCustomerName] = React.useState('');
+  const [customerAddress, setCustomerAddress] = React.useState('');
+  const [attachedDocuments, setAttachedDocuments] = useState<Document[]>([]);
+  const [lineItemDocuments, setLineItemDocuments] = useState<{[key: string]: Document}>({});
+  
+  // Format currency values
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
+    }).format(value);
   };
-
-  const getCustomerName = () => {
+  
+  // Get customer info
+  useEffect(() => {
     if (formData.isNewCustomer && formData.newCustomer?.name) {
-      return formData.newCustomer.name;
+      setCustomerName(formData.newCustomer.name);
+      
+      const address = [
+        formData.newCustomer.address,
+        formData.newCustomer.city,
+        formData.newCustomer.state,
+        formData.newCustomer.zip
+      ].filter(Boolean).join(', ');
+      
+      setCustomerAddress(address);
+    } else {
+      setCustomerName(selectedCustomerName || '');
+      setCustomerAddress(selectedCustomerAddress || '');
     }
-    return selectedCustomerName || 'No customer selected';
-  };
-
+  }, [formData, selectedCustomerName, selectedCustomerAddress]);
+  
+  // Calculate totals
+  const { 
+    totalPrice, 
+    contingencyAmount, 
+    grandTotal 
+  } = calculateEstimateTotals(formData.items, formData.contingency_percentage || '0');
+  
+  // Fetch document information
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      // First fetch estimate-level documents
+      if (formData.estimate_documents && formData.estimate_documents.length > 0) {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .in('document_id', formData.estimate_documents);
+          
+        if (!error && data) {
+          setAttachedDocuments(data);
+        }
+      }
+      
+      // Then fetch line item documents
+      const itemDocumentIds = formData.items
+        .filter(item => item.document_id)
+        .map(item => item.document_id);
+        
+      if (itemDocumentIds.length > 0) {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .in('document_id', itemDocumentIds);
+          
+        if (!error && data) {
+          const documentsMap: {[key: string]: Document} = {};
+          data.forEach(doc => {
+            documentsMap[doc.document_id] = doc;
+          });
+          setLineItemDocuments(documentsMap);
+        }
+      }
+    };
+    
+    fetchDocuments();
+  }, [formData]);
+  
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-[#0485ea]">Estimate Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-1">Project</h3>
-              <p className="text-base">{formData.project}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-1">Customer</h3>
-              <p className="text-base">{getCustomerName()}</p>
-            </div>
+      {/* AKC Information (Hardcoded for the example) */}
+      <div className="flex flex-col items-start">
+        <h2 className="text-xl font-bold text-[#0485ea]">AKC LLC</h2>
+        <p className="text-sm text-gray-600">123 Company Street, City, State ZIP</p>
+        <p className="text-sm text-gray-600">Phone: (555) 123-4567</p>
+        <p className="text-sm text-gray-600">Email: info@akc-llc.com</p>
+      </div>
+      
+      <Separator />
+      
+      {/* Estimate Details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-md font-medium mb-2">Project</h3>
+          <p className="text-lg font-bold">{formData.project}</p>
+          {formData.description && (
+            <p className="text-sm text-gray-600 mt-2">{formData.description}</p>
+          )}
+        </div>
+        
+        <div>
+          <h3 className="text-md font-medium mb-2">Customer</h3>
+          <p className="text-lg font-bold">{customerName}</p>
+          {customerAddress && (
+            <p className="text-sm text-gray-600">{customerAddress}</p>
+          )}
+        </div>
+      </div>
+      
+      {/* Attached Documents Section */}
+      {attachedDocuments.length > 0 && (
+        <div className="mt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <PaperclipIcon className="h-4 w-4 text-[#0485ea]" />
+            <h3 className="text-md font-medium">Attached Documents</h3>
           </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 mb-1">Description</h3>
-            <p className="text-base whitespace-pre-line">{formData.description || 'No description provided'}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {attachedDocuments.map(doc => (
+              <div key={doc.document_id} className="flex items-center gap-2 text-sm border rounded p-2">
+                <FileIcon className="h-4 w-4 text-[#0485ea]" />
+                <span className="truncate">{doc.file_name}</span>
+              </div>
+            ))}
           </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500 mb-1">Site Location</h3>
-            <p className="text-base">{formatAddress()}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-[#0485ea]">Line Items</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b text-left text-sm text-gray-500">
-                  <th className="pb-2">Description</th>
-                  <th className="pb-2">Type</th>
-                  <th className="pb-2 text-right">Qty</th>
-                  <th className="pb-2 text-right">Cost</th>
-                  <th className="pb-2 text-right">Markup %</th>
-                  <th className="pb-2 text-right">Total</th>
+        </div>
+      )}
+      
+      {/* Site Location */}
+      {formData.showSiteLocation && (
+        <div>
+          <h3 className="text-md font-medium mb-2">Site Location</h3>
+          <p className="text-sm text-gray-600">
+            {[
+              formData.location?.address,
+              formData.location?.city,
+              formData.location?.state,
+              formData.location?.zip
+            ].filter(Boolean).join(', ')}
+          </p>
+        </div>
+      )}
+      
+      <Separator />
+      
+      {/* Line Items */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Items</h3>
+        <Card>
+          <CardContent className="p-0">
+            <table className="w-full">
+              <thead className="bg-gray-50 text-gray-700">
+                <tr>
+                  <th className="text-left p-3">Description</th>
+                  <th className="text-right p-3">Quantity</th>
+                  <th className="text-right p-3">Unit Price</th>
+                  <th className="text-right p-3">Total</th>
+                  <th className="text-center p-3 w-10">Docs</th>
                 </tr>
               </thead>
               <tbody>
                 {formData.items.map((item, index) => {
                   const cost = parseFloat(item.cost) || 0;
-                  const qty = parseFloat(item.quantity || '1') || 1;
-                  const markup = parseFloat(item.markup_percentage) || 0;
-                  const total = cost * (1 + markup / 100) * qty;
+                  const markup = cost * (parseFloat(item.markup_percentage) / 100) || 0;
+                  const unitPrice = cost + markup;
+                  const quantity = parseFloat(item.quantity || '1') || 1;
+                  const total = unitPrice * quantity;
                   
                   return (
-                    <tr key={index} className="border-b">
-                      <td className="py-3">{item.description}</td>
-                      <td className="py-3 capitalize">{item.item_type}</td>
-                      <td className="py-3 text-right">{qty}</td>
-                      <td className="py-3 text-right">${cost.toFixed(2)}</td>
-                      <td className="py-3 text-right">{markup}%</td>
-                      <td className="py-3 text-right">${total.toFixed(2)}</td>
+                    <tr key={index} className="border-t">
+                      <td className="p-3">
+                        <div className="font-medium">{item.description}</div>
+                        {item.item_type !== 'labor' && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {item.item_type === 'vendor' ? 'Vendor' : 'Subcontractor'}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3 text-right">{quantity}</td>
+                      <td className="p-3 text-right">{formatCurrency(unitPrice)}</td>
+                      <td className="p-3 text-right">{formatCurrency(total)}</td>
+                      <td className="p-3 text-center">
+                        {item.document_id && lineItemDocuments[item.document_id] && (
+                          <Badge variant="outline" className="bg-blue-50">
+                            <PaperclipIcon className="h-3 w-3" />
+                          </Badge>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
+              <tfoot className="bg-gray-50 font-medium">
+                <tr className="border-t">
+                  <td colSpan={3} className="p-3 text-right">Subtotal</td>
+                  <td className="p-3 text-right">{formatCurrency(totalPrice)}</td>
+                  <td></td>
+                </tr>
+                {parseFloat(formData.contingency_percentage || '0') > 0 && (
+                  <tr className="border-t">
+                    <td colSpan={3} className="p-3 text-right">
+                      Contingency ({formData.contingency_percentage}%)
+                    </td>
+                    <td className="p-3 text-right">{formatCurrency(contingencyAmount)}</td>
+                    <td></td>
+                  </tr>
+                )}
+                <tr className="border-t">
+                  <td colSpan={3} className="p-3 text-right font-bold">
+                    Total
+                  </td>
+                  <td className="p-3 text-right font-bold">{formatCurrency(grandTotal)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
             </table>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between">
-              <span className="font-medium">Subtotal:</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Contingency ({formData.contingency_percentage}%):</span>
-              <span>${contingencyAmount.toFixed(2)}</span>
-            </div>
-            <Separator className="my-2" />
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total:</span>
-              <span>${grandTotal.toFixed(2)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-        <p className="text-sm text-yellow-700">
-          <strong>Note:</strong> This is a preview of your estimate. When you submit, a document record will be created and the estimate will be saved in your system.
-        </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Total Documents Count */}
+      <div className="flex justify-end">
+        {(attachedDocuments.length > 0 || Object.keys(lineItemDocuments).length > 0) && (
+          <Badge variant="outline" className="flex items-center gap-1 bg-blue-50">
+            <PaperclipIcon className="h-3 w-3" />
+            <span>
+              {attachedDocuments.length + Object.keys(lineItemDocuments).length} 
+              Document{(attachedDocuments.length + Object.keys(lineItemDocuments).length) !== 1 ? 's' : ''} Attached
+            </span>
+          </Badge>
+        )}
       </div>
     </div>
   );

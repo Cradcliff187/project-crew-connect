@@ -22,6 +22,7 @@ export const estimateFormSchema = z.object({
     unitPrice: z.string().optional(),
     vendor_id: z.string().optional(),
     subcontractor_id: z.string().optional(),
+    document_id: z.string().optional(), // Added document_id field
   })).min(1, { message: "At least one item is required" }),
   showSiteLocation: z.boolean().default(false),
   newCustomer: z.object({
@@ -34,6 +35,7 @@ export const estimateFormSchema = z.object({
     zip: z.string().optional(),
   }).optional(),
   isNewCustomer: z.boolean().default(false),
+  estimate_documents: z.array(z.string()).optional().default([]), // Added estimate-level documents
 });
 
 export type EstimateFormValues = z.infer<typeof estimateFormSchema>;
