@@ -94,9 +94,6 @@ export const useEstimateSubmit = () => {
         customerName = selectedCustomer?.name || '';
       }
 
-      // Generate estimateId
-      const estimateId = `EST-${uuidv4().slice(0, 8)}`;
-      
       // Calculate total amount
       const totalAmount = formData.items.reduce((total, item) => {
         const cost = parseFloat(item.cost) || 0;
@@ -110,11 +107,11 @@ export const useEstimateSubmit = () => {
       const contingencyPercentage = parseFloat(formData.contingency_percentage) || 0;
       const contingencyAmount = totalAmount * (contingencyPercentage / 100);
       
-      // Insert estimate
-      const { error } = await supabase
+      // Insert estimate - set estimateid to null to let the database generate it
+      const { data: newEstimate, error } = await supabase
         .from('estimates')
         .insert({
-          estimateid: estimateId,
+          // estimateid is omitted to let the database generate it
           projectname: formData.project,
           'job description': formData.description,
           customerid: customerId,
@@ -128,9 +125,14 @@ export const useEstimateSubmit = () => {
           sitelocationcity: formData.location.city,
           sitelocationstate: formData.location.state,
           sitelocationzip: formData.location.zip,
-        });
+        })
+        .select('estimateid')
+        .single();
 
       if (error) throw error;
+      
+      // Get the database-generated estimate ID
+      const estimateId = newEstimate.estimateid;
       
       // Create a document record for the estimate
       await createEstimateDocument(estimateId, formData, customerName);

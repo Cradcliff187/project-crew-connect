@@ -421,16 +421,200 @@ export type Database = {
         }
         Relationships: []
       }
+      estimate_documents: {
+        Row: {
+          created_at: string
+          estimate_id: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          estimate_id: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          estimate_id?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimate_documents_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["estimateid"]
+          },
+        ]
+      }
+      estimate_email_settings: {
+        Row: {
+          body_template: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          subject_template: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          body_template: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          subject_template: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          body_template?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          subject_template?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      estimate_items: {
+        Row: {
+          cost: number | null
+          created_at: string
+          description: string
+          document_id: string | null
+          estimate_id: string
+          gross_margin: number | null
+          gross_margin_percentage: number | null
+          id: string
+          item_category: string | null
+          item_type: string | null
+          markup_amount: number | null
+          markup_percentage: number | null
+          notes: string | null
+          original_item_id: string | null
+          quantity: number
+          revision_id: string | null
+          subcontractor_id: string | null
+          total_price: number
+          unit_price: number
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          description: string
+          document_id?: string | null
+          estimate_id: string
+          gross_margin?: number | null
+          gross_margin_percentage?: number | null
+          id?: string
+          item_category?: string | null
+          item_type?: string | null
+          markup_amount?: number | null
+          markup_percentage?: number | null
+          notes?: string | null
+          original_item_id?: string | null
+          quantity?: number
+          revision_id?: string | null
+          subcontractor_id?: string | null
+          total_price: number
+          unit_price: number
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          description?: string
+          document_id?: string | null
+          estimate_id?: string
+          gross_margin?: number | null
+          gross_margin_percentage?: number | null
+          id?: string
+          item_category?: string | null
+          item_type?: string | null
+          markup_amount?: number | null
+          markup_percentage?: number | null
+          notes?: string | null
+          original_item_id?: string | null
+          quantity?: number
+          revision_id?: string | null
+          subcontractor_id?: string | null
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimate_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "estimate_items_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["estimateid"]
+          },
+          {
+            foreignKeyName: "estimate_items_revision_id_fkey"
+            columns: ["revision_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_items_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["subid"]
+          },
+          {
+            foreignKeyName: "estimate_items_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["vendorid"]
+          },
+        ]
+      }
       estimate_revisions: {
         Row: {
           amount: number | null
           count: number | null
           created_at: string
+          document_id: string | null
           estimate_id: string
           id: string
+          is_current: boolean | null
           notes: string | null
           revision_by: string | null
           revision_date: string
+          sent_date: string | null
+          sent_to: string | null
+          status: string | null
           updated_at: string
           version: number
         }
@@ -438,11 +622,16 @@ export type Database = {
           amount?: number | null
           count?: number | null
           created_at?: string
+          document_id?: string | null
           estimate_id: string
           id?: string
+          is_current?: boolean | null
           notes?: string | null
           revision_by?: string | null
           revision_date?: string
+          sent_date?: string | null
+          sent_to?: string | null
+          status?: string | null
           updated_at?: string
           version?: number
         }
@@ -450,15 +639,27 @@ export type Database = {
           amount?: number | null
           count?: number | null
           created_at?: string
+          document_id?: string | null
           estimate_id?: string
           id?: string
+          is_current?: boolean | null
           notes?: string | null
           revision_by?: string | null
           revision_date?: string
+          sent_date?: string | null
+          sent_to?: string | null
+          status?: string | null
           updated_at?: string
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "estimate_revisions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
           {
             foreignKeyName: "fk_estimate_revisions_estimateid"
             columns: ["estimate_id"]
@@ -1059,6 +1260,57 @@ export type Database = {
         }
         Relationships: []
       }
+      subcontractor_associations: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          description: string | null
+          document_id: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          subcontractor_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          document_id?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          subcontractor_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          document_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          subcontractor_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcontractor_associations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "subcontractor_associations_subcontractor_id_fkey"
+            columns: ["subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractors"
+            referencedColumns: ["subid"]
+          },
+        ]
+      }
       subcontractor_specialties: {
         Row: {
           created_at: string
@@ -1497,6 +1749,13 @@ export type Database = {
         }
         Returns: number
       }
+      convertestimateitemstobudgetitems: {
+        Args: {
+          estimateid: string
+          projectid: string
+        }
+        Returns: Json
+      }
       generate_customer_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1534,6 +1793,28 @@ export type Database = {
           status_code_param: string
         }
         Returns: string
+      }
+      get_subcontractor_projects: {
+        Args: {
+          p_subcontractor_id: string
+        }
+        Returns: {
+          project_id: string
+          project_name: string
+          status: string
+          created_at: string
+        }[]
+      }
+      get_subcontractor_work_orders: {
+        Args: {
+          p_subcontractor_id: string
+        }
+        Returns: {
+          work_order_id: string
+          title: string
+          status: string
+          created_at: string
+        }[]
       }
       get_vendor_projects: {
         Args: {
@@ -1574,6 +1855,10 @@ export type Database = {
           p_budget_item_id: string
         }
         Returns: boolean
+      }
+      migrate_estimate_items_from_documents: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       validate_customers_status_transition: {
         Args: {
