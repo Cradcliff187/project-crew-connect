@@ -93,3 +93,18 @@ export const calculateGrandTotal = (
   return calculateSubtotal(items) + calculateContingencyAmount(items, contingencyPercentage);
 };
 
+// Add the missing function for calculateEstimateTotals
+export const calculateEstimateTotals = (
+  items: EstimateItem[],
+  contingencyPercentage: string
+): { totalPrice: number; contingencyAmount: number; grandTotal: number } => {
+  const totalPrice = calculateSubtotal(items);
+  const contingencyAmount = calculateContingencyAmount(items, contingencyPercentage);
+  const grandTotal = calculateGrandTotal(items, contingencyPercentage);
+  
+  return {
+    totalPrice,
+    contingencyAmount,
+    grandTotal
+  };
+};
