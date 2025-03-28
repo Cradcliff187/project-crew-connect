@@ -1,7 +1,6 @@
 
 import React from 'react';
 import SummaryCard from './summary/SummaryCard';
-import CopyTotalButton from './summary/CopyTotalButton';
 import { useSummaryCalculations } from '../hooks/useSummaryCalculations';
 
 const EstimateSummary = () => {
@@ -28,8 +27,6 @@ const EstimateSummary = () => {
         contingencyAmount={contingencyAmount}
         grandTotal={grandTotal}
       />
-      
-      <CopyTotalButton total={grandTotal} />
     </div>
   );
 };

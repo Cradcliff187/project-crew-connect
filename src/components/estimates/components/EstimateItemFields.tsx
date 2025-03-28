@@ -32,29 +32,40 @@ const EstimateItemFields = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Items</h3>
+        <h3 className="text-lg font-medium">
+          Items ({fields.length})
+        </h3>
         <Button 
           type="button" 
           variant="outline" 
           size="sm" 
           onClick={addNewItem}
+          className="bg-[#0485ea] text-white hover:bg-[#0375d1]"
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Item
         </Button>
       </div>
 
-      {fields.map((field, index) => (
-        <EstimateItemCard 
-          key={field.id}
-          index={index}
-          vendors={vendors}
-          subcontractors={subcontractors}
-          loading={loading}
-          onRemove={() => remove(index)}
-          showRemoveButton={fields.length > 1}
-        />
-      ))}
+      {fields.length === 0 ? (
+        <div className="text-center py-8 border rounded-md bg-muted/20">
+          <p className="text-muted-foreground">No items added yet. Click "Add Item" to begin.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {fields.map((field, index) => (
+            <EstimateItemCard 
+              key={field.id}
+              index={index}
+              vendors={vendors}
+              subcontractors={subcontractors}
+              loading={loading}
+              onRemove={() => remove(index)}
+              showRemoveButton={fields.length > 1}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

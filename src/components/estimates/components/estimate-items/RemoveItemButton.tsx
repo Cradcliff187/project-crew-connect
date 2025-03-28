@@ -12,18 +12,19 @@ const RemoveItemButton: React.FC<RemoveItemButtonProps> = ({ onRemove, showButto
   if (!showButton) return null;
   
   return (
-    <div className="col-span-12 flex justify-end">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={onRemove}
-        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-      >
-        <Trash className="h-4 w-4 mr-1" />
-        Remove Item
-      </Button>
-    </div>
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={(e) => {
+        e.stopPropagation(); // Prevent collapsible from toggling
+        onRemove();
+      }}
+      className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+    >
+      <Trash className="h-4 w-4" />
+      <span className="sr-only">Remove Item</span>
+    </Button>
   );
 };
 
