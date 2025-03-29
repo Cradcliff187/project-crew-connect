@@ -51,6 +51,192 @@ export type Database = {
         }
         Relationships: []
       }
+      change_order_items: {
+        Row: {
+          change_order_id: string
+          created_at: string
+          custom_type: string | null
+          description: string
+          document_id: string | null
+          expense_type: string | null
+          id: string
+          impact_days: number | null
+          item_type: string | null
+          quantity: number
+          subcontractor_id: string | null
+          total_price: number
+          trade_type: string | null
+          unit_price: number
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          change_order_id: string
+          created_at?: string
+          custom_type?: string | null
+          description: string
+          document_id?: string | null
+          expense_type?: string | null
+          id?: string
+          impact_days?: number | null
+          item_type?: string | null
+          quantity?: number
+          subcontractor_id?: string | null
+          total_price: number
+          trade_type?: string | null
+          unit_price: number
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          change_order_id?: string
+          created_at?: string
+          custom_type?: string | null
+          description?: string
+          document_id?: string | null
+          expense_type?: string | null
+          id?: string
+          impact_days?: number | null
+          item_type?: string | null
+          quantity?: number
+          subcontractor_id?: string | null
+          total_price?: number
+          trade_type?: string | null
+          unit_price?: number
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_order_items_change_order_id_fkey"
+            columns: ["change_order_id"]
+            isOneToOne: false
+            referencedRelation: "change_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "change_order_items_change_order_id_fkey"
+            columns: ["change_order_id"]
+            isOneToOne: false
+            referencedRelation: "change_orders_with_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_order_status_history: {
+        Row: {
+          change_order_id: string
+          changed_by: string | null
+          changed_date: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          previous_status: string | null
+          status: string
+        }
+        Insert: {
+          change_order_id: string
+          changed_by?: string | null
+          changed_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          status: string
+        }
+        Update: {
+          change_order_id?: string
+          changed_by?: string | null
+          changed_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_order_status_history_change_order_id_fkey"
+            columns: ["change_order_id"]
+            isOneToOne: false
+            referencedRelation: "change_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "change_order_status_history_change_order_id_fkey"
+            columns: ["change_order_id"]
+            isOneToOne: false
+            referencedRelation: "change_orders_with_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_orders: {
+        Row: {
+          approval_notes: string | null
+          approved_by: string | null
+          approved_date: string | null
+          change_order_number: string | null
+          created_at: string
+          description: string | null
+          document_id: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          impact_days: number | null
+          new_completion_date: string | null
+          original_completion_date: string | null
+          requested_by: string | null
+          requested_date: string | null
+          status: string
+          title: string
+          total_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          approval_notes?: string | null
+          approved_by?: string | null
+          approved_date?: string | null
+          change_order_number?: string | null
+          created_at?: string
+          description?: string | null
+          document_id?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          impact_days?: number | null
+          new_completion_date?: string | null
+          original_completion_date?: string | null
+          requested_by?: string | null
+          requested_date?: string | null
+          status?: string
+          title: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approval_notes?: string | null
+          approved_by?: string | null
+          approved_date?: string | null
+          change_order_number?: string | null
+          created_at?: string
+          description?: string | null
+          document_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          impact_days?: number | null
+          new_completion_date?: string | null
+          original_completion_date?: string | null
+          requested_by?: string | null
+          requested_date?: string | null
+          status?: string
+          title?: string
+          total_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_interactions: {
         Row: {
           contact_id: string
@@ -353,6 +539,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          relationship_metadata: Json | null
           relationship_type: string
           source_document_id: string
           target_document_id: string
@@ -361,6 +548,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          relationship_metadata?: Json | null
           relationship_type: string
           source_document_id: string
           target_document_id: string
@@ -369,6 +557,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          relationship_metadata?: Json | null
           relationship_type?: string
           source_document_id?: string
           target_document_id?: string
@@ -1804,6 +1993,31 @@ export type Database = {
       }
     }
     Views: {
+      change_orders_with_items: {
+        Row: {
+          approval_notes: string | null
+          approved_by: string | null
+          approved_date: string | null
+          change_order_number: string | null
+          created_at: string | null
+          description: string | null
+          document_id: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string | null
+          impact_days: number | null
+          items: Json | null
+          new_completion_date: string | null
+          original_completion_date: string | null
+          requested_by: string | null
+          requested_date: string | null
+          status: string | null
+          title: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
       document_versions: {
         Row: {
           created_at: string | null
@@ -1946,6 +2160,13 @@ export type Database = {
           projectid: string
         }
         Returns: Json
+      }
+      generate_change_order_number: {
+        Args: {
+          entity_type: string
+          entity_id: string
+        }
+        Returns: string
       }
       generate_customer_id: {
         Args: Record<PropertyKey, never>
