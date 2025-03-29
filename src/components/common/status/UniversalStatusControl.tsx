@@ -23,7 +23,7 @@ export interface StatusOption {
 
 export interface UniversalStatusControlProps {
   entityId: string;
-  entityType: 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT';
+  entityType: 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
   currentStatus: string;
   statusOptions: StatusOption[];
   tableName: string;

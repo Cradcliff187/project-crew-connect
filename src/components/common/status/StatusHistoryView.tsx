@@ -9,12 +9,17 @@ import { StatusOption } from './UniversalStatusControl';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
 
 export interface StatusHistoryEntry {
-  id: string;
+  id?: string;
+  logid?: string;
   status: string;
   previous_status?: string;
-  changed_date: string;
+  previousstatus?: string;
+  changed_date?: string;
+  timestamp?: string;
   changed_by?: string;
+  useremail?: string;
   notes?: string;
+  action?: string;
 }
 
 interface StatusHistoryViewProps {
@@ -80,86 +85,59 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
       try {
         const { table, idField } = getHistoryTableInfo();
         
-        // Check if the table exists first
-        const { data: tableExists, error: checkError } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_name', table)
-          .eq('table_schema', 'public')
-          .maybeSingle();
-          
-        if (checkError) {
-          console.error('Error checking table existence:', checkError);
-          // Default to activity log if specified table doesn't exist
-          const { data: activityData, error: activityError } = await supabase
-            .from('activitylog')
+        // Instead of checking if the table exists which causes type errors,
+        // directly try to fetch from the specified table and fall back to activitylog if it fails
+        try {
+          // Try to query from specific status history table
+          const { data, error } = await supabase
+            .from(table)
             .select('*')
-            .eq('referenceid', entityId)
-            .eq('moduletype', entityType)
-            .order('timestamp', { ascending: false });
+            .eq(idField, entityId)
+            .order('changed_date', { ascending: false });
             
-          if (activityError) throw activityError;
+          if (error) throw error;
           
-          if (activityData && activityData.length > 0) {
-            const activityHistory = activityData.map(activity => ({
-              id: activity.logid || activity.id,
-              status: activity.status || 'unknown',
-              previous_status: activity.previousstatus,
-              changed_date: activity.timestamp || activity.created_at,
-              changed_by: activity.useremail,
-              notes: activity.action
-            }));
-            setHistory(activityHistory);
-          } else {
-            setHistory([]);
+          if (data && data.length > 0) {
+            setHistory(data as StatusHistoryEntry[]);
+            return;
           }
-          return;
+        } catch (err) {
+          console.info(`Table ${table} might not exist, falling back to activitylog`);
+          // Fall through to activity log query
         }
         
-        if (!tableExists) {
-          // Fall back to activity log
-          const { data: activityData, error: activityError } = await supabase
-            .from('activitylog')
-            .select('*')
-            .eq('referenceid', entityId)
-            .eq('moduletype', entityType)
-            .order('timestamp', { ascending: false });
-            
-          if (activityError) throw activityError;
-          
-          if (activityData && activityData.length > 0) {
-            const activityHistory = activityData.map(activity => ({
-              id: activity.logid || activity.id,
-              status: activity.status || 'unknown',
-              previous_status: activity.previousstatus,
-              changed_date: activity.timestamp || activity.created_at,
-              changed_by: activity.useremail,
-              notes: activity.action
-            }));
-            setHistory(activityHistory);
-          } else {
-            setHistory([]);
-          }
-          return;
-        }
-        
-        // Fetch from the specific status history table
-        const { data, error } = await supabase
-          .from(table)
+        // Fall back to activity log
+        const { data: activityData, error: activityError } = await supabase
+          .from('activitylog')
           .select('*')
-          .eq(idField, entityId)
-          .order('changed_date', { ascending: false });
+          .eq('referenceid', entityId)
+          .eq('moduletype', entityType)
+          .order('timestamp', { ascending: false });
           
-        if (error) throw error;
+        if (activityError) throw activityError;
         
-        if (data && data.length > 0) {
-          setHistory(data as StatusHistoryEntry[]);
+        if (activityData && activityData.length > 0) {
+          const activityHistory = activityData.map(activity => ({
+            id: activity.logid,
+            logid: activity.logid,
+            status: activity.status || 'unknown',
+            previous_status: activity.previousstatus,
+            previousstatus: activity.previousstatus,
+            changed_date: activity.timestamp || activity.created_at,
+            timestamp: activity.timestamp,
+            changed_by: activity.useremail,
+            useremail: activity.useremail,
+            notes: activity.action,
+            action: activity.action
+          }));
+          setHistory(activityHistory);
         } else {
           setHistory([]);
         }
       } catch (error: any) {
         console.error('Error fetching status history:', error);
         setError(error.message);
+        setHistory([]);
       } finally {
         setLoading(false);
       }
@@ -252,7 +230,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
           <div className="space-y-4">
             {history.map((entry, index) => (
               <div 
-                key={entry.id || index}
+                key={entry.id || entry.logid || index}
                 className="border-l-2 border-gray-200 pl-4 py-2"
               >
                 <div className="flex justify-between items-start">
@@ -263,26 +241,26 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
                         <span className="ml-1">{getStatusLabel(entry.status)}</span>
                       </span>
                       
-                      {entry.previous_status && (
+                      {(entry.previous_status || entry.previousstatus) && (
                         <span className="text-xs text-muted-foreground ml-2">
-                          from {getStatusLabel(entry.previous_status)}
+                          from {getStatusLabel(entry.previous_status || entry.previousstatus || '')}
                         </span>
                       )}
                     </div>
                     
                     <div className="text-xs text-muted-foreground mt-1">
-                      {formatDate(entry.changed_date)}
+                      {formatDate(entry.changed_date || entry.timestamp || '')}
                     </div>
                   </div>
                   
-                  {entry.changed_by && (
-                    <div className="text-sm font-medium">{entry.changed_by}</div>
+                  {(entry.changed_by || entry.useremail) && (
+                    <div className="text-sm font-medium">{entry.changed_by || entry.useremail}</div>
                   )}
                 </div>
                 
-                {entry.notes && (
+                {(entry.notes || entry.action) && (
                   <div className="mt-2 text-sm bg-muted/50 p-2 rounded-md">
-                    {entry.notes}
+                    {entry.notes || entry.action}
                   </div>
                 )}
               </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Check, Pause, Play, AlertCircle, X, Clock, ArrowUpRight } from 'lucide-react';
 import { StatusOption } from '@/components/common/status/UniversalStatusControl';

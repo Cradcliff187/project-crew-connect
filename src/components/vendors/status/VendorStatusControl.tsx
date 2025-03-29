@@ -14,7 +14,7 @@ const VendorStatusControl: React.FC<VendorStatusControlProps> = ({
   onStatusChange 
 }) => {
   const currentStatus = vendor.status || 'POTENTIAL';
-  const { statusOptions } = useStatusOptions('CONTACT', currentStatus);
+  const { statusOptions } = useStatusOptions('VENDOR', currentStatus);
   
   // Filter status options to only show relevant transitions for vendors
   const vendorStatusOptions = statusOptions.filter(option => 

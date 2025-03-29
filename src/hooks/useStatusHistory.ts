@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface StatusHistoryOptions {
   entityId: string;
-  entityType: 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT';
+  entityType: 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
   historyTable?: string;
   entityIdField?: string;
   statusField?: string;
