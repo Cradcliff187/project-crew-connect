@@ -310,6 +310,101 @@ export type Database = {
         }
         Relationships: []
       }
+      document_access_logs: {
+        Row: {
+          access_timestamp: string
+          accessed_by: string | null
+          action: string
+          document_id: string
+          id: string
+        }
+        Insert: {
+          access_timestamp?: string
+          accessed_by?: string | null
+          action: string
+          document_id: string
+          id?: string
+        }
+        Update: {
+          access_timestamp?: string
+          accessed_by?: string | null
+          action?: string
+          document_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_access_logs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_access_logs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+        ]
+      }
+      document_relationships: {
+        Row: {
+          created_at: string
+          id: string
+          relationship_type: string
+          source_document_id: string
+          target_document_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          relationship_type: string
+          source_document_id: string
+          target_document_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          relationship_type?: string
+          source_document_id?: string
+          target_document_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_relationships_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_relationships_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_relationships_target_document_id_fkey"
+            columns: ["target_document_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_relationships_target_document_id_fkey"
+            columns: ["target_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           amount: number | null
@@ -324,8 +419,10 @@ export type Database = {
           file_size: number | null
           file_type: string | null
           is_expense: boolean | null
+          is_latest_version: boolean | null
           mime_type: string | null
           notes: string | null
+          parent_document_id: string | null
           storage_path: string
           tags: string[] | null
           updated_at: string
@@ -347,8 +444,10 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           is_expense?: boolean | null
+          is_latest_version?: boolean | null
           mime_type?: string | null
           notes?: string | null
+          parent_document_id?: string | null
           storage_path: string
           tags?: string[] | null
           updated_at?: string
@@ -370,8 +469,10 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           is_expense?: boolean | null
+          is_latest_version?: boolean | null
           mime_type?: string | null
           notes?: string | null
+          parent_document_id?: string | null
           storage_path?: string
           tags?: string[] | null
           updated_at?: string
@@ -380,7 +481,22 @@ export type Database = {
           vendor_type?: string | null
           version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+        ]
       }
       employees: {
         Row: {
@@ -567,6 +683,13 @@ export type Database = {
             foreignKeyName: "estimate_items_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "estimate_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["document_id"]
           },
@@ -653,6 +776,13 @@ export type Database = {
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "estimate_revisions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
           {
             foreignKeyName: "estimate_revisions_document_id_fkey"
             columns: ["document_id"]
@@ -1299,6 +1429,13 @@ export type Database = {
             foreignKeyName: "subcontractor_associations_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "subcontractor_associations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["document_id"]
           },
@@ -1313,27 +1450,44 @@ export type Database = {
       }
       subcontractor_specialties: {
         Row: {
+          capacity_rating: number | null
           created_at: string
           description: string | null
           id: string
+          parent_specialty_id: string | null
+          service_area: string | null
           specialty: string
           updated_at: string
         }
         Insert: {
+          capacity_rating?: number | null
           created_at?: string
           description?: string | null
           id?: string
+          parent_specialty_id?: string | null
+          service_area?: string | null
           specialty: string
           updated_at?: string
         }
         Update: {
+          capacity_rating?: number | null
           created_at?: string
           description?: string | null
           id?: string
+          parent_specialty_id?: string | null
+          service_area?: string | null
           specialty?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subcontractor_specialties_parent_specialty_id_fkey"
+            columns: ["parent_specialty_id"]
+            isOneToOne: false
+            referencedRelation: "subcontractor_specialties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subcontractors: {
         Row: {
@@ -1520,6 +1674,13 @@ export type Database = {
             foreignKeyName: "time_entry_document_links_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "time_entry_document_links_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
             referencedRelation: "documents"
             referencedColumns: ["document_id"]
           },
@@ -1643,6 +1804,36 @@ export type Database = {
       }
     }
     Views: {
+      document_versions: {
+        Row: {
+          created_at: string | null
+          document_id: string | null
+          entity_id: string | null
+          entity_type: string | null
+          file_name: string | null
+          is_latest_version: boolean | null
+          parent_document_id: string | null
+          storage_path: string | null
+          version: number | null
+          version_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+        ]
+      }
       unified_work_order_expenses: {
         Row: {
           created_at: string | null
