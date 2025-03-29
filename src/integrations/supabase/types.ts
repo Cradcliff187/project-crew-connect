@@ -379,6 +379,42 @@ export type Database = {
           },
         ]
       }
+      contact_status_history: {
+        Row: {
+          changed_by: string | null
+          changed_date: string | null
+          contact_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          previous_status: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_date?: string | null
+          contact_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_date?: string | null
+          contact_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           address: string | null
@@ -1371,6 +1407,42 @@ export type Database = {
           },
         ]
       }
+      project_status_history: {
+        Row: {
+          changed_by: string | null
+          changed_date: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          previous_status: string | null
+          projectid: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          projectid: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          projectid?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           budget_status: string | null
@@ -1990,6 +2062,42 @@ export type Database = {
             referencedColumns: ["work_order_id"]
           },
         ]
+      }
+      work_order_status_history: {
+        Row: {
+          changed_by: string | null
+          changed_date: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          previous_status: string | null
+          status: string
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          status: string
+          updated_at?: string
+          work_order_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          status?: string
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

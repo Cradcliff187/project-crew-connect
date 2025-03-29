@@ -7,7 +7,7 @@ import {
   ClipboardList, 
   Users, 
   BarChart4,
-  Link
+  Info
 } from 'lucide-react';
 
 // Import refactored components
@@ -15,7 +15,7 @@ import ContactDetailHeader from './detail/ContactDetailHeader';
 import ContactActionButtons from './detail/ContactActionButtons';
 import ConversationSection, { Conversation } from './detail/ConversationSection';
 import ScheduleSection, { Appointment } from './detail/ScheduleSection';
-import ContactInfoSection from './detail/ContactInfoSection';
+import ContactDetailInformation from './detail/ContactDetailInformation';
 import RelationshipsSection from './detail/RelationshipsSection';
 import InteractionsSection from './detail/InteractionsSection';
 import PerformanceSection from './detail/PerformanceSection';
@@ -135,7 +135,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
               Performance
             </TabsTrigger>
             <TabsTrigger value="details" className="flex-1">
-              <ClipboardList className="mr-1 h-4 w-4" />
+              <Info className="mr-1 h-4 w-4" />
               Details
             </TabsTrigger>
           </TabsList>
@@ -168,7 +168,10 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
         </TabsContent>
         
         <TabsContent value="details" className="flex-1 overflow-y-auto p-4">
-          <ContactInfoSection contact={contact} />
+          <ContactDetailInformation 
+            contact={contact} 
+            onStatusChange={(contact, newStatus) => handleStatusChange(newStatus)} 
+          />
         </TabsContent>
       </Tabs>
     </div>
