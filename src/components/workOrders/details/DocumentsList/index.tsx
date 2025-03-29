@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
@@ -10,6 +10,7 @@ import { useWorkOrderDocuments } from './useWorkOrderDocuments';
 import { WorkOrderDocument } from './types';
 import DocumentsTableContent from './DocumentsTableContent';
 import { Skeleton } from '@/components/ui/skeleton';
+import DocumentVersionHistoryCard from '@/components/documents/DocumentVersionHistoryCard';
 
 interface WorkOrderDocumentsListProps {
   workOrderId: string;
@@ -40,6 +41,15 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
   const handleCloseViewer = () => {
     setViewDocument(null);
   };
+
+  // Find documents with the same parent_document_id as the selected document
+  const documentVersions = viewDocument 
+    ? documents.filter(doc => 
+        doc.parent_document_id === viewDocument.parent_document_id || 
+        doc.document_id === viewDocument.parent_document_id ||
+        doc.document_id === viewDocument.document_id
+      )
+    : [];
   
   return (
     <div className="space-y-6">
@@ -77,19 +87,37 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
         </div>
       )}
       
-      {loading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-32 w-full" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          {loading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <DocumentsTableContent
+                  documents={documents}
+                  loading={loading}
+                  onViewDocument={handleViewDocument}
+                  onToggleUploadForm={toggleUploadForm}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
-      ) : (
-        <DocumentsTableContent
-          documents={documents}
-          loading={loading}
-          onViewDocument={handleViewDocument}
-          onToggleUploadForm={toggleUploadForm}
-        />
-      )}
+        
+        {viewDocument && documentVersions.length > 0 && (
+          <div className="md:col-span-1">
+            <DocumentVersionHistoryCard 
+              documents={documentVersions}
+              currentVersion={viewDocument.version || 1}
+              onVersionSelect={handleViewDocument}
+            />
+          </div>
+        )}
+      </div>
       
       <DocumentViewer 
         document={viewDocument}

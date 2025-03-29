@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Plus, FileText, Calendar, ArrowRight, Clock } from 'lucide-react';
+import { Plus, FileText, Calendar, ArrowRight, Clock, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import { ChangeOrder } from '@/types/changeOrders';
@@ -126,7 +126,7 @@ const ChangeOrdersList = ({ workOrderId, onChangeOrderAdded }: ChangeOrdersListP
             {changeOrders.map((changeOrder) => (
               <div 
                 key={changeOrder.id}
-                className="border rounded-lg p-3 hover:bg-muted/50 cursor-pointer transition-colors"
+                className="border rounded-lg p-3 hover:bg-[#0485ea]/5 cursor-pointer transition-colors"
                 onClick={() => handleViewChangeOrder(changeOrder)}
               >
                 <div className="flex justify-between items-start">
@@ -149,11 +149,14 @@ const ChangeOrdersList = ({ workOrderId, onChangeOrderAdded }: ChangeOrdersListP
                 </div>
 
                 <div className="flex items-center justify-between mt-3">
-                  <div className="font-semibold">
+                  <div className="font-semibold flex items-center">
+                    <DollarSign className="h-4 w-4 mr-1 text-[#0485ea]" />
                     {formatCurrency(changeOrder.total_amount)}
                   </div>
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <span>{changeOrder.items?.length || 0} items</span>
+                    <Badge variant="outline" className="bg-[#0485ea]/5 border-[#0485ea]/20">
+                      {changeOrder.items?.length || 0} items
+                    </Badge>
                   </div>
                 </div>
               </div>

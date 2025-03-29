@@ -7,6 +7,7 @@ import DocumentUpload from '@/components/documents/DocumentUpload';
 import DocumentsTableContent from '../details/DocumentsList/DocumentsTableContent';
 import { useWorkOrderDocumentsEmbed } from './useWorkOrderDocumentsEmbed';
 import { WorkOrderDocument } from '../details/DocumentsList/types';
+import DocumentVersionHistoryCard from '@/components/documents/DocumentVersionHistoryCard';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;
@@ -16,6 +17,7 @@ interface WorkOrderDocumentsProps {
 const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps) => {
   const { documents, loading, refetchDocuments } = useWorkOrderDocumentsEmbed(workOrderId, entityType);
   const [showUpload, setShowUpload] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<WorkOrderDocument | null>(null);
   
   const handleUploadComplete = () => {
     refetchDocuments();
@@ -23,9 +25,18 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
   };
   
   const handleViewDocument = (document: WorkOrderDocument) => {
-    // View document logic here
+    setSelectedDocument(document);
     window.open(document.url, '_blank');
   };
+
+  // Find documents with the same parent_document_id as the selected document
+  const documentVersions = selectedDocument 
+    ? documents.filter(doc => 
+        doc.parent_document_id === selectedDocument.parent_document_id || 
+        doc.document_id === selectedDocument.parent_document_id ||
+        doc.document_id === selectedDocument.document_id
+      )
+    : [];
   
   return (
     <div className="space-y-4">
@@ -44,16 +55,33 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
         </Button>
       </div>
       
-      <Card className="shadow-sm border-[#0485ea]/10">
-        <CardContent className="p-0">
-          <DocumentsTableContent 
-            documents={documents} 
-            loading={loading} 
-            onViewDocument={handleViewDocument}
-            onToggleUploadForm={() => setShowUpload(true)}
-          />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <Card className="shadow-sm border-[#0485ea]/10">
+            <CardContent className="p-0">
+              <DocumentsTableContent 
+                documents={documents} 
+                loading={loading} 
+                onViewDocument={(doc) => {
+                  handleViewDocument(doc);
+                  setSelectedDocument(doc);
+                }}
+                onToggleUploadForm={() => setShowUpload(true)}
+              />
+            </CardContent>
+          </Card>
+        </div>
+        
+        {selectedDocument && documentVersions.length > 0 && (
+          <div className="md:col-span-1">
+            <DocumentVersionHistoryCard 
+              documents={documentVersions}
+              currentVersion={selectedDocument.version || 1}
+              onVersionSelect={handleViewDocument}
+            />
+          </div>
+        )}
+      </div>
       
       {showUpload && (
         <DocumentUpload

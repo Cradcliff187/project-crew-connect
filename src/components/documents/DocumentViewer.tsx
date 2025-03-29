@@ -99,7 +99,7 @@ const DocumentViewer = ({
     
     switch (contentType) {
       case 'image':
-        return <FileImage className="h-12 w-12 text-blue-500" />;
+        return <FileImage className="h-12 w-12 text-[#0485ea]" />;
       case 'pdf':
         return <FileText className="h-12 w-12 text-red-500" />;
       default:
@@ -139,13 +139,18 @@ const DocumentViewer = ({
             <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-2">
               <span>{dialogDescription}</span>
               {document.category && (
-                <Badge variant="outline" className="capitalize">
+                <Badge variant="outline" className="capitalize bg-[#0485ea]/5 text-[#0485ea] border-[#0485ea]/30">
                   {document.category}
                 </Badge>
               )}
               {document.entity_type && (
                 <Badge variant="secondary" className="capitalize">
                   {document.entity_type.replace(/_/g, ' ').toLowerCase()}
+                </Badge>
+              )}
+              {document.version && (
+                <Badge variant="outline" className="bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/30">
+                  Version {document.version}
                 </Badge>
               )}
             </div>
@@ -218,6 +223,7 @@ const DocumentViewer = ({
               variant="outline" 
               onClick={() => window.open(document.url, '_blank')}
               size="sm"
+              className="border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea]/5"
             >
               <Download className="h-4 w-4 mr-2" />
               Download
