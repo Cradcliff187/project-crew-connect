@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
-import { ChangeOrder, ChangeOrderEntityType } from '@/types/changeOrders';
+import { ChangeOrder, ChangeOrderEntityType, ChangeOrderStatus } from '@/types/changeOrders';
 import FinancialImpactSummary from './FinancialImpactSummary';
 import BudgetImpactAnalysis from './BudgetImpactAnalysis';
 import ScheduleImpactVisualization from './ScheduleImpactVisualization';
