@@ -5,7 +5,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChangeOrder } from '@/types/changeOrders';
+import { ChangeOrder, ChangeOrderEntityType } from '@/types/changeOrders';
 
 interface ChangeOrderImpactDashboardProps {
   projectId: string;
@@ -40,7 +40,14 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
           .order('created_at', { ascending: true });
           
         if (error) throw error;
-        setChangeOrders(data || []);
+        
+        // Map the data to ensure the proper type for entity_type
+        const typedChangeOrders: ChangeOrder[] = data?.map(order => ({
+          ...order,
+          entity_type: order.entity_type as ChangeOrderEntityType,
+        })) || [];
+        
+        setChangeOrders(typedChangeOrders);
       } catch (error) {
         console.error('Error fetching change order data:', error);
       } finally {

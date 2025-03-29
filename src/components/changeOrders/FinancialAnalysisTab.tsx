@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
-import { ChangeOrder } from '@/types/changeOrders';
+import { ChangeOrder, ChangeOrderEntityType } from '@/types/changeOrders';
 import FinancialImpactSummary from './FinancialImpactSummary';
 import BudgetImpactAnalysis from './BudgetImpactAnalysis';
 import ScheduleImpactVisualization from './ScheduleImpactVisualization';
@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface FinancialAnalysisTabProps {
   form: UseFormReturn<ChangeOrder>;
-  entityType: 'PROJECT' | 'WORK_ORDER';
+  entityType: ChangeOrderEntityType;
   entityId: string;
 }
 
