@@ -5,7 +5,7 @@ import VendorsTableBody from './table/VendorsTableBody';
 import VendorsLoadingState from './table/VendorsLoadingState';
 import VendorsErrorState from './table/VendorsErrorState';
 import VendorsEmptyState from './table/VendorsEmptyState';
-import { Vendor } from './table/VendorTableRow';
+import { Vendor } from './types/vendorTypes';
 
 interface VendorsTableProps {
   vendors: Vendor[];

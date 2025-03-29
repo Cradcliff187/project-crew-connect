@@ -1,6 +1,7 @@
 
-import { Vendor } from './VendorTableRow';
+import { TableRow } from '@/components/ui/table';
 import VendorTableRow from './VendorTableRow';
+import { Vendor } from '../types/vendorTypes';
 
 interface VendorsTableBodyProps {
   vendors: Vendor[];

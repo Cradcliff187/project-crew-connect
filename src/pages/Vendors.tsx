@@ -6,9 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import PageTransition from '@/components/layout/PageTransition';
 import VendorsHeader from '@/components/vendors/VendorsHeader';
 import VendorsTable from '@/components/vendors/VendorsTable';
-import { Vendor } from '@/components/vendors/table/VendorTableRow';
 import { useNavigate } from 'react-router-dom';
 import VendorSheet from '@/components/vendors/VendorSheet';
+import { Vendor } from '@/components/vendors/types/vendorTypes';
 
 const fetchVendors = async () => {
   try {

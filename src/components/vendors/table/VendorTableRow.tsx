@@ -6,27 +6,27 @@ import { TableCell, TableRow } from '@/components/ui/table';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { useNavigate } from 'react-router-dom';
 import { StatusType } from '@/types/common';
+import { Vendor } from '../types/vendorTypes';
 
 interface VendorTableRowProps {
-  vendor: {
-    vendorid: string;
-    vendorname: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
-    status?: string;
-    payment_terms?: string;
-  };
+  vendor: Vendor;
+  onViewDetails?: (vendor: Vendor) => void;
+  onEditVendor?: (vendor: Vendor) => void;
 }
 
-const VendorTableRow: React.FC<VendorTableRowProps> = ({ vendor }) => {
+const VendorTableRow: React.FC<VendorTableRowProps> = ({ 
+  vendor, 
+  onViewDetails, 
+  onEditVendor 
+}) => {
   const navigate = useNavigate();
 
   const handleViewVendor = () => {
-    navigate(`/vendors/${vendor.vendorid}`);
+    if (onViewDetails) {
+      onViewDetails(vendor);
+    } else {
+      navigate(`/vendors/${vendor.vendorid}`);
+    }
   };
 
   const formatAddress = () => {

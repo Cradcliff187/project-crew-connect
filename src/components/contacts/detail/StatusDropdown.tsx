@@ -19,8 +19,7 @@ const StatusDropdown = ({ contact, onStatusChange, statusOptions: providedStatus
   
   if (!statusOptions.length) return null;
   
-  // Since this component is designed for the Contacts module which may have a different
-  // structure than our standard models, we'll create a wrapper for the status change event
+  // Handle status change event
   const handleStatusChange = () => {
     onStatusChange(contact, currentStatus);
   };
