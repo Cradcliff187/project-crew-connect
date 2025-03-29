@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Check, Pause, Play, AlertCircle, X, Clock, ArrowUpRight } from 'lucide-react';
 import { StatusOption } from '@/components/common/status/UniversalStatusControl';
 
-type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT';
+type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
 
 export function useStatusOptions(entityType: EntityType, currentStatus?: string) {
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
@@ -125,6 +125,14 @@ export function useStatusOptions(entityType: EntityType, currentStatus?: string)
           { value: 'PENDING', label: 'Pending', icon: <Clock className="h-4 w-4 text-amber-500" /> },
           { value: 'APPROVED', label: 'Approved', icon: <Check className="h-4 w-4 text-green-500" /> },
           { value: 'POTENTIAL', label: 'Potential', icon: <AlertCircle className="h-4 w-4 text-blue-500" /> }
+        ];
+      
+      case 'VENDOR':
+        return [
+          { value: 'POTENTIAL', label: 'Potential', icon: <AlertCircle className="h-4 w-4 text-blue-500" /> },
+          { value: 'APPROVED', label: 'Approved', icon: <Check className="h-4 w-4 text-green-500" /> },
+          { value: 'ACTIVE', label: 'Active', icon: <Play className="h-4 w-4 text-emerald-500" /> },
+          { value: 'INACTIVE', label: 'Inactive', icon: <Pause className="h-4 w-4 text-amber-500" /> }
         ];
         
       default:

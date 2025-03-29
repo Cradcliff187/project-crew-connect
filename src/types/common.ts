@@ -32,6 +32,11 @@ export type StatusType =
   | 'ON_HOLD'
   | 'COMPLETED'
   | 'CANCELLED'
+  // Vendor status types
+  | 'POTENTIAL'
+  | 'APPROVED'
+  | 'ACTIVE'
+  | 'INACTIVE'
   // UI status types for badges
   | 'success'
   | 'info'
