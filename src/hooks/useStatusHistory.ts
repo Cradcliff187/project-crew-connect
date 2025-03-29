@@ -97,10 +97,11 @@ export function useStatusHistory({
         historyRecord[notesField] = notes;
       }
       
-      // Try to insert into the specific history table
+      // Try to insert into the specific history table - using type assertion for safety
       try {
+        // We need to use type assertion here since we're using dynamic table names
         const { error } = await supabase
-          .from(resolvedHistoryTable)
+          .from(resolvedHistoryTable as any)
           .insert(historyRecord);
         
         if (error) {
@@ -145,14 +146,15 @@ export function useStatusHistory({
     try {
       // First, try to fetch from the specific history table
       try {
+        // Using type assertion for the table name
         const { data, error } = await supabase
-          .from(resolvedHistoryTable)
+          .from(resolvedHistoryTable as any)
           .select('*')
           .eq(resolvedEntityIdField, entityId)
           .order(changedDateField, { ascending: false });
         
         if (error) throw error;
-        return data || [];
+        return data as any[] || [];
       } catch (error) {
         console.log(`Falling back to activitylog for ${entityType} status history`);
         // Fall back to activitylog for all entity types

@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EntityType } from '@/hooks/useStatusHistory';
@@ -91,7 +90,7 @@ export const updateEntityStatus = async (
       return false;
     }
     
-    // Update the entity status
+    // Update the entity status - using type assertion for tableName to satisfy TypeScript
     const updateData = {
       [statusField]: newStatus,
       updated_at: new Date().toISOString(),
@@ -99,7 +98,7 @@ export const updateEntityStatus = async (
     };
     
     const { error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .update(updateData)
       .eq(idField, entityId);
 

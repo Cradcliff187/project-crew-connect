@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -88,6 +87,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
         
         // First try to fetch from the specific status history table
         try {
+          // Use type assertion for the table name to satisfy TypeScript
           const { data, error } = await supabase
             .from(table as any)
             .select('*')
@@ -97,7 +97,8 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
           if (error) throw error;
           
           if (data && data.length > 0) {
-            setHistory(data as StatusHistoryEntry[]);
+            // Cast the data to StatusHistoryEntry[]
+            setHistory(data as unknown as StatusHistoryEntry[]);
             return;
           }
         } catch (err) {
