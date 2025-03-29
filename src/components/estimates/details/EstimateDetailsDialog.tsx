@@ -147,7 +147,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
             </TabsContent>
             
             <TabsContent value="documents" className="m-0">
-              <EstimateDocumentsTab />
+              <EstimateDocumentsTab estimateId={estimate.id} />
             </TabsContent>
           </ScrollArea>
         </Tabs>
