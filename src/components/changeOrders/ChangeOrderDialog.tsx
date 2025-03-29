@@ -10,6 +10,7 @@ import { ChangeOrder, ChangeOrderEntityType, ChangeOrderStatus } from '@/types/c
 import ChangeOrderBasicInfo from './ChangeOrderBasicInfo';
 import ChangeOrderItems from './ChangeOrderItems';
 import ChangeOrderApproval from './ChangeOrderApproval';
+import FinancialAnalysisTab from './FinancialAnalysisTab';
 
 interface ChangeOrderDialogProps {
   isOpen: boolean;
@@ -149,9 +150,10 @@ const ChangeOrderDialog = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3">
+          <TabsList className="grid grid-cols-4">
             <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
             <TabsTrigger value="items">Items</TabsTrigger>
+            <TabsTrigger value="financial-analysis" disabled={!isEditing && !form.getValues().items?.length}>Financial Impact</TabsTrigger>
             <TabsTrigger value="approval" disabled={!isEditing}>Approval</TabsTrigger>
           </TabsList>
           
@@ -180,6 +182,29 @@ const ChangeOrderDialog = ({
                 isEditing={isEditing}
                 onUpdated={onSaved}
               />
+              
+              <div className="flex justify-end mt-6 space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  className="bg-[#0485ea] hover:bg-[#0375d1]"
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save Change Order'}
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="financial-analysis" className="py-4">
+              {entityId && (
+                <FinancialAnalysisTab 
+                  form={form} 
+                  entityType={entityType}
+                  entityId={entityId}
+                />
+              )}
               
               <div className="flex justify-end mt-6 space-x-2">
                 <Button type="button" variant="outline" onClick={onClose}>
