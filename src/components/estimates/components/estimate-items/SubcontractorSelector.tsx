@@ -33,7 +33,9 @@ const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, su
                 </Badge>
               )}
             </FormLabel>
-            <Select value={field.value || "none"} onValueChange={field.onChange}>
+            <Select value={field.value || "none"} onValueChange={(value) => {
+              field.onChange(value === "none" ? "" : value);
+            }}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder={loading ? "Loading..." : "Select subcontractor"} />
