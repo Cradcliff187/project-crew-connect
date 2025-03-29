@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
-import WorkOrderStatusControl from './status/WorkOrderStatusControl';
+import WorkOrderStatusControl from '@/components/workOrders/details/WorkOrderStatusControl';
 
 interface WorkOrderDetailHeaderProps {
   workOrder: WorkOrder;
@@ -17,7 +17,7 @@ const WorkOrderDetailHeader: React.FC<WorkOrderDetailHeaderProps> = ({
       <div>
         <h1 className="text-2xl font-bold">{workOrder.title}</h1>
         <p className="text-sm text-muted-foreground">
-          Work Order #{workOrder.work_order_number || workOrder.id?.substring(0, 8)}
+          Work Order #{workOrder.work_order_number || workOrder.work_order_id.substring(0, 8)}
         </p>
       </div>
       
