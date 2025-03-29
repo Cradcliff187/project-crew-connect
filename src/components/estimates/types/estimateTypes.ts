@@ -6,6 +6,14 @@ export type EstimateItem = {
   quantity: number;
   unit_price: number;
   total_price: number;
+  item_type?: string;
+  vendor_id?: string;
+  subcontractor_id?: string;
+  document_id?: string;
+  // Phase 3 fields
+  trade_type?: string;
+  expense_type?: string;
+  custom_type?: string;
 };
 
 export type EstimateRevision = {

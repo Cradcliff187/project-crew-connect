@@ -1,6 +1,26 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Define an internal type to handle type discrepancies between frontend and database
+interface EstimateItemWithExtendedFields {
+  id: string;
+  estimate_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  cost: number;
+  markup_percentage: number;
+  item_type?: string;
+  vendor_id?: string;
+  subcontractor_id?: string;
+  document_id?: string;
+  // These fields might not exist in the database but are used in the frontend
+  trade_type?: string;
+  expense_type?: string;
+  custom_type?: string;
+}
+
 export async function convertEstimateItemsToBudgetItems(estimateId: string, projectId: string) {
   try {
     // Fetch the estimate items from the estimate_items table
@@ -13,36 +33,43 @@ export async function convertEstimateItemsToBudgetItems(estimateId: string, proj
     if (!estimateItems || estimateItems.length === 0) return { success: false, message: "No estimate items found" };
 
     // Map estimate items to budget items format with improved categorization
-    const budgetItems = estimateItems.map(item => {
-      // Determine the category based on item_type, trade_type, and expense_type
-      let category = item.item_type || "Uncategorized";
+    const budgetItems = estimateItems.map((item: any) => {
+      // Cast item to our extended type for safe property access
+      const extendedItem = item as EstimateItemWithExtendedFields;
       
-      if (item.item_type === 'subcontractor' && item.trade_type) {
-        // For subcontractors, use trade_type (specialty) as category
-        if (item.trade_type === 'other' && item.custom_type) {
-          category = `Subcontractor - ${item.custom_type}`;
+      // Determine the category based on item_type
+      let category = extendedItem.item_type || "Uncategorized";
+      
+      if (extendedItem.item_type === 'subcontractor') {
+        // For subcontractors, use trade_type (specialty) as category if available
+        if (extendedItem.trade_type) {
+          if (extendedItem.trade_type === 'other' && extendedItem.custom_type) {
+            category = `Subcontractor - ${extendedItem.custom_type}`;
+          } else {
+            // We'll look up the specialty name in the UI
+            category = `Subcontractor - ${extendedItem.trade_type}`;
+          }
         } else {
-          // We'll need to look up the specialty name in the UI
-          category = `Subcontractor - ${item.trade_type}`;
+          category = "Subcontractor - General";
         }
-      } else if (item.item_type === 'vendor' && item.expense_type) {
-        // For vendors, use expense_type as category
-        if (item.expense_type === 'other' && item.custom_type) {
-          category = `Material - ${item.custom_type}`;
+      } else if (extendedItem.item_type === 'vendor' && extendedItem.expense_type) {
+        // For vendors, use expense_type as category if available
+        if (extendedItem.expense_type === 'other' && extendedItem.custom_type) {
+          category = `Material - ${extendedItem.custom_type}`;
         } else {
           // Capitalize the first letter
-          const formattedType = item.expense_type.charAt(0).toUpperCase() + item.expense_type.slice(1);
+          const formattedType = extendedItem.expense_type.charAt(0).toUpperCase() + extendedItem.expense_type.slice(1);
           category = `Material - ${formattedType}`;
         }
-      } else if (item.item_type === 'labor') {
+      } else if (extendedItem.item_type === 'labor') {
         category = "Labor";
       }
 
       return {
         project_id: projectId,
         category: category,
-        description: item.description || "",
-        estimated_amount: item.total_price || 0,
+        description: extendedItem.description || "",
+        estimated_amount: extendedItem.total_price || 0,
         actual_amount: 0
       };
     });
