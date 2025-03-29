@@ -5,7 +5,8 @@ import SummaryCard from './summary/SummaryCard';
 import { useSummaryCalculations } from '../hooks/useSummaryCalculations';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 import { Badge } from '@/components/ui/badge';
-import { PaperclipIcon } from 'lucide-react';
+import { PaperclipIcon, FileIcon, FileTextIcon, FileImageIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const EstimateSummary = () => {
   const {
@@ -34,10 +35,28 @@ const EstimateSummary = () => {
         <h3 className="text-lg font-medium">Estimate Summary</h3>
         
         {totalDocumentsCount > 0 && (
-          <Badge variant="outline" className="flex items-center gap-1 bg-blue-50">
-            <PaperclipIcon className="h-3 w-3" />
-            <span>{totalDocumentsCount} Document{totalDocumentsCount !== 1 ? 's' : ''}</span>
-          </Badge>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 cursor-pointer">
+                  <PaperclipIcon className="h-3.5 w-3.5" />
+                  <span>{totalDocumentsCount} Document{totalDocumentsCount !== 1 ? 's' : ''}</span>
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs space-y-1">
+                  <div className="flex items-center gap-1">
+                    <FileTextIcon className="h-3.5 w-3.5" />
+                    <span>{estimateDocuments.length} estimate document{estimateDocuments.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <FileIcon className="h-3.5 w-3.5" />
+                    <span>{lineItemDocumentsCount} line item document{lineItemDocumentsCount !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
       

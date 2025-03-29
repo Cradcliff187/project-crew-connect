@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { SubcontractorBasic } from '@/components/documents/vendor-selector/hooks/useVendorOptions';
+import { Badge } from '@/components/ui/badge';
+import { HardHatIcon } from 'lucide-react';
 
 interface SubcontractorSelectorProps {
   index: number;
@@ -22,7 +24,15 @@ const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, su
         name={`items.${index}.subcontractor_id`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Subcontractor</FormLabel>
+            <FormLabel className="flex items-center gap-1">
+              <HardHatIcon className="h-3.5 w-3.5 text-[#0485ea]" />
+              <span>Subcontractor</span>
+              {subcontractors.length > 0 && (
+                <Badge variant="outline" className="ml-1 text-xs bg-blue-50">
+                  {subcontractors.length}
+                </Badge>
+              )}
+            </FormLabel>
             <Select value={field.value || "none"} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>

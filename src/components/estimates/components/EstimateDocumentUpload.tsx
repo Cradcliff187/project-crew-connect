@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { PaperclipIcon, XIcon, FileIcon } from 'lucide-react';
+import { PaperclipIcon, XIcon, FileIcon, FileTextIcon, FileImageIcon, UploadIcon, EyeIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,18 +11,40 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
+import { useDocumentViewer } from '@/hooks/useDocumentViewer';
+import DocumentPreviewCard from '@/components/documents/DocumentPreviewCard';
+import { Badge } from '@/components/ui/badge';
+
+// Helper function to get icon based on file type
+const getDocumentIcon = (fileType?: string) => {
+  if (!fileType) return <FileIcon className="h-4 w-4" />;
+  
+  if (fileType?.includes('image')) {
+    return <FileImageIcon className="h-4 w-4" />;
+  } else if (fileType?.includes('pdf')) {
+    return <FileTextIcon className="h-4 w-4" />;
+  }
+  
+  return <FileIcon className="h-4 w-4" />;
+};
 
 const EstimateDocumentUpload: React.FC = () => {
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   const [attachedDocuments, setAttachedDocuments] = useState<Document[]>([]);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   
   const form = useFormContext<EstimateFormValues>();
   const documentIds = form.watch('estimate_documents') || [];
+  
+  // Use the document viewer hook
+  const { 
+    viewDocument, 
+    closeViewer, 
+    isViewerOpen, 
+    currentDocument 
+  } = useDocumentViewer();
 
   // Fetch attached documents whenever documentIds changes
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchDocuments = async () => {
       if (documentIds.length === 0) {
         setAttachedDocuments([]);
@@ -75,15 +97,32 @@ const EstimateDocumentUpload: React.FC = () => {
     });
   };
 
-  const handlePreviewDocument = (document: Document) => {
-    setSelectedDocument(document);
-    setIsPreviewOpen(true);
+  const handlePreviewDocument = (documentId: string) => {
+    viewDocument(documentId);
   };
+
+  // Categorize documents by type
+  const documentsByCategory: Record<string, Document[]> = {};
+  attachedDocuments.forEach(doc => {
+    const category = doc.category || 'Other';
+    if (!documentsByCategory[category]) {
+      documentsByCategory[category] = [];
+    }
+    documentsByCategory[category].push(doc);
+  });
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Estimate Documents</h3>
+        <h3 className="text-lg font-medium flex items-center gap-2">
+          <PaperclipIcon className="h-4 w-4 text-[#0485ea]" />
+          Estimate Documents
+          {attachedDocuments.length > 0 && (
+            <Badge variant="outline" className="ml-1 text-xs bg-blue-50">
+              {attachedDocuments.length}
+            </Badge>
+          )}
+        </h3>
         <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
           <SheetTrigger asChild>
             <Button 
@@ -92,8 +131,8 @@ const EstimateDocumentUpload: React.FC = () => {
               size="sm"
               className="bg-[#0485ea] text-white hover:bg-[#0375d1]"
             >
-              <PaperclipIcon className="h-4 w-4 mr-1" />
-              Attach Document
+              <UploadIcon className="h-4 w-4 mr-1" />
+              Add Document
             </Button>
           </SheetTrigger>
           <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
@@ -113,59 +152,63 @@ const EstimateDocumentUpload: React.FC = () => {
       
       {/* Display attached documents */}
       {attachedDocuments.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {attachedDocuments.map(document => (
-            <Card key={document.document_id} className="flex items-center p-2">
-              <CardContent className="p-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <FileIcon className="h-5 w-5 text-[#0485ea]" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{document.file_name}</p>
-                    <p className="text-xs text-muted-foreground">{document.category || 'Document'}</p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handlePreviewDocument(document)}
-                    className="text-[#0485ea] h-8 w-8 p-0"
-                  >
-                    <span className="sr-only">Preview</span>
-                    View
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveDocument(document.document_id)}
-                    className="text-red-500 h-8 w-8 p-0"
-                  >
-                    <XIcon className="h-4 w-4" />
-                    <span className="sr-only">Remove</span>
-                  </Button>
+        <div className="space-y-4">
+          {Object.keys(documentsByCategory).length > 0 ? (
+            Object.entries(documentsByCategory).map(([category, docs]) => (
+              <div key={category} className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-600 capitalize">{category}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  {docs.map(document => (
+                    <DocumentPreviewCard
+                      key={document.document_id}
+                      document={document}
+                      onView={() => handlePreviewDocument(document.document_id)}
+                      onDelete={() => handleRemoveDocument(document.document_id)}
+                    />
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            ))
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {attachedDocuments.map(document => (
+                <DocumentPreviewCard
+                  key={document.document_id}
+                  document={document}
+                  onView={() => handlePreviewDocument(document.document_id)}
+                  onDelete={() => handleRemoveDocument(document.document_id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="text-center py-4 border rounded-md bg-muted/20">
-          <p className="text-muted-foreground">No documents attached yet.</p>
+        <div className="text-center py-8 border rounded-md bg-muted/20">
+          <div className="flex flex-col items-center gap-2">
+            <PaperclipIcon className="h-8 w-8 text-muted-foreground" />
+            <p className="text-muted-foreground">No documents attached yet.</p>
+            <p className="text-xs text-muted-foreground">
+              Click "Add Document" to attach receipts, contracts, or other relevant files.
+            </p>
+          </div>
         </div>
       )}
       
       {/* Document Preview Dialog */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+      <Dialog open={isViewerOpen} onOpenChange={closeViewer}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>{selectedDocument?.file_name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {currentDocument?.file_type && getDocumentIcon(currentDocument.file_type)}
+              <span>{currentDocument?.file_name}</span>
+            </DialogTitle>
           </DialogHeader>
-          {selectedDocument && (
+          {currentDocument && (
             <div className="flex justify-center overflow-hidden">
               <iframe
-                src={`${selectedDocument.url}#toolbar=1`}
+                src={`${currentDocument.url}#toolbar=1`}
                 className="w-full h-[70vh] border rounded"
-                title={selectedDocument.file_name}
+                title={currentDocument.file_name}
               />
             </div>
           )}

@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import { ChevronDown, ChevronUp, PaperclipIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import ItemDescription from './ItemDescription';
 import ItemTypeSelector from './ItemTypeSelector';
@@ -23,6 +23,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EstimateItemCardProps {
   index: number;
@@ -43,6 +46,7 @@ const EstimateItemCard: React.FC<EstimateItemCardProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
+  const [attachedDocument, setAttachedDocument] = useState<{file_name?: string; file_type?: string} | null>(null);
   const form = useFormContext<EstimateFormValues>();
   
   // Get current values for calculations
@@ -87,12 +91,43 @@ const EstimateItemCard: React.FC<EstimateItemCardProps> = ({
     name: `items.${index}.subcontractor_id`,
     defaultValue: ''
   });
+  
+  const documentId = useWatch({
+    control: form.control,
+    name: `items.${index}.document_id`,
+    defaultValue: ''
+  });
 
   // Calculate derived values for display
   const item = { cost, markup_percentage: markupPercentage, quantity };
   const itemPrice = calculateItemPrice(item);
   const grossMargin = calculateItemGrossMargin(item);
   const grossMarginPercentage = calculateItemGrossMarginPercentage(item);
+
+  // Fetch document information if a document is attached
+  useEffect(() => {
+    const fetchDocumentInfo = async () => {
+      if (!documentId) {
+        setAttachedDocument(null);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('documents')
+        .select('file_name, file_type')
+        .eq('document_id', documentId)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching document:', error);
+        return;
+      }
+      
+      setAttachedDocument(data);
+    };
+    
+    fetchDocumentInfo();
+  }, [documentId]);
 
   // Handle document upload completion
   const handleDocumentUploadSuccess = (documentId?: string) => {
@@ -155,32 +190,52 @@ const EstimateItemCard: React.FC<EstimateItemCardProps> = ({
             GM: {grossMarginPercentage.toFixed(1)}%
           </div>
           
-          {/* Document attachment button */}
-          <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
-            <SheetTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-500 h-8 w-8 p-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <PaperclipIcon className="h-4 w-4" />
-                <span className="sr-only">Attach Document</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
-              <SheetHeader className="p-6 pb-2">
-                <SheetTitle>Attach Document to Line Item</SheetTitle>
-              </SheetHeader>
-              
-              <EnhancedDocumentUpload 
-                entityType={getEntityTypeForDocument()}
-                entityId={getEntityIdForDocument()}
-                onSuccess={handleDocumentUploadSuccess}
-                onCancel={() => setIsDocumentUploadOpen(false)}
-              />
-            </SheetContent>
-          </Sheet>
+          {/* Document status badge */}
+          {documentId ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 cursor-pointer">
+                    <PaperclipIcon className="h-3 w-3" />
+                    <span className="hidden sm:inline-block">Document</span>
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-xs">
+                    <div className="font-medium">{attachedDocument?.file_name || 'Document attached'}</div>
+                    <div className="text-muted-foreground">{attachedDocument?.file_type}</div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            /* Document attachment button */
+            <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
+                  <span className="hidden sm:inline-block">Attach</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
+                <SheetHeader className="p-6 pb-2">
+                  <SheetTitle>Attach Document to Line Item</SheetTitle>
+                </SheetHeader>
+                
+                <EnhancedDocumentUpload 
+                  entityType={getEntityTypeForDocument()}
+                  entityId={getEntityIdForDocument()}
+                  onSuccess={handleDocumentUploadSuccess}
+                  onCancel={() => setIsDocumentUploadOpen(false)}
+                />
+              </SheetContent>
+            </Sheet>
+          )}
           
           {showRemoveButton && (
             <RemoveItemButton onRemove={onRemove} showButton={true} />
@@ -216,6 +271,25 @@ const EstimateItemCard: React.FC<EstimateItemCardProps> = ({
             <PriceDisplay price={itemPrice} />
             <MarginDisplay grossMargin={grossMargin} grossMarginPercentage={grossMarginPercentage} />
           </div>
+          
+          {/* Document section in expanded view */}
+          {documentId && (
+            <div className="mt-4 p-2 border rounded bg-blue-50 flex items-center">
+              <FileIcon className="h-4 w-4 text-blue-500 mr-2" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{attachedDocument?.file_name || 'Document attached'}</p>
+                <p className="text-xs text-muted-foreground">{attachedDocument?.file_type}</p>
+              </div>
+              <Button
+                variant="ghost" 
+                size="sm"
+                className="text-red-500 h-8 hover:text-red-700 hover:bg-red-50"
+                onClick={() => form.setValue(`items.${index}.document_id`, '')}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
         </div>
       </CollapsibleContent>
     </Collapsible>

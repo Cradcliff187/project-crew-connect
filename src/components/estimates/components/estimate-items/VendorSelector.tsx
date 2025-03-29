@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { Vendor } from '@/components/documents/vendor-selector/hooks/useVendorOptions';
+import { Badge } from '@/components/ui/badge';
+import { StoreIcon } from 'lucide-react';
 
 interface VendorSelectorProps {
   index: number;
@@ -22,7 +24,15 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ index, vendors, loading
         name={`items.${index}.vendor_id`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Vendor</FormLabel>
+            <FormLabel className="flex items-center gap-1">
+              <StoreIcon className="h-3.5 w-3.5 text-[#0485ea]" />
+              <span>Vendor</span>
+              {vendors.length > 0 && (
+                <Badge variant="outline" className="ml-1 text-xs bg-blue-50">
+                  {vendors.length}
+                </Badge>
+              )}
+            </FormLabel>
             <Select value={field.value || "none"} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>
