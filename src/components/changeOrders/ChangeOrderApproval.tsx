@@ -5,14 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { CalendarIcon, CheckCircle, XCircle } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { 
   Popover,
@@ -32,6 +25,9 @@ import {
 import { format } from 'date-fns';
 import { ChangeOrder, ChangeOrderStatus } from '@/types/changeOrders';
 import ChangeOrderStatusBadge from './ChangeOrderStatusBadge';
+import UniversalStatusControl from '@/components/common/status/UniversalStatusControl';
+import { useStatusOptions } from '@/hooks/useStatusOptions';
+import { useStatusHistory } from '@/hooks/useStatusHistory';
 
 interface ChangeOrderApprovalProps {
   form: UseFormReturn<ChangeOrder>;
@@ -44,89 +40,60 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
   const [loading, setLoading] = useState(false);
 
   const status = form.watch('status');
-  const canApprove = status === 'REVIEW';
-  const canReject = status === 'REVIEW';
-  const canSubmit = status === 'DRAFT';
-  const canImplement = status === 'APPROVED';
-  const canCancel = ['DRAFT', 'SUBMITTED', 'REVIEW'].includes(status);
+  const { statusOptions } = useStatusOptions('CHANGE_ORDER', status);
+  const { fetchStatusHistory } = useStatusHistory({
+    entityId: changeOrderId || '',
+    entityType: 'CHANGE_ORDER'
+  });
 
   useEffect(() => {
     if (changeOrderId) {
-      fetchStatusHistory();
+      loadStatusHistory();
     }
   }, [changeOrderId]);
 
-  const fetchStatusHistory = async () => {
-    if (!changeOrderId) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('change_order_status_history')
-        .select('*')
-        .eq('change_order_id', changeOrderId)
-        .order('changed_date', { ascending: false });
-      
-      if (error) throw error;
-      setStatusHistory(data || []);
-    } catch (error: any) {
-      console.error('Error fetching status history:', error);
-    }
-  };
-
-  const updateStatus = async (newStatus: ChangeOrderStatus) => {
+  const loadStatusHistory = async () => {
     if (!changeOrderId) return;
     
     setLoading(true);
     try {
-      const updateData: Partial<ChangeOrder> = {
-        status: newStatus
-      };
-      
-      // For approvals, record who approved and when
-      if (newStatus === 'APPROVED') {
-        updateData.approved_by = form.getValues('approved_by') || 'System User';
-        updateData.approved_date = new Date().toISOString();
-        updateData.approval_notes = form.getValues('approval_notes');
-      }
-      
-      // For rejections, still record the notes
-      if (newStatus === 'REJECTED') {
-        updateData.approval_notes = form.getValues('approval_notes');
-      }
-      
-      const { error } = await supabase
-        .from('change_orders')
-        .update(updateData)
-        .eq('id', changeOrderId);
-      
-      if (error) throw error;
-      
-      // Update the form value
-      form.setValue('status', newStatus);
-      
-      // If approved or rejected, refresh status history
-      await fetchStatusHistory();
-      onUpdated();
-      
-      toast({
-        title: `Change order ${newStatus.toLowerCase()}`,
-        description: `The change order has been ${newStatus.toLowerCase()}.`
-      });
-    } catch (error: any) {
-      console.error(`Error updating status to ${newStatus}:`, error);
-      toast({
-        title: "Error updating status",
-        description: error.message,
-        variant: "destructive"
-      });
+      const history = await fetchStatusHistory();
+      setStatusHistory(history);
+    } catch (error) {
+      console.error('Error loading status history:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleStatusChanged = async () => {
+    // Refresh status history after change
+    await loadStatusHistory();
+    onUpdated();
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Not specified';
     return format(new Date(dateString), 'PPP');
+  };
+
+  // Special fields to update based on status
+  const getAdditionalFieldsForStatus = (newStatus: string) => {
+    const additionalFields: Record<string, any> = {};
+    
+    // For approvals, record who approved and when
+    if (newStatus === 'APPROVED') {
+      additionalFields.approved_by = form.getValues('approved_by') || 'System User';
+      additionalFields.approved_date = new Date().toISOString();
+      additionalFields.approval_notes = form.getValues('approval_notes');
+    }
+    
+    // For rejections, still record the notes
+    if (newStatus === 'REJECTED') {
+      additionalFields.approval_notes = form.getValues('approval_notes');
+    }
+    
+    return additionalFields;
   };
 
   return (
@@ -145,7 +112,6 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
                   id="approved_by"
                   {...form.register('approved_by')}
                   placeholder="Enter approver name"
-                  disabled={!canApprove || loading}
                 />
               </div>
               
@@ -165,64 +131,27 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
                   {...form.register('approval_notes')}
                   placeholder="Enter approval or rejection notes"
                   rows={3}
-                  disabled={!canApprove && !canReject || loading}
                 />
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-wrap gap-2">
-            {canSubmit && (
-              <Button 
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={() => updateStatus('SUBMITTED')}
-                disabled={loading}
-              >
-                Submit for Review
-              </Button>
-            )}
-            
-            {canApprove && (
-              <Button 
-                className="bg-green-500 hover:bg-green-600 text-white"
-                onClick={() => updateStatus('APPROVED')}
-                disabled={loading || !form.watch('approved_by')}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Approve
-              </Button>
-            )}
-            
-            {canReject && (
-              <Button 
-                variant="outline"
-                className="text-red-500 border-red-500 hover:bg-red-50"
-                onClick={() => updateStatus('REJECTED')}
-                disabled={loading}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Reject
-              </Button>
-            )}
-            
-            {canImplement && (
-              <Button 
-                className="bg-purple-500 hover:bg-purple-600 text-white"
-                onClick={() => updateStatus('IMPLEMENTED')}
-                disabled={loading}
-              >
-                Mark as Implemented
-              </Button>
-            )}
-            
-            {canCancel && (
-              <Button 
-                variant="outline"
-                className="text-gray-500"
-                onClick={() => updateStatus('CANCELLED')}
-                disabled={loading}
-              >
-                Cancel Change Order
-              </Button>
+            {changeOrderId && (
+              <UniversalStatusControl 
+                entityId={changeOrderId}
+                entityType="CHANGE_ORDER"
+                currentStatus={status}
+                statusOptions={statusOptions}
+                tableName="change_orders"
+                idField="id"
+                onStatusChange={handleStatusChanged}
+                additionalUpdateFields={getAdditionalFieldsForStatus(form.getValues().status)}
+                className="w-full"
+                showStatusBadge={false}
+                buttonLabel="Update Status"
+                userIdentifier={form.getValues().approved_by}
+                notes={form.getValues().approval_notes}
+              />
             )}
           </CardFooter>
         </Card>
@@ -232,7 +161,9 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
             <CardTitle className="text-lg">Status History</CardTitle>
           </CardHeader>
           <CardContent>
-            {statusHistory.length === 0 ? (
+            {loading ? (
+              <div className="text-muted-foreground text-sm">Loading status history...</div>
+            ) : statusHistory.length === 0 ? (
               <p className="text-muted-foreground text-sm">No status changes recorded yet.</p>
             ) : (
               <div className="space-y-3">

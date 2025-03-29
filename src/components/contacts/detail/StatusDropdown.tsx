@@ -1,51 +1,76 @@
 
-import StatusBadge from '@/components/ui/StatusBadge';
-import { Button } from '@/components/ui/button';
-import { ChevronDown } from '@/components/ui/chevron-down';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-
-interface StatusOption {
-  value: string;
-  label: string;
-}
+import { useStatusOptions } from '@/hooks/useStatusOptions';
+import UniversalStatusControl from '@/components/common/status/UniversalStatusControl';
 
 interface StatusDropdownProps {
   contact: any;
   onStatusChange: (contact: any, newStatus: string) => void;
-  statusOptions: StatusOption[];
 }
 
-const StatusDropdown = ({ contact, onStatusChange, statusOptions }: StatusDropdownProps) => {
+const StatusDropdown = ({ contact, onStatusChange }: StatusDropdownProps) => {
+  const contactType = contact.contact_type || contact.type || 'client';
+  const currentStatus = contact.status || 'active';
+  
+  // Get appropriate status options based on contact type
+  const { statusOptions } = useStatusOptions('CONTACT', currentStatus);
+  
   if (!statusOptions.length) return null;
   
+  // Since this component is designed for the Contacts module which may have a different
+  // structure than our standard models, we'll create a wrapper for the status change event
+  const handleStatusChange = () => {
+    onStatusChange(contact, currentStatus);
+  };
+  
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="outline">
-          Status: <StatusBadge className="ml-2" status={contact.status.toLowerCase() as any} size="sm" />
-          <ChevronDown className="ml-1 h-3 w-3" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {statusOptions.map((option) => (
-          <DropdownMenuItem 
-            key={option.value}
-            onClick={() => onStatusChange(contact, option.value)}
-          >
-            <div className="flex items-center">
-              <StatusBadge status={option.value.toLowerCase() as any} size="sm" />
-              <span className="ml-2">{option.label}</span>
-            </div>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <UniversalStatusControl 
+      entityId={contact.id || contact.customerid || contact.subid || contact.vendorid || ''}
+      entityType="CONTACT"
+      currentStatus={currentStatus}
+      statusOptions={statusOptions}
+      tableName={getTableNameFromContactType(contactType)}
+      idField={getIdFieldFromContactType(contactType)}
+      onStatusChange={handleStatusChange}
+      showStatusBadge={true}
+      size="sm"
+    />
   );
 };
+
+// Helper function to determine database table name based on contact type
+function getTableNameFromContactType(type: string): string {
+  switch (type.toLowerCase()) {
+    case 'client':
+    case 'customer':
+      return 'customers';
+    case 'supplier':
+    case 'vendor':
+      return 'vendors';
+    case 'subcontractor':
+      return 'subcontractors';
+    case 'employee':
+      return 'employees';
+    default:
+      return 'contacts';
+  }
+}
+
+// Helper function to determine ID field name based on contact type
+function getIdFieldFromContactType(type: string): string {
+  switch (type.toLowerCase()) {
+    case 'client':
+    case 'customer':
+      return 'customerid';
+    case 'supplier':
+    case 'vendor':
+      return 'vendorid';
+    case 'subcontractor':
+      return 'subid';
+    case 'employee':
+      return 'employee_id';
+    default:
+      return 'id';
+  }
+}
 
 export default StatusDropdown;
