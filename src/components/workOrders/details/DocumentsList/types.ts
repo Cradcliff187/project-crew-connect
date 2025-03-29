@@ -28,6 +28,7 @@ export interface WorkOrderDocument extends BaseDocument {
   notes?: string | null;
   expense_date?: string | null;
   is_expense?: boolean;
+  parent_document_id?: string | null; // Added for document versioning support
 }
 
 // VendorDocument is a type alias to WorkOrderDocument for backward compatibility

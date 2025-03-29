@@ -32,8 +32,9 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
   // Find documents with the same parent_document_id as the selected document
   const documentVersions = selectedDocument 
     ? documents.filter(doc => 
-        doc.parent_document_id === selectedDocument.parent_document_id || 
-        doc.document_id === selectedDocument.parent_document_id ||
+        (selectedDocument.parent_document_id && doc.parent_document_id === selectedDocument.parent_document_id) || 
+        (selectedDocument.parent_document_id && doc.document_id === selectedDocument.parent_document_id) ||
+        (doc.parent_document_id && doc.parent_document_id === selectedDocument.document_id) ||
         doc.document_id === selectedDocument.document_id
       )
     : [];

@@ -1,4 +1,3 @@
-
 import * as z from 'zod';
 
 // Define the category options
@@ -91,6 +90,7 @@ export const documentSchema = z.object({
   expense_type: z.string().optional(),
   materialName: z.string().optional(),
   costType: z.enum(expenseTypes).optional(),
+  parent_document_id: z.string().nullable().optional(), // Added parent_document_id for versioning
 });
 
 export type DocumentCategory = typeof documentCategories[number];
