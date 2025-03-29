@@ -48,3 +48,5 @@ export interface Option {
   label: string;
   value: string;
 }
+
+export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';

@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Check, AlertCircle, Pause, X, Play, Clock, ArrowUpRight } from 'lucide-react';
 import { StatusOption } from './UniversalStatusControl';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
+import { EntityType } from '@/hooks/useStatusHistory';
 
 export interface StatusHistoryEntry {
   id?: string;
@@ -24,7 +25,7 @@ export interface StatusHistoryEntry {
 
 interface StatusHistoryViewProps {
   entityId: string;
-  entityType: 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
+  entityType: EntityType;
   historyTable?: string;
   entityIdField?: string;
   className?: string;
@@ -85,12 +86,10 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
       try {
         const { table, idField } = getHistoryTableInfo();
         
-        // Instead of checking if the table exists which causes type errors,
-        // directly try to fetch from the specified table and fall back to activitylog if it fails
+        // First try to fetch from the specific status history table
         try {
-          // Try to query from specific status history table
           const { data, error } = await supabase
-            .from(table)
+            .from(table as any)
             .select('*')
             .eq(idField, entityId)
             .order('changed_date', { ascending: false });
@@ -102,7 +101,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
             return;
           }
         } catch (err) {
-          console.info(`Table ${table} might not exist, falling back to activitylog`);
+          console.info(`Falling back to activitylog for ${entityType}`);
           // Fall through to activity log query
         }
         

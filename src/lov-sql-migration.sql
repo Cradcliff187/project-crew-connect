@@ -1,90 +1,55 @@
 
--- Create expenses table if it doesn't exist yet
-CREATE TABLE IF NOT EXISTS public.expenses (
+-- Create vendor_status_history table if it doesn't exist
+CREATE TABLE IF NOT EXISTS public.vendor_status_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    entity_type TEXT NOT NULL,
-    entity_id TEXT NOT NULL,
-    expense_type TEXT NOT NULL,
-    description TEXT NOT NULL,
-    amount NUMERIC NOT NULL,
-    quantity NUMERIC NOT NULL DEFAULT 1,
-    unit_price NUMERIC NOT NULL,
-    expense_date TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    vendor_id TEXT,
-    document_id UUID,
-    budget_item_id UUID,
-    time_entry_id UUID,
-    parent_expense_id UUID,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    created_by TEXT,
-    status TEXT DEFAULT 'ACTIVE',
-    is_billable BOOLEAN DEFAULT true,
-    is_receipt BOOLEAN DEFAULT false,
-    notes TEXT
-);
-
--- Create estimate_items table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.estimate_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    estimate_id TEXT NOT NULL REFERENCES estimates(estimateid),
-    description TEXT NOT NULL,
-    quantity NUMERIC NOT NULL DEFAULT 1,
-    unit_price NUMERIC NOT NULL,
-    total_price NUMERIC NOT NULL,
-    cost NUMERIC,
-    markup_percentage NUMERIC DEFAULT 0,
-    markup_amount NUMERIC,
-    gross_margin NUMERIC,
-    gross_margin_percentage NUMERIC,
-    vendor_id TEXT,
-    subcontractor_id TEXT,
-    item_type TEXT,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
-
--- Create project_expenses table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.project_expenses (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id TEXT NOT NULL REFERENCES projects(projectid),
-    budget_item_id UUID REFERENCES project_budget_items(id),
-    expense_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    amount NUMERIC NOT NULL,
-    vendor_id TEXT,
-    description TEXT NOT NULL,
-    document_id UUID,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
-
--- Create work_order_time_logs table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.work_order_time_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    work_order_id UUID NOT NULL REFERENCES maintenance_work_orders(work_order_id),
-    employee_id UUID,
-    hours_worked NUMERIC NOT NULL,
-    work_date DATE NOT NULL,
+    vendorid TEXT NOT NULL REFERENCES vendors(vendorid),
+    status TEXT NOT NULL,
+    previous_status TEXT,
+    changed_date TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    changed_by TEXT,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
--- Create subcontractor_invoices_new table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.subcontractor_invoices_new (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    subcontractor_id TEXT NOT NULL REFERENCES subcontractors(subid),
-    project_id TEXT REFERENCES projects(projectid),
-    invoice_number TEXT,
-    amount NUMERIC NOT NULL,
-    invoice_date DATE NOT NULL,
-    due_date DATE,
-    status TEXT DEFAULT 'PENDING',
-    description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
+-- Create indexes to improve query performance
+CREATE INDEX IF NOT EXISTS idx_vendor_status_history_vendorid ON public.vendor_status_history(vendorid);
+CREATE INDEX IF NOT EXISTS idx_vendor_status_history_status ON public.vendor_status_history(status);
 
--- Create time_entries_migration_view if it doesn't exist
-CREATE OR REPLACE VIEW time_entries_migration_view AS
-SELECT * FROM time_entries;
+-- Enable row level security
+ALTER TABLE public.vendor_status_history ENABLE ROW LEVEL SECURITY;
+
+-- Create a basic policy that allows all operations (can be refined later)
+CREATE POLICY vendor_status_history_policy ON public.vendor_status_history 
+  FOR ALL USING (true);
+
+-- Create a trigger function to automatically record vendor status changes
+CREATE OR REPLACE FUNCTION public.record_vendor_status_change() 
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.status IS DISTINCT FROM NEW.status THEN
+    INSERT INTO public.vendor_status_history (
+      vendorid, 
+      status, 
+      previous_status, 
+      changed_date,
+      notes
+    ) VALUES (
+      NEW.vendorid,
+      NEW.status,
+      OLD.status,
+      NOW(),
+      'Automatic status change record'
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create or replace the trigger on the vendors table
+DROP TRIGGER IF EXISTS vendor_status_change_trigger ON public.vendors;
+CREATE TRIGGER vendor_status_change_trigger
+AFTER UPDATE ON public.vendors
+FOR EACH ROW
+WHEN (OLD.status IS DISTINCT FROM NEW.status)
+EXECUTE FUNCTION public.record_vendor_status_change();

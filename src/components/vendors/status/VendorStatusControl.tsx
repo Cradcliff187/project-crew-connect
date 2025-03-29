@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Vendor } from '../../vendors/types/vendorTypes';
+import { Vendor } from '../types/vendorTypes';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
 import UniversalStatusControl from '@/components/common/status/UniversalStatusControl';
 

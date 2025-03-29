@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useStatusHistory } from '@/hooks/useStatusHistory';
+import { useStatusHistory, EntityType } from '@/hooks/useStatusHistory';
 
 export interface StatusOption {
   value: string;
@@ -23,7 +23,7 @@ export interface StatusOption {
 
 export interface UniversalStatusControlProps {
   entityId: string;
-  entityType: 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
+  entityType: EntityType;
   currentStatus: string;
   statusOptions: StatusOption[];
   tableName: string;
@@ -107,9 +107,8 @@ const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
         await updateProjectProgress(entityId);
       }
       
-      // Manually record the status change if requested
-      // This is a fallback for entities that don't have database triggers for status history
-      if (recordHistory && entityType === 'CHANGE_ORDER') {
+      // Record the status change in history table or activity log
+      if (recordHistory) {
         await recordStatusChange(
           newStatus,
           currentStatus,

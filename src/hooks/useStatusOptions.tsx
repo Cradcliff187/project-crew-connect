@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { Check, Pause, Play, AlertCircle, X, Clock, ArrowUpRight } from 'lucide-react';
 import { StatusOption } from '@/components/common/status/UniversalStatusControl';
 
-type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
+export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
 
 export function useStatusOptions(entityType: EntityType, currentStatus?: string) {
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
