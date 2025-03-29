@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
@@ -12,6 +13,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
+import { useFormFallback } from "@/hooks/useFormContext"
 
 const Form = FormProvider
 
@@ -40,17 +42,40 @@ const FormField = <
 }
 
 const useFormField = () => {
-  const fieldContext = React.useContext(FormFieldContext)
-  const itemContext = React.useContext(FormItemContext)
-  const { getFieldState, formState } = useFormContext()
-
-  const fieldState = getFieldState(fieldContext.name, formState)
+  const fieldContext = React.useContext(FormFieldContext);
+  const itemContext = React.useContext(FormItemContext);
+  
+  // Try to get the form context, but use fallback if not available
+  let formContext;
+  try {
+    formContext = useFormContext();
+  } catch (error) {
+    formContext = useFormFallback();
+  }
+  
+  const { getFieldState, formState } = formContext;
+  
+  // Only proceed with getFieldState if we have a valid fieldContext
+  const fieldState = fieldContext?.name ? 
+    getFieldState(fieldContext.name, formState) : 
+    { invalid: false, isDirty: false, isTouched: false, error: undefined };
 
   if (!fieldContext) {
-    throw new Error("useFormField should be used within <FormField>")
+    console.warn("useFormField should be used within <FormField>");
+    return {
+      id: itemContext?.id || "",
+      name: "",
+      formItemId: "",
+      formDescriptionId: "",
+      formMessageId: "",
+      invalid: false,
+      isDirty: false,
+      isTouched: false,
+      error: undefined
+    };
   }
 
-  const { id } = itemContext
+  const { id } = itemContext || { id: "" };
 
   return {
     id,
@@ -66,9 +91,7 @@ type FormItemContextValue = {
   id: string
 }
 
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-)
+const FormItemContext = React.createContext<FormItemContextValue | undefined>(undefined);
 
 const FormItem = React.forwardRef<
   HTMLDivElement,

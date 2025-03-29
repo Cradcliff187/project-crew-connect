@@ -10,6 +10,20 @@ interface VendorTypeSelectorProps {
 }
 
 const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
+  // Get controller for the vendorId field outside of the render function
+  const vendorIdController = useController({
+    control,
+    name: 'metadata.vendorId',
+  });
+
+  const handleVendorTypeChange = (value: string) => {
+    // First update the vendor type
+    control._formValues.metadata.vendorType = value;
+    
+    // Then reset the vendor ID
+    vendorIdController.field.onChange('');
+  };
+
   return (
     <FormField
       control={control}
@@ -22,11 +36,7 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
             onValueChange={(value) => {
               field.onChange(value);
               // Reset the vendor ID when changing type
-              const vendorTypeController = useController({
-                control,
-                name: 'metadata.vendorId',
-              });
-              vendorTypeController.field.onChange('');
+              handleVendorTypeChange(value);
             }}
           >
             <FormControl>
