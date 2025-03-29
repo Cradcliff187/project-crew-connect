@@ -35,13 +35,14 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Expense Type</FormLabel>
-            <Select value={field.value || ''} onValueChange={field.onChange}>
+            <Select value={field.value || 'none'} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select expense type" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="none">Select expense type</SelectItem>
                 <SelectItem value="materials">Materials</SelectItem>
                 <SelectItem value="equipment">Equipment</SelectItem>
                 <SelectItem value="supplies">Supplies</SelectItem>

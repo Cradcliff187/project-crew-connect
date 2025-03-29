@@ -32,7 +32,7 @@ const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                   <SelectValue placeholder="Select a customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Select a customer</SelectItem>
+                  <SelectItem value="none">Select a customer</SelectItem>
                   {customers.map(customer => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.name}

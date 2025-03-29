@@ -23,13 +23,14 @@ const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, su
         render={({ field }) => (
           <FormItem>
             <FormLabel>Subcontractor</FormLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select value={field.value || "none"} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder={loading ? "Loading..." : "Select subcontractor"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="none">Select subcontractor</SelectItem>
                 {subcontractors.map(sub => (
                   <SelectItem key={sub.subid} value={sub.subid}>
                     {sub.subname}

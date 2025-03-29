@@ -37,13 +37,14 @@ const TradeTypeSelector: React.FC<TradeTypeSelectorProps> = ({ index }) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Trade Type</FormLabel>
-            <Select value={field.value || ''} onValueChange={field.onChange}>
+            <Select value={field.value || 'none'} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder={loading ? "Loading..." : "Select trade"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="none">Select trade</SelectItem>
                 {Object.values(specialties).map(specialty => (
                   <SelectItem key={specialty.id} value={specialty.id}>
                     {specialty.specialty}

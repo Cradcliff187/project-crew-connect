@@ -23,13 +23,14 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ index, vendors, loading
         render={({ field }) => (
           <FormItem>
             <FormLabel>Vendor</FormLabel>
-            <Select value={field.value} onValueChange={field.onChange}>
+            <Select value={field.value || "none"} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder={loading ? "Loading..." : "Select vendor"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="none">Select vendor</SelectItem>
                 {vendors.map(vendor => (
                   <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
                     {vendor.vendorname}
