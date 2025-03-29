@@ -3,7 +3,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useDocumentCount } from '@/hooks/useDocumentCount';
-import { Vendor } from '../table/VendorTableRow';
+import { Vendor } from '../types/vendorTypes';
 
 interface VendorInfoProps {
   vendor: Vendor;

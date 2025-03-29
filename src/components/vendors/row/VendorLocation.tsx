@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Vendor } from '../table/VendorTableRow';
+import { Vendor } from '../types/vendorTypes';
 
 interface VendorLocationProps {
   vendor: Vendor;
