@@ -14,6 +14,7 @@ import ProjectBudget from './detail/ProjectBudget';
 import ProjectMilestones from './detail/ProjectMilestones';
 import { ProjectDocumentsList } from './detail';
 import ProjectProgressCard from './progress/ProjectProgressCard';
+import ChangeOrdersList from './detail/ChangeOrdersList';
 
 export interface ProjectDetails {
   projectid: string;
@@ -55,11 +56,12 @@ const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDet
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
+        <TabsList className="grid grid-cols-5 mb-4">
           <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
           <TabsTrigger value="budget" className="text-sm">Budget</TabsTrigger>
           <TabsTrigger value="schedule" className="text-sm">Timeline</TabsTrigger>
           <TabsTrigger value="documents" className="text-sm">Documents</TabsTrigger>
+          <TabsTrigger value="changes" className="text-sm">Change Orders</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
@@ -121,6 +123,10 @@ const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDet
         
         <TabsContent value="documents">
           <ProjectDocumentsList projectId={project.projectid} />
+        </TabsContent>
+        
+        <TabsContent value="changes">
+          <ChangeOrdersList projectId={project.projectid} onChangeOrderAdded={handleRefresh} />
         </TabsContent>
       </Tabs>
     </div>
