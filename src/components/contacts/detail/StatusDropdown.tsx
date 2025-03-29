@@ -1,18 +1,21 @@
 
 import { useStatusOptions } from '@/hooks/useStatusOptions';
 import UniversalStatusControl from '@/components/common/status/UniversalStatusControl';
+import { StatusOption } from '@/components/common/status/UniversalStatusControl';
 
-interface StatusDropdownProps {
+export interface StatusDropdownProps {
   contact: any;
   onStatusChange: (contact: any, newStatus: string) => void;
+  statusOptions?: StatusOption[];
 }
 
-const StatusDropdown = ({ contact, onStatusChange }: StatusDropdownProps) => {
+const StatusDropdown = ({ contact, onStatusChange, statusOptions: providedStatusOptions }: StatusDropdownProps) => {
   const contactType = contact.contact_type || contact.type || 'client';
   const currentStatus = contact.status || 'active';
   
-  // Get appropriate status options based on contact type
-  const { statusOptions } = useStatusOptions('CONTACT', currentStatus);
+  // Get appropriate status options based on contact type, or use provided options
+  const { statusOptions: derivedStatusOptions } = useStatusOptions('CONTACT', currentStatus);
+  const statusOptions = providedStatusOptions || derivedStatusOptions;
   
   if (!statusOptions.length) return null;
   

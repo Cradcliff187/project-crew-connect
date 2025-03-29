@@ -57,7 +57,7 @@ export function useStatusHistory({
       }
       
       const { error } = await supabase
-        .from(historyTable)
+        .from(historyTable as any)
         .insert(historyRecord);
       
       if (error) throw error;
@@ -80,7 +80,7 @@ export function useStatusHistory({
       if (entityType !== 'CHANGE_ORDER') return [];
       
       const { data, error } = await supabase
-        .from(historyTable)
+        .from(historyTable as any)
         .select('*')
         .eq(entityIdField, entityId)
         .order(changedDateField, { ascending: false });

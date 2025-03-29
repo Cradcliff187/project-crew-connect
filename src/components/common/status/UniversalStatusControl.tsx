@@ -94,9 +94,9 @@ const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
         }
       }
       
-      // Update the entity in the database
+      // Update the entity in the database - using type assertion for tableName
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .update(updateData)
         .eq(idField, entityId);
       
@@ -152,7 +152,7 @@ const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
     try {
       // Check if a progress record exists
       const { data: progressData } = await supabase
-        .from('project_progress')
+        .from('project_progress' as any)
         .select('id')
         .eq('projectid', projectId)
         .maybeSingle();
@@ -160,13 +160,13 @@ const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
       if (progressData) {
         // Update existing record
         await supabase
-          .from('project_progress')
+          .from('project_progress' as any)
           .update({ progress_percentage: 100 })
           .eq('projectid', projectId);
       } else {
         // Create new progress record with 100%
         await supabase
-          .from('project_progress')
+          .from('project_progress' as any)
           .insert({ 
             projectid: projectId, 
             progress_percentage: 100 

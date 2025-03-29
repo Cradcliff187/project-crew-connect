@@ -7,6 +7,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { VendorProject } from './types';
+import { StatusType } from '@/types/common';
 
 interface AssociatedProjectsProps {
   projects: VendorProject[];
@@ -75,7 +76,7 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <StatusBadge status={project.status || 'unknown'} size="sm" />
+              <StatusBadge status={(project.status?.toLowerCase() || 'unknown') as StatusType} size="sm" />
               <Button 
                 variant="ghost" 
                 size="sm" 

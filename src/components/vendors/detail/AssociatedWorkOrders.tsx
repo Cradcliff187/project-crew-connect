@@ -7,6 +7,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { VendorWorkOrder } from './types';
+import { StatusType } from '@/types/common';
 
 interface AssociatedWorkOrdersProps {
   workOrders: VendorWorkOrder[];
@@ -75,7 +76,7 @@ const AssociatedWorkOrders: React.FC<AssociatedWorkOrdersProps> = ({ workOrders,
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <StatusBadge status={workOrder.status || 'unknown'} size="sm" />
+              <StatusBadge status={(workOrder.status?.toLowerCase() || 'unknown') as StatusType} size="sm" />
               <Button 
                 variant="ghost" 
                 size="sm" 

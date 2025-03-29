@@ -1,95 +1,85 @@
 
-import { TableRow, TableCell } from '@/components/ui/table';
-import { Package, MoreHorizontal } from 'lucide-react';
+import React from 'react';
+import { Building2, ChevronRight, Mail, MapPin, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { TableCell, TableRow } from '@/components/ui/table';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Link } from 'react-router-dom';
-import { formatDate, mapStatusToStatusBadge } from '../utils/vendorUtils';
-import VendorInfo from '../row/VendorInfo';
-import VendorContactInfo from '../row/VendorContactInfo';
-import VendorLocation from '../row/VendorLocation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-// Define vendor type based on our database schema
-export interface Vendor {
-  vendorid: string;
-  vendorname: string | null;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  status: string | null;
-  createdon: string | null;
-  payment_terms: string | null;
-  tax_id: string | null;
-  notes: string | null;
-}
+import { useNavigate } from 'react-router-dom';
+import { StatusType } from '@/types/common';
 
 interface VendorTableRowProps {
-  vendor: Vendor;
-  onViewDetails: (vendor: Vendor) => void;
-  onEditVendor: (vendor: Vendor) => void;
+  vendor: {
+    vendorid: string;
+    vendorname: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    status?: string;
+    payment_terms?: string;
+  };
 }
 
-const VendorTableRow = ({ 
-  vendor, 
-  onViewDetails,
-  onEditVendor
-}: VendorTableRowProps) => {
-  const handleViewDetails = () => {
-    onViewDetails(vendor);
+const VendorTableRow: React.FC<VendorTableRowProps> = ({ vendor }) => {
+  const navigate = useNavigate();
+
+  const handleViewVendor = () => {
+    navigate(`/vendors/${vendor.vendorid}`);
   };
-  
-  const handleEditVendor = () => {
-    onEditVendor(vendor);
+
+  const formatAddress = () => {
+    const parts = [
+      vendor.address,
+      vendor.city,
+      vendor.state,
+      vendor.zip
+    ].filter(Boolean);
+    
+    return parts.length > 0 ? parts.join(', ') : 'No address provided';
   };
-  
+
   return (
-    <TableRow 
-      key={vendor.vendorid}
-      className="hover:bg-[#0485ea]/5 transition-colors"
-    >
+    <TableRow className="hover:bg-muted/50">
       <TableCell>
-        <Link to={`/vendors/${vendor.vendorid}`} className="text-[#0485ea] hover:underline">
-          {vendor.vendorname || 'Unnamed Vendor'}
-        </Link>
+        <div className="flex flex-col">
+          <span className="font-medium">{vendor.vendorname}</span>
+          <span className="text-xs text-muted-foreground">{vendor.vendorid}</span>
+        </div>
       </TableCell>
       <TableCell>
-        <VendorContactInfo vendor={vendor} />
+        <div className="flex flex-col">
+          {vendor.email && (
+            <span className="flex items-center gap-1 text-sm">
+              <Mail className="h-3 w-3" />
+              {vendor.email}
+            </span>
+          )}
+          {vendor.phone && (
+            <span className="flex items-center gap-1 text-sm">
+              <Phone className="h-3 w-3" />
+              {vendor.phone}
+            </span>
+          )}
+        </div>
       </TableCell>
       <TableCell>
-        <VendorLocation vendor={vendor} />
+        <div className="flex items-start gap-1">
+          <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <span className="text-sm">{formatAddress()}</span>
+        </div>
       </TableCell>
-      <TableCell>{formatDate(vendor.createdon)}</TableCell>
       <TableCell>
-        <StatusBadge status={mapStatusToStatusBadge(vendor.status)} />
+        <StatusBadge status={(vendor.status?.toLowerCase() || 'unknown') as StatusType} />
+      </TableCell>
+      <TableCell>
+        <span className="text-sm">{vendor.payment_terms || 'Not specified'}</span>
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white shadow-md">
-              <DropdownMenuItem onClick={handleViewDetails}>
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleEditVendor}>
-                Edit Vendor
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <Button variant="ghost" size="sm" onClick={handleViewVendor}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </TableCell>
     </TableRow>
   );
