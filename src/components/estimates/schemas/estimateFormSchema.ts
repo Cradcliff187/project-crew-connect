@@ -22,7 +22,11 @@ export const estimateFormSchema = z.object({
     unitPrice: z.string().optional(),
     vendor_id: z.string().optional(),
     subcontractor_id: z.string().optional(),
-    document_id: z.string().optional(), // Added document_id field
+    document_id: z.string().optional(),
+    // New fields for Phase 3
+    trade_type: z.string().optional(), // For subcontractors
+    expense_type: z.enum(['materials', 'equipment', 'supplies', 'other']).optional(), // For vendors
+    custom_type: z.string().optional(), // For "other" entries that need further specification
   })).min(1, { message: "At least one item is required" }),
   showSiteLocation: z.boolean().default(false),
   newCustomer: z.object({
@@ -35,7 +39,7 @@ export const estimateFormSchema = z.object({
     zip: z.string().optional(),
   }).optional(),
   isNewCustomer: z.boolean().default(false),
-  estimate_documents: z.array(z.string()).optional().default([]), // Added estimate-level documents
+  estimate_documents: z.array(z.string()).optional().default([]),
 });
 
 export type EstimateFormValues = z.infer<typeof estimateFormSchema>;
@@ -50,6 +54,10 @@ export type EstimateItem = {
   vendor_id?: string;
   subcontractor_id?: string;
   document_id?: string;
+  // New fields for Phase 3
+  trade_type?: string;
+  expense_type?: string;
+  custom_type?: string;
 };
 
 // Types for calculation results

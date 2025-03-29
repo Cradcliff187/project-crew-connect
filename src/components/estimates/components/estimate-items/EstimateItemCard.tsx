@@ -7,6 +7,8 @@ import ItemDescription from './ItemDescription';
 import ItemTypeSelector from './ItemTypeSelector';
 import VendorSelector from './VendorSelector';
 import SubcontractorSelector from './SubcontractorSelector';
+import TradeTypeSelector from './TradeTypeSelector';
+import ExpenseTypeSelector from './ExpenseTypeSelector';
 import CostInput from './CostInput';
 import MarkupInput from './MarkupInput';
 import PriceDisplay from './PriceDisplay';
@@ -20,7 +22,6 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { FileUpload } from '@/components/ui/file-upload';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
 interface EstimateItemCardProps {
@@ -196,12 +197,18 @@ const EstimateItemCard: React.FC<EstimateItemCardProps> = ({
             
             {/* Show vendor selector if type is vendor */}
             {itemType === 'vendor' && (
-              <VendorSelector index={index} vendors={vendors} loading={loading} />
+              <>
+                <VendorSelector index={index} vendors={vendors} loading={loading} />
+                <ExpenseTypeSelector index={index} />
+              </>
             )}
 
             {/* Show subcontractor selector if type is subcontractor */}
             {itemType === 'subcontractor' && (
-              <SubcontractorSelector index={index} subcontractors={subcontractors} loading={loading} />
+              <>
+                <SubcontractorSelector index={index} subcontractors={subcontractors} loading={loading} />
+                <TradeTypeSelector index={index} />
+              </>
             )}
 
             <CostInput index={index} />

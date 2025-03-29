@@ -3,24 +3,49 @@ import { supabase } from '@/integrations/supabase/client';
 
 export async function convertEstimateItemsToBudgetItems(estimateId: string, projectId: string) {
   try {
-    // Fetch the estimate items from expenses table
+    // Fetch the estimate items from the estimate_items table
     const { data: estimateItems, error } = await supabase
-      .from('expenses')
+      .from('estimate_items')
       .select('*')
-      .eq('entity_type', 'ESTIMATE')
-      .eq('entity_id', estimateId);
+      .eq('estimate_id', estimateId);
 
     if (error) throw error;
     if (!estimateItems || estimateItems.length === 0) return { success: false, message: "No estimate items found" };
 
-    // Map estimate items to budget items format
-    const budgetItems = estimateItems.map(item => ({
-      project_id: projectId,
-      category: item.expense_type || "Uncategorized",
-      description: item.description || "",
-      estimated_amount: item.amount || 0,
-      actual_amount: 0
-    }));
+    // Map estimate items to budget items format with improved categorization
+    const budgetItems = estimateItems.map(item => {
+      // Determine the category based on item_type, trade_type, and expense_type
+      let category = item.item_type || "Uncategorized";
+      
+      if (item.item_type === 'subcontractor' && item.trade_type) {
+        // For subcontractors, use trade_type (specialty) as category
+        if (item.trade_type === 'other' && item.custom_type) {
+          category = `Subcontractor - ${item.custom_type}`;
+        } else {
+          // We'll need to look up the specialty name in the UI
+          category = `Subcontractor - ${item.trade_type}`;
+        }
+      } else if (item.item_type === 'vendor' && item.expense_type) {
+        // For vendors, use expense_type as category
+        if (item.expense_type === 'other' && item.custom_type) {
+          category = `Material - ${item.custom_type}`;
+        } else {
+          // Capitalize the first letter
+          const formattedType = item.expense_type.charAt(0).toUpperCase() + item.expense_type.slice(1);
+          category = `Material - ${formattedType}`;
+        }
+      } else if (item.item_type === 'labor') {
+        category = "Labor";
+      }
+
+      return {
+        project_id: projectId,
+        category: category,
+        description: item.description || "",
+        estimated_amount: item.total_price || 0,
+        actual_amount: 0
+      };
+    });
 
     // Create budget items in project_budget_items table
     const { error: insertError } = await supabase

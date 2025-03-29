@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -7,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { FileIcon, PaperclipIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import useSpecialties from '@/components/subcontractors/hooks/useSpecialties';
 
 interface EstimatePreviewProps {
   formData: EstimateFormValues;
@@ -23,6 +25,7 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
   const [customerAddress, setCustomerAddress] = React.useState('');
   const [attachedDocuments, setAttachedDocuments] = useState<Document[]>([]);
   const [lineItemDocuments, setLineItemDocuments] = useState<{[key: string]: Document}>({});
+  const { specialties } = useSpecialties();
   
   // Format currency values
   const formatCurrency = (value: number) => {
@@ -66,6 +69,18 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
     contingencyAmount, 
     grandTotal 
   } = calculateEstimateTotals(calculationItems, formData.contingency_percentage || '0');
+  
+  // Get specialty name from id
+  const getSpecialtyName = (specialtyId: string | undefined) => {
+    if (!specialtyId || specialtyId === 'other') return null;
+    return specialties[specialtyId]?.specialty;
+  };
+  
+  // Format expense type for display
+  const formatExpenseType = (type: string | undefined) => {
+    if (!type) return '';
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
   
   // Fetch document information
   useEffect(() => {
@@ -195,15 +210,27 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
                   const quantity = parseFloat(item.quantity || '1') || 1;
                   const total = unitPrice * quantity;
                   
+                  // Get category info based on item type
+                  let categoryInfo = '';
+                  if (item.item_type === 'vendor' && item.expense_type) {
+                    categoryInfo = item.expense_type === 'other' && item.custom_type 
+                      ? item.custom_type 
+                      : formatExpenseType(item.expense_type);
+                  } else if (item.item_type === 'subcontractor' && item.trade_type) {
+                    categoryInfo = item.trade_type === 'other' && item.custom_type
+                      ? item.custom_type
+                      : getSpecialtyName(item.trade_type) || '';
+                  }
+                  
                   return (
                     <tr key={index} className="border-t">
                       <td className="p-3">
                         <div className="font-medium">{item.description}</div>
-                        {item.item_type !== 'labor' && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {item.item_type === 'vendor' ? 'Vendor' : 'Subcontractor'}
-                          </div>
-                        )}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {item.item_type === 'labor' ? 'Labor' : 
+                            item.item_type === 'vendor' ? 'Vendor' : 'Subcontractor'}
+                          {categoryInfo && ` - ${categoryInfo}`}
+                        </div>
                       </td>
                       <td className="p-3 text-right">{quantity}</td>
                       <td className="p-3 text-right">{formatCurrency(unitPrice)}</td>

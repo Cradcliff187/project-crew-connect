@@ -24,14 +24,22 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
               value={field.value} 
               onValueChange={(value) => {
                 field.onChange(value);
-                // Reset vendor/subcontractor when type changes
+                // Reset type-specific fields when type changes
                 if (value === 'vendor') {
                   form.setValue(`items.${index}.subcontractor_id`, '');
+                  form.setValue(`items.${index}.trade_type`, '');
+                  form.setValue(`items.${index}.custom_type`, '');
                 } else if (value === 'subcontractor') {
                   form.setValue(`items.${index}.vendor_id`, '');
+                  form.setValue(`items.${index}.expense_type`, undefined);
+                  form.setValue(`items.${index}.custom_type`, '');
                 } else {
+                  // For labor, reset all vendor and subcontractor specific fields
                   form.setValue(`items.${index}.vendor_id`, '');
                   form.setValue(`items.${index}.subcontractor_id`, '');
+                  form.setValue(`items.${index}.trade_type`, '');
+                  form.setValue(`items.${index}.expense_type`, undefined);
+                  form.setValue(`items.${index}.custom_type`, '');
                 }
               }}
             >

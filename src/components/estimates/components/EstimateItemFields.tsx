@@ -25,7 +25,11 @@ const EstimateItemFields = () => {
       quantity: '1', 
       unitPrice: '', 
       vendor_id: '',
-      subcontractor_id: ''
+      subcontractor_id: '',
+      document_id: '',
+      trade_type: '',
+      expense_type: undefined,
+      custom_type: ''
     });
   };
 
