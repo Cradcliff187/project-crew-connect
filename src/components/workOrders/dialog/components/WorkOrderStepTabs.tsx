@@ -26,7 +26,10 @@ const WorkOrderStepTabs = ({
 }: WorkOrderStepTabsProps) => {
   return (
     <Tabs value={currentStep}>
-      <TabsList className="grid grid-cols-4 w-full h-12 p-1 bg-gray-50 border border-gray-200 rounded-lg">
+      <TabsList 
+        className="grid grid-cols-4 w-full h-12 p-1 bg-gray-50 border border-gray-200 rounded-lg"
+        aria-label="Work Order Creation Steps"
+      >
         {WORK_ORDER_STEPS.map((step) => (
           <TabsTrigger
             key={step.id}
@@ -38,6 +41,7 @@ const WorkOrderStepTabs = ({
                 : 'hover:bg-gray-100 hover:text-[#0485ea]'
             }`}
             onClick={() => setCurrentStep(step.id)}
+            aria-label={`Step: ${step.label}`}
           >
             {step.label}
           </TabsTrigger>

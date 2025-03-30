@@ -28,8 +28,17 @@ export interface WorkOrderDocument extends BaseDocument {
   notes?: string | null;
   expense_date?: string | null;
   is_expense?: boolean;
-  parent_document_id?: string | null; // Added for document versioning support
+  parent_document_id?: string | null; // For document versioning support
 }
 
-// VendorDocument is a type alias to WorkOrderDocument for backward compatibility
-export type VendorDocument = WorkOrderDocument;
+// Make the ProjectDocument type consistent with the unified document system
+<lov-write file_path="src/components/projects/detail/DocumentsList/types.ts">
+import { BaseDocument } from '@/components/workOrders/details/DocumentsList/types';
+
+export interface ProjectDocument extends BaseDocument {
+  id: string; // For backward compatibility
+  project_id: string;
+  description?: string;
+  category?: string;
+  file_url?: string; // For backward compatibility
+}

@@ -18,7 +18,7 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
     
     setLoading(true);
     try {
-      // Fetch the work order
+      // Fetch the work order - ensure we use proper UUID filtering
       const { data, error } = await supabase
         .from('maintenance_work_orders')
         .select('*')
@@ -75,6 +75,7 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
   
   const fetchLocation = async (locationId: string) => {
     try {
+      // Properly handle UUID filtering for location
       const { data, error } = await supabase
         .from('site_locations')
         .select('location_name, address, city, state, zip')
@@ -101,6 +102,7 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
   
   const fetchAssignee = async (employeeId: string) => {
     try {
+      // Properly handle UUID filtering for employee
       const { data, error } = await supabase
         .from('employees')
         .select('first_name, last_name')

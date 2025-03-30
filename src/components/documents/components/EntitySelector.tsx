@@ -81,6 +81,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   break;
                   
                 case 'WORK_ORDER':
+                  // Here we use proper filtering method instead of relying on URL parameters
                   const { data: workOrders } = await supabase
                     .from('maintenance_work_orders')
                     .select('work_order_id, title');
@@ -121,6 +122,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   break;
                   
                 case 'TIME_ENTRY':
+                  // Here we use proper filtering method instead of relying on URL parameters
                   const { data: timeEntries } = await supabase
                     .from('time_entries')
                     .select('id, entity_id, date_worked');

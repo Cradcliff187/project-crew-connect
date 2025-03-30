@@ -74,8 +74,8 @@ export const uploadDocument = async (
         contentType: contentType,
         cacheControl: '3600',
         upsert: true,
-        // Add explicit Supabase Storage headers to ensure correct content-type
-        duplex: 'half'
+        // Use explicit options for storage
+        duplex: 'half' as const
       };
       
       // Enhanced debugging for upload
@@ -135,7 +135,7 @@ export const uploadDocument = async (
       
       console.log('Inserting document metadata:', documentData);
       
-      // For this DB call we need to explicitly set Content-Type back to JSON
+      // For this DB call we need to ensure headers are correctly sent
       const { data: insertedData, error: insertError } = await supabase
         .from('documents')
         .insert(documentData)

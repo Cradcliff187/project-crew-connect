@@ -1,28 +1,12 @@
 
-export interface VendorProject {
-  project_id: string;
-  project_name: string;
-  status: string;
-  created_at: string;
-}
+import { BaseDocument } from '@/components/workOrders/details/DocumentsList/types';
 
-export interface VendorWorkOrder {
-  work_order_id: string;
-  title: string;
-  status: string;
-  materials_cost: number;
-  created_at: string;
-}
-
-export interface VendorDocument {
-  document_id: string;
-  file_name: string;
-  category?: string;
-  created_at: string;
-  updated_at: string;
-  file_type?: string | null;
-  storage_path: string;
-  entity_id: string;
-  entity_type: string;
-  url?: string;
+export interface VendorDocument extends BaseDocument {
+  // Additional fields for vendor document management
+  description?: string;
+  size?: number;
+  uploaded_by?: string;
+  amount?: number;
+  expense_date?: string;
+  is_expense?: boolean;
 }

@@ -19,7 +19,11 @@ const EstimateStepTabs = ({
 }: EstimateStepTabsProps) => {
   return (
     <Tabs value={currentStep}>
-      <TabsList className="grid w-full h-12 p-1 bg-gray-50 border border-gray-200 rounded-lg" style={{ gridTemplateColumns: `repeat(${steps.length}, 1fr)` }}>
+      <TabsList 
+        className="grid w-full h-12 p-1 bg-gray-50 border border-gray-200 rounded-lg" 
+        style={{ gridTemplateColumns: `repeat(${steps.length}, 1fr)` }}
+        aria-label="Estimate Creation Steps"
+      >
         {steps.map((step) => (
           <TabsTrigger
             key={step.id}
@@ -30,6 +34,7 @@ const EstimateStepTabs = ({
                 : 'hover:bg-gray-100 hover:text-[#0485ea]'
             }`}
             onClick={() => setCurrentStep(step.id)}
+            aria-label={`Step: ${step.label}`}
           >
             {step.label}
           </TabsTrigger>
