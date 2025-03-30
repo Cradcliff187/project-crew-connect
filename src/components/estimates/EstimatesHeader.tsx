@@ -3,10 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusIcon, SearchIcon } from 'lucide-react';
-import EstimateForm from './EstimateForm';
 import EstimateMultiStepForm from './EstimateMultiStepForm';
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import EstimateSettingsButton from './EstimateSettingsButton';
 
 interface EstimatesHeaderProps {
   searchQuery: string;
@@ -20,7 +17,6 @@ const EstimatesHeader = ({
   onEstimateAdded 
 }: EstimatesHeaderProps) => {
   const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [useMultiStepForm] = useLocalStorage('use-multistep-estimate-form', false);
   
   const handleClose = () => {
     setOpenAddDialog(false);
@@ -48,7 +44,6 @@ const EstimatesHeader = ({
         </div>
         
         <div className="flex gap-2">
-          <EstimateSettingsButton />
           <Button 
             onClick={() => setOpenAddDialog(true)}
             className="bg-[#0485ea] hover:bg-[#0373ce]"
@@ -59,17 +54,10 @@ const EstimatesHeader = ({
         </div>
       </div>
       
-      {useMultiStepForm ? (
-        <EstimateMultiStepForm 
-          open={openAddDialog} 
-          onClose={handleClose} 
-        />
-      ) : (
-        <EstimateForm 
-          open={openAddDialog} 
-          onClose={handleClose} 
-        />
-      )}
+      <EstimateMultiStepForm 
+        open={openAddDialog} 
+        onClose={handleClose} 
+      />
     </div>
   );
 };
