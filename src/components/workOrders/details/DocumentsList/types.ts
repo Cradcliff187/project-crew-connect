@@ -32,9 +32,6 @@ export interface WorkOrderDocument extends BaseDocument {
 }
 
 // Make the ProjectDocument type consistent with the unified document system
-<lov-write file_path="src/components/projects/detail/DocumentsList/types.ts">
-import { BaseDocument } from '@/components/workOrders/details/DocumentsList/types';
-
 export interface ProjectDocument extends BaseDocument {
   id: string; // For backward compatibility
   project_id: string;
