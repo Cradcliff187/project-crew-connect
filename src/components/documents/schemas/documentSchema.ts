@@ -4,6 +4,70 @@ import { z } from 'zod';
 // Define allowed entity types
 export type EntityType = 'PROJECT' | 'CUSTOMER' | 'ESTIMATE' | 'WORK_ORDER' | 'VENDOR' | 'SUBCONTRACTOR';
 
+// Extended entity types for internal use (not exposed in the public interface)
+export type InternalEntityType = EntityType | 'EMPLOYEE' | 'TIME_ENTRY';
+
+// Document categories
+export type DocumentCategory = 
+  | 'invoice' 
+  | 'receipt' 
+  | 'contract' 
+  | 'permit' 
+  | 'certificate' 
+  | 'drawing' 
+  | 'photo' 
+  | 'other';
+
+export const documentCategories: { value: DocumentCategory; label: string }[] = [
+  { value: 'invoice', label: 'Invoice' },
+  { value: 'receipt', label: 'Receipt' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'permit', label: 'Permit' },
+  { value: 'certificate', label: 'Certificate' },
+  { value: 'drawing', label: 'Drawing' },
+  { value: 'photo', label: 'Photo' },
+  { value: 'other', label: 'Other' }
+];
+
+// Entity types for selector
+export const entityTypes: { value: EntityType; label: string }[] = [
+  { value: 'PROJECT', label: 'Project' },
+  { value: 'CUSTOMER', label: 'Customer' },
+  { value: 'ESTIMATE', label: 'Estimate' },
+  { value: 'WORK_ORDER', label: 'Work Order' },
+  { value: 'VENDOR', label: 'Vendor' },
+  { value: 'SUBCONTRACTOR', label: 'Subcontractor' }
+];
+
+// Vendor types
+export type VendorType = 'vendor' | 'subcontractor' | 'other';
+
+export const vendorTypes: { value: VendorType; label: string }[] = [
+  { value: 'vendor', label: 'Material Vendor' },
+  { value: 'subcontractor', label: 'Subcontractor' },
+  { value: 'other', label: 'Other' }
+];
+
+// Expense types
+export type ExpenseType = 
+  | 'material' 
+  | 'labor' 
+  | 'equipment' 
+  | 'permit' 
+  | 'travel' 
+  | 'food' 
+  | 'other';
+
+export const expenseTypes: { value: ExpenseType; label: string }[] = [
+  { value: 'material', label: 'Material' },
+  { value: 'labor', label: 'Labor' },
+  { value: 'equipment', label: 'Equipment Rental' },
+  { value: 'permit', label: 'Permit/License Fee' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'food', label: 'Food/Meal' },
+  { value: 'other', label: 'Other' }
+];
+
 // Document metadata schema
 export const documentMetadataSchema = z.object({
   entityType: z.enum(['PROJECT', 'CUSTOMER', 'ESTIMATE', 'WORK_ORDER', 'VENDOR', 'SUBCONTRACTOR']),
@@ -52,4 +116,28 @@ export interface Document {
   expense_date?: string;
   notes?: string;
   url?: string;
+}
+
+// Type for document viewer
+export interface DocumentViewData {
+  document_id: string;
+  file_name: string;
+  file_type: string;
+  url: string;
+}
+
+// Document preview card props
+export interface DocumentPreviewCardProps {
+  document: Document;
+  onView: () => void;
+  onDelete: () => void;
+  showEntityInfo?: boolean;
+}
+
+// Document viewer props
+export interface DocumentViewerProps {
+  document: DocumentViewData | null;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  isLoading?: boolean;
 }

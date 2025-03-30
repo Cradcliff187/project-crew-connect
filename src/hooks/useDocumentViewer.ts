@@ -2,15 +2,18 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from './use-toast';
+import { DocumentViewData } from '@/components/documents/schemas/documentSchema';
 
-interface DocumentViewData {
-  document_id: string;
-  file_name: string;
-  file_type: string;
-  url: string;
+interface DocumentViewerOptions {
+  imageOptions?: {
+    width?: number;
+    height?: number;
+    quality?: number;
+  };
+  onClose?: () => void;
 }
 
-export const useDocumentViewer = () => {
+export const useDocumentViewer = (options?: DocumentViewerOptions) => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [currentDocument, setCurrentDocument] = useState<DocumentViewData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,12 +73,16 @@ export const useDocumentViewer = () => {
 
   const closeViewer = () => {
     setIsViewerOpen(false);
+    if (options?.onClose) {
+      options.onClose();
+    }
   };
 
   return {
     viewDocument,
     closeViewer,
     isViewerOpen,
+    setIsViewerOpen,
     currentDocument,
     isLoading
   };

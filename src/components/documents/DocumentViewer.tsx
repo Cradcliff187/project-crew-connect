@@ -2,18 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileIcon, FileTextIcon, FileImageIcon, Loader2 } from 'lucide-react';
-
-interface DocumentViewerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  document: {
-    document_id: string;
-    file_name: string;
-    file_type: string;
-    url: string;
-  } | null;
-  isLoading?: boolean;
-}
+import { DocumentViewerProps } from './schemas/documentSchema';
 
 // Helper function to get icon based on file type
 const getDocumentIcon = (fileType?: string) => {
@@ -30,7 +19,7 @@ const getDocumentIcon = (fileType?: string) => {
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
   isOpen,
-  onClose,
+  onOpenChange,
   document,
   isLoading = false
 }) => {
@@ -84,7 +73,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

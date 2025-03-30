@@ -17,11 +17,6 @@ export function useReceiptManager() {
     currentDocument, 
     isLoading 
   } = useDocumentViewer({
-    imageOptions: {
-      width: 1200,
-      height: 1200,
-      quality: 90
-    },
     onClose: () => {
       console.log('Document viewer closed via hook callback');
     }

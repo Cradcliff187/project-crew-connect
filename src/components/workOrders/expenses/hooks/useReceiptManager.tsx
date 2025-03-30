@@ -17,25 +17,22 @@ export function useReceiptManager() {
     currentDocument, 
     isLoading 
   } = useDocumentViewer({
-    imageOptions: {
-      width: 1200,
-      height: 1200,
-      quality: 90
-    },
     onClose: () => {
       console.log('Document viewer closed via hook callback');
     }
   });
   
+  // Handle receipt button click
   const handleReceiptClick = async (expense: WorkOrderExpense) => {
+    console.log("Receipt button clicked for expense:", expense);
+    setSelectedExpense(expense);
+    
+    // Check if expense has a receipt
     if (expense.receipt_document_id) {
-      console.log('Viewing existing receipt for expense:', expense.id);
-      setSelectedExpense(expense);
+      // View existing receipt using the document viewer hook
       await viewDocument(expense.receipt_document_id);
     } else {
-      console.log('Setting up receipt upload for expense:', expense.id);
-      // Upload new receipt
-      setSelectedExpense(expense);
+      // Show upload dialog for new receipt
       setShowReceiptUpload(true);
     }
   };

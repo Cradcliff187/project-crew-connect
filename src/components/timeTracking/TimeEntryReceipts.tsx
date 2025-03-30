@@ -1,161 +1,248 @@
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileText, Download, Trash2, Upload, Loader2 } from 'lucide-react';
-import { useTimeEntryReceipts } from './hooks/useTimeEntryReceipts';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { FileUp, Trash2, Eye, FileText } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatDate } from '@/lib/utils';
+import { InternalEntityType } from '@/components/documents/schemas/documentSchema';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
+interface Document {
+  document_id: string;
+  file_name: string;
+  file_type: string;
+  storage_path: string;
+  created_at: string;
+}
+
 interface TimeEntryReceiptsProps {
-  timeEntryId?: string;
+  timeEntryId: string;
   onReceiptChange?: () => void;
 }
 
-const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ 
-  timeEntryId,
-  onReceiptChange
-}) => {
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
-  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
+const TimeEntryReceipts = ({ timeEntryId, onReceiptChange }: TimeEntryReceiptsProps) => {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showUpload, setShowUpload] = useState(false);
+  const { toast } = useToast();
   
-  const { receipts, isLoading, fetchReceipts, deleteReceipt } = useTimeEntryReceipts(timeEntryId);
-  
-  const handleUploadSuccess = () => {
-    setShowUploadDialog(false);
-    fetchReceipts();
-    if (onReceiptChange) onReceiptChange();
+  const fetchDocuments = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('time_entry_document_links')
+        .select(`
+          document_id,
+          documents:document_id (
+            document_id,
+            file_name,
+            file_type,
+            storage_path,
+            created_at
+          )
+        `)
+        .eq('time_entry_id', timeEntryId);
+      
+      if (error) throw error;
+      
+      const formattedDocs = data
+        .map(item => item.documents as Document)
+        .filter(Boolean);
+      
+      setDocuments(formattedDocs);
+    } catch (error) {
+      console.error('Error fetching receipts:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load receipts',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
-  const handleViewReceipt = (url: string) => {
-    setSelectedReceipt(url);
-    setShowViewDialog(true);
+  useEffect(() => {
+    fetchDocuments();
+  }, [timeEntryId]);
+  
+  const handleDocumentUploaded = () => {
+    fetchDocuments();
+    setShowUpload(false);
+    
+    if (onReceiptChange) {
+      onReceiptChange();
+    }
+    
+    toast({
+      title: 'Receipt uploaded',
+      description: 'The receipt has been attached to this time entry'
+    });
   };
   
-  const handleDeleteReceipt = async (documentId: string) => {
-    if (!window.confirm('Are you sure you want to delete this receipt?')) {
+  const handleViewDocument = async (documentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('document_id, file_name, file_type, storage_path')
+        .eq('document_id', documentId)
+        .single();
+      
+      if (error) throw error;
+      
+      const { data: urlData } = supabase
+        .storage
+        .from('construction_documents')
+        .getPublicUrl(data.storage_path);
+      
+      window.open(urlData.publicUrl, '_blank');
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not open the document',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm('Are you sure you want to delete this receipt?')) {
       return;
     }
     
-    const success = await deleteReceipt(documentId);
-    if (success && onReceiptChange) {
-      onReceiptChange();
+    try {
+      // First remove the link
+      const { error: linkError } = await supabase
+        .from('time_entry_document_links')
+        .delete()
+        .eq('document_id', documentId)
+        .eq('time_entry_id', timeEntryId);
+      
+      if (linkError) throw linkError;
+      
+      // Then delete the document
+      const { error: docError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('document_id', documentId);
+      
+      if (docError) throw docError;
+      
+      // Update the UI
+      setDocuments(prev => prev.filter(doc => doc.document_id !== documentId));
+      
+      // Update time entry has_receipts flag if no documents left
+      if (documents.length <= 1) {
+        await supabase
+          .from('time_entries')
+          .update({ has_receipts: false })
+          .eq('id', timeEntryId);
+      }
+      
+      if (onReceiptChange) {
+        onReceiptChange();
+      }
+      
+      toast({
+        title: 'Receipt deleted',
+        description: 'The receipt has been removed'
+      });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete the receipt',
+        variant: 'destructive'
+      });
     }
   };
   
-  if (!timeEntryId) {
-    return <div className="text-sm text-muted-foreground">Please save the time entry first to manage receipts.</div>;
-  }
-  
   return (
-    <div>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-md">Receipts</CardTitle>
+    <div className="space-y-4">
+      {showUpload ? (
+        <EnhancedDocumentUpload
+          entityType={"TIME_ENTRY" as InternalEntityType}
+          entityId={timeEntryId}
+          isReceiptUpload={true}
+          onSuccess={handleDocumentUploaded}
+          onCancel={() => setShowUpload(false)}
+        />
+      ) : (
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">
+            {documents.length > 0 ? 'Attached Receipts' : 'No Receipts Attached'}
+          </h3>
           <Button 
-            variant="outline" 
-            size="sm"
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
-            onClick={() => setShowUploadDialog(true)}
+            onClick={() => setShowUpload(true)}
+            variant="outline"
+            className="gap-2"
           >
-            <Upload className="h-4 w-4 mr-2" />
+            <FileUp className="h-4 w-4" />
             Upload Receipt
           </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
-            </div>
-          ) : receipts.length === 0 ? (
-            <div className="text-center py-6 border rounded bg-muted/50">
-              <p className="text-sm text-muted-foreground">No receipts have been attached yet</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {receipts.map((receipt) => (
-                <div 
-                  key={receipt.document_id} 
-                  className="flex items-center justify-between p-3 rounded-md border"
-                >
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <p className="font-medium text-sm">{receipt.file_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(receipt.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {receipt.url && (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => receipt.url && handleViewReceipt(receipt.url)}
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          asChild
-                        >
-                          <a href={receipt.url} download={receipt.file_name} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      </>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeleteReceipt(receipt.document_id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+        </div>
+      )}
+      
+      {loading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : documents.length > 0 ? (
+        <ScrollArea className="h-[300px]">
+          <div className="space-y-2">
+            {documents.map(doc => (
+              <div 
+                key={doc.document_id} 
+                className="flex items-center justify-between p-3 border rounded-md"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="h-6 w-6 text-[#0485ea]" />
+                  <div>
+                    <p className="font-medium truncate max-w-[200px]">{doc.file_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Added on {formatDate(doc.created_at)}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Upload Receipt</DialogTitle>
-          </DialogHeader>
-          <EnhancedDocumentUpload
-            entityType={'TIME_ENTRY'}
-            entityId={timeEntryId}
-            onSuccess={handleUploadSuccess}
-            onCancel={() => setShowUploadDialog(false)}
-            isReceiptUpload={true}
-          />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>View Receipt</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto">
-            {selectedReceipt && (
-              <iframe
-                src={selectedReceipt}
-                className="w-full h-full rounded-md border"
-                title="Receipt"
-              />
-            )}
+                <div className="flex gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleViewDocument(doc.document_id)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleDeleteDocument(doc.document_id)}
+                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        </DialogContent>
-      </Dialog>
+        </ScrollArea>
+      ) : !showUpload && (
+        <div className="text-center py-10 border border-dashed rounded-md bg-muted/30">
+          <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">No receipts attached to this time entry</p>
+          <Button
+            variant="link"
+            onClick={() => setShowUpload(true)}
+            className="mt-2"
+          >
+            Upload a receipt
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
