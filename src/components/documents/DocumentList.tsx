@@ -79,7 +79,7 @@ const DocumentList = ({
       {currentDocument && (
         <DocumentViewer
           document={currentDocument}
-          isOpen={isViewerOpen}
+          open={isViewerOpen}
           onOpenChange={(open) => !open && closeViewer()}
         />
       )}

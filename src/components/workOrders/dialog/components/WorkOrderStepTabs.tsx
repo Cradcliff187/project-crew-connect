@@ -1,67 +1,43 @@
 
-import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export interface WorkOrderStep {
   id: string;
   label: string;
-  description?: string; // Adding this property
-  order?: number;       // Adding this property
 }
 
 export const WORK_ORDER_STEPS: WorkOrderStep[] = [
-  {
-    id: "details",
-    label: "Details",
-    description: "Basic work order information",
-    order: 1
-  },
-  {
-    id: "materials",
-    label: "Materials",
-    description: "Materials for the work order",
-    order: 2
-  },
-  {
-    id: "labor",
-    label: "Labor",
-    description: "Labor for the work order",
-    order: 3
-  },
-  {
-    id: "expenses",
-    label: "Expenses",
-    description: "Additional expenses",
-    order: 4
-  },
-  {
-    id: "notes",
-    label: "Notes",
-    description: "Additional notes and instructions",
-    order: 5
-  }
+  { id: 'basic-info', label: 'Basic Info' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'location', label: 'Location' },
+  { id: 'preview', label: 'Preview' }
 ];
 
 interface WorkOrderStepTabsProps {
   currentStep: string;
-  onStepChange: (step: string) => void;
-  disabled?: boolean;
+  setCurrentStep: (step: string) => void;
+  isDisabled: boolean;
 }
 
-const WorkOrderStepTabs: React.FC<WorkOrderStepTabsProps> = ({
-  currentStep,
-  onStepChange,
-  disabled = false
-}) => {
+const WorkOrderStepTabs = ({ 
+  currentStep, 
+  setCurrentStep, 
+  isDisabled 
+}: WorkOrderStepTabsProps) => {
   return (
-    <Tabs value={currentStep} onValueChange={onStepChange} className="w-full">
-      <TabsList className="grid grid-cols-5 w-full">
+    <Tabs value={currentStep}>
+      <TabsList className="grid grid-cols-4 w-full h-12 p-1 bg-gray-50 border border-gray-200 rounded-lg">
         {WORK_ORDER_STEPS.map((step) => (
           <TabsTrigger
             key={step.id}
             value={step.id}
-            disabled={disabled}
-            className="text-xs sm:text-sm"
+            disabled={isDisabled}
+            className={`text-sm font-medium transition-all duration-200 ${
+              currentStep === step.id 
+                ? 'bg-[#0485ea] text-white shadow-md' 
+                : 'hover:bg-gray-100 hover:text-[#0485ea]'
+            }`}
+            onClick={() => setCurrentStep(step.id)}
           >
             {step.label}
           </TabsTrigger>

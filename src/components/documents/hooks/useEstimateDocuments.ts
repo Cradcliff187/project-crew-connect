@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
-import { adaptDatabaseDocuments } from '@/utils/typeUtils';
 
 export const useEstimateDocuments = (estimateId: string) => {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -30,9 +29,7 @@ export const useEstimateDocuments = (estimateId: string) => {
         throw error;
       }
       
-      // Use our helper function to adapt document types
-      const adaptedDocuments = adaptDatabaseDocuments(data || []);
-      setDocuments(adaptedDocuments);
+      setDocuments(data || []);
     } catch (err: any) {
       console.error('Error fetching estimate documents:', err);
       setError(err.message);

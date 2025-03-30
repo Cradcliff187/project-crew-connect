@@ -1,73 +1,135 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { format, isToday, isYesterday, differenceInDays, formatDistance } from "date-fns";
 
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
- 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
+export function formatDate(dateString: string | Date): string {
+  if (!dateString) return '';
   
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
   
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  if (isNaN(date.getTime())) return 'Invalid date';
   
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  if (isToday(date)) {
+    return 'Today';
+  }
+  
+  if (isYesterday(date)) {
+    return 'Yesterday';
+  }
+  
+  // Format to show day of week, month, and day
+  return format(date, 'EEEE, MMM d');
 }
 
-// Format date to a standard format
-export function formatDate(date: string | Date | null | undefined): string {
-  if (!date) return 'N/A';
+export function formatRelativeTime(dateString: string | Date): string {
+  if (!dateString) return '';
   
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric'
-  });
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  
+  if (isNaN(date.getTime())) return 'Invalid date';
+  
+  return formatDistance(date, new Date(), { addSuffix: true });
 }
 
-// Format currency values
-export function formatCurrency(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return '$0.00';
-  
+export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(amount);
+  }).format(value);
 }
 
-// Format time range (e.g., "9:00 AM - 5:00 PM")
-export function formatTimeRange(startTime: string, endTime: string): string {
-  if (!startTime || !endTime) return 'N/A';
+export function calculateHoursWorked(startTime: string, endTime: string): number {
+  if (!startTime || !endTime) return 0;
   
-  const formatTime = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+  
+  let hours = endHour - startHour;
+  let minutes = endMinute - startMinute;
+  
+  if (minutes < 0) {
+    hours -= 1;
+    minutes += 60;
+  }
+  
+  // Handle overnight shifts
+  if (hours < 0) {
+    hours += 24;
+  }
+  
+  return parseFloat((hours + (minutes / 60)).toFixed(2));
+}
+
+export function formatTimeRange(startTime: string, endTime: string): string {
+  const formatTime = (time: string) => {
+    if (!time) return '';
+    
+    const [hours, minutes] = time.split(':').map(Number);
     const period = hours >= 12 ? 'PM' : 'AM';
-    const hour12 = hours % 12 || 12;
-    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
   
   return `${formatTime(startTime)} - ${formatTime(endTime)}`;
 }
 
-// Calculate days until due
-export function calculateDaysUntilDue(dueDate: string | Date | null | undefined): number {
-  if (!dueDate) return 0;
+// Format time from 24h to 12h with AM/PM
+export function formatTime(time: string): string {
+  if (!time) return '';
   
-  const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
-  const today = new Date();
+  const [hoursStr, minutesStr] = time.split(':');
+  const hours = parseInt(hoursStr, 10);
+  const minutes = minutesStr.padStart(2, '0');
   
-  // Reset time portion for accurate day calculation
-  due.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 || 12;
   
-  const diffTime = due.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return `${hours12}:${minutes} ${period}`;
+}
+
+// Get a brief description of the time of day
+export function getTimeOfDayLabel(hours: number): string {
+  if (hours >= 5 && hours < 12) return 'Morning';
+  if (hours >= 12 && hours < 17) return 'Afternoon';
+  if (hours >= 17 && hours < 21) return 'Evening';
+  return 'Night';
+}
+
+// Calculate the number of days until a due date
+export function calculateDaysUntilDue(dueDate: string | null | undefined): number | null {
+  if (!dueDate) return null;
   
-  return diffDays;
+  try {
+    const due = new Date(dueDate);
+    const today = new Date();
+    
+    // Reset time to compare just the date portions
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    
+    const diff = differenceInDays(due, today);
+    return diff;
+  } catch (error) {
+    console.error("Error calculating days until due:", error);
+    return null;
+  }
+}
+
+/**
+ * Format file size in bytes to human readable format
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }

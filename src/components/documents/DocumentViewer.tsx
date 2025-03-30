@@ -1,88 +1,235 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileIcon, FileTextIcon, FileImageIcon, Loader2 } from 'lucide-react';
-import { DocumentViewerProps } from './schemas/documentSchema';
+import React, { useState, useEffect, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Download, ExternalLink, FileText, X, AlertTriangle, FileImage, File } from 'lucide-react';
+import { Document } from './schemas/documentSchema';
+import { formatDate } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
-// Helper function to get icon based on file type
-const getDocumentIcon = (fileType?: string) => {
-  if (!fileType) return <FileIcon className="h-4 w-4" />;
-  
-  if (fileType?.includes('image')) {
-    return <FileImageIcon className="h-4 w-4" />;
-  } else if (fileType?.includes('pdf')) {
-    return <FileTextIcon className="h-4 w-4" />;
-  }
-  
-  return <FileIcon className="h-4 w-4" />;
-};
+interface DocumentViewerProps {
+  document: Document | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title?: string;
+  description?: string;
+}
 
-const DocumentViewer: React.FC<DocumentViewerProps> = ({
-  isOpen,
-  onOpenChange,
+const DocumentViewer = ({
   document,
-  isLoading = false
-}) => {
-  // Render correct viewer based on file type
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center h-[70vh]">
-          <div className="flex flex-col items-center">
-            <Loader2 className="h-8 w-8 animate-spin text-[#0485ea] mb-2" />
-            <p className="text-muted-foreground">Loading document...</p>
-          </div>
-        </div>
-      );
+  open,
+  onOpenChange,
+  title,
+  description
+}: DocumentViewerProps) => {
+  const [error, setError] = useState(false);
+  const [loadAttempted, setLoadAttempted] = useState(false);
+  const mountedRef = useRef(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Handle component mount/unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      cleanupIframe();
+    };
+  }, []);
+
+  // Reset state when document changes or dialog opens/closes
+  useEffect(() => {
+    if (mountedRef.current) {
+      setError(false);
+      setLoadAttempted(false);
     }
     
-    if (!document) {
-      return (
-        <div className="flex items-center justify-center h-[70vh]">
-          <p className="text-muted-foreground">No document selected</p>
-        </div>
-      );
+    // Cleanup when dialog closes
+    if (!open) {
+      cleanupIframe();
     }
-    
-    if (document.file_type?.includes('image')) {
-      return (
-        <div className="flex justify-center overflow-auto max-h-[70vh]">
-          <img 
-            src={document.url} 
-            alt={document.file_name}
-            className="max-w-full object-contain"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMjJDNi40NzcgMjIgMiAxNy41MjMgMiAxMkMyIDYuNDc3IDYuNDc3IDIgMTIgMkMxNy41MjMgMiAyMiA2LjQ3NyAyMiAxMkMyMiAxNy41MjMgMTcuNTIzIDIyIDEyIDIyWk0xMiAyMEMxNi40MTggMjAgMjAgMTYuNDE4IDIwIDEyQzIwIDcuNTgyIDE2LjQxOCA0IDEyIDRDNy41ODIgNCA0IDcuNTgyIDQgMTJDNCAxNi40MTggNy41ODIgMjAgMTIgMjBaTTExIDcuNUgxM1Y5LjVIMTFWNy41Wk0xMSAxMS41SDEzVjE2LjVIMTFWMTEuNVoiIGZpbGw9ImN1cnJlbnRDb2xvciIvPjwvc3ZnPg==';
-              e.currentTarget.classList.add('error-image');
-            }}
-          />
-        </div>
-      );
-    }
-    
-    return (
-      <div className="flex justify-center overflow-hidden">
-        <iframe
-          src={`${document.url}#toolbar=1`}
-          className="w-full h-[70vh] border rounded"
-          title={document.file_name}
-        />
-      </div>
-    );
-  };
+  }, [document, open]);
   
+  // Force load attempt after component mount
+  useEffect(() => {
+    if (open && !loadAttempted && mountedRef.current) {
+      setLoadAttempted(true);
+      if (document) {
+        console.log('Viewing document:', {
+          id: document.document_id,
+          name: document.file_name,
+          type: document.file_type,
+          url: document.url
+        });
+      }
+    }
+  }, [open, loadAttempted, document]);
+
+  const cleanupIframe = () => {
+    if (iframeRef.current) {
+      try {
+        iframeRef.current.src = 'about:blank';
+      } catch (e) {
+        console.log('Error cleaning up iframe:', e);
+      }
+    }
+  };
+
+  if (!document) return null;
+
+  const handleViewError = () => {
+    if (mountedRef.current) {
+      console.log('Error viewing document:', document.file_name);
+      setError(true);
+    }
+  };
+
+  // Determine content type for appropriate display
+  const getContentType = () => {
+    if (!document.file_type) return 'unknown';
+    
+    const fileType = document.file_type.toLowerCase();
+    if (fileType.startsWith('image/')) return 'image';
+    if (fileType.includes('pdf')) return 'pdf';
+    return 'other';
+  };
+
+  // Get appropriate icon for the file type
+  const getFileIcon = () => {
+    const contentType = getContentType();
+    
+    switch (contentType) {
+      case 'image':
+        return <FileImage className="h-12 w-12 text-[#0485ea]" />;
+      case 'pdf':
+        return <FileText className="h-12 w-12 text-red-500" />;
+      default:
+        return <File className="h-12 w-12 text-gray-500" />;
+    }
+  };
+
+  const contentType = getContentType();
+  const dialogTitle = title || document.file_name;
+  const dialogDescription = description || (document.category ? 
+    `${document.category.charAt(0).toUpperCase() + document.category.slice(1)} - ${formatDate(document.created_at)}` : 
+    formatDate(document.created_at));
+
+  // Handle closing dialog to avoid UI lockups
+  const handleClose = () => {
+    if (iframeRef.current) {
+      try {
+        iframeRef.current.src = 'about:blank';
+      } catch (e) {
+        console.log('Error cleaning up iframe in handleClose:', e);
+      }
+    }
+    
+    setTimeout(() => {
+      if (mountedRef.current) {
+        onOpenChange(false);
+      }
+    }, 50);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {document?.file_type && getDocumentIcon(document.file_type)}
-            <span>{document?.file_name}</span>
-          </DialogTitle>
+          <div className="flex flex-col gap-1">
+            <DialogTitle className="text-lg font-semibold">{dialogTitle}</DialogTitle>
+            <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-2">
+              <span>{dialogDescription}</span>
+              {document.category && (
+                <Badge variant="outline" className="capitalize bg-[#0485ea]/5 text-[#0485ea] border-[#0485ea]/30">
+                  {document.category}
+                </Badge>
+              )}
+              {document.entity_type && (
+                <Badge variant="secondary" className="capitalize">
+                  {document.entity_type.replace(/_/g, ' ').toLowerCase()}
+                </Badge>
+              )}
+              {document.version && (
+                <Badge variant="outline" className="bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/30">
+                  Version {document.version}
+                </Badge>
+              )}
+            </div>
+          </div>
         </DialogHeader>
         
-        {renderContent()}
+        <div className="p-2 border rounded-md h-[65vh] overflow-auto bg-gray-50">
+          {error ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+              <p className="text-destructive font-semibold mb-2">Error loading document</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                The document couldn't be loaded in the viewer.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => window.open(document.url, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open in new tab
+              </Button>
+            </div>
+          ) : contentType === 'image' ? (
+            <div className="flex items-center justify-center h-full">
+              <img
+                src={document.url}
+                alt={document.file_name}
+                className="max-w-full max-h-[60vh] object-contain"
+                onError={handleViewError}
+              />
+            </div>
+          ) : contentType === 'pdf' ? (
+            <iframe
+              ref={iframeRef}
+              src={document.url}
+              className="w-full h-full border-0"
+              title={document.file_name}
+              onError={handleViewError}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full">
+              {getFileIcon()}
+              <p className="font-medium mt-4 mb-2">Cannot preview this file type</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {document.file_type || 'Unknown file type'}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => window.open(document.url, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open document
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter className="flex justify-between mt-4 gap-2">
+          <div className="flex-1 text-xs text-muted-foreground">
+            {document.file_size && (
+              <span>{(document.file_size / 1024).toFixed(2)} KB</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClose} size="sm">
+              <X className="h-4 w-4 mr-2" />
+              Close
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => window.open(document.url, '_blank')}
+              size="sm"
+              className="border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea]/5"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

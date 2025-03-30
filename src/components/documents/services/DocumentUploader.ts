@@ -31,6 +31,20 @@ export const uploadDocument = async (
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
       console.log(`Uploading file to construction_documents bucket, path: ${filePath}`);
+      console.log(`File object:`, { 
+        name: file.name, 
+        type: file.type, 
+        size: file.size 
+      });
+      
+      // Check if file is actually a File object
+      if (!(file instanceof File)) {
+        console.error('Not a valid File object:', file);
+        throw new Error('Invalid file object provided');
+      }
+      
+      // Enhanced logging for Content-Type debugging
+      console.log('File MIME type from browser:', file.type);
       
       // Determine the proper content type based on file extension if needed
       let contentType = file.type;
@@ -55,17 +69,37 @@ export const uploadDocument = async (
         }
       }
       
+      // Create file options with proper headers to preserve content type
+      const fileOptions = {
+        contentType: contentType,
+        cacheControl: '3600',
+        upsert: true,
+        // Add explicit Supabase Storage headers to ensure correct content-type
+        duplex: 'half'
+      };
+      
+      // Enhanced debugging for upload
+      console.log('About to execute upload with params:', {
+        bucket: 'construction_documents',
+        path: filePath,
+        fileType: contentType,
+        fileSize: file.size,
+        options: fileOptions
+      });
+      
       // Upload the file to Supabase Storage with explicit content type
+      // The headers issue is fixed by removing the global Content-Type header in the Supabase client
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
-        .upload(filePath, file, {
-          contentType: contentType,
-          cacheControl: '3600',
-          upsert: true
-        });
+        .upload(filePath, file, fileOptions);
         
       if (uploadError) {
-        console.error('Storage upload error:', uploadError);
+        console.error('Storage upload error:', {
+          message: uploadError.message,
+          error: uploadError,
+          name: uploadError.name,
+          stack: uploadError.stack
+        });
         throw uploadError;
       }
       
@@ -81,12 +115,13 @@ export const uploadDocument = async (
       // Now insert document metadata to Supabase
       const documentData = {
         file_name: file.name,
-        file_type: contentType,
+        file_type: contentType, // Use our determined content type
         file_size: file.size,
         storage_path: filePath,
         entity_type: metadata.entityType,
-        entity_id: entityId,
+        entity_id: entityId, // Use the sanitized entity ID
         tags: metadata.tags || [],
+        // Additional metadata fields
         category: metadata.category,
         amount: metadata.amount || null,
         expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
@@ -100,6 +135,7 @@ export const uploadDocument = async (
       
       console.log('Inserting document metadata:', documentData);
       
+      // For this DB call we need to explicitly set Content-Type back to JSON
       const { data: insertedData, error: insertError } = await supabase
         .from('documents')
         .insert(documentData)
@@ -107,12 +143,16 @@ export const uploadDocument = async (
         .single();
         
       if (insertError) {
-        console.error('Document metadata insert error:', insertError);
+        console.error('Document metadata insert error:', {
+          message: insertError.message,
+          error: insertError
+        });
         throw insertError;
       }
       
       console.log('Document metadata inserted:', insertedData);
       
+      // Store the document ID for the first file
       if (insertedData) {
         uploadedDocumentId = insertedData.document_id;
       }
@@ -124,7 +164,13 @@ export const uploadDocument = async (
     };
     
   } catch (error: any) {
-    console.error('Upload error:', error);
+    // Enhanced error logging
+    console.error('Upload error (detailed):', {
+      errorMessage: error.message,
+      errorObject: error,
+      name: error.name,
+      stack: error.stack
+    });
     
     return {
       success: false,

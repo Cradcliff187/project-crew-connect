@@ -1,127 +1,99 @@
 
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from './use-toast';
-import { Document, DocumentViewData } from '@/components/documents/schemas/documentSchema';
+import { useState, useCallback } from 'react';
+import { Document } from '@/components/documents/schemas/documentSchema';
+import { fetchDocumentWithUrl } from '@/components/documents/services/DocumentFetcher';
+import { toast } from '@/hooks/use-toast';
 
-interface DocumentViewerOptions {
+export interface UseDocumentViewerOptions {
+  onView?: (document: Document) => void;
+  onClose?: () => void;
   imageOptions?: {
     width?: number;
     height?: number;
     quality?: number;
   };
-  onClose?: () => void;
+  expiresIn?: number; // URL expiration time in seconds
 }
 
-export const useDocumentViewer = (options?: DocumentViewerOptions) => {
+export function useDocumentViewer(options: UseDocumentViewerOptions = {}) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [currentDocument, setCurrentDocument] = useState<DocumentViewData | null>(null);
+  const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
+  const [error, setError] = useState<string | null>(null);
+  
   const viewDocument = async (documentId: string) => {
-    setIsLoading(true);
-    
     try {
-      console.log(`Fetching document details for ID: ${documentId}`);
+      setIsLoading(true);
+      setError(null);
       
-      // Fetch document data - explicitly list the columns we need
-      const { data, error } = await supabase
-        .from('documents')
-        .select('document_id, file_name, file_type, storage_path')
-        .eq('document_id', documentId)
-        .maybeSingle();
+      console.log('Viewing document with ID:', documentId);
       
-      if (error) {
-        throw error;
-      }
-      
-      if (!data) {
-        throw new Error('Document not found');
-      }
-      
-      console.log('Document data retrieved:', data);
-      
-      // Generate signed URL with appropriate options based on file type
-      let urlOptions = {};
-      
-      // For images, add transformation options if provided
-      if (data.file_type && data.file_type.startsWith('image/') && options?.imageOptions) {
-        urlOptions = {
-          transform: {
-            width: options.imageOptions.width,
-            height: options.imageOptions.height,
-            quality: options.imageOptions.quality || 80
-          }
-        };
-      }
-      
-      console.log(`Creating signed URL for: ${data.storage_path}`);
-      
-      // Generate the signed URL with a longer expiration for document viewing
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from('construction_documents')
-        .createSignedUrl(data.storage_path, 900, urlOptions); // 15 minutes expiration
-      
-      if (urlError) {
-        throw urlError;
-      }
-      
-      if (!urlData || !urlData.signedUrl) {
-        throw new Error('Failed to generate document URL');
-      }
-      
-      console.log('Signed URL generated successfully');
-      
-      // Log access to document
-      await supabase
-        .from('document_access_logs')
-        .insert({
-          document_id: documentId,
-          action: 'VIEW'
-        })
-        .then(result => {
-          if (result.error) {
-            console.warn('Failed to log document access:', result.error);
-          }
-        });
-      
-      // Set document and open viewer
-      setCurrentDocument({
-        document_id: data.document_id,
-        file_name: data.file_name,
-        file_type: data.file_type || '',
-        url: urlData.signedUrl
+      const document = await fetchDocumentWithUrl(documentId, {
+        imageOptions: options.imageOptions || {
+          width: 1200,
+          height: 1200,
+          quality: 90
+        },
+        expiresIn: options.expiresIn || 300 // Default to 5 minutes
       });
       
-      setIsViewerOpen(true);
+      if (document) {
+        setCurrentDocument(document);
+        setIsViewerOpen(true);
+        
+        if (options.onView) {
+          options.onView(document);
+        }
+        
+        console.log('Document loaded successfully:', document.file_name);
+      } else {
+        setError('Could not load document');
+        toast({
+          title: 'Error',
+          description: 'Could not load document',
+          variant: 'destructive',
+        });
+      }
     } catch (error: any) {
       console.error('Error viewing document:', error);
+      setError(error.message || 'An error occurred while loading the document');
       toast({
         title: 'Error',
-        description: 'Failed to view document: ' + (error.message || 'Unknown error'),
+        description: error.message || 'An error occurred while loading the document',
         variant: 'destructive',
       });
-      
-      // Return the error so callers can handle it
-      throw error;
     } finally {
       setIsLoading(false);
     }
   };
-
-  const closeViewer = () => {
+  
+  const closeViewer = useCallback(() => {
     setIsViewerOpen(false);
-    if (options?.onClose) {
-      options.onClose();
-    }
-  };
-
+    
+    // Use timeout to ensure the dialog has time to close properly
+    setTimeout(() => {
+      setCurrentDocument(null);
+      setError(null);
+      
+      if (options.onClose) {
+        options.onClose();
+      }
+    }, 100);
+  }, [options]);
+  
   return {
     viewDocument,
     closeViewer,
     isViewerOpen,
-    setIsViewerOpen,
+    setIsViewerOpen: (isOpen: boolean) => {
+      if (!isOpen) {
+        closeViewer();
+      } else {
+        setIsViewerOpen(true);
+      }
+    },
     currentDocument,
-    isLoading
+    isLoading,
+    error
   };
-};
+}

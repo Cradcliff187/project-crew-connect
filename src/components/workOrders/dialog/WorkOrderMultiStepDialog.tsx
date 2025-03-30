@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form';
 import useWorkOrderForm from './useWorkOrderForm';
 import { 
@@ -86,7 +86,6 @@ const WorkOrderMultiStepDialog = ({
   }
 
   const isLastStep = currentStep === WORK_ORDER_STEPS[WORK_ORDER_STEPS.length - 1].id;
-  const currentStepObj = WORK_ORDER_STEPS.find(step => step.id === currentStep);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,10 +94,6 @@ const WorkOrderMultiStepDialog = ({
           <DialogTitle className="text-xl font-semibold text-[#0485ea]">
             Create New Work Order
           </DialogTitle>
-          <DialogDescription>
-            {currentStepObj ? currentStepObj.description || `Step ${currentStepObj.order} of ${WORK_ORDER_STEPS.length}` : 
-            'Fill out the form to create a new work order'}
-          </DialogDescription>
         </DialogHeader>
         
         <div className="mt-2 mb-6">
