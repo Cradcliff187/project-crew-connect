@@ -10,19 +10,28 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const fetchWorkOrders = async () => {
+  // Use wildcard (*) instead of individual column names to avoid 406 errors
   const { data, error } = await supabase
     .from('maintenance_work_orders')
     .select('*')
     .order('created_at', { ascending: false });
   
   if (error) {
+    console.error('Error fetching work orders:', error);
     throw error;
   }
   
   // Cast the data properly to match the WorkOrder type
   const typedWorkOrders = data?.map(order => ({
     ...order,
-    status: order.status as WorkOrder['status'] // Use the proper type from WorkOrder
+    // Ensure these fields are properly cast
+    status: order.status as WorkOrder['status'],
+    priority: order.priority as WorkOrder['priority'],
+    materials_cost: typeof order.materials_cost === 'number' ? order.materials_cost : 0,
+    expenses_cost: typeof order.expenses_cost === 'number' ? order.expenses_cost : 0,
+    actual_hours: typeof order.actual_hours === 'number' ? order.actual_hours : 0,
+    total_cost: typeof order.total_cost === 'number' ? order.total_cost : 0,
+    progress: typeof order.progress === 'number' ? order.progress : 0,
   })) as WorkOrder[];
   
   return typedWorkOrders;
@@ -57,7 +66,7 @@ const WorkOrders = () => {
         console.error('Error fetching work orders:', error);
         toast({
           title: 'Error fetching work orders',
-          description: error.message,
+          description: error.message || 'An unexpected error occurred',
           variant: 'destructive'
         });
       }

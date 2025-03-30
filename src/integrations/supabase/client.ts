@@ -6,7 +6,7 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://zrxezqllmpdlhiudutme.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ";
 
-// Create client with proper configuration to avoid content-type issues with file uploads
+// Create client with proper configuration to avoid content-type issues
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY,
@@ -16,8 +16,9 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
     },
     global: {
-      // Important: Don't set a global Content-Type header as it interferes with file uploads
       headers: {
+        // Don't set a global Content-Type header as it creates problems with file uploads
+        // Instead rely on the Supabase client to set the right headers for each request type
         'apikey': SUPABASE_PUBLISHABLE_KEY,
         'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
       },

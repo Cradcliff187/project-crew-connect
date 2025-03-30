@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import StepNavigation from './StepNavigation';
 import EstimateStepTabs from './EstimateStepTabs';
 import { EstimateStep } from './EstimateStepConstants';
@@ -22,6 +22,8 @@ const DialogContent = ({
   steps,
   setCurrentStep
 }: DialogContentProps) => {
+  const currentStepObj = steps.find(step => step.id === currentStep);
+  
   return (
     <ShadcnDialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
       <DialogHeader className="px-6 pt-6 pb-2">
@@ -33,6 +35,11 @@ const DialogContent = ({
             currentStep={currentStep}
           />
         </DialogTitle>
+        <DialogDescription>
+          {currentStepObj ? 
+            currentStepObj.description || `Step ${currentStepObj.order} of ${steps.length}` : 
+            'Fill out the form to create a new estimate'}
+        </DialogDescription>
       </DialogHeader>
 
       <div className="px-6 py-4">

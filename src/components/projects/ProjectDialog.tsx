@@ -54,8 +54,8 @@ const ProjectDialog = ({
           </DialogTitle>
           <DialogDescription>
             {estimateData 
-              ? 'Create a project based on this estimate.'
-              : 'Enter the project details to add it to your system.'}
+              ? 'Create a project based on this estimate. Fields will be pre-filled with estimate data.'
+              : 'Enter the project details below to create a new project in the system.'}
           </DialogDescription>
         </DialogHeader>
         

@@ -4,7 +4,8 @@ import { useDocumentViewer } from '@/hooks/useDocumentViewer';
 import { toast } from '@/hooks/use-toast';
 
 interface ReceiptEntity {
-  receipt_document_id?: string;
+  receipt_document_id?: string | null;
+  document_id?: string | null; // Add explicit support for both field names
   [key: string]: any;
 }
 
@@ -39,10 +40,21 @@ export function useReceiptManager<T extends ReceiptEntity>(options?: UseReceiptM
     console.log(`Receipt button clicked for ${options?.entityType || 'entity'}:`, entity);
     setSelectedEntity(entity);
     
-    // Check if entity has a receipt
-    if (entity.receipt_document_id) {
+    // Check if entity has a receipt - look for either field name that could contain document ID
+    const documentId = entity.receipt_document_id || entity.document_id;
+    
+    if (documentId) {
       // View existing receipt using the document viewer hook
-      await viewDocument(entity.receipt_document_id);
+      try {
+        await viewDocument(documentId);
+      } catch (error) {
+        console.error('Error viewing receipt:', error);
+        toast({
+          title: 'Error',
+          description: 'Could not load the receipt. The document may no longer exist.',
+          variant: 'destructive'
+        });
+      }
     } else {
       // Show upload dialog for new receipt
       setShowReceiptUpload(true);

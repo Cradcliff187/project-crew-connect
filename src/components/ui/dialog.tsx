@@ -32,11 +32,32 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
+  // Create a unique ID for the dialog content
+  const id = React.useId();
+  const descriptionId = `${id}-description`;
+  
+  // Find a DialogDescription child if one exists
+  let hasDescription = false;
+  React.Children.forEach(children, child => {
+    if (React.isValidElement(child) && child.type === DialogDescription) {
+      hasDescription = true;
+    } else if (React.isValidElement(child) && child.props?.children) {
+      // Also check in nested children like DialogHeader
+      React.Children.forEach(child.props.children, nestedChild => {
+        if (React.isValidElement(nestedChild) && nestedChild.type === DialogDescription) {
+          hasDescription = true;
+        }
+      });
+    }
+  });
+  
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
+        // Provide aria-describedby if we didn't find a DialogDescription
+        aria-describedby={hasDescription ? undefined : descriptionId}
         // Accessibility improvements - prevent auto-focus but allow manual focus for screen readers
         onCloseAutoFocus={(event) => {
           event.preventDefault();
@@ -51,6 +72,11 @@ const DialogContent = React.forwardRef<
         {...props}
       >
         {children}
+        {!hasDescription && (
+          <div id={descriptionId} className="sr-only">
+            Dialog content
+          </div>
+        )}
         <DialogPrimitive.Close 
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
           aria-label="Close dialog"

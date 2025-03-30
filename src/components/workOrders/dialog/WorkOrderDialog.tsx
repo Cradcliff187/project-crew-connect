@@ -7,6 +7,11 @@ interface WorkOrderDialogProps {
   onWorkOrderSaved: () => void;
 }
 
+/**
+ * A wrapper component around WorkOrderMultiStepDialog to maintain
+ * compatibility with existing code that expects isOpen/onClose props
+ * instead of open/onOpenChange
+ */
 const WorkOrderDialog = ({ isOpen, onClose, onWorkOrderSaved }: WorkOrderDialogProps) => {
   return (
     <WorkOrderMultiStepDialog

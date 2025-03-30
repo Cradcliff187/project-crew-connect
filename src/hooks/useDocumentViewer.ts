@@ -22,7 +22,9 @@ export const useDocumentViewer = (options?: DocumentViewerOptions) => {
     setIsLoading(true);
     
     try {
-      // Fetch document data
+      console.log(`Fetching document details for ID: ${documentId}`);
+      
+      // Fetch document data - explicitly list the columns we need
       const { data, error } = await supabase
         .from('documents')
         .select('document_id, file_name, file_type, storage_path')
@@ -36,6 +38,8 @@ export const useDocumentViewer = (options?: DocumentViewerOptions) => {
       if (!data) {
         throw new Error('Document not found');
       }
+      
+      console.log('Document data retrieved:', data);
       
       // Generate signed URL with appropriate options based on file type
       let urlOptions = {};
@@ -51,6 +55,8 @@ export const useDocumentViewer = (options?: DocumentViewerOptions) => {
         };
       }
       
+      console.log(`Creating signed URL for: ${data.storage_path}`);
+      
       // Generate the signed URL with a longer expiration for document viewing
       const { data: urlData, error: urlError } = await supabase.storage
         .from('construction_documents')
@@ -60,12 +66,23 @@ export const useDocumentViewer = (options?: DocumentViewerOptions) => {
         throw urlError;
       }
       
+      if (!urlData || !urlData.signedUrl) {
+        throw new Error('Failed to generate document URL');
+      }
+      
+      console.log('Signed URL generated successfully');
+      
       // Log access to document
       await supabase
         .from('document_access_logs')
         .insert({
           document_id: documentId,
           action: 'VIEW'
+        })
+        .then(result => {
+          if (result.error) {
+            console.warn('Failed to log document access:', result.error);
+          }
         });
       
       // Set document and open viewer
@@ -84,6 +101,9 @@ export const useDocumentViewer = (options?: DocumentViewerOptions) => {
         description: 'Failed to view document: ' + (error.message || 'Unknown error'),
         variant: 'destructive',
       });
+      
+      // Return the error so callers can handle it
+      throw error;
     } finally {
       setIsLoading(false);
     }
