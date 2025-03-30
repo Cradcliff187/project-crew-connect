@@ -21,7 +21,7 @@ import {
 } from '../../utils/estimateCalculations';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
@@ -152,13 +152,15 @@ const EstimateItemCard: React.FC<EstimateItemCardProps> = ({
 
   // Determine entity ID based on item type
   const getEntityIdForDocument = () => {
+    const tempId = form.getValues('temp_id') || 'pending';
+    
     switch (itemType) {
       case 'vendor':
-        return vendorId || 'pending';
+        return vendorId || tempId;
       case 'subcontractor':
-        return subcontractorId || 'pending';
+        return subcontractorId || tempId;
       default:
-        return 'pending';
+        return tempId;
     }
   };
 
@@ -222,9 +224,12 @@ const EstimateItemCard: React.FC<EstimateItemCardProps> = ({
                   <span className="hidden sm:inline-block">Attach</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
+              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" aria-describedby="item-document-upload-description">
                 <SheetHeader className="p-6 pb-2">
                   <SheetTitle>Attach Document to Line Item</SheetTitle>
+                  <SheetDescription id="item-document-upload-description">
+                    Upload a document to attach to this line item.
+                  </SheetDescription>
                 </SheetHeader>
                 
                 <EnhancedDocumentUpload 

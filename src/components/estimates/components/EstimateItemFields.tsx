@@ -23,7 +23,7 @@ const EstimateItemFields = () => {
       cost: '0', 
       markup_percentage: '20',
       quantity: '1', 
-      unitPrice: '', 
+      unitPrice: '0', 
       vendor_id: '',
       subcontractor_id: '',
       document_id: '',

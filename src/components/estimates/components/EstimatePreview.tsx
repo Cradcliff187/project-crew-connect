@@ -85,7 +85,7 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
   
   // Get specialty name from id
   const getSpecialtyName = (specialtyId: string | undefined) => {
-    if (!specialtyId || specialtyId === 'other') return null;
+    if (!specialtyId || specialtyId === 'other' || !specialties[specialtyId]) return null;
     return specialties[specialtyId]?.specialty;
   };
   

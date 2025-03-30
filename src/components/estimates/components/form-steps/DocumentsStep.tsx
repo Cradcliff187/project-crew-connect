@@ -6,7 +6,7 @@ import { FileIcon, FileTextIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
 import DocumentList from '@/components/documents/DocumentList';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
 const DocumentsStep = () => {
@@ -76,9 +76,12 @@ const DocumentsStep = () => {
             Add Document
           </Button>
           
-          <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
+          <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" aria-describedby="document-upload-description">
             <SheetHeader className="p-6 pb-2">
               <SheetTitle>Add Document to Estimate</SheetTitle>
+              <SheetDescription id="document-upload-description">
+                Upload files to attach to this estimate.
+              </SheetDescription>
             </SheetHeader>
             
             {tempEstimateId && (

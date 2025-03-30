@@ -23,6 +23,9 @@ export const estimateFormSchema = z.object({
       vendor_id: z.string().optional(),
       subcontractor_id: z.string().optional(),
       document_id: z.string().optional(),
+      trade_type: z.string().optional(),
+      expense_type: z.string().optional(),
+      custom_type: z.string().optional(),
     })
   ).nonempty({ message: "At least one item is required" }),
   showSiteLocation: z.boolean().default(false),
@@ -42,3 +45,14 @@ export const estimateFormSchema = z.object({
 });
 
 export type EstimateFormValues = z.infer<typeof estimateFormSchema>;
+
+// Export the EstimateItem type for calculations
+export type EstimateItem = {
+  cost: string;
+  markup_percentage: string;
+  quantity: string;
+  item_type?: string;
+  trade_type?: string;
+  expense_type?: string;
+  custom_type?: string;
+};
