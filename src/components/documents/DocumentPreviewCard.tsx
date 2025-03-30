@@ -1,124 +1,73 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { 
-  FileIcon, 
-  FileTextIcon, 
-  FileImageIcon, 
-  EyeIcon, 
-  Trash2Icon,
-  DownloadIcon
-} from "lucide-react";
-import { formatFileSize } from '@/lib/utils';
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from '@/components/ui/card';
 import { Document } from './schemas/documentSchema';
+import { FileText, Eye, Download, Trash2, FileImage, File } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { formatDate } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
-interface DocumentPreviewCardProps {
+export interface DocumentPreviewCardProps {
   document: Document;
-  onView?: () => void;
-  onDelete?: () => void;
-  onDownload?: () => void;
-  showActions?: boolean;
+  onView: () => void;
+  onDelete: () => void;
+  showEntityInfo?: boolean; // Adding this prop
 }
 
-const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
-  document,
-  onView,
+const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({ 
+  document, 
+  onView, 
   onDelete,
-  onDownload,
-  showActions = true
+  showEntityInfo = false
 }) => {
-  // Helper function to get document icon based on file type
   const getDocumentIcon = () => {
-    if (!document.file_type) return <FileIcon className="h-4 w-4" />;
-    
-    if (document.file_type.includes('image')) {
-      return <FileImageIcon className="h-4 w-4" />;
-    } else if (document.file_type.includes('pdf')) {
-      return <FileTextIcon className="h-4 w-4" />;
+    if (document.file_type?.startsWith('image/')) {
+      return <FileImage className="h-4 w-4 text-blue-500" />;
     }
     
-    return <FileIcon className="h-4 w-4" />;
-  };
-  
-  // Helper to format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric'
-    }).format(date);
+    if (document.file_type?.includes('pdf')) {
+      return <FileText className="h-4 w-4 text-red-500" />;
+    }
+    
+    return <File className="h-4 w-4 text-gray-500" />;
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardContent className="p-3">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              {getDocumentIcon()}
-              <div className="truncate font-medium max-w-[180px]">
-                {document.file_name}
-              </div>
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0 mt-1">
+            {getDocumentIcon()}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-medium truncate">{document.file_name}</h4>
+            <div className="flex items-center gap-1 mt-1">
+              <Badge variant="outline" className="text-xs">
+                {document.category || 'Other'}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {formatDate(document.created_at)}
+              </span>
             </div>
             
-            {document.category && (
-              <Badge variant="outline" className="ml-auto text-xs">
-                {document.category}
-              </Badge>
+            {showEntityInfo && document.entity_type && (
+              <div className="text-xs text-muted-foreground mt-1">
+                {document.entity_type}
+              </div>
             )}
           </div>
-          
-          <div className="text-xs text-muted-foreground">
-            {document.file_size && (
-              <div>{formatFileSize(document.file_size)}</div>
-            )}
-            {document.created_at && (
-              <div>Added on {formatDate(document.created_at)}</div>
-            )}
-          </div>
-          
-          {showActions && (
-            <div className="flex gap-1 mt-1 justify-end">
-              {onView && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 w-8 p-0" 
-                  onClick={onView}
-                  title="View document"
-                >
-                  <EyeIcon className="h-4 w-4" />
-                </Button>
-              )}
-              
-              {onDownload && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 w-8 p-0" 
-                  onClick={onDownload}
-                  title="Download document"
-                >
-                  <DownloadIcon className="h-4 w-4" />
-                </Button>
-              )}
-              
-              {onDelete && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
-                  onClick={onDelete}
-                  title="Delete document"
-                >
-                  <Trash2Icon className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
+        </div>
+        
+        <div className="flex justify-end mt-2 space-x-2">
+          <Button variant="ghost" size="sm" onClick={onView}>
+            <Eye className="h-3.5 w-3.5 mr-1" />
+            View
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive hover:text-destructive">
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            Remove
+          </Button>
         </div>
       </CardContent>
     </Card>

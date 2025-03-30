@@ -1,43 +1,67 @@
 
+import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export interface WorkOrderStep {
   id: string;
   label: string;
+  description?: string; // Adding this property
+  order?: number;       // Adding this property
 }
 
 export const WORK_ORDER_STEPS: WorkOrderStep[] = [
-  { id: 'basic-info', label: 'Basic Info' },
-  { id: 'schedule', label: 'Schedule' },
-  { id: 'location', label: 'Location' },
-  { id: 'preview', label: 'Preview' }
+  {
+    id: "details",
+    label: "Details",
+    description: "Basic work order information",
+    order: 1
+  },
+  {
+    id: "materials",
+    label: "Materials",
+    description: "Materials for the work order",
+    order: 2
+  },
+  {
+    id: "labor",
+    label: "Labor",
+    description: "Labor for the work order",
+    order: 3
+  },
+  {
+    id: "expenses",
+    label: "Expenses",
+    description: "Additional expenses",
+    order: 4
+  },
+  {
+    id: "notes",
+    label: "Notes",
+    description: "Additional notes and instructions",
+    order: 5
+  }
 ];
 
 interface WorkOrderStepTabsProps {
   currentStep: string;
-  setCurrentStep: (step: string) => void;
-  isDisabled: boolean;
+  onStepChange: (step: string) => void;
+  disabled?: boolean;
 }
 
-const WorkOrderStepTabs = ({ 
-  currentStep, 
-  setCurrentStep, 
-  isDisabled 
-}: WorkOrderStepTabsProps) => {
+const WorkOrderStepTabs: React.FC<WorkOrderStepTabsProps> = ({
+  currentStep,
+  onStepChange,
+  disabled = false
+}) => {
   return (
-    <Tabs value={currentStep}>
-      <TabsList className="grid grid-cols-4 w-full h-12 p-1 bg-gray-50 border border-gray-200 rounded-lg">
+    <Tabs value={currentStep} onValueChange={onStepChange} className="w-full">
+      <TabsList className="grid grid-cols-5 w-full">
         {WORK_ORDER_STEPS.map((step) => (
           <TabsTrigger
             key={step.id}
             value={step.id}
-            disabled={isDisabled}
-            className={`text-sm font-medium transition-all duration-200 ${
-              currentStep === step.id 
-                ? 'bg-[#0485ea] text-white shadow-md' 
-                : 'hover:bg-gray-100 hover:text-[#0485ea]'
-            }`}
-            onClick={() => setCurrentStep(step.id)}
+            disabled={disabled}
+            className="text-xs sm:text-sm"
           >
             {step.label}
           </TabsTrigger>

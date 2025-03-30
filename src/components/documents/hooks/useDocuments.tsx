@@ -1,142 +1,134 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Document, DocumentCategory, EntityType } from '@/components/documents/schemas/documentSchema';
+import { Document, EntityType, DocumentCategory } from '../schemas/documentSchema';
+import { adaptDatabaseDocuments } from '@/utils/typeUtils';
 
-export interface DocumentFiltersState {
+interface DocumentFilters {
   search: string;
-  category: DocumentCategory | undefined;
-  entityType: EntityType | undefined;
-  isExpense: boolean | undefined;
-  dateRange: { from?: Date; to?: Date } | undefined;
-  sortBy: string;
+  category?: DocumentCategory;
+  entityType?: EntityType;
+  isExpense?: boolean;
+  dateRange?: [Date | null, Date | null];
+  sortBy?: 'newest' | 'oldest' | 'name';
 }
 
-export const useDocuments = (initialFilters: DocumentFiltersState) => {
+export const useDocuments = (initialFilters: DocumentFilters) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<DocumentFiltersState>(initialFilters);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<DocumentFilters>(initialFilters);
+  const [activeFiltersCount, setActiveFiltersCount] = useState<number>(0);
 
   // Count active filters
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
-    if (key === 'sortBy' && value === 'newest') return false;
-    if (key === 'search' && !value) return false;
-    if (value === undefined) return false;
-    return true;
-  }).length;
+  useEffect(() => {
+    let count = 0;
+    if (filters.search) count++;
+    if (filters.category) count++;
+    if (filters.entityType) count++;
+    if (filters.isExpense !== undefined) count++;
+    if (filters.dateRange && 
+        (filters.dateRange[0] !== null || filters.dateRange[1] !== null)) count++;
+    
+    setActiveFiltersCount(count);
+  }, [filters]);
 
-  const fetchDocuments = async () => {
-    setLoading(true);
+  // Handle filter changes
+  const handleFilterChange = useCallback((filterKey: keyof DocumentFilters, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterKey]: value
+    }));
+  }, []);
 
+  // Reset filters
+  const handleResetFilters = useCallback(() => {
+    setFilters(initialFilters);
+  }, [initialFilters]);
+
+  // Fetch documents with applied filters
+  const fetchDocuments = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
+      // Build query
       let query = supabase
         .from('documents')
         .select('*');
-
+      
       // Apply filters
       if (filters.search) {
         query = query.ilike('file_name', `%${filters.search}%`);
       }
-
+      
       if (filters.category) {
         query = query.eq('category', filters.category);
       }
-
+      
       if (filters.entityType) {
         query = query.eq('entity_type', filters.entityType);
       }
-
+      
       if (filters.isExpense !== undefined) {
         query = query.eq('is_expense', filters.isExpense);
       }
       
-      // Apply date range filter if set
-      if (filters.dateRange?.from) {
-        query = query.gte('created_at', filters.dateRange.from.toISOString());
+      if (filters.dateRange) {
+        const [startDate, endDate] = filters.dateRange;
+        
+        if (startDate) {
+          const formattedStartDate = startDate.toISOString();
+          query = query.gte('created_at', formattedStartDate);
+        }
+        
+        if (endDate) {
+          const formattedEndDate = new Date(endDate);
+          formattedEndDate.setHours(23, 59, 59, 999);
+          query = query.lte('created_at', formattedEndDate.toISOString());
+        }
       }
       
-      if (filters.dateRange?.to) {
-        // Add one day to include the end date fully
-        const endDate = new Date(filters.dateRange.to);
-        endDate.setDate(endDate.getDate() + 1);
-        query = query.lt('created_at', endDate.toISOString());
-      }
-
       // Apply sorting
-      switch (filters.sortBy) {
-        case 'newest':
-          query = query.order('created_at', { ascending: false });
-          break;
-        case 'oldest':
-          query = query.order('created_at', { ascending: true });
-          break;
-        case 'name_asc':
-          query = query.order('file_name', { ascending: true });
-          break;
-        case 'name_desc':
-          query = query.order('file_name', { ascending: false });
-          break;
-        case 'size_asc':
-          query = query.order('file_size', { ascending: true });
-          break;
-        case 'size_desc':
-          query = query.order('file_size', { ascending: false });
-          break;
+      if (filters.sortBy === 'oldest') {
+        query = query.order('created_at', { ascending: true });
+      } else if (filters.sortBy === 'name') {
+        query = query.order('file_name', { ascending: true });
+      } else {
+        // Default to newest
+        query = query.order('created_at', { ascending: false });
       }
-
+      
+      // Execute query
       const { data, error } = await query;
-
+      
       if (error) {
         throw error;
       }
-
-      // Get document URLs
-      const docsWithUrls = await Promise.all(data.map(async (doc) => {
-        const { data: { publicUrl } } = supabase.storage
-          .from('construction_documents')
-          .getPublicUrl(doc.storage_path);
-        
-        return { ...doc, url: publicUrl };
-      }));
-
-      setDocuments(docsWithUrls);
-    } catch (error: any) {
-      console.error('Error fetching documents:', error);
-      toast({
-        title: "Failed to load documents",
-        description: error.message,
-        variant: "destructive"
-      });
+      
+      // Process data: generate URLs and set as documents
+      if (data) {
+        // Use our helper function to adapt document types
+        const adaptedDocuments = adaptDatabaseDocuments(data);
+        setDocuments(adaptedDocuments);
+      }
+    } catch (err: any) {
+      console.error('Error fetching documents:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleFilterChange = (newFilters: DocumentFiltersState) => {
-    setFilters(newFilters);
-  };
-
-  const handleResetFilters = () => {
-    setFilters({
-      search: '',
-      category: undefined,
-      entityType: undefined,
-      isExpense: undefined,
-      dateRange: undefined,
-      sortBy: 'newest'
-    });
-  };
+  }, [filters]);
 
   // Fetch documents when filters change
   useEffect(() => {
     fetchDocuments();
-  }, [filters]);
+  }, [fetchDocuments]);
 
   return {
     documents,
     loading,
+    error,
     filters,
     activeFiltersCount,
     handleFilterChange,

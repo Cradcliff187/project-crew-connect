@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from './use-toast';
-import { DocumentViewData } from '@/components/documents/schemas/documentSchema';
+import { Document, DocumentViewData } from '@/components/documents/schemas/documentSchema';
 
 interface DocumentViewerOptions {
   imageOptions?: {

@@ -1,155 +1,116 @@
 
 import { useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Document } from '@/components/documents/schemas/documentSchema';
+import { adaptDatabaseDocuments } from '@/utils/typeUtils';
 
-export interface TimeEntryReceipt extends Document {
+export interface TimeEntryReceipt {
+  document_id: string;
+  file_name: string;
+  file_type?: string;
+  entity_type: string;
+  entity_id: string;
+  created_at: string;
   url?: string;
+  // Additional fields needed for receipts
+  amount?: number;
+  expense_type?: string;
+  category?: string;
 }
 
-export function useTimeEntryReceipts(timeEntryId: string | undefined) {
+export const useTimeEntryReceipts = (timeEntryId: string) => {
   const [receipts, setReceipts] = useState<TimeEntryReceipt[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const fetchReceipts = async () => {
-    if (!timeEntryId) return;
-    
-    setIsLoading(true);
+    if (!timeEntryId) {
+      setReceipts([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      // First get document IDs linked to this time entry
-      const { data: links, error: linksError } = await supabase
+      setLoading(true);
+      
+      // First get document IDs from time entry links
+      const { data: linkData, error: linkError } = await supabase
         .from('time_entry_document_links')
         .select('document_id')
         .eq('time_entry_id', timeEntryId);
         
-      if (linksError) throw linksError;
+      if (linkError) {
+        throw linkError;
+      }
       
-      if (!links || links.length === 0) {
+      if (!linkData || linkData.length === 0) {
         setReceipts([]);
         return;
       }
       
-      // Get document details
-      const documentIds = links.map(link => link.document_id);
+      // Get the document IDs from the links
+      const documentIds = linkData.map(link => link.document_id);
       
-      const { data: documentsData, error: documentsError } = await supabase
+      // Fetch the actual documents
+      const { data: documentData, error: documentError } = await supabase
         .from('documents')
         .select('*')
         .in('document_id', documentIds);
         
-      if (documentsError) throw documentsError;
-      
-      // Get signed URLs for each document
-      const receiptsWithUrls = await Promise.all((documentsData || []).map(async (doc) => {
-        let url = '';
-        if (doc.storage_path) {
-          const { data } = await supabase.storage
-            .from('construction_documents')
-            .createSignedUrl(doc.storage_path, 3600);
-            
-          if (data) {
-            url = data.signedUrl;
-          }
-        }
-        
-        return {
-          ...doc,
-          url
-        };
-      }));
-      
-      setReceipts(receiptsWithUrls);
-    } catch (error: any) {
-      console.error('Error fetching time entry receipts:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load receipts for this time entry.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const deleteReceipt = async (documentId: string) => {
-    if (!timeEntryId || !documentId) return false;
-    
-    try {
-      // First remove the link
-      const { error: unlinkError } = await supabase
-        .from('time_entry_document_links')
-        .delete()
-        .eq('time_entry_id', timeEntryId)
-        .eq('document_id', documentId);
-        
-      if (unlinkError) throw unlinkError;
-      
-      // Get the storage path before deleting the document
-      const { data: docData } = await supabase
-        .from('documents')
-        .select('storage_path')
-        .eq('document_id', documentId)
-        .single();
-      
-      // Delete the document record
-      const { error: deleteError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('document_id', documentId);
-        
-      if (deleteError) throw deleteError;
-      
-      // Delete the file from storage if we have a path
-      if (docData?.storage_path) {
-        await supabase.storage
-          .from('construction_documents')
-          .remove([docData.storage_path]);
+      if (documentError) {
+        throw documentError;
       }
       
-      // Check if time entry has any remaining receipts
-      const { count } = await supabase
-        .from('time_entry_document_links')
-        .select('*', { count: 'exact' })
-        .eq('time_entry_id', timeEntryId);
+      if (!documentData) {
+        setReceipts([]);
+        return;
+      }
       
-      // Update the time entry has_receipts flag
-      await supabase
-        .from('time_entries')
-        .update({ has_receipts: count && count > 0 })
-        .eq('id', timeEntryId);
+      // Generate signed URLs for each document
+      const receiptsWithUrls = await Promise.all(
+        documentData.map(async (doc) => {
+          let url = '';
+          
+          if (doc.storage_path) {
+            const { data: urlData } = await supabase.storage
+              .from('construction_documents')
+              .createSignedUrl(doc.storage_path, 3600); // 1 hour expiration
+              
+            if (urlData) {
+              url = urlData.signedUrl;
+            }
+          }
+          
+          return { ...doc, url };
+        })
+      );
       
-      // Refresh the receipts list
-      fetchReceipts();
+      // Adapt documents to ensure type safety
+      const adaptedReceipts = receiptsWithUrls.map(receipt => ({
+        ...receipt,
+        url: receipt.url || '',
+      })) as TimeEntryReceipt[];
       
-      toast({
-        title: 'Receipt deleted',
-        description: 'The receipt has been removed successfully.'
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error('Error deleting receipt:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete receipt.',
-        variant: 'destructive'
-      });
-      return false;
+      setReceipts(adaptedReceipts);
+    } catch (err: any) {
+      console.error('Error fetching time entry receipts:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
-  
-  // Fetch receipts when the component loads or timeEntryId changes
+
   useEffect(() => {
-    if (timeEntryId) {
-      fetchReceipts();
-    }
+    fetchReceipts();
   }, [timeEntryId]);
-  
+
+  const refetchReceipts = () => {
+    fetchReceipts();
+  };
+
   return {
     receipts,
-    isLoading,
-    fetchReceipts,
-    deleteReceipt
+    loading,
+    error,
+    refetchReceipts
   };
-}
+};
