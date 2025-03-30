@@ -16,17 +16,23 @@ export type DocumentCategory =
   | 'certificate' 
   | 'drawing' 
   | 'photo' 
-  | 'other';
+  | 'other'
+  | '3rd_party_estimate'
+  | 'insurance'
+  | 'certification';
 
-export const documentCategories: { value: DocumentCategory; label: string }[] = [
-  { value: 'invoice', label: 'Invoice' },
-  { value: 'receipt', label: 'Receipt' },
-  { value: 'contract', label: 'Contract' },
-  { value: 'permit', label: 'Permit' },
-  { value: 'certificate', label: 'Certificate' },
-  { value: 'drawing', label: 'Drawing' },
-  { value: 'photo', label: 'Photo' },
-  { value: 'other', label: 'Other' }
+export const documentCategories: DocumentCategory[] = [
+  'invoice',
+  'receipt',
+  'contract',
+  'permit', 
+  'certificate',
+  'drawing',
+  'photo',
+  'other',
+  '3rd_party_estimate',
+  'insurance',
+  'certification'
 ];
 
 // Entity types for selector
@@ -116,6 +122,8 @@ export interface Document {
   expense_date?: string;
   notes?: string;
   url?: string;
+  parent_document_id?: string;
+  is_receipt?: boolean;
 }
 
 // Type for document viewer
@@ -130,7 +138,7 @@ export interface DocumentViewData {
 export interface DocumentPreviewCardProps {
   document: Document;
   onView: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   showEntityInfo?: boolean;
 }
 

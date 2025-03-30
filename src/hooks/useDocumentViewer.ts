@@ -37,10 +37,28 @@ export const useDocumentViewer = (options?: DocumentViewerOptions) => {
         throw new Error('Document not found');
       }
       
-      // Generate public URL
-      const { data: { publicUrl } } = supabase.storage
+      // Generate signed URL with appropriate options based on file type
+      let urlOptions = {};
+      
+      // For images, add transformation options if provided
+      if (data.file_type && data.file_type.startsWith('image/') && options?.imageOptions) {
+        urlOptions = {
+          transform: {
+            width: options.imageOptions.width,
+            height: options.imageOptions.height,
+            quality: options.imageOptions.quality || 80
+          }
+        };
+      }
+      
+      // Generate the signed URL with a longer expiration for document viewing
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('construction_documents')
-        .getPublicUrl(data.storage_path);
+        .createSignedUrl(data.storage_path, 900, urlOptions); // 15 minutes expiration
+      
+      if (urlError) {
+        throw urlError;
+      }
       
       // Log access to document
       await supabase
@@ -55,7 +73,7 @@ export const useDocumentViewer = (options?: DocumentViewerOptions) => {
         document_id: data.document_id,
         file_name: data.file_name,
         file_type: data.file_type || '',
-        url: publicUrl
+        url: urlData.signedUrl
       });
       
       setIsViewerOpen(true);

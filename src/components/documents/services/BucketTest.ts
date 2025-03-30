@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface BucketTestResult {
+interface BucketTestResult {
   success: boolean;
   bucketId?: string;
   bucketName?: string;
@@ -10,55 +10,58 @@ export interface BucketTestResult {
 
 export const testBucketAccess = async (): Promise<BucketTestResult> => {
   try {
-    console.log('Testing access to storage buckets...');
+    // First check if the bucket exists
+    const { data: buckets, error: bucketsError } = await supabase
+      .storage
+      .listBuckets();
     
-    // List all buckets to check permissions
-    const { data: buckets, error } = await supabase.storage.listBuckets();
-    
-    if (error) {
-      console.log('Error accessing buckets:', error.message);
-      // Despite error, we'll try to work with the expected bucket
+    if (bucketsError) {
+      console.error('Error listing buckets:', bucketsError);
       return {
         success: false,
-        bucketId: 'construction_documents',
-        error: error.message
+        error: bucketsError
       };
     }
     
-    console.log('Available buckets:', buckets);
+    // Find our construction documents bucket
+    const constructionBucket = buckets.find(bucket => 
+      bucket.name === 'construction_documents'
+    );
     
-    // Look for our target bucket (construction_documents)
-    const targetBucket = buckets.find(bucket => bucket.id === 'construction_documents');
-    
-    if (targetBucket) {
-      console.log('✅ Target bucket found:', targetBucket.id);
+    if (!constructionBucket) {
+      console.warn('Bucket "construction_documents" not found');
       return {
-        success: true,
-        bucketId: targetBucket.id,
-        bucketName: targetBucket.name
-      };
-    } else {
-      console.log('Target bucket not found in list, but will attempt uploads anyway');
-      
-      // If bucket doesn't exist yet, let's try to create it
-      // But we'll only log it since the SQL migration should handle this
-      console.log('Note: The construction_documents bucket should be created via SQL migration');
-      
-      // Just return the expected bucket ID
-      return {
-        success: true,
-        bucketId: 'construction_documents',
-        bucketName: 'Construction Documents'
+        success: false,
+        error: new Error('Bucket "construction_documents" not found')
       };
     }
-  } catch (error: any) {
-    console.error('Error testing bucket access:', error);
     
-    // Return failure but include our expected bucket ID anyway
+    // Try to list files in the bucket
+    const { data: files, error: filesError } = await supabase
+      .storage
+      .from('construction_documents')
+      .list();
+    
+    if (filesError) {
+      console.error('Error listing files in bucket:', filesError);
+      return {
+        success: false,
+        error: filesError
+      };
+    }
+    
+    // Success! The bucket exists and we can list files
+    return {
+      success: true,
+      bucketId: constructionBucket.id,
+      bucketName: 'construction_documents'
+    };
+    
+  } catch (error) {
+    console.error('Unexpected error testing bucket access:', error);
     return {
       success: false,
-      bucketId: 'construction_documents',
-      error: error.message || 'Unknown error occurred during bucket test'
+      error
     };
   }
 };
