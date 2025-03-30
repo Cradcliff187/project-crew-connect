@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Form } from '@/components/ui/form';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog } from '@/components/ui/dialog';
+import DialogContent as CustomDialogContent from './components/form-steps/DialogContent';
 
 // Import custom components and utilities
 import { useEstimateSubmit } from './hooks/useEstimateSubmit';
@@ -9,7 +10,6 @@ import EstimateStepContent from './components/form-steps/EstimateStepContent';
 import FormActions from './components/form-steps/FormActions';
 import { useEstimateFormData } from './hooks/useEstimateFormData';
 import { useEstimateForm } from './hooks/useEstimateForm';
-import DialogContent as CustomDialogContent from './components/form-steps/DialogContent';
 
 interface EstimateMultiStepFormProps {
   open: boolean;
