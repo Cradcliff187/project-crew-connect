@@ -2,13 +2,14 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { VendorProject, VendorWorkOrder } from '../detail/types';
 
 /**
  * Hook to fetch vendor associated data like projects and work orders
  */
 const useVendorAssociatedData = () => {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [projects, setProjects] = useState<VendorProject[]>([]);
+  const [workOrders, setWorkOrders] = useState<VendorWorkOrder[]>([]);
   const [loadingAssociations, setLoadingAssociations] = useState(false);
   
   const fetchAssociatedData = useCallback(async (vendorId: string) => {
