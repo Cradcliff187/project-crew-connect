@@ -1,108 +1,124 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Eye, Download, Trash2, FileText, FileImage, File } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { 
+  FileIcon, 
+  FileTextIcon, 
+  FileImageIcon, 
+  EyeIcon, 
+  Trash2Icon,
+  DownloadIcon
+} from "lucide-react";
+import { formatFileSize } from '@/lib/utils';
+import { Badge } from "@/components/ui/badge";
 import { Document } from './schemas/documentSchema';
-import { formatDate } from '@/lib/utils';
 
 interface DocumentPreviewCardProps {
   document: Document;
-  onView: () => void;
+  onView?: () => void;
   onDelete?: () => void;
-  showEntityInfo?: boolean;
+  onDownload?: () => void;
+  showActions?: boolean;
 }
 
-const DocumentPreviewCard = ({ 
-  document, 
-  onView, 
+const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
+  document,
+  onView,
   onDelete,
-  showEntityInfo = false
-}: DocumentPreviewCardProps) => {
-  // Get appropriate icon based on file type
-  const getFileIcon = () => {
-    if (!document.file_type) return <File className="h-8 w-8 text-gray-400" />;
+  onDownload,
+  showActions = true
+}) => {
+  // Helper function to get document icon based on file type
+  const getDocumentIcon = () => {
+    if (!document.file_type) return <FileIcon className="h-4 w-4" />;
     
-    const fileType = document.file_type.toLowerCase();
-    if (fileType.startsWith('image/')) {
-      return <FileImage className="h-8 w-8 text-blue-400" />;
-    } else if (fileType.includes('pdf')) {
-      return <FileText className="h-8 w-8 text-red-400" />;
+    if (document.file_type.includes('image')) {
+      return <FileImageIcon className="h-4 w-4" />;
+    } else if (document.file_type.includes('pdf')) {
+      return <FileTextIcon className="h-4 w-4" />;
     }
-    return <File className="h-8 w-8 text-gray-400" />;
+    
+    return <FileIcon className="h-4 w-4" />;
   };
-
-  // Format file size for display
-  const formatFileSize = (size?: number) => {
-    if (!size) return 'Unknown size';
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const handleDownload = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (document.url) {
-      window.open(document.url, '_blank');
-    }
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDelete) onDelete();
+  
+  // Helper to format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric'
+    }).format(date);
   };
 
   return (
-    <Card 
-      className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer bg-white border border-[#0485ea]/10"
-      onClick={onView}
-    >
-      <div className="h-12 bg-[#0485ea]/5 flex items-center px-4">
-        <div className="flex items-center space-x-2">
-          {getFileIcon()}
-          <div className="truncate max-w-[180px]">
-            <p className="font-medium text-sm truncate">{document.file_name}</p>
-          </div>
-        </div>
-      </div>
-      
+    <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-3">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{formatDate(document.created_at)}</span>
-            <span>{formatFileSize(document.file_size)}</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-1">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              {getDocumentIcon()}
+              <div className="truncate font-medium max-w-[180px]">
+                {document.file_name}
+              </div>
+            </div>
+            
             {document.category && (
-              <Badge variant="outline" className="capitalize text-xs">
+              <Badge variant="outline" className="ml-auto text-xs">
                 {document.category}
               </Badge>
             )}
-            {showEntityInfo && document.entity_type && (
-              <Badge variant="secondary" className="text-xs">
-                {document.entity_type.replace(/_/g, ' ').toLowerCase()}
-              </Badge>
+          </div>
+          
+          <div className="text-xs text-muted-foreground">
+            {document.file_size && (
+              <div>{formatFileSize(document.file_size)}</div>
             )}
-            {document.is_expense && (
-              <Badge className="bg-green-500 text-xs">Receipt</Badge>
+            {document.created_at && (
+              <div>Added on {formatDate(document.created_at)}</div>
             )}
           </div>
           
-          <div className="flex justify-between mt-2">
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => { e.stopPropagation(); onView(); }}>
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleDownload}>
-              <Download className="h-4 w-4" />
-            </Button>
-            {onDelete && (
-              <Button variant="ghost" size="sm" className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+          {showActions && (
+            <div className="flex gap-1 mt-1 justify-end">
+              {onView && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0" 
+                  onClick={onView}
+                  title="View document"
+                >
+                  <EyeIcon className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onDownload && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0" 
+                  onClick={onDownload}
+                  title="Download document"
+                >
+                  <DownloadIcon className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onDelete && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
+                  onClick={onDelete}
+                  title="Delete document"
+                >
+                  <Trash2Icon className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

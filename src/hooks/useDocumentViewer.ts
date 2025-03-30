@@ -1,99 +1,82 @@
 
-import { useState, useCallback } from 'react';
-import { Document } from '@/components/documents/schemas/documentSchema';
-import { fetchDocumentWithUrl } from '@/components/documents/services/DocumentFetcher';
-import { toast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from './use-toast';
 
-export interface UseDocumentViewerOptions {
-  onView?: (document: Document) => void;
-  onClose?: () => void;
-  imageOptions?: {
-    width?: number;
-    height?: number;
-    quality?: number;
-  };
-  expiresIn?: number; // URL expiration time in seconds
+interface DocumentViewData {
+  document_id: string;
+  file_name: string;
+  file_type: string;
+  url: string;
 }
 
-export function useDocumentViewer(options: UseDocumentViewerOptions = {}) {
+export const useDocumentViewer = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
+  const [currentDocument, setCurrentDocument] = useState<DocumentViewData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
+
   const viewDocument = async (documentId: string) => {
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
-      setError(null);
+      // Fetch document data
+      const { data, error } = await supabase
+        .from('documents')
+        .select('document_id, file_name, file_type, storage_path')
+        .eq('document_id', documentId)
+        .maybeSingle();
       
-      console.log('Viewing document with ID:', documentId);
+      if (error) {
+        throw error;
+      }
       
-      const document = await fetchDocumentWithUrl(documentId, {
-        imageOptions: options.imageOptions || {
-          width: 1200,
-          height: 1200,
-          quality: 90
-        },
-        expiresIn: options.expiresIn || 300 // Default to 5 minutes
+      if (!data) {
+        throw new Error('Document not found');
+      }
+      
+      // Generate public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('construction_documents')
+        .getPublicUrl(data.storage_path);
+      
+      // Log access to document
+      await supabase
+        .from('document_access_logs')
+        .insert({
+          document_id: documentId,
+          action: 'VIEW'
+        });
+      
+      // Set document and open viewer
+      setCurrentDocument({
+        document_id: data.document_id,
+        file_name: data.file_name,
+        file_type: data.file_type || '',
+        url: publicUrl
       });
       
-      if (document) {
-        setCurrentDocument(document);
-        setIsViewerOpen(true);
-        
-        if (options.onView) {
-          options.onView(document);
-        }
-        
-        console.log('Document loaded successfully:', document.file_name);
-      } else {
-        setError('Could not load document');
-        toast({
-          title: 'Error',
-          description: 'Could not load document',
-          variant: 'destructive',
-        });
-      }
+      setIsViewerOpen(true);
     } catch (error: any) {
       console.error('Error viewing document:', error);
-      setError(error.message || 'An error occurred while loading the document');
       toast({
         title: 'Error',
-        description: error.message || 'An error occurred while loading the document',
+        description: 'Failed to view document: ' + (error.message || 'Unknown error'),
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const closeViewer = useCallback(() => {
+
+  const closeViewer = () => {
     setIsViewerOpen(false);
-    
-    // Use timeout to ensure the dialog has time to close properly
-    setTimeout(() => {
-      setCurrentDocument(null);
-      setError(null);
-      
-      if (options.onClose) {
-        options.onClose();
-      }
-    }, 100);
-  }, [options]);
-  
+  };
+
   return {
     viewDocument,
     closeViewer,
     isViewerOpen,
-    setIsViewerOpen: (isOpen: boolean) => {
-      if (!isOpen) {
-        closeViewer();
-      } else {
-        setIsViewerOpen(true);
-      }
-    },
     currentDocument,
-    isLoading,
-    error
+    isLoading
   };
-}
+};
