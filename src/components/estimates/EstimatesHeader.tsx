@@ -1,10 +1,12 @@
 
 import { useState } from 'react';
-import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import PageHeader from '@/components/layout/PageHeader';
+import { PlusIcon, SearchIcon } from 'lucide-react';
 import EstimateForm from './EstimateForm';
+import EstimateMultiStepForm from './EstimateMultiStepForm';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import EstimateSettingsButton from './EstimateSettingsButton';
 
 interface EstimatesHeaderProps {
   searchQuery: string;
@@ -17,56 +19,58 @@ const EstimatesHeader = ({
   setSearchQuery, 
   onEstimateAdded 
 }: EstimatesHeaderProps) => {
-  const [showNewEstimateForm, setShowNewEstimateForm] = useState(false);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [useMultiStepForm] = useLocalStorage('use-multistep-estimate-form', false);
   
-  const handleCreateNewEstimate = () => {
-    setShowNewEstimateForm(true);
+  const handleClose = () => {
+    setOpenAddDialog(false);
+    onEstimateAdded(); // Refresh the estimates list
   };
-
-  const handleCloseNewEstimateForm = () => {
-    setShowNewEstimateForm(false);
-    onEstimateAdded(); // Refresh the list after creating a new estimate
-  };
-
+  
   return (
-    <>
-      <PageHeader
-        title="Estimates"
-        description="Create and manage your project estimates"
-      >
-        <div className="relative w-full md:w-auto flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            type="search" 
-            placeholder="Search estimates..." 
-            className="pl-9 subtle-input rounded-md"
+    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+      <div>
+        <h1 className="text-2xl font-bold">Estimates</h1>
+        <p className="text-muted-foreground mt-1">
+          Create and manage customer estimates
+        </p>
+      </div>
+      
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative max-w-xs">
+          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search estimates..."
+            className="pl-8 w-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Filter className="h-4 w-4 mr-1" />
-            Filter
-            <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
-          </Button>
+        <div className="flex gap-2">
+          <EstimateSettingsButton />
           <Button 
-            size="sm" 
-            className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0373ce]"
-            onClick={handleCreateNewEstimate}
+            onClick={() => setOpenAddDialog(true)}
+            className="bg-[#0485ea] hover:bg-[#0373ce]"
           >
-            <Plus className="h-4 w-4 mr-1" />
+            <PlusIcon className="h-4 w-4 mr-2" />
             New Estimate
           </Button>
         </div>
-      </PageHeader>
-
-      <EstimateForm 
-        open={showNewEstimateForm} 
-        onClose={handleCloseNewEstimateForm}
-      />
-    </>
+      </div>
+      
+      {useMultiStepForm ? (
+        <EstimateMultiStepForm 
+          open={openAddDialog} 
+          onClose={handleClose} 
+        />
+      ) : (
+        <EstimateForm 
+          open={openAddDialog} 
+          onClose={handleClose} 
+        />
+      )}
+    </div>
   );
 };
 

@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 
 interface FormActionsProps {
   onCancel: () => void;
@@ -10,6 +10,8 @@ interface FormActionsProps {
   currentStep?: string;
   onPreview?: () => void;
   isPreviewStep?: boolean;
+  onSubmit?: () => void;
+  isSubmitting?: boolean;
 }
 
 const FormActions = ({ 
@@ -19,14 +21,16 @@ const FormActions = ({
   isLastStep = false,
   currentStep,
   onPreview,
-  isPreviewStep = false
+  isPreviewStep = false,
+  onSubmit,
+  isSubmitting = false
 }: FormActionsProps) => {
   // If we're in the multi-step mode
   if (currentStep) {
     return (
       <div className="flex justify-between pt-4 border-t">
         <div>
-          {currentStep !== 'basic-info' && onPrevious && (
+          {onPrevious && (
             <Button type="button" variant="outline" onClick={onPrevious}>
               <ArrowLeft className="h-4 w-4 mr-1" />
               Previous
@@ -37,16 +41,33 @@ const FormActions = ({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          {onNext && (
+          
+          {isLastStep && onSubmit ? (
+            <Button 
+              type="button" 
+              className="bg-[#0485ea] hover:bg-[#0373ce] min-w-[120px]" 
+              onClick={onSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting
+                </>
+              ) : (
+                'Save Estimate'
+              )}
+            </Button>
+          ) : onNext ? (
             <Button 
               type="button" 
               className="bg-[#0485ea] hover:bg-[#0373ce]" 
               onClick={onNext}
             >
-              {isLastStep ? 'Preview Estimate' : 'Next'}
-              {!isLastStep && <ArrowRight className="h-4 w-4 ml-1" />}
+              Next
+              <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
     );
@@ -65,6 +86,22 @@ const FormActions = ({
           onClick={onPreview}
         >
           Preview Estimate
+        </Button>
+      )}
+      {isPreviewStep && (
+        <Button 
+          type="submit" 
+          className="bg-[#0485ea] hover:bg-[#0373ce]"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Submitting
+            </>
+          ) : (
+            'Save Estimate'
+          )}
         </Button>
       )}
     </div>
