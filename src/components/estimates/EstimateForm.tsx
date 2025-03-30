@@ -54,6 +54,8 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
         state: '',
         zip: '',
       },
+      // Generate a temporary ID for document handling
+      temp_id: "temp-" + Math.random().toString(36).substr(2, 9)
     },
   });
 
@@ -111,6 +113,8 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
           state: '',
           zip: '',
         },
+        // Generate a new temporary ID
+        temp_id: "temp-" + Math.random().toString(36).substr(2, 9)
       });
     }
   }, [open, form]);
@@ -165,7 +169,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0" aria-describedby="estimate-form-description">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-2xl font-semibold text-[#0485ea]">
             {step === 'edit' ? 'Create New Estimate' : 'Review Estimate'}
@@ -182,6 +186,9 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
               </Button>
             )}
           </DialogTitle>
+          <p id="estimate-form-description" className="sr-only">
+            Form to create a new estimate for a customer
+          </p>
         </DialogHeader>
 
         <Form {...form}>

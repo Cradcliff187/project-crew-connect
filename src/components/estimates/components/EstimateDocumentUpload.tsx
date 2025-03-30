@@ -34,6 +34,7 @@ const EstimateDocumentUpload: React.FC = () => {
   
   const form = useFormContext<EstimateFormValues>();
   const documentIds = form.watch('estimate_documents') || [];
+  const tempId = form.watch('temp_id');
   
   // Use the document viewer hook
   const { 
@@ -140,12 +141,14 @@ const EstimateDocumentUpload: React.FC = () => {
               <SheetTitle>Attach Document to Estimate</SheetTitle>
             </SheetHeader>
             
-            <EnhancedDocumentUpload 
-              entityType="ESTIMATE"
-              entityId="pending" // We'll update this when the estimate is created
-              onSuccess={handleDocumentUploadSuccess}
-              onCancel={() => setIsDocumentUploadOpen(false)}
-            />
+            {tempId && (
+              <EnhancedDocumentUpload 
+                entityType="ESTIMATE"
+                entityId={tempId}
+                onSuccess={handleDocumentUploadSuccess}
+                onCancel={() => setIsDocumentUploadOpen(false)}
+              />
+            )}
           </SheetContent>
         </Sheet>
       </div>
@@ -196,7 +199,7 @@ const EstimateDocumentUpload: React.FC = () => {
       
       {/* Document Preview Dialog */}
       <Dialog open={isViewerOpen} onOpenChange={closeViewer}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh]" aria-describedby="document-preview">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {currentDocument?.file_type && getDocumentIcon(currentDocument.file_type)}
@@ -206,6 +209,7 @@ const EstimateDocumentUpload: React.FC = () => {
           {currentDocument && (
             <div className="flex justify-center overflow-hidden">
               <iframe
+                id="document-preview"
                 src={`${currentDocument.url}#toolbar=1`}
                 className="w-full h-[70vh] border rounded"
                 title={currentDocument.file_name}

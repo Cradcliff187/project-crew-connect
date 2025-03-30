@@ -126,8 +126,13 @@ export const useEstimateSubmit = () => {
         throw new Error(`Error creating estimate items: ${itemsError.message}`);
       }
 
+      // Get the temp ID used for documents
+      const tempId = data.temp_id || '';
+
       // Update any estimate-level documents
       if (data.estimate_documents && data.estimate_documents.length > 0) {
+        console.log(`Updating ${data.estimate_documents.length} documents to estimate ID: ${estimateId}`);
+        
         // Update the documents to associate them with the estimate
         const { error: documentsError } = await supabase
           .from('documents')
@@ -135,26 +140,23 @@ export const useEstimateSubmit = () => {
           .in('document_id', data.estimate_documents);
 
         if (documentsError) {
+          console.error('Error updating document associations:', documentsError);
           throw new Error(`Error updating document associations: ${documentsError.message}`);
         }
       }
 
-      // Update any line item documents that were pending
-      const itemDocumentIds = data.items
-        .filter(item => item.document_id)
-        .map(item => item.document_id);
+      // Update any line item documents that were pending with the temp ID
+      if (tempId) {
+        console.log(`Updating documents with temp ID ${tempId} to estimate ID: ${estimateId}`);
         
-      if (itemDocumentIds.length > 0) {
-        // Update the documents to associate them with the estimate
-        const { error: lineItemDocsError } = await supabase
+        const { error: tempDocsError } = await supabase
           .from('documents')
           .update({ entity_id: estimateId })
-          .in('document_id', itemDocumentIds)
-          .eq('entity_id', 'pending');
-
-        if (lineItemDocsError) {
-          console.error('Error updating line item document associations:', lineItemDocsError);
-          // We'll continue even if this fails
+          .eq('entity_id', tempId);
+          
+        if (tempDocsError) {
+          console.error('Error updating temp documents:', tempDocsError);
+          // Continue even if this fails
         }
       }
 

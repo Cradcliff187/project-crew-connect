@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { FileIcon, FileTextIcon, PlusIcon, TrashIcon } from 'lucide-react';
@@ -12,14 +12,31 @@ import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUploa
 const DocumentsStep = () => {
   const form = useFormContext<EstimateFormValues>();
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
-  const estimateId = "temp-" + Math.random().toString(36).substr(2, 9);
+  
+  // Get the temporary ID from the form context or create one if it doesn't exist
+  const [tempEstimateId, setTempEstimateId] = useState<string>("");
+  
+  useEffect(() => {
+    // Check if we already have a temp ID stored in the form
+    const storedTempId = form.getValues('temp_id');
+    
+    if (storedTempId) {
+      setTempEstimateId(storedTempId);
+    } else {
+      // Create a new temp ID if we don't have one
+      const newTempId = "temp-" + Math.random().toString(36).substr(2, 9);
+      setTempEstimateId(newTempId);
+      // Store it in the form for future reference
+      form.setValue('temp_id', newTempId);
+    }
+  }, [form]);
   
   const { 
     documents, 
     loading, 
     error, 
     refetchDocuments 
-  } = useEstimateDocuments(estimateId);
+  } = useEstimateDocuments(tempEstimateId);
 
   const handleDocumentUploadSuccess = (documentId?: string) => {
     setIsDocumentUploadOpen(false);
@@ -64,12 +81,14 @@ const DocumentsStep = () => {
               <SheetTitle>Add Document to Estimate</SheetTitle>
             </SheetHeader>
             
-            <EnhancedDocumentUpload 
-              entityType="ESTIMATE"
-              entityId={estimateId}
-              onSuccess={handleDocumentUploadSuccess}
-              onCancel={() => setIsDocumentUploadOpen(false)}
-            />
+            {tempEstimateId && (
+              <EnhancedDocumentUpload 
+                entityType="ESTIMATE"
+                entityId={tempEstimateId}
+                onSuccess={handleDocumentUploadSuccess}
+                onCancel={() => setIsDocumentUploadOpen(false)}
+              />
+            )}
           </SheetContent>
         </Sheet>
       </div>
