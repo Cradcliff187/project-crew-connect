@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Form } from '@/components/ui/form';
-import { Dialog } from '@/components/ui/dialog';
-import DialogContent as CustomDialogContent from './components/form-steps/DialogContent';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import CustomDialogContent from './components/form-steps/DialogContent';
 
 // Import custom components and utilities
 import { useEstimateSubmit } from './hooks/useEstimateSubmit';
