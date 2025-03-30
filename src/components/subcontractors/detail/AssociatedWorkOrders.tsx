@@ -11,6 +11,8 @@ interface WorkOrder {
   work_order_id: string;
   title: string;
   status: string;
+  created_at?: string;
+  materials_cost?: number;
 }
 
 interface AssociatedWorkOrdersProps {
@@ -54,7 +56,7 @@ const AssociatedWorkOrders = ({ workOrders, loading }: AssociatedWorkOrdersProps
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => navigate(`/workorders/${workOrder.work_order_id}`)}
+                  onClick={() => navigate(`/work-orders/${workOrder.work_order_id}`)}
                 >
                   View Work Order
                 </Button>

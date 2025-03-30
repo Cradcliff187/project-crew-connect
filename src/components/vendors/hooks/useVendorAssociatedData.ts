@@ -16,6 +16,7 @@ const useVendorAssociatedData = () => {
     if (!vendorId) return;
     
     setLoadingAssociations(true);
+    console.log('Fetching associated data for vendor:', vendorId);
     
     try {
       // Fetch associated projects using the get_vendor_projects database function
@@ -31,6 +32,7 @@ const useVendorAssociatedData = () => {
         });
         setProjects([]);
       } else {
+        console.log('Successfully fetched projects:', projectsData);
         setProjects(projectsData || []);
       }
       
@@ -47,6 +49,7 @@ const useVendorAssociatedData = () => {
         });
         setWorkOrders([]);
       } else {
+        console.log('Successfully fetched work orders:', workOrdersData);
         setWorkOrders(workOrdersData || []);
       }
     } catch (error) {

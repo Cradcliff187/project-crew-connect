@@ -18,15 +18,27 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
     
     setLoading(true);
     try {
-      // Fetch the work order - ensure we use proper UUID filtering
+      console.log('Fetching work order with ID:', workOrderId);
+      
+      // Use maybeSingle() instead of single() to handle empty results
       const { data, error } = await supabase
         .from('maintenance_work_orders')
         .select('*')
         .eq('work_order_id', workOrderId)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
+      }
       
+      if (!data) {
+        console.log('No work order found with ID:', workOrderId);
+        setWorkOrder(null);
+        return;
+      }
+      
+      console.log('Work order found:', data);
       setWorkOrder(data as WorkOrder);
       
       // Fetch related data
@@ -55,19 +67,22 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
   
   const fetchCustomer = async (customerId: string) => {
     try {
+      console.log('Fetching customer with ID:', customerId);
       const { data, error } = await supabase
         .from('customers')
         .select('customername, contactemail, phone')
         .eq('customerid', customerId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       
-      setCustomer({
-        name: data.customername || 'Unknown Customer',
-        email: data.contactemail || '',
-        phone: data.phone || '',
-      });
+      if (data) {
+        setCustomer({
+          name: data.customername || 'Unknown Customer',
+          email: data.contactemail || '',
+          phone: data.phone || '',
+        });
+      }
     } catch (error) {
       console.error('Error fetching customer:', error);
     }
@@ -75,26 +90,29 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
   
   const fetchLocation = async (locationId: string) => {
     try {
+      console.log('Fetching location with ID:', locationId);
       // Properly handle UUID filtering for location
       const { data, error } = await supabase
         .from('site_locations')
         .select('location_name, address, city, state, zip')
         .eq('location_id', locationId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       
-      const fullAddress = [
-        data.address,
-        data.city,
-        data.state,
-        data.zip
-      ].filter(Boolean).join(', ');
-      
-      setLocation({
-        name: data.location_name || 'Unknown Location',
-        address: fullAddress,
-      });
+      if (data) {
+        const fullAddress = [
+          data.address,
+          data.city,
+          data.state,
+          data.zip
+        ].filter(Boolean).join(', ');
+        
+        setLocation({
+          name: data.location_name || 'Unknown Location',
+          address: fullAddress,
+        });
+      }
     } catch (error) {
       console.error('Error fetching location:', error);
     }
@@ -102,18 +120,21 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
   
   const fetchAssignee = async (employeeId: string) => {
     try {
+      console.log('Fetching assignee with ID:', employeeId);
       // Properly handle UUID filtering for employee
       const { data, error } = await supabase
         .from('employees')
         .select('first_name, last_name')
         .eq('employee_id', employeeId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       
-      setAssignee({
-        name: `${data.first_name} ${data.last_name}`,
-      });
+      if (data) {
+        setAssignee({
+          name: `${data.first_name} ${data.last_name}`,
+        });
+      }
     } catch (error) {
       console.error('Error fetching assignee:', error);
     }
