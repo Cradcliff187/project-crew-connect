@@ -6,7 +6,7 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://zrxezqllmpdlhiudutme.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ";
 
-// Create client with proper configuration to avoid content-type issues
+// Create client with improved configuration to avoid 406 errors
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY,
@@ -16,12 +16,55 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
     },
     global: {
+      // Don't set global content-type headers as they interfere with certain operations like file uploads
       headers: {
-        // Don't set a global Content-Type header as it creates problems with file uploads
-        // Instead rely on the Supabase client to set the right headers for each request type
         'apikey': SUPABASE_PUBLISHABLE_KEY,
         'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
       },
     },
   }
 );
+
+// Helper function to check if a specific storage bucket exists
+export const checkBucketExists = async (bucketName: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.storage.getBucket(bucketName);
+    if (error) {
+      console.error(`Error checking bucket ${bucketName}:`, error.message);
+      return false;
+    }
+    return !!data;
+  } catch (err) {
+    console.error(`Exception checking bucket ${bucketName}:`, err);
+    return false;
+  }
+};
+
+// Helper function to ensure a storage bucket exists, creating it if needed
+export const ensureBucketExists = async (bucketName: string, isPublic: boolean = false): Promise<boolean> => {
+  try {
+    // First check if bucket exists
+    const exists = await checkBucketExists(bucketName);
+    
+    if (!exists) {
+      // Create the bucket if it doesn't exist
+      const { error } = await supabase.storage.createBucket(bucketName, {
+        public: isPublic,
+        fileSizeLimit: 52428800, // 50MB limit
+      });
+      
+      if (error) {
+        console.error(`Error creating bucket ${bucketName}:`, error.message);
+        return false;
+      }
+      
+      console.log(`Created storage bucket: ${bucketName}`);
+      return true;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error(`Exception ensuring bucket ${bucketName}:`, err);
+    return false;
+  }
+};

@@ -1,151 +1,99 @@
 
-import { z } from 'zod';
+import { z } from "zod";
 
-// Define allowed entity types
-export type EntityType = 'PROJECT' | 'CUSTOMER' | 'ESTIMATE' | 'WORK_ORDER' | 'VENDOR' | 'SUBCONTRACTOR';
+// Define the valid entity types
+export const entityTypes = [
+  'PROJECT', 
+  'CUSTOMER', 
+  'WORK_ORDER', 
+  'VENDOR', 
+  'SUBCONTRACTOR',
+  'ESTIMATE',
+  'TIME_ENTRY',
+  'EMPLOYEE',
+  'DETACHED'
+] as const;
 
-// Extended entity types for internal use (not exposed in the public interface)
-export type InternalEntityType = EntityType | 'EMPLOYEE' | 'TIME_ENTRY';
+// Internal types that aren't exposed to the user interface
+export const internalEntityTypes = [
+  ...entityTypes,
+  'EXPENSE'
+] as const;
 
-// Document categories
-export type DocumentCategory = 
-  | 'invoice' 
-  | 'receipt' 
-  | 'contract' 
-  | 'permit' 
-  | 'certificate' 
-  | 'drawing' 
-  | 'photo' 
-  | 'other'
-  | '3rd_party_estimate'
-  | 'insurance'
-  | 'certification';
+// Define expense types
+export const expenseTypes = [
+  'material',
+  'labor',
+  'equipment',
+  'service',
+  'travel',
+  'other'
+] as const;
 
-export const documentCategories: DocumentCategory[] = [
+// Define document categories
+export const documentCategories = [
   'invoice',
   'receipt',
   'contract',
-  'permit', 
   'certificate',
+  'permit',
+  'proposal',
+  'specification',
   'drawing',
   'photo',
-  'other',
-  '3rd_party_estimate',
-  'insurance',
-  'certification'
-];
+  'other'
+] as const;
 
-// Entity types for selector
-export const entityTypes: { value: EntityType; label: string }[] = [
-  { value: 'PROJECT', label: 'Project' },
-  { value: 'CUSTOMER', label: 'Customer' },
-  { value: 'ESTIMATE', label: 'Estimate' },
-  { value: 'WORK_ORDER', label: 'Work Order' },
-  { value: 'VENDOR', label: 'Vendor' },
-  { value: 'SUBCONTRACTOR', label: 'Subcontractor' }
-];
-
-// Vendor types
-export type VendorType = 'vendor' | 'subcontractor' | 'other';
-
-export const vendorTypes: { value: VendorType; label: string }[] = [
-  { value: 'vendor', label: 'Material Vendor' },
-  { value: 'subcontractor', label: 'Subcontractor' },
-  { value: 'other', label: 'Other' }
-];
-
-// Expense types
-export type ExpenseType = 
-  | 'material' 
-  | 'labor' 
-  | 'equipment' 
-  | 'permit' 
-  | 'travel' 
-  | 'food' 
-  | 'other';
-
-export const expenseTypes: { value: ExpenseType; label: string }[] = [
-  { value: 'material', label: 'Material' },
-  { value: 'labor', label: 'Labor' },
-  { value: 'equipment', label: 'Equipment Rental' },
-  { value: 'permit', label: 'Permit/License Fee' },
-  { value: 'travel', label: 'Travel' },
-  { value: 'food', label: 'Food/Meal' },
-  { value: 'other', label: 'Other' }
-];
-
-// Document metadata schema
+// Zod schemas
 export const documentMetadataSchema = z.object({
-  entityType: z.enum(['PROJECT', 'CUSTOMER', 'ESTIMATE', 'WORK_ORDER', 'VENDOR', 'SUBCONTRACTOR']),
+  entityType: z.enum(entityTypes).optional(),
   entityId: z.string().optional(),
-  category: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  version: z.number().optional(),
-  isExpense: z.boolean().optional(),
-  vendorId: z.string().optional(),
-  vendorType: z.enum(['vendor', 'subcontractor', 'other']).optional(),
-  expenseType: z.string().optional(),
+  isExpense: z.boolean().optional().default(false),
+  expenseType: z.enum(expenseTypes).optional(),
   amount: z.number().optional(),
   expenseDate: z.date().optional(),
+  vendorId: z.string().optional(),
+  vendorType: z.enum(['vendor', 'subcontractor', 'other']).optional(),
+  category: z.enum(documentCategories).optional(),
+  tags: z.array(z.string()).optional().default([]),
   notes: z.string().optional(),
 });
 
-// Document upload form values schema
 export const documentUploadSchema = z.object({
-  files: z.array(z.instanceof(File)),
+  files: z.array(z.instanceof(File)).min(1, "At least one file is required"),
   metadata: documentMetadataSchema,
 });
+
+// TypeScript types derived from schemas
+export type EntityType = typeof entityTypes[number];
+export type InternalEntityType = typeof internalEntityTypes[number];
+export type ExpenseType = typeof expenseTypes[number];
+export type DocumentCategory = typeof documentCategories[number];
 
 export type DocumentMetadata = z.infer<typeof documentMetadataSchema>;
 export type DocumentUploadFormValues = z.infer<typeof documentUploadSchema>;
 
-// Document interface for fetched documents
+// Interface for document objects returned from the database
 export interface Document {
   document_id: string;
   file_name: string;
   file_type?: string;
   file_size?: number;
   storage_path: string;
-  entity_type: string;
+  entity_type: EntityType;
   entity_id: string;
-  uploaded_by?: string;
-  created_at: string;
-  updated_at?: string;
-  tags?: string[];
-  category?: string;
-  version?: number;
+  category?: DocumentCategory;
   is_expense?: boolean;
-  vendor_id?: string;
-  vendor_type?: string;
-  expense_type?: string;
+  expense_type?: ExpenseType;
   amount?: number;
   expense_date?: string;
+  vendor_id?: string;
+  vendor_type?: 'vendor' | 'subcontractor' | 'other';
+  tags?: string[];
   notes?: string;
-  url?: string;
+  created_at: string;
+  updated_at: string;
+  uploaded_by?: string;
+  is_latest_version?: boolean;
   parent_document_id?: string;
-  is_receipt?: boolean;
-}
-
-// Type for document viewer
-export interface DocumentViewData {
-  document_id: string;
-  file_name: string;
-  file_type: string;
-  url: string;
-}
-
-// Document preview card props
-export interface DocumentPreviewCardProps {
-  document: Document;
-  onView: () => void;
-  onDelete?: () => void;
-  showEntityInfo?: boolean;
-}
-
-// Document viewer props
-export interface DocumentViewerProps {
-  document: DocumentViewData | null;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  isLoading?: boolean;
 }
