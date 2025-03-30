@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
@@ -65,7 +65,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
   const isNewCustomer = form.watch('isNewCustomer');
 
   // Reset form when dialog opens/closes
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       setCurrentStep(ESTIMATE_STEPS[0].id);
       form.reset({
