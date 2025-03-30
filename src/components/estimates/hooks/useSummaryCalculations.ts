@@ -14,10 +14,11 @@ import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema'
 export const useSummaryCalculations = () => {
   const form = useFormContext<EstimateFormValues>();
   
+  // Fix for error #1: Provide a valid default value for items that matches the expected type
   const items = useWatch({
     control: form.control,
     name: 'items',
-    defaultValue: []
+    defaultValue: [{ description: '', quantity: '1', unitPrice: '0', cost: '0', markup_percentage: '0' }]
   });
 
   const contingencyPercentage = useWatch({
@@ -26,13 +27,15 @@ export const useSummaryCalculations = () => {
     defaultValue: "0"
   });
 
-  // Convert items to the expected type for calculations
-  const calculationItems: EstimateItem[] = items.map((item: any) => ({
-    cost: item.cost || '0',
-    markup_percentage: item.markup_percentage || '0',
-    quantity: item.quantity || '1',
-    item_type: item.item_type
-  }));
+  // Fix for error #2: Ensure items is treated as an array and handle it safely
+  const calculationItems: EstimateItem[] = Array.isArray(items) 
+    ? items.map((item: any) => ({
+        cost: item.cost || '0',
+        markup_percentage: item.markup_percentage || '0',
+        quantity: item.quantity || '1',
+        item_type: item.item_type
+      })) 
+    : [];
 
   // Calculate all the totals
   const totalCost = calculateTotalCost(calculationItems);
