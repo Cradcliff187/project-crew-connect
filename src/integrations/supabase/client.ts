@@ -22,5 +22,59 @@ export const supabase = createClient<Database>(
         'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
       },
     },
+    db: {
+      schema: 'public',
+    },
+    // Initialize storage settings with correct defaults
+    storage: {
+      // Don't limit the file sizes by default
+      maxFileSize: 50 * 1024 * 1024, // 50MB max file size
+    },
   }
 );
+
+// Create a bucket if it doesn't exist yet
+export const ensureStorageBucket = async () => {
+  try {
+    // First check if we have the bucket already
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    
+    // Log available buckets for debugging
+    console.log('Available buckets:', buckets?.map(b => b.name));
+    
+    // Check if we have a 'construction_documents' bucket (case insensitive)
+    const constructionBucket = buckets?.find(bucket => 
+      bucket.name.toLowerCase() === 'construction_documents'.toLowerCase()
+    );
+    
+    if (!constructionBucket) {
+      // Bucket doesn't exist, attempt to create it
+      console.log('Creating construction_documents bucket as it does not exist');
+      const { data, error: createError } = await supabase.storage.createBucket(
+        'construction_documents',
+        {
+          public: true,
+          fileSizeLimit: 50 * 1024 * 1024, // 50MB
+          allowedMimeTypes: ['image/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+        }
+      );
+      
+      if (createError) {
+        console.error('Error creating storage bucket:', createError);
+        return false;
+      }
+      
+      console.log('Successfully created construction_documents bucket');
+      return true;
+    }
+    
+    console.log('Construction documents bucket found:', constructionBucket.name);
+    return true;
+  } catch (error) {
+    console.error('Error in ensureStorageBucket:', error);
+    return false;
+  }
+};
+
+// Initialize bucket when importing the client
+ensureStorageBucket().catch(console.error);

@@ -31,8 +31,10 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     console.log('Available buckets:', buckets?.map(b => b.name));
     
     // Find the construction documents bucket with case-insensitive comparison
+    // It could be named 'construction_documents', 'Construction Documents', etc.
     const constructionBucket = buckets?.find(bucket => 
-      bucket.name.toLowerCase() === 'construction_documents'.toLowerCase()
+      bucket.name.toLowerCase().includes('construction') &&
+      bucket.name.toLowerCase().includes('document')
     );
     
     if (!constructionBucket) {

@@ -26,6 +26,33 @@ const getMimeTypeFromExtension = (fileExt: string): string => {
   return mimeMap[fileExt.toLowerCase()] || 'application/octet-stream';
 };
 
+// Get construction documents bucket name (case-insensitive)
+const getConstructionBucketName = async (): Promise<string> => {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  
+  // Default fallback name
+  const defaultBucketName = 'construction_documents';
+  
+  if (!buckets || buckets.length === 0) {
+    console.warn('No buckets found, using default name:', defaultBucketName);
+    return defaultBucketName;
+  }
+  
+  // Find the construction documents bucket with case-insensitive comparison
+  const constructionBucket = buckets.find(bucket => 
+    bucket.name.toLowerCase().includes('construction') &&
+    bucket.name.toLowerCase().includes('document')
+  );
+  
+  if (!constructionBucket) {
+    console.warn('Construction documents bucket not found, using default name:', defaultBucketName);
+    return defaultBucketName;
+  }
+  
+  console.log('Using bucket with exact name:', constructionBucket.name);
+  return constructionBucket.name;
+};
+
 export const uploadDocument = async (
   data: DocumentUploadFormValues
 ): Promise<UploadResult> => {
@@ -35,6 +62,10 @@ export const uploadDocument = async (
     let uploadedDocumentId: string | undefined;
     
     const { files, metadata } = data;
+    
+    // Get the exact bucket name first to avoid case sensitivity issues
+    const bucketName = await getConstructionBucketName();
+    console.log(`Using storage bucket: "${bucketName}"`);
     
     // We'll handle multiple files if they're provided
     for (const file of files) {
@@ -76,27 +107,12 @@ export const uploadDocument = async (
         contentType: contentType,
         cacheControl: '3600',
         upsert: true,
-        // Use explicit options for storage
         duplex: 'half' as const
       };
       
-      // First, find the correct bucket name by getting all buckets
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const constructionBucket = buckets?.find(bucket => 
-        bucket.name.toLowerCase() === 'construction_documents'.toLowerCase()
-      );
-      
-      if (!constructionBucket) {
-        throw new Error('Construction documents bucket not found');
-      }
-      
-      // Use the exact bucket name from Supabase
-      const exactBucketName = constructionBucket.name;
-      console.log(`Using exact bucket name: "${exactBucketName}"`);
-      
       // Enhanced debugging for upload
       console.log('About to execute upload with params:', {
-        bucket: exactBucketName,
+        bucket: bucketName,
         path: filePath,
         fileType: contentType,
         fileSize: file.size,
@@ -105,7 +121,7 @@ export const uploadDocument = async (
       
       // Upload the file to Supabase Storage with explicit content type and exact bucket name
       const { error: uploadError, data: uploadData } = await supabase.storage
-        .from(exactBucketName)
+        .from(bucketName)
         .upload(filePath, file, fileOptions);
         
       if (uploadError) {
@@ -122,7 +138,7 @@ export const uploadDocument = async (
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
-        .from(exactBucketName)
+        .from(bucketName)
         .getPublicUrl(filePath);
         
       console.log('Public URL generated:', publicUrl);

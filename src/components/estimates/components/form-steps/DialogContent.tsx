@@ -22,10 +22,13 @@ const DialogContent = ({
   steps,
   setCurrentStep
 }: DialogContentProps) => {
+  // Generate a stable ID for accessibility
+  const descriptionId = "estimate-form-description";
+  
   return (
     <ShadcnDialogContent 
       className="max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[90vh] overflow-hidden p-0 flex flex-col"
-      aria-describedby="estimate-form-description"
+      aria-describedby={descriptionId}
     >
       <DialogHeader className="px-6 pt-6 pb-2">
         <DialogTitle className="text-2xl font-semibold text-[#0485ea] flex items-center">
@@ -36,7 +39,7 @@ const DialogContent = ({
             currentStep={currentStep}
           />
         </DialogTitle>
-        <DialogDescription id="estimate-form-description">
+        <DialogDescription id={descriptionId}>
           Create and manage estimates for your customers
         </DialogDescription>
       </DialogHeader>

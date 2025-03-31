@@ -43,9 +43,20 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
   useEffect(() => {
     if (open && !form.getValues('temp_id')) {
       // Generate a new temporary ID when form opens and there isn't one
-      const newTempId = "temp-" + Math.random().toString(36).substr(2, 9);
+      const newTempId = "temp-" + Math.random().toString(36).substring(2, 9);
       form.setValue('temp_id', newTempId);
       console.log('Generated new temp ID for estimate:', newTempId);
+      
+      // Ensure the storage bucket exists when creating a new estimate
+      import('@/integrations/supabase/client').then(({ ensureStorageBucket }) => {
+        ensureStorageBucket().then(success => {
+          if (success) {
+            console.log('Storage bucket verified for document uploads');
+          } else {
+            console.error('Failed to verify storage bucket - documents may not upload correctly');
+          }
+        });
+      });
     } else if (!open) {
       resetForm();
     }
