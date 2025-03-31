@@ -1,5 +1,5 @@
 
-import React, { useId } from 'react';
+import React from 'react';
 import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import StepNavigation from './StepNavigation';
 import EstimateStepTabs from './EstimateStepTabs';
@@ -23,14 +23,16 @@ const DialogContent = ({
   setCurrentStep
 }: DialogContentProps) => {
   // Generate stable IDs for accessibility
-  const descriptionId = useId();
-  const titleId = useId();
+  const dialogId = React.useId();
+  const descriptionId = `estimate-dialog-desc-${dialogId}`;
+  const titleId = `estimate-dialog-title-${dialogId}`;
   
   return (
     <ShadcnDialogContent 
       className="max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[90vh] overflow-hidden p-0 flex flex-col"
       aria-describedby={descriptionId}
       aria-labelledby={titleId}
+      id={`estimate-dialog-${dialogId}`}
     >
       <DialogHeader className="px-6 pt-6 pb-2">
         <DialogTitle id={titleId} className="text-2xl font-semibold text-[#0485ea] flex items-center">

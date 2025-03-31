@@ -1,5 +1,5 @@
 
-import { supabase, DOCUMENTS_BUCKET_NAME } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 
 interface BucketTestResult {
   success: boolean;
@@ -10,16 +10,9 @@ interface BucketTestResult {
 
 /**
  * Tests access to the storage bucket
- * This is helpful to validate that the storage bucket is properly configured
+ * This helps validate that the storage bucket is properly configured
  */
-let cachedTestResult: BucketTestResult | null = null;
-
 export const testBucketAccess = async (): Promise<BucketTestResult> => {
-  // Return cached result if available to prevent multiple API calls
-  if (cachedTestResult) {
-    return cachedTestResult;
-  }
-
   try {
     // Get the list of buckets to check for available storage buckets
     const { data: buckets, error: bucketsError } = await supabase
@@ -28,53 +21,55 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     
     if (bucketsError) {
       console.error('Error listing buckets:', bucketsError);
-      cachedTestResult = { 
+      return { 
         success: false, 
         error: bucketsError 
       };
-      return cachedTestResult;
     }
+    
+    // Log all available buckets to help with debugging
+    console.log('Available buckets:', buckets?.map(b => `${b.id} (${b.name})`));
     
     if (!buckets || buckets.length === 0) {
       console.error('No storage buckets found in the project');
-      cachedTestResult = {
+      return {
         success: false,
         error: 'No storage buckets available'
       };
-      return cachedTestResult;
     }
     
-    // Try to find an exact match for our bucket name constant
-    const constructionBucket = buckets.find(bucket => 
-      bucket.name.toLowerCase() === DOCUMENTS_BUCKET_NAME.toLowerCase()
-    );
+    // Look specifically for the bucket using the constant bucket ID
+    const constructionBucket = buckets.find(bucket => bucket.id === DOCUMENTS_BUCKET_ID);
     
     if (constructionBucket) {
-      console.log(`Found ${DOCUMENTS_BUCKET_NAME} bucket:`, constructionBucket.name);
-      cachedTestResult = {
+      console.log('Found construction documents bucket:', constructionBucket.id);
+      return {
         success: true,
         bucketId: constructionBucket.id,
         bucketName: constructionBucket.name
       };
-      return cachedTestResult;
-    } else {
-      // If we can't find the expected bucket, use the first available one as fallback
-      const fallbackBucket = buckets[0];
-      console.warn(`${DOCUMENTS_BUCKET_NAME} bucket not found. Using fallback bucket:`, fallbackBucket.name);
-      cachedTestResult = {
-        success: true,
-        bucketId: fallbackBucket.id,
-        bucketName: fallbackBucket.name
-      };
-      return cachedTestResult;
     }
+    
+    // If we still don't find the expected bucket, just use the first one as fallback
+    // but provide a clear warning
+    const fallbackBucket = buckets[0];
+    console.warn(
+      `${DOCUMENTS_BUCKET_ID} bucket not found. Using fallback bucket:`, 
+      fallbackBucket.id,
+      `- Please create a bucket with ID "${DOCUMENTS_BUCKET_ID}" in Supabase.`
+    );
+    
+    return {
+      success: true,
+      bucketId: fallbackBucket.id,
+      bucketName: fallbackBucket.name
+    };
     
   } catch (error) {
     console.error('Error testing bucket access:', error);
-    cachedTestResult = {
+    return {
       success: false,
       error
     };
-    return cachedTestResult;
   }
 };

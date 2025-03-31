@@ -32,9 +32,10 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => {
-  // Generate a stable ID for the dialog description if not provided
-  const generatedDescriptionId = React.useId();
-  const generatedTitleId = React.useId();
+  // Generate stable IDs for accessibility if not provided
+  const dialogId = React.useId();
+  const generatedDescriptionId = `dialog-desc-${dialogId}`;
+  const generatedTitleId = `dialog-title-${dialogId}`;
   
   // Use provided IDs or generated ones
   const descriptionId = props['aria-describedby'] || generatedDescriptionId;
@@ -60,6 +61,7 @@ const DialogContent = React.forwardRef<
         aria-labelledby={titleId}
         aria-modal="true"
         role="dialog"
+        id={props.id || `dialog-${dialogId}`}
         {...props}
       >
         {children}

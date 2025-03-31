@@ -1,7 +1,7 @@
 
 interface ValidationOptions {
-  maxFileSize?: number; // in MB
-  acceptedFileTypes?: string;
+  maxFileSize: number; // in MB
+  acceptedFileTypes: string;
 }
 
 interface ValidationResult {
@@ -10,58 +10,60 @@ interface ValidationResult {
 }
 
 export const validateFiles = (files: File[], options: ValidationOptions): ValidationResult => {
-  const { maxFileSize = 10, acceptedFileTypes = "" } = options;
+  const { maxFileSize, acceptedFileTypes } = options;
+  const maxSizeInBytes = maxFileSize * 1024 * 1024; // Convert MB to bytes
   const validFiles: File[] = [];
   const errors: string[] = [];
   
-  // Convert acceptedFileTypes string to array of extensions and MIME types
-  const acceptedTypes = acceptedFileTypes
+  // Parse accepted types into an array of mime types or extensions
+  const acceptedTypesArray = acceptedFileTypes
     .split(',')
-    .map(type => type.trim())
+    .map(type => type.trim().toLowerCase())
     .filter(Boolean);
-    
+  
   // Helper to check if a file type is accepted
-  const isTypeAccepted = (file: File): boolean => {
-    if (!acceptedFileTypes || acceptedTypes.length === 0) {
-      return true; // Accept all types if none specified
+  const isAcceptedType = (file: File): boolean => {
+    // If we accept all files
+    if (acceptedTypesArray.includes('*/*') || acceptedTypesArray.includes('*')) {
+      return true;
     }
     
-    const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
-    
-    return acceptedTypes.some(type => {
-      // Check for MIME type match (e.g., "image/*", "application/pdf")
-      if (type.includes('*')) {
-        const typePrefix = type.split('*')[0];
-        return file.type.startsWith(typePrefix);
+    // Check by mime type
+    if (acceptedTypesArray.some(type => {
+      // Handle wildcard mime types like 'image/*'
+      if (type.endsWith('/*')) {
+        const category = type.split('/')[0];
+        return file.type.startsWith(`${category}/`);
       }
-      
-      // Check for extension match
-      if (type.startsWith('.')) {
-        return fileExtension === type.toLowerCase();
-      }
-      
-      // Check for exact MIME type match
       return file.type === type;
-    });
+    })) {
+      return true;
+    }
+    
+    // Check by extension
+    const extension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+    return acceptedTypesArray.some(type => type === extension);
   };
   
-  for (const file of files) {
+  Array.from(files).forEach(file => {
+    let isValid = true;
+    
     // Check file size
-    const fileSizeMB = file.size / (1024 * 1024);
-    if (fileSizeMB > maxFileSize) {
+    if (file.size > maxSizeInBytes) {
       errors.push(`"${file.name}" exceeds the maximum file size of ${maxFileSize}MB.`);
-      continue;
+      isValid = false;
     }
     
     // Check file type
-    if (!isTypeAccepted(file)) {
+    if (!isAcceptedType(file)) {
       errors.push(`"${file.name}" is not an accepted file type.`);
-      continue;
+      isValid = false;
     }
     
-    // File passed all validations
-    validFiles.push(file);
-  }
+    if (isValid) {
+      validFiles.push(file);
+    }
+  });
   
   return { validFiles, errors };
 };

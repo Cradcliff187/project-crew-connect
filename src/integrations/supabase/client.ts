@@ -6,6 +6,9 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://zrxezqllmpdlhiudutme.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ";
 
+// The expected bucket ID that should be used for all document storage operations
+export const DOCUMENTS_BUCKET_ID = 'construction_documents';
+
 // Create client with explicit headers to ensure API key is always sent
 // But avoid setting Content-Type globally to prevent upload issues
 export const supabase = createClient<Database>(
@@ -27,17 +30,14 @@ export const supabase = createClient<Database>(
     },
     // Initialize storage settings with correct defaults
     storage: {
-      // Set appropriate file size limit
-      maxFileSize: 100 * 1024 * 1024, // 100MB max file size
+      // Set reasonable file size limit
+      maxFileSize: 50 * 1024 * 1024, // 50MB max file size
     },
   }
 );
 
-// Store the bucket name in a constant to avoid typos and case sensitivity issues
-export const DOCUMENTS_BUCKET_NAME = 'construction_documents';
-
 // Helper to find the existing storage bucket with a consistent approach
-export const findStorageBucket = async (targetName: string = DOCUMENTS_BUCKET_NAME) => {
+export const findStorageBucket = async () => {
   try {
     // Get all available buckets
     const { data: buckets, error } = await supabase.storage.listBuckets();
@@ -48,31 +48,17 @@ export const findStorageBucket = async (targetName: string = DOCUMENTS_BUCKET_NA
     }
     
     // Log all available buckets for debugging
-    console.log('Available storage buckets:', buckets?.map(b => b.name));
+    console.log('Available storage buckets:', buckets?.map(b => `${b.id} (${b.name})`));
     
-    // First try exact match (case sensitive)
-    let bucket = buckets?.find(b => b.name === targetName);
+    // Find our specific construction_documents bucket by ID
+    const bucket = buckets?.find(b => b.id === DOCUMENTS_BUCKET_ID);
     
     if (bucket) {
-      console.log(`Found exact storage bucket match: ${bucket.name}`);
+      console.log(`Found storage bucket: ${bucket.id}`);
       return bucket;
     }
     
-    // Try case-insensitive match as fallback
-    bucket = buckets?.find(b => b.name.toLowerCase() === targetName.toLowerCase());
-    
-    if (bucket) {
-      console.warn(`Found case-insensitive bucket match: ${bucket.name} for ${targetName}`);
-      return bucket;
-    }
-    
-    // If we have any buckets at all, use the first one as a last resort
-    if (buckets && buckets.length > 0) {
-      console.warn(`Using fallback bucket: ${buckets[0].name} instead of ${targetName}`);
-      return buckets[0];
-    }
-    
-    console.error(`No storage buckets found in project`);
+    console.warn(`No storage bucket found with ID "${DOCUMENTS_BUCKET_ID}"`);
     return null;
   } catch (err) {
     console.error('Error in findStorageBucket:', err);
@@ -80,24 +66,27 @@ export const findStorageBucket = async (targetName: string = DOCUMENTS_BUCKET_NA
   }
 };
 
-// Ensure we have a valid bucket for document storage
+// Check bucket availability and provide guidance if missing
 export const ensureStorageBucket = async () => {
   try {
     const bucket = await findStorageBucket();
     
     if (bucket) {
-      console.log(`Using storage bucket: ${bucket.name}`);
+      console.log(`Using existing bucket: ${bucket.id}`);
       return {
         success: true,
+        bucketId: bucket.id,
         bucketName: bucket.name
       };
     }
     
-    console.warn('No storage bucket found. Document uploads will not work.');
+    // Provide clear guidance when bucket is missing
+    console.warn(`The "${DOCUMENTS_BUCKET_ID}" bucket is not available.`);
+    console.warn('Please ensure the bucket exists in the Supabase dashboard.');
     
     return {
       success: false,
-      error: 'Storage bucket not available'
+      error: `Storage bucket "${DOCUMENTS_BUCKET_ID}" not found`
     };
   } catch (error) {
     console.error('Error in ensureStorageBucket:', error);
@@ -108,20 +97,12 @@ export const ensureStorageBucket = async () => {
   }
 };
 
-// Check bucket status only once on initial load, not repeatedly
-let bucketInitialized = false;
-
-// Initialize bucket access once on app startup
-if (!bucketInitialized) {
-  bucketInitialized = true;
-  ensureStorageBucket().then(result => {
-    if (result.success) {
-      console.log('Storage system initialized successfully');
-    } else {
-      console.warn('Storage system initialization failed:', result.error);
-      console.warn('Document uploads may not work correctly');
-    }
-  }).catch(error => {
-    console.error('Storage bucket initialization failed:', error);
-  });
-}
+// Check bucket status on initial load
+ensureStorageBucket().then(result => {
+  if (result.success) {
+    console.log('Storage system initialized successfully');
+  } else {
+    console.warn('Storage system initialization failed:', result.error);
+    console.warn('Document uploads may not work correctly');
+  }
+}).catch(console.error);

@@ -1,5 +1,5 @@
 
-import { supabase, DOCUMENTS_BUCKET_NAME, findStorageBucket } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 export interface UploadResult {
@@ -26,50 +26,15 @@ const getMimeTypeFromExtension = (fileExt: string): string => {
   return mimeMap[fileExt.toLowerCase()] || 'application/octet-stream';
 };
 
-// Use a cached bucket name to avoid repeatedly looking it up
-let cachedBucketName: string | null = null;
-
-// Get construction documents bucket name with proper caching
-const getStorageBucketName = async (): Promise<string> => {
-  // Return cached bucket name if available
-  if (cachedBucketName) {
-    return cachedBucketName;
-  }
-  
-  // Find the appropriate storage bucket
-  const bucket = await findStorageBucket();
-  
-  if (bucket && bucket.name) {
-    // Cache the result to avoid future API calls
-    cachedBucketName = bucket.name;
-    console.log(`Using storage bucket: "${bucket.name}"`);
-    return bucket.name;
-  }
-  
-  // Default to our constant if no bucket found
-  console.warn(`No suitable bucket found, using default name: "${DOCUMENTS_BUCKET_NAME}"`);
-  cachedBucketName = DOCUMENTS_BUCKET_NAME;
-  
-  return DOCUMENTS_BUCKET_NAME;
-};
-
 export const uploadDocument = async (
   data: DocumentUploadFormValues
 ): Promise<UploadResult> => {
   try {
-    console.log('Starting document upload with data:', {
-      filesCount: data.files.length,
-      entityType: data.metadata.entityType,
-      entityId: data.metadata.entityId
-    });
+    console.log('Uploading document with data:', data);
     
     let uploadedDocumentId: string | undefined;
     
     const { files, metadata } = data;
-    
-    // Get the exact bucket name first to avoid case sensitivity issues
-    const bucketName = await getStorageBucketName();
-    console.log(`Using storage bucket: "${bucketName}" for upload`);
     
     // We'll handle multiple files if they're provided
     for (const file of files) {
@@ -83,13 +48,21 @@ export const uploadDocument = async (
       const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
-      console.log(`Uploading file to path: ${filePath}`);
+      console.log(`Uploading file to storage bucket '${DOCUMENTS_BUCKET_ID}', path: ${filePath}`);
+      console.log(`File object:`, { 
+        name: file.name, 
+        type: file.type, 
+        size: file.size 
+      });
       
       // Check if file is actually a File object
       if (!(file instanceof File)) {
         console.error('Not a valid File object:', file);
         throw new Error('Invalid file object provided');
       }
+      
+      // Enhanced logging for Content-Type debugging
+      console.log('File MIME type from browser:', file.type);
       
       // Determine the proper content type based on file extension if needed
       let contentType = file.type;
@@ -102,27 +75,39 @@ export const uploadDocument = async (
       const fileOptions = {
         contentType: contentType,
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
+        duplex: 'half' as const
       };
       
-      // Upload the file to Supabase Storage
+      // Enhanced debugging for upload
+      console.log('About to execute upload with params:', {
+        bucket: DOCUMENTS_BUCKET_ID,
+        path: filePath,
+        fileType: contentType,
+        fileSize: file.size,
+        options: fileOptions
+      });
+      
+      // Use the DOCUMENTS_BUCKET_ID constant for all storage operations
       const { error: uploadError, data: uploadData } = await supabase.storage
-        .from(bucketName)
+        .from(DOCUMENTS_BUCKET_ID)
         .upload(filePath, file, fileOptions);
         
       if (uploadError) {
         console.error('Storage upload error:', {
           message: uploadError.message,
           error: uploadError,
+          name: uploadError.name,
+          stack: uploadError.stack
         });
         throw uploadError;
       }
       
       console.log('File uploaded successfully:', uploadData);
       
-      // Get public URL for the uploaded file
+      // Get public URL for the uploaded file using the same bucket ID constant
       const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
+        .from(DOCUMENTS_BUCKET_ID)
         .getPublicUrl(filePath);
         
       console.log('Public URL generated:', publicUrl);
@@ -130,11 +115,11 @@ export const uploadDocument = async (
       // Now insert document metadata to Supabase
       const documentData = {
         file_name: file.name,
-        file_type: contentType,
+        file_type: contentType, // Use our determined content type
         file_size: file.size,
         storage_path: filePath,
         entity_type: metadata.entityType,
-        entity_id: entityId,
+        entity_id: entityId, // Use the sanitized entity ID
         tags: metadata.tags || [],
         // Additional metadata fields
         category: metadata.category,
@@ -150,6 +135,7 @@ export const uploadDocument = async (
       
       console.log('Inserting document metadata:', documentData);
       
+      // For this DB call we need to ensure headers are correctly sent
       const { data: insertedData, error: insertError } = await supabase
         .from('documents')
         .insert(documentData)
@@ -182,6 +168,8 @@ export const uploadDocument = async (
     console.error('Upload error (detailed):', {
       errorMessage: error.message,
       errorObject: error,
+      name: error.name,
+      stack: error.stack
     });
     
     return {

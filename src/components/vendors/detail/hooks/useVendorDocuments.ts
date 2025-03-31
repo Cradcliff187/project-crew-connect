@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { VendorDocument } from '../types';
 import { toast } from '@/hooks/use-toast';
 
@@ -69,9 +69,9 @@ export const useVendorDocuments = (vendorId: string) => {
               }
             };
 
-            // Using the correct bucket name - construction_documents
+            // Using the constant bucket ID for all operations
             const { data, error } = await supabase.storage
-              .from('construction_documents')
+              .from(DOCUMENTS_BUCKET_ID)
               .createSignedUrl(doc.storage_path, 300, options); // 5 minutes expiration
               
             if (error) {

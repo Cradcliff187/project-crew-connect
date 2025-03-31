@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { WorkOrderDocument } from '../details/DocumentsList/types';
 
 export const useWorkOrderDocumentsEmbed = (workOrderId: string, entityType: string) => {
@@ -67,12 +67,12 @@ export const useWorkOrderDocumentsEmbed = (workOrderId: string, entityType: stri
         // Combine direct and expense documents
         const allDocs = [...(data || []), ...expenseDocuments];
         
-        // Process the documents to get public URLs
+        // Process the documents to get public URLs - use the consistent bucket ID
         const docsWithUrls = await Promise.all(
           allDocs.map(async (doc) => {
             const { data: urlData } = await supabase
               .storage
-              .from('construction_documents')
+              .from(DOCUMENTS_BUCKET_ID)
               .getPublicUrl(doc.storage_path);
             
             return {
