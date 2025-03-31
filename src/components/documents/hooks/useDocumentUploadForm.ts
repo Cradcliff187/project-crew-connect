@@ -8,7 +8,10 @@ import { testBucketAccess } from '../services/BucketTest';
 import { 
   DocumentUploadFormValues, 
   documentUploadSchema, 
-  EntityType 
+  EntityType,
+  DocumentCategory,
+  ExpenseType,
+  VendorType
 } from '../schemas/documentSchema';
 
 interface UseDocumentUploadFormProps {
@@ -23,7 +26,7 @@ interface UseDocumentUploadFormProps {
     materialName?: string;
     expenseName?: string;
   };
-  instanceId?: string; // Added instanceId prop
+  instanceId?: string;
 }
 
 export const useDocumentUploadForm = ({
@@ -47,18 +50,18 @@ export const useDocumentUploadForm = ({
   console.log(`Creating document upload form instance: ${instanceId} for entityType=${entityType}, entityId=${entityId || 'new'}`);
 
   // Create a new form instance with a stable default values object
-  const defaultValues = {
+  const defaultValues: DocumentUploadFormValues = {
     files: [],
     metadata: {
-      category: isReceiptUpload ? 'receipt' : 'other',
+      category: isReceiptUpload ? 'receipt' as DocumentCategory : 'other' as DocumentCategory,
       entityType: entityType,
       entityId: entityId || '',
       version: 1,
       tags: [],
       isExpense: isReceiptUpload ? true : false,
       vendorId: '',
-      vendorType: 'vendor',
-      expenseType: 'materials', // Default to materials for receipt uploads
+      vendorType: 'vendor' as VendorType,
+      expenseType: 'materials' as ExpenseType,
     }
   };
 
@@ -191,9 +194,9 @@ export const useDocumentUploadForm = ({
     
     // Set the receipt category and expense flag for receipt uploads
     if (isReceiptUpload) {
-      form.setValue('metadata.category', 'receipt');
+      form.setValue('metadata.category', 'receipt' as DocumentCategory);
       form.setValue('metadata.isExpense', true);
-      form.setValue('metadata.expenseType', 'materials'); // Default value
+      form.setValue('metadata.expenseType', 'materials' as ExpenseType);
       setShowVendorSelector(true);
     }
     

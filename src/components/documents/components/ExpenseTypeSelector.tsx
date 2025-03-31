@@ -7,13 +7,12 @@ import { DocumentUploadFormValues, expenseTypes } from '../schemas/documentSchem
 
 interface ExpenseTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
-  instanceId?: string; // Added instanceId prop
+  instanceId?: string; // Add instanceId prop
 }
 
-// Component for use within a form with react-hook-form
 const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ 
   control,
-  instanceId = 'default-expense-type'  // Default value
+  instanceId = 'default-expense-type' // Default value
 }) => {
   return (
     <FormField
