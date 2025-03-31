@@ -23,7 +23,7 @@ const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, su
     const finalValue = value === "none" ? "" : value;
     
     // Use setValue with minimal options to reduce re-renders
-    form.setValue(`items.${index}.subcontractor_id`, finalValue, { 
+    form.setValue(`items.${index}.subcontractor_id` as const, finalValue, { 
       shouldDirty: true,
       shouldValidate: false, // Don't validate on change to reduce calculations
     });

@@ -14,33 +14,26 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
   
   // Memoize the change handler to prevent re-renders
   const handleTypeChange = useCallback((value: string) => {
-    // Create batched updates object to minimize form re-renders
-    const updates: Record<string, any> = {
-      [`items.${index}.item_type`]: value
-    };
+    // First, set the item type directly
+    form.setValue(`items.${index}.item_type` as const, value, { shouldDirty: true });
     
-    // Add type-specific field resets based on the selected type
+    // Then reset related fields based on the selected type
     if (value === 'vendor') {
-      updates[`items.${index}.subcontractor_id`] = '';
-      updates[`items.${index}.trade_type`] = '';
-      updates[`items.${index}.custom_type`] = '';
+      form.setValue(`items.${index}.subcontractor_id` as const, '', { shouldDirty: true });
+      form.setValue(`items.${index}.trade_type` as const, '', { shouldDirty: true });
+      form.setValue(`items.${index}.custom_type` as const, '', { shouldDirty: true });
     } else if (value === 'subcontractor') {
-      updates[`items.${index}.vendor_id`] = '';
-      updates[`items.${index}.expense_type`] = undefined;
-      updates[`items.${index}.custom_type`] = '';
+      form.setValue(`items.${index}.vendor_id` as const, '', { shouldDirty: true });
+      form.setValue(`items.${index}.expense_type` as const, undefined, { shouldDirty: true });
+      form.setValue(`items.${index}.custom_type` as const, '', { shouldDirty: true });
     } else {
       // For labor, reset all vendor and subcontractor specific fields
-      updates[`items.${index}.vendor_id`] = '';
-      updates[`items.${index}.subcontractor_id`] = '';
-      updates[`items.${index}.trade_type`] = '';
-      updates[`items.${index}.expense_type`] = undefined;
-      updates[`items.${index}.custom_type`] = '';
+      form.setValue(`items.${index}.vendor_id` as const, '', { shouldDirty: true });
+      form.setValue(`items.${index}.subcontractor_id` as const, '', { shouldDirty: true });
+      form.setValue(`items.${index}.trade_type` as const, '', { shouldDirty: true });
+      form.setValue(`items.${index}.expense_type` as const, undefined, { shouldDirty: true });
+      form.setValue(`items.${index}.custom_type` as const, '', { shouldDirty: true });
     }
-    
-    // Apply all updates in one batch to minimize re-renders
-    Object.entries(updates).forEach(([field, value]) => {
-      form.setValue(field, value, { shouldDirty: true });
-    });
   }, [form, index]);
   
   return (
