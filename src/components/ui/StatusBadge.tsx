@@ -6,9 +6,10 @@ import { StatusType } from '@/types/common';
 interface StatusBadgeProps {
   status: StatusType | string;
   className?: string;
+  size?: 'sm' | 'default';
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = '' }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = '', size = 'default' }) => {
   const getStatusClass = () => {
     const lowerStatus = status.toLowerCase();
     
@@ -47,10 +48,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ''
       .join(' ');
   };
 
+  const sizeClass = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2.5 py-0.5 text-xs';
+
   return (
     <Badge
       variant="outline"
-      className={`${getStatusClass()} font-medium border ${className}`}
+      className={`${getStatusClass()} font-medium border ${sizeClass} ${className}`}
     >
       {formatStatus(status)}
     </Badge>
