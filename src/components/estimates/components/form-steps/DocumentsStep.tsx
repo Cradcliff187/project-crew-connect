@@ -8,6 +8,7 @@ import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocume
 import DocumentList from '@/components/documents/DocumentList';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { toast } from '@/hooks/use-toast';
 
 const DocumentsStep = () => {
   const form = useFormContext<EstimateFormValues>();
@@ -46,6 +47,11 @@ const DocumentsStep = () => {
       const currentDocuments = form.getValues('estimate_documents') || [];
       form.setValue('estimate_documents', [...currentDocuments, documentId]);
       
+      toast({
+        title: 'Document attached',
+        description: 'Document has been attached to the estimate',
+      });
+      
       // Refresh the document list
       refetchDocuments();
     }
@@ -59,6 +65,11 @@ const DocumentsStep = () => {
       currentDocuments.filter(id => id !== document.document_id)
     );
     
+    toast({
+      title: 'Document removed',
+      description: 'Document has been removed from the estimate',
+    });
+    
     // Refresh the document list
     refetchDocuments();
   };
@@ -69,6 +80,16 @@ const DocumentsStep = () => {
     e.stopPropagation(); // Stop event bubbling
     setIsDocumentUploadOpen(true);
   };
+
+  // Group documents by category for display
+  const documentsByCategory: Record<string, any[]> = {};
+  documents.forEach(doc => {
+    const category = doc.category || 'Other';
+    if (!documentsByCategory[category]) {
+      documentsByCategory[category] = [];
+    }
+    documentsByCategory[category].push(doc);
+  });
 
   return (
     <div className="space-y-6">
@@ -110,6 +131,8 @@ const DocumentsStep = () => {
         onUploadClick={() => setIsDocumentUploadOpen(true)}
         onDocumentDelete={handleDocumentDelete}
         emptyMessage="No documents attached yet. Add supporting documents like contracts, specifications, or reference materials."
+        showEntityInfo={true}
+        showCategories={true}
       />
       
       {error && (

@@ -569,6 +569,13 @@ export type Database = {
             referencedRelation: "documents"
             referencedColumns: ["document_id"]
           },
+          {
+            foreignKeyName: "document_access_logs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
+            referencedColumns: ["document_id"]
+          },
         ]
       }
       document_relationships: {
@@ -615,6 +622,13 @@ export type Database = {
             referencedColumns: ["document_id"]
           },
           {
+            foreignKeyName: "document_relationships_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
+            referencedColumns: ["document_id"]
+          },
+          {
             foreignKeyName: "document_relationships_target_document_id_fkey"
             columns: ["target_document_id"]
             isOneToOne: false
@@ -626,6 +640,13 @@ export type Database = {
             columns: ["target_document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "document_relationships_target_document_id_fkey"
+            columns: ["target_document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
             referencedColumns: ["document_id"]
           },
         ]
@@ -719,6 +740,13 @@ export type Database = {
             columns: ["parent_document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
             referencedColumns: ["document_id"]
           },
         ]
@@ -919,6 +947,13 @@ export type Database = {
             referencedColumns: ["document_id"]
           },
           {
+            foreignKeyName: "estimate_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
+            referencedColumns: ["document_id"]
+          },
+          {
             foreignKeyName: "estimate_items_estimate_id_fkey"
             columns: ["estimate_id"]
             isOneToOne: false
@@ -1013,6 +1048,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "estimate_revisions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
             referencedColumns: ["document_id"]
           },
           {
@@ -1701,6 +1743,13 @@ export type Database = {
             referencedColumns: ["document_id"]
           },
           {
+            foreignKeyName: "subcontractor_associations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
+            referencedColumns: ["document_id"]
+          },
+          {
             foreignKeyName: "subcontractor_associations_subcontractor_id_fkey"
             columns: ["subcontractor_id"]
             isOneToOne: false
@@ -1943,6 +1992,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "time_entry_document_links_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
             referencedColumns: ["document_id"]
           },
           {
@@ -2196,6 +2252,65 @@ export type Database = {
             columns: ["parent_document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
+            referencedColumns: ["document_id"]
+          },
+        ]
+      }
+      estimate_consolidated_documents: {
+        Row: {
+          amount: number | null
+          category: string | null
+          created_at: string | null
+          document_id: string | null
+          entity_id: string | null
+          entity_type: string | null
+          expense_date: string | null
+          expense_type: string | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          is_expense: boolean | null
+          is_latest_version: boolean | null
+          item_description: string | null
+          item_id: string | null
+          mime_type: string | null
+          notes: string | null
+          parent_document_id: string | null
+          storage_path: string | null
+          tags: string[] | null
+          updated_at: string | null
+          uploaded_by: string | null
+          vendor_id: string | null
+          vendor_type: string | null
+          version: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "estimate_consolidated_documents"
             referencedColumns: ["document_id"]
           },
         ]

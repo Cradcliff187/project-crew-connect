@@ -14,6 +14,7 @@ interface DocumentListProps {
   onDocumentDelete?: (document: Document) => void;
   showEntityInfo?: boolean;
   emptyMessage?: string;
+  showCategories?: boolean;
 }
 
 const DocumentList = ({
@@ -22,7 +23,8 @@ const DocumentList = ({
   onUploadClick,
   onDocumentDelete,
   showEntityInfo = false,
-  emptyMessage = "No documents found"
+  emptyMessage = "No documents found",
+  showCategories = false
 }: DocumentListProps) => {
   const { 
     viewDocument, 
@@ -34,6 +36,18 @@ const DocumentList = ({
   const handleViewDocument = (document: Document) => {
     viewDocument(document.document_id);
   };
+
+  // Categorize documents by type if needed
+  const documentsByCategory: Record<string, Document[]> = {};
+  if (showCategories) {
+    documents.forEach(doc => {
+      const category = doc.category || 'Other';
+      if (!documentsByCategory[category]) {
+        documentsByCategory[category] = [];
+      }
+      documentsByCategory[category].push(doc);
+    });
+  }
 
   if (loading) {
     return (
@@ -64,17 +78,38 @@ const DocumentList = ({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {documents.map((document) => (
-          <DocumentPreviewCard
-            key={document.document_id}
-            document={document}
-            onView={() => handleViewDocument(document)}
-            onDelete={onDocumentDelete ? () => onDocumentDelete(document) : undefined}
-            showEntityInfo={showEntityInfo}
-          />
-        ))}
-      </div>
+      {showCategories && Object.keys(documentsByCategory).length > 0 ? (
+        // Show documents grouped by category
+        Object.entries(documentsByCategory).map(([category, docs]) => (
+          <div key={category} className="space-y-3">
+            <h3 className="font-medium text-sm text-gray-600 capitalize">{category}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {docs.map((document) => (
+                <DocumentPreviewCard
+                  key={document.document_id}
+                  document={document}
+                  onView={() => handleViewDocument(document)}
+                  onDelete={onDocumentDelete ? () => onDocumentDelete(document) : undefined}
+                  showEntityInfo={showEntityInfo}
+                />
+              ))}
+            </div>
+          </div>
+        ))
+      ) : (
+        // Show documents without categories
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {documents.map((document) => (
+            <DocumentPreviewCard
+              key={document.document_id}
+              document={document}
+              onView={() => handleViewDocument(document)}
+              onDelete={onDocumentDelete ? () => onDocumentDelete(document) : undefined}
+              showEntityInfo={showEntityInfo}
+            />
+          ))}
+        </div>
+      )}
 
       {currentDocument && (
         <DocumentViewer

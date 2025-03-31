@@ -3,9 +3,10 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Download, Trash2, FileText, FileImage, File } from 'lucide-react';
+import { Eye, Download, Trash2, FileText, FileImage, File, Info } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
 import { formatDate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DocumentPreviewCardProps {
   document: Document;
@@ -53,6 +54,9 @@ const DocumentPreviewCard = ({
     if (onDelete) onDelete();
   };
 
+  // Check if document has an item reference (from the consolidated view)
+  const hasItemReference = document.item_reference || document.item_description;
+
   return (
     <Card 
       className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer bg-white border border-[#0485ea]/10"
@@ -87,6 +91,21 @@ const DocumentPreviewCard = ({
             )}
             {document.is_expense && (
               <Badge className="bg-green-500 text-xs">Receipt</Badge>
+            )}
+            {hasItemReference && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="bg-blue-50 text-xs">
+                      <Info className="h-3 w-3 mr-1" />
+                      Item Doc
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{document.item_reference || document.item_description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
           

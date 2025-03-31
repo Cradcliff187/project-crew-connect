@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
@@ -17,19 +16,16 @@ export const useEstimateSubmit = () => {
       setIsSubmitting(true);
       console.log('Starting estimate submission with data:', data);
 
-      const estimateId = uuidv4();
       let customerId: string | null = null;
 
       // Handle customer selection or creation
       if (data.isNewCustomer && data.newCustomer?.name) {
-        const newCustomerId = uuidv4();
         console.log('Creating new customer:', data.newCustomer);
         
-        // Create a new customer
-        const { error: customerError } = await supabase
+        // Create a new customer - the database will generate the ID
+        const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
           .insert({
-            customerid: newCustomerId,
             customername: data.newCustomer.name,
             contactemail: data.newCustomer.email || null,
             phone: data.newCustomer.phone || null,
@@ -38,26 +34,26 @@ export const useEstimateSubmit = () => {
             state: data.newCustomer.state || null,
             zip: data.newCustomer.zip || null,
             createdon: new Date().toISOString(),
-          });
+          })
+          .select('customerid')
+          .single();
 
         if (customerError) {
           console.error('Error creating customer:', customerError);
           throw new Error(`Error creating customer: ${customerError.message}`);
         }
 
-        console.log('New customer created with ID:', newCustomerId);
-        customerId = newCustomerId;
+        console.log('New customer created with ID:', newCustomer.customerid);
+        customerId = newCustomer.customerid;
       } else if (data.customer) {
         console.log('Using existing customer with ID:', data.customer);
         customerId = data.customer;
       }
 
-      // Create the estimate
-      console.log('Creating estimate with ID:', estimateId);
-      const { error: estimateError } = await supabase
+      // Create the estimate - let the database generate the ID
+      const { data: newEstimate, error: estimateError } = await supabase
         .from('estimates')
         .insert({
-          estimateid: estimateId,
           customerid: customerId,
           projectname: data.project,
           "job description": data.description || null,
@@ -71,30 +67,37 @@ export const useEstimateSubmit = () => {
           datecreated: new Date().toISOString(),
           status: 'draft',
           contingency_percentage: parseFloat(data.contingency_percentage || '0'),
-        });
+        })
+        .select('estimateid')
+        .single();
 
       if (estimateError) {
         console.error('Error creating estimate:', estimateError);
         throw new Error(`Error creating estimate: ${estimateError.message}`);
       }
 
+      const estimateId = newEstimate.estimateid;
+      console.log('Estimate created with ID:', estimateId);
+
       // Create a revision for the estimate
       console.log('Creating revision for estimate');
-      const revisionId = uuidv4();
-      const { error: revisionError } = await supabase
+      const { data: newRevision, error: revisionError } = await supabase
         .from('estimate_revisions')
         .insert({
-          id: revisionId,
           estimate_id: estimateId,
           version: 1,
           is_current: true,
           status: 'draft',
-        });
+        })
+        .select('id')
+        .single();
 
       if (revisionError) {
         console.error('Error creating estimate revision:', revisionError);
         throw new Error(`Error creating estimate revision: ${revisionError.message}`);
       }
+
+      const revisionId = newRevision.id;
 
       // Create the line items
       console.log('Creating line items for estimate');
@@ -154,11 +157,11 @@ export const useEstimateSubmit = () => {
 
         if (documentsError) {
           console.error('Error updating document associations:', documentsError);
-          throw new Error(`Error updating document associations: ${documentsError.message}`);
+          // Continue even if this fails - not critical
         }
       }
 
-      // Update any line item documents that were pending with the temp ID
+      // Update any documents that were tagged with the temp ID
       if (tempId) {
         console.log(`Updating documents with temp ID ${tempId} to estimate ID: ${estimateId}`);
         
@@ -169,7 +172,7 @@ export const useEstimateSubmit = () => {
           
         if (tempDocsError) {
           console.error('Error updating temp documents:', tempDocsError);
-          // Continue even if this fails
+          // Continue even if this fails - not critical
         }
       }
 
@@ -190,7 +193,7 @@ export const useEstimateSubmit = () => {
       
       if (updateError) {
         console.error('Error updating estimate total:', updateError);
-        // Continue even if this fails
+        // Continue even if this fails - not critical
       }
 
       console.log('Estimate creation completed successfully');

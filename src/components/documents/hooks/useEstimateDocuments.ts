@@ -18,18 +18,32 @@ export const useEstimateDocuments = (estimateId: string) => {
         return;
       }
       
+      // Use the new index for faster queries and include line item documents
       const { data, error } = await supabase
-        .from('documents')
+        .from('estimate_consolidated_documents')
         .select('*')
-        .eq('entity_type', 'ESTIMATE')
-        .eq('entity_id', estimateId)
+        .or(`entity_id.eq.${estimateId},entity_id.like.temp-${estimateId.replace('temp-', '')}`)
         .order('created_at', { ascending: false });
       
       if (error) {
         throw error;
       }
       
-      setDocuments(data || []);
+      // Transform the data to include document URLs
+      const docsWithUrls = await Promise.all(data.map(async (doc) => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('construction_documents')
+          .getPublicUrl(doc.storage_path);
+        
+        return { 
+          ...doc,
+          url: publicUrl,
+          // Add a reference to the item description if available
+          item_reference: doc.item_description ? `Item: ${doc.item_description}` : null
+        };
+      }));
+      
+      setDocuments(docsWithUrls);
     } catch (err: any) {
       console.error('Error fetching estimate documents:', err);
       setError(err.message);
