@@ -28,6 +28,13 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
     refetchDocuments
   } = useEstimateDocuments(estimateId);
 
+  useEffect(() => {
+    console.log(`EstimateDocumentsTab: Mounted with estimateId=${estimateId}, found ${documents.length} documents`);
+    return () => {
+      console.log(`EstimateDocumentsTab: Unmounting with estimateId=${estimateId}`);
+    };
+  }, [estimateId, documents.length]);
+
   // Get unique categories
   const categories = Array.from(
     new Set(documents.map(doc => doc.category || 'Uncategorized'))
@@ -51,6 +58,7 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
   });
 
   const handleViewDocument = (doc: Document) => {
+    console.log('Viewing document:', doc.document_id, doc.file_name);
     setViewDocument(doc);
   };
 

@@ -14,11 +14,22 @@ const fetchEstimateItems = async (estimateId: string) => {
       .eq('estimate_id', estimateId)
       .eq('is_current', true)
       .limit(1)
-      .single();
+      .maybeSingle(); // Using maybeSingle instead of single to handle no results case
     
     if (revisionError) {
       console.error('Error fetching current revision:', revisionError);
       // If we can't find the current revision, fall back to all items for this estimate
+      const { data, error } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('estimate_id', estimateId);
+      
+      if (error) throw error;
+      return data as EstimateItem[];
+    }
+    
+    if (!currentRevision) {
+      console.log(`No current revision found for estimate ${estimateId}, fetching all items`);
       const { data, error } = await supabase
         .from('estimate_items')
         .select('*')
