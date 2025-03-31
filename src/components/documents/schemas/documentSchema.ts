@@ -1,3 +1,4 @@
+
 import * as z from 'zod';
 
 // Define the category options
@@ -22,7 +23,8 @@ export const entityTypes = [
   'SUBCONTRACTOR',
   'EXPENSE',
   'TIME_ENTRY',
-  'EMPLOYEE'
+  'EMPLOYEE',
+  'ESTIMATE_ITEM' // Added for line item documents
 ] as const;
 
 // Define vendor types
@@ -90,7 +92,12 @@ export const documentSchema = z.object({
   expense_type: z.string().optional(),
   materialName: z.string().optional(),
   costType: z.enum(expenseTypes).optional(),
-  parent_document_id: z.string().nullable().optional(), // Added parent_document_id for versioning
+  parent_document_id: z.string().nullable().optional(),
+  
+  // Add the new fields from our consolidated view
+  item_id: z.string().optional(),
+  item_description: z.string().optional(),
+  item_reference: z.string().optional()
 });
 
 export type DocumentCategory = typeof documentCategories[number];

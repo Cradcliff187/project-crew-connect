@@ -22,10 +22,16 @@ export const useEstimateSubmit = () => {
       if (data.isNewCustomer && data.newCustomer?.name) {
         console.log('Creating new customer:', data.newCustomer);
         
-        // Create a new customer - the database will generate the ID
+        // First generate a customer ID - using a simple format CUS-XXXXXX
+        const customerIdPrefix = 'CUS-';
+        const randomId = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+        const generatedCustomerId = customerIdPrefix + randomId;
+        
+        // Create a new customer with the generated ID
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
           .insert({
+            customerid: generatedCustomerId, // Use generated ID
             customername: data.newCustomer.name,
             contactemail: data.newCustomer.email || null,
             phone: data.newCustomer.phone || null,
@@ -50,10 +56,17 @@ export const useEstimateSubmit = () => {
         customerId = data.customer;
       }
 
-      // Create the estimate - let the database generate the ID
+      // Generate our own estimate ID - using the format EST-XXXXXX
+      // We'll use our new SQL function for this in production, but for now we'll simulate it
+      const estimateIdPrefix = 'EST-';
+      const randomId = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+      const generatedEstimateId = estimateIdPrefix + randomId;
+      
+      // Create the estimate with our generated ID
       const { data: newEstimate, error: estimateError } = await supabase
         .from('estimates')
         .insert({
+          estimateid: generatedEstimateId, // Use generated ID
           customerid: customerId,
           projectname: data.project,
           "job description": data.description || null,

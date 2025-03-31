@@ -18,7 +18,7 @@ export const useEstimateDocuments = (estimateId: string) => {
         return;
       }
       
-      // Use the new index for faster queries and include line item documents
+      // Use the new consolidated view for faster queries and include line item documents
       const { data, error } = await supabase
         .from('estimate_consolidated_documents')
         .select('*')
