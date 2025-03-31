@@ -27,18 +27,23 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // Find construction_documents bucket - using case-insensitive matching
-    const constructionBucket = buckets.find(bucket => 
+    // Log all available buckets to help with debugging
+    console.log('Available buckets:', buckets?.map(b => b.name));
+    
+    // Find the construction documents bucket with case-insensitive comparison
+    const constructionBucket = buckets?.find(bucket => 
       bucket.name.toLowerCase() === 'construction_documents'.toLowerCase()
     );
     
     if (!constructionBucket) {
-      console.error('construction_documents bucket not found');
+      console.error('Construction documents bucket not found. Available buckets:', buckets?.map(b => b.name));
       return { 
         success: false, 
-        error: 'construction_documents bucket not found' 
+        error: 'Construction documents bucket not found' 
       };
     }
+    
+    console.log('Found bucket:', constructionBucket.name);
     
     return {
       success: true,

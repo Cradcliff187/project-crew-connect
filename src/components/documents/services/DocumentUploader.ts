@@ -48,7 +48,7 @@ export const uploadDocument = async (
       const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
-      console.log(`Uploading file to construction_documents bucket, path: ${filePath}`);
+      console.log(`Uploading file to storage bucket, path: ${filePath}`);
       console.log(`File object:`, { 
         name: file.name, 
         type: file.type, 
@@ -80,19 +80,32 @@ export const uploadDocument = async (
         duplex: 'half' as const
       };
       
+      // First, find the correct bucket name by getting all buckets
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const constructionBucket = buckets?.find(bucket => 
+        bucket.name.toLowerCase() === 'construction_documents'.toLowerCase()
+      );
+      
+      if (!constructionBucket) {
+        throw new Error('Construction documents bucket not found');
+      }
+      
+      // Use the exact bucket name from Supabase
+      const exactBucketName = constructionBucket.name;
+      console.log(`Using exact bucket name: "${exactBucketName}"`);
+      
       // Enhanced debugging for upload
       console.log('About to execute upload with params:', {
-        bucket: 'construction_documents',
+        bucket: exactBucketName,
         path: filePath,
         fileType: contentType,
         fileSize: file.size,
         options: fileOptions
       });
       
-      // Upload the file to Supabase Storage with explicit content type
-      // The headers issue is fixed by removing the global Content-Type header in the Supabase client
+      // Upload the file to Supabase Storage with explicit content type and exact bucket name
       const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('construction_documents')
+        .from(exactBucketName)
         .upload(filePath, file, fileOptions);
         
       if (uploadError) {
@@ -109,7 +122,7 @@ export const uploadDocument = async (
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
-        .from('construction_documents')
+        .from(exactBucketName)
         .getPublicUrl(filePath);
         
       console.log('Public URL generated:', publicUrl);
