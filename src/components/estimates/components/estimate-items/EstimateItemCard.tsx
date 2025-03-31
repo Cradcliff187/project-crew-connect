@@ -128,10 +128,15 @@ const EstimateItemCard = ({
   }, [documentId]);
 
   const handleDocumentUploadSuccess = (documentId?: string) => {
+    console.log(`Document upload success for item ${index}, documentId:`, documentId);
     setIsDocumentUploadOpen(false);
-    if (documentId) {
-      form.setValue(`items.${index}.document_id`, documentId);
-    }
+    
+    // Short delay to ensure state is updated properly
+    setTimeout(() => {
+      if (documentId) {
+        form.setValue(`items.${index}.document_id`, documentId);
+      }
+    }, 50);
   };
 
   const getEntityTypeForDocument = () => {
@@ -158,6 +163,13 @@ const EstimateItemCard = ({
       default:
         return uniqueItemId;
     }
+  };
+
+  const handleAttachClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log(`Opening document upload for item ${index}`);
+    setIsDocumentUploadOpen(true);
   };
 
   return (
@@ -211,7 +223,7 @@ const EstimateItemCard = ({
                   variant="outline" 
                   size="sm" 
                   className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={handleAttachClick}
                 >
                   <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
                   <span className="hidden sm:inline-block">Attach</span>
@@ -278,7 +290,11 @@ const EstimateItemCard = ({
                 variant="ghost" 
                 size="sm"
                 className="text-red-500 h-8 hover:text-red-700 hover:bg-red-50"
-                onClick={() => form.setValue(`items.${index}.document_id`, '')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  form.setValue(`items.${index}.document_id`, '');
+                }}
               >
                 Remove
               </Button>

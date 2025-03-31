@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
@@ -38,6 +38,11 @@ export const useDocumentUploadForm = ({
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const uploadInProgress = useRef(false);
+
+  // Add uniqueness identifier for debug tracking
+  const instanceId = `${entityType}-${entityId || 'new'}-${Date.now()}`;
+  console.log(`Creating document upload form instance: ${instanceId}`);
 
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
@@ -83,8 +88,17 @@ export const useDocumentUploadForm = ({
     checkBucket();
   }, []);
 
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (previewURL) {
+        URL.revokeObjectURL(previewURL);
+      }
+    };
+  }, [previewURL]);
+
   const handleFileSelect = (files: File[]) => {
-    console.log('Files selected in handleFileSelect:', files);
+    console.log(`[${instanceId}] Files selected in handleFileSelect:`, files);
     
     form.setValue('files', files);
     
@@ -92,20 +106,27 @@ export const useDocumentUploadForm = ({
       const previewUrl = URL.createObjectURL(files[0]);
       setPreviewURL(previewUrl);
     } else {
+      if (previewURL) {
+        URL.revokeObjectURL(previewURL);
+      }
       setPreviewURL(null);
     }
   };
 
   const onSubmit = async (data: DocumentUploadFormValues) => {
+    // Guard against multiple submissions
+    if (uploadInProgress.current) {
+      console.log(`[${instanceId}] Upload already in progress, skipping`);
+      return;
+    }
+
     try {
+      uploadInProgress.current = true;
       setIsUploading(true);
       setUploadError(null);
       
-      // Always assume the bucket exists since we've created it via SQL
-      // This prevents the "Storage bucket not properly configured" error
-      
-      console.log('Submitting files:', data.files);
-      console.log('File objects detail:', data.files.map(f => ({
+      console.log(`[${instanceId}] Submitting files:`, data.files);
+      console.log(`[${instanceId}] File objects detail:`, data.files.map(f => ({
         name: f.name,
         type: f.type,
         size: f.size,
@@ -128,16 +149,20 @@ export const useDocumentUploadForm = ({
       
       // Reset form state
       form.reset();
-      setPreviewURL(null);
+      
+      if (previewURL) {
+        URL.revokeObjectURL(previewURL);
+        setPreviewURL(null);
+      }
       
       // Call success callback with documentId
       if (onSuccess) {
-        console.log('Calling onSuccess with document ID:', result.documentId);
+        console.log(`[${instanceId}] Calling onSuccess with document ID:`, result.documentId);
         onSuccess(result.documentId);
       }
       
     } catch (error: any) {
-      console.error('Upload error:', error);
+      console.error(`[${instanceId}] Upload error:`, error);
       setUploadError(error.message || "There was an error uploading your document.");
       
       toast({
@@ -150,10 +175,11 @@ export const useDocumentUploadForm = ({
       if (onCancel) {
         setTimeout(() => {
           onCancel();
-        }, 2000); // Wait for toast to be visible
+        }, 200); // Short wait for toast to be visible
       }
     } finally {
       setIsUploading(false);
+      uploadInProgress.current = false;
     }
   };
 
@@ -164,6 +190,10 @@ export const useDocumentUploadForm = ({
       form.setValue('metadata.expenseType', 'materials'); // Default value
       setShowVendorSelector(true);
     }
+    
+    // Always ensure entity ID is updated
+    form.setValue('metadata.entityId', entityId || '');
+    form.setValue('metadata.entityType', entityType);
     
     if (prefillData) {
       if (prefillData.amount) {
@@ -215,6 +245,7 @@ export const useDocumentUploadForm = ({
     watchVendorType: form.watch('metadata.vendorType'),
     watchFiles: form.watch('files'),
     watchCategory: form.watch('metadata.category'),
-    watchExpenseType: form.watch('metadata.expenseType')
+    watchExpenseType: form.watch('metadata.expenseType'),
+    instanceId
   };
 };

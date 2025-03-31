@@ -74,6 +74,14 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // Initialize form with prefill data if available
   useEffect(() => {
     initializeForm();
+    
+    // Return a cleanup function to reset form when component unmounts
+    return () => {
+      form.reset();
+      if (previewURL) {
+        URL.revokeObjectURL(previewURL);
+      }
+    };
   }, [isReceiptUpload, prefillData]);
 
   // Auto-show vendor selector when receipt category is selected
@@ -92,15 +100,20 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // If prefill data is available and it's a receipt upload, simplify the UI
   const simplifiedUpload = isReceiptUpload && prefillData;
 
-  // Handle form submission with event prevention
+  // Handle form submission with STRONG event prevention
   const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent event bubbling to parent forms
-    e.stopPropagation(); // Stop propagation
-    form.handleSubmit(onSubmit)(e);
+    e.stopPropagation(); // Stop event bubbling to parent forms first
+    e.preventDefault(); // Then prevent default behavior
+    
+    console.log('Document upload form submit triggered');
+    form.handleSubmit((data) => {
+      console.log('Document form data being submitted:', data);
+      onSubmit(data);
+    })(e);
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full" onClick={(e) => e.stopPropagation()}>
       {!simplifiedUpload && (
         <CardHeader>
           <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
@@ -113,7 +126,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       )}
       
       <Form {...form}>
-        <form onSubmit={handleFormSubmit}>
+        <form onSubmit={handleFormSubmit} onClick={(e) => e.stopPropagation()}>
           <CardContent className="p-0">
             <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
               <div className="space-y-6">
@@ -124,6 +137,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                   previewURL={previewURL}
                   watchFiles={watchFiles}
                   label={isReceiptUpload ? "Upload Receipt" : "Upload Document"}
+                  instanceId={`dropzone-${entityType}-${entityId || 'new'}`}
                 />
                 
                 {/* Mobile Capture Component */}
@@ -154,7 +168,10 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={onCancel}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancel();
+                }}
               >
                 Cancel
               </Button>
@@ -163,6 +180,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               type="submit" 
               className="bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isUploading || watchFiles.length === 0}
+              onClick={(e) => e.stopPropagation()}
             >
               {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
             </Button>

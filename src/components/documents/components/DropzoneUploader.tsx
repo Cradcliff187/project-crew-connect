@@ -13,6 +13,7 @@ interface DropzoneUploaderProps {
   previewURL: string | null;
   watchFiles: File[];
   label?: string;
+  instanceId?: string;
 }
 
 const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
@@ -20,19 +21,28 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   onFileSelect,
   previewURL,
   watchFiles,
-  label = 'Upload Document'
+  label = 'Upload Document',
+  instanceId = 'main-dropzone'
 }) => {
   // Log to verify component is rendering with correct props
   console.log('DropzoneUploader rendering with files:', watchFiles);
+  console.log('Using instanceId:', instanceId);
+  
+  const inputId = `${instanceId}-file-input`;
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       // Ensure we're passing proper File objects
       const fileArray = Array.from(files);
-      console.log('Files selected:', fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
+      console.log(`Files selected for ${instanceId}:`, fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
       onFileSelect(fileArray);
     }
+  };
+  
+  const handleDropzoneClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    document.getElementById(inputId)?.click();
   };
   
   return (
@@ -49,7 +59,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   "flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
                   watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
                 )}
-                onClick={() => document.getElementById('dropzone-file')?.click()}
+                onClick={handleDropzoneClick}
               >
                 {previewURL ? (
                   <div className="w-full h-full p-2 flex flex-col items-center justify-center">
@@ -75,7 +85,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                       className="mt-2 border-[#0485ea] text-[#0485ea]"
                       onClick={(e) => {
                         e.stopPropagation();
-                        document.getElementById('dropzone-file')?.click();
+                        document.getElementById(inputId)?.click();
                       }}
                     >
                       <FolderOpen className="h-4 w-4 mr-2" />
@@ -91,7 +101,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   </div>
                 )}
                 <input
-                  id="dropzone-file"
+                  id={inputId}
                   type="file"
                   className="hidden"
                   multiple={false}

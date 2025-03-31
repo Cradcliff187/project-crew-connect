@@ -23,6 +23,23 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   title
 }) => {
   if (!isOpen) return null;
+  
+  // Generate a unique ID for this document upload session
+  const uniqueEntityId = itemId ? `${tempId}-item-${itemId}` : tempId;
+  
+  console.log('DocumentUploadSheet rendering with:', {
+    entityType,
+    uniqueEntityId,
+    isOpen
+  });
+
+  const handleSuccess = (documentId?: string) => {
+    console.log('Document upload success, ID:', documentId);
+    // Use setTimeout to ensure the sheet has time to close properly before calling onSuccess
+    setTimeout(() => {
+      onSuccess(documentId);
+    }, 50);
+  };
 
   return (
     <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
@@ -33,8 +50,8 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
       {tempId && (
         <EnhancedDocumentUpload 
           entityType={entityType}
-          entityId={itemId || tempId}
-          onSuccess={onSuccess}
+          entityId={uniqueEntityId}
+          onSuccess={handleSuccess}
           onCancel={onClose}
         />
       )}
