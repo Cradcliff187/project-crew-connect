@@ -27,7 +27,7 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
   const getDocumentTypeColor = (doc: Document) => {
     if (doc.is_vendor_doc) return "bg-amber-100 text-amber-800 border-amber-200";
     if (doc.is_subcontractor_doc) return "bg-purple-100 text-purple-800 border-purple-200";
-    if (doc.item_reference) return "bg-blue-100 text-blue-800 border-blue-200";
+    if (doc.item_reference && doc.item_reference.startsWith("Item:")) return "bg-blue-100 text-blue-800 border-blue-200";
     return "bg-gray-100 text-gray-800 border-gray-200";
   };
   

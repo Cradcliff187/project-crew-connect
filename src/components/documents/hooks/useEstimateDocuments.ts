@@ -173,7 +173,8 @@ export const useEstimateDocuments = (estimateId: string) => {
                 ...doc,
                 url: publicUrl,
                 item_reference: `Vendor Document - Related to: ${itemDescriptions}`,
-                is_vendor_doc: true
+                is_vendor_doc: true,
+                item_id: null // These are vendor documents, not directly attached to items
               };
             }));
             
@@ -220,7 +221,8 @@ export const useEstimateDocuments = (estimateId: string) => {
                 ...doc,
                 url: publicUrl,
                 item_reference: `Subcontractor Document - Related to: ${itemDescriptions}`,
-                is_subcontractor_doc: true
+                is_subcontractor_doc: true,
+                item_id: null // These are subcontractor documents, not directly attached to items
               };
             }));
             

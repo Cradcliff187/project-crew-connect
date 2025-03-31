@@ -97,7 +97,11 @@ export const documentSchema = z.object({
   // Add the new fields from our consolidated view
   item_id: z.string().optional(),
   item_description: z.string().optional(),
-  item_reference: z.string().optional()
+  item_reference: z.string().optional(),
+  
+  // Add fields for vendor and subcontractor document flags
+  is_vendor_doc: z.boolean().optional(),
+  is_subcontractor_doc: z.boolean().optional()
 });
 
 export type DocumentCategory = typeof documentCategories[number];

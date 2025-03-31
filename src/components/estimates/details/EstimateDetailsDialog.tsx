@@ -96,7 +96,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
           
           <div className="flex-1 overflow-auto p-6">
             <TabsContent value="details" className="m-0 p-0">
-              <EstimateDetailsTab estimate={estimate} formatDate={formatDate} />
+              <EstimateDetailsTab estimate={estimate} />
             </TabsContent>
             
             <TabsContent value="items" className="m-0 p-0">
