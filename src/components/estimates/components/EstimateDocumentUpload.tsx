@@ -1,44 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { 
-  PaperclipIcon, 
-  XIcon, 
-  FileIcon, 
-  FileTextIcon, 
-  FileImageIcon, 
-  UploadIcon, 
-  EyeIcon, 
-  FolderIcon, 
-  InfoIcon 
-} from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 import DocumentViewer from '@/components/documents/DocumentViewer';
-import DocumentPreviewCard from '@/components/documents/DocumentPreviewCard';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const isLineItemDocument = (document: Document) => {
-  return !!(document.item_id || document.item_reference);
-};
-
-const categorizeDocuments = (documents: Document[]) => {
-  const documentsByCategory: Record<string, Document[]> = {};
-  documents.forEach(doc => {
-    const category = doc.category || 'Other';
-    if (!documentsByCategory[category]) {
-      documentsByCategory[category] = [];
-    }
-    documentsByCategory[category].push(doc);
-  });
-  return documentsByCategory;
-};
+// Import refactored components
+import DocumentUploadHeader from './document-upload/DocumentUploadHeader';
+import DocumentUploadContent from './document-upload/DocumentUploadContent';
+import DocumentUploadSheet from './document-upload/DocumentUploadSheet';
+import { categorizeDocuments, filterDocumentsByType } from './document-upload/utils';
 
 interface EstimateDocumentUploadProps {
   estimateItemId?: string;
@@ -125,110 +98,40 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
     e.stopPropagation();
     setIsDocumentUploadOpen(true);
   };
-
-  const documentsByCategory = categorizeDocuments(attachedDocuments);
   
-  const filteredDocuments = showLineItemDocuments 
-    ? attachedDocuments.filter(isLineItemDocument)
-    : attachedDocuments.filter(doc => !isLineItemDocument(doc));
+  // Filter and categorize documents
+  const filteredDocuments = filterDocumentsByType(attachedDocuments, showLineItemDocuments);
+  const documentsByCategory = categorizeDocuments(filteredDocuments);
+  
+  // Determine title based on document type
+  const title = showLineItemDocuments ? "Line Item Documents" : "Estimate Documents";
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium flex items-center gap-2">
-          <PaperclipIcon className="h-4 w-4 text-[#0485ea]" />
-          {showLineItemDocuments ? "Line Item Documents" : "Estimate Documents"}
-          {filteredDocuments.length > 0 && (
-            <Badge variant="outline" className="ml-1 text-xs bg-blue-50">
-              {filteredDocuments.length}
-            </Badge>
-          )}
-        </h3>
-        <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm"
-            className="bg-[#0485ea] text-white hover:bg-[#0375d1]"
-            onClick={handleOpenDocumentUpload}
-          >
-            <UploadIcon className="h-4 w-4 mr-1" />
-            Add Document
-          </Button>
-          <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
-            <SheetHeader className="p-6 pb-2">
-              <SheetTitle>
-                {showLineItemDocuments 
-                  ? "Attach Document to Line Item" 
-                  : "Attach Document to Estimate"}
-              </SheetTitle>
-            </SheetHeader>
-            
-            {tempId && (
-              <EnhancedDocumentUpload 
-                entityType={showLineItemDocuments ? "ESTIMATE_ITEM" : "ESTIMATE"}
-                entityId={showLineItemDocuments ? estimateItemId || tempId : tempId}
-                onSuccess={handleDocumentUploadSuccess}
-                onCancel={() => setIsDocumentUploadOpen(false)}
-              />
-            )}
-          </SheetContent>
-        </Sheet>
-      </div>
+      <DocumentUploadHeader
+        title={title}
+        documentsCount={filteredDocuments.length}
+        onOpenUpload={handleOpenDocumentUpload}
+        isDocumentUploadOpen={isDocumentUploadOpen}
+        setIsDocumentUploadOpen={setIsDocumentUploadOpen}
+      >
+        <DocumentUploadSheet
+          isOpen={isDocumentUploadOpen}
+          onClose={() => setIsDocumentUploadOpen(false)}
+          tempId={tempId}
+          entityType={showLineItemDocuments ? "ESTIMATE_ITEM" : "ESTIMATE"}
+          itemId={showLineItemDocuments ? estimateItemId : undefined}
+          onSuccess={handleDocumentUploadSuccess}
+          title={showLineItemDocuments ? "Attach Document to Line Item" : "Attach Document to Estimate"}
+        />
+      </DocumentUploadHeader>
       
-      {filteredDocuments.length > 0 ? (
-        <div className="space-y-4">
-          {Object.keys(documentsByCategory).length > 0 ? (
-            Object.entries(documentsByCategory).map(([category, docs]) => {
-              const filteredCategoryDocs = showLineItemDocuments 
-                ? docs.filter(isLineItemDocument)
-                : docs.filter(doc => !isLineItemDocument(doc));
-              
-              if (filteredCategoryDocs.length === 0) return null;
-              
-              return (
-                <div key={category} className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-600 capitalize flex items-center">
-                    <FolderIcon className="h-4 w-4 mr-1 text-[#0485ea]" />
-                    {category}
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                    {filteredCategoryDocs.map(document => (
-                      <DocumentPreviewCard
-                        key={document.document_id}
-                        document={document}
-                        onView={() => handleViewDocument(document)}
-                        onDelete={() => handleRemoveDocument(document.document_id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {filteredDocuments.map(document => (
-                <DocumentPreviewCard
-                  key={document.document_id}
-                  document={document}
-                  onView={() => handleViewDocument(document)}
-                  onDelete={() => handleRemoveDocument(document.document_id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="text-center py-8 border rounded-md bg-muted/20">
-          <div className="flex flex-col items-center gap-2">
-            <PaperclipIcon className="h-8 w-8 text-muted-foreground" />
-            <p className="text-muted-foreground">No documents attached yet.</p>
-            <p className="text-xs text-muted-foreground">
-              Click "Add Document" to attach receipts, contracts, or other relevant files.
-            </p>
-          </div>
-        </div>
-      )}
+      <DocumentUploadContent
+        documentsByCategory={documentsByCategory}
+        filteredDocuments={filteredDocuments}
+        onViewDocument={handleViewDocument}
+        onRemoveDocument={handleRemoveDocument}
+      />
       
       <DocumentViewer
         document={viewDocument}
