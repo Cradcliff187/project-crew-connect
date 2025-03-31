@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
 
 export interface TimeEntryReceipt extends Document {
@@ -45,7 +45,7 @@ export function useTimeEntryReceipts(timeEntryId: string | undefined) {
         let url = '';
         if (doc.storage_path) {
           const { data } = await supabase.storage
-            .from('construction_documents')
+            .from(DOCUMENTS_BUCKET_ID)
             .createSignedUrl(doc.storage_path, 3600);
             
           if (data) {
@@ -103,7 +103,7 @@ export function useTimeEntryReceipts(timeEntryId: string | undefined) {
       // Delete the file from storage if we have a path
       if (docData?.storage_path) {
         await supabase.storage
-          .from('construction_documents')
+          .from(DOCUMENTS_BUCKET_ID)
           .remove([docData.storage_path]);
       }
       
