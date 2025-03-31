@@ -102,6 +102,13 @@ const EstimateDocumentUpload: React.FC = () => {
     viewDocument(documentId);
   };
 
+  // Prevent form submission when opening document upload
+  const handleOpenDocumentUpload = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDocumentUploadOpen(true);
+  };
+
   // Categorize documents by type
   const documentsByCategory: Record<string, Document[]> = {};
   attachedDocuments.forEach(doc => {
@@ -125,17 +132,16 @@ const EstimateDocumentUpload: React.FC = () => {
           )}
         </h3>
         <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
-          <SheetTrigger asChild>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm"
-              className="bg-[#0485ea] text-white hover:bg-[#0375d1]"
-            >
-              <UploadIcon className="h-4 w-4 mr-1" />
-              Add Document
-            </Button>
-          </SheetTrigger>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            className="bg-[#0485ea] text-white hover:bg-[#0375d1]"
+            onClick={handleOpenDocumentUpload}
+          >
+            <UploadIcon className="h-4 w-4 mr-1" />
+            Add Document
+          </Button>
           <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
             <SheetHeader className="p-6 pb-2">
               <SheetTitle>Attach Document to Estimate</SheetTitle>

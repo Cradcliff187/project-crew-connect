@@ -92,6 +92,13 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // If prefill data is available and it's a receipt upload, simplify the UI
   const simplifiedUpload = isReceiptUpload && prefillData;
 
+  // Handle form submission with event prevention
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent event bubbling to parent forms
+    e.stopPropagation(); // Stop propagation
+    form.handleSubmit(onSubmit)(e);
+  };
+
   return (
     <Card className="w-full">
       {!simplifiedUpload && (
@@ -106,7 +113,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       )}
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={handleFormSubmit}>
           <CardContent className="p-0">
             <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
               <div className="space-y-6">

@@ -63,14 +63,22 @@ const DocumentsStep = () => {
     refetchDocuments();
   };
 
+  // Handle button click - prevent propagation to parent form
+  const handleAddDocumentClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default behavior
+    e.stopPropagation(); // Stop event bubbling
+    setIsDocumentUploadOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Supporting Documents</h3>
         <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
           <Button 
-            onClick={() => setIsDocumentUploadOpen(true)}
+            onClick={handleAddDocumentClick}
             className="bg-[#0485ea] hover:bg-[#0373ce]"
+            type="button" // Explicitly set as button type, not submit
           >
             <PlusIcon className="h-4 w-4 mr-2" />
             Add Document
