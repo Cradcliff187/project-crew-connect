@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,36 +5,56 @@ import { useToast } from '@/hooks/use-toast';
 import { EstimateItem, EstimateRevision } from '@/components/estimates/types/estimateTypes';
 
 const fetchEstimateItems = async (estimateId: string) => {
-  const { data, error } = await supabase
-    .from('expenses')
-    .select('*')
-    .eq('entity_type', 'ESTIMATE')
-    .eq('entity_id', estimateId);
+  // First, find the current revision ID for this estimate
+  const { data: currentRevision, error: revisionError } = await supabase
+    .from('estimate_revisions')
+    .select('id')
+    .eq('estimate_id', estimateId)
+    .eq('is_current', true)
+    .limit(1)
+    .single();
   
-  if (error) {
-    throw error;
+  if (revisionError) {
+    console.error('Error fetching current revision:', revisionError);
+    // If we can't find the current revision, fall back to all items
+    const { data, error } = await supabase
+      .from('estimate_items')
+      .select('*')
+      .eq('estimate_id', estimateId);
+    
+    if (error) throw error;
+    return data as EstimateItem[];
   }
   
-  // Transform to EstimateItem format
-  const items = data.map(expense => ({
-    id: expense.id,
-    estimate_id: expense.entity_id,
-    description: expense.description,
-    quantity: expense.quantity || 1,
-    unit_price: expense.unit_price || 0,
-    total_price: expense.amount || 0,
-    cost: expense.unit_price || 0,
-    markup_percentage: 0,
-    item_type: expense.expense_type
-  })) as EstimateItem[];
+  // Query items specific to the current revision
+  const { data, error } = await supabase
+    .from('estimate_items')
+    .select('*')
+    .eq('estimate_id', estimateId)
+    .eq('revision_id', currentRevision.id);
   
-  return items;
+  if (error) throw error;
+  
+  // Transform the data to match the EstimateItem format
+  return data as EstimateItem[];
 };
 
 const fetchEstimateRevisions = async (estimateId: string) => {
   const { data, error } = await supabase
     .from('estimate_revisions')
-    .select('*')
+    .select(`
+      id,
+      estimate_id,
+      version,
+      revision_date,
+      sent_date,
+      notes,
+      status,
+      is_current,
+      amount,
+      revision_by,
+      document_id
+    `)
     .eq('estimate_id', estimateId)
     .order('version', { ascending: false });
   
@@ -112,6 +131,8 @@ export const useEstimateDetails = () => {
     fetchEstimateDetails,
     setEstimateItems,
     setEstimateRevisions,
-    isLoading: itemsLoading || revisionsLoading
+    isLoading: itemsLoading || revisionsLoading,
+    refetchItems,
+    refetchRevisions
   };
 };

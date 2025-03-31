@@ -18,19 +18,45 @@ export const useEstimateDocuments = (estimateId: string) => {
         return;
       }
       
-      // Use the new consolidated view for faster queries and include line item documents
-      const { data, error } = await supabase
+      // First try to get documents from the estimate_consolidated_documents view
+      const { data: viewData, error: viewError } = await supabase
         .from('estimate_consolidated_documents')
         .select('*')
-        .or(`entity_id.eq.${estimateId},entity_id.like.temp-${estimateId.replace('temp-', '')}`)
+        .eq('entity_id', estimateId)
         .order('created_at', { ascending: false });
       
-      if (error) {
-        throw error;
+      if (viewError) {
+        console.error('Error fetching from consolidated view:', viewError);
+        // Fall back to direct table query
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('entity_type', 'ESTIMATE')
+          .eq('entity_id', estimateId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Transform the data to include document URLs
+        const docsWithUrls = await Promise.all(data.map(async (doc) => {
+          const { data: { publicUrl } } = supabase.storage
+            .from('construction_documents')
+            .getPublicUrl(doc.storage_path);
+          
+          return { 
+            ...doc,
+            url: publicUrl
+          };
+        }));
+        
+        setDocuments(docsWithUrls);
+        return;
       }
       
-      // Transform the data to include document URLs
-      const docsWithUrls = await Promise.all(data.map(async (doc) => {
+      // Transform the data from the view to include document URLs
+      const docsWithUrls = await Promise.all(viewData.map(async (doc) => {
         const { data: { publicUrl } } = supabase.storage
           .from('construction_documents')
           .getPublicUrl(doc.storage_path);

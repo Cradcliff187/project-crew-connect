@@ -56,6 +56,7 @@ const Estimates = () => {
           searchQuery={searchQuery}
           onViewEstimate={handleViewEstimate}
           formatDate={formatDate}
+          onRefreshEstimates={fetchEstimates}
         />
       </div>
       
