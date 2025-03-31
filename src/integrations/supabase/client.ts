@@ -6,6 +6,9 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://zrxezqllmpdlhiudutme.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ";
 
+// The expected bucket ID that should be used for document storage
+export const DOCUMENTS_BUCKET_ID = 'construction_documents';
+
 // Create client with explicit headers to ensure API key is always sent
 // But avoid setting Content-Type globally to prevent upload issues
 export const supabase = createClient<Database>(
@@ -34,7 +37,7 @@ export const supabase = createClient<Database>(
 );
 
 // Helper to find the existing storage bucket with a consistent approach
-export const findStorageBucket = async (targetName: string = 'construction_documents') => {
+export const findStorageBucket = async () => {
   try {
     // Get all available buckets
     const { data: buckets, error } = await supabase.storage.listBuckets();
@@ -45,32 +48,17 @@ export const findStorageBucket = async (targetName: string = 'construction_docum
     }
     
     // Log all available buckets for debugging
-    console.log('Available storage buckets:', buckets?.map(b => b.name));
+    console.log('Available storage buckets:', buckets?.map(b => `${b.id} (${b.name})`));
     
-    // First try exact case-sensitive match
-    let bucket = buckets?.find(b => b.name === targetName);
-    
-    // If not found, try case-insensitive match
-    if (!bucket) {
-      bucket = buckets?.find(b => 
-        b.name.toLowerCase() === targetName.toLowerCase()
-      );
-    }
-    
-    // If still not found, try more flexible match
-    if (!bucket) {
-      bucket = buckets?.find(b => 
-        b.name.toLowerCase().includes('construction') && 
-        b.name.toLowerCase().includes('document')
-      );
-    }
+    // Find the construction_documents bucket by ID (not name)
+    const bucket = buckets?.find(b => b.id === DOCUMENTS_BUCKET_ID);
     
     if (bucket) {
-      console.log(`Found storage bucket: ${bucket.name}`);
+      console.log(`Found storage bucket: ${bucket.id}`);
       return bucket;
     }
     
-    console.warn(`No suitable storage bucket found matching "${targetName}"`);
+    console.warn(`No storage bucket found with ID "${DOCUMENTS_BUCKET_ID}"`);
     return null;
   } catch (err) {
     console.error('Error in findStorageBucket:', err);
@@ -78,27 +66,27 @@ export const findStorageBucket = async (targetName: string = 'construction_docum
   }
 };
 
-// We won't try to create a bucket anymore since it's failing with RLS policy error
-// Instead, we'll check for existing buckets and provide clear messaging to the user
+// Check bucket availability and provide guidance if missing
 export const ensureStorageBucket = async () => {
   try {
     const bucket = await findStorageBucket();
     
     if (bucket) {
-      console.log(`Using existing bucket: ${bucket.name}`);
+      console.log(`Using existing bucket: ${bucket.id}`);
       return {
         success: true,
+        bucketId: bucket.id,
         bucketName: bucket.name
       };
     }
     
-    // Since we can't create the bucket due to RLS policy, provide guidance
-    console.warn('No construction documents bucket found and cannot create one due to permissions.');
-    console.warn('Please create a "construction_documents" bucket in the Supabase dashboard.');
+    // Provide clear guidance when bucket is missing
+    console.warn(`The "${DOCUMENTS_BUCKET_ID}" bucket is not available.`);
+    console.warn('Please ensure the bucket exists in the Supabase dashboard.');
     
     return {
       success: false,
-      error: 'Storage bucket not found and bucket creation failed due to permissions'
+      error: `Storage bucket "${DOCUMENTS_BUCKET_ID}" not found`
     };
   } catch (error) {
     console.error('Error in ensureStorageBucket:', error);

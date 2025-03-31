@@ -10,7 +10,7 @@ interface BucketTestResult {
 
 /**
  * Tests access to the storage bucket
- * This is helpful to validate that the storage bucket is properly configured
+ * This helps validate that the storage bucket is properly configured
  */
 export const testBucketAccess = async (): Promise<BucketTestResult> => {
   try {
@@ -28,7 +28,7 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     }
     
     // Log all available buckets to help with debugging
-    console.log('Available buckets:', buckets?.map(b => b.name));
+    console.log('Available buckets:', buckets?.map(b => `${b.id} (${b.name})`));
     
     if (!buckets || buckets.length === 0) {
       console.error('No storage buckets found in the project');
@@ -38,37 +38,32 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // Try to find a bucket in this priority order:
-    // 1. Exact match for "construction_documents"
-    // 2. Case-insensitive match for "construction_documents"
-    // 3. Contains both "construction" and "document" anywhere in the name
-    let constructionBucket = buckets.find(bucket => bucket.name === 'construction_documents');
+    // Look specifically for the construction_documents bucket by ID (not name)
+    // This is more reliable than matching by name which can have case sensitivity issues
+    const constructionBucket = buckets.find(bucket => bucket.id === 'construction_documents');
     
-    if (!constructionBucket) {
-      constructionBucket = buckets.find(bucket => 
-        bucket.name.toLowerCase() === 'construction_documents'
-      );
+    if (constructionBucket) {
+      console.log('Found construction documents bucket:', constructionBucket.id);
+      return {
+        success: true,
+        bucketId: constructionBucket.id,
+        bucketName: constructionBucket.name
+      };
     }
     
-    if (!constructionBucket) {
-      constructionBucket = buckets.find(bucket => 
-        bucket.name.toLowerCase().includes('construction') &&
-        bucket.name.toLowerCase().includes('document')
-      );
-    }
-    
-    if (!constructionBucket) {
-      // If we still haven't found a matching bucket, just use the first one as fallback
-      constructionBucket = buckets[0];
-      console.warn('Construction documents bucket not found. Using fallback bucket:', constructionBucket.name);
-    } else {
-      console.log('Found construction documents bucket:', constructionBucket.name);
-    }
+    // If we still don't find the expected bucket, just use the first one as fallback
+    // but provide a clear warning
+    const fallbackBucket = buckets[0];
+    console.warn(
+      'Construction documents bucket not found. Using fallback bucket:', 
+      fallbackBucket.id,
+      '- Please create a bucket with ID "construction_documents" in Supabase.'
+    );
     
     return {
       success: true,
-      bucketId: constructionBucket.id,
-      bucketName: constructionBucket.name
+      bucketId: fallbackBucket.id,
+      bucketName: fallbackBucket.name
     };
     
   } catch (error) {
