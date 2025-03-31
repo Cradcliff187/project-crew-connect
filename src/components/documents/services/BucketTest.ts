@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DOCUMENTS_BUCKET_ID } from '@/constants/storageConstants';
 
 interface BucketTestResult {
   success: boolean;
@@ -15,7 +14,7 @@ interface BucketTestResult {
  */
 export const testBucketAccess = async (): Promise<BucketTestResult> => {
   try {
-    // Get the list of buckets to check if our documents bucket exists
+    // Get the list of buckets to check if construction_documents exists
     const { data: buckets, error: bucketsError } = await supabase
       .storage
       .listBuckets();
@@ -31,25 +30,27 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     // Log all available buckets to help with debugging
     console.log('Available buckets:', buckets?.map(b => b.name));
     
-    // Find our documents bucket (case-insensitive for compatibility)
-    const documentsBucket = buckets?.find(bucket => 
-      bucket.name.toLowerCase() === DOCUMENTS_BUCKET_ID.toLowerCase()
+    // Find the construction documents bucket with case-insensitive comparison
+    // It could be named 'construction_documents', 'Construction Documents', etc.
+    const constructionBucket = buckets?.find(bucket => 
+      bucket.name.toLowerCase().includes('construction') &&
+      bucket.name.toLowerCase().includes('document')
     );
     
-    if (!documentsBucket) {
-      console.error(`${DOCUMENTS_BUCKET_ID} bucket not found. Available buckets:`, buckets?.map(b => b.name));
+    if (!constructionBucket) {
+      console.error('Construction documents bucket not found. Available buckets:', buckets?.map(b => b.name));
       return { 
         success: false, 
-        error: `${DOCUMENTS_BUCKET_ID} bucket not found` 
+        error: 'Construction documents bucket not found' 
       };
     }
     
-    console.log('Found bucket:', documentsBucket.name);
+    console.log('Found bucket:', constructionBucket.name);
     
     return {
       success: true,
-      bucketId: documentsBucket.id,
-      bucketName: documentsBucket.name
+      bucketId: constructionBucket.id,
+      bucketName: constructionBucket.name
     };
     
   } catch (error) {
