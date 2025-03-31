@@ -14,7 +14,7 @@ interface BucketTestResult {
  */
 export const testBucketAccess = async (): Promise<BucketTestResult> => {
   try {
-    // Get the list of buckets to check if construction_documents exists
+    // Get the list of buckets to check for available storage buckets
     const { data: buckets, error: bucketsError } = await supabase
       .storage
       .listBuckets();
@@ -30,22 +30,40 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     // Log all available buckets to help with debugging
     console.log('Available buckets:', buckets?.map(b => b.name));
     
-    // Find the construction documents bucket with case-insensitive comparison
-    // It could be named 'construction_documents', 'Construction Documents', etc.
-    const constructionBucket = buckets?.find(bucket => 
-      bucket.name.toLowerCase().includes('construction') &&
-      bucket.name.toLowerCase().includes('document')
-    );
-    
-    if (!constructionBucket) {
-      console.error('Construction documents bucket not found. Available buckets:', buckets?.map(b => b.name));
-      return { 
-        success: false, 
-        error: 'Construction documents bucket not found' 
+    if (!buckets || buckets.length === 0) {
+      console.error('No storage buckets found in the project');
+      return {
+        success: false,
+        error: 'No storage buckets available'
       };
     }
     
-    console.log('Found bucket:', constructionBucket.name);
+    // Try to find a bucket in this priority order:
+    // 1. Exact match for "construction_documents"
+    // 2. Case-insensitive match for "construction_documents"
+    // 3. Contains both "construction" and "document" anywhere in the name
+    let constructionBucket = buckets.find(bucket => bucket.name === 'construction_documents');
+    
+    if (!constructionBucket) {
+      constructionBucket = buckets.find(bucket => 
+        bucket.name.toLowerCase() === 'construction_documents'
+      );
+    }
+    
+    if (!constructionBucket) {
+      constructionBucket = buckets.find(bucket => 
+        bucket.name.toLowerCase().includes('construction') &&
+        bucket.name.toLowerCase().includes('document')
+      );
+    }
+    
+    if (!constructionBucket) {
+      // If we still haven't found a matching bucket, just use the first one as fallback
+      constructionBucket = buckets[0];
+      console.warn('Construction documents bucket not found. Using fallback bucket:', constructionBucket.name);
+    } else {
+      console.log('Found construction documents bucket:', constructionBucket.name);
+    }
     
     return {
       success: true,

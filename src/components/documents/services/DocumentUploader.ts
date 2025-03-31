@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
+import { findStorageBucket } from '@/integrations/supabase/client';
 
 export interface UploadResult {
   success: boolean;
@@ -26,31 +27,32 @@ const getMimeTypeFromExtension = (fileExt: string): string => {
   return mimeMap[fileExt.toLowerCase()] || 'application/octet-stream';
 };
 
-// Get construction documents bucket name (case-insensitive)
-const getConstructionBucketName = async (): Promise<string> => {
-  const { data: buckets } = await supabase.storage.listBuckets();
+// Use a cached bucket name to avoid repeatedly looking it up
+let cachedBucketName: string | null = null;
+
+// Get construction documents bucket name with proper caching
+const getStorageBucketName = async (): Promise<string> => {
+  // Return cached bucket name if available
+  if (cachedBucketName) {
+    return cachedBucketName;
+  }
   
-  // Default fallback name
+  // Find the appropriate storage bucket
+  const bucket = await findStorageBucket();
+  
+  if (bucket && bucket.name) {
+    // Cache the result to avoid future API calls
+    cachedBucketName = bucket.name;
+    console.log(`Using storage bucket: "${bucket.name}"`);
+    return bucket.name;
+  }
+  
+  // Default fallback if no bucket found
   const defaultBucketName = 'construction_documents';
+  console.warn(`No suitable bucket found, using default name: "${defaultBucketName}"`);
+  console.warn('Upload will likely fail - a bucket must be created in Supabase dashboard');
   
-  if (!buckets || buckets.length === 0) {
-    console.warn('No buckets found, using default name:', defaultBucketName);
-    return defaultBucketName;
-  }
-  
-  // Find the construction documents bucket with case-insensitive comparison
-  const constructionBucket = buckets.find(bucket => 
-    bucket.name.toLowerCase().includes('construction') &&
-    bucket.name.toLowerCase().includes('document')
-  );
-  
-  if (!constructionBucket) {
-    console.warn('Construction documents bucket not found, using default name:', defaultBucketName);
-    return defaultBucketName;
-  }
-  
-  console.log('Using bucket with exact name:', constructionBucket.name);
-  return constructionBucket.name;
+  return defaultBucketName;
 };
 
 export const uploadDocument = async (
@@ -64,7 +66,7 @@ export const uploadDocument = async (
     const { files, metadata } = data;
     
     // Get the exact bucket name first to avoid case sensitivity issues
-    const bucketName = await getConstructionBucketName();
+    const bucketName = await getStorageBucketName();
     console.log(`Using storage bucket: "${bucketName}"`);
     
     // We'll handle multiple files if they're provided
