@@ -14,6 +14,8 @@ import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema'
 export const useSummaryCalculations = () => {
   const form = useFormContext<EstimateFormValues>();
   
+  console.log('Form values in useSummaryCalculations:', form.getValues());
+  
   // Fix for error #1: Provide a valid default value for items that matches the expected type
   const items = useWatch({
     control: form.control,
@@ -21,21 +23,30 @@ export const useSummaryCalculations = () => {
     defaultValue: [{ description: '', quantity: '1', unitPrice: '0', cost: '0', markup_percentage: '0' }]
   });
 
+  console.log('Items from useWatch:', items);
+
   const contingencyPercentage = useWatch({
     control: form.control,
     name: 'contingency_percentage',
     defaultValue: "0"
   });
 
+  console.log('Contingency percentage:', contingencyPercentage);
+
   // Fix for error #2: Ensure items is treated as an array and handle it safely
   const calculationItems: EstimateItem[] = Array.isArray(items) 
-    ? items.map((item: any) => ({
-        cost: item.cost || '0',
-        markup_percentage: item.markup_percentage || '0',
-        quantity: item.quantity || '1',
-        item_type: item.item_type
-      })) 
+    ? items.map((item: any) => {
+        console.log('Processing item for calculation:', item);
+        return {
+          cost: item?.cost || '0',
+          markup_percentage: item?.markup_percentage || '0',
+          quantity: item?.quantity || '1',
+          item_type: item?.item_type
+        };
+      }) 
     : [];
+
+  console.log('Transformed calculation items:', calculationItems);
 
   // Calculate all the totals
   const totalCost = calculateTotalCost(calculationItems);
@@ -45,6 +56,16 @@ export const useSummaryCalculations = () => {
   const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
   const contingencyAmount = calculateContingencyAmount(calculationItems, contingencyPercentage);
   const grandTotal = calculateGrandTotal(calculationItems, contingencyPercentage);
+
+  console.log('Calculation results:', {
+    totalCost,
+    totalMarkup,
+    subtotal,
+    totalGrossMargin,
+    overallMarginPercentage,
+    contingencyAmount,
+    grandTotal
+  });
 
   return {
     totalCost,

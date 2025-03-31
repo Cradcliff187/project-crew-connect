@@ -15,6 +15,7 @@ export const useEstimateSubmit = () => {
   ) => {
     try {
       setIsSubmitting(true);
+      console.log('Starting estimate submission with data:', data);
 
       const estimateId = uuidv4();
       let customerId: string | null = null;
@@ -22,6 +23,7 @@ export const useEstimateSubmit = () => {
       // Handle customer selection or creation
       if (data.isNewCustomer && data.newCustomer?.name) {
         const newCustomerId = uuidv4();
+        console.log('Creating new customer:', data.newCustomer);
         
         // Create a new customer
         const { error: customerError } = await supabase
@@ -39,15 +41,19 @@ export const useEstimateSubmit = () => {
           });
 
         if (customerError) {
+          console.error('Error creating customer:', customerError);
           throw new Error(`Error creating customer: ${customerError.message}`);
         }
 
+        console.log('New customer created with ID:', newCustomerId);
         customerId = newCustomerId;
       } else if (data.customer) {
+        console.log('Using existing customer with ID:', data.customer);
         customerId = data.customer;
       }
 
       // Create the estimate
+      console.log('Creating estimate with ID:', estimateId);
       const { error: estimateError } = await supabase
         .from('estimates')
         .insert({
@@ -68,10 +74,12 @@ export const useEstimateSubmit = () => {
         });
 
       if (estimateError) {
+        console.error('Error creating estimate:', estimateError);
         throw new Error(`Error creating estimate: ${estimateError.message}`);
       }
 
       // Create a revision for the estimate
+      console.log('Creating revision for estimate');
       const revisionId = uuidv4();
       const { error: revisionError } = await supabase
         .from('estimate_revisions')
@@ -84,11 +92,14 @@ export const useEstimateSubmit = () => {
         });
 
       if (revisionError) {
+        console.error('Error creating estimate revision:', revisionError);
         throw new Error(`Error creating estimate revision: ${revisionError.message}`);
       }
 
       // Create the line items
+      console.log('Creating line items for estimate');
       const lineItems = data.items.map(item => {
+        console.log('Processing line item:', item);
         const cost = parseFloat(item.cost) || 0;
         const markup_percentage = parseFloat(item.markup_percentage) || 0;
         const markup_amount = cost * (markup_percentage / 100);
@@ -118,11 +129,13 @@ export const useEstimateSubmit = () => {
       });
 
       // Insert the line items
+      console.log(`Inserting ${lineItems.length} line items`);
       const { error: itemsError } = await supabase
         .from('estimate_items')
         .insert(lineItems);
 
       if (itemsError) {
+        console.error('Error creating estimate items:', itemsError);
         throw new Error(`Error creating estimate items: ${itemsError.message}`);
       }
 
@@ -166,6 +179,7 @@ export const useEstimateSubmit = () => {
       const estimateTotal = total + contingencyAmount;
       
       // Update the estimate with the final amount
+      console.log('Updating estimate with final amount:', estimateTotal);
       const { error: updateError } = await supabase
         .from('estimates')
         .update({ 
@@ -179,6 +193,7 @@ export const useEstimateSubmit = () => {
         // Continue even if this fails
       }
 
+      console.log('Estimate creation completed successfully');
       toast({
         title: 'Estimate Created',
         description: 'Your estimate has been created successfully.',

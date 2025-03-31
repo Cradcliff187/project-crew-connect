@@ -23,6 +23,7 @@ export function useRecentActivity() {
       setError(null);
       
       try {
+        console.log('Fetching activity logs...');
         // Fetch recent activity logs
         const { data, error } = await supabase
           .from('activitylog')
@@ -32,8 +33,11 @@ export function useRecentActivity() {
           
         if (error) throw error;
         
+        console.log('Activity logs fetched:', data);
+        
         // Process and format the activity data
         const formattedActivities = await Promise.all((data || []).map(async (activity) => {
+          console.log('Formatting activity:', activity);
           return formatActivity(activity);
         }));
         
@@ -60,25 +64,46 @@ export function useRecentActivity() {
     // Get entity name based on reference ID and module type
     if (activity.referenceid) {
       try {
+        console.log(`Getting entity name for ${activity.moduletype} with ID ${activity.referenceid}`);
+        
         if (activity.moduletype === 'PROJECTS') {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('projects')
             .select('projectname')
             .eq('projectid', activity.referenceid)
-            .single();
-          entityName = data?.projectname || 'Unknown Project';
+            .maybeSingle(); // Changed from .single() to .maybeSingle()
+            
+          console.log('Project lookup result:', { data, error });
+          
+          if (error) {
+            console.error('Error fetching project name:', error);
+            entityName = 'Unknown Project';
+          } else {
+            entityName = data?.projectname || 'Unknown Project';
+          }
         } else if (activity.moduletype === 'WORK_ORDER') {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('maintenance_work_orders')
             .select('title')
             .eq('work_order_id', activity.referenceid)
-            .single();
-          entityName = data?.title || 'Unknown Work Order';
+            .maybeSingle(); // Changed from .single() to .maybeSingle()
+            
+          console.log('Work order lookup result:', { data, error });
+          
+          if (error) {
+            console.error('Error fetching work order title:', error);
+            entityName = 'Unknown Work Order';
+          } else {
+            entityName = data?.title || 'Unknown Work Order';
+          }
         }
       } catch (err) {
         console.error('Error fetching entity name:', err);
+        entityName = `Unknown ${activity.moduletype}`;
       }
     }
+    
+    console.log(`Entity name determined: "${entityName}" for ${activity.moduletype}`);
     
     // Set properties based on activity type
     switch (activity.moduletype) {
@@ -123,23 +148,18 @@ export function useRecentActivity() {
         content = `<span class="font-medium">${activity.useremail || 'A user'}</span> performed an action`;
     }
     
-    // If no real activity data yet, create placeholder activities
-    if (!activity.timestamp) {
-      return {
-        icon,
-        iconBg,
-        iconColor,
-        content,
-        timeAgo: '2 days ago'
-      };
-    }
+    const timeAgo = activity.timestamp 
+      ? formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true }) 
+      : '2 days ago';
+      
+    console.log(`Formatted activity with content: "${content}" and timeAgo: "${timeAgo}"`);
     
     return {
       icon,
       iconBg,
       iconColor,
       content,
-      timeAgo: formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })
+      timeAgo
     };
   }
 
