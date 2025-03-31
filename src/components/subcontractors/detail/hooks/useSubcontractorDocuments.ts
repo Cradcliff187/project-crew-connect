@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { SubcontractorDocument } from '../types';
 import { toast } from '@/hooks/use-toast';
 
@@ -52,7 +52,7 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
       
       console.log('Total unique documents:', uniqueDocs.length);
       
-      // Get public URLs for documents
+      // Get public URLs for documents using the consistent bucket ID
       const enhancedDocuments = await Promise.all(
         uniqueDocs.map(async (doc) => {
           let url = '';
@@ -69,9 +69,9 @@ export const useSubcontractorDocuments = (subcontractorId: string) => {
               }
             };
             
-            // Using signed URLs for better security
+            // Using signed URLs for better security with the constant bucket ID
             const { data, error } = await supabase.storage
-              .from('construction_documents')
+              .from(DOCUMENTS_BUCKET_ID)
               .createSignedUrl(doc.storage_path, 300, options); // 5 minutes expiration
               
             if (error) {

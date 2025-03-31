@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -123,13 +123,13 @@ export function useTimeEntryForm(onSuccess: () => void) {
       if (selectedFiles.length > 0 && insertedEntry) {
         // Use the improved document upload approach
         for (const file of selectedFiles) {
-          // First upload file to storage
+          // First upload file to storage using the constant bucket ID
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
           
           const { error: uploadError } = await supabase.storage
-            .from('construction_documents')
+            .from(DOCUMENTS_BUCKET_ID)
             .upload(filePath, file);
             
           if (uploadError) throw uploadError;

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { WorkOrderDocument } from './types';
 
 export const useWorkOrderDocuments = (workOrderId: string) => {
@@ -99,7 +99,7 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
       const allDocuments = [...(documentsData || []), ...receiptDocuments];
       console.log('Combined documents before URL generation:', allDocuments);
       
-      // Get signed URLs for documents for better security
+      // Get signed URLs for documents for better security - use the consistent bucket ID
       const enhancedDocuments = await Promise.all(
         allDocuments.map(async (doc) => {
           let url = '';
@@ -114,7 +114,7 @@ export const useWorkOrderDocuments = (workOrderId: string) => {
             };
             
             const { data, error } = await supabase.storage
-              .from('construction_documents') // Using the correct bucket name
+              .from(DOCUMENTS_BUCKET_ID) // Using the consistent bucket ID
               .createSignedUrl(doc.storage_path, 300, options); // 5 minutes expiration
               
             if (error) {

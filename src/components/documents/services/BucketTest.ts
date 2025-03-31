@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 
 interface BucketTestResult {
   success: boolean;
@@ -38,9 +38,8 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // Look specifically for the construction_documents bucket by ID (not name)
-    // This is more reliable than matching by name which can have case sensitivity issues
-    const constructionBucket = buckets.find(bucket => bucket.id === 'construction_documents');
+    // Look specifically for the bucket using the constant bucket ID
+    const constructionBucket = buckets.find(bucket => bucket.id === DOCUMENTS_BUCKET_ID);
     
     if (constructionBucket) {
       console.log('Found construction documents bucket:', constructionBucket.id);
@@ -55,9 +54,9 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     // but provide a clear warning
     const fallbackBucket = buckets[0];
     console.warn(
-      'Construction documents bucket not found. Using fallback bucket:', 
+      `${DOCUMENTS_BUCKET_ID} bucket not found. Using fallback bucket:`, 
       fallbackBucket.id,
-      '- Please create a bucket with ID "construction_documents" in Supabase.'
+      `- Please create a bucket with ID "${DOCUMENTS_BUCKET_ID}" in Supabase.`
     );
     
     return {

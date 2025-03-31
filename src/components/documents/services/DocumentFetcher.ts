@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 
 interface FetchDocumentOptions {
@@ -31,9 +31,9 @@ export const fetchDocumentWithUrl = async (
       return null;
     }
     
-    // Generate a public URL for the document
+    // Generate a public URL for the document using the constant bucket ID
     const { data: { publicUrl } } = supabase.storage
-      .from('construction_documents')
+      .from(DOCUMENTS_BUCKET_ID)
       .getPublicUrl(data.storage_path, {
         transform: data.file_type?.startsWith('image/') ? options.imageOptions : undefined,
         download: false,
@@ -77,7 +77,7 @@ export const fetchDocumentsByEntity = async (
     const documentsWithUrls = await Promise.all(
       (data || []).map(async (doc) => {
         const { data: { publicUrl } } = supabase.storage
-          .from('construction_documents')
+          .from(DOCUMENTS_BUCKET_ID)
           .getPublicUrl(doc.storage_path, {
             transform: doc.file_type?.startsWith('image/') ? options.imageOptions : undefined,
             download: false,

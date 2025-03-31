@@ -6,7 +6,7 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://zrxezqllmpdlhiudutme.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ";
 
-// The expected bucket ID that should be used for document storage
+// The expected bucket ID that should be used for all document storage operations
 export const DOCUMENTS_BUCKET_ID = 'construction_documents';
 
 // Create client with explicit headers to ensure API key is always sent
@@ -30,7 +30,7 @@ export const supabase = createClient<Database>(
     },
     // Initialize storage settings with correct defaults
     storage: {
-      // Don't limit the file sizes by default
+      // Set reasonable file size limit
       maxFileSize: 50 * 1024 * 1024, // 50MB max file size
     },
   }
@@ -50,7 +50,7 @@ export const findStorageBucket = async () => {
     // Log all available buckets for debugging
     console.log('Available storage buckets:', buckets?.map(b => `${b.id} (${b.name})`));
     
-    // Find the construction_documents bucket by ID (not name)
+    // Find our specific construction_documents bucket by ID
     const bucket = buckets?.find(b => b.id === DOCUMENTS_BUCKET_ID);
     
     if (bucket) {

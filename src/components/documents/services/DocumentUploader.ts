@@ -88,7 +88,7 @@ export const uploadDocument = async (
         options: fileOptions
       });
       
-      // Upload the file to Supabase Storage with explicit content type and exact bucket ID
+      // Use the DOCUMENTS_BUCKET_ID constant for all storage operations
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
         .upload(filePath, file, fileOptions);
@@ -105,7 +105,7 @@ export const uploadDocument = async (
       
       console.log('File uploaded successfully:', uploadData);
       
-      // Get public URL for the uploaded file
+      // Get public URL for the uploaded file using the same bucket ID constant
       const { data: { publicUrl } } = supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
         .getPublicUrl(filePath);
