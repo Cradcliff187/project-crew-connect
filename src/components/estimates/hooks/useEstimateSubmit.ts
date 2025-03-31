@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,7 @@ export const useEstimateSubmit = () => {
 
   const submitEstimate = async (
     data: EstimateFormValues,
-    customers: { id: string; name: string }[],
+    customers: { id: string; name: string; address?: string; city?: string; state?: string; zip?: string }[],
     onClose: () => void
   ) => {
     try {
@@ -17,6 +16,10 @@ export const useEstimateSubmit = () => {
       console.log('Starting estimate submission with data:', data);
 
       let customerId: string | null = null;
+      let customerAddress: string | null = null;
+      let customerCity: string | null = null;
+      let customerState: string | null = null;
+      let customerZip: string | null = null;
 
       // Handle customer selection or creation
       if (data.isNewCustomer && data.newCustomer?.name) {
@@ -51,9 +54,24 @@ export const useEstimateSubmit = () => {
 
         console.log('New customer created with ID:', newCustomer.customerid);
         customerId = newCustomer.customerid;
+        
+        // Store the new customer's address information for use in the estimate
+        customerAddress = data.newCustomer.address || null;
+        customerCity = data.newCustomer.city || null;
+        customerState = data.newCustomer.state || null;
+        customerZip = data.newCustomer.zip || null;
       } else if (data.customer) {
         console.log('Using existing customer with ID:', data.customer);
         customerId = data.customer;
+        
+        // Get the selected customer's address information
+        const selectedCustomer = customers.find(c => c.id === data.customer);
+        if (selectedCustomer) {
+          customerAddress = selectedCustomer.address || null;
+          customerCity = selectedCustomer.city || null; 
+          customerState = selectedCustomer.state || null;
+          customerZip = selectedCustomer.zip || null;
+        }
       }
 
       // Generate our own estimate ID - using the format EST-XXXXXX
@@ -61,6 +79,14 @@ export const useEstimateSubmit = () => {
       const estimateIdPrefix = 'EST-';
       const randomId = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
       const generatedEstimateId = estimateIdPrefix + randomId;
+      
+      // Determine which location data to use
+      // If showSiteLocation is true, use the custom location
+      // Otherwise, use the customer's address
+      const locationAddress = data.showSiteLocation ? data.location.address : customerAddress;
+      const locationCity = data.showSiteLocation ? data.location.city : customerCity;
+      const locationState = data.showSiteLocation ? data.location.state : customerState;
+      const locationZip = data.showSiteLocation ? data.location.zip : customerZip;
       
       // Create the estimate with our generated ID
       const { data: newEstimate, error: estimateError } = await supabase
@@ -73,10 +99,10 @@ export const useEstimateSubmit = () => {
           customername: customerId ? 
             customers.find(c => c.id === customerId)?.name || null : 
             data.newCustomer?.name || null,
-          sitelocationaddress: data.showSiteLocation ? data.location.address || null : null,
-          sitelocationcity: data.showSiteLocation ? data.location.city || null : null,
-          sitelocationstate: data.showSiteLocation ? data.location.state || null : null,
-          sitelocationzip: data.showSiteLocation ? data.location.zip || null : null,
+          sitelocationaddress: locationAddress,
+          sitelocationcity: locationCity,
+          sitelocationstate: locationState,
+          sitelocationzip: locationZip,
           datecreated: new Date().toISOString(),
           status: 'draft',
           contingency_percentage: parseFloat(data.contingency_percentage || '0'),

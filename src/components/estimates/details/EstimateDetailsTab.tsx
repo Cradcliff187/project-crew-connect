@@ -42,6 +42,11 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
     }).format(amount);
   };
 
+  // Check if we have valid location data to display
+  const hasLocationData = estimate.location && 
+    (estimate.location.address || estimate.location.city || 
+     estimate.location.state || estimate.location.zip);
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Card>
@@ -84,16 +89,16 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
               <span className="text-muted-foreground">Project:</span>
               <span className="font-medium">{estimate.project}</span>
             </div>
-            {estimate.location && (
+            {hasLocationData && (
               <div className="grid grid-cols-2">
                 <span className="text-muted-foreground">Location:</span>
                 <div className="font-medium">
-                  {estimate.location.address && <div>{estimate.location.address}</div>}
-                  {(estimate.location.city || estimate.location.state || estimate.location.zip) && (
+                  {estimate.location?.address && <div>{estimate.location.address}</div>}
+                  {(estimate.location?.city || estimate.location?.state || estimate.location?.zip) && (
                     <div>
-                      {estimate.location.city && `${estimate.location.city}, `}
-                      {estimate.location.state && `${estimate.location.state} `}
-                      {estimate.location.zip && estimate.location.zip}
+                      {estimate.location?.city && `${estimate.location.city}, `}
+                      {estimate.location?.state && `${estimate.location.state} `}
+                      {estimate.location?.zip && estimate.location.zip}
                     </div>
                   )}
                 </div>

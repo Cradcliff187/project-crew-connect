@@ -33,6 +33,12 @@ const EstimateInfoCard: React.FC<EstimateInfoCardProps> = ({ data }) => {
     });
   };
 
+  // Check if we have valid location data to display
+  const hasLocationData = data.sitelocationaddress || 
+                         data.sitelocationcity || 
+                         data.sitelocationstate || 
+                         data.sitelocationzip;
+
   return (
     <Card>
       <CardHeader>
@@ -90,7 +96,7 @@ const EstimateInfoCard: React.FC<EstimateInfoCardProps> = ({ data }) => {
           </dl>
         </div>
         
-        {(data.sitelocationaddress || data.sitelocationcity) && (
+        {hasLocationData && (
           <div>
             <h3 className="font-medium text-sm text-gray-500 mb-1 flex items-center">
               <MapPin className="h-4 w-4 mr-1 text-gray-400" />
