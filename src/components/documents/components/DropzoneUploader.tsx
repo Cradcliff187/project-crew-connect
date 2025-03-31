@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Upload, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -24,17 +24,17 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   label = 'Upload Document',
   instanceId = 'main-dropzone'
 }) => {
-  // Generate truly unique ID for this instance
-  const uniqueId = `${instanceId}-${React.useId()}`;
-  const inputId = `${uniqueId}-file-input`;
+  // Create deterministic ID based on provided instanceId
+  const inputId = `file-input-${instanceId.replace(/[^a-zA-Z0-9-]/g, '-')}`;
   
   // Log to verify component is rendering with correct props
-  console.log('DropzoneUploader rendering with ID:', uniqueId, {
+  console.log('DropzoneUploader rendering with ID:', instanceId, {
     files: watchFiles.length > 0 ? watchFiles.map(f => f.name) : 'none',
     previewURL: previewURL ? 'has preview' : 'no preview'
   });
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Use memoized callback to prevent unnecessary re-renders
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       // Ensure we're passing proper File objects
@@ -42,21 +42,35 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
       console.log(`Files selected for ${instanceId}:`, fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
       onFileSelect(fileArray);
     }
-  };
+  }, [onFileSelect, instanceId]);
   
-  const handleDropzoneClick = (e: React.MouseEvent) => {
+  // Use memoized callback to prevent unnecessary re-renders
+  const handleDropzoneClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     
     console.log(`Dropzone clicked for ${instanceId}, activating input with ID:`, inputId);
-    // Use getElementById to find the input element by its unique ID
+    // Get input element by ID
     const inputElement = document.getElementById(inputId);
     if (inputElement) {
       inputElement.click();
     } else {
       console.error(`Could not find input element with ID: ${inputId}`);
     }
-  };
+  }, [inputId, instanceId]);
+  
+  // Use memoized callback to prevent unnecessary re-renders
+  const handleBrowseClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const inputElement = document.getElementById(inputId);
+    if (inputElement) {
+      inputElement.click();
+    } else {
+      console.error(`Could not find input element with ID: ${inputId}`);
+    }
+  }, [inputId]);
   
   return (
     <FormField
@@ -73,7 +87,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
                 )}
                 onClick={handleDropzoneClick}
-                data-dropzone-id={uniqueId}
+                data-dropzone-id={instanceId}
               >
                 {previewURL ? (
                   <div className="w-full h-full p-2 flex flex-col items-center justify-center">
@@ -97,17 +111,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                       variant="outline" 
                       size="sm"
                       className="mt-2 border-[#0485ea] text-[#0485ea]"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        
-                        const inputElement = document.getElementById(inputId);
-                        if (inputElement) {
-                          inputElement.click();
-                        } else {
-                          console.error(`Could not find input element with ID: ${inputId}`);
-                        }
-                      }}
+                      onClick={handleBrowseClick}
                     >
                       <FolderOpen className="h-4 w-4 mr-2" />
                       Browse Files
@@ -153,4 +157,4 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   );
 };
 
-export default DropzoneUploader;
+export default React.memo(DropzoneUploader);

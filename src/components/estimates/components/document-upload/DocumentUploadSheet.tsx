@@ -23,19 +23,30 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   title
 }) => {
   // Create deterministic IDs that won't change between renders
+  // Using sanitized values to ensure they're valid for DOM IDs
   const stableSheetId = useMemo(() => {
+    const sanitizedTempId = tempId.replace(/[^a-zA-Z0-9-]/g, '-');
+    const sanitizedItemId = itemId ? itemId.replace(/[^a-zA-Z0-9-]/g, '-') : 'unknown';
+    
     return entityType === 'ESTIMATE_ITEM' 
-      ? `estimate-item-${itemId || 'unknown'}-${tempId}` 
-      : `estimate-${tempId}`;
+      ? `estimate-item-${sanitizedItemId}-${sanitizedTempId}` 
+      : `estimate-${sanitizedTempId}`;
   }, [entityType, itemId, tempId]);
 
   // Generate a consistent entity ID
   const entityId = useMemo(() => {
+    // Ensure we have sanitized, valid IDs
+    const sanitizedTempId = tempId.replace(/[^a-zA-Z0-9-]/g, '-');
+    
     if (entityType === 'ESTIMATE_ITEM' && itemId) {
-      return `${tempId}-item-${itemId}`;
+      const sanitizedItemId = itemId.replace(/[^a-zA-Z0-9-]/g, '-');
+      return `${sanitizedTempId}-item-${sanitizedItemId}`;
     }
-    return tempId;
+    return sanitizedTempId;
   }, [entityType, tempId, itemId]);
+  
+  // Unique aria ID for accessibility
+  const sheetDescriptionId = `sheet-desc-${stableSheetId}`;
 
   // Don't render anything if the sheet is closed
   if (!isOpen) {
@@ -47,10 +58,11 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
       className="w-[90vw] sm:max-w-[600px] p-0" 
       onInteractOutside={onClose}
       onEscapeKeyDown={onClose}
+      aria-describedby={sheetDescriptionId}
     >
       <SheetHeader className="p-6 pb-2">
         <SheetTitle>{title}</SheetTitle>
-        <SheetDescription>
+        <SheetDescription id={sheetDescriptionId}>
           Upload files to attach to {entityType === 'ESTIMATE_ITEM' ? 'this line item' : 'this estimate'}.
         </SheetDescription>
       </SheetHeader>

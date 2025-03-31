@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Control } from 'react-hook-form';
@@ -14,6 +14,27 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({
   control,
   instanceId = 'default-expense-type'
 }) => {
+  // Create a sanitized instanceId to ensure it's valid for DOM IDs
+  const sanitizedInstanceId = instanceId.replace(/[^a-zA-Z0-9-]/g, '-');
+  
+  // Memoize the rendering of radio options for better performance
+  const renderRadioOptions = useCallback(() => {
+    return expenseTypes.map((type) => {
+      const radioId = `${sanitizedInstanceId}-expense-type-${type}`;
+      return (
+        <div key={type} className="flex items-center space-x-2">
+          <RadioGroupItem value={type} id={radioId} />
+          <label 
+            htmlFor={radioId} 
+            className="text-sm font-normal cursor-pointer"
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </label>
+        </div>
+      );
+    });
+  }, [sanitizedInstanceId]);
+  
   return (
     <FormField
       control={control}
@@ -27,17 +48,7 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({
               defaultValue={field.value}
               className="flex flex-wrap gap-4"
             >
-              {expenseTypes.map((type) => (
-                <div key={type} className="flex items-center space-x-2">
-                  <RadioGroupItem value={type} id={`${instanceId}-expense-type-${type}`} />
-                  <label 
-                    htmlFor={`${instanceId}-expense-type-${type}`} 
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </label>
-                </div>
-              ))}
+              {renderRadioOptions()}
             </RadioGroup>
           </FormControl>
           <FormMessage />

@@ -8,6 +8,24 @@ export interface UploadResult {
   error?: any;
 }
 
+// Helper function to determine MIME type from file extension
+const getMimeTypeFromExtension = (fileExt: string): string => {
+  const mimeMap: Record<string, string> = {
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'txt': 'text/plain'
+  };
+  
+  return mimeMap[fileExt.toLowerCase()] || 'application/octet-stream';
+};
+
 export const uploadDocument = async (
   data: DocumentUploadFormValues
 ): Promise<UploadResult> => {
@@ -22,11 +40,11 @@ export const uploadDocument = async (
     for (const file of files) {
       // Create a unique file name using timestamp and original name
       const timestamp = new Date().getTime();
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop() || '';
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       
       // Format entity type for path to ensure consistency
-      const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
+      const entityTypePath = metadata.entityType.toLowerCase().replace(/_/g, '-');
       const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
@@ -49,24 +67,8 @@ export const uploadDocument = async (
       // Determine the proper content type based on file extension if needed
       let contentType = file.type;
       if (!contentType || contentType === 'application/octet-stream') {
-        // Map common extensions to MIME types
-        const mimeMap: Record<string, string> = {
-          'pdf': 'application/pdf',
-          'doc': 'application/msword',
-          'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'xls': 'application/vnd.ms-excel',
-          'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'png': 'image/png',
-          'jpg': 'image/jpeg',
-          'jpeg': 'image/jpeg',
-          'gif': 'image/gif',
-          'txt': 'text/plain'
-        };
-        
-        if (fileExt && mimeMap[fileExt.toLowerCase()]) {
-          contentType = mimeMap[fileExt.toLowerCase()];
-          console.log(`File type not provided, using extension-based type: ${contentType}`);
-        }
+        contentType = getMimeTypeFromExtension(fileExt);
+        console.log(`File type not provided, using extension-based type: ${contentType}`);
       }
       
       // Create file options with proper headers to preserve content type

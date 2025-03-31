@@ -27,9 +27,9 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // Find construction_documents bucket
+    // Find construction_documents bucket - using case-insensitive matching
     const constructionBucket = buckets.find(bucket => 
-      bucket.name === 'construction_documents'
+      bucket.name.toLowerCase() === 'construction_documents'.toLowerCase()
     );
     
     if (!constructionBucket) {
