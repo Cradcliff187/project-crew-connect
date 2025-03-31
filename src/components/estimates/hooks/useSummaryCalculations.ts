@@ -25,7 +25,13 @@ export const useSummaryCalculations = () => {
   const itemsArray = useWatch({
     control: form.control,
     name: 'items',
-    defaultValue: []
+    // Fix: Use a default value that matches the expected type (at least one item)
+    defaultValue: [{ 
+      description: '',
+      cost: '0',
+      markup_percentage: '0',
+      quantity: '1'
+    }]
   });
   
   const contingencyPercentage = useWatch({

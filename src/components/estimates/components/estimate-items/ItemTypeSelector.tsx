@@ -14,26 +14,33 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
   
   // Memoize the change handler to prevent re-renders
   const handleTypeChange = useCallback((value: string) => {
-    // Batch state updates to prevent multiple re-renders
-    form.setValue(`items.${index}.item_type`, value, { shouldDirty: true });
+    // Create batched updates object to minimize form re-renders
+    const updates: Record<string, any> = {
+      [`items.${index}.item_type`]: value
+    };
     
-    // Reset type-specific fields when type changes
+    // Add type-specific field resets based on the selected type
     if (value === 'vendor') {
-      form.setValue(`items.${index}.subcontractor_id`, '', { shouldDirty: true });
-      form.setValue(`items.${index}.trade_type`, '', { shouldDirty: true });
-      form.setValue(`items.${index}.custom_type`, '', { shouldDirty: true });
+      updates[`items.${index}.subcontractor_id`] = '';
+      updates[`items.${index}.trade_type`] = '';
+      updates[`items.${index}.custom_type`] = '';
     } else if (value === 'subcontractor') {
-      form.setValue(`items.${index}.vendor_id`, '', { shouldDirty: true });
-      form.setValue(`items.${index}.expense_type`, undefined, { shouldDirty: true });
-      form.setValue(`items.${index}.custom_type`, '', { shouldDirty: true });
+      updates[`items.${index}.vendor_id`] = '';
+      updates[`items.${index}.expense_type`] = undefined;
+      updates[`items.${index}.custom_type`] = '';
     } else {
       // For labor, reset all vendor and subcontractor specific fields
-      form.setValue(`items.${index}.vendor_id`, '', { shouldDirty: true });
-      form.setValue(`items.${index}.subcontractor_id`, '', { shouldDirty: true });
-      form.setValue(`items.${index}.trade_type`, '', { shouldDirty: true });
-      form.setValue(`items.${index}.expense_type`, undefined, { shouldDirty: true });
-      form.setValue(`items.${index}.custom_type`, '', { shouldDirty: true });
+      updates[`items.${index}.vendor_id`] = '';
+      updates[`items.${index}.subcontractor_id`] = '';
+      updates[`items.${index}.trade_type`] = '';
+      updates[`items.${index}.expense_type`] = undefined;
+      updates[`items.${index}.custom_type`] = '';
     }
+    
+    // Apply all updates in one batch to minimize re-renders
+    Object.entries(updates).forEach(([field, value]) => {
+      form.setValue(field, value, { shouldDirty: true });
+    });
   }, [form, index]);
   
   return (

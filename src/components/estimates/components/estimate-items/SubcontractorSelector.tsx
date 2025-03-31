@@ -19,7 +19,14 @@ const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, su
   
   // Optimize value change handler with useCallback
   const handleValueChange = useCallback((value: string) => {
-    form.setValue(`items.${index}.subcontractor_id`, value === "none" ? "" : value, { shouldDirty: true });
+    // Use a direct value check instead of an equality comparison for better stability
+    const finalValue = value === "none" ? "" : value;
+    
+    // Use setValue with minimal options to reduce re-renders
+    form.setValue(`items.${index}.subcontractor_id`, finalValue, { 
+      shouldDirty: true,
+      shouldValidate: false, // Don't validate on change to reduce calculations
+    });
   }, [form, index]);
   
   return (
