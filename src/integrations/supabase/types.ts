@@ -1954,6 +1954,50 @@ export type Database = {
           },
         ]
       }
+      vendor_status_history: {
+        Row: {
+          changed_by: string | null
+          changed_date: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          previous_status: string | null
+          status: string
+          updated_at: string
+          vendorid: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          status: string
+          updated_at?: string
+          vendorid: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_date?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          previous_status?: string | null
+          status?: string
+          updated_at?: string
+          vendorid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_status_history_vendorid_fkey"
+            columns: ["vendorid"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["vendorid"]
+          },
+        ]
+      }
       vendors: {
         Row: {
           address: string | null
