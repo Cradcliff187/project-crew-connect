@@ -23,7 +23,10 @@ const DialogContent = ({
   setCurrentStep
 }: DialogContentProps) => {
   return (
-    <ShadcnDialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
+    <ShadcnDialogContent 
+      className="max-w-3xl max-h-[90vh] overflow-hidden p-0 flex flex-col"
+      aria-describedby="estimate-form-description"
+    >
       <DialogHeader className="px-6 pt-6 pb-2">
         <DialogTitle className="text-2xl font-semibold text-[#0485ea] flex items-center">
           Create New Estimate
@@ -33,6 +36,9 @@ const DialogContent = ({
             currentStep={currentStep}
           />
         </DialogTitle>
+        <p id="estimate-form-description" className="text-sm text-muted-foreground">
+          Create and manage estimates for your customers
+        </p>
       </DialogHeader>
 
       <div className="px-6 py-4">
