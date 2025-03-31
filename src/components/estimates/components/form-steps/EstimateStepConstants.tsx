@@ -22,15 +22,15 @@ export const ESTIMATE_STEPS: EstimateStep[] = [
     description: 'Services and materials'
   },
   { 
-    id: 'documents', 
-    label: 'Documents',
+    id: 'summary', 
+    label: 'Summary',
     icon: <FileTextIcon className="h-4 w-4" />,
-    description: 'Attach supporting documents'
+    description: 'Review details'
   },
   { 
     id: 'review', 
-    label: 'Review',
+    label: 'Preview',
     icon: <CalendarIcon className="h-4 w-4" />,
-    description: 'Review and submit'
+    description: 'Preview and submit'
   }
 ];

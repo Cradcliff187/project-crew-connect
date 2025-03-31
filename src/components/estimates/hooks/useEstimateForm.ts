@@ -89,9 +89,11 @@ export const useEstimateForm = ({ open }: UseEstimateFormProps) => {
       case 'basic-info':
         return form.trigger(['project', 'customer', 'description']);
       case 'line-items':
-        return form.trigger(['items']);
-      case 'documents':
-        return Promise.resolve(true); // Documents are optional
+        return form.trigger(['items', 'contingency_percentage']);
+      case 'summary':
+        return Promise.resolve(true); // Summary step is just review, no validation needed
+      case 'review':
+        return Promise.resolve(true); // Preview step is also just review
       default:
         return Promise.resolve(true);
     }

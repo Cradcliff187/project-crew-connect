@@ -4,7 +4,7 @@ import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import BasicInfoStep from './BasicInfoStep';
 import LineItemsStep from './LineItemsStep';
-import DocumentsStep from './DocumentsStep';
+import SummaryStep from './SummaryStep';
 import ReviewStep from './ReviewStep';
 
 interface EstimateStepContentProps {
@@ -47,8 +47,8 @@ const EstimateStepContent = ({
         <LineItemsStep />
       </TabsContent>
       
-      <TabsContent value="documents" className="m-0">
-        <DocumentsStep />
+      <TabsContent value="summary" className="m-0">
+        <SummaryStep />
       </TabsContent>
       
       <TabsContent value="review" className="m-0">

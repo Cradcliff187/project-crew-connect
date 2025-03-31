@@ -24,7 +24,7 @@ const DialogContent = ({
 }: DialogContentProps) => {
   return (
     <ShadcnDialogContent 
-      className="max-w-3xl max-h-[90vh] overflow-hidden p-0 flex flex-col"
+      className="max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[90vh] overflow-hidden p-0 flex flex-col"
       aria-describedby="estimate-form-description"
     >
       <DialogHeader className="px-6 pt-6 pb-2">

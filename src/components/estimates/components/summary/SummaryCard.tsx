@@ -24,7 +24,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   grandTotal
 }) => {
   return (
-    <Card>
+    <Card className="bg-white shadow-sm">
       <CardContent className="pt-6">
         <div className="space-y-4">
           <SummaryItem 
