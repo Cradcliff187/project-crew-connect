@@ -177,13 +177,16 @@ export const useEstimateDocuments = (estimateId: string) => {
               const relatedItems = allItems.filter(item => item.vendor_id === doc.entity_id);
               const itemDescriptions = relatedItems.map(item => item.description).join(', ');
               
+              // Ensure all required properties are included
               return { 
                 ...doc,
                 url: publicUrl,
                 item_reference: `Vendor Document - Related to: ${itemDescriptions}`,
                 is_vendor_doc: true,
-                item_id: null // These are vendor documents, not directly attached to items
-              };
+                item_id: null, // These are vendor documents, not directly attached to items
+                is_latest_version: doc.is_latest_version ?? true,
+                mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+              } as Document;
             }));
             
             // Add these documents to our array
@@ -225,13 +228,16 @@ export const useEstimateDocuments = (estimateId: string) => {
               const relatedItems = allItems.filter(item => item.subcontractor_id === doc.entity_id);
               const itemDescriptions = relatedItems.map(item => item.description).join(', ');
               
+              // Ensure all required properties are included
               return { 
                 ...doc,
                 url: publicUrl,
                 item_reference: `Subcontractor Document - Related to: ${itemDescriptions}`,
                 is_subcontractor_doc: true,
-                item_id: null // These are subcontractor documents, not directly attached to items
-              };
+                item_id: null, // These are subcontractor documents, not directly attached to items
+                is_latest_version: doc.is_latest_version ?? true,
+                mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+              } as Document;
             }));
             
             // Add these documents to our array

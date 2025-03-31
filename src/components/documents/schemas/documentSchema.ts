@@ -104,7 +104,11 @@ export const documentSchema = z.object({
   is_subcontractor_doc: z.boolean().optional(),
   
   // Add revision ID for tracking which revision a document belongs to
-  revision_id: z.string().optional()
+  revision_id: z.string().optional(),
+  
+  // Add the missing fields required for the type
+  is_latest_version: z.boolean().optional(),
+  mime_type: z.string().optional()
 });
 
 export type DocumentCategory = typeof documentCategories[number];
