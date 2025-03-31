@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { FormFallbackProvider } from '@/hooks/useFormContext';
@@ -26,13 +26,13 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   if (!isOpen) return null;
   
   // Generate a unique ID for this document upload session
-  // This ensures each upload form has its own entity ID context
+  // Create a stable ID that won't change on re-renders
   const uniqueEntityId = itemId 
     ? `${tempId}-item-${itemId}` 
     : tempId;
   
-  // Add a uniqueness identifier for debugging
-  const instanceId = `upload-${entityType}-${uniqueEntityId}-${Date.now()}`;
+  // Create a stable instance ID without Date.now()
+  const instanceId = `upload-${entityType}-${uniqueEntityId}`;
   
   console.log('DocumentUploadSheet rendering:', {
     instanceId,

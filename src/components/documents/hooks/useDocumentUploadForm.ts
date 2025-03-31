@@ -46,23 +46,26 @@ export const useDocumentUploadForm = ({
   // Add uniqueness identifier for debug tracking
   console.log(`Creating document upload form instance: ${instanceId} for entityType=${entityType}, entityId=${entityId || 'new'}`);
 
+  // Create a new form instance with a stable default values object
+  const defaultValues = {
+    files: [],
+    metadata: {
+      category: isReceiptUpload ? 'receipt' : 'other',
+      entityType: entityType,
+      entityId: entityId || '',
+      version: 1,
+      tags: [],
+      isExpense: isReceiptUpload ? true : false,
+      vendorId: '',
+      vendorType: 'vendor',
+      expenseType: 'materials', // Default to materials for receipt uploads
+    }
+  };
+
   // Create a new form instance for each component instance
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
-    defaultValues: {
-      files: [],
-      metadata: {
-        category: isReceiptUpload ? 'receipt' : 'other',
-        entityType: entityType,
-        entityId: entityId || '',
-        version: 1,
-        tags: [],
-        isExpense: isReceiptUpload ? true : false,
-        vendorId: '',
-        vendorType: 'vendor',
-        expenseType: 'materials', // Default to materials for receipt uploads
-      }
-    }
+    defaultValues
   });
 
   // Modified bucket check to assume bucket exists if we've created it 
@@ -107,6 +110,9 @@ export const useDocumentUploadForm = ({
     form.setValue('files', files);
     
     if (files.length > 0 && files[0].type.startsWith('image/')) {
+      if (previewURL) {
+        URL.revokeObjectURL(previewURL);
+      }
       const previewUrl = URL.createObjectURL(files[0]);
       setPreviewURL(previewUrl);
     } else {
@@ -168,13 +174,6 @@ export const useDocumentUploadForm = ({
         description: error.message || "There was an error uploading your document.",
         variant: "destructive"
       });
-      
-      // Even on error, callback to parent to clean up UI
-      if (onCancel) {
-        setTimeout(() => {
-          onCancel();
-        }, 200); // Short wait for toast to be visible
-      }
     } finally {
       setIsUploading(false);
       uploadInProgress.current = false;
@@ -182,6 +181,12 @@ export const useDocumentUploadForm = ({
   };
 
   const initializeForm = () => {
+    // Only initialize once to prevent unnecessary re-renders
+    if (formInitialized.current) {
+      console.log(`[${instanceId}] Form already initialized, skipping`);
+      return;
+    }
+    
     console.log(`[${instanceId}] Initializing form for entityId=${entityId}, entityType=${entityType}`);
     
     // Set the receipt category and expense flag for receipt uploads

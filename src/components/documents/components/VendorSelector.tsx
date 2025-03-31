@@ -1,16 +1,17 @@
 
 import React, { useEffect, useState } from 'react';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
@@ -19,82 +20,99 @@ interface VendorSelectorProps {
   instanceId?: string; // Added instanceId prop
 }
 
-interface VendorOption {
+type Vendor = {
   id: string;
   name: string;
-}
+};
 
 const VendorSelector: React.FC<VendorSelectorProps> = ({ 
   control, 
-  vendorType,
+  vendorType, 
   prefillVendorId,
   instanceId = 'default-vendor'  // Default value
 }) => {
-  const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(false);
-  
-  // Fetch vendors based on vendor type
+
   useEffect(() => {
     const fetchVendors = async () => {
       setLoading(true);
       try {
-        let data: VendorOption[] = [];
-        
         if (vendorType === 'vendor') {
-          const { data: vendorsData } = await supabase
+          const { data } = await supabase
             .from('vendors')
-            .select('vendorid, vendorname');
+            .select('vendorid, vendorname')
+            .order('vendorname');
           
-          data = (vendorsData || []).map(v => ({ 
-            id: v.vendorid, 
-            name: v.vendorname || v.vendorid 
-          }));
+          if (data) {
+            setVendors(data.map(v => ({ id: v.vendorid, name: v.vendorname })));
+          }
         } else if (vendorType === 'subcontractor') {
-          const { data: subsData } = await supabase
+          const { data } = await supabase
             .from('subcontractors')
-            .select('subid, subname');
+            .select('subid, subname')
+            .order('subname');
           
-          data = (subsData || []).map(s => ({ 
-            id: s.subid, 
-            name: s.subname || s.subid 
-          }));
+          if (data) {
+            setVendors(data.map(s => ({ id: s.subid, name: s.subname })));
+          }
         }
-        
-        setVendors(data);
       } catch (error) {
         console.error('Error fetching vendors:', error);
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchVendors();
-  }, [vendorType]);
-  
-  // Set prefill value when available
-  useEffect(() => {
-    if (prefillVendorId) {
-      // For debugging
-      console.log(`Setting prefill vendor ID: ${prefillVendorId}`);
+
+    if (vendorType === 'vendor' || vendorType === 'subcontractor') {
+      fetchVendors();
     }
-  }, [prefillVendorId]);
-  
+  }, [vendorType]);
+
+  // Check if the prefill value is set
+  useEffect(() => {
+    if (prefillVendorId && vendors.length > 0) {
+      const vendorExists = vendors.some(v => v.id === prefillVendorId);
+      if (vendorExists) {
+        // Set the form value
+        // (We're not calling this directly in render to avoid rendering issues)
+        setTimeout(() => {
+          // This will be handled by the form controller
+        }, 0);
+      }
+    }
+  }, [prefillVendorId, vendors]);
+
   return (
     <FormField
       control={control}
       name="metadata.vendorId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{vendorType === 'subcontractor' ? 'Subcontractor' : 'Vendor'}</FormLabel>
-          {vendors.length > 0 ? (
+          <FormLabel>
+            {vendorType === 'vendor' ? 'Vendor' : 
+             vendorType === 'subcontractor' ? 'Subcontractor' : 
+             'Source'}
+          </FormLabel>
+          {vendorType === 'other' ? (
+            <FormControl>
+              <Input 
+                {...field}
+                id={`${instanceId}-vendor-input`}
+                placeholder="Enter source name"
+              />
+            </FormControl>
+          ) : vendors.length > 0 ? (
             <Select
-              value={field.value || prefillVendorId}
+              value={field.value || prefillVendorId || ''}
               onValueChange={field.onChange}
               defaultValue={prefillVendorId}
             >
               <FormControl>
-                <SelectTrigger id={`${instanceId}-vendor-trigger`}>
-                  <SelectValue placeholder={`Select a ${vendorType === 'subcontractor' ? 'subcontractor' : 'vendor'}`} />
+                <SelectTrigger id={`${instanceId}-vendor-select`} className={loading ? "opacity-70" : ""}>
+                  <SelectValue 
+                    placeholder={`Select a ${vendorType === 'vendor' ? 'vendor' : 'subcontractor'}`}
+                  />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -106,13 +124,14 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
               </SelectContent>
             </Select>
           ) : (
-            <Select disabled>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading..." : "No options available"} />
-                </SelectTrigger>
-              </FormControl>
-            </Select>
+            <FormControl>
+              <Input 
+                {...field}
+                id={`${instanceId}-vendor-fallback`}
+                placeholder={loading ? "Loading..." : `Enter ${vendorType} ID or name`}
+                disabled={loading}
+              />
+            </FormControl>
           )}
           <FormMessage />
         </FormItem>

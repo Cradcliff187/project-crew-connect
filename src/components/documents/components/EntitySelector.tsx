@@ -134,6 +134,12 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   }));
                   break;
                   
+                // Display a single item for temp IDs when we're in ESTIMATE_ITEM context
+                case 'ESTIMATE_ITEM':
+                  // For temporary estimate items, we'll handle the display differently
+                  // No need to fetch from the database
+                  break;
+                  
                 default:
                   data = [];
               }
@@ -156,43 +162,55 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           <FormField
             control={control}
             name="metadata.entityId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {entityType ? `${entityType.replace(/_/g, ' ')} ID` : 'Entity ID'}
-                </FormLabel>
-                {entities.length > 0 ? (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={isReceiptUpload && !!field.value}
-                  >
+            render={({ field }) => {
+              // For temporary ESTIMATE_ITEM entities, display a friendly message
+              const isTempEstimateItem = entityType === 'ESTIMATE_ITEM' && field.value && field.value.includes('temp-');
+              
+              return (
+                <FormItem>
+                  <FormLabel>
+                    {entityType ? `${entityType.replace(/_/g, ' ')} ID` : 'Entity ID'}
+                  </FormLabel>
+                  
+                  {/* Special handling for temporary estimate items */}
+                  {isTempEstimateItem ? (
+                    <div className="text-sm p-2 bg-blue-50 rounded border border-blue-100">
+                      Document will be attached to this line item. The permanent ID will be assigned when the estimate is saved.
+                    </div>
+                  ) : entities.length > 0 ? (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isReceiptUpload && !!field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger id={`${instanceId}-entity-trigger`}>
+                          <SelectValue placeholder={`Select a ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'}`} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {entities.map((entity) => (
+                          <SelectItem key={entity.id} value={entity.id}>
+                            {entity.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
                     <FormControl>
-                      <SelectTrigger id={`${instanceId}-entity-trigger`}>
-                        <SelectValue placeholder={`Select a ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'}`} />
-                      </SelectTrigger>
+                      <Input
+                        {...field}
+                        id={`${instanceId}-entity-input`}
+                        placeholder={loading ? "Loading..." : `Enter ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'} ID`}
+                        disabled={loading || (isReceiptUpload && !!field.value)}
+                        className={isTempEstimateItem ? "opacity-50" : ""}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      {entities.map((entity) => (
-                        <SelectItem key={entity.id} value={entity.id}>
-                          {entity.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <FormControl>
-                    <Input
-                      {...field}
-                      id={`${instanceId}-entity-input`}
-                      placeholder={loading ? "Loading..." : `Enter ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'} ID`}
-                      disabled={loading || (isReceiptUpload && !!field.value)}
-                    />
-                  </FormControl>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
+                  )}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         );
       }}

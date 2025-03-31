@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -49,10 +49,11 @@ const EstimateItemCard = ({
   const [attachedDocument, setAttachedDocument] = useState<{file_name?: string; file_type?: string} | null>(null);
   const form = useFormContext<EstimateFormValues>();
   
-  // Generate a unique identifier for this card instance
-  const itemInstanceId = React.useId();
+  // Use a stable ID for this component that won't change on re-renders
+  // Replace React.useId() with a more stable identifier based on the index
+  const stableId = `estimate-item-${index}`;
   
-  console.log(`Rendering EstimateItemCard for index ${index} with ID ${itemInstanceId}`);
+  console.log(`Rendering EstimateItemCard for index ${index} with ID ${stableId}`);
   
   const itemType = form.watch(`items.${index}.item_type`) || '';
   
@@ -154,16 +155,16 @@ const EstimateItemCard = ({
   };
 
   const getEntityIdForDocument = () => {
-    // Generate a unique entity ID for each line item
+    // Generate a stable entity ID for each line item
     const tempId = form.getValues('temp_id') || 'pending';
-    // Use the React ID to ensure uniqueness even for duplicated items
-    return `${tempId}-item-${index}-${itemInstanceId}`;
+    // Use the stable ID to ensure uniqueness even for duplicated items
+    return `${tempId}-item-${index}`;
   };
 
   const handleAttachClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log(`Opening document upload for item ${index} with instance ID ${itemInstanceId}`);
+    console.log(`Opening document upload for item ${index} with stable ID ${stableId}`);
     setIsDocumentUploadOpen(true);
   };
 
@@ -173,6 +174,13 @@ const EstimateItemCard = ({
     console.log(`Removing document from item ${index}`);
     form.setValue(`items.${index}.document_id`, '');
     setAttachedDocument(null);
+  };
+
+  // Use manual sheet control instead of relying on SheetTrigger
+  const openDocumentUpload = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDocumentUploadOpen(true);
   };
 
   return (
@@ -223,32 +231,27 @@ const EstimateItemCard = ({
             <Sheet 
               open={isDocumentUploadOpen} 
               onOpenChange={(open) => {
-                // Only update the state if closing the sheet, not opening it
-                // This avoids a loop that can occur when SheetTrigger is clicked
-                if (!open) {
-                  setIsDocumentUploadOpen(false);
-                  console.log(`Sheet for item ${index} is now closed`);
-                }
+                console.log(`Sheet open state changing to ${open} for item ${index}`);
+                setIsDocumentUploadOpen(open);
               }}
             >
-              <SheetTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
-                  onClick={handleAttachClick}
-                >
-                  <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
-                  <span className="hidden sm:inline-block">Attach</span>
-                </Button>
-              </SheetTrigger>
+              {/* Use regular button instead of SheetTrigger to avoid issues */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
+                onClick={openDocumentUpload}
+              >
+                <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
+                <span className="hidden sm:inline-block">Attach</span>
+              </Button>
               
               <DocumentUploadSheet 
                 isOpen={isDocumentUploadOpen}
                 onClose={() => setIsDocumentUploadOpen(false)}
                 tempId={form.getValues('temp_id') || 'pending'}
                 entityType="ESTIMATE_ITEM"
-                itemId={`${index}-${itemInstanceId}`}
+                itemId={`${index}`}
                 onSuccess={handleDocumentUploadSuccess}
                 title="Attach Document to Line Item"
               />

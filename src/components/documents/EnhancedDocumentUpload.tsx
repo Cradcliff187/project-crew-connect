@@ -134,7 +134,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       )}
       
       <Form {...form}>
-        <form onSubmit={handleFormSubmit} onClick={(e) => e.stopPropagation()}>
+        <form onSubmit={handleFormSubmit} onClick={(e) => e.stopPropagation()} id={`document-form-${instanceId}`}>
           <CardContent className="p-0">
             <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
               <div className="space-y-6">
@@ -190,6 +190,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               className={`bg-[#0485ea] hover:bg-[#0375d1] ${isUploading ? 'uploading' : ''}`}
               disabled={isUploading || watchFiles.length === 0}
               onClick={(e) => e.stopPropagation()}
+              form={`document-form-${instanceId}`}
             >
               {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
             </Button>

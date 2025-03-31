@@ -10,6 +10,12 @@ interface VendorTypeSelectorProps {
   instanceId?: string; // Added instanceId prop
 }
 
+const vendorTypes = [
+  { value: 'vendor', label: 'Vendor/Supplier' },
+  { value: 'subcontractor', label: 'Subcontractor' },
+  { value: 'other', label: 'Other' }
+];
+
 const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ 
   control,
   instanceId = 'default-vendor-type'  // Default value
@@ -25,20 +31,19 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({
             <RadioGroup
               onValueChange={field.onChange}
               defaultValue={field.value}
-              className="flex flex-col space-y-1"
+              className="flex flex-wrap gap-4"
             >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="vendor" id={`${instanceId}-vendor-type`} />
-                <label htmlFor={`${instanceId}-vendor-type`} className="text-sm font-normal cursor-pointer">Vendor/Supplier</label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="subcontractor" id={`${instanceId}-subcontractor-type`} />
-                <label htmlFor={`${instanceId}-subcontractor-type`} className="text-sm font-normal cursor-pointer">Subcontractor</label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="other" id={`${instanceId}-other-type`} />
-                <label htmlFor={`${instanceId}-other-type`} className="text-sm font-normal cursor-pointer">Other</label>
-              </div>
+              {vendorTypes.map((type) => (
+                <div key={type.value} className="flex items-center space-x-2">
+                  <RadioGroupItem value={type.value} id={`${instanceId}-vendor-type-${type.value}`} />
+                  <label 
+                    htmlFor={`${instanceId}-vendor-type-${type.value}`} 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    {type.label}
+                  </label>
+                </div>
+              ))}
             </RadioGroup>
           </FormControl>
           <FormMessage />
