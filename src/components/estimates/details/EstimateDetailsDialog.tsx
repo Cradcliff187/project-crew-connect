@@ -95,7 +95,6 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
                 id="dev-mode"
                 checked={devMode}
                 onCheckedChange={setDevMode}
-                size="sm"
                 className="data-[state=checked]:bg-yellow-500"
               />
               <Label htmlFor="dev-mode" className="text-xs text-white/80">
