@@ -21,25 +21,62 @@ const fetchEstimateItems = async (estimateId: string) => {
       throw revisionError;
     }
     
-    let query = supabase
-      .from('estimate_items')
-      .select('*')
-      .eq('estimate_id', estimateId);
-    
+    // If we have a current revision, try to get items for it first
     if (currentRevision) {
       console.log(`Found current revision ${currentRevision.id} for estimate ${estimateId}, fetching items for this revision`);
-      query = query.eq('revision_id', currentRevision.id);
-    } else {
-      console.log(`No current revision found for estimate ${estimateId}, fetching all items`);
+      
+      const { data: currentItems, error: currentItemsError } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('estimate_id', estimateId)
+        .eq('revision_id', currentRevision.id);
+      
+      if (currentItemsError) {
+        console.error('Error fetching current revision items:', currentItemsError);
+        throw currentItemsError;
+      }
+      
+      // If we have items in the current revision, return them
+      if (currentItems && currentItems.length > 0) {
+        console.log(`Found ${currentItems.length} items for current revision`);
+        return currentItems as EstimateItem[];
+      }
+      
+      // If no items in current revision, we'll try the latest revision with items below
+      console.log('Current revision has no items, will try to find items in previous revisions');
     }
     
-    const { data, error } = await query;
+    // Find the latest revision that has items (may not be the current one)
+    const { data: revisions } = await supabase
+      .from('estimate_revisions')
+      .select('id')
+      .eq('estimate_id', estimateId)
+      .order('version', { ascending: false });
     
-    if (error) throw error;
+    if (revisions && revisions.length > 0) {
+      // Check each revision for items, starting with the most recent
+      for (const revision of revisions) {
+        const { data: items, error } = await supabase
+          .from('estimate_items')
+          .select('*')
+          .eq('estimate_id', estimateId)
+          .eq('revision_id', revision.id);
+        
+        if (error) {
+          console.error(`Error fetching items for revision ${revision.id}:`, error);
+          continue; // Try the next revision
+        }
+        
+        if (items && items.length > 0) {
+          console.log(`Found ${items.length} items in revision ${revision.id}`);
+          return items as EstimateItem[];
+        }
+      }
+    }
     
-    console.log(`Found ${data?.length || 0} items for estimate ${estimateId}`);
-    
-    return data as EstimateItem[];
+    // If no items found in any revision, return empty array
+    console.log(`No items found in any revision for estimate ${estimateId}`);
+    return [];
   } catch (error) {
     console.error('Error in fetchEstimateItems:', error);
     return [];

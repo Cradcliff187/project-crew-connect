@@ -32,15 +32,10 @@ export const useEstimateDocuments = (estimateId: string) => {
         throw error;
       }
       
-      console.log(`Found ${data?.length || 0} documents for estimate ${estimateId}`);
-      
-      if (!data || data.length === 0) {
-        setDocuments([]);
-        return;
-      }
+      console.log(`Found ${data?.length || 0} documents directly associated with estimate ${estimateId}`);
       
       // Transform the data to include document URLs
-      const docsWithUrls = await Promise.all(data.map(async (doc) => {
+      const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
         let publicUrl = '';
         
         try {
@@ -130,7 +125,117 @@ export const useEstimateDocuments = (estimateId: string) => {
         }
       }
       
-      setDocuments(docsWithUrls);
+      // Additionally fetch vendor-associated documents for estimate items
+      const { data: allItems, error: allItemsError } = await supabase
+        .from('estimate_items')
+        .select('id, description, vendor_id, subcontractor_id')
+        .eq('estimate_id', estimateId)
+        .or('vendor_id.is.not.null,subcontractor_id.is.not.null');
+        
+      if (!allItemsError && allItems && allItems.length > 0) {
+        console.log(`Found ${allItems.length} items with vendor or subcontractor associations`);
+        
+        // Process vendors
+        const vendorIds = allItems
+          .filter(item => item.vendor_id)
+          .map(item => item.vendor_id);
+          
+        if (vendorIds.length > 0) {
+          const { data: vendorDocs, error: vendorDocsError } = await supabase
+            .from('documents')
+            .select('*')
+            .eq('entity_type', 'VENDOR')
+            .in('entity_id', vendorIds)
+            .order('created_at', { ascending: false });
+            
+          if (!vendorDocsError && vendorDocs && vendorDocs.length > 0) {
+            console.log(`Found ${vendorDocs.length} vendor documents`);
+            
+            // Process and add vendor documents
+            const vendorDocsWithUrls = await Promise.all(vendorDocs.map(async (doc) => {
+              let publicUrl = '';
+              
+              try {
+                const { data: urlData } = supabase.storage
+                  .from('construction_documents')
+                  .getPublicUrl(doc.storage_path);
+                
+                publicUrl = urlData.publicUrl;
+              } catch (err) {
+                console.error('Error getting public URL:', err);
+              }
+              
+              // Find the related items for this vendor
+              const relatedItems = allItems.filter(item => item.vendor_id === doc.entity_id);
+              const itemDescriptions = relatedItems.map(item => item.description).join(', ');
+              
+              return { 
+                ...doc,
+                url: publicUrl,
+                item_reference: `Vendor Document - Related to: ${itemDescriptions}`,
+                is_vendor_doc: true
+              };
+            }));
+            
+            // Add these documents to our array
+            docsWithUrls.push(...vendorDocsWithUrls);
+          }
+        }
+        
+        // Process subcontractors
+        const subcontractorIds = allItems
+          .filter(item => item.subcontractor_id)
+          .map(item => item.subcontractor_id);
+          
+        if (subcontractorIds.length > 0) {
+          const { data: subDocs, error: subDocsError } = await supabase
+            .from('documents')
+            .select('*')
+            .eq('entity_type', 'SUBCONTRACTOR')
+            .in('entity_id', subcontractorIds)
+            .order('created_at', { ascending: false });
+            
+          if (!subDocsError && subDocs && subDocs.length > 0) {
+            console.log(`Found ${subDocs.length} subcontractor documents`);
+            
+            // Process and add subcontractor documents
+            const subDocsWithUrls = await Promise.all(subDocs.map(async (doc) => {
+              let publicUrl = '';
+              
+              try {
+                const { data: urlData } = supabase.storage
+                  .from('construction_documents')
+                  .getPublicUrl(doc.storage_path);
+                
+                publicUrl = urlData.publicUrl;
+              } catch (err) {
+                console.error('Error getting public URL:', err);
+              }
+              
+              // Find the related items for this subcontractor
+              const relatedItems = allItems.filter(item => item.subcontractor_id === doc.entity_id);
+              const itemDescriptions = relatedItems.map(item => item.description).join(', ');
+              
+              return { 
+                ...doc,
+                url: publicUrl,
+                item_reference: `Subcontractor Document - Related to: ${itemDescriptions}`,
+                is_subcontractor_doc: true
+              };
+            }));
+            
+            // Add these documents to our array
+            docsWithUrls.push(...subDocsWithUrls);
+          }
+        }
+      }
+      
+      // Remove any duplicate documents (by document_id)
+      const uniqueDocs = Array.from(
+        new Map(docsWithUrls.map(doc => [doc.document_id, doc])).values()
+      );
+      
+      setDocuments(uniqueDocs);
     } catch (err: any) {
       console.error('Error fetching estimate documents:', err);
       setError(err.message);

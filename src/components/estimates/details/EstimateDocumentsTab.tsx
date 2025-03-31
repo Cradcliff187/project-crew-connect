@@ -1,218 +1,186 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PaperclipIcon, UploadIcon, FileTextIcon, FileIcon, FileImageIcon, EyeIcon, FolderIcon } from "lucide-react";
-import { useEstimateDocuments } from "@/components/documents/hooks/useEstimateDocuments";
-import { Document } from "@/components/documents/schemas/documentSchema";
-import DocumentPreviewCard from "@/components/documents/DocumentPreviewCard";
-import DocumentViewer from "@/components/documents/DocumentViewer";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useDocumentCount } from "@/hooks/useDocumentCount";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import EnhancedDocumentUpload from "@/components/documents/EnhancedDocumentUpload";
-import { toast } from "@/hooks/use-toast";
+import { PlusCircle, FileIcon, ExternalLink, PaperclipIcon } from "lucide-react";
+import { useEstimateDocuments } from '@/components/documents/hooks/useEstimateDocuments';
+import { useDocumentViewer } from '@/hooks/useDocumentViewer';
+import { Badge } from "@/components/ui/badge";
+import { Document } from '@/components/documents/schemas/documentSchema';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
-interface EstimateDocumentsTabProps {
+type EstimateDocumentsTabProps = {
   estimateId: string;
-}
+};
 
 const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId }) => {
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const [viewDocument, setViewDocument] = useState<Document | null>(null);
-  const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
-  const { count, loading: countLoading } = useDocumentCount("ESTIMATE", estimateId);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const { documents, loading, error, refetchDocuments } = useEstimateDocuments(estimateId);
+  const { viewDocument, isViewerOpen, currentDocument, closeViewer } = useDocumentViewer();
   
-  const { 
-    documents, 
-    loading, 
-    error,
-    refetchDocuments
-  } = useEstimateDocuments(estimateId);
-
-  useEffect(() => {
-    console.log(`EstimateDocumentsTab: Mounted with estimateId=${estimateId}, found ${documents.length} documents`);
-    return () => {
-      console.log(`EstimateDocumentsTab: Unmounting with estimateId=${estimateId}`);
-    };
-  }, [estimateId, documents.length]);
-
-  // Get unique categories
-  const categories = Array.from(
-    new Set(documents.map(doc => doc.category || 'Uncategorized'))
-  ).filter(Boolean);
-
-  // Group documents by category for display
-  const documentsByCategory: Record<string, Document[]> = {};
-  documents.forEach(doc => {
-    const category = doc.category || 'Uncategorized';
-    if (!documentsByCategory[category]) {
-      documentsByCategory[category] = [];
-    }
-    documentsByCategory[category].push(doc);
-  });
-
-  // Filter documents based on tab
-  const filteredDocuments = documents.filter(doc => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'line-items') return !!doc.item_id;
-    return doc.category === activeTab;
-  });
-
-  const handleViewDocument = (doc: Document) => {
-    console.log('Viewing document:', doc.document_id, doc.file_name);
-    setViewDocument(doc);
+  const handleDocumentUploadSuccess = () => {
+    setIsUploadOpen(false);
+    refetchDocuments();
   };
-
-  const closeViewer = () => {
-    setViewDocument(null);
+  
+  const getDocumentTypeColor = (doc: Document) => {
+    if (doc.is_vendor_doc) return "bg-amber-100 text-amber-800 border-amber-200";
+    if (doc.is_subcontractor_doc) return "bg-purple-100 text-purple-800 border-purple-200";
+    if (doc.item_reference) return "bg-blue-100 text-blue-800 border-blue-200";
+    return "bg-gray-100 text-gray-800 border-gray-200";
   };
-
-  const handleDocumentUploadSuccess = (documentId?: string) => {
-    setIsDocumentUploadOpen(false);
-    if (documentId) {
-      toast({
-        title: "Document uploaded",
-        description: "The document has been successfully uploaded and attached to this estimate.",
-      });
-      refetchDocuments();
-    }
+  
+  const getDocumentTypeLabel = (doc: Document) => {
+    if (doc.is_vendor_doc) return "Vendor Document";
+    if (doc.is_subcontractor_doc) return "Subcontractor Document";
+    if (doc.item_reference && doc.item_reference.startsWith("Item:")) return "Line Item Document";
+    return "Estimate Document";
   };
 
   return (
-    <Card className="border border-[#0485ea]/10">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CardTitle>Estimate Documents</CardTitle>
-          {!countLoading && count > 0 && (
-            <Badge variant="outline" className="bg-blue-50">
-              {count}
-            </Badge>
-          )}
-        </div>
-        
-        <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
-          <Button 
-            variant="outline" 
-            className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
-            onClick={() => setIsDocumentUploadOpen(true)}
-          >
-            <UploadIcon className="h-4 w-4 mr-1" />
-            Add Document
-          </Button>
-          
-          <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
-            <SheetHeader className="p-6 pb-2">
-              <SheetTitle>Add Document to Estimate</SheetTitle>
-            </SheetHeader>
-            
-            <EnhancedDocumentUpload 
-              entityType="ESTIMATE"
-              entityId={estimateId}
-              onSuccess={handleDocumentUploadSuccess}
-              onCancel={() => setIsDocumentUploadOpen(false)}
-            />
-          </SheetContent>
-        </Sheet>
-      </CardHeader>
-      
-      <CardContent>
-        {loading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Estimate Documents</CardTitle>
+              <CardDescription>Documents associated with this estimate</CardDescription>
             </div>
+            <Sheet open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+              <SheetTrigger asChild>
+                <Button size="sm">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Document
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
+                <SheetHeader className="p-6 pb-2">
+                  <SheetTitle>Upload Document</SheetTitle>
+                </SheetHeader>
+                <EnhancedDocumentUpload 
+                  entityType="ESTIMATE"
+                  entityId={estimateId}
+                  onSuccess={handleDocumentUploadSuccess}
+                  onCancel={() => setIsUploadOpen(false)}
+                />
+              </SheetContent>
+            </Sheet>
           </div>
-        ) : error ? (
-          <div className="text-center py-6 text-red-500">
-            <p>Error loading documents: {error}</p>
-          </div>
-        ) : documents.length > 0 ? (
-          <div className="space-y-6">
-            {(categories.length > 1 || documents.some(d => !!d.item_id)) && (
-              <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full mb-4">
-                  <TabsTrigger value="all">All Documents</TabsTrigger>
-                  {documents.some(d => !!d.item_id) && (
-                    <TabsTrigger value="line-items">Line Item Documents</TabsTrigger>
-                  )}
-                  {categories.map(category => (
-                    <TabsTrigger key={category} value={category}>
-                      {category}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            )}
-            
-            {activeTab === 'all' ? (
-              <div className="space-y-6">
-                {Object.entries(documentsByCategory).map(([category, docs]) => (
-                  <div key={category} className="space-y-2">
-                    <h3 className="text-sm font-medium text-gray-600 capitalize flex items-center">
-                      <FolderIcon className="h-4 w-4 mr-1 text-[#0485ea]" />
-                      {category}
-                      <Badge variant="outline" className="ml-2 bg-blue-50">
-                        {docs.length}
-                      </Badge>
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {docs.map(doc => (
-                        <DocumentPreviewCard
-                          key={doc.document_id}
-                          document={doc}
-                          onView={() => handleViewDocument(doc)}
-                        />
-                      ))}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading documents...
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">
+              Error loading documents: {error}
+            </div>
+          ) : documents.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {documents.map((doc) => (
+                <div 
+                  key={doc.document_id} 
+                  className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => viewDocument(doc.document_id)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-50 p-2 rounded-lg">
+                      <FileIcon className="h-8 w-8 text-blue-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm mb-1 truncate" title={doc.file_name}>
+                        {doc.file_name}
+                      </h4>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge variant="outline" className={getDocumentTypeColor(doc)}>
+                          {getDocumentTypeLabel(doc)}
+                        </Badge>
+                        {doc.is_expense && (
+                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                            Expense
+                          </Badge>
+                        )}
+                      </div>
+                      {doc.item_reference && (
+                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2" title={doc.item_reference}>
+                          {doc.item_reference}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                        <PaperclipIcon className="h-3 w-3" />
+                        <span>{doc.file_type}</span>
+                        {doc.file_size && (
+                          <span className="ml-2">
+                            {(doc.file_size / 1024).toFixed(0)} KB
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No documents found for this estimate.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {isViewerOpen && currentDocument && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-medium">{currentDocument.file_name}</h3>
+              <div className="flex gap-2">
+                {currentDocument.url && (
+                  <a 
+                    href={currentDocument.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:text-blue-700"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button size="sm" variant="outline">
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Open
+                    </Button>
+                  </a>
+                )}
+                <Button size="sm" variant="ghost" onClick={closeViewer}>
+                  Close
+                </Button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {filteredDocuments.map(doc => (
-                  <DocumentPreviewCard
-                    key={doc.document_id}
-                    document={doc}
-                    onView={() => handleViewDocument(doc)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <div className="flex flex-col items-center gap-2">
-              <PaperclipIcon className="h-10 w-10 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">No documents attached to this estimate.</p>
-              <p className="text-xs text-muted-foreground">
-                Add documents to keep track of receipts, quotes, and other important files.
-              </p>
-              <Button 
-                variant="outline" 
-                className="mt-2"
-                onClick={() => setIsDocumentUploadOpen(true)}
-              >
-                <UploadIcon className="h-4 w-4 mr-1" />
-                Upload Document
-              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              {currentDocument.file_type?.includes('image') ? (
+                <img 
+                  src={currentDocument.url} 
+                  alt={currentDocument.file_name}
+                  className="max-w-full h-auto mx-auto" 
+                />
+              ) : currentDocument.file_type?.includes('pdf') ? (
+                <iframe 
+                  src={`${currentDocument.url}#toolbar=0`} 
+                  className="w-full h-full min-h-[500px]"
+                  title={currentDocument.file_name}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <p>Preview not available for this file type.</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Please use the Open button to view this document.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-        )}
-      </CardContent>
-
-      {/* Document Viewer */}
-      <DocumentViewer 
-        document={viewDocument}
-        open={!!viewDocument}
-        onOpenChange={(open) => !open && closeViewer()}
-      />
-    </Card>
+        </div>
+      )}
+    </>
   );
 };
 
