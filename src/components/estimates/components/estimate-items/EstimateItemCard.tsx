@@ -115,19 +115,23 @@ const EstimateItemCard = ({
       
       console.log(`Fetching document info for item ${index}, documentId:`, documentId);
       
-      const { data, error } = await supabase
-        .from('documents')
-        .select('file_name, file_type')
-        .eq('document_id', documentId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('file_name, file_type')
+          .eq('document_id', documentId)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching document:', error);
+          return;
+        }
         
-      if (error) {
-        console.error('Error fetching document:', error);
-        return;
+        console.log(`Document info retrieved for item ${index}:`, data);
+        setAttachedDocument(data);
+      } catch (err) {
+        console.error(`Error fetching document info: ${err}`);
       }
-      
-      console.log(`Document info retrieved for item ${index}:`, data);
-      setAttachedDocument(data);
     };
     
     fetchDocumentInfo();
@@ -228,34 +232,15 @@ const EstimateItemCard = ({
               </Tooltip>
             </TooltipProvider>
           ) : (
-            <Sheet 
-              open={isDocumentUploadOpen} 
-              onOpenChange={(open) => {
-                console.log(`Sheet open state changing to ${open} for item ${index}`);
-                setIsDocumentUploadOpen(open);
-              }}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
+              onClick={openDocumentUpload}
             >
-              {/* Use regular button instead of SheetTrigger to avoid issues */}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
-                onClick={openDocumentUpload}
-              >
-                <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
-                <span className="hidden sm:inline-block">Attach</span>
-              </Button>
-              
-              <DocumentUploadSheet 
-                isOpen={isDocumentUploadOpen}
-                onClose={() => setIsDocumentUploadOpen(false)}
-                tempId={form.getValues('temp_id') || 'pending'}
-                entityType="ESTIMATE_ITEM"
-                itemId={`${index}`}
-                onSuccess={handleDocumentUploadSuccess}
-                title="Attach Document to Line Item"
-              />
-            </Sheet>
+              <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
+              <span className="hidden sm:inline-block">Attach</span>
+            </Button>
           )}
           
           {showRemoveButton && (
@@ -309,6 +294,17 @@ const EstimateItemCard = ({
           )}
         </div>
       </CollapsibleContent>
+      
+      {/* Document Upload Sheet - Controlled manually instead of with SheetTrigger */}
+      <DocumentUploadSheet 
+        isOpen={isDocumentUploadOpen}
+        onClose={() => setIsDocumentUploadOpen(false)}
+        tempId={form.getValues('temp_id') || 'pending'}
+        entityType="ESTIMATE_ITEM"
+        itemId={`${index}`}
+        onSuccess={handleDocumentUploadSuccess}
+        title="Attach Document to Line Item"
+      />
     </Collapsible>
   );
 };
