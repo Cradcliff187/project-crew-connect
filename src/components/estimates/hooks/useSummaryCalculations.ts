@@ -18,10 +18,17 @@ export const useSummaryCalculations = () => {
   const lastCalculationTime = useRef(Date.now());
   
   // Optimize the watch to be more specific and prevent re-render loops
+  // Provide a default value that meets the TypeScript requirements (array with at least one item)
   const items = useWatch({
     control: form.control,
     name: 'items',
-    defaultValue: []
+    defaultValue: [{ 
+      description: '', 
+      quantity: '1', 
+      unitPrice: '0', 
+      cost: '0', 
+      markup_percentage: '0' 
+    }]
   });
 
   const contingencyPercentage = useWatch({
