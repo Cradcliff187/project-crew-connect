@@ -1,7 +1,6 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_NAME, findStorageBucket } from '@/integrations/supabase/client';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
-import { findStorageBucket } from '@/integrations/supabase/client';
 
 export interface UploadResult {
   success: boolean;
@@ -47,12 +46,11 @@ const getStorageBucketName = async (): Promise<string> => {
     return bucket.name;
   }
   
-  // Default fallback if no bucket found
-  const defaultBucketName = 'construction_documents';
-  console.warn(`No suitable bucket found, using default name: "${defaultBucketName}"`);
-  console.warn('Upload will likely fail - a bucket must be created in Supabase dashboard');
+  // Default to our constant if no bucket found
+  console.warn(`No suitable bucket found, using default name: "${DOCUMENTS_BUCKET_NAME}"`);
+  cachedBucketName = DOCUMENTS_BUCKET_NAME;
   
-  return defaultBucketName;
+  return DOCUMENTS_BUCKET_NAME;
 };
 
 export const uploadDocument = async (
@@ -82,20 +80,12 @@ export const uploadDocument = async (
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
       console.log(`Uploading file to storage bucket, path: ${filePath}`);
-      console.log(`File object:`, { 
-        name: file.name, 
-        type: file.type, 
-        size: file.size 
-      });
       
       // Check if file is actually a File object
       if (!(file instanceof File)) {
         console.error('Not a valid File object:', file);
         throw new Error('Invalid file object provided');
       }
-      
-      // Enhanced logging for Content-Type debugging
-      console.log('File MIME type from browser:', file.type);
       
       // Determine the proper content type based on file extension if needed
       let contentType = file.type;
@@ -112,15 +102,6 @@ export const uploadDocument = async (
         duplex: 'half' as const
       };
       
-      // Enhanced debugging for upload
-      console.log('About to execute upload with params:', {
-        bucket: bucketName,
-        path: filePath,
-        fileType: contentType,
-        fileSize: file.size,
-        options: fileOptions
-      });
-      
       // Upload the file to Supabase Storage with explicit content type and exact bucket name
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucketName)
@@ -130,8 +111,6 @@ export const uploadDocument = async (
         console.error('Storage upload error:', {
           message: uploadError.message,
           error: uploadError,
-          name: uploadError.name,
-          stack: uploadError.stack
         });
         throw uploadError;
       }
@@ -201,8 +180,6 @@ export const uploadDocument = async (
     console.error('Upload error (detailed):', {
       errorMessage: error.message,
       errorObject: error,
-      name: error.name,
-      stack: error.stack
     });
     
     return {

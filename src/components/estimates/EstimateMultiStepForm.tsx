@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Form } from '@/components/ui/form';
 import { Dialog } from '@/components/ui/dialog';
 import CustomDialogContent from './components/form-steps/DialogContent';
@@ -41,9 +41,15 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     isLastStep
   } = useEstimateForm({ open, onClose });
 
+  // Use a ref to track initialization state and prevent redundant calls
+  const initialized = useRef(false);
+  const storageChecked = useRef(false);
+
   // Generate a temp ID only once when dialog opens
   useEffect(() => {
-    if (open) {
+    if (open && !initialized.current) {
+      initialized.current = true;
+      
       // First check if we already have a temp ID
       const existingTempId = form.getValues('temp_id');
       
@@ -56,23 +62,27 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
         console.log('Using existing temp ID for estimate:', existingTempId);
       }
       
-      // Ensure the storage bucket exists when creating a new estimate
-      ensureStorageBucket().then(result => {
-        if (result.success) {
-          console.log('Storage bucket verified for document uploads');
-        } else {
-          console.warn('Storage bucket check failed:', result.error);
-          toast({
-            title: 'Document Storage Warning',
-            description: 'Document uploads may not work due to storage configuration issues',
-            variant: 'destructive',
-          });
-        }
-      }).catch(error => {
-        console.error('Failed to verify storage bucket:', error);
-      });
+      // Ensure the storage bucket exists when creating a new estimate - but only once
+      if (!storageChecked.current) {
+        storageChecked.current = true;
+        ensureStorageBucket().then(result => {
+          if (result.success) {
+            console.log('Storage bucket verified for document uploads');
+          } else {
+            console.warn('Storage bucket check failed:', result.error);
+            toast({
+              title: 'Document Storage Warning',
+              description: 'Document uploads may not work due to storage configuration issues',
+              variant: 'destructive',
+            });
+          }
+        }).catch(error => {
+          console.error('Failed to verify storage bucket:', error);
+        });
+      }
     } else if (!open) {
       resetForm();
+      initialized.current = false;
     }
   }, [open, form, resetForm]);
 

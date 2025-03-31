@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useId } from 'react';
 import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import StepNavigation from './StepNavigation';
 import EstimateStepTabs from './EstimateStepTabs';
@@ -22,9 +22,9 @@ const DialogContent = ({
   steps,
   setCurrentStep
 }: DialogContentProps) => {
-  // Generate a stable ID for accessibility
-  const descriptionId = React.useId();
-  const titleId = React.useId();
+  // Generate stable IDs for accessibility
+  const descriptionId = useId();
+  const titleId = useId();
   
   return (
     <ShadcnDialogContent 
