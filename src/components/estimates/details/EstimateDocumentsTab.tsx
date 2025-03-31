@@ -11,6 +11,9 @@ import DocumentViewer from "@/components/documents/DocumentViewer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useDocumentCount } from "@/hooks/useDocumentCount";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import EnhancedDocumentUpload from "@/components/documents/EnhancedDocumentUpload";
+import { toast } from "@/hooks/use-toast";
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
@@ -19,7 +22,8 @@ interface EstimateDocumentsTabProps {
 const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId }) => {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [viewDocument, setViewDocument] = useState<Document | null>(null);
-  const { count } = useDocumentCount("ESTIMATE", estimateId);
+  const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
+  const { count, loading: countLoading } = useDocumentCount("ESTIMATE", estimateId);
   
   const { 
     documents, 
@@ -66,26 +70,52 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
     setViewDocument(null);
   };
 
+  const handleDocumentUploadSuccess = (documentId?: string) => {
+    setIsDocumentUploadOpen(false);
+    if (documentId) {
+      toast({
+        title: "Document uploaded",
+        description: "The document has been successfully uploaded and attached to this estimate.",
+      });
+      refetchDocuments();
+    }
+  };
+
   return (
     <Card className="border border-[#0485ea]/10">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <CardTitle>Estimate Documents</CardTitle>
-          {count > 0 && (
+          {!countLoading && count > 0 && (
             <Badge variant="outline" className="bg-blue-50">
               {count}
             </Badge>
           )}
         </div>
         
-        <Button 
-          variant="outline" 
-          className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
-          disabled
-        >
-          <UploadIcon className="h-4 w-4 mr-1" />
-          Add Document
-        </Button>
+        <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
+          <Button 
+            variant="outline" 
+            className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
+            onClick={() => setIsDocumentUploadOpen(true)}
+          >
+            <UploadIcon className="h-4 w-4 mr-1" />
+            Add Document
+          </Button>
+          
+          <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
+            <SheetHeader className="p-6 pb-2">
+              <SheetTitle>Add Document to Estimate</SheetTitle>
+            </SheetHeader>
+            
+            <EnhancedDocumentUpload 
+              entityType="ESTIMATE"
+              entityId={estimateId}
+              onSuccess={handleDocumentUploadSuccess}
+              onCancel={() => setIsDocumentUploadOpen(false)}
+            />
+          </SheetContent>
+        </Sheet>
       </CardHeader>
       
       <CardContent>
@@ -163,6 +193,14 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
               <p className="text-xs text-muted-foreground">
                 Add documents to keep track of receipts, quotes, and other important files.
               </p>
+              <Button 
+                variant="outline" 
+                className="mt-2"
+                onClick={() => setIsDocumentUploadOpen(true)}
+              >
+                <UploadIcon className="h-4 w-4 mr-1" />
+                Upload Document
+              </Button>
             </div>
           </div>
         )}

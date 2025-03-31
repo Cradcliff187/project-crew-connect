@@ -20,7 +20,7 @@ export const useEstimateDocuments = (estimateId: string) => {
       
       console.log(`Fetching documents for estimate: ${estimateId}`);
       
-      // Try direct query from documents table
+      // Fetch documents associated with this estimate
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -32,7 +32,12 @@ export const useEstimateDocuments = (estimateId: string) => {
         throw error;
       }
       
-      console.log(`Found ${data.length} documents for estimate ${estimateId}`);
+      console.log(`Found ${data?.length || 0} documents for estimate ${estimateId}`);
+      
+      if (!data || data.length === 0) {
+        setDocuments([]);
+        return;
+      }
       
       // Transform the data to include document URLs
       const docsWithUrls = await Promise.all(data.map(async (doc) => {
@@ -50,13 +55,80 @@ export const useEstimateDocuments = (estimateId: string) => {
           // Continue even if we can't get the URL
         }
         
+        // Check if this document is attached to an estimate item
+        let itemDescription = '';
+        if (doc.notes && doc.notes.includes('Item:')) {
+          itemDescription = doc.notes.split('Item:')[1].trim();
+        }
+        
         return { 
           ...doc,
           url: publicUrl,
-          // Add any item reference if available
-          item_reference: doc.notes && doc.notes.includes('Item:') ? doc.notes : null
+          item_reference: itemDescription || null,
+          item_id: null // Will be populated if this is a line item document
         };
       }));
+      
+      // Additionally, fetch documents attached to estimate items
+      const { data: currentRevision, error: revisionError } = await supabase
+        .from('estimate_revisions')
+        .select('id')
+        .eq('estimate_id', estimateId)
+        .eq('is_current', true)
+        .maybeSingle();
+        
+      if (!revisionError && currentRevision) {
+        const { data: items, error: itemsError } = await supabase
+          .from('estimate_items')
+          .select('id, description, document_id')
+          .eq('estimate_id', estimateId)
+          .eq('revision_id', currentRevision.id)
+          .not('document_id', 'is', null);
+          
+        if (!itemsError && items && items.length > 0) {
+          console.log(`Found ${items.length} items with attached documents`);
+          
+          // Get the unique document IDs
+          const documentIds = items.map(item => item.document_id).filter(Boolean);
+          
+          if (documentIds.length > 0) {
+            const { data: itemDocuments, error: itemDocsError } = await supabase
+              .from('documents')
+              .select('*')
+              .in('document_id', documentIds);
+              
+            if (!itemDocsError && itemDocuments) {
+              // Process these documents and add them to our array
+              const itemDocsWithUrls = await Promise.all(itemDocuments.map(async (doc) => {
+                let publicUrl = '';
+                
+                try {
+                  const { data: urlData } = supabase.storage
+                    .from('construction_documents')
+                    .getPublicUrl(doc.storage_path);
+                  
+                  publicUrl = urlData.publicUrl;
+                } catch (err) {
+                  console.error('Error getting public URL:', err);
+                }
+                
+                // Find the related item for this document
+                const relatedItem = items.find(item => item.document_id === doc.document_id);
+                
+                return { 
+                  ...doc,
+                  url: publicUrl,
+                  item_reference: relatedItem ? `Item: ${relatedItem.description}` : null,
+                  item_id: relatedItem ? relatedItem.id : null
+                };
+              }));
+              
+              // Add these documents to our array
+              docsWithUrls.push(...itemDocsWithUrls);
+            }
+          }
+        }
+      }
       
       setDocuments(docsWithUrls);
     } catch (err: any) {

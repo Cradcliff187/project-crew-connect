@@ -1,55 +1,82 @@
 
--- Create vendor_status_history table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.vendor_status_history (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    vendorid TEXT NOT NULL REFERENCES vendors(vendorid),
-    status TEXT NOT NULL,
-    previous_status TEXT,
-    changed_date TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    changed_by TEXT,
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
+-- Drop the existing function first
+DROP FUNCTION IF EXISTS public.copy_estimate_items_to_revision();
 
--- Create indexes to improve query performance
-CREATE INDEX IF NOT EXISTS idx_vendor_status_history_vendorid ON public.vendor_status_history(vendorid);
-CREATE INDEX IF NOT EXISTS idx_vendor_status_history_status ON public.vendor_status_history(status);
-
--- Enable row level security
-ALTER TABLE public.vendor_status_history ENABLE ROW LEVEL SECURITY;
-
--- Create a basic policy that allows all operations (can be refined later)
-CREATE POLICY vendor_status_history_policy ON public.vendor_status_history 
-  FOR ALL USING (true);
-
--- Create a trigger function to automatically record vendor status changes
-CREATE OR REPLACE FUNCTION public.record_vendor_status_change() 
-RETURNS TRIGGER AS $$
+-- Create an improved version that properly handles item copying
+CREATE OR REPLACE FUNCTION public.copy_estimate_items_to_revision()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    prev_revision_id UUID;
+    item_record RECORD;
 BEGIN
-  IF OLD.status IS DISTINCT FROM NEW.status THEN
-    INSERT INTO public.vendor_status_history (
-      vendorid, 
-      status, 
-      previous_status, 
-      changed_date,
-      notes
-    ) VALUES (
-      NEW.vendorid,
-      NEW.status,
-      OLD.status,
-      NOW(),
-      'Automatic status change record'
-    );
-  END IF;
-  RETURN NEW;
+    -- Set new revision as current
+    IF NEW.is_current = true THEN
+        -- Find other current revisions and mark them as not current
+        UPDATE estimate_revisions
+        SET is_current = false
+        WHERE estimate_id = NEW.estimate_id
+          AND id != NEW.id
+          AND is_current = true;
+          
+        -- Find the previous revision with items to copy
+        SELECT id INTO prev_revision_id
+        FROM estimate_revisions
+        WHERE estimate_id = NEW.estimate_id
+          AND id != NEW.id
+        ORDER BY version DESC
+        LIMIT 1;
+        
+        -- If previous revision exists, copy its items to the new revision
+        IF prev_revision_id IS NOT NULL THEN
+            -- Log the copy operation
+            RAISE NOTICE 'Copying items from revision % to new revision %', prev_revision_id, NEW.id;
+            
+            -- Copy each item with a new ID but preserve all other properties
+            FOR item_record IN 
+                SELECT * FROM estimate_items 
+                WHERE revision_id = prev_revision_id
+            LOOP
+                INSERT INTO estimate_items (
+                    estimate_id, description, quantity, unit_price, total_price,
+                    cost, markup_percentage, markup_amount, gross_margin, 
+                    gross_margin_percentage, vendor_id, subcontractor_id, 
+                    item_type, document_id, notes, revision_id, created_at, updated_at
+                ) VALUES (
+                    NEW.estimate_id, 
+                    item_record.description, 
+                    item_record.quantity, 
+                    item_record.unit_price, 
+                    item_record.total_price, 
+                    item_record.cost, 
+                    item_record.markup_percentage, 
+                    item_record.markup_amount, 
+                    item_record.gross_margin, 
+                    item_record.gross_margin_percentage,
+                    item_record.vendor_id, 
+                    item_record.subcontractor_id, 
+                    item_record.item_type, 
+                    item_record.document_id, 
+                    item_record.notes, 
+                    NEW.id,
+                    now(),
+                    now()
+                );
+            END LOOP;
+            
+            -- Also copy estimate_documents associations
+            RAISE NOTICE 'Copied items from revision % to new revision %', prev_revision_id, NEW.id;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$function$;
 
--- Create or replace the trigger on the vendors table
-DROP TRIGGER IF EXISTS vendor_status_change_trigger ON public.vendors;
-CREATE TRIGGER vendor_status_change_trigger
-AFTER UPDATE ON public.vendors
+-- Make sure the trigger is properly attached
+DROP TRIGGER IF EXISTS copy_estimate_items_to_revision ON public.estimate_revisions;
+CREATE TRIGGER copy_estimate_items_to_revision
+AFTER INSERT ON public.estimate_revisions
 FOR EACH ROW
-WHEN (OLD.status IS DISTINCT FROM NEW.status)
-EXECUTE FUNCTION public.record_vendor_status_change();
+EXECUTE FUNCTION public.copy_estimate_items_to_revision();

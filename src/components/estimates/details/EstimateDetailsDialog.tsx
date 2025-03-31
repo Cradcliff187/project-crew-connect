@@ -48,6 +48,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("details");
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [isCreatingRevision, setIsCreatingRevision] = useState(false);
   const { toast } = useToast();
   const { convertEstimateToProject, isConverting } = useEstimateToProject();
   
@@ -60,23 +61,158 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
     }).format(date);
   };
 
+  const handleCreateNewVersion = async () => {
+    try {
+      // Check if the estimate is in a state where creating a new version is allowed
+      if (estimate.status !== 'draft' && estimate.status !== 'sent' && estimate.status !== 'pending') {
+        toast({
+          title: "Cannot create new version",
+          description: "New versions can only be created for estimates in draft, sent, or pending state.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setIsCreatingRevision(true);
+      
+      console.log(`Creating new version for estimate: ${estimate.id}`);
+      
+      // Get the current version number
+      const { data: revisions, error: revisionsError } = await supabase
+        .from('estimate_revisions')
+        .select('version, id')
+        .eq('estimate_id', estimate.id)
+        .order('version', { ascending: false })
+        .limit(1);
+        
+      if (revisionsError) {
+        throw revisionsError;
+      }
+      
+      const currentVersion = revisions && revisions.length > 0 ? revisions[0].version : 0;
+      const prevRevisionId = revisions && revisions.length > 0 ? revisions[0].id : null;
+      const newVersion = currentVersion + 1;
+      
+      console.log(`Current version: ${currentVersion}, Creating version: ${newVersion}`);
+      
+      // Create a new revision
+      const { data: newRevision, error: revisionError } = await supabase
+        .from('estimate_revisions')
+        .insert({
+          estimate_id: estimate.id,
+          version: newVersion,
+          is_current: true,
+          status: 'draft',
+          revision_date: new Date().toISOString(),
+          notes: `Version ${newVersion} created as a revision of version ${currentVersion}`
+        })
+        .select('id')
+        .single();
+        
+      if (revisionError || !newRevision) {
+        throw revisionError || new Error('Failed to create new revision');
+      }
+      
+      console.log(`Created new revision with ID: ${newRevision.id}`);
+      
+      // Copy items from previous revision to new revision
+      if (prevRevisionId) {
+        const { data: prevItems, error: prevItemsError } = await supabase
+          .from('estimate_items')
+          .select('*')
+          .eq('estimate_id', estimate.id)
+          .eq('revision_id', prevRevisionId);
+        
+        if (prevItemsError) {
+          throw prevItemsError;
+        }
+        
+        console.log(`Found ${prevItems?.length || 0} items to copy from previous revision`);
+        
+        if (prevItems && prevItems.length > 0) {
+          // Prepare items for the new revision
+          const newItems = prevItems.map(item => {
+            const { id, created_at, updated_at, ...rest } = item;
+            return {
+              ...rest,
+              revision_id: newRevision.id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+          });
+          
+          const { error: insertError } = await supabase
+            .from('estimate_items')
+            .insert(newItems);
+          
+          if (insertError) {
+            throw insertError;
+          }
+          
+          console.log(`Copied ${newItems.length} items to the new revision`);
+        }
+      }
+      
+      // Update the estimate status to draft if it was sent or pending
+      if (estimate.status === 'sent' || estimate.status === 'pending') {
+        const { error: updateError } = await supabase
+          .from('estimates')
+          .update({ 
+            status: 'draft', 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('estimateid', estimate.id);
+          
+        if (updateError) {
+          throw updateError;
+        }
+        
+        console.log(`Updated estimate ${estimate.id} status to draft`);
+      }
+      
+      toast({
+        title: "New version created",
+        description: `Created version ${newVersion} of the estimate.`,
+        variant: "default"
+      });
+      
+      // Close the dialog to refresh the data
+      onClose();
+      
+    } catch (error: any) {
+      console.error('Error creating new estimate version:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create new version",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingRevision(false);
+    }
+  };
+
   const handleCopyEstimate = async () => {
     try {
       setIsDuplicating(true);
+      toast({
+        title: "Duplicating estimate",
+        description: "Please wait while we duplicate the estimate...",
+      });
       
       // Get the original estimate details
       const { data: originalEstimate, error: estimateError } = await supabase
         .from('estimates')
         .select('*')
         .eq('estimateid', estimate.id)
-        .maybeSingle(); // Using maybeSingle instead of single to handle no results case
+        .maybeSingle();
         
       if (estimateError || !originalEstimate) {
         throw estimateError || new Error(`No estimate found with ID ${estimate.id}`);
       }
       
+      console.log('Found estimate to duplicate:', originalEstimate.estimateid);
+      
       // Create a new estimate based on the original
-      // We don't set estimateid because it will be auto-generated by a database trigger
       const newEstimateData = {
         projectname: `${originalEstimate.projectname} (Copy)`,
         "job description": originalEstimate["job description"],
@@ -122,11 +258,32 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
       
       console.log('Created new revision with ID:', newRevision.id);
       
+      // Get current revision for the original estimate
+      const { data: currentRevision, error: getCurrentError } = await supabase
+        .from('estimate_revisions')
+        .select('id')
+        .eq('estimate_id', estimate.id)
+        .eq('is_current', true)
+        .maybeSingle();
+      
+      if (getCurrentError) {
+        throw getCurrentError;
+      }
+      
+      const currentRevisionId = currentRevision?.id;
+      console.log('Current revision ID for original estimate:', currentRevisionId);
+      
       // Get original estimate items to duplicate
-      const { data: originalItems, error: itemsError } = await supabase
+      let query = supabase
         .from('estimate_items')
         .select('*')
         .eq('estimate_id', estimate.id);
+      
+      if (currentRevisionId) {
+        query = query.eq('revision_id', currentRevisionId);
+      }
+      
+      const { data: originalItems, error: itemsError } = await query;
         
       if (itemsError) {
         throw itemsError;
@@ -136,22 +293,14 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
       
       // Copy items to the new estimate
       if (originalItems && originalItems.length > 0) {
-        const newItems = originalItems.map(item => ({
-          estimate_id: newEstimate.estimateid,
-          revision_id: newRevision.id,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.total_price,
-          cost: item.cost,
-          markup_percentage: item.markup_percentage,
-          markup_amount: item.markup_amount,
-          vendor_id: item.vendor_id,
-          subcontractor_id: item.subcontractor_id,
-          item_type: item.item_type,
-          gross_margin: item.gross_margin,
-          gross_margin_percentage: item.gross_margin_percentage
-        }));
+        const newItems = originalItems.map(item => {
+          const { id, created_at, updated_at, ...rest } = item;
+          return {
+            ...rest,
+            estimate_id: newEstimate.estimateid,
+            revision_id: newRevision.id,
+          };
+        });
         
         const { error: copyItemsError } = await supabase
           .from('estimate_items')
@@ -167,7 +316,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
       // Copy document associations if any
       const { data: documents, error: docsError } = await supabase
         .from('documents')
-        .select('document_id, file_name, storage_path, category, tags')
+        .select('document_id, file_name, storage_path, category, tags, notes')
         .eq('entity_type', 'ESTIMATE')
         .eq('entity_id', estimate.id);
         
@@ -179,35 +328,34 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
       
       // Associate documents with the new estimate
       if (documents && documents.length > 0) {
-        for (const doc of documents) {
-          // Create a new document reference pointing to the same storage path
-          const { error: docCreateError } = await supabase
-            .from('documents')
-            .insert({
-              entity_id: newEstimate.estimateid,
-              entity_type: 'ESTIMATE',
-              file_name: doc.file_name,
-              storage_path: doc.storage_path,
-              category: doc.category,
-              tags: doc.tags
-            });
-            
-          if (docCreateError) {
-            console.error('Error copying document:', docCreateError);
-            // Continue with other documents even if one fails
-          }
+        const documentsToInsert = documents.map(doc => ({
+          entity_id: newEstimate.estimateid,
+          entity_type: 'ESTIMATE',
+          file_name: doc.file_name,
+          storage_path: doc.storage_path,
+          category: doc.category,
+          tags: doc.tags,
+          notes: doc.notes
+        }));
+        
+        const { error: docInsertError } = await supabase
+          .from('documents')
+          .insert(documentsToInsert);
+          
+        if (docInsertError) {
+          throw docInsertError;
         }
         
-        console.log(`Associated ${documents.length} documents with new estimate`);
+        console.log(`Associated ${documentsToInsert.length} documents with new estimate`);
       }
       
       toast({
-        title: "Duplicate created",
+        title: "Estimate duplicated",
         description: `A new draft estimate has been created based on ${estimate.id}.`,
         variant: "default"
       });
       
-      // Close the dialog and let the parent component refresh
+      // Close the dialog after successful duplication
       onClose();
       
     } catch (error: any) {
@@ -264,9 +412,25 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
         <div className="flex items-center justify-end space-x-2 mb-4">
           <Button 
             variant="outline" 
+            onClick={handleCreateNewVersion}
+            size="sm"
+            disabled={isCreatingRevision || isConverting || isDuplicating}
+          >
+            {isCreatingRevision ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                Creating New Version...
+              </>
+            ) : (
+              'Create New Version'
+            )}
+          </Button>
+          
+          <Button 
+            variant="outline" 
             onClick={handleCopyEstimate}
             size="sm"
-            disabled={isDuplicating}
+            disabled={isDuplicating || isConverting || isCreatingRevision}
           >
             {isDuplicating ? (
               <>
@@ -277,10 +441,11 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
               'Duplicate'
             )}
           </Button>
+          
           <Button
             onClick={handleConvertToProject}
             size="sm"
-            disabled={!canConvert || isConverting}
+            disabled={!canConvert || isConverting || isDuplicating || isCreatingRevision}
             className="bg-[#0485ea] hover:bg-[#0373ce]"
           >
             {isConverting ? (

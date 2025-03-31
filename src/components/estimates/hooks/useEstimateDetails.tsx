@@ -18,39 +18,27 @@ const fetchEstimateItems = async (estimateId: string) => {
     
     if (revisionError) {
       console.error('Error fetching current revision:', revisionError);
-      // If we can't find the current revision, fall back to all items for this estimate
-      const { data, error } = await supabase
-        .from('estimate_items')
-        .select('*')
-        .eq('estimate_id', estimateId);
-      
-      if (error) throw error;
-      return data as EstimateItem[];
+      throw revisionError;
     }
     
-    if (!currentRevision) {
-      console.log(`No current revision found for estimate ${estimateId}, fetching all items`);
-      const { data, error } = await supabase
-        .from('estimate_items')
-        .select('*')
-        .eq('estimate_id', estimateId);
-      
-      if (error) throw error;
-      return data as EstimateItem[];
-    }
-    
-    // Query items specific to the current revision
-    const { data, error } = await supabase
+    let query = supabase
       .from('estimate_items')
       .select('*')
-      .eq('estimate_id', estimateId)
-      .eq('revision_id', currentRevision.id);
+      .eq('estimate_id', estimateId);
+    
+    if (currentRevision) {
+      console.log(`Found current revision ${currentRevision.id} for estimate ${estimateId}, fetching items for this revision`);
+      query = query.eq('revision_id', currentRevision.id);
+    } else {
+      console.log(`No current revision found for estimate ${estimateId}, fetching all items`);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
     
-    console.log(`Found ${data?.length || 0} items for estimate ${estimateId} with revision ${currentRevision.id}`);
+    console.log(`Found ${data?.length || 0} items for estimate ${estimateId}`);
     
-    // Transform the data to match the EstimateItem format
     return data as EstimateItem[];
   } catch (error) {
     console.error('Error in fetchEstimateItems:', error);
@@ -143,13 +131,13 @@ export const useEstimateDetails = () => {
   const setEstimateItems = (items: EstimateItem[]) => {
     // This is a placeholder for state management
     // In a real app with React Query, you would use queryClient.setQueryData
-    // For now, we keep this function to maintain interface compatibility
+    console.log('Setting estimate items:', items);
   };
 
   const setEstimateRevisions = (revisions: EstimateRevision[]) => {
     // This is a placeholder for state management
     // In a real app with React Query, you would use queryClient.setQueryData
-    // For now, we keep this function to maintain interface compatibility
+    console.log('Setting estimate revisions:', revisions);
   };
 
   return {
@@ -160,6 +148,7 @@ export const useEstimateDetails = () => {
     setEstimateRevisions,
     isLoading: itemsLoading || revisionsLoading,
     refetchItems,
-    refetchRevisions
+    refetchRevisions,
+    currentEstimateId
   };
 };
