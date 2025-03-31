@@ -46,7 +46,7 @@ export const estimateFormSchema = z.object({
 
 export type EstimateFormValues = z.infer<typeof estimateFormSchema>;
 
-// Export the EstimateItem type for calculations
+// Export the EstimateItem type for calculations - ensure all required properties have defaults
 export type EstimateItem = {
   cost: string;
   markup_percentage: string;
@@ -55,4 +55,7 @@ export type EstimateItem = {
   trade_type?: string;
   expense_type?: string;
   custom_type?: string;
+  vendor_id?: string;
+  subcontractor_id?: string;
+  document_id?: string;
 };

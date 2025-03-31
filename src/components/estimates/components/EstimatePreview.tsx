@@ -19,9 +19,25 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('summary');
   
-  // Calculate totals
+  // Transform the form data items to match the expected EstimateItem type
+  const transformedItems = Array.isArray(formData.items) 
+    ? formData.items.map(item => ({
+        cost: item.cost || '0',
+        markup_percentage: item.markup_percentage || '0',
+        quantity: item.quantity || '1',
+        item_type: item.item_type,
+        vendor_id: item.vendor_id,
+        subcontractor_id: item.subcontractor_id,
+        document_id: item.document_id,
+        trade_type: item.trade_type,
+        expense_type: item.expense_type,
+        custom_type: item.custom_type
+      }))
+    : [];
+  
+  // Calculate totals using the transformed items
   const { totalPrice, contingencyAmount, grandTotal } = calculateEstimateTotals(
-    formData.items || [],
+    transformedItems,
     formData.contingency_percentage || '0'
   );
 

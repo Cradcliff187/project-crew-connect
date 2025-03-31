@@ -185,9 +185,23 @@ export const calculateEstimateTotals = (
     return { totalPrice: 0, contingencyAmount: 0, grandTotal: 0 };
   }
   
-  const totalPrice = calculateSubtotal(items);
-  const contingencyAmount = calculateContingencyAmount(items, contingencyPercentage);
-  const grandTotal = calculateGrandTotal(items, contingencyPercentage);
+  // Ensure all required properties have values
+  const safeItems = items.map(item => ({
+    cost: item.cost || '0',
+    markup_percentage: item.markup_percentage || '0',
+    quantity: item.quantity || '1',
+    item_type: item.item_type,
+    trade_type: item.trade_type,
+    expense_type: item.expense_type,
+    custom_type: item.custom_type,
+    vendor_id: item.vendor_id,
+    subcontractor_id: item.subcontractor_id,
+    document_id: item.document_id
+  }));
+  
+  const totalPrice = calculateSubtotal(safeItems);
+  const contingencyAmount = calculateContingencyAmount(safeItems, contingencyPercentage);
+  const grandTotal = calculateGrandTotal(safeItems, contingencyPercentage);
   
   const result = {
     totalPrice,

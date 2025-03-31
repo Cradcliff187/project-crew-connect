@@ -41,7 +41,13 @@ export const useSummaryCalculations = () => {
           cost: item?.cost || '0',
           markup_percentage: item?.markup_percentage || '0',
           quantity: item?.quantity || '1',
-          item_type: item?.item_type
+          item_type: item?.item_type,
+          vendor_id: item?.vendor_id,
+          subcontractor_id: item?.subcontractor_id,
+          document_id: item?.document_id,
+          trade_type: item?.trade_type,
+          expense_type: item?.expense_type,
+          custom_type: item?.custom_type
         };
       }) 
     : [];
