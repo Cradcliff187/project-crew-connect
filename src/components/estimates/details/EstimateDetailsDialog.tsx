@@ -2,13 +2,13 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EstimateDetailsTab from './EstimateDetailsTab';
 import EstimateItemsTab from './EstimateItemsTab';
 import EstimateRevisionsTab from './EstimateRevisionsTab';
 import EstimateDocumentsTab from './EstimateDocumentsTab';
 import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type EstimateDetailsDialogProps = {
   estimate: {
@@ -67,9 +67,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
             <h2 className="text-xl font-semibold">{estimate.project}</h2>
             <p className="text-white/80 text-sm">Client: {estimate.client}</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-primary/20">
-            <X className="h-5 w-5" />
-          </Button>
+          {/* Remove the custom close button as it duplicates the built-in one */}
         </div>
         
         <Tabs 
@@ -86,7 +84,16 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
                 Items
               </TabsTrigger>
               <TabsTrigger value="revisions" className="data-[state=active]:border-b-primary data-[state=active]:border-b-2 rounded-none">
-                Revisions {revisions.length > 0 && `(${revisions.length})`}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>Revisions {revisions.length > 0 && `(${revisions.length})`}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      View and manage estimate revisions
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </TabsTrigger>
               <TabsTrigger value="documents" className="data-[state=active]:border-b-primary data-[state=active]:border-b-2 rounded-none">
                 Documents

@@ -101,7 +101,10 @@ export const documentSchema = z.object({
   
   // Add fields for vendor and subcontractor document flags
   is_vendor_doc: z.boolean().optional(),
-  is_subcontractor_doc: z.boolean().optional()
+  is_subcontractor_doc: z.boolean().optional(),
+  
+  // Add revision ID for tracking which revision a document belongs to
+  revision_id: z.string().optional()
 });
 
 export type DocumentCategory = typeof documentCategories[number];

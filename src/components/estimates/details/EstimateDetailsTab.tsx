@@ -1,80 +1,116 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 
 type EstimateDetailsTabProps = {
   estimate: {
-    project: string;
+    id: string;
     client: string;
-    description?: string;
+    project: string;
+    date: string;
     amount: number;
+    status: string;
+    versions: number;
     location?: {
       address?: string;
       city?: string;
       state?: string;
       zip?: string;
     };
+    description?: string;
   };
 };
 
 const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => {
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }).format(date);
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid gap-6 md:grid-cols-2">
       <Card>
-        <CardHeader>
-          <CardTitle>Project Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div>
-            <span className="text-muted-foreground">Project:</span>
-            <p className="font-medium">{estimate.project}</p>
-          </div>
-          {estimate.description && (
-            <div>
-              <span className="text-muted-foreground">Description:</span>
-              <p>{estimate.description}</p>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-4">Estimate Information</h3>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Estimate ID:</span>
+              <span className="font-medium">{estimate.id}</span>
             </div>
-          )}
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Date Created:</span>
+              <span className="font-medium">{formatDate(estimate.date)}</span>
+            </div>
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Amount:</span>
+              <span className="font-medium">{formatCurrency(estimate.amount)}</span>
+            </div>
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Status:</span>
+              <span className="font-medium capitalize">{estimate.status}</span>
+            </div>
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Total Revisions:</span>
+              <span className="font-medium">{estimate.versions}</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
       
       <Card>
-        <CardHeader>
-          <CardTitle>Client Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div>
-            <span className="text-muted-foreground">Client:</span>
-            <p className="font-medium">{estimate.client}</p>
-          </div>
-          {estimate.location && (
-            <div>
-              <span className="text-muted-foreground">Location:</span>
-              {estimate.location.address && <p>{estimate.location.address}</p>}
-              {(estimate.location.city || estimate.location.state || estimate.location.zip) && (
-                <p>
-                  {estimate.location.city && `${estimate.location.city}, `}
-                  {estimate.location.state && `${estimate.location.state} `}
-                  {estimate.location.zip && estimate.location.zip}
-                </p>
-              )}
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-4">Client & Project Details</h3>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Client:</span>
+              <span className="font-medium">{estimate.client}</span>
             </div>
-          )}
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Project:</span>
+              <span className="font-medium">{estimate.project}</span>
+            </div>
+            {estimate.location && (
+              <div className="grid grid-cols-2">
+                <span className="text-muted-foreground">Location:</span>
+                <div className="font-medium">
+                  {estimate.location.address && <div>{estimate.location.address}</div>}
+                  {(estimate.location.city || estimate.location.state || estimate.location.zip) && (
+                    <div>
+                      {estimate.location.city && `${estimate.location.city}, `}
+                      {estimate.location.state && `${estimate.location.state} `}
+                      {estimate.location.zip && estimate.location.zip}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Financial Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div>
-            <span className="text-muted-foreground">Total Amount:</span>
-            <p className="font-medium text-xl">{formatCurrency(estimate.amount)}</p>
-          </div>
-        </CardContent>
-      </Card>
+      {estimate.description && (
+        <Card className="md:col-span-2">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-medium mb-4">Description</h3>
+            <p className="whitespace-pre-wrap text-gray-700">{estimate.description}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

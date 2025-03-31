@@ -20,7 +20,7 @@ export const useEstimateDocuments = (estimateId: string) => {
       
       console.log(`Fetching documents for estimate: ${estimateId}`);
       
-      // Fetch documents associated with this estimate
+      // Fetch documents associated directly with this estimate
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -64,37 +64,45 @@ export const useEstimateDocuments = (estimateId: string) => {
         };
       }));
       
-      // Additionally, fetch documents attached to estimate items
-      const { data: currentRevision, error: revisionError } = await supabase
+      // Fetch all revisions for this estimate, not just the current one
+      const { data: allRevisions, error: revisionsError } = await supabase
         .from('estimate_revisions')
         .select('id')
-        .eq('estimate_id', estimateId)
-        .eq('is_current', true)
-        .maybeSingle();
+        .eq('estimate_id', estimateId);
         
-      if (!revisionError && currentRevision) {
+      if (revisionsError) {
+        console.error('Error fetching estimate revisions:', revisionsError);
+      }
+      
+      let itemDocuments: Document[] = [];
+      
+      // If we have revisions, fetch documents for items in each revision
+      if (allRevisions && allRevisions.length > 0) {
+        const revisionIds = allRevisions.map(rev => rev.id);
+        
+        // Fetch all items that have document associations for all revisions
         const { data: items, error: itemsError } = await supabase
           .from('estimate_items')
-          .select('id, description, document_id')
+          .select('id, description, document_id, revision_id')
           .eq('estimate_id', estimateId)
-          .eq('revision_id', currentRevision.id)
+          .in('revision_id', revisionIds)
           .not('document_id', 'is', null);
           
         if (!itemsError && items && items.length > 0) {
-          console.log(`Found ${items.length} items with attached documents`);
+          console.log(`Found ${items.length} items with attached documents across all revisions`);
           
           // Get the unique document IDs
           const documentIds = items.map(item => item.document_id).filter(Boolean);
           
           if (documentIds.length > 0) {
-            const { data: itemDocuments, error: itemDocsError } = await supabase
+            const { data: itemDocData, error: itemDocsError } = await supabase
               .from('documents')
               .select('*')
               .in('document_id', documentIds);
               
-            if (!itemDocsError && itemDocuments) {
+            if (!itemDocsError && itemDocData) {
               // Process these documents and add them to our array
-              const itemDocsWithUrls = await Promise.all(itemDocuments.map(async (doc) => {
+              const itemDocsWithUrls = await Promise.all(itemDocData.map(async (doc) => {
                 let publicUrl = '';
                 
                 try {
@@ -114,12 +122,12 @@ export const useEstimateDocuments = (estimateId: string) => {
                   ...doc,
                   url: publicUrl,
                   item_reference: relatedItem ? `Item: ${relatedItem.description}` : null,
-                  item_id: relatedItem ? relatedItem.id : null
+                  item_id: relatedItem ? relatedItem.id : null,
+                  revision_id: relatedItem?.revision_id
                 };
               }));
               
-              // Add these documents to our array
-              docsWithUrls.push(...itemDocsWithUrls);
+              itemDocuments = itemDocsWithUrls;
             }
           }
         }
@@ -232,10 +240,15 @@ export const useEstimateDocuments = (estimateId: string) => {
         }
       }
       
+      // Add item documents to our collection
+      docsWithUrls.push(...itemDocuments);
+      
       // Remove any duplicate documents (by document_id)
       const uniqueDocs = Array.from(
         new Map(docsWithUrls.map(doc => [doc.document_id, doc])).values()
       );
+      
+      console.log(`Found a total of ${uniqueDocs.length} unique documents for estimate ${estimateId} across all revisions`);
       
       setDocuments(uniqueDocs);
     } catch (err: any) {

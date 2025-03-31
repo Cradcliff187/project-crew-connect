@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, FileIcon, ExternalLink, PaperclipIcon } from "lucide-react";
+import { PlusCircle, FileIcon, ExternalLink, PaperclipIcon, AlertTriangle } from "lucide-react";
 import { useEstimateDocuments } from '@/components/documents/hooks/useEstimateDocuments';
 import { useDocumentViewer } from '@/hooks/useDocumentViewer';
 import { Badge } from "@/components/ui/badge";
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type EstimateDocumentsTabProps = {
   estimateId: string;
@@ -38,6 +39,9 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
     return "Estimate Document";
   };
 
+  // Check if we have any documents from any source
+  const hasDocuments = documents && documents.length > 0;
+
   return (
     <>
       <Card>
@@ -49,7 +53,7 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
             </div>
             <Sheet open={isUploadOpen} onOpenChange={setIsUploadOpen}>
               <SheetTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" className="bg-[#0485ea] hover:bg-[#0373ce]">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Add Document
                 </Button>
@@ -75,56 +79,75 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
             </div>
           ) : error ? (
             <div className="text-center py-8 text-red-500">
-              Error loading documents: {error}
+              <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+              <p>Error loading documents:</p>
+              <p className="font-mono text-sm">{error}</p>
             </div>
-          ) : documents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map((doc) => (
-                <div 
-                  key={doc.document_id} 
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => viewDocument(doc.document_id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="bg-blue-50 p-2 rounded-lg">
-                      <FileIcon className="h-8 w-8 text-blue-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm mb-1 truncate" title={doc.file_name}>
-                        {doc.file_name}
-                      </h4>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <Badge variant="outline" className={getDocumentTypeColor(doc)}>
-                          {getDocumentTypeLabel(doc)}
-                        </Badge>
-                        {doc.is_expense && (
-                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                            Expense
-                          </Badge>
-                        )}
-                      </div>
-                      {doc.item_reference && (
-                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2" title={doc.item_reference}>
-                          {doc.item_reference}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
-                        <PaperclipIcon className="h-3 w-3" />
-                        <span>{doc.file_type}</span>
-                        {doc.file_size && (
-                          <span className="ml-2">
-                            {(doc.file_size / 1024).toFixed(0)} KB
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          ) : !hasDocuments ? (
+            <div className="text-center py-8 text-muted-foreground border rounded-lg p-6 bg-gray-50">
+              <FileIcon className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <p className="mb-2">No documents found for this estimate.</p>
+              <p className="text-sm mb-4">Upload a document to attach it to this estimate.</p>
+              <Button 
+                onClick={() => setIsUploadOpen(true)}
+                className="bg-[#0485ea] hover:bg-[#0373ce]"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Document
+              </Button>
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No documents found for this estimate.
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {documents.map((doc) => (
+                <TooltipProvider key={doc.document_id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div 
+                        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-[#0485ea]/30"
+                        onClick={() => viewDocument(doc.document_id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="bg-blue-50 p-2 rounded-lg">
+                            <FileIcon className="h-8 w-8 text-[#0485ea]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm mb-1 truncate" title={doc.file_name}>
+                              {doc.file_name}
+                            </h4>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <Badge variant="outline" className={getDocumentTypeColor(doc)}>
+                                {getDocumentTypeLabel(doc)}
+                              </Badge>
+                              {doc.is_expense && (
+                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                                  Expense
+                                </Badge>
+                              )}
+                            </div>
+                            {doc.item_reference && (
+                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2" title={doc.item_reference}>
+                                {doc.item_reference}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                              <PaperclipIcon className="h-3 w-3" />
+                              <span>{doc.file_type}</span>
+                              {doc.file_size && (
+                                <span className="ml-2">
+                                  {(doc.file_size / 1024).toFixed(0)} KB
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Click to view document</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
             </div>
           )}
         </CardContent>
