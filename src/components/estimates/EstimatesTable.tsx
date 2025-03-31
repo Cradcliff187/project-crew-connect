@@ -1,4 +1,3 @@
-
 import { FileText, Plus, Eye, Edit, Copy, ArrowRight, Download, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -99,7 +98,10 @@ const EstimatesTable = ({
       if (estimate.status === 'sent' || estimate.status === 'pending') {
         const { error: updateError } = await supabase
           .from('estimates')
-          .update({ status: 'draft', updated_at: new Date().toISOString() })
+          .update({ 
+            status: 'draft', 
+            updated_at: new Date().toISOString() 
+          })
           .eq('estimateid', estimate.id);
           
         if (updateError) {
@@ -147,7 +149,7 @@ const EstimatesTable = ({
         .from('estimates')
         .insert({
           projectname: `${originalEstimate.projectname} (Copy)`,
-          job_description: originalEstimate.job_description,
+          "job description": originalEstimate["job description"],
           customerid: originalEstimate.customerid,
           customername: originalEstimate.customername,
           sitelocationaddress: originalEstimate.sitelocationaddress,

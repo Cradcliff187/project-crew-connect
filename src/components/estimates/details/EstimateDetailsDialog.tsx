@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -80,7 +79,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
         .from('estimates')
         .insert({
           projectname: `${originalEstimate.projectname} (Copy)`,
-          job_description: originalEstimate.job_description,
+          "job description": originalEstimate["job description"],
           customerid: originalEstimate.customerid,
           customername: originalEstimate.customername,
           sitelocationaddress: originalEstimate.sitelocationaddress,
