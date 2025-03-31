@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
@@ -13,33 +13,45 @@ interface ExpenseTypeSelectorProps {
 const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [internalValue, setInternalValue] = useState('');
   
-  // Use a standard watch to minimize re-renders
-  const expenseType = form.watch(`items.${index}.expense_type`);
-  
-  // Only update UI state when expense type changes, don't trigger form updates
-  useEffect(() => {
-    if (expenseType === 'other') {
-      setShowCustomInput(true);
-    } else {
-      setShowCustomInput(false);
-      
-      // Only clear custom_type if it has been set previously
-      const currentCustomType = form.getValues(`items.${index}.custom_type`);
-      if (currentCustomType) {
-        form.setValue(`items.${index}.custom_type`, '', { shouldDirty: false });
-      }
-    }
-  }, [expenseType, form, index]);
-  
-  // Separate rendering from form interactions
-  const handleExpenseTypeChange = (value: string) => {
+  // Use a callback for the expense type change handler to prevent recreation on render
+  const handleExpenseTypeChange = useCallback((value: string) => {
+    // Set internal state first to avoid re-renders from form
+    setInternalValue(value);
+    
+    // Update form with minimal validation and re-rendering
     form.setValue(`items.${index}.expense_type`, value, {
       shouldDirty: true,
-      shouldValidate: false, // Avoid triggering validation on every change
+      shouldValidate: false, 
       shouldTouch: true
     });
-  };
+    
+    // Toggle custom input separately from form updates
+    setShowCustomInput(value === 'other');
+    
+    // If switching away from "other", clear the custom type
+    if (value !== 'other') {
+      form.setValue(`items.${index}.custom_type`, '', { shouldDirty: false });
+    }
+  }, [form, index]);
+  
+  // Use a stable callback for custom type changes
+  const handleCustomTypeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    form.setValue(`items.${index}.custom_type`, e.target.value, {
+      shouldDirty: true,
+      shouldValidate: false
+    });
+  }, [form, index]);
+  
+  // Initialize component state from form values
+  useEffect(() => {
+    const currentValue = form.getValues(`items.${index}.expense_type`);
+    if (currentValue) {
+      setInternalValue(currentValue);
+      setShowCustomInput(currentValue === 'other');
+    }
+  }, [form, index]);
   
   return (
     <div className="col-span-12 md:col-span-3">
@@ -50,7 +62,7 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
           <FormItem>
             <FormLabel>Expense Type</FormLabel>
             <Select 
-              value={field.value || 'none'} 
+              value={internalValue || 'none'} 
               onValueChange={handleExpenseTypeChange}
             >
               <FormControl>
@@ -82,14 +94,7 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
                 <Input 
                   placeholder="Enter custom expense type" 
                   {...field} 
-                  onBlur={(e) => {
-                    // Only update on blur to reduce re-renders
-                    field.onBlur();
-                  }}
-                  onChange={(e) => {
-                    // Update with minimal render impact
-                    field.onChange(e);
-                  }}
+                  onChange={handleCustomTypeChange}
                 />
               </FormControl>
               <FormMessage />
@@ -101,4 +106,5 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
   );
 };
 
-export default ExpenseTypeSelector;
+// Use React.memo to prevent unnecessary re-renders
+export default memo(ExpenseTypeSelector);

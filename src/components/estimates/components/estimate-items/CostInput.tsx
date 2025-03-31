@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
@@ -13,59 +13,61 @@ const CostInput: React.FC<CostInputProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   const [localCost, setLocalCost] = useState<string>('');
   const [debouncePending, setDebouncePending] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number>(0);
   
   // Initialize local state from form
   useEffect(() => {
-    const costValue = form.watch(`items.${index}.cost`) || '0';
-    setLocalCost(costValue);
+    const costValue = form.getValues(`items.${index}.cost`) || '0';
+    if (costValue !== localCost) {
+      setLocalCost(costValue);
+    }
   }, [form, index]);
 
-  // Separate UI updates from form updates with debouncing
+  // Debounce form updates with a stable timer reference
   useEffect(() => {
-    if (debouncePending) {
+    if (debouncePending && (Date.now() - lastUpdated > 200)) {
       const handler = setTimeout(() => {
-        // Only update the form if the value has actually changed
+        // Only update if value has changed to prevent loops
         const currentCost = form.getValues(`items.${index}.cost`);
         if (currentCost !== localCost) {
           form.setValue(`items.${index}.cost`, localCost, {
             shouldDirty: true,
             shouldValidate: false
           });
+          setLastUpdated(Date.now());
         }
         setDebouncePending(false);
       }, 300);
       
       return () => clearTimeout(handler);
     }
-  }, [localCost, debouncePending, form, index]);
+  }, [localCost, debouncePending, form, index, lastUpdated]);
 
-  // Handle local changes
-  const handleCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Use a stable callback for cost changes
+  const handleCostChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Update local state immediately for responsive UI
     setLocalCost(value);
-    // Mark for debounced form update
     setDebouncePending(true);
-  };
+  }, []);
 
-  // Handle blur event to ensure form is updated
-  const handleBlur = () => {
-    // Force immediate update on blur
+  // Handle blur event with a stable callback
+  const handleBlur = useCallback(() => {
     if (debouncePending) {
       form.setValue(`items.${index}.cost`, localCost, {
         shouldDirty: true,
         shouldValidate: true
       });
       setDebouncePending(false);
+      setLastUpdated(Date.now());
     }
-  };
+  }, [debouncePending, form, index, localCost]);
   
   return (
     <div className="col-span-12 md:col-span-2">
       <FormField
         control={form.control}
         name={`items.${index}.cost`}
-        render={({ field }) => (
+        render={() => (
           <FormItem>
             <FormLabel>Cost</FormLabel>
             <FormControl>
@@ -90,4 +92,5 @@ const CostInput: React.FC<CostInputProps> = ({ index }) => {
   );
 };
 
-export default React.memo(CostInput);
+// Use React.memo to prevent unnecessary re-renders
+export default memo(CostInput);

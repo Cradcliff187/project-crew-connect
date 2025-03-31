@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
@@ -22,18 +22,21 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   onSuccess,
   title
 }) => {
-  // Create a truly stable and unique ID
-  const stableSheetId = React.useMemo(() => {
+  // Create a truly stable ID that won't change between renders
+  const stableSheetId = useMemo(() => {
+    // Create a base ID with all the relevant info but without random components
     const baseId = entityType === 'ESTIMATE_ITEM' 
-      ? `estimate-item-${itemId}-${tempId.substring(0, 8)}` 
-      : `estimate-${tempId.substring(0, 8)}`;
-    return `${baseId}-${Math.random().toString(36).substring(2, 8)}`;
+      ? `estimate-item-${itemId || 'unknown'}-${tempId}` 
+      : `estimate-${tempId}`;
+    
+    // Return a completely deterministic ID
+    return baseId;
   }, [entityType, itemId, tempId]);
 
   // Generate a consistent entity ID that doesn't change on re-renders
-  const entityId = React.useMemo(() => {
-    if (entityType === 'ESTIMATE_ITEM') {
-      // For items, include both the estimate ID and item ID
+  const entityId = useMemo(() => {
+    if (entityType === 'ESTIMATE_ITEM' && itemId) {
+      // For items, include both the estimate ID and item ID in a consistent format
       return `${tempId}-item-${itemId}`;
     }
     // For the main estimate, just use the tempId
@@ -44,6 +47,7 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
     return null;
   }
 
+  // Use stable IDs and a simpler architecture
   return (
     <SheetContent 
       className="w-[90vw] sm:max-w-[600px] p-0" 

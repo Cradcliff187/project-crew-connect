@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { UseFormReturn, Control } from 'react-hook-form';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
 import EntitySelector from './EntitySelector';
@@ -26,7 +26,7 @@ interface MetadataFormProps {
     materialName?: string;
     expenseName?: string;
   };
-  instanceId?: string; // Added instanceId prop
+  instanceId?: string;
 }
 
 const MetadataForm: React.FC<MetadataFormProps> = ({
@@ -39,25 +39,30 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   prefillData,
   instanceId = 'default-metadata'
 }) => {
-  // Set initial values from prefillData
-  useEffect(() => {
+  // Prefill data setup - extracted to a stable callback to prevent re-runs
+  const setupPrefillData = useCallback(() => {
     console.log(`[${instanceId}] Setting up MetadataForm with prefillData:`, prefillData);
     
     if (prefillData) {
       if (prefillData.amount) {
-        form.setValue('metadata.amount', prefillData.amount);
+        form.setValue('metadata.amount', prefillData.amount, {shouldValidate: false});
       }
       if (prefillData.vendorId) {
-        form.setValue('metadata.vendorId', prefillData.vendorId);
+        form.setValue('metadata.vendorId', prefillData.vendorId, {shouldValidate: false});
       }
       
       // Add any notes with material name if available
       if (prefillData.materialName || prefillData.expenseName) {
         const itemName = prefillData.materialName || prefillData.expenseName;
-        form.setValue('metadata.notes', `Receipt for: ${itemName}`);
+        form.setValue('metadata.notes', `Receipt for: ${itemName}`, {shouldValidate: false});
       }
     }
-  }, [prefillData, form, instanceId]);
+  }, [form, prefillData, instanceId]);
+  
+  // Run setup once on mount
+  useEffect(() => {
+    setupPrefillData();
+  }, [setupPrefillData]);
   
   // Get the watchCategory value
   const watchCategory = form.watch('metadata.category');
@@ -142,4 +147,4 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   );
 };
 
-export default MetadataForm;
+export default React.memo(MetadataForm);
