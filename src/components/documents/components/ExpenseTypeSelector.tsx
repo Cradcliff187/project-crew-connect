@@ -7,10 +7,14 @@ import { DocumentUploadFormValues, expenseTypes } from '../schemas/documentSchem
 
 interface ExpenseTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
+  instanceId?: string; // Added instanceId prop
 }
 
 // Component for use within a form with react-hook-form
-const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ control }) => {
+const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ 
+  control,
+  instanceId = 'default-expense-type'  // Default value
+}) => {
   return (
     <FormField
       control={control}
@@ -26,9 +30,9 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ control }) =>
             >
               {expenseTypes.map((type) => (
                 <div key={type} className="flex items-center space-x-2">
-                  <RadioGroupItem value={type} id={`expense-type-${type}`} />
+                  <RadioGroupItem value={type} id={`${instanceId}-expense-type-${type}`} />
                   <label 
-                    htmlFor={`expense-type-${type}`} 
+                    htmlFor={`${instanceId}-expense-type-${type}`} 
                     className="text-sm font-normal cursor-pointer"
                   >
                     {type.charAt(0).toUpperCase() + type.slice(1)}

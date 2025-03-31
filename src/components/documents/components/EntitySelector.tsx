@@ -17,6 +17,7 @@ interface EntitySelectorProps {
   control: Control<DocumentUploadFormValues>;
   entityType?: EntityType; // Make this optional
   isReceiptUpload?: boolean;
+  instanceId?: string; // Added instanceId prop
 }
 
 interface EntityOption {
@@ -27,7 +28,8 @@ interface EntityOption {
 const EntitySelector: React.FC<EntitySelectorProps> = ({ 
   control, 
   entityType: propEntityType,
-  isReceiptUpload = false 
+  isReceiptUpload = false,
+  instanceId = 'default-entity'  // Default value
 }) => {
   const [entities, setEntities] = useState<EntityOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -166,7 +168,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                     disabled={isReceiptUpload && !!field.value}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger id={`${instanceId}-entity-trigger`}>
                         <SelectValue placeholder={`Select a ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'}`} />
                       </SelectTrigger>
                     </FormControl>
@@ -182,6 +184,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   <FormControl>
                     <Input
                       {...field}
+                      id={`${instanceId}-entity-input`}
                       placeholder={loading ? "Loading..." : `Enter ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'} ID`}
                       disabled={loading || (isReceiptUpload && !!field.value)}
                     />

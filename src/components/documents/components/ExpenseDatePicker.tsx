@@ -16,9 +16,13 @@ import { Calendar } from '@/components/ui/calendar';
 
 interface ExpenseDatePickerProps {
   control: Control<DocumentUploadFormValues>;
+  instanceId?: string; // Added instanceId prop
 }
 
-const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ control }) => {
+const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ 
+  control,
+  instanceId = 'default-date'  // Default value
+}) => {
   return (
     <FormField
       control={control}
@@ -31,6 +35,7 @@ const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ control }) => {
               <FormControl>
                 <Button
                   variant="outline"
+                  id={`${instanceId}-date-picker`}
                   className={cn(
                     "w-full pl-3 text-left font-normal",
                     !field.value && "text-muted-foreground"

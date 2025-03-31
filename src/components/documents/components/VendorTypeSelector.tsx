@@ -3,13 +3,17 @@ import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues, vendorTypes } from '../schemas/documentSchema';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface VendorTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
+  instanceId?: string; // Added instanceId prop
 }
 
-const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
+const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ 
+  control,
+  instanceId = 'default-vendor-type'  // Default value
+}) => {
   return (
     <FormField
       control={control}
@@ -24,16 +28,16 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
               className="flex flex-col space-y-1"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="vendor" id="vendor-type" />
-                <label htmlFor="vendor-type" className="text-sm font-normal cursor-pointer">Supplier</label>
+                <RadioGroupItem value="vendor" id={`${instanceId}-vendor-type`} />
+                <label htmlFor={`${instanceId}-vendor-type`} className="text-sm font-normal cursor-pointer">Vendor/Supplier</label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="subcontractor" id="subcontractor-type" />
-                <label htmlFor="subcontractor-type" className="text-sm font-normal cursor-pointer">Subcontractor</label>
+                <RadioGroupItem value="subcontractor" id={`${instanceId}-subcontractor-type`} />
+                <label htmlFor={`${instanceId}-subcontractor-type`} className="text-sm font-normal cursor-pointer">Subcontractor</label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="other" id="other-type" />
-                <label htmlFor="other-type" className="text-sm font-normal cursor-pointer">Other</label>
+                <RadioGroupItem value="other" id={`${instanceId}-other-type`} />
+                <label htmlFor={`${instanceId}-other-type`} className="text-sm font-normal cursor-pointer">Other</label>
               </div>
             </RadioGroup>
           </FormControl>
