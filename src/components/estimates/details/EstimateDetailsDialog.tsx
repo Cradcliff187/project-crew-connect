@@ -9,6 +9,10 @@ import EstimateRevisionsTab from './EstimateRevisionsTab';
 import EstimateDocumentsTab from './EstimateDocumentsTab';
 import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import EstimateStatusManager from '../detail/EstimateStatusManager';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 type EstimateDetailsDialogProps = {
   estimate: {
@@ -31,6 +35,7 @@ type EstimateDetailsDialogProps = {
   revisions: EstimateRevision[];
   open: boolean;
   onClose: () => void;
+  onStatusChange?: () => void;
 };
 
 const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({ 
@@ -38,9 +43,11 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
   items = [], 
   revisions = [], 
   open, 
-  onClose 
+  onClose,
+  onStatusChange 
 }) => {
   const [activeTab, setActiveTab] = useState("details");
+  const [devMode, setDevMode] = useState(false);
   
   const formatDate = (dateString: string) => {
     try {
@@ -59,15 +66,43 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
     setActiveTab(value);
   };
 
+  const handleStatusChange = () => {
+    if (onStatusChange) {
+      onStatusChange();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden p-0 flex flex-col">
-        <div className="flex justify-between items-center bg-primary px-6 py-4 text-white">
+        <div className="flex justify-between items-center bg-[#0485ea] px-6 py-4 text-white">
           <div>
             <h2 className="text-xl font-semibold">{estimate.project}</h2>
             <p className="text-white/80 text-sm">Client: {estimate.client}</p>
           </div>
-          {/* Remove the custom close button as it duplicates the built-in one */}
+          <div className="flex items-center space-x-3">
+            <EstimateStatusManager
+              estimateId={estimate.id}
+              currentStatus={estimate.status}
+              onStatusChange={handleStatusChange}
+              showDevMode={devMode}
+              size="sm"
+              className="bg-white/10 px-2 py-1 rounded-md"
+            />
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="dev-mode"
+                checked={devMode}
+                onCheckedChange={setDevMode}
+                size="sm"
+                className="data-[state=checked]:bg-yellow-500"
+              />
+              <Label htmlFor="dev-mode" className="text-xs text-white/80">
+                Dev Mode
+              </Label>
+            </div>
+          </div>
         </div>
         
         <Tabs 

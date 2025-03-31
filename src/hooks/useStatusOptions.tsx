@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from 'react';
-import { Check, Pause, Play, AlertCircle, X, Clock, ArrowUpRight } from 'lucide-react';
+import { Check, Pause, Play, AlertCircle, X, Clock, ArrowUpRight, Send, FileText } from 'lucide-react';
 import { StatusOption } from '@/components/common/status/UniversalStatusControl';
-
-export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
+import { EntityType } from '@/types/common';
 
 export function useStatusOptions(entityType: EntityType, currentStatus?: string) {
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
@@ -133,6 +132,16 @@ export function useStatusOptions(entityType: EntityType, currentStatus?: string)
           { value: 'APPROVED', label: 'Approved', icon: <Check className="h-4 w-4 text-green-500" /> },
           { value: 'ACTIVE', label: 'Active', icon: <Play className="h-4 w-4 text-emerald-500" /> },
           { value: 'INACTIVE', label: 'Inactive', icon: <Pause className="h-4 w-4 text-amber-500" /> }
+        ];
+        
+      case 'ESTIMATE':
+        return [
+          { value: 'draft', label: 'Draft', icon: <AlertCircle className="h-4 w-4 text-gray-500" /> },
+          { value: 'sent', label: 'Sent', icon: <Send className="h-4 w-4 text-blue-500" /> },
+          { value: 'pending', label: 'Pending', icon: <Clock className="h-4 w-4 text-amber-500" /> },
+          { value: 'approved', label: 'Approved', icon: <Check className="h-4 w-4 text-green-500" /> },
+          { value: 'rejected', label: 'Rejected', icon: <X className="h-4 w-4 text-red-500" /> },
+          { value: 'converted', label: 'Converted', icon: <FileText className="h-4 w-4 text-purple-500" /> }
         ];
         
       default:

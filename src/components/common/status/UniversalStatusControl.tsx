@@ -30,7 +30,7 @@ export interface UniversalStatusControlProps {
   idField: string;
   statusField?: string;
   onStatusChange: () => void;
-  additionalUpdateFields?: Record<string, any>;
+  additionalUpdateFields?: Record<string, any> | ((newStatus: string) => Record<string, any>);
   className?: string;
   size?: 'sm' | 'default';
   showStatusBadge?: boolean;
@@ -81,8 +81,15 @@ const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
       const updateData: Record<string, any> = {
         [statusField]: newStatus,
         updated_at: new Date().toISOString(),
-        ...additionalUpdateFields
       };
+      
+      // Handle additionalUpdateFields as either an object or a function
+      if (typeof additionalUpdateFields === 'function') {
+        const additionalFields = additionalUpdateFields(newStatus);
+        Object.assign(updateData, additionalFields);
+      } else {
+        Object.assign(updateData, additionalUpdateFields);
+      }
       
       // Special case: If changing to "COMPLETED" for work orders or projects, set progress to 100%
       if ((entityType === 'WORK_ORDER' || entityType === 'PROJECT') && 
@@ -105,6 +112,11 @@ const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
       // Special case for projects when status is "COMPLETED": Update progress to 100%
       if (entityType === 'PROJECT' && newStatus.toUpperCase() === 'COMPLETED') {
         await updateProjectProgress(entityId);
+      }
+      
+      // If the entity is an estimate, also update the current revision
+      if (entityType === 'ESTIMATE') {
+        await updateEstimateRevision(entityId, newStatus);
       }
       
       // Record the status change in history table or activity log
@@ -143,6 +155,27 @@ const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
       });
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // Helper function to update estimate's current revision status
+  const updateEstimateRevision = async (estimateId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('estimate_revisions')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+          ...(newStatus === 'sent' ? { sent_date: new Date().toISOString() } : {})
+        })
+        .eq('estimate_id', estimateId)
+        .eq('is_current', true);
+        
+      if (error) {
+        console.error('Error updating estimate revision:', error);
+      }
+    } catch (error) {
+      console.error('Error updating estimate revision:', error);
     }
   };
   
@@ -186,7 +219,7 @@ const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
   return (
     <div className={cn("flex items-center relative z-10", className)}>
       {showStatusBadge && (
-        <StatusBadge status={currentStatus.toLowerCase() as any} />
+        <StatusBadge status={currentStatus.toLowerCase() as any} size={size} />
       )}
       
       <DropdownMenu open={open} onOpenChange={setOpen}>

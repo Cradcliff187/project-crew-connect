@@ -49,4 +49,4 @@ export interface Option {
   value: string;
 }
 
-export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR';
+export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR' | 'ESTIMATE';

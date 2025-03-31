@@ -34,6 +34,14 @@ const Estimates = () => {
     setEstimateRevisions([]);
     fetchEstimates(); // Refresh the list when the dialog is closed
   };
+
+  const handleStatusChange = () => {
+    // Refresh both the estimate details and the main estimate list
+    if (selectedEstimate) {
+      fetchEstimateDetails(selectedEstimate.id);
+      fetchEstimates();
+    }
+  };
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -70,6 +78,7 @@ const Estimates = () => {
           revisions={estimateRevisions}
           open={!!selectedEstimate}
           onClose={closeEstimateDetails}
+          onStatusChange={handleStatusChange}
         />
       )}
     </PageTransition>
