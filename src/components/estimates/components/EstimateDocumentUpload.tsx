@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -191,8 +192,8 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
             Object.entries(documentsByCategory).map(([category, docs]) => {
               // Filter docs based on whether they're line item documents
               const filteredCategoryDocs = isLineItemDocument 
-                ? docs.filter(doc => Boolean(doc.item_id || doc.item_reference))
-                : docs.filter(doc => !Boolean(doc.item_id || doc.item_reference));
+                ? docs.filter(doc => !!doc.item_id || !!doc.item_reference)
+                : docs.filter(doc => !doc.item_id && !doc.item_reference);
               
               if (filteredCategoryDocs.length === 0) return null;
               
