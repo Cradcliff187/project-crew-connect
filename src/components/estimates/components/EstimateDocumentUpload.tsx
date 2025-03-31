@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -42,12 +43,12 @@ const isLineItemDocument = (document: Document) => {
 
 interface EstimateDocumentUploadProps {
   estimateItemId?: string;
-  isLineItemDocument?: boolean;
+  showLineItemDocuments?: boolean;
 }
 
 const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
   estimateItemId,
-  isLineItemDocument = false
+  showLineItemDocuments = false
 }) => {
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   const [attachedDocuments, setAttachedDocuments] = useState<Document[]>([]);
@@ -128,7 +129,7 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
 
   const documentsByCategory = categorizeDocuments(attachedDocuments);
   
-  const filteredDocuments = isLineItemDocument 
+  const filteredDocuments = showLineItemDocuments 
     ? attachedDocuments.filter(isLineItemDocument)
     : attachedDocuments.filter(doc => !isLineItemDocument(doc));
 
@@ -137,7 +138,7 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium flex items-center gap-2">
           <PaperclipIcon className="h-4 w-4 text-[#0485ea]" />
-          {isLineItemDocument ? "Line Item Documents" : "Estimate Documents"}
+          {showLineItemDocuments ? "Line Item Documents" : "Estimate Documents"}
           {filteredDocuments.length > 0 && (
             <Badge variant="outline" className="ml-1 text-xs bg-blue-50">
               {filteredDocuments.length}
@@ -158,7 +159,7 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
           <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
             <SheetHeader className="p-6 pb-2">
               <SheetTitle>
-                {isLineItemDocument 
+                {showLineItemDocuments 
                   ? "Attach Document to Line Item" 
                   : "Attach Document to Estimate"}
               </SheetTitle>
@@ -166,8 +167,8 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
             
             {tempId && (
               <EnhancedDocumentUpload 
-                entityType={isLineItemDocument ? "ESTIMATE_ITEM" : "ESTIMATE"}
-                entityId={isLineItemDocument ? estimateItemId || tempId : tempId}
+                entityType={showLineItemDocuments ? "ESTIMATE_ITEM" : "ESTIMATE"}
+                entityId={showLineItemDocuments ? estimateItemId || tempId : tempId}
                 onSuccess={handleDocumentUploadSuccess}
                 onCancel={() => setIsDocumentUploadOpen(false)}
               />
@@ -180,7 +181,7 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
         <div className="space-y-4">
           {Object.keys(documentsByCategory).length > 0 ? (
             Object.entries(documentsByCategory).map(([category, docs]) => {
-              const filteredCategoryDocs = isLineItemDocument 
+              const filteredCategoryDocs = showLineItemDocuments 
                 ? docs.filter(isLineItemDocument)
                 : docs.filter(doc => !isLineItemDocument(doc));
               
