@@ -56,6 +56,12 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
     setDeleteDialogOpen(false);
   };
 
+  const handleStatusChange = () => {
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <EstimateDetailHeader 
@@ -63,6 +69,7 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
         onEdit={onEdit}
         onDelete={() => setDeleteDialogOpen(true)}
         onConvert={() => setConvertDialogOpen(true)}
+        onStatusChange={handleStatusChange}
       />
       
       <EstimateDetailContent 
