@@ -42,10 +42,8 @@ export const useDocumentUploadForm = ({
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   
   // Create stable refs for all props to prevent effects from re-running
-  const instanceIdRef = useRef(instanceId);
   const entityTypeRef = useRef(entityType);
   const entityIdRef = useRef(entityId);
   const isReceiptUploadRef = useRef(isReceiptUpload);
@@ -55,12 +53,11 @@ export const useDocumentUploadForm = ({
   
   // Update refs when props change
   useEffect(() => {
-    instanceIdRef.current = instanceId;
     entityTypeRef.current = entityType;
     entityIdRef.current = entityId;
     isReceiptUploadRef.current = isReceiptUpload;
     prefillDataRef.current = prefillData;
-  }, [instanceId, entityType, entityId, isReceiptUpload, prefillData]);
+  }, [entityType, entityId, isReceiptUpload, prefillData]);
 
   // Create default values with stable references
   const defaultValues = useRef<DocumentUploadFormValues>({
@@ -84,15 +81,6 @@ export const useDocumentUploadForm = ({
     defaultValues,
     mode: 'onBlur', // Less validation, less re-renders
   });
-
-  // Log form state changes for debugging
-  useEffect(() => {
-    console.log(`[useDocumentUploadForm:${instanceIdRef.current}] Form was created/updated`);
-    
-    return () => {
-      console.log(`[useDocumentUploadForm:${instanceIdRef.current}] Form instance will be unmounted`);
-    };
-  }, []);
 
   // Check bucket access once
   useEffect(() => {
@@ -160,23 +148,18 @@ export const useDocumentUploadForm = ({
   const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
     // Prevent double submission
     if (uploadInProgress.current) {
-      console.log(`[useDocumentUploadForm:${instanceIdRef.current}] Upload already in progress, skipping`);
       return;
     }
 
     try {
       uploadInProgress.current = true;
       setIsUploading(true);
-      setUploadError(null);
       
-      console.log(`[useDocumentUploadForm:${instanceIdRef.current}] Starting document upload:`, data);
       const result = await uploadDocument(data);
       
       if (!result.success) {
         throw result.error || new Error('Upload failed');
       }
-      
-      console.log(`[useDocumentUploadForm:${instanceIdRef.current}] Upload successful:`, result.documentId);
       
       // Show success message
       toast({
@@ -200,9 +183,6 @@ export const useDocumentUploadForm = ({
       }
       
     } catch (error: any) {
-      console.error(`[useDocumentUploadForm:${instanceIdRef.current}] Upload error:`, error);
-      setUploadError(error.message || "There was an error uploading your document.");
-      
       toast({
         title: "Upload failed",
         description: error.message || "There was an error uploading your document.",
@@ -214,17 +194,9 @@ export const useDocumentUploadForm = ({
     }
   }, [form, previewURL, onSuccess]);
 
-  // Initialize form once and only once
+  // Initialize form once
   const initializeForm = useCallback(() => {
-    if (formInitialized.current) {
-      console.log(`[useDocumentUploadForm:${instanceIdRef.current}] Form already initialized, skipping`);
-      return;
-    }
-    
-    console.log(`[useDocumentUploadForm:${instanceIdRef.current}] Initializing form with entity:`, {
-      type: entityTypeRef.current,
-      id: entityIdRef.current
-    });
+    if (formInitialized.current) return;
     
     // Set the receipt category and expense flag for receipt uploads
     if (isReceiptUploadRef.current) {
@@ -240,8 +212,6 @@ export const useDocumentUploadForm = ({
     
     // Apply prefill data if available
     if (prefillDataRef.current) {
-      console.log(`[useDocumentUploadForm:${instanceIdRef.current}] Applying prefill data:`, prefillDataRef.current);
-      
       if (prefillDataRef.current.amount) {
         form.setValue('metadata.amount', prefillDataRef.current.amount, { shouldValidate: false });
       }
@@ -268,7 +238,6 @@ export const useDocumentUploadForm = ({
     }
     
     form.reset();
-    setUploadError(null);
     
     if (onCancel) {
       onCancel();
@@ -285,7 +254,6 @@ export const useDocumentUploadForm = ({
     onSubmit,
     initializeForm,
     bucketInfo,
-    uploadError,
     handleCancel,
     // Watch what's needed with unique keys to avoid needless renders
     watchIsExpense: form.watch('metadata.isExpense'),

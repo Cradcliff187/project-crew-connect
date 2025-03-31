@@ -7,12 +7,12 @@ import { DocumentUploadFormValues, expenseTypes } from '../schemas/documentSchem
 
 interface ExpenseTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
-  instanceId?: string; // Add instanceId prop
+  instanceId?: string;
 }
 
 const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ 
   control,
-  instanceId = 'default-expense-type' // Default value
+  instanceId = 'default-expense-type'
 }) => {
   return (
     <FormField
@@ -47,4 +47,4 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({
   );
 };
 
-export default ExpenseTypeSelector;
+export default React.memo(ExpenseTypeSelector);

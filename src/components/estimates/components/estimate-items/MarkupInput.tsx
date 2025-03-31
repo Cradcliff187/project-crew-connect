@@ -12,12 +12,14 @@ interface MarkupInputProps {
 const MarkupInput: React.FC<MarkupInputProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   const [localMarkup, setLocalMarkup] = useState<string>('');
-  const debouncePending = useRef(false);
-  const lastFormValue = useRef<string>('');
   const updateTimeoutRef = useRef<number | null>(null);
+  const lastFormValue = useRef<string>('');
+  const isUpdatingRef = useRef(false);
   
   // Initialize form values
   useEffect(() => {
+    if (isUpdatingRef.current) return;
+    
     const markupValue = form.getValues(`items.${index}.markup_percentage`) || '0';
     if (markupValue !== localMarkup && markupValue !== lastFormValue.current) {
       setLocalMarkup(markupValue);
@@ -25,13 +27,11 @@ const MarkupInput: React.FC<MarkupInputProps> = ({ index }) => {
     }
   }, [form, index, localMarkup]);
 
-  // Implement debounced update with proper cleanup
+  // Implement proper cleanup
   useEffect(() => {
     return () => {
-      // Clear timeout on unmount
       if (updateTimeoutRef.current !== null) {
         window.clearTimeout(updateTimeoutRef.current);
-        updateTimeoutRef.current = null;
       }
     };
   }, []);
@@ -49,37 +49,43 @@ const MarkupInput: React.FC<MarkupInputProps> = ({ index }) => {
     }
     
     // Set new timeout for debounced update
-    debouncePending.current = true;
     updateTimeoutRef.current = window.setTimeout(() => {
-      // Only update if value changed and component is still mounted
       if (newValue !== lastFormValue.current) {
-        form.setValue(`items.${index}.markup_percentage`, newValue, {
-          shouldDirty: true,
-          shouldValidate: false
-        });
-        lastFormValue.current = newValue;
+        try {
+          isUpdatingRef.current = true;
+          form.setValue(`items.${index}.markup_percentage`, newValue, {
+            shouldDirty: true,
+            shouldValidate: false
+          });
+          lastFormValue.current = newValue;
+        } finally {
+          isUpdatingRef.current = false;
+        }
       }
-      debouncePending.current = false;
       updateTimeoutRef.current = null;
     }, 300);
   }, [form, index]);
 
   // Handle blur with immediate update
   const handleBlur = useCallback(() => {
-    // Clear pending timeout if exists
+    // Clear pending timeout
     if (updateTimeoutRef.current !== null) {
       window.clearTimeout(updateTimeoutRef.current);
       updateTimeoutRef.current = null;
     }
     
     // Update immediately on blur if needed
-    if (debouncePending.current || localMarkup !== lastFormValue.current) {
-      form.setValue(`items.${index}.markup_percentage`, localMarkup, {
-        shouldDirty: true,
-        shouldValidate: true
-      });
-      lastFormValue.current = localMarkup;
-      debouncePending.current = false;
+    if (localMarkup !== lastFormValue.current) {
+      try {
+        isUpdatingRef.current = true;
+        form.setValue(`items.${index}.markup_percentage`, localMarkup, {
+          shouldDirty: true,
+          shouldValidate: true
+        });
+        lastFormValue.current = localMarkup;
+      } finally {
+        isUpdatingRef.current = false;
+      }
     }
   }, [form, index, localMarkup]);
   

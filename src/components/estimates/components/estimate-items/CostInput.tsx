@@ -32,7 +32,6 @@ const CostInput: React.FC<CostInputProps> = ({ index }) => {
     return () => {
       if (updateTimeoutRef.current !== null) {
         window.clearTimeout(updateTimeoutRef.current);
-        updateTimeoutRef.current = null;
       }
     };
   }, []);
@@ -120,5 +119,4 @@ const CostInput: React.FC<CostInputProps> = ({ index }) => {
   );
 };
 
-// Prevent unnecessary re-renders
 export default React.memo(CostInput);

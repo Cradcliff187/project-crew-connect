@@ -14,7 +14,6 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [internalValue, setInternalValue] = useState('');
-  const lastSetValueTime = useRef(0);
   const isUpdatingRef = useRef(false);
   
   // Load initial values from form
@@ -23,31 +22,23 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
     
     const currentValue = form.getValues(`items.${index}.expense_type`);
     if (currentValue && currentValue !== internalValue) {
-      console.log(`[ExpenseTypeSelector:${index}] Initializing with value:`, currentValue);
       setInternalValue(currentValue);
       setShowCustomInput(currentValue === 'other');
     }
   }, [form, index, internalValue]);
   
-  // Use a debounced callback for expense type change
+  // Use a stable callback for expense type change
   const handleExpenseTypeChange = useCallback((value: string) => {
-    // Guard against excessive re-renders
-    if (value === internalValue && Date.now() - lastSetValueTime.current < 300) {
-      return;
-    }
-    
     try {
       isUpdatingRef.current = true;
       
       // Update internal state
       setInternalValue(value);
-      lastSetValueTime.current = Date.now();
       
       // Update form state with minimal validation
       form.setValue(`items.${index}.expense_type`, value, {
         shouldDirty: true,
-        shouldValidate: false,
-        shouldTouch: true
+        shouldValidate: false
       });
       
       // Update custom input visibility
@@ -58,10 +49,9 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
         form.setValue(`items.${index}.custom_type`, '', { shouldDirty: false });
       }
     } finally {
-      // Always release the update lock
       isUpdatingRef.current = false;
     }
-  }, [form, index, internalValue]);
+  }, [form, index]);
   
   // Handle custom type changes with minimal form updates
   const handleCustomTypeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +73,7 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
       <FormField
         control={form.control}
         name={`items.${index}.expense_type`}
-        render={({ field }) => (
+        render={() => (
           <FormItem>
             <FormLabel>Expense Type</FormLabel>
             <Select 
@@ -131,5 +121,4 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
   );
 };
 
-// Prevent unnecessary re-renders
 export default React.memo(ExpenseTypeSelector);
