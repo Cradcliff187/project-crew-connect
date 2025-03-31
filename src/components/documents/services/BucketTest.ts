@@ -11,8 +11,6 @@ interface BucketTestResult {
 /**
  * Tests access to the storage bucket
  * This is helpful to validate that the storage bucket is properly configured
- * 
- * We're using a memoized pattern to prevent repeated calls
  */
 let cachedTestResult: BucketTestResult | null = null;
 
@@ -47,7 +45,9 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     }
     
     // Try to find an exact match for our bucket name constant
-    const constructionBucket = buckets.find(bucket => bucket.name === DOCUMENTS_BUCKET_NAME);
+    const constructionBucket = buckets.find(bucket => 
+      bucket.name.toLowerCase() === DOCUMENTS_BUCKET_NAME.toLowerCase()
+    );
     
     if (constructionBucket) {
       console.log(`Found ${DOCUMENTS_BUCKET_NAME} bucket:`, constructionBucket.name);

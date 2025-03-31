@@ -57,7 +57,11 @@ export const uploadDocument = async (
   data: DocumentUploadFormValues
 ): Promise<UploadResult> => {
   try {
-    console.log('Uploading document with data:', data);
+    console.log('Starting document upload with data:', {
+      filesCount: data.files.length,
+      entityType: data.metadata.entityType,
+      entityId: data.metadata.entityId
+    });
     
     let uploadedDocumentId: string | undefined;
     
@@ -65,7 +69,7 @@ export const uploadDocument = async (
     
     // Get the exact bucket name first to avoid case sensitivity issues
     const bucketName = await getStorageBucketName();
-    console.log(`Using storage bucket: "${bucketName}"`);
+    console.log(`Using storage bucket: "${bucketName}" for upload`);
     
     // We'll handle multiple files if they're provided
     for (const file of files) {
@@ -79,7 +83,7 @@ export const uploadDocument = async (
       const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
-      console.log(`Uploading file to storage bucket, path: ${filePath}`);
+      console.log(`Uploading file to path: ${filePath}`);
       
       // Check if file is actually a File object
       if (!(file instanceof File)) {
@@ -98,11 +102,10 @@ export const uploadDocument = async (
       const fileOptions = {
         contentType: contentType,
         cacheControl: '3600',
-        upsert: true,
-        duplex: 'half' as const
+        upsert: true
       };
       
-      // Upload the file to Supabase Storage with explicit content type and exact bucket name
+      // Upload the file to Supabase Storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(bucketName)
         .upload(filePath, file, fileOptions);
@@ -127,11 +130,11 @@ export const uploadDocument = async (
       // Now insert document metadata to Supabase
       const documentData = {
         file_name: file.name,
-        file_type: contentType, // Use our determined content type
+        file_type: contentType,
         file_size: file.size,
         storage_path: filePath,
         entity_type: metadata.entityType,
-        entity_id: entityId, // Use the sanitized entity ID
+        entity_id: entityId,
         tags: metadata.tags || [],
         // Additional metadata fields
         category: metadata.category,
@@ -147,7 +150,6 @@ export const uploadDocument = async (
       
       console.log('Inserting document metadata:', documentData);
       
-      // For this DB call we need to ensure headers are correctly sent
       const { data: insertedData, error: insertError } = await supabase
         .from('documents')
         .insert(documentData)

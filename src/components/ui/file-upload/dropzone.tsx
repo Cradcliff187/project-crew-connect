@@ -1,7 +1,6 @@
 
-import React from "react";
 import { cn } from "@/lib/utils";
-import { Upload } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 
 interface DropzoneProps {
   isDragging: boolean;
@@ -11,33 +10,36 @@ interface DropzoneProps {
   onClick: () => void;
 }
 
-export const Dropzone: React.FC<DropzoneProps> = ({
+export function Dropzone({
   isDragging,
   dropzoneText,
   acceptedFileTypes,
   maxFileSize,
   onClick
-}) => {
+}: DropzoneProps) {
+  // Format accepted file types for display
+  const formattedTypes = acceptedFileTypes
+    .split(',')
+    .map(type => type.replace('*', '').replace('application/', '').replace('image/', ''))
+    .filter(Boolean)
+    .join(', ');
+  
   return (
     <div
-      className={cn(
-        "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-        isDragging
-          ? "border-[#0485ea] bg-[#0485ea]/10"
-          : "border-border hover:border-[#0485ea]/50 hover:bg-[#0485ea]/5"
-      )}
       onClick={onClick}
+      className={cn(
+        "border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer transition-colors",
+        isDragging 
+          ? "border-primary bg-primary/5" 
+          : "border-input hover:border-primary/50 hover:bg-muted/50"
+      )}
     >
-      <div className="flex flex-col items-center gap-2">
-        <Upload className="h-8 w-8 text-muted-foreground" />
-        <p className="text-sm font-medium">{dropzoneText}</p>
-        <p className="text-xs text-muted-foreground">
-          Accepted files: {acceptedFileTypes.replace(/\*/g, 'all')}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Maximum file size: {maxFileSize}MB
-        </p>
-      </div>
+      <UploadCloud className="h-10 w-10 mb-2 text-muted-foreground" />
+      <p className="text-sm font-medium">{dropzoneText}</p>
+      <p className="text-xs text-muted-foreground mt-1">
+        {formattedTypes && `Accepts: ${formattedTypes}`}
+        {maxFileSize && ` (Max: ${maxFileSize}MB)`}
+      </p>
     </div>
   );
-};
+}

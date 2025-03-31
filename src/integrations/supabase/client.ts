@@ -27,8 +27,8 @@ export const supabase = createClient<Database>(
     },
     // Initialize storage settings with correct defaults
     storage: {
-      // Don't limit the file sizes by default
-      maxFileSize: 50 * 1024 * 1024, // 50MB max file size
+      // Set appropriate file size limit
+      maxFileSize: 100 * 1024 * 1024, // 100MB max file size
     },
   }
 );
@@ -50,21 +50,29 @@ export const findStorageBucket = async (targetName: string = DOCUMENTS_BUCKET_NA
     // Log all available buckets for debugging
     console.log('Available storage buckets:', buckets?.map(b => b.name));
     
-    // First try exact match (which should work now that we've created the bucket)
+    // First try exact match (case sensitive)
     let bucket = buckets?.find(b => b.name === targetName);
     
     if (bucket) {
-      console.log(`Found storage bucket: ${bucket.name}`);
+      console.log(`Found exact storage bucket match: ${bucket.name}`);
       return bucket;
     }
     
-    // If we have any buckets at all, use the first one as a fallback
+    // Try case-insensitive match as fallback
+    bucket = buckets?.find(b => b.name.toLowerCase() === targetName.toLowerCase());
+    
+    if (bucket) {
+      console.warn(`Found case-insensitive bucket match: ${bucket.name} for ${targetName}`);
+      return bucket;
+    }
+    
+    // If we have any buckets at all, use the first one as a last resort
     if (buckets && buckets.length > 0) {
       console.warn(`Using fallback bucket: ${buckets[0].name} instead of ${targetName}`);
       return buckets[0];
     }
     
-    console.warn(`No suitable storage bucket found`);
+    console.error(`No storage buckets found in project`);
     return null;
   } catch (err) {
     console.error('Error in findStorageBucket:', err);
@@ -72,7 +80,7 @@ export const findStorageBucket = async (targetName: string = DOCUMENTS_BUCKET_NA
   }
 };
 
-// Updated bucket initialization that properly uses our newly created bucket
+// Ensure we have a valid bucket for document storage
 export const ensureStorageBucket = async () => {
   try {
     const bucket = await findStorageBucket();
@@ -85,11 +93,11 @@ export const ensureStorageBucket = async () => {
       };
     }
     
-    console.warn('No storage bucket found');
+    console.warn('No storage bucket found. Document uploads will not work.');
     
     return {
       success: false,
-      error: 'Storage bucket not found'
+      error: 'Storage bucket not available'
     };
   } catch (error) {
     console.error('Error in ensureStorageBucket:', error);
@@ -101,10 +109,11 @@ export const ensureStorageBucket = async () => {
 };
 
 // Check bucket status only once on initial load, not repeatedly
-let bucketCheckComplete = false;
+let bucketInitialized = false;
 
-if (!bucketCheckComplete) {
-  bucketCheckComplete = true;
+// Initialize bucket access once on app startup
+if (!bucketInitialized) {
+  bucketInitialized = true;
   ensureStorageBucket().then(result => {
     if (result.success) {
       console.log('Storage system initialized successfully');
@@ -112,5 +121,7 @@ if (!bucketCheckComplete) {
       console.warn('Storage system initialization failed:', result.error);
       console.warn('Document uploads may not work correctly');
     }
-  }).catch(console.error);
+  }).catch(error => {
+    console.error('Storage bucket initialization failed:', error);
+  });
 }

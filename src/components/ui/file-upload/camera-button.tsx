@@ -1,24 +1,21 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
 import { Camera } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CameraButtonProps {
   onCameraCapture: () => void;
 }
 
-export const CameraButton: React.FC<CameraButtonProps> = ({ 
-  onCameraCapture 
-}) => {
+export function CameraButton({ onCameraCapture }: CameraButtonProps) {
   return (
     <Button
       type="button"
       variant="outline"
       onClick={onCameraCapture}
-      className="flex items-center gap-2 w-full"
+      className="w-full"
     >
-      <Camera className="h-4 w-4" />
+      <Camera className="h-4 w-4 mr-2" />
       Take Photo
     </Button>
   );
-};
+}
