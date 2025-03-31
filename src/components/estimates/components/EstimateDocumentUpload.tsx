@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,10 @@ import DocumentPreviewCard from '@/components/documents/DocumentPreviewCard';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+const isLineItemDocument = (document: Document) => {
+  return !!(document.item_id || document.item_reference);
+};
+
 const categorizeDocuments = (documents: Document[]) => {
   const documentsByCategory: Record<string, Document[]> = {};
   documents.forEach(doc => {
@@ -35,10 +38,6 @@ const categorizeDocuments = (documents: Document[]) => {
     documentsByCategory[category].push(doc);
   });
   return documentsByCategory;
-};
-
-const isLineItemDocument = (document: Document) => {
-  return !!(document.item_id || document.item_reference);
 };
 
 interface EstimateDocumentUploadProps {
