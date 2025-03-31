@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
@@ -12,6 +12,30 @@ interface ItemTypeSelectorProps {
 const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   
+  // Memoize the change handler to prevent re-renders
+  const handleTypeChange = useCallback((value: string) => {
+    // Batch state updates to prevent multiple re-renders
+    form.setValue(`items.${index}.item_type`, value, { shouldDirty: true });
+    
+    // Reset type-specific fields when type changes
+    if (value === 'vendor') {
+      form.setValue(`items.${index}.subcontractor_id`, '', { shouldDirty: true });
+      form.setValue(`items.${index}.trade_type`, '', { shouldDirty: true });
+      form.setValue(`items.${index}.custom_type`, '', { shouldDirty: true });
+    } else if (value === 'subcontractor') {
+      form.setValue(`items.${index}.vendor_id`, '', { shouldDirty: true });
+      form.setValue(`items.${index}.expense_type`, undefined, { shouldDirty: true });
+      form.setValue(`items.${index}.custom_type`, '', { shouldDirty: true });
+    } else {
+      // For labor, reset all vendor and subcontractor specific fields
+      form.setValue(`items.${index}.vendor_id`, '', { shouldDirty: true });
+      form.setValue(`items.${index}.subcontractor_id`, '', { shouldDirty: true });
+      form.setValue(`items.${index}.trade_type`, '', { shouldDirty: true });
+      form.setValue(`items.${index}.expense_type`, undefined, { shouldDirty: true });
+      form.setValue(`items.${index}.custom_type`, '', { shouldDirty: true });
+    }
+  }, [form, index]);
+  
   return (
     <div className="col-span-12 md:col-span-3">
       <FormField
@@ -22,26 +46,7 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
             <FormLabel>Type*</FormLabel>
             <Select 
               value={field.value || ''} 
-              onValueChange={(value) => {
-                field.onChange(value);
-                // Reset type-specific fields when type changes
-                if (value === 'vendor') {
-                  form.setValue(`items.${index}.subcontractor_id`, '');
-                  form.setValue(`items.${index}.trade_type`, '');
-                  form.setValue(`items.${index}.custom_type`, '');
-                } else if (value === 'subcontractor') {
-                  form.setValue(`items.${index}.vendor_id`, '');
-                  form.setValue(`items.${index}.expense_type`, undefined);
-                  form.setValue(`items.${index}.custom_type`, '');
-                } else {
-                  // For labor, reset all vendor and subcontractor specific fields
-                  form.setValue(`items.${index}.vendor_id`, '');
-                  form.setValue(`items.${index}.subcontractor_id`, '');
-                  form.setValue(`items.${index}.trade_type`, '');
-                  form.setValue(`items.${index}.expense_type`, undefined);
-                  form.setValue(`items.${index}.custom_type`, '');
-                }
-              }}
+              onValueChange={handleTypeChange}
             >
               <FormControl>
                 <SelectTrigger>
@@ -62,4 +67,4 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
   );
 };
 
-export default ItemTypeSelector;
+export default React.memo(ItemTypeSelector);
