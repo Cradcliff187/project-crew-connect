@@ -51,6 +51,7 @@ const useFormField = () => {
     formContext = useFormContext();
   } catch (error) {
     formContext = useFormFallback();
+    console.warn("Form context not found, using fallback");
   }
   
   const { getFieldState, formState } = formContext;

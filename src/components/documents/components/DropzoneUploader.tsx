@@ -24,11 +24,15 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   label = 'Upload Document',
   instanceId = 'main-dropzone'
 }) => {
-  // Log to verify component is rendering with correct props
-  console.log('DropzoneUploader rendering with files:', watchFiles);
-  console.log('Using instanceId:', instanceId);
+  // Generate truly unique ID for this instance
+  const uniqueId = `${instanceId}-${React.useId()}`;
+  const inputId = `${uniqueId}-file-input`;
   
-  const inputId = `${instanceId}-file-input`;
+  // Log to verify component is rendering with correct props
+  console.log('DropzoneUploader rendering with ID:', uniqueId, {
+    files: watchFiles.length > 0 ? watchFiles.map(f => f.name) : 'none',
+    previewURL: previewURL ? 'has preview' : 'no preview'
+  });
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -42,7 +46,16 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   
   const handleDropzoneClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    document.getElementById(inputId)?.click();
+    e.preventDefault();
+    
+    console.log(`Dropzone clicked for ${instanceId}, activating input with ID:`, inputId);
+    // Use getElementById to find the input element by its unique ID
+    const inputElement = document.getElementById(inputId);
+    if (inputElement) {
+      inputElement.click();
+    } else {
+      console.error(`Could not find input element with ID: ${inputId}`);
+    }
   };
   
   return (
@@ -60,6 +73,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
                 )}
                 onClick={handleDropzoneClick}
+                data-dropzone-id={uniqueId}
               >
                 {previewURL ? (
                   <div className="w-full h-full p-2 flex flex-col items-center justify-center">
@@ -85,7 +99,14 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                       className="mt-2 border-[#0485ea] text-[#0485ea]"
                       onClick={(e) => {
                         e.stopPropagation();
-                        document.getElementById(inputId)?.click();
+                        e.preventDefault();
+                        
+                        const inputElement = document.getElementById(inputId);
+                        if (inputElement) {
+                          inputElement.click();
+                        } else {
+                          console.error(`Could not find input element with ID: ${inputId}`);
+                        }
                       }}
                     >
                       <FolderOpen className="h-4 w-4 mr-2" />

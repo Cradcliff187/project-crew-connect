@@ -23,6 +23,7 @@ interface UseDocumentUploadFormProps {
     materialName?: string;
     expenseName?: string;
   };
+  instanceId?: string; // Added instanceId prop
 }
 
 export const useDocumentUploadForm = ({
@@ -31,7 +32,8 @@ export const useDocumentUploadForm = ({
   onSuccess,
   onCancel,
   isReceiptUpload = false,
-  prefillData
+  prefillData,
+  instanceId = 'default-form'
 }: UseDocumentUploadFormProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
@@ -39,11 +41,12 @@ export const useDocumentUploadForm = ({
   const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const uploadInProgress = useRef(false);
+  const formInitialized = useRef(false);
 
   // Add uniqueness identifier for debug tracking
-  const instanceId = `${entityType}-${entityId || 'new'}-${Date.now()}`;
-  console.log(`Creating document upload form instance: ${instanceId}`);
+  console.log(`Creating document upload form instance: ${instanceId} for entityType=${entityType}, entityId=${entityId || 'new'}`);
 
+  // Create a new form instance for each component instance
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
@@ -70,35 +73,36 @@ export const useDocumentUploadForm = ({
         // First try to test the bucket access
         const result = await testBucketAccess();
         if (result.success && result.bucketId) {
-          console.log(`✅ Successfully connected to bucket: ${result.bucketId}`);
+          console.log(`✅ [${instanceId}] Successfully connected to bucket: ${result.bucketId}`);
           setBucketInfo({id: result.bucketId, name: result.bucketName || result.bucketId});
         } else {
           // If the test fails, we'll still try to proceed assuming the bucket exists
           // since we've created it in SQL
-          console.warn('⚠️ Could not confirm bucket access, but will attempt uploads:', result.error);
+          console.warn(`⚠️ [${instanceId}] Could not confirm bucket access, but will attempt uploads:`, result.error);
           setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
         }
       } catch (error) {
-        console.error('❌ Error testing bucket access:', error);
+        console.error(`❌ [${instanceId}] Error testing bucket access:`, error);
         // Assume the bucket exists since we've created it in SQL
         setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
       }
     };
     
     checkBucket();
-  }, []);
+  }, [instanceId]);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
+      console.log(`[${instanceId}] Cleaning up form resources`);
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
       }
     };
-  }, [previewURL]);
+  }, [previewURL, instanceId]);
 
   const handleFileSelect = (files: File[]) => {
-    console.log(`[${instanceId}] Files selected in handleFileSelect:`, files);
+    console.log(`[${instanceId}] Files selected in handleFileSelect:`, files.map(f => f.name));
     
     form.setValue('files', files);
     
@@ -125,14 +129,8 @@ export const useDocumentUploadForm = ({
       setIsUploading(true);
       setUploadError(null);
       
-      console.log(`[${instanceId}] Submitting files:`, data.files);
-      console.log(`[${instanceId}] File objects detail:`, data.files.map(f => ({
-        name: f.name,
-        type: f.type,
-        size: f.size,
-        lastModified: f.lastModified,
-        isFile: f instanceof File
-      })));
+      console.log(`[${instanceId}] Submitting files:`, data.files.map(f => f.name));
+      console.log(`[${instanceId}] Form metadata:`, data.metadata);
       
       const result = await uploadDocument(data);
       
@@ -184,6 +182,9 @@ export const useDocumentUploadForm = ({
   };
 
   const initializeForm = () => {
+    console.log(`[${instanceId}] Initializing form for entityId=${entityId}, entityType=${entityType}`);
+    
+    // Set the receipt category and expense flag for receipt uploads
     if (isReceiptUpload) {
       form.setValue('metadata.category', 'receipt');
       form.setValue('metadata.isExpense', true);
@@ -195,6 +196,7 @@ export const useDocumentUploadForm = ({
     form.setValue('metadata.entityId', entityId || '');
     form.setValue('metadata.entityType', entityType);
     
+    // Apply prefill data if available
     if (prefillData) {
       if (prefillData.amount) {
         form.setValue('metadata.amount', prefillData.amount);
@@ -210,10 +212,14 @@ export const useDocumentUploadForm = ({
         form.setValue('metadata.notes', `Receipt for: ${itemName}`);
       }
     }
+    
+    formInitialized.current = true;
   };
 
   const handleCancel = () => {
     // Clean up before cancelling
+    console.log(`[${instanceId}] Handling cancel, cleaning up resources`);
+    
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
       setPreviewURL(null);

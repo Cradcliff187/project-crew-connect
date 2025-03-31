@@ -26,6 +26,7 @@ interface EnhancedDocumentUploadProps {
     materialName?: string;
     expenseName?: string;
   };
+  instanceId?: string; // Added instanceId prop
 }
 
 const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
@@ -34,20 +35,21 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   onSuccess,
   onCancel,
   isReceiptUpload = false,
-  prefillData
+  prefillData,
+  instanceId = 'default-upload'
 }) => {
   const [showMobileCapture, setShowMobileCapture] = useState(false);
   const { isMobile, hasCamera } = useDeviceCapabilities();
   
   // Log props for debugging
-  console.log('EnhancedDocumentUpload props:', { 
+  console.log(`EnhancedDocumentUpload [${instanceId}] props:`, { 
     entityType, 
     entityId, 
     isReceiptUpload, 
     prefillData 
   });
 
-  // Use the custom hook for form management
+  // Use the custom hook for form management with instanceId passed through
   const {
     form,
     isUploading,
@@ -68,21 +70,24 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     onSuccess,
     onCancel,
     isReceiptUpload,
-    prefillData
+    prefillData,
+    instanceId
   });
 
   // Initialize form with prefill data if available
   useEffect(() => {
+    console.log(`[${instanceId}] Initializing form with entity ID: ${entityId}`);
     initializeForm();
     
     // Return a cleanup function to reset form when component unmounts
     return () => {
+      console.log(`[${instanceId}] Cleaning up on unmount`);
       form.reset();
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
       }
     };
-  }, [isReceiptUpload, prefillData]);
+  }, [isReceiptUpload, prefillData, entityId, instanceId]);
 
   // Auto-show vendor selector when receipt category is selected
   useEffect(() => {
@@ -105,15 +110,18 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     e.stopPropagation(); // Stop event bubbling to parent forms first
     e.preventDefault(); // Then prevent default behavior
     
-    console.log('Document upload form submit triggered');
+    console.log(`[${instanceId}] Document upload form submit triggered`);
     form.handleSubmit((data) => {
-      console.log('Document form data being submitted:', data);
+      console.log(`[${instanceId}] Document form data being submitted:`, data);
       onSubmit(data);
     })(e);
   };
 
   return (
-    <Card className="w-full" onClick={(e) => e.stopPropagation()}>
+    <Card 
+      className={`w-full ${isUploading ? 'uploading' : ''}`} 
+      onClick={(e) => e.stopPropagation()}
+    >
       {!simplifiedUpload && (
         <CardHeader>
           <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
@@ -137,7 +145,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                   previewURL={previewURL}
                   watchFiles={watchFiles}
                   label={isReceiptUpload ? "Upload Receipt" : "Upload Document"}
-                  instanceId={`dropzone-${entityType}-${entityId || 'new'}`}
+                  instanceId={`dropzone-${instanceId}`}
                 />
                 
                 {/* Mobile Capture Component */}
@@ -158,6 +166,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                   isReceiptUpload={isReceiptUpload}
                   showVendorSelector={showVendorSelector}
                   prefillData={prefillData}
+                  instanceId={instanceId}
                 />
               </div>
             </ScrollArea>
@@ -178,7 +187,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
             )}
             <Button
               type="submit" 
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
+              className={`bg-[#0485ea] hover:bg-[#0375d1] ${isUploading ? 'uploading' : ''}`}
               disabled={isUploading || watchFiles.length === 0}
               onClick={(e) => e.stopPropagation()}
             >

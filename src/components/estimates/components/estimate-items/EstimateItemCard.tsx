@@ -21,11 +21,11 @@ import {
 } from '../../utils/estimateCalculations';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import DocumentUploadSheet from '../document-upload/DocumentUploadSheet';
 
 interface EstimateItemCardProps {
   index: number;
@@ -49,8 +49,10 @@ const EstimateItemCard = ({
   const [attachedDocument, setAttachedDocument] = useState<{file_name?: string; file_type?: string} | null>(null);
   const form = useFormContext<EstimateFormValues>();
   
-  console.log(`Rendering EstimateItemCard for index ${index} with form values:`, 
-    form.getValues(`items.${index}`));
+  // Generate a unique identifier for this card instance
+  const itemInstanceId = React.useId();
+  
+  console.log(`Rendering EstimateItemCard for index ${index} with ID ${itemInstanceId}`);
   
   const itemType = form.watch(`items.${index}.item_type`) || '';
   
@@ -110,6 +112,8 @@ const EstimateItemCard = ({
         return;
       }
       
+      console.log(`Fetching document info for item ${index}, documentId:`, documentId);
+      
       const { data, error } = await supabase
         .from('documents')
         .select('file_name, file_type')
@@ -121,55 +125,54 @@ const EstimateItemCard = ({
         return;
       }
       
+      console.log(`Document info retrieved for item ${index}:`, data);
       setAttachedDocument(data);
     };
     
     fetchDocumentInfo();
-  }, [documentId]);
+  }, [documentId, index]);
 
   const handleDocumentUploadSuccess = (documentId?: string) => {
     console.log(`Document upload success for item ${index}, documentId:`, documentId);
+    
+    // Close the document upload sheet
     setIsDocumentUploadOpen(false);
     
     // Short delay to ensure state is updated properly
     setTimeout(() => {
       if (documentId) {
+        // Set the document ID in the form data
         form.setValue(`items.${index}.document_id`, documentId);
+        console.log(`Updated document_id for item ${index}:`, documentId);
       }
-    }, 50);
+    }, 100);
   };
 
   const getEntityTypeForDocument = () => {
-    switch (itemType) {
-      case 'vendor':
-        return 'VENDOR';
-      case 'subcontractor':
-        return 'SUBCONTRACTOR';
-      default:
-        return 'ESTIMATE';
-    }
+    // Return the proper entity type based on the item type
+    return "ESTIMATE_ITEM";
   };
 
   const getEntityIdForDocument = () => {
-    // Generate a unique entity ID for each line item to prevent document attachment conflicts
+    // Generate a unique entity ID for each line item
     const tempId = form.getValues('temp_id') || 'pending';
-    const uniqueItemId = `${tempId}-item-${index}`;
-    
-    switch (itemType) {
-      case 'vendor':
-        return vendorId || uniqueItemId;
-      case 'subcontractor':
-        return subcontractorId || uniqueItemId;
-      default:
-        return uniqueItemId;
-    }
+    // Use the React ID to ensure uniqueness even for duplicated items
+    return `${tempId}-item-${index}-${itemInstanceId}`;
   };
 
   const handleAttachClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log(`Opening document upload for item ${index}`);
+    console.log(`Opening document upload for item ${index} with instance ID ${itemInstanceId}`);
     setIsDocumentUploadOpen(true);
+  };
+
+  const handleRemoveDocument = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log(`Removing document from item ${index}`);
+    form.setValue(`items.${index}.document_id`, '');
+    setAttachedDocument(null);
   };
 
   return (
@@ -217,7 +220,17 @@ const EstimateItemCard = ({
               </Tooltip>
             </TooltipProvider>
           ) : (
-            <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
+            <Sheet 
+              open={isDocumentUploadOpen} 
+              onOpenChange={(open) => {
+                // Only update the state if closing the sheet, not opening it
+                // This avoids a loop that can occur when SheetTrigger is clicked
+                if (!open) {
+                  setIsDocumentUploadOpen(false);
+                  console.log(`Sheet for item ${index} is now closed`);
+                }
+              }}
+            >
               <SheetTrigger asChild>
                 <Button 
                   variant="outline" 
@@ -229,21 +242,16 @@ const EstimateItemCard = ({
                   <span className="hidden sm:inline-block">Attach</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" aria-describedby="item-document-upload-description">
-                <SheetHeader className="p-6 pb-2">
-                  <SheetTitle>Attach Document to Line Item</SheetTitle>
-                  <SheetDescription id="item-document-upload-description">
-                    Upload a document to attach to this line item.
-                  </SheetDescription>
-                </SheetHeader>
-                
-                <EnhancedDocumentUpload 
-                  entityType={getEntityTypeForDocument()}
-                  entityId={getEntityIdForDocument()}
-                  onSuccess={handleDocumentUploadSuccess}
-                  onCancel={() => setIsDocumentUploadOpen(false)}
-                />
-              </SheetContent>
+              
+              <DocumentUploadSheet 
+                isOpen={isDocumentUploadOpen}
+                onClose={() => setIsDocumentUploadOpen(false)}
+                tempId={form.getValues('temp_id') || 'pending'}
+                entityType="ESTIMATE_ITEM"
+                itemId={`${index}-${itemInstanceId}`}
+                onSuccess={handleDocumentUploadSuccess}
+                title="Attach Document to Line Item"
+              />
             </Sheet>
           )}
           
@@ -290,11 +298,7 @@ const EstimateItemCard = ({
                 variant="ghost" 
                 size="sm"
                 className="text-red-500 h-8 hover:text-red-700 hover:bg-red-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  form.setValue(`items.${index}.document_id`, '');
-                }}
+                onClick={handleRemoveDocument}
               >
                 Remove
               </Button>
