@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@
 import { X, Download, FileType, FileText, Image as ImageIcon, File } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 
 interface DocumentViewerProps {
@@ -34,7 +34,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, open, onOpenC
     try {
       setLoading(true);
       const { data, error } = await supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
+        .from('construction_documents')
         .createSignedUrl(document.storage_path, 300, { download: true });
         
       if (error) throw error;

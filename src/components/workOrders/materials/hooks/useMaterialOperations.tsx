@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderMaterial } from '@/types/workOrder';
 
 export function useMaterialOperations(workOrderId: string, fetchMaterials: () => Promise<void>) {
@@ -145,9 +145,9 @@ export function useMaterialOperations(workOrderId: string, fetchMaterials: () =>
         } else if (document?.storage_path) {
           console.log('Deleting file from storage:', document.storage_path);
           
-          // Delete the file from storage using the constant bucket ID
+          // Delete the file from storage
           const { error: storageError } = await supabase.storage
-            .from(DOCUMENTS_BUCKET_ID)
+            .from('construction_documents')
             .remove([document.storage_path]);
           
           if (storageError) {

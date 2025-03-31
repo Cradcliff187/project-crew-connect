@@ -1,7 +1,28 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
+
+// Helper to get the correct bucket name
+const getCorrectBucketName = async (): Promise<string> => {
+  try {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    
+    if (!buckets || buckets.length === 0) {
+      return 'construction_documents';
+    }
+    
+    const constructionBucket = buckets.find(bucket => 
+      bucket.name.toLowerCase().includes('construction') &&
+      bucket.name.toLowerCase().includes('document')
+    );
+    
+    return constructionBucket?.name || 'construction_documents';
+  } catch (error) {
+    console.error('Error getting bucket name:', error);
+    return 'construction_documents';
+  }
+};
 
 export const useEstimateDocuments = (estimateId: string) => {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -11,6 +32,7 @@ export const useEstimateDocuments = (estimateId: string) => {
   const fetchInProgress = useRef(false);
   const lastEstimateId = useRef<string | null>(null);
   const documentCacheRef = useRef<Map<string, Document>>(new Map());
+  const bucketNameRef = useRef<string | null>(null);
 
   // Function to fetch documents with improved error handling
   const fetchDocuments = useCallback(async () => {
@@ -45,6 +67,12 @@ export const useEstimateDocuments = (estimateId: string) => {
       
       console.log(`Fetching documents for ${isTemporaryId ? 'temporary' : 'permanent'} estimate: ${estimateId}`);
       
+      // Get the bucket name if we don't have it yet
+      if (!bucketNameRef.current) {
+        bucketNameRef.current = await getCorrectBucketName();
+        console.log('Using storage bucket:', bucketNameRef.current);
+      }
+      
       // For temporary IDs, use a simplified query
       if (isTemporaryId) {
         const { data, error } = await supabase
@@ -71,9 +99,9 @@ export const useEstimateDocuments = (estimateId: string) => {
             publicUrl = cachedDoc.url;
           } else {
             try {
-              // Use the constant bucket ID
+              // Use the correct bucket name we determined
               const { data: urlData } = supabase.storage
-                .from(DOCUMENTS_BUCKET_ID)
+                .from(bucketNameRef.current || 'construction_documents')
                 .getPublicUrl(doc.storage_path);
               
               publicUrl = urlData.publicUrl;
@@ -126,9 +154,9 @@ export const useEstimateDocuments = (estimateId: string) => {
           publicUrl = cachedDoc.url;
         } else {
           try {
-            // Get the public URL for the document using constant bucket ID
+            // Get the public URL for the document using correct bucket name
             const { data: urlData } = supabase.storage
-              .from(DOCUMENTS_BUCKET_ID)
+              .from(bucketNameRef.current || 'construction_documents')
               .getPublicUrl(doc.storage_path);
             
             publicUrl = urlData.publicUrl;

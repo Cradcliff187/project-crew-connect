@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 interface Receipt {
@@ -54,7 +54,7 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
       const receiptsWithUrls = await Promise.all(documents.map(async (doc) => {
         const { data: urlData } = await supabase
           .storage
-          .from(DOCUMENTS_BUCKET_ID)
+          .from('construction_documents')
           .createSignedUrl(doc.storage_path, 60 * 5); // 5 minutes expiry
           
         return {
@@ -91,7 +91,7 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
       if (document?.storage_path) {
         const { error: storageError } = await supabase
           .storage
-          .from(DOCUMENTS_BUCKET_ID)
+          .from('construction_documents')
           .remove([document.storage_path]);
           
         if (storageError) {

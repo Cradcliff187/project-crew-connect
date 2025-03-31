@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { TimeEntryFormValues } from './useTimeEntryForm';
 import { toast } from '@/hooks/use-toast';
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 export function useTimeEntrySubmit(onSuccess: () => void) {
@@ -52,9 +52,8 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
           
-          // Use the consistent bucket ID for file uploads
           const { error: uploadError } = await supabase.storage
-            .from(DOCUMENTS_BUCKET_ID)
+            .from('construction_documents')
             .upload(filePath, file);
             
           if (uploadError) throw uploadError;
