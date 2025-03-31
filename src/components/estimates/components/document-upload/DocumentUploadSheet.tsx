@@ -22,15 +22,23 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   onSuccess,
   title
 }) => {
-  // Create a stable and unique instance ID for this document upload
-  const instanceId = entityType === 'ESTIMATE_ITEM' 
-    ? `estimate-item-${itemId}-${tempId.substring(0, 8)}` 
-    : `estimate-${tempId.substring(0, 8)}`;
+  // Create a truly stable and unique ID
+  const stableSheetId = React.useMemo(() => {
+    const baseId = entityType === 'ESTIMATE_ITEM' 
+      ? `estimate-item-${itemId}-${tempId.substring(0, 8)}` 
+      : `estimate-${tempId.substring(0, 8)}`;
+    return `${baseId}-${Math.random().toString(36).substring(2, 8)}`;
+  }, [entityType, itemId, tempId]);
 
-  // Generate an appropriate entity ID
-  const entityId = entityType === 'ESTIMATE_ITEM'
-    ? `${tempId}-item-${itemId}`
-    : tempId;
+  // Generate a consistent entity ID that doesn't change on re-renders
+  const entityId = React.useMemo(() => {
+    if (entityType === 'ESTIMATE_ITEM') {
+      // For items, include both the estimate ID and item ID
+      return `${tempId}-item-${itemId}`;
+    }
+    // For the main estimate, just use the tempId
+    return tempId;
+  }, [entityType, tempId, itemId]);
 
   if (!isOpen) {
     return null;
@@ -54,10 +62,10 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
         entityId={entityId}
         onSuccess={onSuccess}
         onCancel={onClose}
-        instanceId={instanceId}
+        instanceId={stableSheetId}
       />
     </SheetContent>
   );
 };
 
-export default DocumentUploadSheet;
+export default React.memo(DocumentUploadSheet);

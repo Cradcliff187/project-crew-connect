@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 
@@ -7,27 +6,72 @@ export const useEstimateDocuments = (estimateId: string) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isTempId, setIsTempId] = useState(false);
 
-  const fetchDocuments = async () => {
+  // Memoize this function to prevent recreation on every render
+  const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
       if (!estimateId) {
         setDocuments([]);
+        setIsTempId(false);
         return;
       }
       
       // Check if this is a temporary ID (starts with 'temp-')
-      const isTempId = estimateId.startsWith('temp-');
+      const isTemporaryId = estimateId.startsWith('temp-');
+      setIsTempId(isTemporaryId);
       
-      // For temporary IDs, we don't need to query the database
-      if (isTempId) {
-        // Simply return an empty array for temporary IDs
-        setDocuments([]);
+      // For temporary IDs, handle differently
+      if (isTemporaryId) {
+        // For temp IDs, only fetch from documents table using this id
+        // No need to check for related items/revisions
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('entity_type', 'ESTIMATE')
+          .eq('entity_id', estimateId)
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error('Error fetching temp documents:', error);
+          setError('Failed to fetch documents');
+          setDocuments([]);
+          return;
+        }
+        
+        // Process these documents with URLs
+        const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
+          let publicUrl = '';
+          
+          try {
+            const { data: urlData } = supabase.storage
+              .from('construction_documents')
+              .getPublicUrl(doc.storage_path);
+            
+            publicUrl = urlData.publicUrl;
+          } catch (err) {
+            console.error('Error getting public URL:', err);
+            publicUrl = '';
+          }
+          
+          return { 
+            ...doc,
+            url: publicUrl,
+            item_reference: null,
+            item_id: null,
+            is_latest_version: doc.is_latest_version ?? true,
+            mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+          } as Document;
+        }));
+        
+        setDocuments(docsWithUrls);
         return;
       }
       
+      // For real estimate IDs, perform the complete fetch logic
       console.log(`Fetching documents for estimate: ${estimateId}`);
       
       // Fetch documents associated directly with this estimate
@@ -283,22 +327,22 @@ export const useEstimateDocuments = (estimateId: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [estimateId]);
 
   useEffect(() => {
     if (estimateId) {
       fetchDocuments();
+    } else {
+      setDocuments([]);
+      setLoading(false);
     }
-  }, [estimateId]);
-
-  const refetchDocuments = () => {
-    fetchDocuments();
-  };
+  }, [estimateId, fetchDocuments]);
 
   return {
     documents,
     loading,
     error,
-    refetchDocuments
+    refetchDocuments: fetchDocuments,
+    isTempId
   };
 };

@@ -14,18 +14,32 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   const [showCustomInput, setShowCustomInput] = useState(false);
   
+  // Use a standard watch to minimize re-renders
   const expenseType = form.watch(`items.${index}.expense_type`);
   
-  // Show custom input for "other" expense type
+  // Only update UI state when expense type changes, don't trigger form updates
   useEffect(() => {
     if (expenseType === 'other') {
       setShowCustomInput(true);
     } else {
       setShowCustomInput(false);
-      // Clear custom type if a specific expense type is selected
-      form.setValue(`items.${index}.custom_type`, '');
+      
+      // Only clear custom_type if it has been set previously
+      const currentCustomType = form.getValues(`items.${index}.custom_type`);
+      if (currentCustomType) {
+        form.setValue(`items.${index}.custom_type`, '', { shouldDirty: false });
+      }
     }
   }, [expenseType, form, index]);
+  
+  // Separate rendering from form interactions
+  const handleExpenseTypeChange = (value: string) => {
+    form.setValue(`items.${index}.expense_type`, value, {
+      shouldDirty: true,
+      shouldValidate: false, // Avoid triggering validation on every change
+      shouldTouch: true
+    });
+  };
   
   return (
     <div className="col-span-12 md:col-span-3">
@@ -35,7 +49,10 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Expense Type</FormLabel>
-            <Select value={field.value || 'none'} onValueChange={field.onChange}>
+            <Select 
+              value={field.value || 'none'} 
+              onValueChange={handleExpenseTypeChange}
+            >
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select expense type" />
@@ -62,7 +79,18 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
             <FormItem className="mt-2">
               <FormLabel>Custom Expense Type</FormLabel>
               <FormControl>
-                <Input placeholder="Enter custom expense type" {...field} />
+                <Input 
+                  placeholder="Enter custom expense type" 
+                  {...field} 
+                  onBlur={(e) => {
+                    // Only update on blur to reduce re-renders
+                    field.onBlur();
+                  }}
+                  onChange={(e) => {
+                    // Update with minimal render impact
+                    field.onChange(e);
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

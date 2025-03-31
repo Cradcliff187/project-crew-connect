@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
@@ -43,11 +43,22 @@ export const useDocumentUploadForm = ({
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  
+  // Refs to prevent race conditions
   const uploadInProgress = useRef(false);
   const formInitialized = useRef(false);
-
-  // Add uniqueness identifier for debug tracking
-  console.log(`Creating document upload form instance: ${instanceId} for entityType=${entityType}, entityId=${entityId || 'new'}`);
+  const instanceRef = useRef(instanceId);
+  const isReceiptRef = useRef(isReceiptUpload);
+  const entityIdRef = useRef(entityId);
+  const entityTypeRef = useRef(entityType);
+  
+  // Ensure refs are always up to date
+  useEffect(() => {
+    instanceRef.current = instanceId;
+    isReceiptRef.current = isReceiptUpload;
+    entityIdRef.current = entityId;
+    entityTypeRef.current = entityType;
+  }, [instanceId, isReceiptUpload, entityId, entityType]);
 
   // Create a new form instance with a stable default values object
   const defaultValues: DocumentUploadFormValues = {
@@ -68,49 +79,49 @@ export const useDocumentUploadForm = ({
   // Create a new form instance for each component instance
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
-    defaultValues
+    defaultValues,
+    mode: 'onBlur', // Validate on blur to reduce render cycles
   });
 
-  // Modified bucket check to assume bucket exists if we've created it 
-  // via SQL migration in Supabase
+  // Modified bucket check to handle errors gracefully
   useEffect(() => {
+    let isMounted = true;
     const checkBucket = async () => {
       try {
-        // First try to test the bucket access
         const result = await testBucketAccess();
-        if (result.success && result.bucketId) {
-          console.log(`✅ [${instanceId}] Successfully connected to bucket: ${result.bucketId}`);
+        if (result.success && result.bucketId && isMounted) {
           setBucketInfo({id: result.bucketId, name: result.bucketName || result.bucketId});
-        } else {
-          // If the test fails, we'll still try to proceed assuming the bucket exists
-          // since we've created it in SQL
-          console.warn(`⚠️ [${instanceId}] Could not confirm bucket access, but will attempt uploads:`, result.error);
+        } else if (isMounted) {
+          // Fallback to default bucket name
           setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
         }
       } catch (error) {
-        console.error(`❌ [${instanceId}] Error testing bucket access:`, error);
-        // Assume the bucket exists since we've created it in SQL
-        setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
+        if (isMounted) {
+          // Fallback to default bucket name on error
+          setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
+        }
       }
     };
     
     checkBucket();
-  }, [instanceId]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      console.log(`[${instanceId}] Cleaning up form resources`);
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
       }
     };
-  }, [previewURL, instanceId]);
+  }, [previewURL]);
 
-  const handleFileSelect = (files: File[]) => {
-    console.log(`[${instanceId}] Files selected in handleFileSelect:`, files.map(f => f.name));
-    
-    form.setValue('files', files);
+  // Memoize the file select handler to prevent recreation
+  const handleFileSelect = useCallback((files: File[]) => {
+    form.setValue('files', files, { shouldValidate: false });
     
     if (files.length > 0 && files[0].type.startsWith('image/')) {
       if (previewURL) {
@@ -124,12 +135,12 @@ export const useDocumentUploadForm = ({
       }
       setPreviewURL(null);
     }
-  };
+  }, [form, previewURL]);
 
-  const onSubmit = async (data: DocumentUploadFormValues) => {
+  // Memoize the submit handler to prevent recreation
+  const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
     // Guard against multiple submissions
     if (uploadInProgress.current) {
-      console.log(`[${instanceId}] Upload already in progress, skipping`);
       return;
     }
 
@@ -138,18 +149,16 @@ export const useDocumentUploadForm = ({
       setIsUploading(true);
       setUploadError(null);
       
-      console.log(`[${instanceId}] Submitting files:`, data.files.map(f => f.name));
-      console.log(`[${instanceId}] Form metadata:`, data.metadata);
-      
       const result = await uploadDocument(data);
       
       if (!result.success) {
         throw result.error || new Error('Upload failed');
       }
       
+      // Show success message
       toast({
-        title: isReceiptUpload ? "Receipt uploaded successfully" : "Document uploaded successfully",
-        description: isReceiptUpload 
+        title: isReceiptRef.current ? "Receipt uploaded successfully" : "Document uploaded successfully",
+        description: isReceiptRef.current 
           ? "Your receipt has been attached to this expense." 
           : "Your document has been uploaded and indexed."
       });
@@ -164,12 +173,10 @@ export const useDocumentUploadForm = ({
       
       // Call success callback with documentId
       if (onSuccess) {
-        console.log(`[${instanceId}] Calling onSuccess with document ID:`, result.documentId);
         onSuccess(result.documentId);
       }
       
     } catch (error: any) {
-      console.error(`[${instanceId}] Upload error:`, error);
       setUploadError(error.message || "There was an error uploading your document.");
       
       toast({
@@ -181,59 +188,56 @@ export const useDocumentUploadForm = ({
       setIsUploading(false);
       uploadInProgress.current = false;
     }
-  };
+  }, [form, previewURL, onSuccess]);
 
-  const initializeForm = () => {
+  // Memoize the initialize function to prevent recreation
+  const initializeForm = useCallback(() => {
     // Only initialize once to prevent unnecessary re-renders
     if (formInitialized.current) {
-      console.log(`[${instanceId}] Form already initialized, skipping`);
       return;
     }
     
-    console.log(`[${instanceId}] Initializing form for entityId=${entityId}, entityType=${entityType}`);
-    
     // Set the receipt category and expense flag for receipt uploads
-    if (isReceiptUpload) {
-      form.setValue('metadata.category', 'receipt' as DocumentCategory);
-      form.setValue('metadata.isExpense', true);
-      form.setValue('metadata.expenseType', 'materials' as ExpenseType);
+    if (isReceiptRef.current) {
+      form.setValue('metadata.category', 'receipt' as DocumentCategory, { shouldValidate: false });
+      form.setValue('metadata.isExpense', true, { shouldValidate: false });
+      form.setValue('metadata.expenseType', 'materials' as ExpenseType, { shouldValidate: false });
       setShowVendorSelector(true);
     }
     
-    // Always ensure entity ID is updated
-    form.setValue('metadata.entityId', entityId || '');
-    form.setValue('metadata.entityType', entityType);
+    // Always ensure entity ID and type are updated
+    form.setValue('metadata.entityId', entityIdRef.current || '', { shouldValidate: false });
+    form.setValue('metadata.entityType', entityTypeRef.current, { shouldValidate: false });
     
     // Apply prefill data if available
     if (prefillData) {
       if (prefillData.amount) {
-        form.setValue('metadata.amount', prefillData.amount);
+        form.setValue('metadata.amount', prefillData.amount, { shouldValidate: false });
       }
       
       if (prefillData.vendorId) {
-        form.setValue('metadata.vendorId', prefillData.vendorId);
+        form.setValue('metadata.vendorId', prefillData.vendorId, { shouldValidate: false });
       }
       
       const itemName = prefillData.expenseName || prefillData.materialName;
       if (itemName) {
-        form.setValue('metadata.tags', [itemName]);
-        form.setValue('metadata.notes', `Receipt for: ${itemName}`);
+        form.setValue('metadata.tags', [itemName], { shouldValidate: false });
+        form.setValue('metadata.notes', `Receipt for: ${itemName}`, { shouldValidate: false });
       }
     }
     
     formInitialized.current = true;
-  };
+  }, [form, prefillData]);
 
-  const handleCancel = () => {
+  // Memoize the cancel handler to prevent recreation
+  const handleCancel = useCallback(() => {
     // Clean up before cancelling
-    console.log(`[${instanceId}] Handling cancel, cleaning up resources`);
-    
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
       setPreviewURL(null);
     }
     
-    // Reset form
+    // Reset form and error states
     form.reset();
     setUploadError(null);
     
@@ -241,7 +245,7 @@ export const useDocumentUploadForm = ({
     if (onCancel) {
       onCancel();
     }
-  };
+  }, [form, previewURL, onCancel]);
 
   return {
     form,

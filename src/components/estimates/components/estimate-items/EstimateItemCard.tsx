@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -21,7 +21,7 @@ import {
 } from '../../utils/estimateCalculations';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -36,7 +36,8 @@ interface EstimateItemCardProps {
   showRemoveButton: boolean;
 }
 
-const EstimateItemCard = ({ 
+// Use React.memo to prevent unnecessary re-renders
+const EstimateItemCard = memo(({ 
   index, 
   vendors, 
   subcontractors, 
@@ -49,71 +50,52 @@ const EstimateItemCard = ({
   const [attachedDocument, setAttachedDocument] = useState<{file_name?: string; file_type?: string} | null>(null);
   const form = useFormContext<EstimateFormValues>();
   
-  // Use a stable ID for this component that won't change on re-renders
-  // Replace React.useId() with a more stable identifier based on the index
-  const stableId = `estimate-item-${index}`;
+  // Use a stable ID based on a ref to ensure it doesn't change on re-renders
+  const stableIdRef = useRef(`estimate-item-${index}-${Math.random().toString(36).substr(2, 9)}`);
+  const stableId = stableIdRef.current;
   
-  console.log(`Rendering EstimateItemCard for index ${index} with ID ${stableId}`);
-  
-  const itemType = form.watch(`items.${index}.item_type`) || '';
-  
-  console.log(`Item type for index ${index}: ${itemType}`);
-  
-  const cost = useWatch({
+  // Optimize form watching - only watch what we need
+  const formValues = useWatch({
     control: form.control,
-    name: `items.${index}.cost`,
-    defaultValue: '0'
+    name: `items.${index}`,
+    defaultValue: { 
+      cost: '0', 
+      markup_percentage: '0', 
+      quantity: '1',
+      description: '',
+      item_type: '',
+      vendor_id: '',
+      subcontractor_id: '',
+      document_id: ''
+    }
   });
+  
+  const { 
+    cost, 
+    markup_percentage: markupPercentage, 
+    quantity, 
+    description, 
+    item_type: itemType,
+    vendor_id: vendorId,
+    subcontractor_id: subcontractorId,
+    document_id: documentId
+  } = formValues;
 
-  const markupPercentage = useWatch({
-    control: form.control,
-    name: `items.${index}.markup_percentage`,
-    defaultValue: '0'
-  });
-  
-  const quantity = useWatch({
-    control: form.control,
-    name: `items.${index}.quantity`,
-    defaultValue: '1'
-  });
-
-  const description = useWatch({
-    control: form.control,
-    name: `items.${index}.description`,
-    defaultValue: ''
-  });
-
-  const vendorId = useWatch({
-    control: form.control,
-    name: `items.${index}.vendor_id`,
-    defaultValue: ''
-  });
-  
-  const subcontractorId = useWatch({
-    control: form.control,
-    name: `items.${index}.subcontractor_id`,
-    defaultValue: ''
-  });
-  
-  const documentId = useWatch({
-    control: form.control,
-    name: `items.${index}.document_id`,
-    defaultValue: ''
-  });
-
+  // Memoize calculations to reduce render cycles
   const item = { cost, markup_percentage: markupPercentage, quantity };
-  const itemPrice = calculateItemPrice(item);
-  const grossMargin = calculateItemGrossMargin(item);
-  const grossMarginPercentage = calculateItemGrossMarginPercentage(item);
+  const itemPrice = React.useMemo(() => calculateItemPrice(item), [cost, markupPercentage, quantity]);
+  const grossMargin = React.useMemo(() => calculateItemGrossMargin(item), [cost, markupPercentage, quantity]);
+  const grossMarginPercentage = React.useMemo(() => calculateItemGrossMarginPercentage(item), [cost, markupPercentage, quantity]);
 
+  // Only fetch document info when documentId changes and is not empty
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchDocumentInfo = async () => {
       if (!documentId) {
-        setAttachedDocument(null);
+        if (isMounted) setAttachedDocument(null);
         return;
       }
-      
-      console.log(`Fetching document info for item ${index}, documentId:`, documentId);
       
       try {
         const { data, error } = await supabase
@@ -122,71 +104,67 @@ const EstimateItemCard = ({
           .eq('document_id', documentId)
           .single();
           
-        if (error) {
+        if (error || !data) {
           console.error('Error fetching document:', error);
           return;
         }
         
-        console.log(`Document info retrieved for item ${index}:`, data);
-        setAttachedDocument(data);
+        if (isMounted) {
+          setAttachedDocument(data);
+        }
       } catch (err) {
         console.error(`Error fetching document info: ${err}`);
       }
     };
     
     fetchDocumentInfo();
-  }, [documentId, index]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [documentId]);
 
   const handleDocumentUploadSuccess = (documentId?: string) => {
-    console.log(`Document upload success for item ${index}, documentId:`, documentId);
-    
     // Close the document upload sheet
     setIsDocumentUploadOpen(false);
     
-    // Short delay to ensure state is updated properly
-    setTimeout(() => {
-      if (documentId) {
-        // Set the document ID in the form data
-        form.setValue(`items.${index}.document_id`, documentId);
-        console.log(`Updated document_id for item ${index}:`, documentId);
-      }
-    }, 100);
+    // Only update form if we got a documentId
+    if (documentId) {
+      // Use direct setValue with minimal options to prevent re-renders
+      form.setValue(`items.${index}.document_id`, documentId, {
+        shouldDirty: true,
+        shouldValidate: false
+      });
+    }
   };
 
-  const getEntityTypeForDocument = () => {
-    // Return the proper entity type based on the item type
-    return "ESTIMATE_ITEM";
-  };
-
-  const getEntityIdForDocument = () => {
-    // Generate a stable entity ID for each line item
-    const tempId = form.getValues('temp_id') || 'pending';
-    // Use the stable ID to ensure uniqueness even for duplicated items
-    return `${tempId}-item-${index}`;
-  };
-
-  const handleAttachClick = (e: React.MouseEvent) => {
+  // Stable callbacks to prevent re-renders
+  const handleAttachClick = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log(`Opening document upload for item ${index} with stable ID ${stableId}`);
     setIsDocumentUploadOpen(true);
-  };
+  }, []);
 
-  const handleRemoveDocument = (e: React.MouseEvent) => {
+  const handleRemoveDocument = React.useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log(`Removing document from item ${index}`);
-    form.setValue(`items.${index}.document_id`, '');
+    form.setValue(`items.${index}.document_id`, '', {
+      shouldDirty: true,
+      shouldValidate: false
+    });
     setAttachedDocument(null);
-  };
+  }, [form, index]);
 
-  // Use manual sheet control instead of relying on SheetTrigger
-  const openDocumentUpload = (e: React.MouseEvent) => {
+  const openDocumentUpload = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDocumentUploadOpen(true);
-  };
+  }, []);
 
+  // Get tempId for document upload once and store it
+  const tempId = form.getValues('temp_id') || 'pending';
+
+  // Only re-render price and margin calculations when their inputs change
   return (
     <Collapsible
       open={isOpen}
@@ -275,12 +253,12 @@ const EstimateItemCard = ({
             <MarginDisplay grossMargin={grossMargin} grossMarginPercentage={grossMarginPercentage} />
           </div>
           
-          {documentId && (
+          {documentId && attachedDocument && (
             <div className="mt-4 p-2 border rounded bg-blue-50 flex items-center">
               <FileIcon className="h-4 w-4 text-blue-500 mr-2" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{attachedDocument?.file_name || 'Document attached'}</p>
-                <p className="text-xs text-muted-foreground">{attachedDocument?.file_type}</p>
+                <p className="text-sm font-medium truncate">{attachedDocument.file_name || 'Document attached'}</p>
+                <p className="text-xs text-muted-foreground">{attachedDocument.file_type}</p>
               </div>
               <Button
                 variant="ghost" 
@@ -299,7 +277,7 @@ const EstimateItemCard = ({
       <DocumentUploadSheet 
         isOpen={isDocumentUploadOpen}
         onClose={() => setIsDocumentUploadOpen(false)}
-        tempId={form.getValues('temp_id') || 'pending'}
+        tempId={tempId}
         entityType="ESTIMATE_ITEM"
         itemId={`${index}`}
         onSuccess={handleDocumentUploadSuccess}
@@ -307,6 +285,9 @@ const EstimateItemCard = ({
       />
     </Collapsible>
   );
-};
+});
+
+// Add display name for React DevTools
+EstimateItemCard.displayName = 'EstimateItemCard';
 
 export default EstimateItemCard;

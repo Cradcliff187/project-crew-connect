@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Form } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -26,10 +26,10 @@ interface EnhancedDocumentUploadProps {
     materialName?: string;
     expenseName?: string;
   };
-  instanceId?: string; // Added instanceId prop
+  instanceId?: string;
 }
 
-const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
+const EnhancedDocumentUpload = React.memo(({
   entityType,
   entityId,
   onSuccess,
@@ -37,18 +37,11 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   isReceiptUpload = false,
   prefillData,
   instanceId = 'default-upload'
-}) => {
+}: EnhancedDocumentUploadProps) => {
   const [showMobileCapture, setShowMobileCapture] = useState(false);
   const { isMobile, hasCamera } = useDeviceCapabilities();
+  const formSubmitted = useRef(false);
   
-  // Log props for debugging
-  console.log(`EnhancedDocumentUpload [${instanceId}] props:`, { 
-    entityType, 
-    entityId, 
-    isReceiptUpload, 
-    prefillData 
-  });
-
   // Use the custom hook for form management with instanceId passed through
   const {
     form,
@@ -63,7 +56,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     watchVendorType,
     watchFiles,
     watchCategory,
-    watchExpenseType
+    handleCancel
   } = useDocumentUploadForm({
     entityType,
     entityId,
@@ -76,25 +69,23 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
 
   // Initialize form with prefill data if available
   useEffect(() => {
-    console.log(`[${instanceId}] Initializing form with entity ID: ${entityId}`);
     initializeForm();
+    formSubmitted.current = false;
     
     // Return a cleanup function to reset form when component unmounts
     return () => {
-      console.log(`[${instanceId}] Cleaning up on unmount`);
-      form.reset();
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
       }
     };
-  }, [isReceiptUpload, prefillData, entityId, instanceId]);
+  }, [isReceiptUpload, prefillData, entityId, instanceId, initializeForm, previewURL]);
 
   // Auto-show vendor selector when receipt category is selected
   useEffect(() => {
     if (watchCategory === 'receipt' || watchCategory === 'invoice') {
       setShowVendorSelector(true);
     }
-  }, [watchCategory]);
+  }, [watchCategory, setShowVendorSelector]);
 
   // Handle capture from mobile device
   const handleMobileCapture = (file: File) => {
@@ -107,15 +98,29 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
 
   // Handle form submission with STRONG event prevention
   const handleFormSubmit = (e: React.FormEvent) => {
-    e.stopPropagation(); // Stop event bubbling to parent forms first
-    e.preventDefault(); // Then prevent default behavior
+    e.stopPropagation();
+    e.preventDefault();
     
-    console.log(`[${instanceId}] Document upload form submit triggered`);
+    // Prevent double submissions
+    if (formSubmitted.current || isUploading) {
+      return;
+    }
+    
+    formSubmitted.current = true;
     form.handleSubmit((data) => {
-      console.log(`[${instanceId}] Document form data being submitted:`, data);
       onSubmit(data);
     })(e);
   };
+
+  // Handle cancel with proper cleanup
+  const handleCancelUpload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    handleCancel();
+  };
+
+  // Create a unique form ID for this specific instance
+  const formId = `document-form-${instanceId}`;
 
   return (
     <Card 
@@ -134,7 +139,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       )}
       
       <Form {...form}>
-        <form onSubmit={handleFormSubmit} onClick={(e) => e.stopPropagation()} id={`document-form-${instanceId}`}>
+        <form onSubmit={handleFormSubmit} onClick={(e) => e.stopPropagation()} id={formId}>
           <CardContent className="p-0">
             <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
               <div className="space-y-6">
@@ -177,10 +182,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCancel();
-                }}
+                onClick={handleCancelUpload}
               >
                 Cancel
               </Button>
@@ -189,8 +191,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               type="submit" 
               className={`bg-[#0485ea] hover:bg-[#0375d1] ${isUploading ? 'uploading' : ''}`}
               disabled={isUploading || watchFiles.length === 0}
-              onClick={(e) => e.stopPropagation()}
-              form={`document-form-${instanceId}`}
+              form={formId}
             >
               {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
             </Button>
@@ -199,6 +200,9 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       </Form>
     </Card>
   );
-};
+});
+
+// Add display name
+EnhancedDocumentUpload.displayName = 'EnhancedDocumentUpload';
 
 export default EnhancedDocumentUpload;

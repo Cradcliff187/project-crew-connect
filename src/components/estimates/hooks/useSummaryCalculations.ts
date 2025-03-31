@@ -10,20 +10,16 @@ import {
   calculateOverallGrossMarginPercentage
 } from '../utils/estimateCalculations';
 import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
+import { useMemo } from 'react';
 
 export const useSummaryCalculations = () => {
   const form = useFormContext<EstimateFormValues>();
   
-  console.log('Form values in useSummaryCalculations:', form.getValues());
-  
-  // Fix for error #1: Provide a valid default value for items that matches the expected type
+  // Optimize the watch to be more specific
   const items = useWatch({
     control: form.control,
-    name: 'items',
-    defaultValue: [{ description: '', quantity: '1', unitPrice: '0', cost: '0', markup_percentage: '0' }]
+    name: 'items'
   });
-
-  console.log('Items from useWatch:', items);
 
   const contingencyPercentage = useWatch({
     control: form.control,
@@ -31,55 +27,44 @@ export const useSummaryCalculations = () => {
     defaultValue: "0"
   });
 
-  console.log('Contingency percentage:', contingencyPercentage);
+  // Transform items and perform calculations with memoization to prevent unnecessary recalculations
+  const calculationItems: EstimateItem[] = useMemo(() => {
+    if (!Array.isArray(items)) return [];
+    
+    return items.map((item: any) => ({
+      cost: item?.cost || '0',
+      markup_percentage: item?.markup_percentage || '0',
+      quantity: item?.quantity || '1',
+      item_type: item?.item_type,
+      vendor_id: item?.vendor_id,
+      subcontractor_id: item?.subcontractor_id,
+      document_id: item?.document_id,
+      trade_type: item?.trade_type,
+      expense_type: item?.expense_type,
+      custom_type: item?.custom_type
+    }));
+  }, [items]);
 
-  // Fix for error #2: Ensure items is treated as an array and handle it safely
-  const calculationItems: EstimateItem[] = Array.isArray(items) 
-    ? items.map((item: any) => {
-        console.log('Processing item for calculation:', item);
-        return {
-          cost: item?.cost || '0',
-          markup_percentage: item?.markup_percentage || '0',
-          quantity: item?.quantity || '1',
-          item_type: item?.item_type,
-          vendor_id: item?.vendor_id,
-          subcontractor_id: item?.subcontractor_id,
-          document_id: item?.document_id,
-          trade_type: item?.trade_type,
-          expense_type: item?.expense_type,
-          custom_type: item?.custom_type
-        };
-      }) 
-    : [];
+  // Memoize all calculations to prevent recalculation unless inputs change
+  const calculations = useMemo(() => {
+    const totalCost = calculateTotalCost(calculationItems);
+    const totalMarkup = calculateTotalMarkup(calculationItems);
+    const subtotal = calculateSubtotal(calculationItems);
+    const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
+    const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
+    const contingencyAmount = calculateContingencyAmount(calculationItems, contingencyPercentage);
+    const grandTotal = calculateGrandTotal(calculationItems, contingencyPercentage);
 
-  console.log('Transformed calculation items:', calculationItems);
+    return {
+      totalCost,
+      totalMarkup,
+      subtotal,
+      totalGrossMargin,
+      overallMarginPercentage,
+      contingencyAmount,
+      grandTotal
+    };
+  }, [calculationItems, contingencyPercentage]);
 
-  // Calculate all the totals
-  const totalCost = calculateTotalCost(calculationItems);
-  const totalMarkup = calculateTotalMarkup(calculationItems);
-  const subtotal = calculateSubtotal(calculationItems);
-  const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
-  const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
-  const contingencyAmount = calculateContingencyAmount(calculationItems, contingencyPercentage);
-  const grandTotal = calculateGrandTotal(calculationItems, contingencyPercentage);
-
-  console.log('Calculation results:', {
-    totalCost,
-    totalMarkup,
-    subtotal,
-    totalGrossMargin,
-    overallMarginPercentage,
-    contingencyAmount,
-    grandTotal
-  });
-
-  return {
-    totalCost,
-    totalMarkup,
-    subtotal,
-    totalGrossMargin,
-    overallMarginPercentage,
-    contingencyAmount,
-    grandTotal
-  };
+  return calculations;
 };
