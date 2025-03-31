@@ -3,80 +3,35 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PaperclipIcon, UploadIcon, FileTextIcon, FileIcon, FileImageIcon, EyeIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useDocumentViewer } from "@/hooks/useDocumentViewer";
+import { PaperclipIcon, UploadIcon, FileTextIcon, FileIcon, FileImageIcon, EyeIcon, FolderIcon } from "lucide-react";
+import { useEstimateDocuments } from "@/components/documents/hooks/useEstimateDocuments";
 import { Document } from "@/components/documents/schemas/documentSchema";
 import DocumentPreviewCard from "@/components/documents/DocumentPreviewCard";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import DocumentViewer from "@/components/documents/DocumentViewer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useDocumentCount } from "@/hooks/useDocumentCount";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
 }
 
 const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId }) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [viewDocument, setViewDocument] = useState<Document | null>(null);
   const { count } = useDocumentCount("ESTIMATE", estimateId);
   
   const { 
-    viewDocument, 
-    closeViewer, 
-    isViewerOpen, 
-    currentDocument 
-  } = useDocumentViewer();
-
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      if (!estimateId) return;
-      
-      setLoading(true);
-      
-      try {
-        const { data, error } = await supabase
-          .from('documents')
-          .select('*')
-          .eq('entity_type', 'ESTIMATE')
-          .eq('entity_id', estimateId)
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        
-        setDocuments(data as Document[]);
-      } catch (error) {
-        console.error('Error fetching estimate documents:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchDocuments();
-  }, [estimateId]);
-
-  // Get document icon based on file type
-  const getDocumentIcon = (fileType?: string) => {
-    if (!fileType) return <FileIcon className="h-4 w-4" />;
-    
-    if (fileType?.includes('image')) {
-      return <FileImageIcon className="h-4 w-4" />;
-    } else if (fileType?.includes('pdf')) {
-      return <FileTextIcon className="h-4 w-4" />;
-    }
-    
-    return <FileIcon className="h-4 w-4" />;
-  };
-
-  // Filter documents based on tab
-  const filteredDocuments = documents.filter(doc => {
-    if (activeTab === 'all') return true;
-    return doc.category === activeTab;
-  });
+    documents, 
+    loading, 
+    error,
+    refetchDocuments
+  } = useEstimateDocuments(estimateId);
 
   // Get unique categories
-  const categories = Array.from(new Set(documents.map(doc => doc.category || 'Uncategorized'))).filter(Boolean);
+  const categories = Array.from(
+    new Set(documents.map(doc => doc.category || 'Uncategorized'))
+  ).filter(Boolean);
 
   // Group documents by category for display
   const documentsByCategory: Record<string, Document[]> = {};
@@ -88,8 +43,23 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
     documentsByCategory[category].push(doc);
   });
 
+  // Filter documents based on tab
+  const filteredDocuments = documents.filter(doc => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'line-items') return !!doc.item_id;
+    return doc.category === activeTab;
+  });
+
+  const handleViewDocument = (doc: Document) => {
+    setViewDocument(doc);
+  };
+
+  const closeViewer = () => {
+    setViewDocument(null);
+  };
+
   return (
-    <Card>
+    <Card className="border border-[#0485ea]/10">
       <CardHeader className="flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <CardTitle>Estimate Documents</CardTitle>
@@ -112,15 +82,27 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
       
       <CardContent>
         {loading ? (
-          <div className="text-center py-6">
-            <p className="text-muted-foreground">Loading documents...</p>
+          <div className="space-y-4">
+            <Skeleton className="h-12 w-full" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-6 text-red-500">
+            <p>Error loading documents: {error}</p>
           </div>
         ) : documents.length > 0 ? (
           <div className="space-y-6">
-            {categories.length > 1 && (
+            {(categories.length > 1 || documents.some(d => !!d.item_id)) && (
               <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full">
+                <TabsList className="w-full mb-4">
                   <TabsTrigger value="all">All Documents</TabsTrigger>
+                  {documents.some(d => !!d.item_id) && (
+                    <TabsTrigger value="line-items">Line Item Documents</TabsTrigger>
+                  )}
                   {categories.map(category => (
                     <TabsTrigger key={category} value={category}>
                       {category}
@@ -134,13 +116,19 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
               <div className="space-y-6">
                 {Object.entries(documentsByCategory).map(([category, docs]) => (
                   <div key={category} className="space-y-2">
-                    <h3 className="text-sm font-medium text-gray-600 capitalize">{category}</h3>
+                    <h3 className="text-sm font-medium text-gray-600 capitalize flex items-center">
+                      <FolderIcon className="h-4 w-4 mr-1 text-[#0485ea]" />
+                      {category}
+                      <Badge variant="outline" className="ml-2 bg-blue-50">
+                        {docs.length}
+                      </Badge>
+                    </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       {docs.map(doc => (
                         <DocumentPreviewCard
                           key={doc.document_id}
                           document={doc}
-                          onView={() => viewDocument(doc.document_id)}
+                          onView={() => handleViewDocument(doc)}
                         />
                       ))}
                     </div>
@@ -153,7 +141,7 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
                   <DocumentPreviewCard
                     key={doc.document_id}
                     document={doc}
-                    onView={() => viewDocument(doc.document_id)}
+                    onView={() => handleViewDocument(doc)}
                   />
                 ))}
               </div>
@@ -172,26 +160,12 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
         )}
       </CardContent>
 
-      {/* Document Viewer Dialog */}
-      <Dialog open={isViewerOpen} onOpenChange={closeViewer}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {currentDocument?.file_type && getDocumentIcon(currentDocument.file_type)}
-              <span>{currentDocument?.file_name}</span>
-            </DialogTitle>
-          </DialogHeader>
-          {currentDocument && (
-            <div className="flex justify-center overflow-hidden">
-              <iframe
-                src={`${currentDocument.url}#toolbar=1`}
-                className="w-full h-[70vh] border rounded"
-                title={currentDocument.file_name}
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Document Viewer */}
+      <DocumentViewer 
+        document={viewDocument}
+        open={!!viewDocument}
+        onOpenChange={(open) => !open && closeViewer()}
+      />
     </Card>
   );
 };

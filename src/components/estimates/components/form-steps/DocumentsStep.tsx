@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { FileIcon, FileTextIcon, PlusIcon, TrashIcon } from 'lucide-react';
+import { FileIcon, FileTextIcon, PlusIcon, TrashIcon, UploadIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
 import DocumentList from '@/components/documents/DocumentList';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { toast } from '@/hooks/use-toast';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 const DocumentsStep = () => {
   const form = useFormContext<EstimateFormValues>();
@@ -81,27 +82,17 @@ const DocumentsStep = () => {
     setIsDocumentUploadOpen(true);
   };
 
-  // Group documents by category for display
-  const documentsByCategory: Record<string, any[]> = {};
-  documents.forEach(doc => {
-    const category = doc.category || 'Other';
-    if (!documentsByCategory[category]) {
-      documentsByCategory[category] = [];
-    }
-    documentsByCategory[category].push(doc);
-  });
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Supporting Documents</h3>
+    <Card className="border border-[#0485ea]/10">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-lg font-medium">Supporting Documents</CardTitle>
         <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
           <Button 
             onClick={handleAddDocumentClick}
             className="bg-[#0485ea] hover:bg-[#0373ce]"
             type="button" // Explicitly set as button type, not submit
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
+            <UploadIcon className="h-4 w-4 mr-2" />
             Add Document
           </Button>
           
@@ -123,24 +114,26 @@ const DocumentsStep = () => {
             )}
           </SheetContent>
         </Sheet>
-      </div>
+      </CardHeader>
       
-      <DocumentList
-        documents={documents}
-        loading={loading}
-        onUploadClick={() => setIsDocumentUploadOpen(true)}
-        onDocumentDelete={handleDocumentDelete}
-        emptyMessage="No documents attached yet. Add supporting documents like contracts, specifications, or reference materials."
-        showEntityInfo={true}
-        showCategories={true}
-      />
-      
-      {error && (
-        <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800 text-sm">
-          Error loading documents: {error}
-        </div>
-      )}
-    </div>
+      <CardContent>
+        <DocumentList
+          documents={documents}
+          loading={loading}
+          onUploadClick={() => setIsDocumentUploadOpen(true)}
+          onDocumentDelete={handleDocumentDelete}
+          emptyMessage="No documents attached yet. Add supporting documents like contracts, specifications, or reference materials."
+          showEntityInfo={false}
+          showCategories={true}
+        />
+        
+        {error && (
+          <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800 text-sm mt-4">
+            Error loading documents: {error}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

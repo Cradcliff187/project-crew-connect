@@ -2,47 +2,64 @@
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { PaperclipIcon, XIcon, FileIcon, FileTextIcon, FileImageIcon, UploadIcon, EyeIcon } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { 
+  PaperclipIcon, 
+  XIcon, 
+  FileIcon, 
+  FileTextIcon, 
+  FileImageIcon, 
+  UploadIcon, 
+  EyeIcon, 
+  FolderIcon, 
+  InfoIcon 
+} from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
-import { useDocumentViewer } from '@/hooks/useDocumentViewer';
+import DocumentViewer from '@/components/documents/DocumentViewer';
 import DocumentPreviewCard from '@/components/documents/DocumentPreviewCard';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-// Helper function to get icon based on file type
-const getDocumentIcon = (fileType?: string) => {
-  if (!fileType) return <FileIcon className="h-4 w-4" />;
-  
-  if (fileType?.includes('image')) {
-    return <FileImageIcon className="h-4 w-4" />;
-  } else if (fileType?.includes('pdf')) {
-    return <FileTextIcon className="h-4 w-4" />;
-  }
-  
-  return <FileIcon className="h-4 w-4" />;
+// Helper function to categorize documents
+const categorizeDocuments = (documents: Document[]) => {
+  const documentsByCategory: Record<string, Document[]> = {};
+  documents.forEach(doc => {
+    const category = doc.category || 'Other';
+    if (!documentsByCategory[category]) {
+      documentsByCategory[category] = [];
+    }
+    documentsByCategory[category].push(doc);
+  });
+  return documentsByCategory;
 };
 
-const EstimateDocumentUpload: React.FC = () => {
+// Helper function to check if a document is for a line item
+const isLineItemDocument = (document: Document) => {
+  return !!document.item_id || !!document.item_reference;
+};
+
+interface EstimateDocumentUploadProps {
+  estimateItemId?: string;
+  isLineItemDocument?: boolean;
+}
+
+const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
+  estimateItemId,
+  isLineItemDocument = false
+}) => {
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   const [attachedDocuments, setAttachedDocuments] = useState<Document[]>([]);
+  const [viewDocument, setViewDocument] = useState<Document | null>(null);
+  const [loading, setLoading] = useState(false);
   
   const form = useFormContext<EstimateFormValues>();
   const documentIds = form.watch('estimate_documents') || [];
   const tempId = form.watch('temp_id');
-  
-  // Use the document viewer hook
-  const { 
-    viewDocument, 
-    closeViewer, 
-    isViewerOpen, 
-    currentDocument 
-  } = useDocumentViewer();
 
   // Fetch attached documents whenever documentIds changes
   useEffect(() => {
@@ -52,6 +69,7 @@ const EstimateDocumentUpload: React.FC = () => {
         return;
       }
 
+      setLoading(true);
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -64,10 +82,12 @@ const EstimateDocumentUpload: React.FC = () => {
           description: 'Failed to load attached documents',
           variant: 'destructive',
         });
+        setLoading(false);
         return;
       }
 
       setAttachedDocuments(data || []);
+      setLoading(false);
     };
 
     fetchDocuments();
@@ -98,8 +118,12 @@ const EstimateDocumentUpload: React.FC = () => {
     });
   };
 
-  const handlePreviewDocument = (documentId: string) => {
-    viewDocument(documentId);
+  const handleViewDocument = (document: Document) => {
+    setViewDocument(document);
+  };
+
+  const closeViewer = () => {
+    setViewDocument(null);
   };
 
   // Prevent form submission when opening document upload
@@ -109,25 +133,23 @@ const EstimateDocumentUpload: React.FC = () => {
     setIsDocumentUploadOpen(true);
   };
 
-  // Categorize documents by type
-  const documentsByCategory: Record<string, Document[]> = {};
-  attachedDocuments.forEach(doc => {
-    const category = doc.category || 'Other';
-    if (!documentsByCategory[category]) {
-      documentsByCategory[category] = [];
-    }
-    documentsByCategory[category].push(doc);
-  });
+  // Categorize documents
+  const documentsByCategory = categorizeDocuments(attachedDocuments);
+  
+  // Filter line item documents if viewing estimate-level documents
+  const filteredDocuments = isLineItemDocument 
+    ? attachedDocuments.filter(doc => isLineItemDocument(doc))
+    : attachedDocuments.filter(doc => !isLineItemDocument(doc));
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium flex items-center gap-2">
           <PaperclipIcon className="h-4 w-4 text-[#0485ea]" />
-          Estimate Documents
-          {attachedDocuments.length > 0 && (
+          {isLineItemDocument ? "Line Item Documents" : "Estimate Documents"}
+          {filteredDocuments.length > 0 && (
             <Badge variant="outline" className="ml-1 text-xs bg-blue-50">
-              {attachedDocuments.length}
+              {filteredDocuments.length}
             </Badge>
           )}
         </h3>
@@ -144,13 +166,17 @@ const EstimateDocumentUpload: React.FC = () => {
           </Button>
           <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
             <SheetHeader className="p-6 pb-2">
-              <SheetTitle>Attach Document to Estimate</SheetTitle>
+              <SheetTitle>
+                {isLineItemDocument 
+                  ? "Attach Document to Line Item" 
+                  : "Attach Document to Estimate"}
+              </SheetTitle>
             </SheetHeader>
             
             {tempId && (
               <EnhancedDocumentUpload 
-                entityType="ESTIMATE"
-                entityId={tempId}
+                entityType={isLineItemDocument ? "ESTIMATE_ITEM" : "ESTIMATE"}
+                entityId={isLineItemDocument ? estimateItemId || tempId : tempId}
                 onSuccess={handleDocumentUploadSuccess}
                 onCancel={() => setIsDocumentUploadOpen(false)}
               />
@@ -160,31 +186,43 @@ const EstimateDocumentUpload: React.FC = () => {
       </div>
       
       {/* Display attached documents */}
-      {attachedDocuments.length > 0 ? (
+      {filteredDocuments.length > 0 ? (
         <div className="space-y-4">
           {Object.keys(documentsByCategory).length > 0 ? (
-            Object.entries(documentsByCategory).map(([category, docs]) => (
-              <div key={category} className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-600 capitalize">{category}</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                  {docs.map(document => (
-                    <DocumentPreviewCard
-                      key={document.document_id}
-                      document={document}
-                      onView={() => handlePreviewDocument(document.document_id)}
-                      onDelete={() => handleRemoveDocument(document.document_id)}
-                    />
-                  ))}
+            Object.entries(documentsByCategory).map(([category, docs]) => {
+              // Filter docs based on whether they're line item documents
+              const filteredCategoryDocs = isLineItemDocument 
+                ? docs.filter(doc => isLineItemDocument(doc))
+                : docs.filter(doc => !isLineItemDocument(doc));
+              
+              if (filteredCategoryDocs.length === 0) return null;
+              
+              return (
+                <div key={category} className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-600 capitalize flex items-center">
+                    <FolderIcon className="h-4 w-4 mr-1 text-[#0485ea]" />
+                    {category}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {filteredCategoryDocs.map(document => (
+                      <DocumentPreviewCard
+                        key={document.document_id}
+                        document={document}
+                        onView={() => handleViewDocument(document)}
+                        onDelete={() => handleRemoveDocument(document.document_id)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {attachedDocuments.map(document => (
+              {filteredDocuments.map(document => (
                 <DocumentPreviewCard
                   key={document.document_id}
                   document={document}
-                  onView={() => handlePreviewDocument(document.document_id)}
+                  onView={() => handleViewDocument(document)}
                   onDelete={() => handleRemoveDocument(document.document_id)}
                 />
               ))}
@@ -203,27 +241,12 @@ const EstimateDocumentUpload: React.FC = () => {
         </div>
       )}
       
-      {/* Document Preview Dialog */}
-      <Dialog open={isViewerOpen} onOpenChange={closeViewer}>
-        <DialogContent className="max-w-4xl max-h-[90vh]" aria-describedby="document-preview">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {currentDocument?.file_type && getDocumentIcon(currentDocument.file_type)}
-              <span>{currentDocument?.file_name}</span>
-            </DialogTitle>
-          </DialogHeader>
-          {currentDocument && (
-            <div className="flex justify-center overflow-hidden">
-              <iframe
-                id="document-preview"
-                src={`${currentDocument.url}#toolbar=1`}
-                className="w-full h-[70vh] border rounded"
-                title={currentDocument.file_name}
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Document Viewer */}
+      <DocumentViewer
+        document={viewDocument}
+        open={!!viewDocument}
+        onOpenChange={(open) => !open && closeViewer()}
+      />
     </div>
   );
 };
