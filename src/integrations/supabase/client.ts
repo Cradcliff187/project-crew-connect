@@ -72,8 +72,8 @@ export const findStorageBucket = async (targetName: string = DOCUMENTS_BUCKET_NA
   }
 };
 
-// We won't try to create a bucket anymore since it's failing with RLS policy error
-// Instead, we'll check for existing buckets and provide clear messaging to the user
+// Improved bucket initialization that doesn't try to create a bucket
+// Just checks for existing buckets and provides clear messaging
 export const ensureStorageBucket = async () => {
   try {
     const bucket = await findStorageBucket();
