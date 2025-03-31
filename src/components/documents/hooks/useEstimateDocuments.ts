@@ -47,7 +47,7 @@ export const useEstimateDocuments = (estimateId: string) => {
           publicUrl = urlData.publicUrl;
         } catch (err) {
           console.error('Error getting public URL:', err);
-          // Continue even if we can't get the URL
+          publicUrl = ''; // Set default empty URL on error
         }
         
         // Check if this document is attached to an estimate item
@@ -60,8 +60,10 @@ export const useEstimateDocuments = (estimateId: string) => {
           ...doc,
           url: publicUrl,
           item_reference: itemDescription || null,
-          item_id: null // Will be populated if this is a line item document
-        };
+          item_id: null, // Will be populated if this is a line item document
+          is_latest_version: doc.is_latest_version ?? true,
+          mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+        } as Document;
       }));
       
       // Fetch all revisions for this estimate, not just the current one
@@ -113,6 +115,7 @@ export const useEstimateDocuments = (estimateId: string) => {
                   publicUrl = urlData.publicUrl;
                 } catch (err) {
                   console.error('Error getting public URL:', err);
+                  publicUrl = ''; // Set default empty URL on error
                 }
                 
                 // Find the related item for this document
@@ -123,8 +126,10 @@ export const useEstimateDocuments = (estimateId: string) => {
                   url: publicUrl,
                   item_reference: relatedItem ? `Item: ${relatedItem.description}` : null,
                   item_id: relatedItem ? relatedItem.id : null,
-                  revision_id: relatedItem?.revision_id
-                };
+                  revision_id: relatedItem?.revision_id,
+                  is_latest_version: doc.is_latest_version ?? true,
+                  mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+                } as Document;
               }));
               
               itemDocuments = itemDocsWithUrls;
@@ -171,6 +176,7 @@ export const useEstimateDocuments = (estimateId: string) => {
                 publicUrl = urlData.publicUrl;
               } catch (err) {
                 console.error('Error getting public URL:', err);
+                publicUrl = ''; // Set default empty URL on error
               }
               
               // Find the related items for this vendor
@@ -222,6 +228,7 @@ export const useEstimateDocuments = (estimateId: string) => {
                 publicUrl = urlData.publicUrl;
               } catch (err) {
                 console.error('Error getting public URL:', err);
+                publicUrl = ''; // Set default empty URL on error
               }
               
               // Find the related items for this subcontractor

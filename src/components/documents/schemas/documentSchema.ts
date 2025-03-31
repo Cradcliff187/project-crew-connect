@@ -80,7 +80,7 @@ export const documentSchema = z.object({
   tags: z.array(z.string()).nullable(),
   created_at: z.string(),
   updated_at: z.string(),
-  url: z.string().optional(),
+  url: z.string().default(''),
   category: z.string().optional(),
   amount: z.number().optional(),
   expense_date: z.string().optional(),
@@ -95,9 +95,9 @@ export const documentSchema = z.object({
   parent_document_id: z.string().nullable().optional(),
   
   // Add the new fields from our consolidated view
-  item_id: z.string().optional(),
+  item_id: z.string().nullable().optional(),
   item_description: z.string().optional(),
-  item_reference: z.string().optional(),
+  item_reference: z.string().nullable().default(null),
   
   // Add fields for vendor and subcontractor document flags
   is_vendor_doc: z.boolean().optional(),
@@ -107,8 +107,8 @@ export const documentSchema = z.object({
   revision_id: z.string().optional(),
   
   // Add the missing fields required for the type
-  is_latest_version: z.boolean().optional(),
-  mime_type: z.string().optional()
+  is_latest_version: z.boolean().default(true),
+  mime_type: z.string().default('application/octet-stream')
 });
 
 export type DocumentCategory = typeof documentCategories[number];
