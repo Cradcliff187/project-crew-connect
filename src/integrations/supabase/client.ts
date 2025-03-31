@@ -33,48 +33,88 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Create a bucket if it doesn't exist yet
-export const ensureStorageBucket = async () => {
+// Helper to find the existing storage bucket with a consistent approach
+export const findStorageBucket = async (targetName: string = 'construction_documents') => {
   try {
-    // First check if we have the bucket already
+    // Get all available buckets
     const { data: buckets, error } = await supabase.storage.listBuckets();
     
-    // Log available buckets for debugging
-    console.log('Available buckets:', buckets?.map(b => b.name));
-    
-    // Check if we have a 'construction_documents' bucket (case insensitive)
-    const constructionBucket = buckets?.find(bucket => 
-      bucket.name.toLowerCase() === 'construction_documents'.toLowerCase()
-    );
-    
-    if (!constructionBucket) {
-      // Bucket doesn't exist, attempt to create it
-      console.log('Creating construction_documents bucket as it does not exist');
-      const { data, error: createError } = await supabase.storage.createBucket(
-        'construction_documents',
-        {
-          public: true,
-          fileSizeLimit: 50 * 1024 * 1024, // 50MB
-          allowedMimeTypes: ['image/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-        }
-      );
-      
-      if (createError) {
-        console.error('Error creating storage bucket:', createError);
-        return false;
-      }
-      
-      console.log('Successfully created construction_documents bucket');
-      return true;
+    if (error) {
+      console.error('Error listing buckets:', error);
+      return null;
     }
     
-    console.log('Construction documents bucket found:', constructionBucket.name);
-    return true;
-  } catch (error) {
-    console.error('Error in ensureStorageBucket:', error);
-    return false;
+    // Log all available buckets for debugging
+    console.log('Available storage buckets:', buckets?.map(b => b.name));
+    
+    // First try exact case-sensitive match
+    let bucket = buckets?.find(b => b.name === targetName);
+    
+    // If not found, try case-insensitive match
+    if (!bucket) {
+      bucket = buckets?.find(b => 
+        b.name.toLowerCase() === targetName.toLowerCase()
+      );
+    }
+    
+    // If still not found, try more flexible match
+    if (!bucket) {
+      bucket = buckets?.find(b => 
+        b.name.toLowerCase().includes('construction') && 
+        b.name.toLowerCase().includes('document')
+      );
+    }
+    
+    if (bucket) {
+      console.log(`Found storage bucket: ${bucket.name}`);
+      return bucket;
+    }
+    
+    console.warn(`No suitable storage bucket found matching "${targetName}"`);
+    return null;
+  } catch (err) {
+    console.error('Error in findStorageBucket:', err);
+    return null;
   }
 };
 
-// Initialize bucket when importing the client
-ensureStorageBucket().catch(console.error);
+// We won't try to create a bucket anymore since it's failing with RLS policy error
+// Instead, we'll check for existing buckets and provide clear messaging to the user
+export const ensureStorageBucket = async () => {
+  try {
+    const bucket = await findStorageBucket();
+    
+    if (bucket) {
+      console.log(`Using existing bucket: ${bucket.name}`);
+      return {
+        success: true,
+        bucketName: bucket.name
+      };
+    }
+    
+    // Since we can't create the bucket due to RLS policy, provide guidance
+    console.warn('No construction documents bucket found and cannot create one due to permissions.');
+    console.warn('Please create a "construction_documents" bucket in the Supabase dashboard.');
+    
+    return {
+      success: false,
+      error: 'Storage bucket not found and bucket creation failed due to permissions'
+    };
+  } catch (error) {
+    console.error('Error in ensureStorageBucket:', error);
+    return {
+      success: false,
+      error
+    };
+  }
+};
+
+// Check bucket status on initial load
+ensureStorageBucket().then(result => {
+  if (result.success) {
+    console.log('Storage system initialized successfully');
+  } else {
+    console.warn('Storage system initialization failed:', result.error);
+    console.warn('Document uploads may not work correctly');
+  }
+}).catch(console.error);

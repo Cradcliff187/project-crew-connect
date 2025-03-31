@@ -23,15 +23,17 @@ const DialogContent = ({
   setCurrentStep
 }: DialogContentProps) => {
   // Generate a stable ID for accessibility
-  const descriptionId = "estimate-form-description";
+  const descriptionId = React.useId();
+  const titleId = React.useId();
   
   return (
     <ShadcnDialogContent 
       className="max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[90vh] overflow-hidden p-0 flex flex-col"
       aria-describedby={descriptionId}
+      aria-labelledby={titleId}
     >
       <DialogHeader className="px-6 pt-6 pb-2">
-        <DialogTitle className="text-2xl font-semibold text-[#0485ea] flex items-center">
+        <DialogTitle id={titleId} className="text-2xl font-semibold text-[#0485ea] flex items-center">
           Create New Estimate
           <StepNavigation 
             isFirstStep={isFirstStep}
