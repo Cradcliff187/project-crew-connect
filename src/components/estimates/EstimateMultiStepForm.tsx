@@ -39,13 +39,14 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     isLastStep
   } = useEstimateForm({ open, onClose });
 
-  // Reset form when dialog opens/closes
+  // Generate a temp ID only once when dialog opens
   useEffect(() => {
-    if (open) {
-      // Generate a new temporary ID when form opens
+    if (open && !form.getValues('temp_id')) {
+      // Generate a new temporary ID when form opens and there isn't one
       const newTempId = "temp-" + Math.random().toString(36).substr(2, 9);
       form.setValue('temp_id', newTempId);
-    } else {
+      console.log('Generated new temp ID for estimate:', newTempId);
+    } else if (!open) {
       resetForm();
     }
   }, [open, form, resetForm]);
