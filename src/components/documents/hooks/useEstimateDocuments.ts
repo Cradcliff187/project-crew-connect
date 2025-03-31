@@ -18,54 +18,43 @@ export const useEstimateDocuments = (estimateId: string) => {
         return;
       }
       
-      // First try to get documents from the estimate_consolidated_documents view
-      const { data: viewData, error: viewError } = await supabase
-        .from('estimate_consolidated_documents')
+      console.log(`Fetching documents for estimate: ${estimateId}`);
+      
+      // Try direct query from documents table
+      const { data, error } = await supabase
+        .from('documents')
         .select('*')
+        .eq('entity_type', 'ESTIMATE')
         .eq('entity_id', estimateId)
         .order('created_at', { ascending: false });
       
-      if (viewError) {
-        console.error('Error fetching from consolidated view:', viewError);
-        // Fall back to direct table query
-        const { data, error } = await supabase
-          .from('documents')
-          .select('*')
-          .eq('entity_type', 'ESTIMATE')
-          .eq('entity_id', estimateId)
-          .order('created_at', { ascending: false });
+      if (error) {
+        throw error;
+      }
+      
+      console.log(`Found ${data.length} documents for estimate ${estimateId}`);
+      
+      // Transform the data to include document URLs
+      const docsWithUrls = await Promise.all(data.map(async (doc) => {
+        let publicUrl = '';
         
-        if (error) {
-          throw error;
-        }
-        
-        // Transform the data to include document URLs
-        const docsWithUrls = await Promise.all(data.map(async (doc) => {
-          const { data: { publicUrl } } = supabase.storage
+        try {
+          // Get the public URL for the document
+          const { data: urlData } = supabase.storage
             .from('construction_documents')
             .getPublicUrl(doc.storage_path);
           
-          return { 
-            ...doc,
-            url: publicUrl
-          };
-        }));
-        
-        setDocuments(docsWithUrls);
-        return;
-      }
-      
-      // Transform the data from the view to include document URLs
-      const docsWithUrls = await Promise.all(viewData.map(async (doc) => {
-        const { data: { publicUrl } } = supabase.storage
-          .from('construction_documents')
-          .getPublicUrl(doc.storage_path);
+          publicUrl = urlData.publicUrl;
+        } catch (err) {
+          console.error('Error getting public URL:', err);
+          // Continue even if we can't get the URL
+        }
         
         return { 
           ...doc,
           url: publicUrl,
-          // Add a reference to the item description if available
-          item_reference: doc.item_description ? `Item: ${doc.item_description}` : null
+          // Add any item reference if available
+          item_reference: doc.notes && doc.notes.includes('Item:') ? doc.notes : null
         };
       }));
       

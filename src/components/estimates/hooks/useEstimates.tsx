@@ -1,106 +1,90 @@
 
 import { useState, useEffect } from 'react';
+import { StatusType } from '@/types/common';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { EstimateType } from '../EstimatesTable';
 
 export const useEstimates = () => {
   const [estimates, setEstimates] = useState<EstimateType[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
+  
   const fetchEstimates = async () => {
     try {
       setLoading(true);
-      const { data: estimatesData, error } = await supabase
+      
+      // Get all estimates with their current revision version
+      const { data, error } = await supabase
         .from('estimates')
         .select(`
           estimateid,
-          customername,
           customerid,
+          customername,
           projectname,
-          datecreated,
-          estimateamount,
-          status,
           "job description",
+          estimateamount,
+          contingencyamount,
+          contingency_percentage,
+          datecreated,
+          sentdate,
+          approveddate,
+          status,
           sitelocationaddress,
           sitelocationcity,
           sitelocationstate,
-          sitelocationzip,
-          customerid,
-          projectid
+          sitelocationzip
         `)
         .order('datecreated', { ascending: false });
-
+      
       if (error) {
         throw error;
       }
-
-      // Fetch the revision counts separately
-      const revisionCounts: Record<string, number> = {};
       
-      // Process each estimate to get its revisions
-      for (const estimate of estimatesData || []) {
-        try {
-          const { data: revisionsData, error: revisionsError } = await supabase
-            .from('estimate_revisions')
-            .select('id')
-            .eq('estimate_id', estimate.estimateid);
-            
-          if (revisionsError) {
-            console.error(`Error fetching revisions for estimate ${estimate.estimateid}:`, revisionsError);
-            continue;
-          }
+      // Get revision counts for each estimate
+      const revisionsPromises = data.map(async (estimate) => {
+        const { count, error: countError } = await supabase
+          .from('estimate_revisions')
+          .select('id', { count: 'exact', head: true })
+          .eq('estimate_id', estimate.estimateid);
           
-          revisionCounts[estimate.estimateid] = (revisionsData?.length || 0);
-        } catch (err) {
-          console.error(`Error processing revisions for estimate ${estimate.estimateid}:`, err);
-          revisionCounts[estimate.estimateid] = 0;
+        if (countError) {
+          console.error('Error fetching revision count:', countError);
+          return 0;
         }
-      }
-
-      const formattedEstimates = estimatesData.map(estimate => {
-        const revisionCount = revisionCounts[estimate.estimateid] || 0;
-        const clientName = estimate.customername || 'Unknown Client';
         
-        return {
-          id: estimate.estimateid,
-          client: clientName,
-          project: estimate.projectname || 'Unnamed Project',
-          date: estimate.datecreated || new Date().toISOString(),
-          amount: Number(estimate.estimateamount) || 0,
-          status: estimate.status || 'draft',
-          versions: Number(revisionCount) + 1,
-          description: estimate["job description"],
-          location: {
-            address: estimate.sitelocationaddress,
-            city: estimate.sitelocationcity,
-            state: estimate.sitelocationstate,
-            zip: estimate.sitelocationzip
-          }
-        };
+        return count || 0;
       });
-
+      
+      const revisionCounts = await Promise.all(revisionsPromises);
+      
+      // Format the data for the UI
+      const formattedEstimates: EstimateType[] = data.map((estimate, index) => ({
+        id: estimate.estimateid,
+        client: estimate.customername || estimate.customerid || 'Unknown Client',
+        project: estimate.projectname || `Estimate ${estimate.estimateid}`,
+        date: estimate.datecreated || new Date().toISOString(),
+        amount: estimate.estimateamount || 0,
+        status: estimate.status as StatusType || 'draft',
+        versions: revisionCounts[index],
+        description: estimate["job description"],
+        location: {
+          address: estimate.sitelocationaddress,
+          city: estimate.sitelocationcity,
+          state: estimate.sitelocationstate,
+          zip: estimate.sitelocationzip
+        }
+      }));
+      
       setEstimates(formattedEstimates);
     } catch (error) {
       console.error('Error fetching estimates:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load estimates. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchEstimates();
   }, []);
-
-  return {
-    estimates,
-    loading,
-    fetchEstimates
-  };
+  
+  return { estimates, loading, fetchEstimates };
 };

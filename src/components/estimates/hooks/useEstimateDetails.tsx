@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,64 +6,78 @@ import { useToast } from '@/hooks/use-toast';
 import { EstimateItem, EstimateRevision } from '@/components/estimates/types/estimateTypes';
 
 const fetchEstimateItems = async (estimateId: string) => {
-  // First, find the current revision ID for this estimate
-  const { data: currentRevision, error: revisionError } = await supabase
-    .from('estimate_revisions')
-    .select('id')
-    .eq('estimate_id', estimateId)
-    .eq('is_current', true)
-    .limit(1)
-    .single();
-  
-  if (revisionError) {
-    console.error('Error fetching current revision:', revisionError);
-    // If we can't find the current revision, fall back to all items
+  try {
+    // First, find the current revision ID for this estimate
+    const { data: currentRevision, error: revisionError } = await supabase
+      .from('estimate_revisions')
+      .select('id')
+      .eq('estimate_id', estimateId)
+      .eq('is_current', true)
+      .limit(1)
+      .single();
+    
+    if (revisionError) {
+      console.error('Error fetching current revision:', revisionError);
+      // If we can't find the current revision, fall back to all items for this estimate
+      const { data, error } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('estimate_id', estimateId);
+      
+      if (error) throw error;
+      return data as EstimateItem[];
+    }
+    
+    // Query items specific to the current revision
     const { data, error } = await supabase
       .from('estimate_items')
       .select('*')
-      .eq('estimate_id', estimateId);
+      .eq('estimate_id', estimateId)
+      .eq('revision_id', currentRevision.id);
     
     if (error) throw error;
+    
+    console.log(`Found ${data?.length || 0} items for estimate ${estimateId} with revision ${currentRevision.id}`);
+    
+    // Transform the data to match the EstimateItem format
     return data as EstimateItem[];
+  } catch (error) {
+    console.error('Error in fetchEstimateItems:', error);
+    return [];
   }
-  
-  // Query items specific to the current revision
-  const { data, error } = await supabase
-    .from('estimate_items')
-    .select('*')
-    .eq('estimate_id', estimateId)
-    .eq('revision_id', currentRevision.id);
-  
-  if (error) throw error;
-  
-  // Transform the data to match the EstimateItem format
-  return data as EstimateItem[];
 };
 
 const fetchEstimateRevisions = async (estimateId: string) => {
-  const { data, error } = await supabase
-    .from('estimate_revisions')
-    .select(`
-      id,
-      estimate_id,
-      version,
-      revision_date,
-      sent_date,
-      notes,
-      status,
-      is_current,
-      amount,
-      revision_by,
-      document_id
-    `)
-    .eq('estimate_id', estimateId)
-    .order('version', { ascending: false });
-  
-  if (error) {
-    throw error;
+  try {
+    const { data, error } = await supabase
+      .from('estimate_revisions')
+      .select(`
+        id,
+        estimate_id,
+        version,
+        revision_date,
+        sent_date,
+        notes,
+        status,
+        is_current,
+        amount,
+        revision_by,
+        document_id
+      `)
+      .eq('estimate_id', estimateId)
+      .order('version', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
+    
+    console.log(`Found ${data?.length || 0} revisions for estimate ${estimateId}`);
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in fetchEstimateRevisions:', error);
+    return [];
   }
-  
-  return data || [];
 };
 
 export const useEstimateDetails = () => {
@@ -110,6 +125,7 @@ export const useEstimateDetails = () => {
   });
 
   const fetchEstimateDetails = (estimateId: string) => {
+    console.log('Fetching details for estimate:', estimateId);
     setCurrentEstimateId(estimateId);
   };
 

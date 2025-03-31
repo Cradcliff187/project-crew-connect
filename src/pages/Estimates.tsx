@@ -17,7 +17,8 @@ const Estimates = () => {
     estimateRevisions, 
     fetchEstimateDetails,
     setEstimateItems,
-    setEstimateRevisions
+    setEstimateRevisions,
+    isLoading: detailsLoading
   } = useEstimateDetails();
   
   const handleViewEstimate = (estimate: EstimateType) => {
