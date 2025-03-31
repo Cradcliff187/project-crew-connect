@@ -15,11 +15,10 @@ const EstimateItemFields = () => {
     name: "items",
   });
 
-  // Function to add a new item with default values
+  // Function to add a new item with default values but NO default item_type
   const addNewItem = () => {
     append({ 
       description: '', 
-      item_type: 'labor', 
       cost: '0', 
       markup_percentage: '20',
       quantity: '1', 
@@ -30,6 +29,7 @@ const EstimateItemFields = () => {
       trade_type: '',
       expense_type: undefined,
       custom_type: ''
+      // Removed item_type: 'labor' to prevent pre-filled value
     });
   };
 

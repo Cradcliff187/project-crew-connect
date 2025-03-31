@@ -21,7 +21,7 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
           <FormItem>
             <FormLabel>Type*</FormLabel>
             <Select 
-              value={field.value} 
+              value={field.value || ''} 
               onValueChange={(value) => {
                 field.onChange(value);
                 // Reset type-specific fields when type changes

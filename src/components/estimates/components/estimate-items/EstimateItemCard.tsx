@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
@@ -51,7 +52,7 @@ const EstimateItemCard = ({
   console.log(`Rendering EstimateItemCard for index ${index} with form values:`, 
     form.getValues(`items.${index}`));
   
-  const itemType = form.watch(`items.${index}.item_type`) || 'labor';
+  const itemType = form.watch(`items.${index}.item_type`) || '';
   
   console.log(`Item type for index ${index}: ${itemType}`);
   
@@ -145,15 +146,17 @@ const EstimateItemCard = ({
   };
 
   const getEntityIdForDocument = () => {
+    // Generate a unique entity ID for each line item to prevent document attachment conflicts
     const tempId = form.getValues('temp_id') || 'pending';
+    const uniqueItemId = `${tempId}-item-${index}`;
     
     switch (itemType) {
       case 'vendor':
-        return vendorId || tempId;
+        return vendorId || uniqueItemId;
       case 'subcontractor':
-        return subcontractorId || tempId;
+        return subcontractorId || uniqueItemId;
       default:
-        return tempId;
+        return uniqueItemId;
     }
   };
 
