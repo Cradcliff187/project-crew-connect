@@ -72,14 +72,13 @@ export const findStorageBucket = async (targetName: string = DOCUMENTS_BUCKET_NA
   }
 };
 
-// Improved bucket initialization that doesn't try to create a bucket
-// Just checks for existing buckets and provides clear messaging
+// Updated bucket initialization that properly uses our newly created bucket
 export const ensureStorageBucket = async () => {
   try {
     const bucket = await findStorageBucket();
     
     if (bucket) {
-      console.log(`Using existing bucket: ${bucket.name}`);
+      console.log(`Using storage bucket: ${bucket.name}`);
       return {
         success: true,
         bucketName: bucket.name
