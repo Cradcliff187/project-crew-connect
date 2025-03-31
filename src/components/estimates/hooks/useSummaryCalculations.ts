@@ -1,4 +1,3 @@
-
 import { useFormContext, useWatch } from 'react-hook-form';
 import { 
   calculateSubtotal, 
@@ -16,9 +15,10 @@ export const useSummaryCalculations = () => {
   const form = useFormContext<EstimateFormValues>();
   const calculationCount = useRef(0);
   const lastCalculationTime = useRef(Date.now());
+  const calculationIntervals = useRef<number[]>([]);
   
   // Optimize the watch to be more specific and prevent re-render loops
-  // Provide a default value that meets the TypeScript requirements (array with at least one item)
+  // Provide a default value that meets the TypeScript requirements
   const items = useWatch({
     control: form.control,
     name: 'items',
@@ -37,27 +37,50 @@ export const useSummaryCalculations = () => {
     defaultValue: "0"
   });
 
-  // Add debugging for excessive calculations
+  // Enhanced debugging for excessive calculations
   useEffect(() => {
     calculationCount.current++;
     const now = Date.now();
     const timeSinceLastCalc = now - lastCalculationTime.current;
     
+    // Track time intervals between calculations
+    calculationIntervals.current.push(timeSinceLastCalc);
+    if (calculationIntervals.current.length > 20) {
+      calculationIntervals.current.shift();
+    }
+    
+    // Detect frequent recalculations and provide more detailed debugging
     if (timeSinceLastCalc < 100 && calculationCount.current > 5) {
-      console.warn(`Frequent recalculations detected in useSummaryCalculations, ${calculationCount.current} calcs in ${timeSinceLastCalc}ms`);
+      const averageInterval = calculationIntervals.current.reduce((sum, interval) => sum + interval, 0) / 
+        calculationIntervals.current.length;
+      
+      console.warn(
+        `Frequent recalculations detected in useSummaryCalculations:\n` +
+        `- ${calculationCount.current} calculations total\n` +
+        `- Last interval: ${timeSinceLastCalc}ms\n` +
+        `- Average interval: ${averageInterval.toFixed(2)}ms\n` +
+        `- Items array length: ${items?.length || 0}`
+      );
     }
     
     lastCalculationTime.current = now;
   }, [items, contingencyPercentage]);
 
-  // Transform items and perform calculations with memoization to prevent unnecessary recalculations
+  // Transform items with more robust null/undefined handling
   const calculationItems: EstimateItem[] = useMemo(() => {
-    if (!Array.isArray(items)) return [];
+    if (!Array.isArray(items) || items.length === 0) {
+      return [{ 
+        cost: '0',
+        markup_percentage: '0',
+        quantity: '1'
+      }];
+    }
     
     return items.map((item: any) => ({
       cost: item?.cost || '0',
       markup_percentage: item?.markup_percentage || '0',
       quantity: item?.quantity || '1',
+      // Keep optional fields if they exist
       item_type: item?.item_type,
       vendor_id: item?.vendor_id,
       subcontractor_id: item?.subcontractor_id,
@@ -68,7 +91,7 @@ export const useSummaryCalculations = () => {
     }));
   }, [items]);
 
-  // Memoize all calculations with a dependency array that only includes what's actually needed
+  // Memoize all calculations with proper dependencies
   const calculations = useMemo(() => {
     const totalCost = calculateTotalCost(calculationItems);
     const totalMarkup = calculateTotalMarkup(calculationItems);

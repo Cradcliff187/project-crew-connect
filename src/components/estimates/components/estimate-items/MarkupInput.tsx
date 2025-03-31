@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
@@ -12,60 +12,83 @@ interface MarkupInputProps {
 const MarkupInput: React.FC<MarkupInputProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   const [localMarkup, setLocalMarkup] = useState<string>('');
-  const [debouncePending, setDebouncePending] = useState(false);
+  const debouncePending = useRef(false);
+  const lastFormValue = useRef<string>('');
+  const updateTimeoutRef = useRef<number | null>(null);
   
-  // Initialize local state from form
+  // Initialize form values
   useEffect(() => {
-    const markupValue = form.watch(`items.${index}.markup_percentage`) || '0';
-    setLocalMarkup(markupValue);
+    const markupValue = form.getValues(`items.${index}.markup_percentage`) || '0';
+    if (markupValue !== localMarkup && markupValue !== lastFormValue.current) {
+      setLocalMarkup(markupValue);
+      lastFormValue.current = markupValue;
+    }
+  }, [form, index, localMarkup]);
+
+  // Implement debounced update with proper cleanup
+  useEffect(() => {
+    return () => {
+      // Clear timeout on unmount
+      if (updateTimeoutRef.current !== null) {
+        window.clearTimeout(updateTimeoutRef.current);
+        updateTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handle change with a stable reference
+  const handleMarkupChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    
+    // Update local state immediately for responsive UI
+    setLocalMarkup(newValue);
+    
+    // Clear any pending timeout
+    if (updateTimeoutRef.current !== null) {
+      window.clearTimeout(updateTimeoutRef.current);
+    }
+    
+    // Set new timeout for debounced update
+    debouncePending.current = true;
+    updateTimeoutRef.current = window.setTimeout(() => {
+      // Only update if value changed and component is still mounted
+      if (newValue !== lastFormValue.current) {
+        form.setValue(`items.${index}.markup_percentage`, newValue, {
+          shouldDirty: true,
+          shouldValidate: false
+        });
+        lastFormValue.current = newValue;
+      }
+      debouncePending.current = false;
+      updateTimeoutRef.current = null;
+    }, 300);
   }, [form, index]);
 
-  // Separate UI updates from form updates with debouncing
-  useEffect(() => {
-    if (debouncePending) {
-      const handler = setTimeout(() => {
-        // Only update the form if the value has actually changed
-        const currentMarkup = form.getValues(`items.${index}.markup_percentage`);
-        if (currentMarkup !== localMarkup) {
-          form.setValue(`items.${index}.markup_percentage`, localMarkup, {
-            shouldDirty: true,
-            shouldValidate: false
-          });
-        }
-        setDebouncePending(false);
-      }, 300);
-      
-      return () => clearTimeout(handler);
+  // Handle blur with immediate update
+  const handleBlur = useCallback(() => {
+    // Clear pending timeout if exists
+    if (updateTimeoutRef.current !== null) {
+      window.clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = null;
     }
-  }, [localMarkup, debouncePending, form, index]);
-
-  // Handle local changes
-  const handleMarkupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Update local state immediately for responsive UI
-    setLocalMarkup(value);
-    // Mark for debounced form update
-    setDebouncePending(true);
-  };
-
-  // Handle blur event to ensure form is updated
-  const handleBlur = () => {
-    // Force immediate update on blur
-    if (debouncePending) {
+    
+    // Update immediately on blur if needed
+    if (debouncePending.current || localMarkup !== lastFormValue.current) {
       form.setValue(`items.${index}.markup_percentage`, localMarkup, {
         shouldDirty: true,
         shouldValidate: true
       });
-      setDebouncePending(false);
+      lastFormValue.current = localMarkup;
+      debouncePending.current = false;
     }
-  };
+  }, [form, index, localMarkup]);
   
   return (
     <div className="col-span-12 md:col-span-2">
       <FormField
         control={form.control}
         name={`items.${index}.markup_percentage`}
-        render={({ field }) => (
+        render={() => (
           <FormItem>
             <FormLabel>Markup %</FormLabel>
             <FormControl>

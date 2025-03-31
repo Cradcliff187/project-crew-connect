@@ -22,9 +22,9 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   onSuccess,
   title
 }) => {
-  // Create a truly stable ID that won't change between renders
+  // Create deterministic IDs that won't change between renders
   const stableSheetId = useMemo(() => {
-    // Create a base ID with all the relevant info but without random components
+    // Create a base ID with all relevant info but without random components
     const baseId = entityType === 'ESTIMATE_ITEM' 
       ? `estimate-item-${itemId || 'unknown'}-${tempId}` 
       : `estimate-${tempId}`;
@@ -43,11 +43,12 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
     return tempId;
   }, [entityType, tempId, itemId]);
 
+  // Don't render anything if the sheet is closed
   if (!isOpen) {
     return null;
   }
 
-  // Use stable IDs and a simpler architecture
+  // Use stable IDs for simpler architecture
   return (
     <SheetContent 
       className="w-[90vw] sm:max-w-[600px] p-0" 

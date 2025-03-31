@@ -9,34 +9,43 @@ export const useEstimateDocuments = (estimateId: string) => {
   const [error, setError] = useState<string | null>(null);
   const [isTempId, setIsTempId] = useState(false);
   const fetchInProgress = useRef(false);
+  const lastEstimateId = useRef<string | null>(null);
+  const documentCacheRef = useRef<Map<string, Document>>(new Map());
 
-  // Memoize this function to prevent recreation on every render
+  // Function to fetch documents with improved error handling
   const fetchDocuments = useCallback(async () => {
-    // Guard against multiple concurrent fetches
+    // Skip if already fetching or if estimateId hasn't changed
     if (fetchInProgress.current) {
       console.log('Document fetch already in progress, skipping');
       return;
     }
+    
+    if (estimateId === lastEstimateId.current && documents.length > 0) {
+      console.log('Using cached documents for estimateId:', estimateId);
+      return;
+    }
 
+    fetchInProgress.current = true;
+    lastEstimateId.current = estimateId;
+    
     try {
-      fetchInProgress.current = true;
       setLoading(true);
       setError(null);
       
       if (!estimateId) {
+        console.log('No estimateId provided, clearing documents');
         setDocuments([]);
         setIsTempId(false);
-        fetchInProgress.current = false;
         return;
       }
       
-      // Check if this is a temporary ID (starts with 'temp-')
+      // Check if this is a temporary ID
       const isTemporaryId = estimateId.startsWith('temp-');
       setIsTempId(isTemporaryId);
       
       console.log(`Fetching documents for ${isTemporaryId ? 'temporary' : 'permanent'} estimate: ${estimateId}`);
       
-      // For temporary IDs, use a simplified query to avoid database errors
+      // For temporary IDs, use a simplified query
       if (isTemporaryId) {
         const { data, error } = await supabase
           .from('documents')
@@ -49,7 +58,6 @@ export const useEstimateDocuments = (estimateId: string) => {
           console.error('Error fetching temp documents:', error);
           setError('Failed to fetch documents');
           setDocuments([]);
-          fetchInProgress.current = false;
           return;
         }
         
@@ -57,18 +65,24 @@ export const useEstimateDocuments = (estimateId: string) => {
         const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
           let publicUrl = '';
           
-          try {
-            const { data: urlData } = supabase.storage
-              .from('construction_documents')
-              .getPublicUrl(doc.storage_path);
-            
-            publicUrl = urlData.publicUrl;
-          } catch (err) {
-            console.error('Error getting public URL:', err);
-            publicUrl = '';
+          // Check cache first
+          const cachedDoc = documentCacheRef.current.get(doc.document_id);
+          if (cachedDoc?.url) {
+            publicUrl = cachedDoc.url;
+          } else {
+            try {
+              const { data: urlData } = supabase.storage
+                .from('construction_documents')
+                .getPublicUrl(doc.storage_path);
+              
+              publicUrl = urlData.publicUrl;
+            } catch (err) {
+              console.error('Error getting public URL:', err);
+              publicUrl = '';
+            }
           }
           
-          return { 
+          const processedDoc = { 
             ...doc,
             url: publicUrl,
             item_reference: null,
@@ -76,10 +90,14 @@ export const useEstimateDocuments = (estimateId: string) => {
             is_latest_version: doc.is_latest_version ?? true,
             mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
           } as Document;
+          
+          // Store in cache
+          documentCacheRef.current.set(doc.document_id, processedDoc);
+          
+          return processedDoc;
         }));
         
         setDocuments(docsWithUrls);
-        fetchInProgress.current = false;
         return;
       }
       
@@ -101,16 +119,22 @@ export const useEstimateDocuments = (estimateId: string) => {
       const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
         let publicUrl = '';
         
-        try {
-          // Get the public URL for the document
-          const { data: urlData } = supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(doc.storage_path);
-          
-          publicUrl = urlData.publicUrl;
-        } catch (err) {
-          console.error('Error getting public URL:', err);
-          publicUrl = ''; // Set default empty URL on error
+        // Check cache first
+        const cachedDoc = documentCacheRef.current.get(doc.document_id);
+        if (cachedDoc?.url) {
+          publicUrl = cachedDoc.url;
+        } else {
+          try {
+            // Get the public URL for the document
+            const { data: urlData } = supabase.storage
+              .from('construction_documents')
+              .getPublicUrl(doc.storage_path);
+            
+            publicUrl = urlData.publicUrl;
+          } catch (err) {
+            console.error('Error getting public URL:', err);
+            publicUrl = ''; // Set default empty URL on error
+          }
         }
         
         // Check if this document is attached to an estimate item
@@ -119,7 +143,7 @@ export const useEstimateDocuments = (estimateId: string) => {
           itemDescription = doc.notes.split('Item:')[1].trim();
         }
         
-        return { 
+        const processedDoc = { 
           ...doc,
           url: publicUrl,
           item_reference: itemDescription || null,
@@ -127,6 +151,11 @@ export const useEstimateDocuments = (estimateId: string) => {
           is_latest_version: doc.is_latest_version ?? true,
           mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
         } as Document;
+        
+        // Store in cache
+        documentCacheRef.current.set(doc.document_id, processedDoc);
+        
+        return processedDoc;
       }));
       
       // Only proceed with more advanced queries if this is a real estimate ID
@@ -148,11 +177,12 @@ export const useEstimateDocuments = (estimateId: string) => {
     } catch (err: any) {
       console.error('Error fetching estimate documents:', err);
       setError(err.message);
+      setDocuments([]);
     } finally {
       setLoading(false);
       fetchInProgress.current = false;
     }
-  }, [estimateId]);
+  }, [estimateId, documents.length]);
 
   // Only fetch when estimateId changes, not on every render
   useEffect(() => {
@@ -162,6 +192,11 @@ export const useEstimateDocuments = (estimateId: string) => {
       setDocuments([]);
       setLoading(false);
     }
+    
+    // Cleanup on unmount or when estimateId changes
+    return () => {
+      fetchInProgress.current = false;
+    };
   }, [estimateId, fetchDocuments]);
 
   return {
