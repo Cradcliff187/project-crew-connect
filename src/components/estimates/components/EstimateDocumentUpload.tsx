@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,6 @@ import DocumentPreviewCard from '@/components/documents/DocumentPreviewCard';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-// Helper function to categorize documents
 const categorizeDocuments = (documents: Document[]) => {
   const documentsByCategory: Record<string, Document[]> = {};
   documents.forEach(doc => {
@@ -38,9 +36,8 @@ const categorizeDocuments = (documents: Document[]) => {
   return documentsByCategory;
 };
 
-// Helper function to check if a document is for a line item
 const isLineItemDocument = (document: Document) => {
-  return Boolean(document.item_id || document.item_reference);
+  return !!(document.item_id || document.item_reference);
 };
 
 interface EstimateDocumentUploadProps {
@@ -61,7 +58,6 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
   const documentIds = form.watch('estimate_documents') || [];
   const tempId = form.watch('temp_id');
 
-  // Fetch attached documents whenever documentIds changes
   useEffect(() => {
     const fetchDocuments = async () => {
       if (documentIds.length === 0) {
@@ -96,7 +92,6 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
   const handleDocumentUploadSuccess = (documentId?: string) => {
     setIsDocumentUploadOpen(false);
     if (documentId) {
-      // Add document ID to the form
       const updatedDocumentIds = [...documentIds, documentId];
       form.setValue('estimate_documents', updatedDocumentIds);
       
@@ -108,7 +103,6 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
   };
 
   const handleRemoveDocument = (documentId: string) => {
-    // Filter out the removed document ID
     const updatedDocumentIds = documentIds.filter(id => id !== documentId);
     form.setValue('estimate_documents', updatedDocumentIds);
     
@@ -126,19 +120,16 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
     setViewDocument(null);
   };
 
-  // Prevent form submission when opening document upload
   const handleOpenDocumentUpload = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDocumentUploadOpen(true);
   };
 
-  // Categorize documents
   const documentsByCategory = categorizeDocuments(attachedDocuments);
   
-  // Filter line item documents if viewing estimate-level documents
   const filteredDocuments = isLineItemDocument 
-    ? attachedDocuments.filter(doc => isLineItemDocument(doc))
+    ? attachedDocuments.filter(isLineItemDocument)
     : attachedDocuments.filter(doc => !isLineItemDocument(doc));
 
   return (
@@ -185,15 +176,13 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
         </Sheet>
       </div>
       
-      {/* Display attached documents */}
       {filteredDocuments.length > 0 ? (
         <div className="space-y-4">
           {Object.keys(documentsByCategory).length > 0 ? (
             Object.entries(documentsByCategory).map(([category, docs]) => {
-              // Filter docs based on whether they're line item documents
               const filteredCategoryDocs = isLineItemDocument 
-                ? docs.filter(doc => !!doc.item_id || !!doc.item_reference)
-                : docs.filter(doc => !doc.item_id && !doc.item_reference);
+                ? docs.filter(isLineItemDocument)
+                : docs.filter(doc => !isLineItemDocument(doc));
               
               if (filteredCategoryDocs.length === 0) return null;
               
@@ -241,7 +230,6 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
         </div>
       )}
       
-      {/* Document Viewer */}
       <DocumentViewer
         document={viewDocument}
         open={!!viewDocument}
