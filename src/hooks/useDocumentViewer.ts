@@ -11,6 +11,7 @@ export interface UseDocumentViewerOptions {
     width?: number;
     height?: number;
     quality?: number;
+    format?: 'webp' | 'png' | 'jpeg';
   };
   expiresIn?: number; // URL expiration time in seconds
 }
@@ -32,7 +33,8 @@ export function useDocumentViewer(options: UseDocumentViewerOptions = {}) {
         imageOptions: options.imageOptions || {
           width: 1200,
           height: 1200,
-          quality: 90
+          quality: 90,
+          format: 'webp'
         },
         expiresIn: options.expiresIn || 300 // Default to 5 minutes
       });

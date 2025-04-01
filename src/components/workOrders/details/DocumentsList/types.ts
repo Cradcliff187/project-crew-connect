@@ -10,6 +10,9 @@ export interface BaseDocument {
   created_at: string;
   updated_at: string;
   url: string;
+  id?: string; // For backward compatibility
+  file_url?: string; // For backward compatibility
+  project_id?: string; // For backward compatibility
 }
 
 // WorkOrderDocument extends the base document with work order specific fields

@@ -1,12 +1,12 @@
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 import { Document } from '../schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
 
 export const useDocumentNavigation = () => {
-  const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
+  const navigate = useNavigate();
 
   const navigateToEntity = useCallback((document: Document) => {
     if (!document.entity_type || !document.entity_id) {
@@ -35,7 +35,7 @@ export const useDocumentNavigation = () => {
     const route = entityRouteMap[document.entity_type.toUpperCase()];
 
     if (route) {
-      router.push(route)
+      navigate(route)
         .then(() => {
           toast({
             title: 'Navigation successful',
@@ -61,7 +61,7 @@ export const useDocumentNavigation = () => {
       });
       setIsNavigating(false);
     }
-  }, [router]);
+  }, [navigate]);
 
   return {
     navigateToEntity,

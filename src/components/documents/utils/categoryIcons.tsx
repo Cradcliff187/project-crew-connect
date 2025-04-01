@@ -8,7 +8,7 @@ import {
   FileSpreadsheet, 
   FileCheck, 
   Shield, 
-  HardHat 
+  HardHat
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
