@@ -1,259 +1,129 @@
+
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 
-export const useEstimateSubmit = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export interface UseEstimateSubmitProps {
+  onSuccess?: () => void;
+}
 
-  const submitEstimate = async (
-    data: EstimateFormValues,
-    customers: { id: string; name: string; address?: string; city?: string; state?: string; zip?: string }[],
-    onClose: () => void
-  ) => {
+export const useEstimateSubmit = ({ onSuccess }: UseEstimateSubmitProps = {}) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+
+  /**
+   * Handles the submission of a new estimate
+   */
+  const submitEstimate = async (data: EstimateFormValues): Promise<boolean> => {
     try {
       setIsSubmitting(true);
-      console.log('Starting estimate submission with data:', data);
+      console.log('Submitting estimate with data:', data);
 
-      let customerId: string | null = null;
-      let customerAddress: string | null = null;
-      let customerCity: string | null = null;
-      let customerState: string | null = null;
-      let customerZip: string | null = null;
-
-      // Handle customer selection or creation
-      if (data.isNewCustomer && data.newCustomer?.name) {
-        console.log('Creating new customer:', data.newCustomer);
-        
-        // First generate a customer ID - using a simple format CUS-XXXXXX
-        const customerIdPrefix = 'CUS-';
-        const randomId = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-        const generatedCustomerId = customerIdPrefix + randomId;
-        
-        // Create a new customer with the generated ID
-        const { data: newCustomer, error: customerError } = await supabase
+      // First, handle creating a customer if it's a new one
+      let customerId = data.customer;
+      if (data.isNewCustomer && data.customerName) {
+        const { data: customerData, error: customerError } = await supabase
           .from('customers')
           .insert({
-            customerid: generatedCustomerId, // Use generated ID
-            customername: data.newCustomer.name,
-            contactemail: data.newCustomer.email || null,
-            phone: data.newCustomer.phone || null,
-            address: data.newCustomer.address || null,
-            city: data.newCustomer.city || null,
-            state: data.newCustomer.state || null,
-            zip: data.newCustomer.zip || null,
-            createdon: new Date().toISOString(),
+            customername: data.customerName,
+            address: data.customerAddress,
+            city: data.customerCity,
+            state: data.customerState,
+            zip: data.customerZip,
+            contactname: data.customerContactName,
+            contactemail: data.customerEmail,
+            phone: data.customerPhone,
           })
           .select('customerid')
           .single();
 
         if (customerError) {
-          console.error('Error creating customer:', customerError);
-          throw new Error(`Error creating customer: ${customerError.message}`);
+          throw new Error(`Failed to create customer: ${customerError.message}`);
         }
 
-        console.log('New customer created with ID:', newCustomer.customerid);
-        customerId = newCustomer.customerid;
-        
-        // Store the new customer's address information for use in the estimate
-        customerAddress = data.newCustomer.address || null;
-        customerCity = data.newCustomer.city || null;
-        customerState = data.newCustomer.state || null;
-        customerZip = data.newCustomer.zip || null;
-      } else if (data.customer) {
-        console.log('Using existing customer with ID:', data.customer);
-        customerId = data.customer;
-        
-        // Get the selected customer's address information
-        const selectedCustomer = customers.find(c => c.id === data.customer);
-        if (selectedCustomer) {
-          customerAddress = selectedCustomer.address || null;
-          customerCity = selectedCustomer.city || null; 
-          customerState = selectedCustomer.state || null;
-          customerZip = selectedCustomer.zip || null;
-        }
+        customerId = customerData.customerid;
       }
 
-      // Generate our own estimate ID - using the format EST-XXXXXX
-      // We'll use our new SQL function for this in production, but for now we'll simulate it
-      const estimateIdPrefix = 'EST-';
-      const randomId = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-      const generatedEstimateId = estimateIdPrefix + randomId;
-      
-      // Determine which location data to use
-      // If showSiteLocation is true, use the custom location
-      // Otherwise, use the customer's address
-      const locationAddress = data.showSiteLocation ? data.location.address : customerAddress;
-      const locationCity = data.showSiteLocation ? data.location.city : customerCity;
-      const locationState = data.showSiteLocation ? data.location.state : customerState;
-      const locationZip = data.showSiteLocation ? data.location.zip : customerZip;
-      
-      // Create the estimate with our generated ID
-      const { data: newEstimate, error: estimateError } = await supabase
+      // Create a new estimate with the validated customer ID
+      const { data: estimateData, error: estimateError } = await supabase
         .from('estimates')
         .insert({
-          estimateid: generatedEstimateId, // Use generated ID
-          customerid: customerId,
-          projectname: data.project,
-          "job description": data.description || null,
-          customername: customerId ? 
-            customers.find(c => c.id === customerId)?.name || null : 
-            data.newCustomer?.name || null,
-          sitelocationaddress: locationAddress,
-          sitelocationcity: locationCity,
-          sitelocationstate: locationState,
-          sitelocationzip: locationZip,
-          datecreated: new Date().toISOString(),
-          status: 'draft',
-          contingency_percentage: parseFloat(data.contingency_percentage || '0'),
+          customer_id: customerId,
+          project_name: data.project,
+          description: data.description,
+          location_address: data.jobAddress,
+          location_city: data.jobCity,
+          location_state: data.jobState,
+          location_zip: data.jobZip,
+          status: 'DRAFT',
+          total_amount: data.total || 0,
+          subtotal: data.subtotal || 0,
+          contingency: data.contingency || 0,
+          tax_rate: data.taxRate || 0,
+          tax_amount: data.taxAmount || 0,
         })
-        .select('estimateid')
+        .select('estimate_id')
         .single();
 
       if (estimateError) {
-        console.error('Error creating estimate:', estimateError);
-        throw new Error(`Error creating estimate: ${estimateError.message}`);
+        throw new Error(`Failed to create estimate: ${estimateError.message}`);
       }
 
-      const estimateId = newEstimate.estimateid;
-      console.log('Estimate created with ID:', estimateId);
-
-      // Create a revision for the estimate
-      console.log('Creating revision for estimate');
-      const { data: newRevision, error: revisionError } = await supabase
-        .from('estimate_revisions')
-        .insert({
-          estimate_id: estimateId,
-          version: 1,
-          is_current: true,
-          status: 'draft',
-        })
-        .select('id')
-        .single();
-
-      if (revisionError) {
-        console.error('Error creating estimate revision:', revisionError);
-        throw new Error(`Error creating estimate revision: ${revisionError.message}`);
-      }
-
-      const revisionId = newRevision.id;
-
-      // Create the line items
-      console.log('Creating line items for estimate');
-      const lineItems = data.items.map(item => {
-        console.log('Processing line item:', item);
-        const cost = parseFloat(item.cost) || 0;
-        const markup_percentage = parseFloat(item.markup_percentage) || 0;
-        const markup_amount = cost * (markup_percentage / 100);
-        const unit_price = cost + markup_amount;
-        const quantity = parseFloat(item.quantity || '1') || 1;
-        const total_price = unit_price * quantity;
-        const gross_margin = markup_amount * quantity;
-        const gross_margin_percentage = cost > 0 ? (markup_amount / cost) * 100 : 0;
-
-        return {
-          estimate_id: estimateId,
-          revision_id: revisionId,
+      // Insert estimate line items
+      if (data.items && data.items.length > 0) {
+        const lineItems = data.items.map((item) => ({
+          estimate_id: estimateData.estimate_id,
           description: item.description,
-          item_type: item.item_type,
-          cost: cost,
-          markup_percentage: markup_percentage,
-          markup_amount: markup_amount,
-          unit_price: unit_price,
-          quantity: quantity,
-          total_price: total_price,
-          gross_margin: gross_margin,
-          gross_margin_percentage: gross_margin_percentage,
-          vendor_id: item.vendor_id || null,
-          subcontractor_id: item.subcontractor_id || null,
-          document_id: item.document_id || null,
-        };
-      });
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          amount: item.amount,
+        }));
 
-      // Insert the line items
-      console.log(`Inserting ${lineItems.length} line items`);
-      const { error: itemsError } = await supabase
-        .from('estimate_items')
-        .insert(lineItems);
+        const { error: lineItemsError } = await supabase
+          .from('estimate_line_items')
+          .insert(lineItems);
 
-      if (itemsError) {
-        console.error('Error creating estimate items:', itemsError);
-        throw new Error(`Error creating estimate items: ${itemsError.message}`);
-      }
-
-      // Get the temp ID used for documents
-      const tempId = data.temp_id || '';
-
-      // Update any estimate-level documents
-      if (data.estimate_documents && data.estimate_documents.length > 0) {
-        console.log(`Updating ${data.estimate_documents.length} documents to estimate ID: ${estimateId}`);
-        
-        // Update the documents to associate them with the estimate
-        const { error: documentsError } = await supabase
-          .from('documents')
-          .update({ entity_id: estimateId })
-          .in('document_id', data.estimate_documents);
-
-        if (documentsError) {
-          console.error('Error updating document associations:', documentsError);
-          // Continue even if this fails - not critical
+        if (lineItemsError) {
+          throw new Error(`Failed to create line items: ${lineItemsError.message}`);
         }
       }
 
-      // Update any documents that were tagged with the temp ID
-      if (tempId) {
-        console.log(`Updating documents with temp ID ${tempId} to estimate ID: ${estimateId}`);
-        
-        const { error: tempDocsError } = await supabase
-          .from('documents')
-          .update({ entity_id: estimateId })
-          .eq('entity_id', tempId);
-          
-        if (tempDocsError) {
-          console.error('Error updating temp documents:', tempDocsError);
-          // Continue even if this fails - not critical
-        }
-      }
-
-      // Calculate total amount
-      const total = lineItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
-      const contingencyAmount = total * (parseFloat(data.contingency_percentage || '0') / 100);
-      const estimateTotal = total + contingencyAmount;
-      
-      // Update the estimate with the final amount
-      console.log('Updating estimate with final amount:', estimateTotal);
-      const { error: updateError } = await supabase
-        .from('estimates')
-        .update({ 
-          estimateamount: estimateTotal,
-          contingencyamount: contingencyAmount
-        })
-        .eq('estimateid', estimateId);
-      
-      if (updateError) {
-        console.error('Error updating estimate total:', updateError);
-        // Continue even if this fails - not critical
-      }
-
-      console.log('Estimate creation completed successfully');
+      // Success notification
       toast({
         title: 'Estimate Created',
-        description: 'Your estimate has been created successfully.',
+        description: 'The estimate has been successfully created.',
       });
 
-      onClose();
+      // Call the success callback if provided
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Navigate to estimates list
+        navigate('/estimates');
+      }
+
+      return true;
     } catch (error: any) {
-      console.error('Error submitting estimate:', error);
+      console.error('Error creating estimate:', error);
       
       toast({
-        title: 'Error',
-        description: error.message || 'An error occurred while creating the estimate.',
+        title: 'Error Creating Estimate',
+        description: error.message || 'There was an error creating the estimate. Please try again.',
         variant: 'destructive',
       });
+      
+      return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return { submitEstimate, isSubmitting };
+  return {
+    submitEstimate,
+    isSubmitting,
+  };
 };
+
+export default useEstimateSubmit;

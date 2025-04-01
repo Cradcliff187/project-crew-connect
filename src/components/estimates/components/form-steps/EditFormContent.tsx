@@ -23,6 +23,8 @@ interface EditFormContentProps {
   onExistingCustomer: () => void;
   onPreview: (e?: React.MouseEvent) => void;
   onCancel: () => void;
+  contingencyAmount: number;
+  onContingencyChange: (value: number) => void;
 }
 
 const EditFormContent = ({
@@ -33,7 +35,9 @@ const EditFormContent = ({
   onNewCustomer,
   onExistingCustomer,
   onPreview,
-  onCancel
+  onCancel,
+  contingencyAmount,
+  onContingencyChange
 }: EditFormContentProps) => {
   const form = useFormContext<EstimateFormValues>();
   
@@ -62,7 +66,10 @@ const EditFormContent = ({
               <TabsTrigger value="new">New Customer</TabsTrigger>
             </TabsList>
             <TabsContent value="existing">
-              <CustomerSelector customers={customers} />
+              <CustomerSelector 
+                customers={customers} 
+                selectedCustomerAddress={selectedCustomerAddress}
+              />
             </TabsContent>
             <TabsContent value="new">
               <CustomerFormFields />
@@ -99,7 +106,10 @@ const EditFormContent = ({
       <h3 className="text-lg font-semibold mt-8 mb-4">Estimate Summary</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
-          <ContingencyInput />
+          <ContingencyInput 
+            contingencyAmount={contingencyAmount}
+            onChange={onContingencyChange}
+          />
         </div>
         <div className="md:col-span-2">
           <EstimateSummary />
