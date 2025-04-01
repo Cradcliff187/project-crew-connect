@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,7 +6,8 @@ import { uploadDocument } from '../services/DocumentUploader';
 import { 
   DocumentUploadFormValues, 
   documentUploadSchema, 
-  EntityType 
+  EntityType,
+  DocumentCategory
 } from '../schemas/documentSchema';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -38,19 +38,19 @@ export const useDocumentUploadForm = ({
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   
-  // Create the form with default values
+  // Create the form with properly typed default values
   const defaultValues = useMemo(() => ({
-    files: [],
+    files: [] as File[],
     metadata: {
-      category: isReceiptUpload ? 'receipt' : 'other',
+      category: (isReceiptUpload ? 'receipt' : 'other') as DocumentCategory,
       entityType: entityType,
       entityId: entityId || '',
       version: 1,
-      tags: [],
+      tags: [] as string[],
       isExpense: isReceiptUpload ? true : false,
       vendorId: '',
-      vendorType: 'vendor',
-      expenseType: 'materials', // Default to materials for receipt uploads
+      vendorType: 'vendor' as const,
+      expenseType: 'materials' as const, // Default to materials for receipt uploads
     }
   }), [isReceiptUpload, entityType, entityId]);
   
@@ -134,7 +134,7 @@ export const useDocumentUploadForm = ({
     form.setValue('metadata.entityId', entityId || '');
     
     if (isReceiptUpload) {
-      form.setValue('metadata.category', 'receipt');
+      form.setValue('metadata.category', 'receipt' as DocumentCategory);
       form.setValue('metadata.isExpense', true);
       form.setValue('metadata.expenseType', 'materials');
       setShowVendorSelector(true);

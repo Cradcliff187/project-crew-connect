@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { WorkOrder } from '@/types/workOrder.ts'; // Using the correct import
+import { WorkOrder } from '@/types/workOrder'; // Using the correct import
 
 // Define the Project type to avoid conflicts
 interface Project {
@@ -31,11 +31,11 @@ export const useSubcontractorAssociatedData = () => {
         
       if (workOrderError) throw workOrderError;
       
-      // Convert to WorkOrder type with required fields
+      // Convert to WorkOrder type with required fields and proper status typing
       const typedWorkOrders: WorkOrder[] = (workOrderData || []).map(wo => ({
         work_order_id: wo.work_order_id,
         title: wo.title,
-        status: wo.status,
+        status: wo.status as WorkOrder['status'], // Type assertion to match allowed statuses
         due_by_date: wo.due_by_date,
         progress: wo.progress,
         actual_hours: 0, // Default value
