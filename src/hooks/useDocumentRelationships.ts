@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Document } from '@/components/documents/schemas/documentSchema';
@@ -228,12 +228,12 @@ export const useDocumentRelationships = (documentId?: string) => {
     }
   }, []);
   
-  // Initial fetch
-  useState(() => {
+  // Initial fetch when component mounts
+  useEffect(() => {
     if (documentId) {
       fetchRelationships();
     }
-  });
+  }, [documentId, fetchRelationships]);
   
   return {
     relationships,

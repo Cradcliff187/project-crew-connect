@@ -7,93 +7,70 @@ interface FetchDocumentOptions {
     width?: number;
     height?: number;
     quality?: number;
+    format?: 'webp' | 'png' | 'jpeg';
   };
-  expiresIn?: number; // Expiration time in seconds
+  expiresIn?: number; // URL expiration time in seconds
 }
 
-/**
- * Fetch a document by ID and generate a public URL for it
- */
-export const fetchDocumentWithUrl = async (
-  documentId: string,
+export async function fetchDocumentWithUrl(
+  documentId: string, 
   options: FetchDocumentOptions = {}
-): Promise<Document | null> => {
+): Promise<Document | null> {
   try {
-    // Fetch the document metadata from the database
-    const { data, error } = await supabase
+    console.log('Fetching document with ID:', documentId);
+    
+    // Fetch the document from the database
+    const { data: document, error } = await supabase
       .from('documents')
       .select('*')
       .eq('document_id', documentId)
       .single();
     
-    if (error || !data) {
+    if (error) {
       console.error('Error fetching document:', error);
+      throw error;
+    }
+    
+    if (!document) {
+      console.error('Document not found');
       return null;
     }
     
-    // Generate a public URL for the document
-    const { data: { publicUrl } } = supabase.storage
-      .from('construction_documents')
-      .getPublicUrl(data.storage_path, {
-        transform: data.file_type?.startsWith('image/') ? options.imageOptions : undefined,
-        download: false,
-      });
-    
-    // Return the document with the URL
-    return {
-      ...data,
-      url: publicUrl
-    } as Document;
-    
-  } catch (error) {
-    console.error('Error in fetchDocumentWithUrl:', error);
-    return null;
-  }
-};
-
-/**
- * Fetch multiple documents by entity type and ID
- */
-export const fetchDocumentsByEntity = async (
-  entityType: string,
-  entityId: string,
-  options: FetchDocumentOptions = {}
-): Promise<Document[]> => {
-  try {
-    // Fetch document metadata
-    const { data, error } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('entity_type', entityType)
-      .eq('entity_id', entityId)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching documents:', error);
-      return [];
+    // Generate a URL for the document
+    if (document.storage_path) {
+      let urlOptions: any = {
+        download: false
+      };
+      
+      // Add transform options for images
+      const fileType = document.file_type?.toLowerCase() || '';
+      if (fileType.includes('image/') && options.imageOptions) {
+        urlOptions.transform = {
+          width: options.imageOptions.width || 800,
+          height: options.imageOptions.height || 800,
+          quality: options.imageOptions.quality || 80,
+          format: options.imageOptions.format || 'webp'
+        };
+      }
+      
+      const { data: urlData, error: urlError } = await supabase.storage
+        .from('construction_documents')
+        .createSignedUrl(document.storage_path, options.expiresIn || 300, urlOptions);
+      
+      if (urlError) {
+        console.error('Error generating URL:', urlError);
+        throw urlError;
+      }
+      
+      return {
+        ...document,
+        url: urlData.signedUrl
+      } as Document;
     }
     
-    // Add URLs to each document
-    const documentsWithUrls = await Promise.all(
-      (data || []).map(async (doc) => {
-        const { data: { publicUrl } } = supabase.storage
-          .from('construction_documents')
-          .getPublicUrl(doc.storage_path, {
-            transform: doc.file_type?.startsWith('image/') ? options.imageOptions : undefined,
-            download: false,
-          });
-        
-        return {
-          ...doc,
-          url: publicUrl
-        } as Document;
-      })
-    );
-    
-    return documentsWithUrls;
-    
+    return document as Document;
   } catch (error) {
-    console.error('Error in fetchDocumentsByEntity:', error);
-    return [];
+    console.error('Error in fetchDocumentWithUrl:', error);
+    throw error;
   }
-};
+}
