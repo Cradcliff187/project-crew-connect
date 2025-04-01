@@ -1,4 +1,3 @@
-
 import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
@@ -8,7 +7,6 @@ export interface UploadResult {
   error?: any;
 }
 
-// Helper function to determine MIME type from file extension
 const getMimeTypeFromExtension = (fileExt: string): string => {
   const mimeMap: Record<string, string> = {
     'pdf': 'application/pdf',
@@ -32,13 +30,11 @@ export const uploadDocument = async (
   try {
     console.log('Uploading document with data:', data);
     
-    // Validate that files are present
     if (!data.files || data.files.length === 0) {
       console.error('No files provided for upload');
       throw new Error('No files provided for upload');
     }
     
-    // Validate that metadata is present
     if (!data.metadata) {
       console.error('No metadata provided for upload');
       throw new Error('No metadata provided for upload');
@@ -48,9 +44,7 @@ export const uploadDocument = async (
     
     const { files, metadata } = data;
     
-    // We'll handle multiple files if they're provided
     for (const file of files) {
-      // Validate the file object
       if (!(file instanceof File)) {
         console.error('Not a valid File object:', file);
         throw new Error('Invalid file object provided');
@@ -58,26 +52,22 @@ export const uploadDocument = async (
       
       console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size} bytes`);
       
-      // Create a unique file name using timestamp and original name
       const timestamp = new Date().getTime();
       const fileExt = file.name.split('.').pop() || '';
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       
-      // Format entity type for path to ensure consistency
       const entityTypePath = metadata.entityType.toLowerCase().replace(/_/g, '-');
-      const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
+      const entityId = metadata.entityId || 'general';
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
       console.log(`Uploading file directly to ${DOCUMENTS_BUCKET_ID}/${filePath}`);
       
-      // Determine the proper content type based on file extension if needed
       let contentType = file.type;
       if (!contentType || contentType === 'application/octet-stream') {
         contentType = getMimeTypeFromExtension(fileExt);
         console.log(`File type not provided, using extension-based type: ${contentType}`);
       }
       
-      // Create file options with proper headers to preserve content type
       const fileOptions = {
         contentType: contentType,
         cacheControl: '3600',
@@ -85,7 +75,6 @@ export const uploadDocument = async (
         duplex: 'half' as const
       };
       
-      // Use the constant bucket ID directly
       console.log(`Starting upload to Supabase storage with options:`, fileOptions);
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
@@ -94,25 +83,20 @@ export const uploadDocument = async (
       if (uploadError) {
         console.error('Storage upload error:', {
           message: uploadError.message,
-          error: uploadError,
           name: uploadError.name,
-          stack: uploadError.stack,
-          status: uploadError.status,
-          details: uploadError.details
+          code: uploadError.code,
         });
         throw uploadError;
       }
       
       console.log('File uploaded successfully:', uploadData);
       
-      // Get public URL for the uploaded file 
       const { data: { publicUrl } } = supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
         .getPublicUrl(filePath);
         
       console.log('Public URL generated:', publicUrl);
       
-      // Now insert document metadata to Supabase
       const documentData = {
         file_name: file.name,
         file_type: contentType,
@@ -121,7 +105,6 @@ export const uploadDocument = async (
         entity_type: metadata.entityType,
         entity_id: entityId,
         tags: metadata.tags || [],
-        // Additional metadata fields
         category: metadata.category,
         amount: metadata.amount || null,
         expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
@@ -154,7 +137,6 @@ export const uploadDocument = async (
       
       console.log('Document metadata inserted:', insertedData);
       
-      // Store the document ID for the first file
       if (insertedData) {
         uploadedDocumentId = insertedData.document_id;
       }
@@ -166,15 +148,12 @@ export const uploadDocument = async (
     };
     
   } catch (error: any) {
-    // Enhanced error logging
     console.error('Upload error (detailed):', {
       errorMessage: error.message,
       errorObject: error,
       name: error.name,
       stack: error.stack,
-      code: error.code,
-      details: error.details || 'No additional details',
-      status: error.status || 'No status code'
+      code: error.code || 'UNKNOWN_ERROR',
     });
     
     return {
