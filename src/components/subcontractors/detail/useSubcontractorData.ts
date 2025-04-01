@@ -14,7 +14,8 @@ const useSubcontractorData = (subcontractorId: string | undefined) => {
   const { 
     projects, 
     workOrders, 
-    loadingAssociations, 
+    loading: loadingAssociations, 
+    error: associationsError,
     fetchAssociatedData 
   } = useSubcontractorAssociatedData();
   

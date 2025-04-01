@@ -39,29 +39,32 @@ export const useDocumentUploadForm = ({
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   
   // Create the form with default values
+  const defaultValues = useMemo(() => ({
+    files: [],
+    metadata: {
+      category: isReceiptUpload ? 'receipt' : 'other',
+      entityType: entityType,
+      entityId: entityId || '',
+      version: 1,
+      tags: [],
+      isExpense: isReceiptUpload ? true : false,
+      vendorId: '',
+      vendorType: 'vendor',
+      expenseType: 'materials', // Default to materials for receipt uploads
+    }
+  }), [isReceiptUpload, entityType, entityId]);
+  
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
-    defaultValues: useMemo(() => ({
-      files: [],
-      metadata: {
-        category: isReceiptUpload ? 'receipt' : 'other',
-        entityType: entityType,
-        entityId: entityId || '',
-        version: 1,
-        tags: [],
-        isExpense: isReceiptUpload ? true : false,
-        vendorId: '',
-        vendorType: 'vendor',
-        expenseType: 'materials', // Default to materials for receipt uploads
-      }
-    }), [isReceiptUpload, entityType, entityId])
+    defaultValues,
+    mode: 'onChange'
   });
 
   // Memoize the file selection handler
   const handleFileSelect = useCallback((files: File[]) => {
     if (!files.length) return;
     
-    form.setValue('files', files);
+    form.setValue('files', files, { shouldValidate: true });
     
     if (files[0].type.startsWith('image/')) {
       const previewUrl = URL.createObjectURL(files[0]);
@@ -71,12 +74,12 @@ export const useDocumentUploadForm = ({
     }
   }, [form]);
 
-  // Create stable watchers
+  // Use debounced values for the watchers to prevent excessive re-renders
   const watchIsExpense = useDebounce(form.watch('metadata.isExpense'), 300);
   const watchVendorType = useDebounce(form.watch('metadata.vendorType'), 300);
-  const watchFiles = form.watch('files');
   const watchCategory = useDebounce(form.watch('metadata.category'), 300);
   const watchExpenseType = useDebounce(form.watch('metadata.expenseType'), 300);
+  const watchFiles = form.watch('files');
 
   // Memoize the submit handler
   const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
@@ -125,7 +128,8 @@ export const useDocumentUploadForm = ({
   // Initialize form values only once
   const initializeForm = useCallback(() => {
     if (isFormInitialized) return;
-    
+
+    // Only update these fields once to avoid re-rendering loops
     form.setValue('metadata.entityType', entityType);
     form.setValue('metadata.entityId', entityId || '');
     
