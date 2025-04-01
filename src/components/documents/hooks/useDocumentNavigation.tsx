@@ -1,8 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Document } from '../schemas/documentSchema';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Hook to handle navigation between entities related to documents
@@ -10,10 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 export const useDocumentNavigation = () => {
   const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   // Navigate to the entity associated with the document
-  const navigateToEntity = (document: Document) => {
+  const navigateToEntity = useCallback((document: Document) => {
     if (!document || !document.entity_type || !document.entity_id) {
       toast({
         title: "Navigation error",
@@ -77,7 +76,7 @@ export const useDocumentNavigation = () => {
     } finally {
       setIsNavigating(false);
     }
-  };
+  }, [navigate]);
 
   return {
     navigateToEntity,

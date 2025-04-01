@@ -36,7 +36,7 @@ export const useDocumentNavigation = () => {
 
     if (route) {
       try {
-        // React Router's navigate function doesn't return a Promise, so we can't use .then()
+        // React Router's navigate doesn't return a Promise, so don't use .then()
         navigate(route);
         
         // Show success toast after navigation

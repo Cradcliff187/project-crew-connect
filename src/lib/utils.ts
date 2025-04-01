@@ -51,6 +51,12 @@ export function getFileIconByType(fileType: string): string {
   return 'file';
 }
 
+/**
+ * Format a time range from start and end time strings
+ * @param startTime Start time in 24h format (e.g. "09:00")
+ * @param endTime End time in 24h format (e.g. "17:00")
+ * @returns Formatted time range (e.g. "9:00 AM - 5:00 PM")
+ */
 export function formatTimeRange(startTime?: string, endTime?: string): string {
   if (!startTime || !endTime) return "N/A";
   
@@ -78,6 +84,11 @@ export function formatTimeRange(startTime?: string, endTime?: string): string {
   }
 }
 
+/**
+ * Calculate the number of days until a due date
+ * @param dueDate Due date string in ISO format
+ * @returns Number of days until due (negative if overdue), or null if no due date
+ */
 export function calculateDaysUntilDue(dueDate?: string | null): number | null {
   if (!dueDate) return null;
   
