@@ -1,193 +1,165 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Document } from './schemas/documentSchema';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Trash2, ExternalLink, FileText, AlertTriangle, X } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Download, Trash, Tag, Calendar, FileText, File } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import DocumentViewer from './DocumentViewer';
+import EntityInformation from './EntityInformation';
+import DocumentVersionHistoryCard from './DocumentVersionHistoryCard';
+import { DocumentCategoryBadge } from './utils/categoryIcons';
 
 interface DocumentDetailViewProps {
   document: Document | null;
   open: boolean;
   onClose: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 }
 
-const DocumentDetailView = ({ document, open, onClose, onDelete }: DocumentDetailViewProps) => {
-  const [viewError, setViewError] = useState(false);
-  const [loadAttempted, setLoadAttempted] = useState(false);
-  const mountedRef = useRef(true);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Track component mount status
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      
-      // Clean up iframe resources
-      if (iframeRef.current) {
-        try {
-          iframeRef.current.src = 'about:blank';
-        } catch (e) {
-          console.log('Error cleaning up iframe on unmount:', e);
-        }
-      }
-    };
-  }, []);
-
-  // Reset state when document changes or dialog opens/closes
-  useEffect(() => {
-    if (mountedRef.current) {
-      setViewError(false);
-      setLoadAttempted(false);
-    }
-    
-    // When dialog is closed, perform additional cleanup
-    if (!open && iframeRef.current) {
-      try {
-        iframeRef.current.src = 'about:blank';
-      } catch (e) {
-        console.log('Error cleaning up iframe on dialog close:', e);
-      }
-    }
-  }, [document, open]);
-  
-  // Force load attempt after component mount
-  useEffect(() => {
-    if (open && !loadAttempted && document && mountedRef.current) {
-      setLoadAttempted(true);
-      console.log('Document detail view - document loaded:', {
-        id: document.document_id,
-        fileName: document.file_name,
-        fileType: document.file_type,
-        url: document.url
-      });
-    }
-  }, [open, loadAttempted, document]);
-
+const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
+  document,
+  open,
+  onClose,
+  onDelete
+}) => {
   if (!document) return null;
 
-  const handleViewError = () => {
-    if (mountedRef.current) {
-      console.log('Error loading document preview:', document.file_name);
-      console.log('Document type:', document.file_type);
-      setViewError(true);
+  // Determine icon based on file type
+  const getFileIcon = () => {
+    if (document.file_type?.startsWith('image/')) {
+      return <File className="h-5 w-5 text-blue-500" />;
     }
-  };
-
-  // Determine the type of content for appropriate display
-  const getContentType = () => {
-    if (!document.file_type) return 'unknown';
-    
-    const fileType = document.file_type.toLowerCase();
-    if (fileType.startsWith('image/')) return 'image';
-    if (fileType.includes('pdf')) return 'pdf';
-    return 'other';
-  };
-
-  const contentType = getContentType();
-
-  // Handle closing dialog to avoid UI lockups
-  const handleClose = () => {
-    // Clean up iframe resources first
-    if (iframeRef.current) {
-      try {
-        iframeRef.current.src = 'about:blank';
-      } catch (e) {
-        console.log('Error cleaning up iframe in handleClose:', e);
-      }
+    if (document.file_type?.includes('pdf')) {
+      return <FileText className="h-5 w-5 text-red-500" />;
     }
-    
-    // Small delay to ensure cleanup happens before dialog state changes
-    setTimeout(() => {
-      if (mountedRef.current) {
-        onClose();
-      }
-    }, 10);
+    return <File className="h-5 w-5 text-gray-500" />;
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="sm:max-w-[700px]">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>{document.file_name}</DialogTitle>
-          <DialogDescription>
-            {document.file_type || 'Document'} - Uploaded on {formatDate(document.created_at)}
-          </DialogDescription>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                {getFileIcon()}
+                <DialogTitle className="text-xl">{document.file_name}</DialogTitle>
+                {document.category && (
+                  <DocumentCategoryBadge category={document.category} />
+                )}
+              </div>
+              <DialogDescription className="mt-1">
+                {document.file_size && `${(document.file_size / 1024).toFixed(1)} KB`} • 
+                Added on {formatDate(document.created_at)}
+              </DialogDescription>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="text-[#0485ea] border-[#0485ea]/30"
+                asChild
+              >
+                <a href={document.url} download={document.file_name} target="_blank" rel="noopener noreferrer">
+                  <Download className="h-4 w-4 mr-1" />
+                  Download
+                </a>
+              </Button>
+              
+              {onDelete && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-destructive border-destructive/30"
+                  onClick={onDelete}
+                >
+                  <Trash className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogHeader>
         
-        <div className="p-4 border rounded-md h-[400px] overflow-auto">
-          {viewError ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <AlertTriangle className="h-12 w-12 text-destructive mb-2" />
-              <p className="text-destructive font-semibold">Error loading document</p>
-              <p className="text-sm text-muted-foreground mt-2 mb-4">
-                The document couldn't be loaded in the viewer.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => window.open(document.url, '_blank')}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open in new tab
-              </Button>
-            </div>
-          ) : contentType === 'image' ? (
-            <div className="flex items-center justify-center h-full">
-              <img
-                src={document.url}
-                alt={document.file_name}
-                className="max-w-full max-h-[350px] object-contain"
-                onError={handleViewError}
-              />
-            </div>
-          ) : contentType === 'pdf' ? (
-            <iframe
-              ref={iframeRef}
-              src={document.url}
-              className="w-full h-full border-0"
-              title={document.file_name}
-              onError={handleViewError}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full">
-              <FileText className="h-12 w-12 text-muted-foreground mb-2" />
-              <p className="font-medium mb-1">Cannot preview this file type</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                {document.file_type || 'Unknown file type'}
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => window.open(document.url, '_blank')}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open document
-              </Button>
-            </div>
-          )}
-        </div>
-        
-        <DialogFooter className="flex justify-between mt-4">
-          <Button variant="destructive" onClick={onDelete} size="sm">
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose} size="sm">
-              <X className="h-4 w-4 mr-2" />
-              Close
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => window.open(document.url, '_blank')}
-              size="sm"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
+        <div className="flex flex-col md:flex-row gap-6 mt-4 overflow-hidden">
+          {/* Main preview area */}
+          <div className="flex-1 overflow-hidden">
+            <DocumentViewer document={document} embedded />
           </div>
-        </DialogFooter>
+          
+          {/* Side panel with information */}
+          <div className="w-full md:w-64 space-y-6 overflow-y-auto pb-4">
+            {/* Entity Information */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Association</h3>
+              <EntityInformation document={document} />
+            </div>
+            
+            <Separator />
+            
+            {/* Metadata */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Document Info</h3>
+              <dl className="space-y-2 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <dt className="font-medium">Created:</dt>
+                  <dd>{formatDate(document.created_at)}</dd>
+                </div>
+                
+                {document.updated_at && document.updated_at !== document.created_at && (
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <dt className="font-medium">Updated:</dt>
+                    <dd>{formatDate(document.updated_at)}</dd>
+                  </div>
+                )}
+                
+                {document.tags && document.tags.length > 0 && (
+                  <div className="flex items-start gap-1.5">
+                    <Tag className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <dt className="font-medium">Tags:</dt>
+                    <dd className="flex flex-wrap gap-1">
+                      {document.tags.map(tag => (
+                        <span key={tag} className="bg-muted px-1.5 py-0.5 rounded text-xs">
+                          {tag}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+            
+            <Separator />
+            
+            {/* Document Notes */}
+            {document.notes && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Notes</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {document.notes}
+                </p>
+              </div>
+            )}
+            
+            <Separator />
+            
+            {/* Version history */}
+            {document.document_id && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2">Version History</h3>
+                <DocumentVersionHistoryCard 
+                  documentId={document.document_id}
+                  minimal
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

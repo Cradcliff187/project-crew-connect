@@ -19,6 +19,7 @@ interface DocumentListProps {
   showEntityInfo?: boolean;
   emptyMessage?: string;
   showCategories?: boolean;
+  showNavigationButtons?: boolean;
 }
 
 const DocumentList = ({
@@ -29,7 +30,8 @@ const DocumentList = ({
   onBatchDelete,
   showEntityInfo = false,
   emptyMessage = "No documents found",
-  showCategories = false
+  showCategories = false,
+  showNavigationButtons = false
 }: DocumentListProps) => {
   const { 
     viewDocument, 
@@ -269,6 +271,7 @@ const DocumentList = ({
                       showEntityInfo={showEntityInfo}
                       isSelected={selectedDocuments.includes(document.document_id)}
                       batchMode={batchMode}
+                      showNavigationButton={showNavigationButtons}
                     />
                   </div>
                 ))}
@@ -277,7 +280,7 @@ const DocumentList = ({
           );
         })
       ) : (
-        // Show documents without categories
+        // Show documents without categories, add showNavigationButton prop
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {documents.map((document) => (
             <div key={document.document_id} className="relative">
@@ -299,6 +302,7 @@ const DocumentList = ({
                 showEntityInfo={showEntityInfo}
                 isSelected={selectedDocuments.includes(document.document_id)}
                 batchMode={batchMode}
+                showNavigationButton={showNavigationButtons}
               />
             </div>
           ))}

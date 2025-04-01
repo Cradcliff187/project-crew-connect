@@ -3,10 +3,11 @@ import React from 'react';
 import { Document } from './schemas/documentSchema';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Trash2, File, FileText, Image } from 'lucide-react';
+import { Eye, Trash2, File, FileText, Image, ExternalLink } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { DocumentCategoryBadge } from './utils/categoryIcons';
 import { cn } from '@/lib/utils';
+import { useDocumentNavigation } from './hooks/useDocumentNavigation';
 
 interface DocumentCardProps {
   document: Document;
@@ -15,6 +16,7 @@ interface DocumentCardProps {
   batchMode?: boolean;
   isSelected?: boolean;
   onClick?: () => void;
+  showNavigationButton?: boolean;
 }
 
 const DocumentCard: React.FC<DocumentCardProps> = ({
@@ -23,8 +25,11 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
   onDelete,
   batchMode = false,
   isSelected = false,
-  onClick
+  onClick,
+  showNavigationButton = false
 }) => {
+  const { navigateToEntity } = useDocumentNavigation();
+  
   // Determine icon based on file type
   const getFileIcon = () => {
     if (document.file_type?.startsWith('image/')) {
@@ -64,6 +69,9 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
             <div className="flex items-center justify-between mt-3">
               <span className="text-xs capitalize">
                 {document.entity_type.toLowerCase().replace('_', ' ')}
+                {document.entity_id && !document.entity_id.includes('general') && 
+                  <span className="ml-1">#{document.entity_id.slice(-5)}</span>
+                }
               </span>
               
               {!batchMode && (
@@ -79,6 +87,20 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
+                  
+                  {showNavigationButton && document.entity_id && !document.entity_id.includes('general') && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-[#0485ea]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateToEntity(document);
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  )}
                   
                   {onDelete && (
                     <Button 

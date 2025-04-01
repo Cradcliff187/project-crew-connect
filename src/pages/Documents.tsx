@@ -100,6 +100,7 @@ const DocumentsPage: React.FC = () => {
           documents={recentDocuments}
           loading={recentDocumentsLoading}
           onViewDocument={handleDocumentSelect}
+          showNavigationButtons
         />
         
         {/* Unified Filter Area */}
@@ -120,6 +121,7 @@ const DocumentsPage: React.FC = () => {
             onDelete={handleDeleteDialogOpen}
             onBatchDelete={handleBatchDelete}
             onUploadClick={() => setIsUploadOpen(true)}
+            showNavigationButtons
           />
         </div>
 

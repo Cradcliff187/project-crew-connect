@@ -1,12 +1,13 @@
 
 import React from 'react';
 import { Document } from './schemas/documentSchema';
-import { Trash2, Eye, FileText, File, Image } from 'lucide-react';
+import { Trash2, Eye, FileText, File, Image, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
 import { DocumentCategoryBadge } from './utils/categoryIcons';
 import { cn } from '@/lib/utils';
+import { useDocumentNavigation } from './hooks/useDocumentNavigation';
 
 interface DocumentPreviewCardProps {
   document: Document;
@@ -15,6 +16,7 @@ interface DocumentPreviewCardProps {
   showEntityInfo?: boolean;
   isSelected?: boolean;
   batchMode?: boolean;
+  showNavigationButton?: boolean;
 }
 
 const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
@@ -23,8 +25,11 @@ const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
   onDelete,
   showEntityInfo = false,
   isSelected = false,
-  batchMode = false
+  batchMode = false,
+  showNavigationButton = false
 }) => {
+  const { navigateToEntity } = useDocumentNavigation();
+  
   // Determine file type
   const isImage = document.file_type?.startsWith('image/');
   const isPdf = document.file_type?.includes('pdf');
@@ -89,6 +94,20 @@ const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
           >
             <Eye className="h-4 w-4" />
           </Button>
+          
+          {showNavigationButton && document.entity_id && !document.entity_id.includes('general') && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-[#0485ea]"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigateToEntity(document);
+              }}
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+          )}
           
           {onDelete && (
             <Button 
