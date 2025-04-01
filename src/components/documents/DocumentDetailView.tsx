@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Document } from './schemas/documentSchema';
 import { Button } from '@/components/ui/button';
-import { Download, Trash2, FileText, Calendar, User, Tag, Link } from 'lucide-react';
+import { Download, Trash2, FileText, Calendar, User, Tag, Link, Plus } from 'lucide-react';
 import { formatDate, formatFileSize } from '@/lib/utils';
 import DocumentViewer from './DocumentViewer';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,12 @@ import { Separator } from '@/components/ui/separator';
 import { DocumentCategoryBadge } from './utils/categoryIcons';
 import EntityInformation from './EntityInformation';
 import DocumentVersionHistoryCard from './DocumentVersionHistoryCard';
+import { 
+  useDocumentRelationships, 
+  CreateRelationshipParams 
+} from '@/hooks/useDocumentRelationships';
+import DocumentRelationshipsList from './DocumentRelationshipsList';
+import DocumentRelationshipForm from './DocumentRelationshipForm';
 
 interface DocumentDetailViewProps {
   document: Document | null;
@@ -18,6 +24,7 @@ interface DocumentDetailViewProps {
   onClose: () => void;
   onDownload?: () => void;
   onDelete?: () => void;
+  onViewRelatedDocument?: (document: Document) => void;
 }
 
 const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
@@ -26,7 +33,17 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
   onClose,
   onDownload,
   onDelete,
+  onViewRelatedDocument
 }) => {
+  const [isAddingRelationship, setIsAddingRelationship] = useState(false);
+  
+  const { 
+    relationships, 
+    loading: relationshipsLoading, 
+    createRelationship,
+    deleteRelationship
+  } = useDocumentRelationships(document?.document_id);
+
   if (!document) return null;
 
   const handleDownload = () => {
@@ -36,6 +53,21 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
     if (onDownload) {
       onDownload();
     }
+  };
+  
+  const handleCreateRelationship = async (params: CreateRelationshipParams) => {
+    await createRelationship(params);
+    setIsAddingRelationship(false);
+  };
+  
+  const handleViewRelatedDocument = (relatedDoc: Document) => {
+    if (onViewRelatedDocument) {
+      onViewRelatedDocument(relatedDoc);
+    }
+  };
+  
+  const isCurrentDocument = (documentId: string) => {
+    return document.document_id === documentId;
   };
 
   return (
@@ -123,6 +155,46 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
                   </div>
                 </div>
               )}
+              
+              <Separator />
+              
+              {/* Document Relationships */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm flex items-center">
+                    <Link className="h-4 w-4 mr-1" />
+                    Linked Documents
+                  </h4>
+                  
+                  {!isAddingRelationship && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="h-7"
+                      onClick={() => setIsAddingRelationship(true)}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1 text-[#0485ea]" />
+                      Add Link
+                    </Button>
+                  )}
+                </div>
+                
+                {isAddingRelationship ? (
+                  <DocumentRelationshipForm 
+                    sourceDocumentId={document.document_id}
+                    onCreateRelationship={handleCreateRelationship}
+                    onCancel={() => setIsAddingRelationship(false)}
+                  />
+                ) : (
+                  <DocumentRelationshipsList 
+                    relationships={relationships}
+                    loading={relationshipsLoading}
+                    onViewDocument={handleViewRelatedDocument}
+                    onDeleteRelationship={deleteRelationship}
+                    isCurrentDocument={isCurrentDocument}
+                  />
+                )}
+              </div>
               
               <Separator />
               

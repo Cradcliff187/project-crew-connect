@@ -20,6 +20,7 @@ import RecentDocumentsSection from '@/components/documents/RecentDocumentsSectio
 import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
 import { useRecentDocuments } from '@/components/documents/hooks/useRecentDocuments';
+import { Document } from '@/components/documents/schemas/documentSchema';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -73,6 +74,17 @@ const DocumentsPage: React.FC = () => {
   const handleDocumentUploadSuccess = () => {
     handleUploadSuccess();
     refreshRecentDocuments();
+  };
+  
+  // Handle viewing a related document
+  const handleViewRelatedDocument = (document: Document) => {
+    // Close the current detail view first
+    setIsDetailOpen(false);
+    
+    // Small timeout to ensure the dialog properly closes before opening new one
+    setTimeout(() => {
+      handleDocumentSelect(document);
+    }, 100);
   };
 
   return (
@@ -134,6 +146,7 @@ const DocumentsPage: React.FC = () => {
             setIsDetailOpen(false);
             handleDeleteDialogOpen(selectedDocument!);
           }}
+          onViewRelatedDocument={handleViewRelatedDocument}
         />
 
         {/* Delete Confirmation Dialog */}
