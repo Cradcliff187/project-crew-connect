@@ -96,8 +96,8 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
                   <p className="text-sm text-gray-600 mb-3">
                     Uploaded: {formatDate(doc.created_at || '')}
                   </p>
-                  {doc.description && (
-                    <p className="text-sm text-gray-600 truncate">{doc.description}</p>
+                  {doc.notes && (
+                    <p className="text-sm text-gray-600 truncate">{doc.notes}</p>
                   )}
                 </div>
                 <div className="border-t p-3 flex justify-between">
@@ -131,11 +131,11 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
       )}
       
       <DocumentUploadDialog
-        isOpen={uploadDialogOpen}
-        onOpenChange={setUploadDialogOpen}
+        projectId={estimateId}
         entityType="ESTIMATE"
         entityId={estimateId}
-        onUploadComplete={handleUploadComplete}
+        onSuccess={handleUploadComplete}
+        onCancel={() => setUploadDialogOpen(false)}
       />
     </div>
   );

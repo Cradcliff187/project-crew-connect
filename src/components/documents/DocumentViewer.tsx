@@ -1,10 +1,17 @@
 
 import React from 'react';
-import { Document } from './schemas/documentSchema';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, FileText, AlertTriangle, X } from 'lucide-react';
-import { formatBytes } from '@/lib/utils';
+import { Document } from './schemas/documentSchema';
+import { Download, FileText, FileImage, File } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface DocumentViewerProps {
   document: Document | null;
@@ -12,91 +19,85 @@ interface DocumentViewerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) => {
+const DocumentViewer: React.FC<DocumentViewerProps> = ({
+  document,
+  open,
+  onOpenChange
+}) => {
   if (!document) return null;
-
-  const getFileType = () => {
-    if (!document.file_type) return 'unknown';
-    const fileType = document.file_type.toLowerCase();
-    if (fileType.startsWith('image/')) return 'image';
-    if (fileType.includes('pdf')) return 'pdf';
-    return 'other';
+  
+  const isImage = document.file_type?.startsWith('image/');
+  const isPdf = document.file_type?.includes('pdf');
+  
+  const getFileIcon = () => {
+    if (isImage) return <FileImage className="h-8 w-8 text-blue-400" />;
+    if (isPdf) return <FileText className="h-8 w-8 text-red-400" />;
+    return <File className="h-8 w-8 text-gray-400" />;
   };
-
-  const fileType = getFileType();
-  const fileName = document.file_name || 'Document';
-  const fileSize = document.file_size ? formatBytes(document.file_size) : 'Unknown size';
+  
+  const formatFileSize = (size?: number) => {
+    if (!size) return 'Unknown size';
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            {fileName}
+            {getFileIcon()}
+            <span className="truncate">{document.file_name}</span>
           </DialogTitle>
           <DialogDescription>
-            {document.file_type || 'Document'} • {fileSize}
+            {formatDate(document.created_at || '')} - {formatFileSize(document.file_size)}
           </DialogDescription>
         </DialogHeader>
         
-        <div className="min-h-[60vh] flex items-center justify-center bg-muted/20 rounded-md overflow-hidden">
-          {fileType === 'image' ? (
-            <img
-              src={document.url}
-              alt={fileName}
-              className="max-h-[60vh] object-contain"
-              onError={() => console.error('Error loading image')}
+        <div className="flex-1 overflow-auto min-h-[50vh] bg-gray-50 rounded-md flex items-center justify-center">
+          {isImage && document.file_url ? (
+            <img 
+              src={document.file_url} 
+              alt={document.file_name} 
+              className="max-w-full max-h-[60vh] object-contain"
             />
-          ) : fileType === 'pdf' ? (
+          ) : isPdf && document.file_url ? (
             <iframe
-              src={`${document.url}#toolbar=1`}
+              src={document.file_url}
               className="w-full h-[60vh]"
-              title={fileName}
+              title={document.file_name}
             />
           ) : (
-            <div className="text-center p-4">
-              <AlertTriangle className="h-16 w-16 text-amber-500 mx-auto mb-4" />
-              <p className="mb-2 font-medium">This file type cannot be previewed</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                {document.file_type || 'Unknown file type'}
+            <div className="text-center p-8">
+              <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">
+                Preview not available for this file type
               </p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => window.open(document.file_url, '_blank')}
+              >
+                Open in new tab
+              </Button>
             </div>
           )}
         </div>
-
-        <DialogFooter className="flex items-center justify-between mt-4">
-          <div>
-            {document.category && (
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full capitalize">
-                {document.category}
-              </span>
+        
+        <DialogFooter className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            {document.notes && (
+              <p><strong>Notes:</strong> {document.notes}</p>
             )}
-            {document.created_at && (
-              <span className="text-xs text-muted-foreground ml-2">
-                Added {new Date(document.created_at).toLocaleDateString()}
-              </span>
+            {document.entity_type && (
+              <p><strong>Associated with:</strong> {document.entity_type.toLowerCase()}</p>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open(document.url, '_blank')}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-[#0485ea] text-white hover:bg-[#0373ce]"
-              onClick={() => window.open(document.url, '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open in New Tab
-            </Button>
-          </div>
+          <Button onClick={() => window.open(document.file_url, '_blank')}>
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,13 +31,21 @@ const formSchema = z.object({
   entityId: z.string().optional()
 });
 
-type DocumentUploadProps = {
+export type DocumentUploadProps = {
   projectId?: string;
+  entityType?: string;
+  entityId?: string;
   onSuccess?: (data: any) => void;
   onCancel?: () => void;
 };
 
-export default function DocumentUpload({ projectId, onSuccess, onCancel }: DocumentUploadProps) {
+export default function DocumentUpload({ 
+  projectId, 
+  entityType = 'PROJECT',
+  entityId,
+  onSuccess, 
+  onCancel 
+}: DocumentUploadProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -52,8 +59,8 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
       supplier: '',
       projectId: projectId || '',
       notes: '',
-      entityType: 'PROJECT',
-      entityId: projectId || '',
+      entityType: entityType || 'PROJECT',
+      entityId: entityId || projectId || '',
     },
   });
 
@@ -83,7 +90,6 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
     setUploadProgress(0);
 
     try {
-      // Upload files to Supabase storage
       const uploadResults = await Promise.all(
         files.map(async (file) => {
           const fileExt = file.name.split('.').pop();
@@ -96,7 +102,6 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
 
           if (error) throw error;
           
-          // Get public URL
           const { data: { publicUrl } } = supabase.storage
             .from('construction_documents')
             .getPublicUrl(filePath);
@@ -111,7 +116,6 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
         })
       );
 
-      // Record document metadata in documents table
       for (const uploadResult of uploadResults) {
         const { error: dbError } = await supabase
           .from('documents')
@@ -122,17 +126,15 @@ export default function DocumentUpload({ projectId, onSuccess, onCancel }: Docum
             storage_path: uploadResult.path,
             entity_type: data.entityType,
             entity_id: data.entityId || '',
-            uploaded_by: 'current_user', // In a real app, this would be the authenticated user
+            uploaded_by: 'current_user',
             tags: [data.documentType, data.supplier.toLowerCase().replace(/\s+/g, '-')],
           });
 
         if (dbError) throw dbError;
       }
 
-      // Show success state
       setIsSuccess(true);
       
-      // After successful upload
       if (onSuccess) {
         setTimeout(() => {
           onSuccess({
