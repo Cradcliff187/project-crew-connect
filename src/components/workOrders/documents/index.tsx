@@ -8,6 +8,7 @@ import DocumentsTableContent from '../details/DocumentsList/DocumentsTableConten
 import { useWorkOrderDocumentsEmbed } from './useWorkOrderDocumentsEmbed';
 import { WorkOrderDocument } from '../details/DocumentsList/types';
 import DocumentVersionHistoryCard from '@/components/documents/DocumentVersionHistoryCard';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;
@@ -27,6 +28,34 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
   const handleViewDocument = (document: WorkOrderDocument) => {
     setSelectedDocument(document);
     window.open(document.url, '_blank');
+  };
+
+  // Convert string entityType to proper EntityType enum
+  const getEntityType = (): EntityType => {
+    switch (entityType.toUpperCase()) {
+      case 'WORK_ORDER':
+        return 'WORK_ORDER' as EntityType;
+      case 'PROJECT':
+        return 'PROJECT' as EntityType;
+      case 'ESTIMATE':
+        return 'ESTIMATE' as EntityType;
+      case 'CUSTOMER':
+        return 'CUSTOMER' as EntityType;
+      case 'VENDOR':
+        return 'VENDOR' as EntityType;
+      case 'SUBCONTRACTOR':
+        return 'SUBCONTRACTOR' as EntityType;
+      case 'EXPENSE':
+        return 'EXPENSE' as EntityType;
+      case 'TIME_ENTRY':
+        return 'TIME_ENTRY' as EntityType;
+      case 'EMPLOYEE':
+        return 'EMPLOYEE' as EntityType;
+      case 'ESTIMATE_ITEM':
+        return 'ESTIMATE_ITEM' as EntityType;
+      default:
+        return 'WORK_ORDER' as EntityType;
+    }
   };
 
   return (
@@ -79,7 +108,7 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
       {showUpload && (
         <DocumentUpload
           projectId={workOrderId}
-          entityType={entityType}
+          entityType={getEntityType()}
           entityId={workOrderId}
           onSuccess={handleUploadComplete}
           onCancel={() => setShowUpload(false)}

@@ -13,16 +13,20 @@ import { Document } from './schemas/documentSchema';
 import { Download, FileText, FileImage, File } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
-interface DocumentViewerProps {
+export interface DocumentViewerProps {
   document: Document | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  title?: string;
+  description?: string;
 }
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
   document,
   open,
-  onOpenChange
+  onOpenChange,
+  title,
+  description
 }) => {
   if (!document) return null;
   
@@ -50,11 +54,19 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
       <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {getFileIcon()}
-            <span className="truncate">{document.file_name}</span>
+            {title || (
+              <>
+                {getFileIcon()}
+                <span className="truncate">{document.file_name}</span>
+              </>
+            )}
           </DialogTitle>
           <DialogDescription>
-            {formatDate(document.created_at || '')} - {formatFileSize(document.file_size)}
+            {description || (
+              <>
+                {formatDate(document.created_at || '')} - {formatFileSize(document.file_size)}
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
         
