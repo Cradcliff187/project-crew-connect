@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useCallback } from 'react';
@@ -41,7 +40,6 @@ export function useDocumentUploadForm({
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(isReceiptUpload);
   
-  // Initialize form with default values
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
@@ -59,13 +57,11 @@ export function useDocumentUploadForm({
     }
   });
   
-  // Watch form values
   const watchFiles = form.watch('files');
   const watchCategory = form.watch('metadata.category') as DocumentCategory;
   const watchIsExpense = form.watch('metadata.isExpense');
   const watchVendorType = form.watch('metadata.vendorType') as VendorType;
   
-  // Initialize form with prefill data and reset
   const initializeForm = useCallback(() => {
     const defaultValues: DocumentUploadFormValues = {
       files: [],
@@ -89,11 +85,9 @@ export function useDocumentUploadForm({
     }
   }, [form, entityType, entityId, isReceiptUpload, prefillData, previewURL]);
   
-  // Handle file selection
   const handleFileSelect = useCallback((files: File[]) => {
     form.setValue('files', files);
     
-    // Create preview URL for the first file if it's an image
     if (files.length > 0 && files[0].type.startsWith('image/')) {
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
@@ -104,7 +98,6 @@ export function useDocumentUploadForm({
     }
   }, [form, previewURL]);
   
-  // Handle form submission
   const onSubmit = async (data: DocumentUploadFormValues) => {
     if (data.files.length === 0) {
       toast({
@@ -128,9 +121,8 @@ export function useDocumentUploadForm({
     
     try {
       console.log('Starting file upload with data:', data);
-      const file = data.files[0]; // Take the first file
+      const file = data.files[0];
       
-      // Use the DocumentService to upload the file
       const document = await DocumentService.uploadDocument(
         file,
         data.metadata.entityType,
@@ -159,16 +151,13 @@ export function useDocumentUploadForm({
         description: 'Your document has been uploaded successfully.',
       });
       
-      // Reset the form
       form.reset();
       
-      // Revoke any object URLs to prevent memory leaks
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
         setPreviewURL(null);
       }
       
-      // Call the success callback
       if (onSuccess) {
         onSuccess(document.document_id);
       }
@@ -184,18 +173,14 @@ export function useDocumentUploadForm({
     }
   };
   
-  // Handle cancellation
   const handleCancel = () => {
-    // Reset form
     form.reset();
     
-    // Clean up any object URLs
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
       setPreviewURL(null);
     }
     
-    // Call the cancel callback
     if (onCancel) {
       onCancel();
     }

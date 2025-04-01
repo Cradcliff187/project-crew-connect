@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 
 export class DocumentService {
@@ -24,12 +24,197 @@ export class DocumentService {
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('construction_documents')
+        .from(DOCUMENTS_BUCKET_ID)
         .getPublicUrl(data.storage_path);
       
       return { ...data, url: publicUrl };
     } catch (error) {
       console.error('Error fetching document:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Uploads a document and creates the associated metadata
+   */
+  static async uploadDocument(
+    file: File,
+    entityType: string,
+    entityId: string,
+    metadata: {
+      category?: string;
+      isExpense?: boolean;
+      vendorId?: string;
+      vendorType?: string;
+      amount?: number;
+      expenseDate?: Date;
+      expenseType?: string;
+      notes?: string;
+      tags?: string[];
+    }
+  ): Promise<Document | null> {
+    try {
+      // Create a unique file name using timestamp and original name
+      const timestamp = new Date().getTime();
+      const fileExt = file.name.split('.').pop() || '';
+      const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      
+      const entityTypePath = entityType.toLowerCase().replace(/_/g, '-');
+      const filePath = `${entityTypePath}/${entityId}/${fileName}`;
+      
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .upload(filePath, file, {
+          contentType: file.type,
+          cacheControl: '3600',
+          upsert: true
+        });
+        
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .getPublicUrl(filePath);
+        
+      // Insert document metadata to database
+      const documentData = {
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        storage_path: filePath,
+        entity_type: entityType,
+        entity_id: entityId,
+        tags: metadata.tags || [],
+        category: metadata.category,
+        amount: metadata.amount || null,
+        expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
+        version: 1,
+        is_expense: metadata.isExpense || false,
+        notes: metadata.notes || null,
+        vendor_id: metadata.vendorId || null,
+        vendor_type: metadata.vendorType || null,
+        expense_type: metadata.expenseType || null,
+      };
+      
+      const { data: insertedData, error: insertError } = await supabase
+        .from('documents')
+        .insert(documentData)
+        .select('*')
+        .single();
+        
+      if (insertError) {
+        throw insertError;
+      }
+      
+      return { ...insertedData, url: publicUrl };
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Creates a new version of an existing document
+   */
+  static async createNewVersion(
+    documentId: string,
+    file: File,
+    notes?: string
+  ): Promise<Document | null> {
+    try {
+      // Get the original document
+      const { data: originalDoc, error: fetchError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('document_id', documentId)
+        .single();
+        
+      if (fetchError) {
+        throw fetchError;
+      }
+      
+      if (!originalDoc) {
+        throw new Error('Original document not found');
+      }
+      
+      // Upload the new version file
+      const timestamp = new Date().getTime();
+      const fileExt = file.name.split('.').pop() || '';
+      const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      
+      const entityTypePath = originalDoc.entity_type.toLowerCase().replace(/_/g, '-');
+      const filePath = `${entityTypePath}/${originalDoc.entity_id}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .upload(filePath, file, {
+          contentType: file.type,
+          cacheControl: '3600',
+          upsert: true
+        });
+        
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Calculate new version number
+      let newVersion = 1;
+      
+      // If the original document has a parent, it means it's already a version
+      const parentId = originalDoc.parent_document_id || originalDoc.document_id;
+      
+      // Get all existing versions to determine the next version number
+      const { data: existingVersions, error: versionsError } = await supabase
+        .from('documents')
+        .select('version')
+        .or(`document_id.eq.${parentId},parent_document_id.eq.${parentId}`);
+        
+      if (versionsError) {
+        throw versionsError;
+      }
+      
+      if (existingVersions && existingVersions.length > 0) {
+        const versions = existingVersions.map(v => v.version || 1);
+        newVersion = Math.max(...versions) + 1;
+      }
+      
+      // Insert the new version
+      const newVersionData = {
+        ...originalDoc,
+        document_id: undefined, // Let Supabase generate a new ID
+        parent_document_id: parentId,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        storage_path: filePath,
+        version: newVersion,
+        notes: notes || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      const { data: insertedData, error: insertError } = await supabase
+        .from('documents')
+        .insert(newVersionData)
+        .select('*')
+        .single();
+        
+      if (insertError) {
+        throw insertError;
+      }
+      
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .getPublicUrl(filePath);
+        
+      return { ...insertedData, url: publicUrl };
+    } catch (error) {
+      console.error('Error creating document version:', error);
       return null;
     }
   }
@@ -56,7 +241,7 @@ export class DocumentService {
       
       // Delete the file from storage
       const { error: storageError } = await supabase.storage
-        .from('construction_documents')
+        .from(DOCUMENTS_BUCKET_ID)
         .remove([data.storage_path]);
       
       if (storageError) {
@@ -77,133 +262,6 @@ export class DocumentService {
     } catch (error) {
       console.error('Error deleting document:', error);
       return false;
-    }
-  }
-  
-  /**
-   * Checks if a document has references in other tables
-   */
-  static async hasReferences(documentId: string): Promise<boolean> {
-    try {
-      // Check if document is referenced in project_expenses
-      const { count: expenseCount, error: expenseError } = await supabase
-        .from('expenses')
-        .select('id', { count: 'exact' })
-        .eq('document_id', documentId);
-      
-      if (expenseError) {
-        throw expenseError;
-      }
-      
-      // Check if document is referenced in estimate_items
-      const { count: estimateItemCount, error: estimateItemError } = await supabase
-        .from('estimate_items')
-        .select('id', { count: 'exact' })
-        .eq('document_id', documentId);
-      
-      if (estimateItemError) {
-        throw estimateItemError;
-      }
-      
-      // Check if document is referenced in change_orders
-      const { count: changeOrderCount, error: changeOrderError } = await supabase
-        .from('change_orders')
-        .select('id', { count: 'exact' })
-        .eq('document_id', documentId);
-      
-      if (changeOrderError) {
-        throw changeOrderError;
-      }
-      
-      return (expenseCount || 0) > 0 || 
-             (estimateItemCount || 0) > 0 || 
-             (changeOrderCount || 0) > 0;
-    } catch (error) {
-      console.error('Error checking document references:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Creates a new version of a document
-   */
-  static async createNewVersion(
-    documentId: string, 
-    file: File, 
-    notes?: string
-  ): Promise<Document | null> {
-    try {
-      // Get original document
-      const originalDoc = await this.getDocumentById(documentId);
-      
-      if (!originalDoc) {
-        throw new Error('Original document not found');
-      }
-      
-      // Update original document to not be the latest version
-      const { error: updateError } = await supabase
-        .from('documents')
-        .update({ is_latest_version: false })
-        .eq('document_id', documentId);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      // Generate new storage path
-      const timestamp = new Date().getTime();
-      const fileExt = file.name.split('.').pop();
-      const newFileName = `${timestamp}_${file.name}`;
-      const storagePath = `documents/${newFileName}`;
-      
-      // Upload new file
-      const { error: uploadError } = await supabase.storage
-        .from('construction_documents')
-        .upload(storagePath, file);
-      
-      if (uploadError) {
-        throw uploadError;
-      }
-      
-      // Create new document record
-      const newVersion = (originalDoc.version || 1) + 1;
-      
-      const { data: newDoc, error: insertError } = await supabase
-        .from('documents')
-        .insert({
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          storage_path: storagePath,
-          entity_type: originalDoc.entity_type,
-          entity_id: originalDoc.entity_id,
-          category: originalDoc.category,
-          parent_document_id: documentId,
-          version: newVersion,
-          is_latest_version: true,
-          notes: notes || originalDoc.notes,
-          tags: originalDoc.tags,
-          vendor_id: originalDoc.vendor_id,
-          is_expense: originalDoc.is_expense,
-          expense_date: originalDoc.expense_date,
-          amount: originalDoc.amount
-        })
-        .select('*')
-        .single();
-      
-      if (insertError) {
-        throw insertError;
-      }
-      
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(storagePath);
-      
-      return { ...newDoc, url: publicUrl };
-    } catch (error) {
-      console.error('Error creating new document version:', error);
-      return null;
     }
   }
 }

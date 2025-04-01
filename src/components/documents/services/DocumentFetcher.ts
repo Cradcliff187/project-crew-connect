@@ -39,11 +39,11 @@ export const fetchDocumentWithUrl = async (
     
     if (isImage && options.imageOptions) {
       const { width, height, quality } = options.imageOptions;
+      // Fixed: Removed format as it's not a valid TransformOptions property
       const transformOptions = {
         width,
         height,
-        quality: quality || 80,
-        format: 'auto',
+        quality: quality || 80
       };
       
       const { data: transformData } = supabase.storage

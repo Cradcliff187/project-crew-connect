@@ -3,23 +3,24 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { Document, EntityType } from '../schemas/documentSchema';
 
-export interface DocumentFilters {
+// Renamed to DocumentFiltersState for consistency across files
+export interface DocumentFiltersState {
   search: string;
   category?: string;
   entityType?: EntityType;
   isExpense?: boolean;
   dateRange?: {
-    from: Date;
-    to: Date;
+    from?: Date;
+    to?: Date;
   };
-  sortBy: 'newest' | 'oldest' | 'name' | 'size';
+  sortBy: string;
 }
 
-export function useDocuments(initialFilters: DocumentFilters) {
+export function useDocuments(initialFilters: DocumentFiltersState) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<DocumentFilters>(initialFilters);
+  const [filters, setFilters] = useState<DocumentFiltersState>(initialFilters);
   
   // Count how many active filters we have for UI feedback
   const activeFiltersCount = Object.entries(filters).reduce((count, [key, value]) => {
@@ -58,9 +59,14 @@ export function useDocuments(initialFilters: DocumentFilters) {
       }
       
       if (filters.dateRange) {
-        query = query
-          .gte('created_at', filters.dateRange.from.toISOString())
-          .lte('created_at', filters.dateRange.to.toISOString());
+        if (filters.dateRange.from) {
+          query = query.gte('created_at', filters.dateRange.from.toISOString());
+        }
+        if (filters.dateRange.to) {
+          const endDate = new Date(filters.dateRange.to);
+          endDate.setDate(endDate.getDate() + 1);
+          query = query.lt('created_at', endDate.toISOString());
+        }
       }
       
       // Apply sorting
@@ -71,10 +77,16 @@ export function useDocuments(initialFilters: DocumentFilters) {
         case 'oldest':
           query = query.order('created_at', { ascending: true });
           break;
-        case 'name':
+        case 'name_asc':
           query = query.order('file_name', { ascending: true });
           break;
-        case 'size':
+        case 'name_desc':
+          query = query.order('file_name', { ascending: false });
+          break;
+        case 'size_asc':
+          query = query.order('file_size', { ascending: true });
+          break;
+        case 'size_desc':
           query = query.order('file_size', { ascending: false });
           break;
       }
@@ -96,12 +108,12 @@ export function useDocuments(initialFilters: DocumentFilters) {
           if (doc.storage_path) {
             const { data: urlData } = await supabase.storage
               .from(DOCUMENTS_BUCKET_ID)
-              .createSignedUrl(doc.storage_path, 300);
+              .getPublicUrl(doc.storage_path);
               
             if (urlData) {
               return {
                 ...doc,
-                url: urlData.signedUrl
+                url: urlData.publicUrl
               };
             }
           }
@@ -129,7 +141,7 @@ export function useDocuments(initialFilters: DocumentFilters) {
   }, [fetchDocuments]);
   
   // Handle filter changes
-  const handleFilterChange = useCallback((key: keyof DocumentFilters, value: any) => {
+  const handleFilterChange = useCallback((key: keyof DocumentFiltersState, value: any) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
