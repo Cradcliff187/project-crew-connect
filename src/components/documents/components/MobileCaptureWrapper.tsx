@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
@@ -27,13 +26,16 @@ const MobileCaptureWrapper: React.FC<MobileCaptureWrapperProps> = ({
     if (e.target.files && e.target.files.length > 0) {
       console.log('File captured from mobile camera:', e.target.files[0].name);
       onCapture(e.target.files[0]);
+      
+      // Reset the input value to allow selecting the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
   
   // Handle camera button click
-  const handleCameraClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleCameraClick = () => {
     console.log('Camera button clicked, activating input via ref');
     
     if (fileInputRef.current) {

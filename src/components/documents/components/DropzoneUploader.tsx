@@ -46,13 +46,10 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   }, [onFileSelect, instanceId]);
   
   // Use memoized callback to prevent unnecessary re-renders
-  const handleDropzoneClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    // Use the ref directly instead of getElementById
+  const handleDropzoneClick = useCallback(() => {
     console.log(`Dropzone clicked for ${instanceId}, activating input via ref`);
     if (fileInputRef.current) {
+      // Use the click() method directly on the input element
       fileInputRef.current.click();
     } else {
       console.error(`Could not access file input ref for ${instanceId}`);
@@ -64,7 +61,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
     e.stopPropagation();
     e.preventDefault();
     
-    // Use the ref directly instead of getElementById
+    console.log(`Browse button clicked for ${instanceId}, activating input via ref`);
     if (fileInputRef.current) {
       fileInputRef.current.click();
     } else {
@@ -104,7 +101,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-10 h-10 mb-3 text-[#0485ea]" />
                     <p className="mb-2 text-sm">
-                      <span className="font-semibold text-[#0485ea]">Drag and drop</span> your file here
+                      <span className="font-semibold text-[#0485ea]">Click here</span> or drag and drop your file
                     </p>
                     <Button 
                       type="button"
