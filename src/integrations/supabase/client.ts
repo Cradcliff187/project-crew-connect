@@ -29,27 +29,31 @@ export async function ensureStorageBucket() {
       return { success: false, error: listError };
     }
     
+    // Debug: log all buckets to help diagnose issues
+    console.log('Available buckets:', 
+      buckets?.map(b => `ID: ${b.id}, Name: ${b.name}, Public: ${b.public}`));
+    
     // If the bucket already exists, return success
-    if (buckets?.some(bucket => bucket.name === DOCUMENTS_BUCKET_ID)) {
+    if (buckets?.some(bucket => bucket.id === DOCUMENTS_BUCKET_ID)) {
       console.log(`Bucket ${DOCUMENTS_BUCKET_ID} already exists`);
-      return { success: true };
+      return { success: true, bucketId: DOCUMENTS_BUCKET_ID };
     }
     
-    // Otherwise, create the bucket
-    const { error: createError } = await supabase
-      .storage
-      .createBucket(DOCUMENTS_BUCKET_ID, {
-        public: false,
-        fileSizeLimit: 50 * 1024 * 1024 // 50MB limit
-      });
-      
-    if (createError) {
-      console.error('Error creating storage bucket:', createError);
-      return { success: false, error: createError };
+    // If no buckets found at all, that's a separate issue to report
+    if (!buckets || buckets.length === 0) {
+      console.error('No storage buckets found in Supabase project');
+      return { 
+        success: false, 
+        error: 'No storage buckets available. Please check Supabase configuration.'
+      };
     }
     
-    console.log(`Successfully created bucket ${DOCUMENTS_BUCKET_ID}`);
-    return { success: true };
+    // Otherwise, report that the specific bucket we need doesn't exist
+    console.error(`Bucket ${DOCUMENTS_BUCKET_ID} not found. Available buckets: ${buckets.map(b => b.id).join(', ')}`);
+    return { 
+      success: false, 
+      error: `Required bucket "${DOCUMENTS_BUCKET_ID}" not found in Supabase storage.` 
+    };
   } catch (error) {
     console.error('Unexpected error ensuring storage bucket:', error);
     return { success: false, error };

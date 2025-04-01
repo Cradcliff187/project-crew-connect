@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 
 interface BucketTestResult {
   success: boolean;
@@ -39,13 +39,8 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // Search for construction documents bucket with different variations
-    const constructionBucket = buckets.find(
-      bucket => 
-        bucket.id === 'construction_documents' || 
-        bucket.name === 'Construction Documents' ||
-        bucket.name === 'construction_documents'
-    );
+    // Search for our construction documents bucket
+    const constructionBucket = buckets.find(bucket => bucket.id === DOCUMENTS_BUCKET_ID);
     
     if (constructionBucket) {
       console.log('Found construction documents bucket:', {
@@ -53,6 +48,22 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
         name: constructionBucket.name,
         isPublic: constructionBucket.public
       });
+      
+      // Try to list files to verify access permissions
+      const { error: listError } = await supabase
+        .storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .list();
+        
+      if (listError) {
+        console.error(`Error accessing files in ${DOCUMENTS_BUCKET_ID} bucket:`, listError);
+        return {
+          success: false,
+          bucketId: constructionBucket.id,
+          bucketName: constructionBucket.name,
+          error: `Bucket exists but cannot access files: ${listError.message}`
+        };
+      }
       
       return {
         success: true,
@@ -63,14 +74,14 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     
     // If we don't find the exact bucket, provide more context
     console.warn(
-      'Specific construction documents bucket not found. ' + 
+      `Bucket '${DOCUMENTS_BUCKET_ID}' not found. ` + 
       'Available buckets:', 
       buckets.map(b => `${b.id} (${b.name})`)
     );
     
     return {
       success: false,
-      error: 'Construction documents bucket not found'
+      error: `Construction documents bucket '${DOCUMENTS_BUCKET_ID}' not found`
     };
     
   } catch (error) {
@@ -81,4 +92,3 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     };
   }
 };
-

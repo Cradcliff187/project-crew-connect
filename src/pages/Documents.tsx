@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,14 @@ import { toast } from '@/hooks/use-toast';
 
 import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
-import { testBucketAccess } from '@/components/documents/services/BucketTest';
+import { testBucketAccess, ensureStorageBucket } from '@/components/documents/services/BucketTest';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
+  const [bucketStatus, setBucketStatus] = useState<{checked: boolean, ready: boolean}>({
+    checked: false,
+    ready: false
+  });
   
   // Use the custom hook for document state management
   const { 
@@ -59,7 +63,34 @@ const DocumentsPage: React.FC = () => {
     handleUploadSuccess
   } = useDocumentActions(fetchDocuments);
 
-  // Run bucket test on page load and log results
+  // Check bucket on component mount
+  useEffect(() => {
+    const checkBucketStatus = async () => {
+      try {
+        // First ensure the bucket exists
+        const ensureResult = await ensureStorageBucket();
+        if (!ensureResult.success) {
+          console.error('Storage bucket not properly configured:', ensureResult.error);
+          toast({
+            title: 'Storage Configuration Issue',
+            description: 'Document storage is not properly configured. Please contact support.',
+            variant: 'destructive',
+          });
+          setBucketStatus({checked: true, ready: false});
+          return;
+        }
+        
+        setBucketStatus({checked: true, ready: true});
+      } catch (error) {
+        console.error('Error checking bucket status:', error);
+        setBucketStatus({checked: true, ready: false});
+      }
+    };
+    
+    checkBucketStatus();
+  }, []);
+
+  // Run bucket test on demand and log results
   const runBucketTest = async () => {
     const result = await testBucketAccess();
     console.log('Bucket Test Result:', result);
@@ -70,12 +101,14 @@ const DocumentsPage: React.FC = () => {
         description: `Found bucket: ${result.bucketName} (ID: ${result.bucketId})`,
         variant: 'default',
       });
+      setBucketStatus({checked: true, ready: true});
     } else {
       toast({
         title: 'Bucket Check Failed',
         description: result.error || 'Unknown error checking bucket',
         variant: 'destructive',
       });
+      setBucketStatus({checked: true, ready: false});
     }
   };
 
@@ -100,6 +133,7 @@ const DocumentsPage: React.FC = () => {
             className="bg-[#0485ea] hover:bg-[#0375d1]" 
             size={isMobile ? "icon" : "default"}
             onClick={() => setIsUploadOpen(true)}
+            disabled={!bucketStatus.ready}
           >
             <Plus className="h-4 w-4" />
             {!isMobile && <span>Add Document</span>}
@@ -107,6 +141,22 @@ const DocumentsPage: React.FC = () => {
         </PageHeader>
 
         <Separator className="my-6" />
+        
+        {/* Storage Status Alert */}
+        {bucketStatus.checked && !bucketStatus.ready && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded mb-6">
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              <div>
+                <h3 className="font-medium">Storage Configuration Issue</h3>
+                <p className="text-sm">
+                  Document storage is not properly configured. Document uploads and viewing may not work.
+                  Please contact your system administrator to ensure the Supabase storage bucket is correctly set up.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Unified Filter Area */}
         <DocumentFilters
