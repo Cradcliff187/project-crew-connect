@@ -84,7 +84,6 @@ export const uploadDocument = async (
         console.error('Storage upload error:', {
           message: uploadError.message,
           name: uploadError.name,
-          code: uploadError.code,
         });
         throw uploadError;
       }
@@ -128,7 +127,6 @@ export const uploadDocument = async (
         console.error('Document metadata insert error:', {
           message: insertError.message,
           error: insertError,
-          code: insertError.code,
           details: insertError.details,
           hint: insertError.hint
         });
@@ -152,8 +150,7 @@ export const uploadDocument = async (
       errorMessage: error.message,
       errorObject: error,
       name: error.name,
-      stack: error.stack,
-      code: error.code || 'UNKNOWN_ERROR',
+      stack: error.stack
     });
     
     return {
