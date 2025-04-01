@@ -1,5 +1,5 @@
 
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { DocumentService } from './DocumentService';
 import { Document } from '../schemas/documentSchema';
 
 interface ImageOptions {
@@ -15,6 +15,7 @@ interface FetchDocumentOptions {
 
 /**
  * Fetches a document by ID and generates a signed URL
+ * Uses the DocumentService for consistent handling
  */
 export async function fetchDocumentWithUrl(
   documentId: string,
@@ -23,69 +24,8 @@ export async function fetchDocumentWithUrl(
   try {
     console.log('Fetching document with ID:', documentId);
     
-    // First fetch the document metadata
-    const { data: document, error } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('document_id', documentId)
-      .single();
-      
-    if (error) {
-      console.error('Error fetching document:', error);
-      return null;
-    }
-    
-    if (!document || !document.storage_path) {
-      console.error('Document not found or has no storage path');
-      return null;
-    }
-    
-    // Generate the URL with provided options
-    let url: string;
-    
-    if (options.imageOptions && document.file_type?.startsWith('image/')) {
-      // For images, we can use transformation options
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .createSignedUrl(
-          document.storage_path, 
-          options.expiresIn || 300, // default 5 minutes
-          {
-            transform: {
-              width: options.imageOptions.width,
-              height: options.imageOptions.height,
-              quality: options.imageOptions.quality
-            }
-          }
-        );
-        
-      if (urlError) {
-        console.error('Error generating signed URL:', urlError);
-        return null;
-      }
-      
-      url = urlData.signedUrl;
-    } else {
-      // For non-images, just get a regular signed URL
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .createSignedUrl(
-          document.storage_path, 
-          options.expiresIn || 300
-        );
-        
-      if (urlError) {
-        console.error('Error generating signed URL:', urlError);
-        return null;
-      }
-      
-      url = urlData.signedUrl;
-    }
-    
-    return {
-      ...document,
-      url
-    } as Document;
+    // Fetch document and generate signed URL using DocumentService
+    return await DocumentService.getDocumentById(documentId);
   } catch (error) {
     console.error('Error in fetchDocumentWithUrl:', error);
     return null;
@@ -94,6 +34,7 @@ export async function fetchDocumentWithUrl(
 
 /**
  * Fetches multiple documents by IDs
+ * Uses the DocumentService for consistent handling
  */
 export async function fetchDocumentsWithUrls(
   documentIds: string[],
@@ -102,44 +43,15 @@ export async function fetchDocumentsWithUrls(
   if (!documentIds.length) return [];
   
   try {
-    // Fetch all documents metadata
-    const { data: documents, error } = await supabase
-      .from('documents')
-      .select('*')
-      .in('document_id', documentIds);
-      
-    if (error) {
-      console.error('Error fetching documents:', error);
-      return [];
-    }
+    console.log('Fetching multiple documents:', documentIds);
     
-    // Generate signed URLs for each document
-    const docsWithUrls = await Promise.all(
-      documents.map(async (doc) => {
-        if (!doc.storage_path) {
-          return { ...doc, url: '' };
-        }
-        
-        let url = '';
-        
-        try {
-          const { data: urlData } = await supabase.storage
-            .from(DOCUMENTS_BUCKET_ID)
-            .createSignedUrl(
-              doc.storage_path, 
-              options.expiresIn || 300
-            );
-            
-          url = urlData?.signedUrl || '';
-        } catch (e) {
-          console.error(`Error generating URL for document ${doc.document_id}:`, e);
-        }
-        
-        return { ...doc, url } as Document;
-      })
+    // Fetch all documents in parallel
+    const documents = await Promise.all(
+      documentIds.map(id => DocumentService.getDocumentById(id))
     );
     
-    return docsWithUrls;
+    // Filter out any nulls (failed fetches)
+    return documents.filter(Boolean) as Document[];
   } catch (error) {
     console.error('Error in fetchDocumentsWithUrls:', error);
     return [];

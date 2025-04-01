@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { DocumentMetadata, documentUploadSchema, EntityType } from '../schemas/documentSchema';
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { DocumentService } from '../services/DocumentService';
 
 interface UseDocumentUploadFormProps {
   entityType: EntityType;
@@ -123,59 +123,29 @@ export function useDocumentUploadForm({
       console.log('Starting file upload with data:', data);
       const file = data.files[0]; // Take the first file
       
-      // Generate a unique file path
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      // Use the DocumentService to upload the file
+      const document = await DocumentService.uploadDocument(
+        file,
+        data.metadata.entityType,
+        data.metadata.entityId,
+        {
+          category: data.metadata.category,
+          isExpense: data.metadata.isExpense,
+          vendorId: data.metadata.vendorId,
+          vendorType: data.metadata.vendorType,
+          amount: data.metadata.amount,
+          expenseDate: data.metadata.expenseDate,
+          expenseType: data.metadata.expenseType,
+          notes: data.metadata.notes,
+          tags: data.metadata.tags,
+        }
+      );
       
-      // Create a logical folder structure for organization
-      const basePath = data.metadata.entityType.toLowerCase();
-      const filePath = `${basePath}/${data.metadata.entityId}/${fileName}`;
-      
-      console.log('Uploading file to path:', filePath);
-      
-      // Upload the file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .upload(filePath, file);
-      
-      if (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        throw new Error(`Error uploading file: ${uploadError.message}`);
+      if (!document) {
+        throw new Error('Failed to upload document');
       }
       
-      console.log('File uploaded successfully, now creating document record');
-      
-      // Create a document record in the database
-      const documentData = {
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-        storage_path: filePath,
-        entity_type: data.metadata.entityType,
-        entity_id: data.metadata.entityId,
-        category: data.metadata.category,
-        tags: data.metadata.tags,
-        is_expense: data.metadata.isExpense,
-        amount: data.metadata.amount,
-        expense_date: data.metadata.expenseDate,
-        vendor_id: data.metadata.vendorId,
-        vendor_type: data.metadata.vendorType,
-        expense_type: data.metadata.expenseType,
-        notes: data.metadata.notes,
-      };
-      
-      const { data: document, error: documentError } = await supabase
-        .from('documents')
-        .insert(documentData)
-        .select()
-        .single();
-      
-      if (documentError) {
-        console.error('Error creating document record:', documentError);
-        throw new Error(`Error creating document record: ${documentError.message}`);
-      }
-      
-      console.log('Document record created successfully:', document);
+      console.log('Document uploaded successfully:', document);
       
       toast({
         title: 'Upload successful',
