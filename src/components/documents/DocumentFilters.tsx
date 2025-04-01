@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Search, Filter, Calendar, Tags, ArrowDownWideNarrow } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -276,4 +277,5 @@ export const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   );
 };
 
+// Also export as default for backward compatibility
 export default DocumentFilters;

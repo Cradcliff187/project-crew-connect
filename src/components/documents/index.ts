@@ -6,3 +6,6 @@ export { default as EnhancedDocumentUpload } from './EnhancedDocumentUpload';
 export { default as DocumentDetailView } from './DocumentDetailView';
 export { DocumentFilters } from './DocumentFilters';
 export { default as DocumentViews } from './DocumentViews';
+
+// Also re-export DocumentFilters as default for backward compatibility
+export { DocumentFilters as default } from './DocumentFilters';

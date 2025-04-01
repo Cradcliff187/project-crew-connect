@@ -1,20 +1,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
-import { Document, EntityType } from '../schemas/documentSchema';
-
-// Renamed to DocumentFiltersState for consistency across files
-export interface DocumentFiltersState {
-  search: string;
-  category?: string;
-  entityType?: EntityType;
-  isExpense?: boolean;
-  dateRange?: {
-    from?: Date;
-    to?: Date;
-  };
-  sortBy: string;
-}
+import { Document, EntityType, DocumentCategory } from '../schemas/documentSchema';
+import { DocumentFiltersState } from '../DocumentFilters';
 
 export function useDocuments(initialFilters: DocumentFiltersState) {
   const [documents, setDocuments] = useState<Document[]>([]);

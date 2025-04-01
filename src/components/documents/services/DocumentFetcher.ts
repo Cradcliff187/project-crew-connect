@@ -2,12 +2,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 
+interface ImageTransformOptions {
+  width?: number;
+  height?: number;
+  quality?: number;
+}
+
 interface FetchOptions {
-  imageOptions?: {
-    width?: number;
-    height?: number;
-    quality?: number;
-  };
+  imageOptions?: ImageTransformOptions;
   expiresIn?: number;
 }
 
@@ -39,17 +41,17 @@ export const fetchDocumentWithUrl = async (
     
     if (isImage && options.imageOptions) {
       const { width, height, quality } = options.imageOptions;
-      // Fix: Only include the valid transform options
-      const transformOptions = {
-        width,
-        height,
-        quality: quality || 80
-      };
+      // Create valid transform options
+      const transformOptions: Record<string, any> = {};
+      
+      if (width) transformOptions.width = width;
+      if (height) transformOptions.height = height;
+      if (quality) transformOptions.quality = quality;
       
       const { data: transformData } = supabase.storage
         .from('construction_documents')
         .getPublicUrl(data.storage_path, {
-          transform: transformOptions,
+          transform: Object.keys(transformOptions).length > 0 ? transformOptions : undefined,
         });
       
       url = transformData.publicUrl;
