@@ -1,9 +1,8 @@
-
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Plus, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, CheckCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { 
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle

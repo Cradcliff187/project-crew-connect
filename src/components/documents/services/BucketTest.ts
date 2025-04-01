@@ -39,10 +39,12 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // Search for the specific bucket we're interested in
+    // Search for construction documents bucket with different variations
     const constructionBucket = buckets.find(
-      bucket => bucket.id === 'construction_documents' || 
-                bucket.name === 'Construction Documents'
+      bucket => 
+        bucket.id === 'construction_documents' || 
+        bucket.name === 'Construction Documents' ||
+        bucket.name === 'construction_documents'
     );
     
     if (constructionBucket) {
@@ -63,7 +65,7 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     console.warn(
       'Specific construction documents bucket not found. ' + 
       'Available buckets:', 
-      buckets.map(b => b.id)
+      buckets.map(b => `${b.id} (${b.name})`)
     );
     
     return {
@@ -79,3 +81,4 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
     };
   }
 };
+
