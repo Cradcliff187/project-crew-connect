@@ -1,16 +1,16 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 import { useToast } from '@/hooks/use-toast';
 
-export const useDocumentActions = (onSuccessfulDelete: () => void) => {
+export const useDocumentActions = (fetchDocuments: () => void) => {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [hasReferences, setHasReferences] = useState(false);
+  const [batchDeleteLoading, setBatchDeleteLoading] = useState(false);
   const { toast } = useToast();
 
   const handleDocumentSelect = (document: Document) => {
@@ -24,7 +24,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     setHasReferences(false);
     
     try {
-      // Check if document is referenced by expenses or time entries
       const { count: expensesCount, error: expensesCheckError } = await supabase
         .from('expenses')
         .select('*', { count: 'exact', head: true })
@@ -35,7 +34,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
         throw expensesCheckError;
       }
       
-      // Check if document is referenced by time entries
       const { count: timeEntriesCount, error: timeEntriesCheckError } = await supabase
         .from('time_entry_document_links')
         .select('*', { count: 'exact', head: true })
@@ -46,7 +44,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
         throw timeEntriesCheckError;
       }
       
-      // If document is referenced, show the appropriate UI
       if ((expensesCount && expensesCount > 0) || (timeEntriesCount && timeEntriesCount > 0)) {
         setHasReferences(true);
       }
@@ -68,7 +65,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     try {
       setDeleteError(null);
       
-      // Check if document is referenced by expenses
       const { count: expensesCount, error: expensesCheckError } = await supabase
         .from('expenses')
         .select('*', { count: 'exact', head: true })
@@ -76,7 +72,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
         
       if (expensesCheckError) throw expensesCheckError;
       
-      // Check if document is referenced by time entries
       const { count: timeEntriesCount, error: timeEntriesCheckError } = await supabase
         .from('time_entry_document_links')
         .select('*', { count: 'exact', head: true })
@@ -94,7 +89,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
         return;
       }
       
-      // If we reach here, document is not referenced and can be deleted
       await deleteDocumentFromStorage();
       
       toast({
@@ -112,7 +106,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
       
       let errorMessage = "Failed to delete document";
       
-      // Look for foreign key constraint violations
       if (error.code === '23503') {
         errorMessage = "This document is referenced by another record and cannot be deleted. You need to remove those references first.";
       } else {
@@ -135,7 +128,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     try {
       setDeleteError(null);
       
-      // First remove references from expenses
       const { error: expensesUpdateError } = await supabase
         .from('expenses')
         .update({ document_id: null })
@@ -143,7 +135,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
         
       if (expensesUpdateError) throw expensesUpdateError;
       
-      // Remove references from time entry document links
       const { error: timeEntryLinksError } = await supabase
         .from('time_entry_document_links')
         .delete()
@@ -151,7 +142,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
         
       if (timeEntryLinksError) throw timeEntryLinksError;
       
-      // Then delete the document
       await deleteDocumentFromStorage();
       
       toast({
@@ -176,11 +166,46 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     }
   };
 
-  // Helper function to delete document from storage and database
+  const handleBatchDelete = async (documentIds: string[]) => {
+    if (!documentIds.length) return;
+
+    try {
+      setBatchDeleteLoading(true);
+      
+      for (const documentId of documentIds) {
+        const { error } = await supabase
+          .from('documents')
+          .delete()
+          .eq('document_id', documentId);
+          
+        if (error) {
+          throw error;
+        }
+      }
+      
+      fetchDocuments();
+      
+      toast({
+        title: "Documents deleted",
+        description: `Successfully deleted ${documentIds.length} document(s)`,
+      });
+    } catch (error: any) {
+      console.error('Error deleting documents:', error);
+      setDeleteError(error.message);
+      
+      toast({
+        title: "Delete failed",
+        description: error.message || "There was an error deleting the documents",
+        variant: "destructive",
+      });
+    } finally {
+      setBatchDeleteLoading(false);
+    }
+  };
+
   const deleteDocumentFromStorage = async () => {
     if (!selectedDocument) return;
     
-    // Delete from storage first
     if (selectedDocument.storage_path) {
       const { error: storageError } = await supabase.storage
         .from('construction_documents')
@@ -189,7 +214,6 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
       if (storageError) throw storageError;
     }
     
-    // Then delete from database
     const { error: dbError } = await supabase
       .from('documents')
       .delete()
@@ -200,7 +224,7 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
 
   const handleUploadSuccess = () => {
     setIsUploadOpen(false);
-    onSuccessfulDelete(); // Reuse the same function to refresh documents
+    onSuccessfulDelete();
     toast({
       title: "Document uploaded",
       description: "Your document has been successfully uploaded."
@@ -221,6 +245,8 @@ export const useDocumentActions = (onSuccessfulDelete: () => void) => {
     handleDeleteDialogOpen,
     handleDeleteDocument,
     handleForceDelete,
-    handleUploadSuccess
+    handleUploadSuccess,
+    batchDeleteLoading,
+    handleBatchDelete
   };
 };

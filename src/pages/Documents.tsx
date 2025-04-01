@@ -50,6 +50,7 @@ const DocumentsPage: React.FC = () => {
     isUploadOpen,
     deleteError,
     hasReferences,
+    batchDeleteLoading,
     setIsUploadOpen,
     setIsDetailOpen,
     setIsDeleteOpen,
@@ -57,7 +58,8 @@ const DocumentsPage: React.FC = () => {
     handleDeleteDialogOpen,
     handleDeleteDocument,
     handleForceDelete,
-    handleUploadSuccess
+    handleUploadSuccess,
+    handleBatchDelete
   } = useDocumentActions(fetchDocuments);
 
   // Use the recent documents hook
@@ -116,6 +118,7 @@ const DocumentsPage: React.FC = () => {
             activeFiltersCount={activeFiltersCount}
             onView={handleDocumentSelect}
             onDelete={handleDeleteDialogOpen}
+            onBatchDelete={handleBatchDelete}
             onUploadClick={() => setIsUploadOpen(true)}
           />
         </div>

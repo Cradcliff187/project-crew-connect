@@ -1,144 +1,110 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Eye, Download, Trash2, FileText, FileImage, File, Info } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
+import { Trash2, Eye, FileText, File, Image } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getCategoryConfig } from './utils/categoryIcons';
+import { DocumentCategoryBadge } from './utils/categoryIcons';
+import { cn } from '@/lib/utils';
 
 interface DocumentPreviewCardProps {
   document: Document;
   onView: () => void;
   onDelete?: () => void;
   showEntityInfo?: boolean;
+  isSelected?: boolean;
+  batchMode?: boolean;
 }
 
-const DocumentPreviewCard = ({ 
-  document, 
-  onView, 
+const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
+  document,
+  onView,
   onDelete,
-  showEntityInfo = false
-}: DocumentPreviewCardProps) => {
-  // Get appropriate icon based on file type
-  const getFileIcon = () => {
-    if (!document.file_type) return <File className="h-8 w-8 text-gray-400" />;
-    
-    const fileType = document.file_type.toLowerCase();
-    if (fileType.startsWith('image/')) {
-      return <FileImage className="h-8 w-8 text-blue-400" />;
-    } else if (fileType.includes('pdf')) {
-      return <FileText className="h-8 w-8 text-red-400" />;
-    }
-    return <File className="h-8 w-8 text-gray-400" />;
-  };
-
-  // Format file size for display
-  const formatFileSize = (size?: number) => {
-    if (!size) return 'Unknown size';
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const handleDownload = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (document.url) {
-      window.open(document.url, '_blank');
-    }
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDelete) onDelete();
-  };
-
-  // Check if document has an item reference (from the consolidated view)
-  const hasItemReference = document.item_reference || document.item_description;
+  showEntityInfo = false,
+  isSelected = false,
+  batchMode = false
+}) => {
+  // Determine file type
+  const isImage = document.file_type?.startsWith('image/');
+  const isPdf = document.file_type?.includes('pdf');
   
-  // Get category config for styling
-  const categoryConfig = getCategoryConfig(document.category);
-  const CategoryIcon = categoryConfig.icon;
+  const getDocumentIcon = () => {
+    if (isImage) return <Image className="h-5 w-5 text-blue-500" />;
+    if (isPdf) return <FileText className="h-5 w-5 text-red-500" />;
+    return <File className="h-5 w-5 text-gray-500" />;
+  };
 
   return (
     <Card 
-      className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer bg-white border border-[#0485ea]/10"
-      onClick={onView}
+      className={cn(
+        "h-full flex flex-col transition-all border hover:border-[#0485ea] hover:shadow-sm group overflow-hidden",
+        isSelected && "ring-2 ring-[#0485ea] border-[#0485ea] bg-blue-50/30",
+        batchMode ? "cursor-pointer" : "cursor-default"
+      )}
+      onClick={batchMode ? onView : undefined}
     >
-      <div className="h-12 bg-[#0485ea]/5 flex items-center px-4">
-        <div className="flex items-center space-x-2">
-          {getFileIcon()}
-          <div className="truncate max-w-[180px]">
-            <p className="font-medium text-sm truncate">{document.file_name}</p>
+      <CardContent className="p-4 flex-grow space-y-2">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            {getDocumentIcon()}
+            <h3 className="font-medium text-sm line-clamp-1">{document.file_name}</h3>
           </div>
+          {document.category && (
+            <DocumentCategoryBadge category={document.category} />
+          )}
         </div>
-      </div>
-      
-      <CardContent className="p-3">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{formatDate(document.created_at)}</span>
-            <span>{formatFileSize(document.file_size)}</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-1">
-            {document.category && (
-              <Badge 
-                className="flex items-center gap-1 text-xs px-2 py-0.5 font-medium" 
-                style={{ 
-                  backgroundColor: categoryConfig.bgColor, 
-                  color: categoryConfig.color 
-                }}
-              >
-                <CategoryIcon className="h-3 w-3" />
-                <span className="capitalize">{categoryConfig.label}</span>
-              </Badge>
-            )}
-            
-            {showEntityInfo && document.entity_type && (
-              <Badge variant="secondary" className="text-xs">
-                {document.entity_type.replace(/_/g, ' ').toLowerCase()}
-              </Badge>
-            )}
-            
-            {document.is_expense && (
-              <Badge className="bg-green-500 text-xs">Receipt</Badge>
-            )}
-            
-            {hasItemReference && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="bg-blue-50 text-xs">
-                      <Info className="h-3 w-3 mr-1" />
-                      Item Doc
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{document.item_reference || document.item_description}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-          
-          <div className="flex justify-between mt-2">
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => { e.stopPropagation(); onView(); }}>
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleDownload}>
-              <Download className="h-4 w-4" />
-            </Button>
-            {onDelete && (
-              <Button variant="ghost" size="sm" className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+        
+        <div className="text-xs text-muted-foreground">
+          Added on {formatDate(document.created_at)}
         </div>
+        
+        {showEntityInfo && document.entity_type && (
+          <div className="text-xs capitalize">
+            <span className="text-muted-foreground">Associated with: </span>
+            <span className="font-medium">{document.entity_type.toLowerCase().replace('_', ' ')}</span>
+            {document.entity_id && !document.entity_id.includes('general') && (
+              <span className="font-medium"> #{document.entity_id.slice(-5)}</span>
+            )}
+          </div>
+        )}
+        
+        {document.notes && (
+          <div className="text-xs mt-2">
+            <p className="line-clamp-2 text-muted-foreground">{document.notes}</p>
+          </div>
+        )}
       </CardContent>
+      
+      {!batchMode && (
+        <CardFooter className="px-4 py-3 pt-0 flex justify-end gap-2 mt-auto">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              onView();
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          
+          {onDelete && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </CardFooter>
+      )}
     </Card>
   );
 };
