@@ -199,7 +199,7 @@ const EstimatesTable = ({
       
       const currentRevisionId = currentRevision?.id;
       
-      const query = supabase
+      let query = supabase
         .from('estimate_items')
         .select('*')
         .eq('estimate_id', estimate.id);
