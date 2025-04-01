@@ -1,141 +1,120 @@
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+
+import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 
-export async function fetchDocumentVersions(documentId: string): Promise<Document[]> {
+interface FetchOptions {
+  imageOptions?: {
+    width?: number;
+    height?: number;
+    quality?: number;
+  };
+  expiresIn?: number;
+}
+
+/**
+ * Fetches a document by ID and includes a public URL
+ */
+export const fetchDocumentWithUrl = async (
+  documentId: string, 
+  options: FetchOptions = {}
+): Promise<Document | null> => {
   try {
-    const { data: document, error: docError } = await supabase
+    const { data, error } = await supabase
       .from('documents')
       .select('*')
       .eq('document_id', documentId)
       .single();
-      
-    if (docError) {
-      throw docError;
+    
+    if (error) {
+      throw error;
     }
     
-    const parentId = document.parent_document_id || document.document_id;
-    
-    const { data: versions, error: versionsError } = await supabase
-      .from('documents')
-      .select('*')
-      .or(`document_id.eq.${parentId},parent_document_id.eq.${parentId}`)
-      .order('version', { ascending: false });
-      
-    if (versionsError) {
-      throw versionsError;
+    if (!data) {
+      return null;
     }
     
-    if (!versions.some(v => v.document_id === document.document_id)) {
-      versions.push(document);
-    }
+    // Get URL based on file type and options
+    let url: string;
+    const isImage = data.file_type?.toLowerCase().startsWith('image/');
     
-    const uniqueVersions = versions.filter((v, i, self) => 
-      self.findIndex(v2 => v2.document_id === v.document_id) === i
-    );
-    
-    uniqueVersions.sort((a, b) => (b.version || 1) - (a.version || 1));
-    
-    const versionsWithUrls = uniqueVersions.map(version => {
-      const { data } = supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .getPublicUrl(version.storage_path);
-        
-      return {
-        ...version,
-        url: data.publicUrl
+    if (isImage && options.imageOptions) {
+      const { width, height, quality } = options.imageOptions;
+      const transformOptions = {
+        width,
+        height,
+        quality: quality || 80,
+        format: 'auto',
       };
-    });
+      
+      const { data: transformData } = supabase.storage
+        .from('construction_documents')
+        .getPublicUrl(data.storage_path, {
+          transform: transformOptions,
+        });
+      
+      url = transformData.publicUrl;
+    } else if (options.expiresIn) {
+      // Get signed URL with expiration
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from('construction_documents')
+        .createSignedUrl(data.storage_path, options.expiresIn);
+      
+      if (signedError) {
+        throw signedError;
+      }
+      
+      url = signedData.signedUrl;
+    } else {
+      // Get standard public URL
+      const { data: publicData } = supabase.storage
+        .from('construction_documents')
+        .getPublicUrl(data.storage_path);
+      
+      url = publicData.publicUrl;
+    }
     
-    return versionsWithUrls;
+    return { ...data, url };
   } catch (error) {
-    console.error('Error fetching document versions:', error);
-    return [];
+    console.error('Error fetching document with URL:', error);
+    return null;
   }
-}
+};
 
-export async function fetchDocumentsByEntity(entityType: string, entityId: string): Promise<Document[]> {
+/**
+ * Fetches multiple documents by entity
+ */
+export const fetchDocumentsByEntity = async (
+  entityType: string,
+  entityId: string
+): Promise<Document[]> => {
   try {
     const { data, error } = await supabase
       .from('documents')
       .select('*')
       .eq('entity_type', entityType)
       .eq('entity_id', entityId)
-      .eq('is_latest_version', true)
       .order('created_at', { ascending: false });
-      
+    
     if (error) {
       throw error;
     }
     
-    const documentsWithUrls = data.map(doc => {
-      const { data } = supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .getPublicUrl(doc.storage_path);
-        
-      return {
-        ...doc,
-        url: data.publicUrl
-      };
-    });
+    if (!data || data.length === 0) {
+      return [];
+    }
     
-    return documentsWithUrls;
+    // Add URLs to all documents
+    const docsWithUrls = await Promise.all(data.map(async (doc) => {
+      const { data: { publicUrl } } = supabase.storage
+        .from('construction_documents')
+        .getPublicUrl(doc.storage_path);
+      
+      return { ...doc, url: publicUrl };
+    }));
+    
+    return docsWithUrls;
   } catch (error) {
-    console.error('Error fetching documents by entity:', error);
+    console.error('Error fetching entity documents:', error);
     return [];
   }
-}
-
-interface FetchDocumentOptions {
-  imageOptions?: {
-    width?: number;
-    height?: number;
-    quality?: number;
-  };
-  expiresIn?: number; // URL expiration time in seconds
-}
-
-/**
- * Fetches a document by ID and gets a signed URL for viewing
- */
-export async function fetchDocumentWithUrl(documentId: string, options: FetchDocumentOptions = {}): Promise<Document | null> {
-  try {
-    const { data: document, error: docError } = await supabase
-      .from('documents')
-      .select('*')
-      .eq('document_id', documentId)
-      .single();
-      
-    if (docError) {
-      console.error('Error fetching document:', docError);
-      return null;
-    }
-    
-    if (!document) {
-      console.error('Document not found:', documentId);
-      return null;
-    }
-    
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from(DOCUMENTS_BUCKET_ID)
-      .createSignedUrl(
-        document.storage_path,
-        options.expiresIn || 300,
-        {
-          transform: options.imageOptions
-        }
-      );
-      
-    if (signedUrlError) {
-      console.error('Error creating signed URL:', signedUrlError);
-      return null;
-    }
-    
-    return {
-      ...document,
-      url: signedUrlData.signedUrl
-    };
-  } catch (error) {
-    console.error('Error in fetchDocumentWithUrl:', error);
-    return null;
-  }
-}
+};

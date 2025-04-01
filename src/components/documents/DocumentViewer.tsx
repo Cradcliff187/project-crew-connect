@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, Image, File } from 'lucide-react';
+import { Download, FileText, Image, File, X } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
 import { format } from 'date-fns';
 
@@ -11,13 +11,17 @@ interface DocumentViewerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDelete?: () => void;
+  title?: string;
+  description?: string;
 }
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
   document,
   open,
   onOpenChange,
-  onDelete
+  onDelete,
+  title,
+  description
 }) => {
   if (!document) {
     return null;
@@ -34,6 +38,11 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  const dialogTitle = title || `Document: ${document.file_name}`;
+  const dialogDescription = description || (document.category 
+    ? `${document.category.replace(/_/g, ' ')} document` 
+    : `${document.file_type || 'Document'} preview`);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
@@ -46,8 +55,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             ) : (
               <File className="h-5 w-5 text-gray-500" />
             )}
-            {document.file_name}
+            {dialogTitle}
           </DialogTitle>
+          {description && <p className="text-sm text-gray-500">{dialogDescription}</p>}
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden min-h-[60vh]">
@@ -116,13 +126,14 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
           )}
         </div>
         
-        <div className="flex justify-between mt-4">
+        <DialogFooter className="flex justify-between mt-4">
           {onDelete && (
             <Button 
               variant="outline" 
               className="text-red-600 border-red-200 hover:bg-red-50"
               onClick={onDelete}
             >
+              <X className="h-4 w-4 mr-2" />
               Delete
             </Button>
           )}
@@ -138,7 +149,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

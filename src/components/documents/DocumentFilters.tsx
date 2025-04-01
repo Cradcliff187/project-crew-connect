@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, Check, X, Calendar } from 'lucide-react';
+import { Search, Filter, X, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,8 +67,6 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   };
 
   const handleRemoveFilter = (filterKey: keyof DocumentFiltersState) => {
-    const newFilters = { ...filters };
-    
     if (filterKey === 'category') {
       onFilterChange('category', undefined);
     } else if (filterKey === 'entityType') {

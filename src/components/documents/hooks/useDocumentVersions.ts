@@ -1,77 +1,126 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 import { DocumentService } from '../services/DocumentService';
-import { fetchDocumentVersions } from '../services/DocumentFetcher';
 
-interface UseDocumentVersionsResult {
-  documentVersions: Document[];
-  loading: boolean;
-  error: string | null;
-  createNewVersion: (file: File, notes?: string) => Promise<boolean>;
-  refetchVersions: () => Promise<void>;
-}
-
-export function useDocumentVersions(documentId?: string): UseDocumentVersionsResult {
+export const useDocumentVersions = (documentId?: string) => {
   const [documentVersions, setDocumentVersions] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  
   const fetchVersions = async () => {
     if (!documentId) {
       setDocumentVersions([]);
       return;
     }
-
+    
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      setError(null);
-
-      const versions = await fetchDocumentVersions(documentId);
-      setDocumentVersions(versions);
-    } catch (err: any) {
-      console.error('Error fetching document versions:', err);
-      setError(err.message || 'Failed to fetch document versions');
+      // First, get the current document
+      const { data: currentDoc, error: currentDocError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('document_id', documentId)
+        .single();
+      
+      if (currentDocError) {
+        throw currentDocError;
+      }
+      
+      let allVersions: Document[] = [];
+      
+      // If this document has a parent, fetch all siblings (including parent)
+      if (currentDoc.parent_document_id) {
+        const parentId = currentDoc.parent_document_id;
+        
+        // Get the parent
+        const { data: parentDoc, error: parentError } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('document_id', parentId)
+          .single();
+        
+        if (parentError) {
+          throw parentError;
+        }
+        
+        // Get all children of the parent (siblings of current doc)
+        const { data: siblings, error: siblingsError } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('parent_document_id', parentId);
+        
+        if (siblingsError) {
+          throw siblingsError;
+        }
+        
+        allVersions = [parentDoc, ...siblings];
+      } else {
+        // This is a parent document, get all its children
+        const { data: children, error: childrenError } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('parent_document_id', documentId);
+        
+        if (childrenError) {
+          throw childrenError;
+        }
+        
+        allVersions = [currentDoc, ...(children || [])];
+      }
+      
+      // Add URLs to all documents
+      const versionsWithUrls = await Promise.all(allVersions.map(async (doc) => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('construction_documents')
+          .getPublicUrl(doc.storage_path);
+        
+        return { ...doc, url: publicUrl };
+      }));
+      
+      // Sort by version
+      const sortedVersions = versionsWithUrls.sort((a, b) => 
+        (b.version || 1) - (a.version || 1)
+      );
+      
+      setDocumentVersions(sortedVersions);
+    } catch (error) {
+      console.error('Error fetching document versions:', error);
+      setDocumentVersions([]);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchVersions();
-  }, [documentId]);
-
+  
+  // Create a new version of the document
   const createNewVersion = async (file: File, notes?: string): Promise<boolean> => {
     if (!documentId) return false;
     
     try {
-      setLoading(true);
-      setError(null);
+      const result = await DocumentService.createNewVersion(documentId, file, notes);
       
-      const newVersion = await DocumentService.createDocumentVersion(documentId, file, notes);
-      
-      if (!newVersion) {
-        throw new Error('Failed to create new document version');
+      if (result) {
+        await fetchVersions();
+        return true;
       }
       
-      // Update the versions list
-      await fetchVersions();
-      
-      return true;
-    } catch (err: any) {
-      console.error('Error creating document version:', err);
-      setError(err.message || 'Failed to create document version');
       return false;
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error creating new version:', error);
+      return false;
     }
   };
-
+  
+  // Fetch versions when documentId changes
+  useEffect(() => {
+    fetchVersions();
+  }, [documentId]);
+  
   return {
     documentVersions,
     loading,
-    error,
     createNewVersion,
     refetchVersions: fetchVersions
   };
-}
+};
