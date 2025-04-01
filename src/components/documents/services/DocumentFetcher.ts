@@ -1,10 +1,8 @@
-
 import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 
 export async function fetchDocumentVersions(documentId: string): Promise<Document[]> {
   try {
-    // First get the document itself
     const { data: document, error: docError } = await supabase
       .from('documents')
       .select('*')
@@ -15,10 +13,8 @@ export async function fetchDocumentVersions(documentId: string): Promise<Documen
       throw docError;
     }
     
-    // If this is already a version of another document, get that parent ID
     const parentId = document.parent_document_id || document.document_id;
     
-    // Fetch all versions related to this document (either as parent or child)
     const { data: versions, error: versionsError } = await supabase
       .from('documents')
       .select('*')
@@ -29,20 +25,16 @@ export async function fetchDocumentVersions(documentId: string): Promise<Documen
       throw versionsError;
     }
     
-    // If the original document isn't already included, add it
     if (!versions.some(v => v.document_id === document.document_id)) {
       versions.push(document);
     }
     
-    // Add the document itself if it's not already in the versions list
     const uniqueVersions = versions.filter((v, i, self) => 
       self.findIndex(v2 => v2.document_id === v.document_id) === i
     );
     
-    // Sort versions by version number, with latest first
     uniqueVersions.sort((a, b) => (b.version || 1) - (a.version || 1));
     
-    // Get public URLs for all versions
     const versionsWithUrls = uniqueVersions.map(version => {
       const { data } = supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
@@ -75,7 +67,6 @@ export async function fetchDocumentsByEntity(entityType: string, entityId: strin
       throw error;
     }
     
-    // Add public URLs to documents
     const documentsWithUrls = data.map(doc => {
       const { data } = supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
@@ -91,5 +82,60 @@ export async function fetchDocumentsByEntity(entityType: string, entityId: strin
   } catch (error) {
     console.error('Error fetching documents by entity:', error);
     return [];
+  }
+}
+
+interface FetchDocumentOptions {
+  imageOptions?: {
+    width?: number;
+    height?: number;
+    quality?: number;
+  };
+  expiresIn?: number; // URL expiration time in seconds
+}
+
+/**
+ * Fetches a document by ID and gets a signed URL for viewing
+ */
+export async function fetchDocumentWithUrl(documentId: string, options: FetchDocumentOptions = {}): Promise<Document | null> {
+  try {
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('document_id', documentId)
+      .single();
+      
+    if (docError) {
+      console.error('Error fetching document:', docError);
+      return null;
+    }
+    
+    if (!document) {
+      console.error('Document not found:', documentId);
+      return null;
+    }
+    
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from(DOCUMENTS_BUCKET_ID)
+      .createSignedUrl(
+        document.storage_path,
+        options.expiresIn || 300,
+        {
+          transform: options.imageOptions
+        }
+      );
+      
+    if (signedUrlError) {
+      console.error('Error creating signed URL:', signedUrlError);
+      return null;
+    }
+    
+    return {
+      ...document,
+      url: signedUrlData.signedUrl
+    };
+  } catch (error) {
+    console.error('Error in fetchDocumentWithUrl:', error);
+    return null;
   }
 }
