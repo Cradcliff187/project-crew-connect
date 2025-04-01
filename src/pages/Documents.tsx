@@ -20,7 +20,7 @@ import { toast } from '@/hooks/use-toast';
 import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
 import { testBucketAccess } from '@/components/documents/services/BucketTest';
-import { ensureStorageBucket } from '@/integrations/supabase/client';
+import { getStorageBucket } from '@/integrations/supabase/client';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -65,14 +65,15 @@ const DocumentsPage: React.FC = () => {
     handleUploadSuccess
   } = useDocumentActions(fetchDocuments);
 
-  // Check bucket on component mount
+  // Check bucket on component mount - simplified approach
   useEffect(() => {
     const checkBucketStatus = async () => {
       try {
-        // First ensure the bucket exists
-        const ensureResult = await ensureStorageBucket();
-        if (!ensureResult.success) {
-          console.error('Storage bucket not properly configured:', ensureResult.error);
+        // Get the bucket directly without checking if it exists
+        const { success, error } = await getStorageBucket();
+        
+        if (!success) {
+          console.error('Storage access issue:', error);
           toast({
             title: 'Storage Configuration Issue',
             description: 'Document storage is not properly configured. Please contact support.',
@@ -100,14 +101,14 @@ const DocumentsPage: React.FC = () => {
     if (result.success) {
       toast({
         title: 'Bucket Check Successful',
-        description: `Found bucket: ${result.bucketName} (ID: ${result.bucketId})`,
+        description: `Storage access confirmed for: ${result.bucketName}`,
         variant: 'default',
       });
       setBucketStatus({checked: true, ready: true});
     } else {
       toast({
         title: 'Bucket Check Failed',
-        description: result.error || 'Unknown error checking bucket',
+        description: result.error || 'Unknown error checking storage access',
         variant: 'destructive',
       });
       setBucketStatus({checked: true, ready: false});
@@ -129,7 +130,7 @@ const DocumentsPage: React.FC = () => {
             variant="outline"
           >
             <CheckCircle className="h-4 w-4 mr-1" />
-            {!isMobile && <span>Test Bucket</span>}
+            {!isMobile && <span>Test Storage</span>}
           </Button>
           <Button 
             className="bg-[#0485ea] hover:bg-[#0375d1]" 
@@ -150,10 +151,10 @@ const DocumentsPage: React.FC = () => {
             <div className="flex items-center">
               <AlertTriangle className="h-5 w-5 mr-2" />
               <div>
-                <h3 className="font-medium">Storage Configuration Issue</h3>
+                <h3 className="font-medium">Storage Access Issue</h3>
                 <p className="text-sm">
-                  Document storage is not properly configured. Document uploads and viewing may not work.
-                  Please contact your system administrator to ensure the Supabase storage bucket is correctly set up.
+                  Document storage is not accessible. Document uploads and viewing may not work.
+                  Please verify your Supabase storage configuration and permissions.
                 </p>
               </div>
             </div>
@@ -180,7 +181,7 @@ const DocumentsPage: React.FC = () => {
           />
         </div>
 
-        {/* Document Detail Dialog */}
+        {/* Dialog components */}
         <DocumentDetailView 
           document={selectedDocument}
           open={isDetailOpen}
@@ -191,7 +192,6 @@ const DocumentsPage: React.FC = () => {
           }}
         />
 
-        {/* Delete Confirmation Dialog */}
         <DeleteConfirmation 
           open={isDeleteOpen}
           onClose={() => setIsDeleteOpen(false)}
@@ -201,7 +201,6 @@ const DocumentsPage: React.FC = () => {
           hasReferences={hasReferences}
         />
 
-        {/* Upload Dialog */}
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogContent className={isMobile ? "w-[95vw] max-w-[600px]" : "sm:max-w-[600px]"}>
             <DialogHeader>

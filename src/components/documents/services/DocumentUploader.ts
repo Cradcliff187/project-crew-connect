@@ -48,21 +48,13 @@ export const uploadDocument = async (
       const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
-      console.log(`Uploading file to storage bucket '${DOCUMENTS_BUCKET_ID}', path: ${filePath}`);
-      console.log(`File object:`, { 
-        name: file.name, 
-        type: file.type, 
-        size: file.size 
-      });
+      console.log(`Uploading file directly to ${DOCUMENTS_BUCKET_ID}/${filePath}`);
       
       // Check if file is actually a File object
       if (!(file instanceof File)) {
         console.error('Not a valid File object:', file);
         throw new Error('Invalid file object provided');
       }
-      
-      // Enhanced logging for Content-Type debugging
-      console.log('File MIME type from browser:', file.type);
       
       // Determine the proper content type based on file extension if needed
       let contentType = file.type;
@@ -79,16 +71,7 @@ export const uploadDocument = async (
         duplex: 'half' as const
       };
       
-      // Enhanced debugging for upload
-      console.log('About to execute upload with params:', {
-        bucket: DOCUMENTS_BUCKET_ID,
-        path: filePath,
-        fileType: contentType,
-        fileSize: file.size,
-        options: fileOptions
-      });
-      
-      // Use the DOCUMENTS_BUCKET_ID constant for all storage operations
+      // Use the constant bucket ID directly
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
         .upload(filePath, file, fileOptions);
@@ -105,7 +88,7 @@ export const uploadDocument = async (
       
       console.log('File uploaded successfully:', uploadData);
       
-      // Get public URL for the uploaded file using the same bucket ID constant
+      // Get public URL for the uploaded file 
       const { data: { publicUrl } } = supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
         .getPublicUrl(filePath);
@@ -115,11 +98,11 @@ export const uploadDocument = async (
       // Now insert document metadata to Supabase
       const documentData = {
         file_name: file.name,
-        file_type: contentType, // Use our determined content type
+        file_type: contentType,
         file_size: file.size,
         storage_path: filePath,
         entity_type: metadata.entityType,
-        entity_id: entityId, // Use the sanitized entity ID
+        entity_id: entityId,
         tags: metadata.tags || [],
         // Additional metadata fields
         category: metadata.category,
@@ -135,7 +118,6 @@ export const uploadDocument = async (
       
       console.log('Inserting document metadata:', documentData);
       
-      // For this DB call we need to ensure headers are correctly sent
       const { data: insertedData, error: insertError } = await supabase
         .from('documents')
         .insert(documentData)

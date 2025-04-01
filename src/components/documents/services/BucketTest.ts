@@ -14,76 +14,29 @@ interface BucketTestResult {
  */
 export const testBucketAccess = async (): Promise<BucketTestResult> => {
   try {
-    // Get the list of buckets to check for available storage buckets
-    const { data: buckets, error: bucketsError } = await supabase
+    // Simply try to list files in the known bucket instead of listing buckets
+    const { data, error } = await supabase
       .storage
-      .listBuckets();
-    
-    if (bucketsError) {
-      console.error('Error listing buckets:', bucketsError);
-      return { 
-        success: false, 
-        error: bucketsError 
-      };
-    }
-    
-    // Detailed logging of all buckets
-    console.log('Available buckets:', 
-      buckets?.map(b => `ID: ${b.id}, Name: ${b.name}, Public: ${b.public}`));
-    
-    if (!buckets || buckets.length === 0) {
-      console.error('No storage buckets found in the project');
+      .from(DOCUMENTS_BUCKET_ID)
+      .list();
+      
+    if (error) {
+      console.error(`Error accessing files in ${DOCUMENTS_BUCKET_ID} bucket:`, error);
       return {
         success: false,
-        error: 'No storage buckets available'
+        bucketId: DOCUMENTS_BUCKET_ID,
+        bucketName: DOCUMENTS_BUCKET_ID,
+        error: `Cannot access files: ${error.message}`
       };
     }
     
-    // Search for our construction documents bucket
-    const constructionBucket = buckets.find(bucket => bucket.id === DOCUMENTS_BUCKET_ID);
-    
-    if (constructionBucket) {
-      console.log('Found construction documents bucket:', {
-        id: constructionBucket.id,
-        name: constructionBucket.name,
-        isPublic: constructionBucket.public
-      });
-      
-      // Try to list files to verify access permissions
-      const { error: listError } = await supabase
-        .storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .list();
-        
-      if (listError) {
-        console.error(`Error accessing files in ${DOCUMENTS_BUCKET_ID} bucket:`, listError);
-        return {
-          success: false,
-          bucketId: constructionBucket.id,
-          bucketName: constructionBucket.name,
-          error: `Bucket exists but cannot access files: ${listError.message}`
-        };
-      }
-      
-      return {
-        success: true,
-        bucketId: constructionBucket.id,
-        bucketName: constructionBucket.name
-      };
-    }
-    
-    // If we don't find the exact bucket, provide more context
-    console.warn(
-      `Bucket '${DOCUMENTS_BUCKET_ID}' not found. ` + 
-      'Available buckets:', 
-      buckets.map(b => `${b.id} (${b.name})`)
-    );
+    console.log(`Successfully accessed ${DOCUMENTS_BUCKET_ID} bucket with ${data?.length || 0} files`);
     
     return {
-      success: false,
-      error: `Construction documents bucket '${DOCUMENTS_BUCKET_ID}' not found`
+      success: true,
+      bucketId: DOCUMENTS_BUCKET_ID,
+      bucketName: DOCUMENTS_BUCKET_ID
     };
-    
   } catch (error) {
     console.error('Unexpected error testing bucket access:', error);
     return {
