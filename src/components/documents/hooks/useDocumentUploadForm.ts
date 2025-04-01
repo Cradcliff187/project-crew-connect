@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { DocumentMetadata, documentUploadSchema, EntityType } from '../schemas/documentSchema';
 import { DocumentService } from '../services/DocumentService';
+import { DocumentMetadata, documentUploadSchema, EntityType } from '../schemas/documentSchema';
 
 interface UseDocumentUploadFormProps {
   entityType: EntityType;

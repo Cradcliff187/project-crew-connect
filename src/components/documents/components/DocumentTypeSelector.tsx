@@ -1,65 +1,50 @@
 
 import React from 'react';
-import { Control, Controller } from 'react-hook-form';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Control } from 'react-hook-form';
 import { DocumentUploadFormValues, documentCategories } from '../schemas/documentSchema';
 
 interface DocumentTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
+  isReceiptUpload?: boolean;
   instanceId?: string;
 }
 
 const DocumentTypeSelector: React.FC<DocumentTypeSelectorProps> = ({ 
   control,
-  instanceId = 'default-doc-type'
+  isReceiptUpload = false,
+  instanceId = 'default-category'
 }) => {
+  // If it's a receipt upload, we'll force the category to be 'receipt'
+  if (isReceiptUpload) {
+    return null;
+  }
+
   return (
     <FormField
       control={control}
       name="metadata.category"
       render={({ field }) => (
-        <FormItem className="space-y-2">
+        <FormItem className="space-y-1">
           <FormLabel>Document Type</FormLabel>
           <FormControl>
             <RadioGroup
               onValueChange={field.onChange}
               defaultValue={field.value}
-              className="flex flex-col space-y-1"
-              id={`document-type-${instanceId}`}
+              className="flex flex-wrap gap-4"
             >
-              <FormItem className="flex items-center space-x-3 space-y-0">
-                <FormControl>
-                  <RadioGroupItem value="receipt" id={`receipt-${instanceId}`} />
-                </FormControl>
-                <FormLabel htmlFor={`receipt-${instanceId}`} className="font-normal">
-                  Receipt
-                </FormLabel>
-              </FormItem>
-              <FormItem className="flex items-center space-x-3 space-y-0">
-                <FormControl>
-                  <RadioGroupItem value="invoice" id={`invoice-${instanceId}`} />
-                </FormControl>
-                <FormLabel htmlFor={`invoice-${instanceId}`} className="font-normal">
-                  Invoice
-                </FormLabel>
-              </FormItem>
-              <FormItem className="flex items-center space-x-3 space-y-0">
-                <FormControl>
-                  <RadioGroupItem value="contract" id={`contract-${instanceId}`} />
-                </FormControl>
-                <FormLabel htmlFor={`contract-${instanceId}`} className="font-normal">
-                  Contract
-                </FormLabel>
-              </FormItem>
-              <FormItem className="flex items-center space-x-3 space-y-0">
-                <FormControl>
-                  <RadioGroupItem value="other" id={`other-${instanceId}`} />
-                </FormControl>
-                <FormLabel htmlFor={`other-${instanceId}`} className="font-normal">
-                  Other
-                </FormLabel>
-              </FormItem>
+              {documentCategories.map((category) => (
+                <div key={category} className="flex items-center space-x-2">
+                  <RadioGroupItem value={category} id={`${instanceId}-category-${category}`} />
+                  <label 
+                    htmlFor={`${instanceId}-category-${category}`} 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    {category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ')}
+                  </label>
+                </div>
+              ))}
             </RadioGroup>
           </FormControl>
           <FormMessage />
@@ -69,4 +54,4 @@ const DocumentTypeSelector: React.FC<DocumentTypeSelectorProps> = ({
   );
 };
 
-export default React.memo(DocumentTypeSelector);
+export default DocumentTypeSelector;
