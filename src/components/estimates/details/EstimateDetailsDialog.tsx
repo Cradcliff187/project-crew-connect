@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +13,8 @@ import EstimateStatusManager from '../detail/EstimateStatusManager';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { FileUp } from 'lucide-react';
+import EstimateRevisionDialog from '../detail/dialogs/EstimateRevisionDialog';
 
 type EstimateDetailsDialogProps = {
   estimate: {
@@ -47,6 +50,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("details");
   const [devMode, setDevMode] = useState(false);
+  const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
   
   const formatDate = (dateString: string) => {
     try {
@@ -71,6 +75,9 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
     }
   };
 
+  // Determine if the create revision button should be shown
+  const canCreateRevision = ['draft', 'sent', 'pending', 'approved', 'rejected'].includes(estimate.status);
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden p-0 flex flex-col">
@@ -80,6 +87,18 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
             <p className="text-white/80 text-sm">Client: {estimate.client}</p>
           </div>
           <div className="flex items-center space-x-3">
+            {canCreateRevision && (devMode || estimate.status !== 'approved') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRevisionDialogOpen(true)}
+                className="flex items-center bg-white/10 hover:bg-white/20 text-white border-white/20"
+              >
+                <FileUp className="h-4 w-4 mr-1" />
+                Create Revision
+              </Button>
+            )}
+            
             <EstimateStatusManager
               estimateId={estimate.id}
               currentStatus={estimate.status}
@@ -152,6 +171,14 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsDialogProps> = ({
             </TabsContent>
           </div>
         </Tabs>
+        
+        <EstimateRevisionDialog
+          open={revisionDialogOpen}
+          onOpenChange={setRevisionDialogOpen}
+          estimateId={estimate.id}
+          currentVersion={estimate.versions || 1}
+          onSuccess={handleStatusChange}
+        />
       </DialogContent>
     </Dialog>
   );
