@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -60,12 +61,14 @@ export const useDocumentUploadForm = ({
     mode: 'onChange'
   });
 
-  // Memoize the file selection handler
+  // Memoize the file selection handler to prevent recreating on each render
   const handleFileSelect = useCallback((files: File[]) => {
     if (!files.length) return;
     
+    // Update the form value
     form.setValue('files', files, { shouldValidate: true });
     
+    // Create a preview URL for images
     if (files[0].type.startsWith('image/')) {
       const previewUrl = URL.createObjectURL(files[0]);
       setPreviewURL(previewUrl);
@@ -74,19 +77,26 @@ export const useDocumentUploadForm = ({
     }
   }, [form]);
 
-  // Use debounced values for the watchers to prevent excessive re-renders
+  // Use debounced values for form watches to prevent excessive re-renders
   const watchIsExpense = useDebounce(form.watch('metadata.isExpense'), 300);
   const watchVendorType = useDebounce(form.watch('metadata.vendorType'), 300);
   const watchCategory = useDebounce(form.watch('metadata.category'), 300);
   const watchExpenseType = useDebounce(form.watch('metadata.expenseType'), 300);
+  
+  // Don't debounce files as we need immediate feedback
   const watchFiles = form.watch('files');
 
-  // Memoize the submit handler
+  // Memoize the submit handler to prevent recreation on each render
   const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
-    if (isUploading) return; // Prevent double submissions
+    if (isUploading) return; // Prevent multiple simultaneous submissions
     
     try {
       setIsUploading(true);
+      
+      // Only log in development environment
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Submitting document upload form', data);
+      }
       
       const result = await uploadDocument(data);
       
@@ -104,6 +114,7 @@ export const useDocumentUploadForm = ({
       // Reset form state
       form.reset();
       
+      // Clean up preview URL if it exists
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
         setPreviewURL(null);
@@ -125,7 +136,7 @@ export const useDocumentUploadForm = ({
     }
   }, [form, isReceiptUpload, isUploading, onSuccess, previewURL]);
 
-  // Initialize form values only once
+  // Initialize form values only once - memoized to prevent unnecessary re-renders
   const initializeForm = useCallback(() => {
     if (isFormInitialized) return;
 
@@ -140,6 +151,7 @@ export const useDocumentUploadForm = ({
       setShowVendorSelector(true);
     }
     
+    // Apply prefill data if available - optimized to only run once
     if (prefillData) {
       if (prefillData.amount) {
         form.setValue('metadata.amount', prefillData.amount);
@@ -162,7 +174,14 @@ export const useDocumentUploadForm = ({
   // Run initialization once on mount
   useEffect(() => {
     initializeForm();
-  }, [initializeForm]);
+    
+    // Cleanup function for preview URL
+    return () => {
+      if (previewURL) {
+        URL.revokeObjectURL(previewURL);
+      }
+    };
+  }, [initializeForm, previewURL]);
 
   // Create stable cancel handler
   const handleCancel = useCallback(() => {

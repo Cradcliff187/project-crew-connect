@@ -50,6 +50,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     handleFileSelect,
     onSubmit,
     initializeForm,
+    handleCancel,
     watchIsExpense,
     watchVendorType,
     watchFiles,
@@ -67,14 +68,14 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // Initialize form with prefill data if available
   useEffect(() => {
     initializeForm();
-  }, [isReceiptUpload, prefillData, initializeForm]);
+  }, [initializeForm]);
 
   // Auto-show vendor selector when receipt category is selected
   useEffect(() => {
     if (watchCategory === 'receipt' || watchCategory === 'invoice') {
       setShowVendorSelector(true);
     }
-  }, [watchCategory]);
+  }, [watchCategory, setShowVendorSelector]);
 
   // Handle capture from mobile device
   const handleMobileCapture = useCallback((file: File) => {
@@ -85,19 +86,34 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // If prefill data is available and it's a receipt upload, simplify the UI
   const simplifiedUpload = isReceiptUpload && prefillData;
 
-  // Handle form submission with event prevention
+  // Handle form submission with explicit event prevention
   const handleFormSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault(); // Prevent event bubbling to parent forms
-    e.stopPropagation(); // Stop propagation
+    // Always prevent default to handle submission manually
+    e.preventDefault(); 
+    
+    // Stop propagation if requested (prevents bubbling to parent forms)
+    if (preventFormPropagation) {
+      e.stopPropagation();
+    }
     
     // Use the form submission handler from the custom hook
     form.handleSubmit((data) => {
       onSubmit(data);
     })(e);
-  }, [form, onSubmit]);
+  }, [form, onSubmit, preventFormPropagation]);
+
+  // Click handler for buttons to prevent event bubbling
+  const handleButtonClick = useCallback((e: React.MouseEvent) => {
+    if (preventFormPropagation) {
+      e.stopPropagation();
+    }
+  }, [preventFormPropagation]);
 
   return (
-    <Card className="w-full" onClick={preventFormPropagation ? (e) => e.stopPropagation() : undefined}>
+    <Card 
+      className="w-full"
+      onClick={preventFormPropagation ? (e) => e.stopPropagation() : undefined}
+    >
       {!simplifiedUpload && (
         <CardHeader>
           <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
@@ -154,7 +170,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  onCancel();
+                  handleCancel();
                 }}
               >
                 Cancel
@@ -164,12 +180,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               type="submit" 
               className="bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isUploading || watchFiles.length === 0}
-              onClick={(e) => {
-                // Prevent the click from bubbling up to parent forms
-                if (preventFormPropagation) {
-                  e.stopPropagation();
-                }
-              }}
+              onClick={handleButtonClick}
             >
               {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
             </Button>
