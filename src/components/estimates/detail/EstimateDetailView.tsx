@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusType } from '@/types/common';
 import EstimateDetailHeader from './EstimateDetailHeader';
 import EstimateDetailContent from './EstimateDetailContent';
 import EstimateDeleteDialog from './dialogs/EstimateDeleteDialog';
 import EstimateConvertDialog from './dialogs/EstimateConvertDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EstimateDetailViewProps {
   data: {
@@ -48,6 +49,25 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
 }) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState(1);
+
+  useEffect(() => {
+    // Get the current version number
+    const fetchCurrentVersion = async () => {
+      const { data: revisions, error } = await supabase
+        .from('estimate_revisions')
+        .select('version')
+        .eq('estimate_id', data.estimateid)
+        .eq('is_current', true)
+        .single();
+      
+      if (revisions && !error) {
+        setCurrentVersion(revisions.version);
+      }
+    };
+    
+    fetchCurrentVersion();
+  }, [data.estimateid]);
 
   const handleDelete = () => {
     if (onDelete) {
@@ -66,6 +86,7 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
     <div className="space-y-6">
       <EstimateDetailHeader 
         data={data}
+        currentVersion={currentVersion}
         onEdit={onEdit}
         onDelete={() => setDeleteDialogOpen(true)}
         onConvert={() => setConvertDialogOpen(true)}

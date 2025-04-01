@@ -1,5 +1,4 @@
-
-import { FileText, Plus, Eye, Edit, Copy, ArrowRight, Download, Trash2 } from 'lucide-react';
+import { FileText, Plus, Eye, Edit, Copy, ArrowRight, Download, Trash2, FileUp } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,10 +48,8 @@ const EstimatesTable = ({
     estimate.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Function to handle creating a new revision
   const handleCreateNewVersion = async (estimate: EstimateType) => {
     try {
-      // Check if the estimate is in a state where creating a new version is allowed
       if (estimate.status !== 'draft' && estimate.status !== 'sent' && estimate.status !== 'pending') {
         toast({
           title: "Cannot create new version",
@@ -62,9 +59,11 @@ const EstimatesTable = ({
         return;
       }
       
-      console.log(`Creating new version for estimate: ${estimate.id}`);
+      toast({
+        title: "Creating new revision...",
+        description: "Please wait while we create a new revision for this estimate.",
+      });
       
-      // Get the current version number
       const { data: revisions, error: revisionsError } = await supabase
         .from('estimate_revisions')
         .select('version, id')
@@ -77,12 +76,8 @@ const EstimatesTable = ({
       }
       
       const currentVersion = revisions && revisions.length > 0 ? revisions[0].version : 0;
-      const prevRevisionId = revisions && revisions.length > 0 ? revisions[0].id : null;
       const newVersion = currentVersion + 1;
       
-      console.log(`Current version: ${currentVersion}, Creating version: ${newVersion}`);
-      
-      // Create a new revision
       const { data: newRevision, error: revisionError } = await supabase
         .from('estimate_revisions')
         .insert({
@@ -100,47 +95,6 @@ const EstimatesTable = ({
         throw revisionError || new Error('Failed to create new revision');
       }
       
-      console.log(`Created new revision with ID: ${newRevision.id}`);
-      
-      // Copy items from previous revision to new revision
-      if (prevRevisionId) {
-        const { data: prevItems, error: prevItemsError } = await supabase
-          .from('estimate_items')
-          .select('*')
-          .eq('estimate_id', estimate.id)
-          .eq('revision_id', prevRevisionId);
-        
-        if (prevItemsError) {
-          throw prevItemsError;
-        }
-        
-        console.log(`Found ${prevItems?.length || 0} items to copy from previous revision`);
-        
-        if (prevItems && prevItems.length > 0) {
-          // Prepare items for the new revision
-          const newItems = prevItems.map(item => {
-            const { id, created_at, updated_at, ...rest } = item;
-            return {
-              ...rest,
-              revision_id: newRevision.id,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-          });
-          
-          const { error: insertError } = await supabase
-            .from('estimate_items')
-            .insert(newItems);
-          
-          if (insertError) {
-            throw insertError;
-          }
-          
-          console.log(`Copied ${newItems.length} items to the new revision`);
-        }
-      }
-      
-      // Update the estimate status to draft if it was sent or pending
       if (estimate.status === 'sent' || estimate.status === 'pending') {
         const { error: updateError } = await supabase
           .from('estimates')
@@ -153,17 +107,14 @@ const EstimatesTable = ({
         if (updateError) {
           throw updateError;
         }
-        
-        console.log(`Updated estimate ${estimate.id} status to draft`);
       }
       
       toast({
-        title: "New version created",
+        title: "New revision created",
         description: `Created version ${newVersion} of the estimate.`,
         variant: "default"
       });
       
-      // Refresh the estimates list
       if (onRefreshEstimates) {
         onRefreshEstimates();
       }
@@ -178,7 +129,6 @@ const EstimatesTable = ({
     }
   };
   
-  // Function to handle duplicating an estimate
   const handleDuplicateEstimate = async (estimate: EstimateType) => {
     try {
       toast({
@@ -186,9 +136,6 @@ const EstimatesTable = ({
         description: "Please wait while we duplicate the estimate...",
       });
       
-      console.log(`Duplicating estimate: ${estimate.id}`);
-      
-      // Get the original estimate details
       const { data: originalEstimate, error: estimateError } = await supabase
         .from('estimates')
         .select('*')
@@ -199,9 +146,6 @@ const EstimatesTable = ({
         throw estimateError || new Error(`No estimate found with ID ${estimate.id}`);
       }
       
-      console.log('Found estimate to duplicate:', originalEstimate.estimateid);
-      
-      // Create a new estimate based on the original
       const newEstimateData = {
         projectname: `${originalEstimate.projectname} (Copy)`,
         "job description": originalEstimate["job description"],
@@ -226,9 +170,6 @@ const EstimatesTable = ({
         throw createError || new Error('Failed to create new estimate');
       }
       
-      console.log('Created new estimate with ID:', newEstimate.estimateid);
-      
-      // Create a new revision for the new estimate
       const { data: newRevision, error: revisionError } = await supabase
         .from('estimate_revisions')
         .insert({
@@ -245,9 +186,6 @@ const EstimatesTable = ({
         throw revisionError || new Error('Failed to create estimate revision');
       }
       
-      console.log('Created new revision with ID:', newRevision.id);
-      
-      // Get current revision for the original estimate
       const { data: currentRevision, error: getCurrentError } = await supabase
         .from('estimate_revisions')
         .select('id')
@@ -260,10 +198,8 @@ const EstimatesTable = ({
       }
       
       const currentRevisionId = currentRevision?.id;
-      console.log('Current revision ID for original estimate:', currentRevisionId);
       
-      // Get original estimate items to duplicate
-      let query = supabase
+      const query = supabase
         .from('estimate_items')
         .select('*')
         .eq('estimate_id', estimate.id);
@@ -278,40 +214,32 @@ const EstimatesTable = ({
         throw itemsError;
       }
       
-      console.log(`Found ${originalItems?.length || 0} items to copy`);
+      const newItems = originalItems.map(item => ({
+        estimate_id: newEstimate.estimateid,
+        revision_id: newRevision.id,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+        cost: item.cost,
+        markup_percentage: item.markup_percentage,
+        markup_amount: item.markup_amount,
+        vendor_id: item.vendor_id,
+        subcontractor_id: item.subcontractor_id,
+        item_type: item.item_type,
+        document_id: item.document_id,
+        gross_margin: item.gross_margin,
+        gross_margin_percentage: item.gross_margin_percentage
+      }));
       
-      // Copy items to the new estimate
-      if (originalItems && originalItems.length > 0) {
-        const newItems = originalItems.map(item => ({
-          estimate_id: newEstimate.estimateid,
-          revision_id: newRevision.id,
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.total_price,
-          cost: item.cost,
-          markup_percentage: item.markup_percentage,
-          markup_amount: item.markup_amount,
-          vendor_id: item.vendor_id,
-          subcontractor_id: item.subcontractor_id,
-          item_type: item.item_type,
-          document_id: item.document_id,
-          gross_margin: item.gross_margin,
-          gross_margin_percentage: item.gross_margin_percentage
-        }));
-        
-        const { error: copyItemsError } = await supabase
-          .from('estimate_items')
-          .insert(newItems);
+      const { error: copyItemsError } = await supabase
+        .from('estimate_items')
+        .insert(newItems);
           
-        if (copyItemsError) {
-          throw copyItemsError;
-        }
-        
-        console.log(`Copied ${newItems.length} items to new estimate`);
+      if (copyItemsError) {
+        throw copyItemsError;
       }
       
-      // Copy document associations if any
       const { data: documents, error: docsError } = await supabase
         .from('documents')
         .select('document_id, file_name, storage_path, category, tags, notes')
@@ -322,29 +250,22 @@ const EstimatesTable = ({
         throw docsError;
       }
       
-      console.log(`Found ${documents?.length || 0} documents to associate`);
+      const documentsToInsert = documents.map(doc => ({
+        entity_id: newEstimate.estimateid,
+        entity_type: 'ESTIMATE',
+        file_name: doc.file_name,
+        storage_path: doc.storage_path,
+        category: doc.category,
+        tags: doc.tags,
+        notes: doc.notes
+      }));
       
-      // Associate documents with the new estimate
-      if (documents && documents.length > 0) {
-        const documentsToInsert = documents.map(doc => ({
-          entity_id: newEstimate.estimateid,
-          entity_type: 'ESTIMATE',
-          file_name: doc.file_name,
-          storage_path: doc.storage_path,
-          category: doc.category,
-          tags: doc.tags,
-          notes: doc.notes
-        }));
-        
-        const { error: docInsertError } = await supabase
-          .from('documents')
-          .insert(documentsToInsert);
+      const { error: docInsertError } = await supabase
+        .from('documents')
+        .insert(documentsToInsert);
           
-        if (docInsertError) {
-          throw docInsertError;
-        }
-        
-        console.log(`Associated ${documentsToInsert.length} documents with new estimate`);
+      if (docInsertError) {
+        throw docInsertError;
       }
       
       toast({
@@ -353,7 +274,6 @@ const EstimatesTable = ({
         variant: "default"
       });
       
-      // Refresh the estimates list
       if (onRefreshEstimates) {
         onRefreshEstimates();
       }
@@ -381,16 +301,21 @@ const EstimatesTable = ({
             label: 'Edit estimate',
             icon: <Edit className="w-4 h-4" />,
             onClick: (e) => console.log('Edit estimate', estimate.id)
+          }
+        ]
+      },
+      {
+        label: 'Versioning',
+        items: [
+          {
+            label: 'Create new revision',
+            icon: <FileUp className="w-4 h-4" />,
+            onClick: (e) => handleCreateNewVersion(estimate)
           },
           {
-            label: 'Duplicate',
+            label: 'Duplicate estimate',
             icon: <Copy className="w-4 h-4" />,
             onClick: (e) => handleDuplicateEstimate(estimate)
-          },
-          {
-            label: 'Create new version',
-            icon: <Plus className="w-4 h-4" />,
-            onClick: (e) => handleCreateNewVersion(estimate)
           }
         ]
       },
