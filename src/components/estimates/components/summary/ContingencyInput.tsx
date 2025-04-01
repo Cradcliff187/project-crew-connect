@@ -19,7 +19,7 @@ const ContingencyInput = () => {
   }, 0);
   
   const contingencyPercentage = parseFloat(form.watch('contingency_percentage') || '0');
-  const contingencyAmount = (totalBeforeContingency * contingencyPercentage) / 100;
+  const contingencyAmount = totalBeforeContingency * (contingencyPercentage / 100);
 
   return (
     <div className="flex items-center gap-4">

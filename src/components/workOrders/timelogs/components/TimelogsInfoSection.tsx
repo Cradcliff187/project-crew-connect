@@ -27,7 +27,7 @@ interface TimelogsInfoSectionProps {
   onTimeLogAdded: () => void;
 }
 
-export const TimelogsInfoSection = ({
+const TimelogsInfoSection = ({
   timelogs,
   loading,
   employees,
@@ -105,3 +105,5 @@ export const TimelogsInfoSection = ({
     </Card>
   );
 };
+
+export default TimelogsInfoSection;

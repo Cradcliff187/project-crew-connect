@@ -1,70 +1,85 @@
 
+import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 
-const LocationFields = () => {
+interface LocationFieldsProps {
+  selectedCustomerAddress?: string | null;
+}
+
+const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress }) => {
   const form = useFormContext<EstimateFormValues>();
-  const showSiteLocation = form.watch('showSiteLocation');
-
-  // Only render if site location should be shown
-  if (!showSiteLocation) return null;
-
+  
   return (
-    <div className="space-y-2">
-      <h3 className="text-lg font-medium">Site Location</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold mt-8 mb-4">Project Location</h3>
+      
+      {selectedCustomerAddress && (
+        <div className="p-3 bg-gray-50 rounded-md border mb-4">
+          <p className="text-sm text-gray-700">
+            <span className="font-semibold">Customer Address:</span> {selectedCustomerAddress}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            You can use the customer address or specify a different location below.
+          </p>
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
-          name="location.address"
+          name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Address</FormLabel>
+              <FormLabel>Street Address</FormLabel>
               <FormControl>
-                <Input placeholder="Enter address" {...field} />
+                <Input placeholder="Street address" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
+        
         <FormField
           control={form.control}
-          name="location.city"
+          name="city"
           render={({ field }) => (
             <FormItem>
               <FormLabel>City</FormLabel>
               <FormControl>
-                <Input placeholder="Enter city" {...field} />
+                <Input placeholder="City" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
-          name="location.state"
+          name="state"
           render={({ field }) => (
             <FormItem>
               <FormLabel>State</FormLabel>
               <FormControl>
-                <Input placeholder="Enter state" {...field} />
+                <Input placeholder="State" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
+        
         <FormField
           control={form.control}
-          name="location.zip"
+          name="zip"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>ZIP Code</FormLabel>
+              <FormLabel>Zip Code</FormLabel>
               <FormControl>
-                <Input placeholder="Enter ZIP code" {...field} />
+                <Input placeholder="Zip code" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

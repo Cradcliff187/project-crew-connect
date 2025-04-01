@@ -81,13 +81,31 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
+      // Get the current time for start/end time
+      const currentHour = new Date().getHours();
+      const currentMinute = new Date().getMinutes();
+      
+      // Create default start and end times based on hours worked
+      const startTime = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+      
+      // Calculate end time (simple approach for now)
+      const endHour = Math.min(currentHour + Math.floor(values.hours), 23);
+      const endMinute = currentMinute + Math.round((values.hours % 1) * 60);
+      const adjustedEndHour = endMinute >= 60 ? endHour + 1 : endHour;
+      const adjustedEndMinute = endMinute >= 60 ? endMinute - 60 : endMinute;
+      
+      const endTime = `${adjustedEndHour.toString().padStart(2, '0')}:${adjustedEndMinute.toString().padStart(2, '0')}`;
+      
       const timeEntryData = {
         entity_type: 'work_order',
         entity_id: workOrderId,
         date_worked: format(values.date, 'yyyy-MM-dd'),
+        start_time: startTime,
+        end_time: endTime,
         hours_worked: values.hours,
         notes: values.description || null,
         employee_id: values.employee_id || null,
+        has_receipts: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

@@ -1,108 +1,48 @@
 
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { X, FileText, Save } from 'lucide-react';
 
 interface FormActionsProps {
   onCancel: () => void;
-  onPrevious?: () => void;
-  onNext?: (e?: React.MouseEvent) => void;
-  isLastStep?: boolean;
-  currentStep?: string;
-  onPreview?: (e?: React.MouseEvent) => void;
-  isPreviewStep?: boolean;
-  onSubmit?: (e?: React.FormEvent) => void;
+  onPreview: (e?: React.MouseEvent) => void;
+  isPreviewStep: boolean;
+  onSubmit?: () => void;
   isSubmitting?: boolean;
 }
 
-const FormActions = ({ 
-  onCancel, 
-  onPrevious, 
-  onNext, 
-  isLastStep = false,
-  currentStep,
+const FormActions: React.FC<FormActionsProps> = ({
+  onCancel,
   onPreview,
-  isPreviewStep = false,
+  isPreviewStep,
   onSubmit,
   isSubmitting = false
-}: FormActionsProps) => {
-  // If we're in the multi-step mode
-  if (currentStep) {
-    return (
-      <div className="flex justify-between pt-4 border-t">
-        <div>
-          {onPrevious && (
-            <Button type="button" variant="outline" onClick={onPrevious}>
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Previous
-            </Button>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          
-          {isLastStep && onSubmit ? (
-            <Button 
-              type="button" 
-              className="bg-[#0485ea] hover:bg-[#0373ce] min-w-[120px]" 
-              onClick={(e) => onSubmit(e)}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting
-                </>
-              ) : (
-                'Save Estimate'
-              )}
-            </Button>
-          ) : onNext ? (
-            <Button 
-              type="button" 
-              className="bg-[#0485ea] hover:bg-[#0373ce]" 
-              onClick={(e) => onNext(e)}
-            >
-              Next
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
-  // Legacy mode for preview step
+}) => {
   return (
-    <div className="flex justify-end gap-2 pt-4 border-t">
+    <div className="flex justify-end mt-6 space-x-2">
       <Button type="button" variant="outline" onClick={onCancel}>
+        <X className="h-4 w-4 mr-2" />
         Cancel
       </Button>
-      {onPreview && !isPreviewStep && (
+      
+      {!isPreviewStep ? (
         <Button 
           type="button" 
-          className="bg-[#0485ea] hover:bg-[#0373ce]" 
-          onClick={(e) => onPreview(e)}
+          onClick={onPreview}
+          className="bg-[#0485ea] hover:bg-[#0375d1]"
         >
-          Preview Estimate
+          <FileText className="h-4 w-4 mr-2" />
+          Preview
         </Button>
-      )}
-      {isPreviewStep && onSubmit && (
-        <Button 
-          type="button" 
-          className="bg-[#0485ea] hover:bg-[#0373ce]"
+      ) : (
+        <Button
+          type="button"
+          onClick={onSubmit}
+          className="bg-[#0485ea] hover:bg-[#0375d1]"
           disabled={isSubmitting}
-          onClick={(e) => onSubmit(e)}
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Submitting
-            </>
-          ) : (
-            'Save Estimate'
-          )}
+          <Save className="h-4 w-4 mr-2" />
+          {isSubmitting ? 'Saving...' : 'Create Estimate'}
         </Button>
       )}
     </div>

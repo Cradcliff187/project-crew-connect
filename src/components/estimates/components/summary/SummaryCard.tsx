@@ -1,60 +1,48 @@
 
 import React from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Card, CardContent } from '@/components/ui/card';
-import SummaryItem from './SummaryItem';
-import ContingencyInput from './ContingencyInput';
+import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 
 interface SummaryCardProps {
-  totalCost: number;
-  totalMarkup: number;
-  subtotal: number;
-  totalGrossMargin: number;
-  overallMarginPercentage: number;
-  contingencyAmount: number;
-  grandTotal: number;
+  contingencyAmount?: number;
 }
 
-const SummaryCard: React.FC<SummaryCardProps> = ({
-  totalCost,
-  totalMarkup,
-  subtotal,
-  totalGrossMargin,
-  overallMarginPercentage,
-  contingencyAmount,
-  grandTotal
-}) => {
+const SummaryCard: React.FC<SummaryCardProps> = ({ contingencyAmount = 0 }) => {
+  const form = useFormContext<EstimateFormValues>();
+  
+  // Calculate totals
+  const items = form.watch('items') || [];
+  const subtotal = items.reduce((sum: number, item: any) => {
+    const cost = parseFloat(item.cost) || 0;
+    const markup = parseFloat(item.markup_percentage) || 0;
+    const markupAmount = cost * (markup / 100);
+    const quantity = parseFloat(item.quantity) || 1;
+    return sum + ((cost + markupAmount) * quantity);
+  }, 0);
+  
+  const total = subtotal + contingencyAmount;
+  
   return (
-    <Card className="bg-white shadow-sm">
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <SummaryItem 
-            label="Total Cost" 
-            value={`$${totalCost.toFixed(2)}`} 
-          />
+    <Card>
+      <CardContent className="p-6">
+        <h4 className="text-lg font-semibold mb-4">Estimate Summary</h4>
+        
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Subtotal:</span>
+            <span>${subtotal.toFixed(2)}</span>
+          </div>
           
-          <SummaryItem 
-            label="Total Markup" 
-            value={`$${totalMarkup.toFixed(2)}`} 
-          />
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Contingency:</span>
+            <span>${contingencyAmount.toFixed(2)}</span>
+          </div>
           
-          <SummaryItem 
-            label="Subtotal (Price)" 
-            value={`$${subtotal.toFixed(2)}`} 
-          />
-          
-          <SummaryItem 
-            label="Gross Margin" 
-            value={`$${totalGrossMargin.toFixed(2)} (${overallMarginPercentage.toFixed(1)}%)`} 
-          />
-          
-          <ContingencyInput contingencyAmount={contingencyAmount} />
-          
-          <SummaryItem 
-            label="Grand Total" 
-            value={`$${grandTotal.toFixed(2)}`}
-            isBold={true}
-            hasBorderTop={true} 
-          />
+          <div className="border-t pt-2 mt-2 flex justify-between font-medium">
+            <span>Total:</span>
+            <span>${total.toFixed(2)}</span>
+          </div>
         </div>
       </CardContent>
     </Card>
