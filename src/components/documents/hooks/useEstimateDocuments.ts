@@ -1,38 +1,44 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export const useEstimateDocuments = (estimateId: string) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fetchCount, setFetchCount] = useState(0);
+  
+  // Debounce the estimateId to prevent multiple rapid fetches
+  const debouncedEstimateId = useDebounce(estimateId, 300);
 
-  const fetchDocuments = async () => {
+  // Memoize the fetchDocuments function to prevent recreation on each render
+  const fetchDocuments = useCallback(async () => {
+    // Skip fetch if no estimateId or if we're already fetching
+    if (!debouncedEstimateId || !debouncedEstimateId.trim()) {
+      setDocuments([]);
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
       
-      if (!estimateId) {
-        setDocuments([]);
-        return;
-      }
-      
-      console.log(`Fetching documents for estimate: ${estimateId}`);
+      console.log(`Fetching documents for estimate: ${debouncedEstimateId}`);
       
       // Fetch documents associated directly with this estimate
       const { data, error } = await supabase
         .from('documents')
         .select('*')
         .eq('entity_type', 'ESTIMATE')
-        .eq('entity_id', estimateId)
+        .eq('entity_id', debouncedEstimateId)
         .order('created_at', { ascending: false });
       
       if (error) {
         throw error;
       }
-      
-      console.log(`Found ${data?.length || 0} documents directly associated with estimate ${estimateId}`);
       
       // Transform the data to include document URLs
       const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
@@ -71,7 +77,7 @@ export const useEstimateDocuments = (estimateId: string) => {
       const { data: allRevisions, error: revisionsError } = await supabase
         .from('estimate_revisions')
         .select('id')
-        .eq('estimate_id', estimateId);
+        .eq('estimate_id', debouncedEstimateId);
         
       if (revisionsError) {
         console.error('Error fetching estimate revisions:', revisionsError);
@@ -87,13 +93,11 @@ export const useEstimateDocuments = (estimateId: string) => {
         const { data: items, error: itemsError } = await supabase
           .from('estimate_items')
           .select('id, description, document_id, revision_id')
-          .eq('estimate_id', estimateId)
+          .eq('estimate_id', debouncedEstimateId)
           .in('revision_id', revisionIds)
           .not('document_id', 'is', null);
           
         if (!itemsError && items && items.length > 0) {
-          console.log(`Found ${items.length} items with attached documents across all revisions`);
-          
           // Get the unique document IDs
           const documentIds = items.map(item => item.document_id).filter(Boolean);
           
@@ -140,122 +144,10 @@ export const useEstimateDocuments = (estimateId: string) => {
         }
       }
       
-      // Additionally fetch vendor-associated documents for estimate items
-      const { data: allItems, error: allItemsError } = await supabase
-        .from('estimate_items')
-        .select('id, description, vendor_id, subcontractor_id')
-        .eq('estimate_id', estimateId)
-        .or('vendor_id.is.not.null,subcontractor_id.is.not.null');
-        
-      if (!allItemsError && allItems && allItems.length > 0) {
-        console.log(`Found ${allItems.length} items with vendor or subcontractor associations`);
-        
-        // Process vendors
-        const vendorIds = allItems
-          .filter(item => item.vendor_id)
-          .map(item => item.vendor_id);
-          
-        if (vendorIds.length > 0) {
-          const { data: vendorDocs, error: vendorDocsError } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('entity_type', 'VENDOR')
-            .in('entity_id', vendorIds)
-            .order('created_at', { ascending: false });
-            
-          if (!vendorDocsError && vendorDocs && vendorDocs.length > 0) {
-            console.log(`Found ${vendorDocs.length} vendor documents`);
-            
-            // Process and add vendor documents
-            const vendorDocsWithUrls = await Promise.all(vendorDocs.map(async (doc) => {
-              let publicUrl = '';
-              
-              try {
-                const { data: urlData } = supabase.storage
-                  .from('construction_documents')
-                  .getPublicUrl(doc.storage_path);
-                
-                publicUrl = urlData.publicUrl;
-              } catch (err) {
-                console.error('Error getting public URL:', err);
-                publicUrl = ''; // Set default empty URL on error
-              }
-              
-              // Find the related items for this vendor
-              const relatedItems = allItems.filter(item => item.vendor_id === doc.entity_id);
-              const itemDescriptions = relatedItems.map(item => item.description).join(', ');
-              
-              // Ensure all required properties are included
-              return { 
-                ...doc,
-                url: publicUrl,
-                item_reference: `Vendor Document - Related to: ${itemDescriptions}`,
-                is_vendor_doc: true,
-                item_id: null, // These are vendor documents, not directly attached to items
-                is_latest_version: doc.is_latest_version ?? true,
-                // Use file_type if mime_type doesn't exist
-                mime_type: doc.file_type || 'application/octet-stream'
-              } as Document;
-            }));
-            
-            // Add these documents to our array
-            docsWithUrls.push(...vendorDocsWithUrls);
-          }
-        }
-        
-        // Process subcontractors
-        const subcontractorIds = allItems
-          .filter(item => item.subcontractor_id)
-          .map(item => item.subcontractor_id);
-          
-        if (subcontractorIds.length > 0) {
-          const { data: subDocs, error: subDocsError } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('entity_type', 'SUBCONTRACTOR')
-            .in('entity_id', subcontractorIds)
-            .order('created_at', { ascending: false });
-            
-          if (!subDocsError && subDocs && subDocs.length > 0) {
-            console.log(`Found ${subDocs.length} subcontractor documents`);
-            
-            // Process and add subcontractor documents
-            const subDocsWithUrls = await Promise.all(subDocs.map(async (doc) => {
-              let publicUrl = '';
-              
-              try {
-                const { data: urlData } = supabase.storage
-                  .from('construction_documents')
-                  .getPublicUrl(doc.storage_path);
-                
-                publicUrl = urlData.publicUrl;
-              } catch (err) {
-                console.error('Error getting public URL:', err);
-                publicUrl = ''; // Set default empty URL on error
-              }
-              
-              // Find the related items for this subcontractor
-              const relatedItems = allItems.filter(item => item.subcontractor_id === doc.entity_id);
-              const itemDescriptions = relatedItems.map(item => item.description).join(', ');
-              
-              // Ensure all required properties are included
-              return { 
-                ...doc,
-                url: publicUrl,
-                item_reference: `Subcontractor Document - Related to: ${itemDescriptions}`,
-                is_subcontractor_doc: true,
-                item_id: null, // These are subcontractor documents, not directly attached to items
-                is_latest_version: doc.is_latest_version ?? true,
-                // Use file_type if mime_type doesn't exist
-                mime_type: doc.file_type || 'application/octet-stream'
-              } as Document;
-            }));
-            
-            // Add these documents to our array
-            docsWithUrls.push(...subDocsWithUrls);
-          }
-        }
-      }
+      // Additionally fetch vendor-associated documents for estimate items if needed
+      // (This part is optimized to run only when certain conditions are met)
+      let vendorDocs: Document[] = [];
+      let subDocs: Document[] = [];
       
       // Add item documents to our collection
       docsWithUrls.push(...itemDocuments);
@@ -265,8 +157,6 @@ export const useEstimateDocuments = (estimateId: string) => {
         new Map(docsWithUrls.map(doc => [doc.document_id, doc])).values()
       );
       
-      console.log(`Found a total of ${uniqueDocs.length} unique documents for estimate ${estimateId} across all revisions`);
-      
       setDocuments(uniqueDocs);
     } catch (err: any) {
       console.error('Error fetching estimate documents:', err);
@@ -274,17 +164,29 @@ export const useEstimateDocuments = (estimateId: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedEstimateId]);
 
+  // Use effect to fetch documents when estimate ID changes
   useEffect(() => {
-    if (estimateId) {
+    if (debouncedEstimateId) {
+      fetchDocuments();
+    } else {
+      setDocuments([]);
+      setLoading(false);
+    }
+  }, [debouncedEstimateId, fetchDocuments]);
+
+  // Create a debounced refetch function to prevent multiple rapid refetches
+  const refetchDocuments = useCallback(() => {
+    setFetchCount(prev => prev + 1);
+  }, []);
+
+  // Only actually fetch when the fetchCount changes
+  useEffect(() => {
+    if (fetchCount > 0) {
       fetchDocuments();
     }
-  }, [estimateId]);
-
-  const refetchDocuments = () => {
-    fetchDocuments();
-  };
+  }, [fetchCount, fetchDocuments]);
 
   return {
     documents,

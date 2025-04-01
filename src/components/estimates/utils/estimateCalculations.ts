@@ -1,16 +1,21 @@
 
 import { EstimateItem } from '../schemas/estimateFormSchema';
 
-// Add logging to help debug calculation issues
+// Add controlled logging to help debug calculation issues
+// Only log when DEBUG_CALCULATIONS is true
+const DEBUG_CALCULATIONS = false;
+
 const logCalculation = (name: string, input: any, result: number) => {
-  console.log(`${name} calculation:`, { input, result });
+  if (DEBUG_CALCULATIONS) {
+    console.log(`${name} calculation:`, { input, result });
+  }
   return result;
 };
 
 // Calculate the total cost for a single item
 export const calculateItemCost = (item: EstimateItem): number => {
   if (!item) {
-    console.warn('calculateItemCost called with undefined item');
+    if (DEBUG_CALCULATIONS) console.warn('calculateItemCost called with undefined item');
     return 0;
   }
   
@@ -22,7 +27,7 @@ export const calculateItemCost = (item: EstimateItem): number => {
 // Calculate the markup amount for a single item
 export const calculateItemMarkup = (item: EstimateItem): number => {
   if (!item) {
-    console.warn('calculateItemMarkup called with undefined item');
+    if (DEBUG_CALCULATIONS) console.warn('calculateItemMarkup called with undefined item');
     return 0;
   }
   
@@ -34,7 +39,7 @@ export const calculateItemMarkup = (item: EstimateItem): number => {
 // Calculate the selling price for a single item
 export const calculateItemPrice = (item: EstimateItem): number => {
   if (!item) {
-    console.warn('calculateItemPrice called with undefined item');
+    if (DEBUG_CALCULATIONS) console.warn('calculateItemPrice called with undefined item');
     return 0;
   }
   
@@ -46,7 +51,7 @@ export const calculateItemPrice = (item: EstimateItem): number => {
 // Calculate the gross margin for a single item
 export const calculateItemGrossMargin = (item: EstimateItem): number => {
   if (!item) {
-    console.warn('calculateItemGrossMargin called with undefined item');
+    if (DEBUG_CALCULATIONS) console.warn('calculateItemGrossMargin called with undefined item');
     return 0;
   }
   
@@ -58,7 +63,7 @@ export const calculateItemGrossMargin = (item: EstimateItem): number => {
 // Calculate the gross margin percentage for a single item
 export const calculateItemGrossMarginPercentage = (item: EstimateItem): number => {
   if (!item) {
-    console.warn('calculateItemGrossMarginPercentage called with undefined item');
+    if (DEBUG_CALCULATIONS) console.warn('calculateItemGrossMarginPercentage called with undefined item');
     return 0;
   }
   
@@ -72,7 +77,7 @@ export const calculateItemGrossMarginPercentage = (item: EstimateItem): number =
 // Calculate the total cost of all items
 export const calculateTotalCost = (items: EstimateItem[]): number => {
   if (!Array.isArray(items)) {
-    console.warn('calculateTotalCost called with non-array items:', items);
+    if (DEBUG_CALCULATIONS) console.warn('calculateTotalCost called with non-array items:', items);
     return 0;
   }
   
@@ -86,7 +91,7 @@ export const calculateTotalCost = (items: EstimateItem[]): number => {
 // Calculate the total markup amount of all items
 export const calculateTotalMarkup = (items: EstimateItem[]): number => {
   if (!Array.isArray(items)) {
-    console.warn('calculateTotalMarkup called with non-array items:', items);
+    if (DEBUG_CALCULATIONS) console.warn('calculateTotalMarkup called with non-array items:', items);
     return 0;
   }
   
@@ -97,12 +102,9 @@ export const calculateTotalMarkup = (items: EstimateItem[]): number => {
   return logCalculation('TotalMarkup', { itemsCount: items.length }, result);
 };
 
-// Calculate the total selling price of all items (subtotal)
+// Rest of utility functions - limited logging
 export const calculateSubtotal = (items: EstimateItem[]): number => {
-  if (!Array.isArray(items)) {
-    console.warn('calculateSubtotal called with non-array items:', items);
-    return 0;
-  }
+  if (!Array.isArray(items)) return 0;
   
   const result = items.reduce((total, item) => {
     return total + calculateItemPrice(item);
@@ -111,12 +113,8 @@ export const calculateSubtotal = (items: EstimateItem[]): number => {
   return logCalculation('Subtotal', { itemsCount: items.length }, result);
 };
 
-// Calculate the total gross margin of all items
 export const calculateTotalGrossMargin = (items: EstimateItem[]): number => {
-  if (!Array.isArray(items)) {
-    console.warn('calculateTotalGrossMargin called with non-array items:', items);
-    return 0;
-  }
+  if (!Array.isArray(items)) return 0;
   
   const result = items.reduce((total, item) => {
     return total + calculateItemGrossMargin(item);
@@ -125,12 +123,8 @@ export const calculateTotalGrossMargin = (items: EstimateItem[]): number => {
   return logCalculation('TotalGrossMargin', { itemsCount: items.length }, result);
 };
 
-// Calculate the overall gross margin percentage
 export const calculateOverallGrossMarginPercentage = (items: EstimateItem[]): number => {
-  if (!Array.isArray(items)) {
-    console.warn('calculateOverallGrossMarginPercentage called with non-array items:', items);
-    return 0;
-  }
+  if (!Array.isArray(items)) return 0;
   
   const subtotal = calculateSubtotal(items);
   const totalGrossMargin = calculateTotalGrossMargin(items);
@@ -141,15 +135,11 @@ export const calculateOverallGrossMarginPercentage = (items: EstimateItem[]): nu
   return logCalculation('OverallGrossMarginPercentage', { totalGrossMargin, subtotal }, result);
 };
 
-// Calculate contingency amount based on the subtotal
 export const calculateContingencyAmount = (
   items: EstimateItem[],
   contingencyPercentage: string
 ): number => {
-  if (!Array.isArray(items)) {
-    console.warn('calculateContingencyAmount called with non-array items:', items);
-    return 0;
-  }
+  if (!Array.isArray(items)) return 0;
   
   const totalAmount = calculateSubtotal(items);
   const contingencyPercentageNum = parseFloat(contingencyPercentage) || 0;
@@ -158,15 +148,11 @@ export const calculateContingencyAmount = (
   return logCalculation('ContingencyAmount', { totalAmount, contingencyPercentageNum }, result);
 };
 
-// Calculate the grand total (subtotal + contingency)
 export const calculateGrandTotal = (
   items: EstimateItem[],
   contingencyPercentage: string
 ): number => {
-  if (!Array.isArray(items)) {
-    console.warn('calculateGrandTotal called with non-array items:', items);
-    return 0;
-  }
+  if (!Array.isArray(items)) return 0;
   
   const result = calculateSubtotal(items) + calculateContingencyAmount(items, contingencyPercentage);
   return logCalculation('GrandTotal', { 
@@ -175,13 +161,12 @@ export const calculateGrandTotal = (
   }, result);
 };
 
-// Calculate the estimate totals
+// Optimized for efficiency - calculates all at once
 export const calculateEstimateTotals = (
   items: EstimateItem[],
   contingencyPercentage: string
 ): { totalPrice: number; contingencyAmount: number; grandTotal: number } => {
   if (!Array.isArray(items)) {
-    console.warn('calculateEstimateTotals called with non-array items:', items);
     return { totalPrice: 0, contingencyAmount: 0, grandTotal: 0 };
   }
   
@@ -201,15 +186,11 @@ export const calculateEstimateTotals = (
   
   const totalPrice = calculateSubtotal(safeItems);
   const contingencyAmount = calculateContingencyAmount(safeItems, contingencyPercentage);
-  const grandTotal = calculateGrandTotal(safeItems, contingencyPercentage);
+  const grandTotal = totalPrice + contingencyAmount;
   
-  const result = {
+  return {
     totalPrice,
     contingencyAmount,
     grandTotal
   };
-  
-  console.log('EstimateTotals calculation result:', result);
-  
-  return result;
 };

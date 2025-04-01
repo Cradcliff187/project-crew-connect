@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 
@@ -22,7 +22,25 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   onSuccess,
   title
 }) => {
+  // If the sheet is not open, don't render the contents to prevent unnecessary calculations
   if (!isOpen) return null;
+
+  // Memoize the success handler to prevent unnecessary re-renders
+  const handleSuccess = useCallback((documentId?: string) => {
+    if (documentId) {
+      console.log(`Document upload successful: ${documentId}`);
+      onSuccess(documentId);
+    } else {
+      console.log('Document upload completed but no ID returned');
+      onClose();
+    }
+  }, [onSuccess, onClose]);
+
+  // Create a stable memoized cancel handler
+  const handleCancel = useCallback(() => {
+    console.log('Document upload canceled');
+    onClose();
+  }, [onClose]);
 
   return (
     <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
@@ -34,12 +52,13 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
         <EnhancedDocumentUpload 
           entityType={entityType}
           entityId={itemId || tempId}
-          onSuccess={onSuccess}
-          onCancel={onClose}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
         />
       )}
     </SheetContent>
   );
 };
 
-export default DocumentUploadSheet;
+// Use React.memo to prevent unnecessary re-renders
+export default React.memo(DocumentUploadSheet);

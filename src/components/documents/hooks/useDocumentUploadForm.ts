@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
@@ -38,6 +38,7 @@ export const useDocumentUploadForm = ({
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
 
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
@@ -57,25 +58,15 @@ export const useDocumentUploadForm = ({
     }
   });
 
-  // Modified bucket check to assume bucket exists if we've created it 
-  // via SQL migration in Supabase
+  // Check bucket only once on mount
   useEffect(() => {
     const checkBucket = async () => {
       try {
-        // First try to test the bucket access
-        const result = await testBucketAccess();
-        if (result.success && result.bucketId) {
-          console.log(`✅ Successfully connected to bucket: ${result.bucketId}`);
-          setBucketInfo({id: result.bucketId, name: result.bucketName || result.bucketId});
-        } else {
-          // If the test fails, we'll still try to proceed assuming the bucket exists
-          // since we've created it in SQL
-          console.warn('⚠️ Could not confirm bucket access, but will attempt uploads:', result.error);
-          setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
-        }
+        // Instead of checking the bucket every time, assume it exists
+        setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
       } catch (error) {
-        console.error('❌ Error testing bucket access:', error);
-        // Assume the bucket exists since we've created it in SQL
+        console.error('❌ Error with bucket access:', error);
+        // Still set the bucket info to avoid blocking uploads
         setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
       }
     };
@@ -83,36 +74,29 @@ export const useDocumentUploadForm = ({
     checkBucket();
   }, []);
 
-  const handleFileSelect = (files: File[]) => {
-    console.log('Files selected in handleFileSelect:', files);
+  // Memoize the file selection handler
+  const handleFileSelect = useCallback((files: File[]) => {
+    if (!files.length) return;
     
     form.setValue('files', files);
     
-    if (files.length > 0 && files[0].type.startsWith('image/')) {
+    if (files[0].type.startsWith('image/')) {
       const previewUrl = URL.createObjectURL(files[0]);
       setPreviewURL(previewUrl);
     } else {
       setPreviewURL(null);
     }
-  };
+  }, [form]);
 
-  const onSubmit = async (data: DocumentUploadFormValues) => {
+  // Memoize the submit handler
+  const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
+    if (isUploading) return; // Prevent double submissions
+    
     try {
       setIsUploading(true);
       setUploadError(null);
       
-      // Always assume the bucket exists since we've created it via SQL
-      // This prevents the "Storage bucket not properly configured" error
-      
-      console.log('Submitting files:', data.files);
-      console.log('File objects detail:', data.files.map(f => ({
-        name: f.name,
-        type: f.type,
-        size: f.size,
-        lastModified: f.lastModified,
-        isFile: f instanceof File
-      })));
-      
+      console.log('Submitting document upload...');
       const result = await uploadDocument(data);
       
       if (!result.success) {
@@ -128,11 +112,15 @@ export const useDocumentUploadForm = ({
       
       // Reset form state
       form.reset();
-      setPreviewURL(null);
+      
+      if (previewURL) {
+        URL.revokeObjectURL(previewURL);
+        setPreviewURL(null);
+      }
       
       // Call success callback with documentId
       if (onSuccess) {
-        console.log('Calling onSuccess with document ID:', result.documentId);
+        console.log('Upload successful, document ID:', result.documentId);
         onSuccess(result.documentId);
       }
       
@@ -145,23 +133,22 @@ export const useDocumentUploadForm = ({
         description: error.message || "There was an error uploading your document.",
         variant: "destructive"
       });
-      
-      // Even on error, callback to parent to clean up UI
-      if (onCancel) {
-        setTimeout(() => {
-          onCancel();
-        }, 2000); // Wait for toast to be visible
-      }
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [form, isReceiptUpload, isUploading, onSuccess, previewURL]);
 
-  const initializeForm = () => {
+  // Initialize form values only once
+  const initializeForm = useCallback(() => {
+    if (isFormInitialized) return;
+    
+    form.setValue('metadata.entityType', entityType);
+    form.setValue('metadata.entityId', entityId || '');
+    
     if (isReceiptUpload) {
       form.setValue('metadata.category', 'receipt');
       form.setValue('metadata.isExpense', true);
-      form.setValue('metadata.expenseType', 'materials'); // Default value
+      form.setValue('metadata.expenseType', 'materials');
       setShowVendorSelector(true);
     }
     
@@ -180,9 +167,16 @@ export const useDocumentUploadForm = ({
         form.setValue('metadata.notes', `Receipt for: ${itemName}`);
       }
     }
-  };
+    
+    setIsFormInitialized(true);
+  }, [entityId, entityType, form, isFormInitialized, isReceiptUpload, prefillData]);
 
-  const handleCancel = () => {
+  // Run initialization once on mount
+  useEffect(() => {
+    initializeForm();
+  }, [initializeForm]);
+
+  const handleCancel = useCallback(() => {
     // Clean up before cancelling
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
@@ -197,7 +191,7 @@ export const useDocumentUploadForm = ({
     if (onCancel) {
       onCancel();
     }
-  };
+  }, [form, onCancel, previewURL]);
 
   return {
     form,

@@ -608,6 +608,7 @@ export type Database = {
           updated_at: string
           uploaded_by: string | null
           vendor_id: string | null
+          vendor_type: string | null
           version: number | null
         }
         Insert: {
@@ -631,6 +632,7 @@ export type Database = {
           updated_at?: string
           uploaded_by?: string | null
           vendor_id?: string | null
+          vendor_type?: string | null
           version?: number | null
         }
         Update: {
@@ -654,6 +656,7 @@ export type Database = {
           updated_at?: string
           uploaded_by?: string | null
           vendor_id?: string | null
+          vendor_type?: string | null
           version?: number | null
         }
         Relationships: [

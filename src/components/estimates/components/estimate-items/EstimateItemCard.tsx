@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -35,7 +35,7 @@ interface EstimateItemCardProps {
   showRemoveButton: boolean;
 }
 
-const EstimateItemCard = ({ 
+const EstimateItemCard = memo(({ 
   index, 
   vendors, 
   subcontractors, 
@@ -48,12 +48,11 @@ const EstimateItemCard = ({
   const [attachedDocument, setAttachedDocument] = useState<{file_name?: string; file_type?: string} | null>(null);
   const form = useFormContext<EstimateFormValues>();
   
-  console.log(`Rendering EstimateItemCard for index ${index} with form values:`, 
-    form.getValues(`items.${index}`));
-  
-  const itemType = form.watch(`items.${index}.item_type`) || 'labor';
-  
-  console.log(`Item type for index ${index}: ${itemType}`);
+  const itemType = useWatch({
+    control: form.control,
+    name: `items.${index}.item_type`,
+    defaultValue: 'labor'
+  });
   
   const cost = useWatch({
     control: form.control,
@@ -97,43 +96,47 @@ const EstimateItemCard = ({
     defaultValue: ''
   });
 
-  const item = { cost, markup_percentage: markupPercentage, quantity };
-  const itemPrice = calculateItemPrice(item);
-  const grossMargin = calculateItemGrossMargin(item);
-  const grossMarginPercentage = calculateItemGrossMarginPercentage(item);
-
-  useEffect(() => {
-    const fetchDocumentInfo = async () => {
-      if (!documentId) {
-        setAttachedDocument(null);
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from('documents')
-        .select('file_name, file_type')
-        .eq('document_id', documentId)
-        .single();
-        
-      if (error) {
-        console.error('Error fetching document:', error);
-        return;
-      }
-      
-      setAttachedDocument(data);
+  const { itemPrice, grossMargin, grossMarginPercentage } = React.useMemo(() => {
+    const item = { cost, markup_percentage: markupPercentage, quantity };
+    return {
+      itemPrice: calculateItemPrice(item),
+      grossMargin: calculateItemGrossMargin(item),
+      grossMarginPercentage: calculateItemGrossMarginPercentage(item)
     };
+  }, [cost, markupPercentage, quantity]);
+
+  const fetchDocumentInfo = useCallback(async () => {
+    if (!documentId) {
+      setAttachedDocument(null);
+      return;
+    }
     
-    fetchDocumentInfo();
+    const { data, error } = await supabase
+      .from('documents')
+      .select('file_name, file_type')
+      .eq('document_id', documentId)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching document:', error);
+      return;
+    }
+    
+    setAttachedDocument(data);
   }, [documentId]);
 
-  const handleDocumentUploadSuccess = (documentId?: string) => {
-    setIsDocumentUploadOpen(false);
-    if (documentId) {
-      form.setValue(`items.${index}.document_id`, documentId);
-    }
-  };
+  useEffect(() => {
+    fetchDocumentInfo();
+  }, [fetchDocumentInfo]);
 
-  const getEntityTypeForDocument = () => {
+  const handleDocumentUploadSuccess = useCallback((docId?: string) => {
+    setIsDocumentUploadOpen(false);
+    if (docId) {
+      form.setValue(`items.${index}.document_id`, docId);
+    }
+  }, [form, index]);
+
+  const getEntityTypeForDocument = useCallback(() => {
     switch (itemType) {
       case 'vendor':
         return 'VENDOR';
@@ -142,9 +145,9 @@ const EstimateItemCard = ({
       default:
         return 'ESTIMATE';
     }
-  };
+  }, [itemType]);
 
-  const getEntityIdForDocument = () => {
+  const getEntityIdForDocument = useCallback(() => {
     const tempId = form.getValues('temp_id') || 'pending';
     
     switch (itemType) {
@@ -155,7 +158,13 @@ const EstimateItemCard = ({
       default:
         return tempId;
     }
-  };
+  }, [form, itemType, vendorId, subcontractorId]);
+
+  const handleAttachClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDocumentUploadOpen(true);
+  }, []);
 
   return (
     <Collapsible
@@ -208,7 +217,7 @@ const EstimateItemCard = ({
                   variant="outline" 
                   size="sm" 
                   className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={handleAttachClick}
                 >
                   <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
                   <span className="hidden sm:inline-block">Attach</span>
@@ -285,6 +294,8 @@ const EstimateItemCard = ({
       </CollapsibleContent>
     </Collapsible>
   );
-};
+});
+
+EstimateItemCard.displayName = 'EstimateItemCard';
 
 export default EstimateItemCard;
