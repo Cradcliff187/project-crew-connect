@@ -64,7 +64,7 @@ export const useEstimateDocuments = (estimateId: string) => {
         
         return { 
           ...doc,
-          url: publicUrl,
+          file_url: publicUrl,
           item_reference: itemDescription || null,
           item_id: null, // Will be populated if this is a line item document
           is_latest_version: doc.is_latest_version ?? true,
@@ -128,7 +128,7 @@ export const useEstimateDocuments = (estimateId: string) => {
                 
                 return { 
                   ...doc,
-                  url: publicUrl,
+                  file_url: publicUrl,
                   item_reference: relatedItem ? `Item: ${relatedItem.description}` : null,
                   item_id: relatedItem ? relatedItem.id : null,
                   revision_id: relatedItem?.revision_id,
@@ -143,11 +143,6 @@ export const useEstimateDocuments = (estimateId: string) => {
           }
         }
       }
-      
-      // Additionally fetch vendor-associated documents for estimate items if needed
-      // (This part is optimized to run only when certain conditions are met)
-      let vendorDocs: Document[] = [];
-      let subDocs: Document[] = [];
       
       // Add item documents to our collection
       docsWithUrls.push(...itemDocuments);

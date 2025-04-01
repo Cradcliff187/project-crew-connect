@@ -99,18 +99,17 @@ export const generatePDF = async (
       
       while (remainingHeight > 0) {
         // Add image portion to current page
-        pdf.addImage(
-          imgData, 
-          'PNG', 
-          marginLeft, 
-          yPosition, 
-          imgWidth, 
-          Math.min(contentHeight, remainingHeight),
-          null,
-          null,
-          null,
-          sourceY / canvas.height
-        );
+        pdf.addImage({
+          imageData: imgData,
+          format: 'PNG',
+          x: marginLeft,
+          y: yPosition,
+          width: imgWidth,
+          height: Math.min(contentHeight, remainingHeight),
+          alias: undefined,
+          compression: 'NONE',
+          rotation: 0
+        });
         
         remainingHeight -= contentHeight;
         sourceY += (contentHeight * canvas.height) / imgHeight;

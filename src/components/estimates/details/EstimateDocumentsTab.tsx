@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, FileText, Share2 } from 'lucide-react';
-import { useEstimateDocuments } from '@/components/estimates/hooks/useEstimateDocumentManager';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import DocumentUploadDialog from '@/components/documents/DocumentUpload';
+import { useEstimateDocuments } from '@/components/documents/hooks/useEstimateDocuments';
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
@@ -17,16 +17,16 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
   onShareDocument
 }) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const { documents, loading, error, fetchDocuments } = useEstimateDocuments(estimateId);
+  const { documents, loading, error, refetchDocuments } = useEstimateDocuments(estimateId);
 
   useEffect(() => {
     if (estimateId) {
-      fetchDocuments();
+      refetchDocuments();
     }
-  }, [estimateId, fetchDocuments]);
+  }, [estimateId, refetchDocuments]);
 
   const handleUploadComplete = () => {
-    fetchDocuments();
+    refetchDocuments();
     setUploadDialogOpen(false);
   };
 
@@ -131,7 +131,7 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
       )}
       
       <DocumentUploadDialog
-        open={uploadDialogOpen}
+        isOpen={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         entityType="ESTIMATE"
         entityId={estimateId}
