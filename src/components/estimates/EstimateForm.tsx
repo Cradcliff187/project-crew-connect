@@ -53,6 +53,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     await submitEstimate(data, customers, onClose);
   };
 
+  // Fixed type error by accepting the MouseEvent parameter
   const handlePreview = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

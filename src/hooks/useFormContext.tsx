@@ -84,6 +84,5 @@ export const FormFallbackProvider: React.FC<FormFallbackProviderProps> = ({ chil
   );
 };
 
-// Also export the useFormFallback hook from the .ts file for backward compatibility
+// Export the useFormFallback hook from the .ts file for backward compatibility
 export * from "./useFormContext";
-
