@@ -62,7 +62,8 @@ export const useEstimateDocuments = (estimateId: string) => {
           item_reference: itemDescription || null,
           item_id: null, // Will be populated if this is a line item document
           is_latest_version: doc.is_latest_version ?? true,
-          mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+          // Use file_type if mime_type doesn't exist
+          mime_type: doc.file_type || 'application/octet-stream'
         } as Document;
       }));
       
@@ -128,7 +129,8 @@ export const useEstimateDocuments = (estimateId: string) => {
                   item_id: relatedItem ? relatedItem.id : null,
                   revision_id: relatedItem?.revision_id,
                   is_latest_version: doc.is_latest_version ?? true,
-                  mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+                  // Use file_type if mime_type doesn't exist
+                  mime_type: doc.file_type || 'application/octet-stream'
                 } as Document;
               }));
               
@@ -191,7 +193,8 @@ export const useEstimateDocuments = (estimateId: string) => {
                 is_vendor_doc: true,
                 item_id: null, // These are vendor documents, not directly attached to items
                 is_latest_version: doc.is_latest_version ?? true,
-                mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+                // Use file_type if mime_type doesn't exist
+                mime_type: doc.file_type || 'application/octet-stream'
               } as Document;
             }));
             
@@ -243,7 +246,8 @@ export const useEstimateDocuments = (estimateId: string) => {
                 is_subcontractor_doc: true,
                 item_id: null, // These are subcontractor documents, not directly attached to items
                 is_latest_version: doc.is_latest_version ?? true,
-                mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+                // Use file_type if mime_type doesn't exist
+                mime_type: doc.file_type || 'application/octet-stream'
               } as Document;
             }));
             
