@@ -1,15 +1,15 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
 import { uploadDocument } from '../services/DocumentUploader';
-import { testBucketAccess } from '../services/BucketTest';
 import { 
   DocumentUploadFormValues, 
   documentUploadSchema, 
   EntityType 
 } from '../schemas/documentSchema';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface UseDocumentUploadFormProps {
   entityType: EntityType;
@@ -36,13 +36,12 @@ export const useDocumentUploadForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
-  const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
-
+  
+  // Create the form with default values
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
-    defaultValues: {
+    defaultValues: useMemo(() => ({
       files: [],
       metadata: {
         category: isReceiptUpload ? 'receipt' : 'other',
@@ -55,24 +54,8 @@ export const useDocumentUploadForm = ({
         vendorType: 'vendor',
         expenseType: 'materials', // Default to materials for receipt uploads
       }
-    }
+    }), [isReceiptUpload, entityType, entityId])
   });
-
-  // Check bucket only once on mount
-  useEffect(() => {
-    const checkBucket = async () => {
-      try {
-        // Instead of checking the bucket every time, assume it exists
-        setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
-      } catch (error) {
-        console.error('❌ Error with bucket access:', error);
-        // Still set the bucket info to avoid blocking uploads
-        setBucketInfo({id: 'construction_documents', name: 'Construction Documents'});
-      }
-    };
-    
-    checkBucket();
-  }, []);
 
   // Memoize the file selection handler
   const handleFileSelect = useCallback((files: File[]) => {
@@ -88,15 +71,20 @@ export const useDocumentUploadForm = ({
     }
   }, [form]);
 
+  // Create stable watchers
+  const watchIsExpense = useDebounce(form.watch('metadata.isExpense'), 300);
+  const watchVendorType = useDebounce(form.watch('metadata.vendorType'), 300);
+  const watchFiles = form.watch('files');
+  const watchCategory = useDebounce(form.watch('metadata.category'), 300);
+  const watchExpenseType = useDebounce(form.watch('metadata.expenseType'), 300);
+
   // Memoize the submit handler
   const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
     if (isUploading) return; // Prevent double submissions
     
     try {
       setIsUploading(true);
-      setUploadError(null);
       
-      console.log('Submitting document upload...');
       const result = await uploadDocument(data);
       
       if (!result.success) {
@@ -120,14 +108,10 @@ export const useDocumentUploadForm = ({
       
       // Call success callback with documentId
       if (onSuccess) {
-        console.log('Upload successful, document ID:', result.documentId);
         onSuccess(result.documentId);
       }
       
     } catch (error: any) {
-      console.error('Upload error:', error);
-      setUploadError(error.message || "There was an error uploading your document.");
-      
       toast({
         title: "Upload failed",
         description: error.message || "There was an error uploading your document.",
@@ -176,6 +160,7 @@ export const useDocumentUploadForm = ({
     initializeForm();
   }, [initializeForm]);
 
+  // Create stable cancel handler
   const handleCancel = useCallback(() => {
     // Clean up before cancelling
     if (previewURL) {
@@ -185,7 +170,6 @@ export const useDocumentUploadForm = ({
     
     // Reset form
     form.reset();
-    setUploadError(null);
     
     // Call parent cancel handler
     if (onCancel) {
@@ -202,13 +186,11 @@ export const useDocumentUploadForm = ({
     handleFileSelect,
     onSubmit,
     initializeForm,
-    bucketInfo,
-    uploadError,
     handleCancel,
-    watchIsExpense: form.watch('metadata.isExpense'),
-    watchVendorType: form.watch('metadata.vendorType'),
-    watchFiles: form.watch('files'),
-    watchCategory: form.watch('metadata.category'),
-    watchExpenseType: form.watch('metadata.expenseType')
+    watchIsExpense,
+    watchVendorType,
+    watchFiles,
+    watchCategory,
+    watchExpenseType
   };
 };

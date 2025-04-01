@@ -11,16 +11,13 @@ import {
   calculateOverallGrossMarginPercentage
 } from '../utils/estimateCalculations';
 import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export const useSummaryCalculations = () => {
   const form = useFormContext<EstimateFormValues>();
   
-  // Use memo to prevent unnecessary logs when the same values are used
-  const formValues = useMemo(() => {
-    return form.getValues();
-  }, [form]);
-  
-  // Fix for error #1: Provide a valid default value for items that matches the expected type
+  // Use useWatch for more efficient watching of form values
+  // This prevents unnecessary recalculation on every render
   const items = useWatch({
     control: form.control,
     name: 'items',
@@ -33,12 +30,15 @@ export const useSummaryCalculations = () => {
     defaultValue: "0"
   });
 
-  // Fix for error #2: Ensure items is treated as an array and handle it safely
-  // Using useMemo to prevent recalculation if items haven't changed
+  // Debounce values to reduce calculation frequency
+  const debouncedItems = useDebounce(items, 300);
+  const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 300);
+
+  // Use useMemo to prevent recalculation if the inputs haven't changed
   const calculationItems: EstimateItem[] = useMemo(() => {
-    if (!Array.isArray(items)) return [];
+    if (!Array.isArray(debouncedItems)) return [];
     
-    return items.map((item: any) => ({
+    return debouncedItems.map((item: any) => ({
       cost: item?.cost || '0',
       markup_percentage: item?.markup_percentage || '0',
       quantity: item?.quantity || '1',
@@ -50,9 +50,9 @@ export const useSummaryCalculations = () => {
       expense_type: item?.expense_type,
       custom_type: item?.custom_type
     }));
-  }, [items]);
+  }, [debouncedItems]);
 
-  // Use memoization to calculate values only when inputs change
+  // Use memoization to calculate values only when the debounced inputs change
   const calculations = useMemo(() => {
     // Calculate all the totals
     const totalCost = calculateTotalCost(calculationItems);
@@ -60,8 +60,8 @@ export const useSummaryCalculations = () => {
     const subtotal = calculateSubtotal(calculationItems);
     const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
     const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
-    const contingencyAmount = calculateContingencyAmount(calculationItems, contingencyPercentage);
-    const grandTotal = calculateGrandTotal(calculationItems, contingencyPercentage);
+    const contingencyAmount = calculateContingencyAmount(calculationItems, debouncedContingencyPercentage);
+    const grandTotal = calculateGrandTotal(calculationItems, debouncedContingencyPercentage);
 
     return {
       totalCost,
@@ -72,7 +72,7 @@ export const useSummaryCalculations = () => {
       contingencyAmount,
       grandTotal
     };
-  }, [calculationItems, contingencyPercentage]);
+  }, [calculationItems, debouncedContingencyPercentage]);
 
   return calculations;
 };

@@ -1,10 +1,10 @@
 
 import { EstimateItem } from '../schemas/estimateFormSchema';
 
-// Add controlled logging to help debug calculation issues
-// Only log when DEBUG_CALCULATIONS is true
+// Set DEBUG_CALCULATIONS to false to disable calculation logging
 const DEBUG_CALCULATIONS = false;
 
+// Function for controlled logging
 const logCalculation = (name: string, input: any, result: number) => {
   if (DEBUG_CALCULATIONS) {
     console.log(`${name} calculation:`, { input, result });
@@ -15,7 +15,6 @@ const logCalculation = (name: string, input: any, result: number) => {
 // Calculate the total cost for a single item
 export const calculateItemCost = (item: EstimateItem): number => {
   if (!item) {
-    if (DEBUG_CALCULATIONS) console.warn('calculateItemCost called with undefined item');
     return 0;
   }
   
@@ -27,7 +26,6 @@ export const calculateItemCost = (item: EstimateItem): number => {
 // Calculate the markup amount for a single item
 export const calculateItemMarkup = (item: EstimateItem): number => {
   if (!item) {
-    if (DEBUG_CALCULATIONS) console.warn('calculateItemMarkup called with undefined item');
     return 0;
   }
   
@@ -39,7 +37,6 @@ export const calculateItemMarkup = (item: EstimateItem): number => {
 // Calculate the selling price for a single item
 export const calculateItemPrice = (item: EstimateItem): number => {
   if (!item) {
-    if (DEBUG_CALCULATIONS) console.warn('calculateItemPrice called with undefined item');
     return 0;
   }
   
@@ -51,7 +48,6 @@ export const calculateItemPrice = (item: EstimateItem): number => {
 // Calculate the gross margin for a single item
 export const calculateItemGrossMargin = (item: EstimateItem): number => {
   if (!item) {
-    if (DEBUG_CALCULATIONS) console.warn('calculateItemGrossMargin called with undefined item');
     return 0;
   }
   
@@ -63,7 +59,6 @@ export const calculateItemGrossMargin = (item: EstimateItem): number => {
 // Calculate the gross margin percentage for a single item
 export const calculateItemGrossMarginPercentage = (item: EstimateItem): number => {
   if (!item) {
-    if (DEBUG_CALCULATIONS) console.warn('calculateItemGrossMarginPercentage called with undefined item');
     return 0;
   }
   
@@ -77,7 +72,6 @@ export const calculateItemGrossMarginPercentage = (item: EstimateItem): number =
 // Calculate the total cost of all items
 export const calculateTotalCost = (items: EstimateItem[]): number => {
   if (!Array.isArray(items)) {
-    if (DEBUG_CALCULATIONS) console.warn('calculateTotalCost called with non-array items:', items);
     return 0;
   }
   
@@ -91,7 +85,6 @@ export const calculateTotalCost = (items: EstimateItem[]): number => {
 // Calculate the total markup amount of all items
 export const calculateTotalMarkup = (items: EstimateItem[]): number => {
   if (!Array.isArray(items)) {
-    if (DEBUG_CALCULATIONS) console.warn('calculateTotalMarkup called with non-array items:', items);
     return 0;
   }
   
@@ -102,7 +95,7 @@ export const calculateTotalMarkup = (items: EstimateItem[]): number => {
   return logCalculation('TotalMarkup', { itemsCount: items.length }, result);
 };
 
-// Rest of utility functions - limited logging
+// Rest of utility functions with limited logging
 export const calculateSubtotal = (items: EstimateItem[]): number => {
   if (!Array.isArray(items)) return 0;
   
@@ -161,7 +154,7 @@ export const calculateGrandTotal = (
   }, result);
 };
 
-// Optimized for efficiency - calculates all at once
+// Optimized calculation function - calculates all at once
 export const calculateEstimateTotals = (
   items: EstimateItem[],
   contingencyPercentage: string

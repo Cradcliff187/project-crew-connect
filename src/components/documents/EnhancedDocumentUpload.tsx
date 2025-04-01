@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form } from '@/components/ui/form';
-import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,6 +25,7 @@ interface EnhancedDocumentUploadProps {
     materialName?: string;
     expenseName?: string;
   };
+  preventFormPropagation?: boolean;
 }
 
 const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
@@ -34,18 +34,11 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   onSuccess,
   onCancel,
   isReceiptUpload = false,
-  prefillData
+  prefillData,
+  preventFormPropagation = false
 }) => {
   const [showMobileCapture, setShowMobileCapture] = useState(false);
   const { isMobile, hasCamera } = useDeviceCapabilities();
-  
-  // Log props for debugging
-  console.log('EnhancedDocumentUpload props:', { 
-    entityType, 
-    entityId, 
-    isReceiptUpload, 
-    prefillData 
-  });
 
   // Use the custom hook for form management
   const {
@@ -74,7 +67,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // Initialize form with prefill data if available
   useEffect(() => {
     initializeForm();
-  }, [isReceiptUpload, prefillData]);
+  }, [isReceiptUpload, prefillData, initializeForm]);
 
   // Auto-show vendor selector when receipt category is selected
   useEffect(() => {
@@ -84,23 +77,27 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   }, [watchCategory]);
 
   // Handle capture from mobile device
-  const handleMobileCapture = (file: File) => {
+  const handleMobileCapture = useCallback((file: File) => {
     handleFileSelect([file]);
     setShowMobileCapture(false);
-  };
+  }, [handleFileSelect]);
 
   // If prefill data is available and it's a receipt upload, simplify the UI
   const simplifiedUpload = isReceiptUpload && prefillData;
 
   // Handle form submission with event prevention
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault(); // Prevent event bubbling to parent forms
     e.stopPropagation(); // Stop propagation
-    form.handleSubmit(onSubmit)(e);
-  };
+    
+    // Use the form submission handler from the custom hook
+    form.handleSubmit((data) => {
+      onSubmit(data);
+    })(e);
+  }, [form, onSubmit]);
 
   return (
-    <Card className="w-full">
+    <Card className="w-full" onClick={preventFormPropagation ? (e) => e.stopPropagation() : undefined}>
       {!simplifiedUpload && (
         <CardHeader>
           <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
@@ -154,7 +151,11 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={onCancel}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onCancel();
+                }}
               >
                 Cancel
               </Button>
@@ -163,6 +164,12 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               type="submit" 
               className="bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isUploading || watchFiles.length === 0}
+              onClick={(e) => {
+                // Prevent the click from bubbling up to parent forms
+                if (preventFormPropagation) {
+                  e.stopPropagation();
+                }
+              }}
             >
               {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
             </Button>
@@ -173,4 +180,4 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   );
 };
 
-export default EnhancedDocumentUpload;
+export default React.memo(EnhancedDocumentUpload);

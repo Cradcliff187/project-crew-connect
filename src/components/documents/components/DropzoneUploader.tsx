@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback, memo } from 'react';
 import { Upload, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -22,18 +22,21 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   watchFiles,
   label = 'Upload Document'
 }) => {
-  // Log to verify component is rendering with correct props
-  console.log('DropzoneUploader rendering with files:', watchFiles);
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Create a memoized file change handler
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       // Ensure we're passing proper File objects
       const fileArray = Array.from(files);
-      console.log('Files selected:', fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
       onFileSelect(fileArray);
     }
-  };
+  }, [onFileSelect]);
+  
+  // Create a memoized click handler
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    document.getElementById('dropzone-file')?.click();
+  }, []);
   
   return (
     <FormField
@@ -49,7 +52,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   "flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
                   watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
                 )}
-                onClick={() => document.getElementById('dropzone-file')?.click()}
+                onClick={handleClick}
               >
                 {previewURL ? (
                   <div className="w-full h-full p-2 flex flex-col items-center justify-center">
@@ -73,10 +76,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                       variant="outline" 
                       size="sm"
                       className="mt-2 border-[#0485ea] text-[#0485ea]"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        document.getElementById('dropzone-file')?.click();
-                      }}
+                      onClick={handleClick}
                     >
                       <FolderOpen className="h-4 w-4 mr-2" />
                       Browse Files
@@ -122,4 +122,5 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   );
 };
 
-export default DropzoneUploader;
+// Use React.memo to prevent unnecessary re-renders
+export default memo(DropzoneUploader);

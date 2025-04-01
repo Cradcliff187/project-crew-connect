@@ -28,22 +28,19 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   // Memoize the success handler to prevent unnecessary re-renders
   const handleSuccess = useCallback((documentId?: string) => {
     if (documentId) {
-      console.log(`Document upload successful: ${documentId}`);
       onSuccess(documentId);
     } else {
-      console.log('Document upload completed but no ID returned');
       onClose();
     }
   }, [onSuccess, onClose]);
 
   // Create a stable memoized cancel handler
   const handleCancel = useCallback(() => {
-    console.log('Document upload canceled');
     onClose();
   }, [onClose]);
 
   return (
-    <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
+    <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" onClick={(e) => e.stopPropagation()}>
       <SheetHeader className="p-6 pb-2">
         <SheetTitle>{title}</SheetTitle>
       </SheetHeader>
@@ -54,6 +51,7 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
           entityId={itemId || tempId}
           onSuccess={handleSuccess}
           onCancel={handleCancel}
+          preventFormPropagation={true}
         />
       )}
     </SheetContent>

@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 import { filterDocumentsByType, categorizeDocuments } from '../components/document-upload/utils';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface UseEstimateDocumentManagerOptions {
   /**
@@ -26,20 +27,22 @@ export function useEstimateDocumentManager(options: UseEstimateDocumentManagerOp
   const [attachedDocuments, setAttachedDocuments] = useState<Document[]>([]);
   const [viewDocument, setViewDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
   
   const form = useFormContext<EstimateFormValues>();
-  const documentIds = form.watch('estimate_documents') || [];
+  const documentIds = useDebounce(form.watch('estimate_documents') || [], 300);
   const tempId = form.watch('temp_id');
 
-  // Fetch documents when document IDs change
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      if (documentIds.length === 0) {
-        setAttachedDocuments([]);
-        return;
-      }
+  // Memoized fetch function
+  const fetchDocuments = useCallback(async () => {
+    if (documentIds.length === 0) {
+      setAttachedDocuments([]);
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
+    setLoading(true);
+    try {
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -52,55 +55,78 @@ export function useEstimateDocumentManager(options: UseEstimateDocumentManagerOp
           description: 'Failed to load attached documents',
           variant: 'destructive',
         });
-        setLoading(false);
-        return;
+      } else {
+        setAttachedDocuments(data || []);
       }
-
-      setAttachedDocuments(data || []);
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    } finally {
       setLoading(false);
-    };
-
-    fetchDocuments();
+    }
   }, [documentIds]);
 
-  const handleDocumentUploadSuccess = (documentId?: string) => {
+  // Fetch documents when documentIds change or fetch is triggered
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments, fetchTrigger]);
+
+  // Handle document upload success
+  const handleDocumentUploadSuccess = useCallback((documentId?: string) => {
     setIsDocumentUploadOpen(false);
     if (documentId) {
       const updatedDocumentIds = [...documentIds, documentId];
-      form.setValue('estimate_documents', updatedDocumentIds);
+      form.setValue('estimate_documents', updatedDocumentIds, {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: false,
+      });
       
       toast({
         title: 'Document attached',
         description: 'Document has been attached to the estimate',
       });
+      
+      // Trigger a re-fetch after updating document IDs
+      setFetchTrigger(prev => prev + 1);
     }
-  };
+  }, [documentIds, form]);
 
-  const handleRemoveDocument = (documentId: string) => {
+  // Handle document removal
+  const handleRemoveDocument = useCallback((documentId: string) => {
     const updatedDocumentIds = documentIds.filter(id => id !== documentId);
-    form.setValue('estimate_documents', updatedDocumentIds);
+    form.setValue('estimate_documents', updatedDocumentIds, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: false,
+    });
     
     toast({
       title: 'Document removed',
       description: 'Document has been removed from the estimate',
     });
-  };
+    
+    // Trigger a re-fetch after updating document IDs
+    setFetchTrigger(prev => prev + 1);
+  }, [documentIds, form]);
 
-  const handleViewDocument = (document: Document) => {
+  // Handle document viewing
+  const handleViewDocument = useCallback((document: Document) => {
     setViewDocument(document);
-  };
+  }, []);
 
-  const closeViewer = () => {
+  // Close document viewer
+  const closeViewer = useCallback(() => {
     setViewDocument(null);
-  };
+  }, []);
 
-  const handleOpenDocumentUpload = (e: React.MouseEvent) => {
+  // Handle opening document upload
+  const handleOpenDocumentUpload = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDocumentUploadOpen(true);
-  };
+  }, []);
   
-  // Process documents for the UI
+  // Process documents for the UI - memoized to prevent unnecessary re-processing
   const filteredDocuments = filterDocumentsByType(attachedDocuments, showLineItemDocuments);
   const documentsByCategory = categorizeDocuments(filteredDocuments);
   
