@@ -1,40 +1,23 @@
 
 import React from 'react';
-import { useFormContext } from 'react-hook-form';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
-import { EstimateFormValues, EstimateItem } from '../../schemas/estimateFormSchema';
+import { useSummaryCalculations } from '../../hooks/useSummaryCalculations';
 
 interface SummaryCardProps {
   contingencyAmount: number;
 }
 
 const SummaryCard = ({ contingencyAmount }: SummaryCardProps) => {
-  const form = useFormContext<EstimateFormValues>();
-  const items = form.watch('items') || [];
+  const {
+    subtotal,
+    totalCost,
+    grandTotal,
+    overallMarginPercentage
+  } = useSummaryCalculations();
   
-  // Calculate subtotal
-  const subtotal = items.reduce((sum: number, item: EstimateItem) => {
-    const cost = parseFloat(item.cost || '0');
-    const markup = parseFloat(item.markup_percentage || '0');
-    const markupAmount = cost * (markup / 100);
-    const quantity = parseFloat(item.quantity || '1');
-    return sum + ((cost + markupAmount) * quantity);
-  }, 0);
-  
-  // Calculate grand total
-  const grandTotal = subtotal + contingencyAmount;
-  
-  // Calculate total cost (for profit margin calculation)
-  const totalCost = items.reduce((sum: number, item: EstimateItem) => {
-    const cost = parseFloat(item.cost || '0');
-    const quantity = parseFloat(item.quantity || '1');
-    return sum + (cost * quantity);
-  }, 0);
-  
-  // Calculate profit margin
+  // Calculate gross profit
   const grossProfit = grandTotal - totalCost;
-  const grossMarginPercentage = totalCost > 0 ? (grossProfit / grandTotal) * 100 : 0;
   
   return (
     <Card>
@@ -61,7 +44,7 @@ const SummaryCard = ({ contingencyAmount }: SummaryCardProps) => {
           
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Est. Gross Margin:</span>
-            <span>{grossMarginPercentage.toFixed(1)}%</span>
+            <span>{overallMarginPercentage.toFixed(1)}%</span>
           </div>
           
           <div className="flex justify-between items-center text-sm">
