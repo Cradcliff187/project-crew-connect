@@ -9,15 +9,16 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from "@/components/ui/dialog";
 
-import DocumentFilters from '@/components/documents/DocumentFilters';
+import { DocumentFilters } from '@/components/documents/DocumentFilters';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import DocumentViews from '@/components/documents/DocumentViews';
 import DocumentDetailView from '@/components/documents/DocumentDetailView';
 import DeleteConfirmation from '@/components/documents/DeleteConfirmation';
 import PageHeader from '@/components/layout/PageHeader';
 
-import { useDocuments, DocumentFiltersState } from '@/components/documents/hooks/useDocuments';
+import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
+import { DocumentFiltersState } from '@/components/documents/DocumentFilters';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();

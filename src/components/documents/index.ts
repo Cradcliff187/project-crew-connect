@@ -4,5 +4,5 @@ export { default as DocumentViewerDialog } from './DocumentViewerDialog';
 export { default as ReceiptUploadDialog } from './ReceiptUploadDialog';
 export { default as EnhancedDocumentUpload } from './EnhancedDocumentUpload';
 export { default as DocumentDetailView } from './DocumentDetailView';
-export { default as DocumentFilters } from './DocumentFilters';
+export { DocumentFilters } from './DocumentFilters';
 export { default as DocumentViews } from './DocumentViews';

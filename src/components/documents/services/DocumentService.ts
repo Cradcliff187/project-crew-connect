@@ -60,7 +60,6 @@ export const DocumentService = {
         .insert({
           file_name: file.name,
           file_type: file.type,
-          mime_type: file.type || `application/${fileExt}`,
           file_size: file.size,
           storage_path: fileKey,
           entity_type: entityType,
@@ -99,6 +98,133 @@ export const DocumentService = {
       };
     } catch (error) {
       console.error('Document upload failed:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Creates a new version of an existing document
+   */
+  createNewVersion: async (
+    documentId: string,
+    file: File,
+    notes?: string
+  ): Promise<Document | null> => {
+    try {
+      // First, get the current document to reference it as parent
+      const { data: currentDoc, error: currentDocError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('document_id', documentId)
+        .single();
+
+      if (currentDocError) {
+        console.error('Error fetching current document:', currentDocError);
+        throw currentDocError;
+      }
+
+      if (!currentDoc) {
+        throw new Error('Document not found');
+      }
+
+      // Calculate the next version number
+      const nextVersion = (currentDoc.version || 1) + 1;
+
+      // If this is the first version update, make sure it has version 1
+      if (!currentDoc.version) {
+        const { error: updateError } = await supabase
+          .from('documents')
+          .update({ version: 1 })
+          .eq('document_id', documentId);
+
+        if (updateError) {
+          console.error('Error updating original document version:', updateError);
+        }
+      }
+
+      // Set parent document reference to the original document
+      const parentDocId = currentDoc.parent_document_id || documentId;
+
+      // Create a unique file path similar to the original but with version
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const fileKey = `${currentDoc.entity_type.toLowerCase()}/${currentDoc.entity_id}/${Date.now()}-v${nextVersion}-${uuidv4()}.${fileExt}`;
+
+      // Upload the new version file to storage
+      const { error: uploadError } = await supabase.storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .upload(fileKey, file, {
+          contentType: file.type || `application/${fileExt}`,
+          cacheControl: '3600'
+        });
+
+      if (uploadError) {
+        console.error('Error uploading file version to storage:', uploadError);
+        throw uploadError;
+      }
+
+      // Update all previous versions to not be the latest
+      const { error: updatePreviousError } = await supabase
+        .from('documents')
+        .update({ is_latest_version: false })
+        .eq('parent_document_id', parentDocId);
+
+      if (updatePreviousError) {
+        console.error('Error updating previous versions:', updatePreviousError);
+        // Continue despite error - we want to create the new version anyway
+      }
+
+      // Also update the original document if it hasn't been tagged with a parent yet
+      const { error: updateOriginalError } = await supabase
+        .from('documents')
+        .update({ 
+          is_latest_version: false,
+          parent_document_id: parentDocId 
+        })
+        .eq('document_id', documentId)
+        .is('parent_document_id', null);
+
+      if (updateOriginalError) {
+        console.error('Error updating original document:', updateOriginalError);
+        // Continue despite error
+      }
+
+      // Create the new document version record
+      const { data: newVersionData, error: versionError } = await supabase
+        .from('documents')
+        .insert({
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          storage_path: fileKey,
+          entity_type: currentDoc.entity_type,
+          entity_id: currentDoc.entity_id,
+          category: currentDoc.category,
+          parent_document_id: parentDocId,
+          version: nextVersion,
+          is_latest_version: true,
+          notes: notes || `Version ${nextVersion}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (versionError) {
+        console.error('Error creating document version record:', versionError);
+        throw versionError;
+      }
+
+      // Get the public URL for the document
+      const { data: urlData } = supabase.storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .getPublicUrl(fileKey);
+
+      return {
+        ...newVersionData,
+        url: urlData.publicUrl
+      };
+    } catch (error) {
+      console.error('Document version creation failed:', error);
       return null;
     }
   },

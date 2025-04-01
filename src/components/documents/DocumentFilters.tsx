@@ -27,9 +27,19 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { EntityType, DocumentCategory } from './schemas/documentSchema';
-import { DocumentFiltersState } from './hooks/useDocuments';
 
-// Available entity types for filtering
+export interface DocumentFiltersState {
+  search: string;
+  category?: DocumentCategory;
+  entityType?: EntityType;
+  isExpense?: boolean;
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
+  sortBy: string;
+}
+
 const entityTypes = [
   { value: 'VENDOR', label: 'Vendor' },
   { value: 'CUSTOMER', label: 'Customer' },
@@ -40,7 +50,6 @@ const entityTypes = [
   { value: 'TIME_ENTRY', label: 'Time Entry' },
 ];
 
-// Available document categories for filtering
 const documentCategories: { value: DocumentCategory; label: string }[] = [
   { value: 'other', label: 'Other' },
   { value: 'invoice', label: 'Invoice' },
@@ -52,7 +61,6 @@ const documentCategories: { value: DocumentCategory; label: string }[] = [
   { value: 'photo', label: 'Photo' },
 ];
 
-// Available sort options
 const sortOptions = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
@@ -66,14 +74,14 @@ interface DocumentFiltersProps {
   filters: DocumentFiltersState;
   activeFiltersCount: number;
   onFilterChange: (key: keyof DocumentFiltersState, value: any) => void;
-  onResetFilters: () => void;
+  onReset: () => void;
 }
 
 export const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   filters,
   activeFiltersCount,
   onFilterChange,
-  onResetFilters,
+  onReset,
 }) => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange('search', e.target.value);
@@ -239,7 +247,7 @@ export const DocumentFilters: React.FC<DocumentFiltersProps> = ({
               </Popover>
             </div>
           </div>
-          <Button variant="link" size="sm" className="mt-4" onClick={onResetFilters}>
+          <Button variant="link" size="sm" className="mt-4" onClick={onReset}>
             Reset Filters
           </Button>
         </AccordionContent>
@@ -267,3 +275,5 @@ export const DocumentFilters: React.FC<DocumentFiltersProps> = ({
     </Accordion>
   );
 };
+
+export default DocumentFilters;
