@@ -111,6 +111,7 @@ const TimelogAddSheet = ({
       
       resetForm();
       onSuccess();
+      onOpenChange(false);
     } catch (error: any) {
       console.error('Error logging time:', error);
       toast({

@@ -31,7 +31,7 @@ const TimelogsInfoSection = ({
   const totalHours = timelogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
   
   // Find employee name by ID
-  const getEmployeeName = (employeeId: string | null) => {
+  const getEmployeeName = (employeeId: string | null | undefined) => {
     if (!employeeId) return "Unassigned";
     const employee = employees.find(e => e.employee_id === employeeId);
     return employee ? employee.name : "Unknown Employee";

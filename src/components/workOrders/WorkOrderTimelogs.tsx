@@ -16,8 +16,6 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     handleDeleteTimelog
   } = useWorkOrderTimelogs(workOrderId);
   
-  // We don't need to map the employee structure since it's already in the correct format
-  
   const handleSuccessfulAdd = () => {
     fetchTimelogs();
     if (onTimeLogAdded) onTimeLogAdded();

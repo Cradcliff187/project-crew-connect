@@ -88,11 +88,12 @@ const FormActions = ({
           Preview Estimate
         </Button>
       )}
-      {isPreviewStep && (
+      {isPreviewStep && onSubmit && (
         <Button 
-          type="submit" 
+          type="button" 
           className="bg-[#0485ea] hover:bg-[#0373ce]"
           disabled={isSubmitting}
+          onClick={(e) => onSubmit(e)}
         >
           {isSubmitting ? (
             <>

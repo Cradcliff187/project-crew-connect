@@ -5,12 +5,21 @@ import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 
-interface ContingencyInputProps {
-  contingencyAmount: number;
-}
-
-const ContingencyInput: React.FC<ContingencyInputProps> = ({ contingencyAmount }) => {
+const ContingencyInput = () => {
   const form = useFormContext<EstimateFormValues>();
+  
+  // Calculate contingency amount based on current items
+  const items = form.watch('items') || [];
+  const totalBeforeContingency = items.reduce((sum, item) => {
+    const cost = parseFloat(item.cost) || 0;
+    const markup = parseFloat(item.markup_percentage) || 0;
+    const markupAmount = cost * (markup / 100);
+    const quantity = parseFloat(item.quantity) || 1;
+    return sum + ((cost + markupAmount) * quantity);
+  }, 0);
+  
+  const contingencyPercentage = parseFloat(form.watch('contingency_percentage') || '0');
+  const contingencyAmount = (totalBeforeContingency * contingencyPercentage) / 100;
 
   return (
     <div className="flex items-center gap-4">
