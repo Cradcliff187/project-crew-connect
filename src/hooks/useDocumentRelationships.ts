@@ -4,11 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Document } from '@/components/documents/schemas/documentSchema';
 
+export type RelationshipType = 'REFERENCE' | 'VERSION' | 'ATTACHMENT' | 'RELATED' | 'SUPPLEMENT';
+
 export type DocumentRelationship = {
   id: string;
   source_document_id: string;
   target_document_id: string;
-  relationship_type: 'REFERENCE' | 'VERSION' | 'ATTACHMENT' | 'RELATED' | 'SUPPLEMENT';
+  relationship_type: RelationshipType;
   relationship_metadata?: {
     description?: string;
     created_by?: string;
@@ -18,8 +20,6 @@ export type DocumentRelationship = {
   source_document?: Document;
   target_document?: Document;
 };
-
-export type RelationshipType = DocumentRelationship['relationship_type'];
 
 export interface CreateRelationshipParams {
   sourceDocumentId: string;
@@ -93,11 +93,31 @@ export const useDocumentRelationships = (documentId?: string) => {
       
       if (targetError) throw targetError;
       
-      // Combine and set relationships
+      // Type validation and casting for relationship_type
+      const validateRelationshipType = (type: string): RelationshipType => {
+        const validTypes: RelationshipType[] = ['REFERENCE', 'VERSION', 'ATTACHMENT', 'RELATED', 'SUPPLEMENT'];
+        return validTypes.includes(type as RelationshipType) 
+          ? (type as RelationshipType) 
+          : 'RELATED'; // Default to RELATED if type is invalid
+      };
+      
+      // Process source relationships with proper type casting
+      const typedSourceRelationships = sourceRelationships?.map(rel => ({
+        ...rel,
+        relationship_type: validateRelationshipType(rel.relationship_type)
+      })) || [];
+      
+      // Process target relationships with proper type casting
+      const typedTargetRelationships = targetRelationships?.map(rel => ({
+        ...rel,
+        relationship_type: validateRelationshipType(rel.relationship_type)
+      })) || [];
+      
+      // Combine and set relationships with proper typing
       setRelationships([
-        ...(sourceRelationships || []),
-        ...(targetRelationships || [])
-      ]);
+        ...typedSourceRelationships,
+        ...typedTargetRelationships
+      ] as DocumentRelationship[]);
     } catch (err: any) {
       console.error('Error fetching document relationships:', err);
       setError(err.message);

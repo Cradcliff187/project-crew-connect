@@ -1,182 +1,279 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useDocuments } from './hooks/useDocuments';
-import { Loader2, Search, Link, Plus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
+import { Loader2, Link2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Document } from './schemas/documentSchema';
 import { CreateRelationshipParams, RelationshipType } from '@/hooks/useDocumentRelationships';
 
 interface DocumentRelationshipFormProps {
-  sourceDocumentId: string;
+  documentId: string;
   onCreateRelationship: (params: CreateRelationshipParams) => Promise<any>;
   onCancel: () => void;
 }
 
-const relationshipOptions: { value: RelationshipType; label: string }[] = [
-  { value: 'RELATED', label: 'Related Document' },
-  { value: 'REFERENCE', label: 'Referenced Document' },
-  { value: 'SUPPLEMENT', label: 'Supplementary Document' },
-  { value: 'ATTACHMENT', label: 'Attachment' },
+type FormValues = {
+  targetDocumentId: string;
+  relationshipType: RelationshipType;
+  description: string;
+  searchTerm: string;
+};
+
+const relationshipOptions: { value: RelationshipType; label: string; description: string }[] = [
+  { value: 'REFERENCE', label: 'References', description: 'This document refers to the selected document' },
+  { value: 'VERSION', label: 'Version of', description: 'This document is a version of the selected document' },
+  { value: 'ATTACHMENT', label: 'Attachment to', description: 'This document is an attachment to the selected document' },
+  { value: 'RELATED', label: 'Related to', description: 'These documents are related to each other' },
+  { value: 'SUPPLEMENT', label: 'Supplements', description: 'This document supplements the selected document' }
 ];
 
 const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
-  sourceDocumentId,
+  documentId,
   onCreateRelationship,
   onCancel
 }) => {
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string>('');
-  const [relationshipType, setRelationshipType] = useState<RelationshipType>('RELATED');
-  const [description, setDescription] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchResults, setSearchResults] = useState<Document[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   
-  // Use the useDocuments hook to search for documents
-  const { 
-    documents, 
-    loading,
-  } = useDocuments({
-    search: searchQuery,
-    sortBy: 'newest'
+  const form = useForm<FormValues>({
+    defaultValues: {
+      targetDocumentId: '',
+      relationshipType: 'RELATED',
+      description: '',
+      searchTerm: ''
+    }
   });
   
-  // Filter out the current document and any already linked documents
-  const filteredDocuments = documents.filter(doc => 
-    doc.document_id !== sourceDocumentId
-  );
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedDocumentId) {
+  // Search for documents
+  const handleSearch = useCallback(async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 2) {
+      setSearchResults([]);
       return;
     }
     
-    setIsSubmitting(true);
+    setSearching(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .ilike('file_name', `%${searchTerm}%`)
+        .neq('document_id', documentId) // Exclude the current document
+        .limit(10);
+      
+      if (error) throw error;
+      
+      setSearchResults(data || []);
+    } catch (err: any) {
+      console.error('Error searching for documents:', err);
+      toast({
+        title: 'Search error',
+        description: err.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setSearching(false);
+    }
+  }, [documentId]);
+  
+  // Handle form submission
+  const onSubmit = async (values: FormValues) => {
+    if (!values.targetDocumentId) {
+      toast({
+        title: 'Validation error',
+        description: 'Please select a document to link to',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setSubmitting(true);
     
     try {
       await onCreateRelationship({
-        sourceDocumentId,
-        targetDocumentId: selectedDocumentId,
-        relationshipType,
-        metadata: { description }
+        sourceDocumentId: documentId,
+        targetDocumentId: values.targetDocumentId,
+        relationshipType: values.relationshipType,
+        metadata: {
+          description: values.description
+        }
       });
       
-      // Reset form after successful creation
-      setSelectedDocumentId('');
-      setRelationshipType('RELATED');
-      setDescription('');
-      onCancel();
+      // Reset form
+      form.reset({
+        targetDocumentId: '',
+        relationshipType: 'RELATED',
+        description: '',
+        searchTerm: ''
+      });
+      
+      // Clear search results
+      setSearchResults([]);
+    } catch (error) {
+      console.error('Error creating relationship:', error);
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
   
+  // Watch for changes in search term
+  const searchTerm = form.watch('searchTerm');
+  
+  React.useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      handleSearch(searchTerm);
+    }, 300);
+    
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm, handleSearch]);
+  
+  // Handle document selection
   const handleSelectDocument = (document: Document) => {
-    setSelectedDocumentId(document.document_id);
+    form.setValue('targetDocumentId', document.document_id);
+    form.setValue('searchTerm', document.file_name);
+    setSearchResults([]);
   };
-
+  
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="search-documents">Find document to link</Label>
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="search-documents"
-            placeholder="Search for documents..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-      
-      <div className="border rounded-md max-h-48 overflow-y-auto">
-        {loading ? (
-          <div className="flex justify-center items-center p-4">
-            <Loader2 className="h-5 w-5 text-[#0485ea] animate-spin" />
+    <Card className="shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-base">
+          <div className="flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-[#0485ea]" />
+            Create Document Relationship
           </div>
-        ) : filteredDocuments.length === 0 ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            No documents found
-          </div>
-        ) : (
-          <div className="divide-y">
-            {filteredDocuments.map((document) => (
-              <div
-                key={document.document_id}
-                className={`p-2 cursor-pointer hover:bg-slate-50 flex items-center justify-between ${
-                  selectedDocumentId === document.document_id ? 'bg-blue-50' : ''
-                }`}
-                onClick={() => handleSelectDocument(document)}
-              >
-                <div className="flex items-center">
-                  <Link className="h-4 w-4 mr-2 text-[#0485ea]" />
-                  <div className="truncate">{document.file_name}</div>
-                </div>
-                {selectedDocumentId === document.document_id && (
-                  <Plus className="h-4 w-4 text-[#0485ea]" />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        </CardTitle>
+      </CardHeader>
       
-      <div className="space-y-2">
-        <Label htmlFor="relationship-type">Relationship Type</Label>
-        <Select 
-          value={relationshipType}
-          onValueChange={(value) => setRelationshipType(value as RelationshipType)}
-        >
-          <SelectTrigger id="relationship-type">
-            <SelectValue placeholder="Select relationship type" />
-          </SelectTrigger>
-          <SelectContent>
-            {relationshipOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="description">Description (Optional)</Label>
-        <Textarea
-          id="description"
-          placeholder="Add a description for this relationship"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={2}
-        />
-      </div>
-      
-      <div className="flex justify-end space-x-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button 
-          type="submit" 
-          disabled={!selectedDocumentId || isSubmitting}
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-        >
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Create Relationship
-        </Button>
-      </div>
-    </form>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="searchTerm"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Search for a document</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input 
+                        placeholder="Search by document name..."
+                        {...field}
+                      />
+                      {searching && (
+                        <div className="absolute right-2 top-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
+                      
+                      {/* Search results dropdown */}
+                      {searchResults.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full border rounded-md bg-white shadow-lg max-h-60 overflow-auto">
+                          {searchResults.map(doc => (
+                            <div 
+                              key={doc.document_id}
+                              className="p-2 hover:bg-muted cursor-pointer border-b last:border-0"
+                              onClick={() => handleSelectDocument(doc)}
+                            >
+                              <div className="font-medium truncate">{doc.file_name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {doc.entity_type}: {doc.entity_id}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <input 
+              type="hidden" 
+              {...form.register('targetDocumentId')}
+            />
+            
+            <FormField
+              control={form.control}
+              name="relationshipType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Relationship Type</FormLabel>
+                  <Select 
+                    value={field.value} 
+                    onValueChange={field.onChange}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select relationship type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {relationshipOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div>
+                            <div>{option.label}</div>
+                            <div className="text-xs text-muted-foreground">{option.description}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe why these documents are related..."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+          
+          <CardFooter className="justify-between">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
+              disabled={!form.getValues('targetDocumentId') || submitting}
+            >
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Relationship
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
+    </Card>
   );
 };
 

@@ -1,20 +1,13 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Document } from './schemas/documentSchema';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Download, Trash2, FileText, Calendar, User, Tag, Link, Plus } from 'lucide-react';
-import { formatDate, formatFileSize } from '@/lib/utils';
+import { Download, Trash2, FileText, Link2 } from 'lucide-react';
+import { Document } from './schemas/documentSchema';
 import DocumentViewer from './DocumentViewer';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { DocumentCategoryBadge } from './utils/categoryIcons';
-import EntityInformation from './EntityInformation';
-import DocumentVersionHistoryCard from './DocumentVersionHistoryCard';
-import { 
-  useDocumentRelationships, 
-  CreateRelationshipParams 
-} from '@/hooks/useDocumentRelationships';
+import { formatDate } from '@/lib/utils';
+import { useDocumentRelationships } from '@/hooks/useDocumentRelationships';
 import DocumentRelationshipsList from './DocumentRelationshipsList';
 import DocumentRelationshipForm from './DocumentRelationshipForm';
 
@@ -22,8 +15,7 @@ interface DocumentDetailViewProps {
   document: Document | null;
   open: boolean;
   onClose: () => void;
-  onDownload?: () => void;
-  onDelete?: () => void;
+  onDelete?: (document: Document) => void;
   onViewRelatedDocument?: (document: Document) => void;
 }
 
@@ -31,159 +23,213 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
   document,
   open,
   onClose,
-  onDownload,
   onDelete,
   onViewRelatedDocument
 }) => {
-  const [isAddingRelationship, setIsAddingRelationship] = useState(false);
+  const [activeTab, setActiveTab] = useState('preview');
+  const [showAddRelationship, setShowAddRelationship] = useState(false);
   
-  const { 
-    relationships, 
-    loading: relationshipsLoading, 
+  // Use the document relationships hook
+  const {
+    relationships,
+    loading: relationshipsLoading,
     createRelationship,
     deleteRelationship
   } = useDocumentRelationships(document?.document_id);
-
-  if (!document) return null;
-
-  const handleDownload = () => {
-    if (document.url) {
-      window.open(document.url, '_blank');
-    }
-    if (onDownload) {
-      onDownload();
-    }
-  };
   
-  const handleCreateRelationship = async (params: CreateRelationshipParams) => {
-    await createRelationship(params);
-    setIsAddingRelationship(false);
-  };
-  
+  // Handle view related document
   const handleViewRelatedDocument = (relatedDoc: Document) => {
     if (onViewRelatedDocument) {
       onViewRelatedDocument(relatedDoc);
     }
   };
   
-  const isCurrentDocument = (documentId: string) => {
-    return document.document_id === documentId;
+  // Handle relationship creation
+  const handleCreateRelationship = async (params: any) => {
+    await createRelationship(params);
+    setShowAddRelationship(false);
   };
-
+  
+  // Download handler
+  const handleDownload = () => {
+    if (document?.url) {
+      window.open(document.url, '_blank');
+    }
+  };
+  
+  // Delete handler
+  const handleDelete = () => {
+    if (document && onDelete) {
+      onDelete(document);
+    }
+  };
+  
+  // Check if the document ID matches the current document
+  const isCurrentDocument = (documentId: string) => {
+    return document?.document_id === documentId;
+  };
+  
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 h-[80vh]">
-          {/* Document Preview */}
-          <div className="relative bg-gray-50 flex flex-col overflow-hidden border-r">
-            <DialogHeader className="px-4 py-2 border-b bg-white">
-              <div className="flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-[#0485ea]" />
-                <DialogTitle className="text-lg line-clamp-1">{document.file_name}</DialogTitle>
-              </div>
-              <DialogDescription className="text-xs">
-                {formatFileSize(document.file_size || 0)}
-              </DialogDescription>
-            </DialogHeader>
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-xl">
+            {document?.file_name || 'Document Details'}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="relationships">
+                Relationships
+                {relationships?.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    {relationships.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
             
-            <div className="flex-1 overflow-auto">
-              <DocumentViewer 
-                document={document}
-                className="w-full h-full"
-              />
+            <div className="flex space-x-2">
+              <Button 
+                size="sm"
+                variant="outline"
+                onClick={handleDownload}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download
+              </Button>
+              
+              {onDelete && (
+                <Button 
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              )}
             </div>
           </div>
           
-          {/* Document Details */}
-          <div className="bg-white p-6 overflow-y-auto flex flex-col">
-            <h3 className="text-lg font-medium mb-4">Document Information</h3>
-            
-            <div className="space-y-6">
-              {/* Basic Info */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <FileText className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                  <div>
-                    <h4 className="font-medium text-sm">File Name</h4>
-                    <p className="text-sm break-all">{document.file_name}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-2">
-                  <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                  <div>
-                    <h4 className="font-medium text-sm">Date Added</h4>
-                    <p className="text-sm">{formatDate(document.created_at)}</p>
-                  </div>
-                </div>
-                
-                {document.uploaded_by && (
-                  <div className="flex items-start gap-2">
-                    <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                    <div>
-                      <h4 className="font-medium text-sm">Uploaded By</h4>
-                      <p className="text-sm">{document.uploaded_by}</p>
+          <TabsContent value="preview" className="flex-1 mt-0">
+            {document && (
+              <DocumentViewer 
+                document={document}
+                open={open && activeTab === 'preview'}
+                onOpenChange={() => {}}
+              />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="details" className="flex-1 mt-0">
+            {document && (
+              <div className="space-y-4 overflow-y-auto p-4 bg-gray-50 rounded-md h-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold">File Information</h3>
+                    <div className="text-sm">
+                      <div className="flex justify-between py-1 border-b">
+                        <span className="text-muted-foreground">File Name</span>
+                        <span className="font-medium">{document.file_name}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b">
+                        <span className="text-muted-foreground">File Type</span>
+                        <span className="font-medium">{document.file_type || 'Unknown'}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b">
+                        <span className="text-muted-foreground">File Size</span>
+                        <span className="font-medium">
+                          {document.file_size 
+                            ? `${Math.round(document.file_size / 1024)} KB` 
+                            : 'Unknown'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b">
+                        <span className="text-muted-foreground">Uploaded</span>
+                        <span className="font-medium">{formatDate(document.created_at)}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b">
+                        <span className="text-muted-foreground">Last Modified</span>
+                        <span className="font-medium">{formatDate(document.updated_at)}</span>
+                      </div>
                     </div>
                   </div>
-                )}
-                
-                {document.category && (
-                  <div className="flex items-start gap-2">
-                    <Tag className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                    <div>
-                      <h4 className="font-medium text-sm">Category</h4>
-                      <DocumentCategoryBadge category={document.category} />
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold">Metadata</h3>
+                    <div className="text-sm">
+                      <div className="flex justify-between py-1 border-b">
+                        <span className="text-muted-foreground">Category</span>
+                        <span className="font-medium">{document.category || 'Uncategorized'}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b">
+                        <span className="text-muted-foreground">Entity Type</span>
+                        <span className="font-medium">{document.entity_type}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b">
+                        <span className="text-muted-foreground">Entity ID</span>
+                        <span className="font-medium">{document.entity_id}</span>
+                      </div>
+                      {document.is_expense && (
+                        <>
+                          <div className="flex justify-between py-1 border-b">
+                            <span className="text-muted-foreground">Is Receipt</span>
+                            <span className="font-medium">Yes</span>
+                          </div>
+                          {document.amount && (
+                            <div className="flex justify-between py-1 border-b">
+                              <span className="text-muted-foreground">Amount</span>
+                              <span className="font-medium">${document.amount.toFixed(2)}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {document.notes && (
+                        <div className="py-1">
+                          <div className="text-muted-foreground mb-1">Notes</div>
+                          <div className="font-medium bg-white p-2 rounded border text-sm">
+                            {document.notes}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="relationships" className="flex-1 mt-0">
+            <div className="h-full flex flex-col">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-sm font-semibold flex items-center gap-1">
+                  <Link2 className="h-4 w-4 text-[#0485ea]" />
+                  Document Relationships
+                </h3>
+                {!showAddRelationship && (
+                  <Button 
+                    size="sm"
+                    variant="outline" 
+                    className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
+                    onClick={() => setShowAddRelationship(true)}
+                  >
+                    <Link2 className="h-4 w-4 mr-1" />
+                    Add Relationship
+                  </Button>
                 )}
-                
-                <EntityInformation document={document} />
               </div>
               
-              <Separator />
-              
-              {/* Tags */}
-              {document.tags && document.tags.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Tags</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {document.tags.map((tag) => (
-                      <Badge key={tag} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <Separator />
-              
-              {/* Document Relationships */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm flex items-center">
-                    <Link className="h-4 w-4 mr-1" />
-                    Linked Documents
-                  </h4>
-                  
-                  {!isAddingRelationship && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="h-7"
-                      onClick={() => setIsAddingRelationship(true)}
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1 text-[#0485ea]" />
-                      Add Link
-                    </Button>
-                  )}
-                </div>
-                
-                {isAddingRelationship ? (
+              <div className="flex-1 overflow-y-auto">
+                {showAddRelationship ? (
                   <DocumentRelationshipForm 
-                    sourceDocumentId={document.document_id}
+                    documentId={document?.document_id || ''}
                     onCreateRelationship={handleCreateRelationship}
-                    onCancel={() => setIsAddingRelationship(false)}
+                    onCancel={() => setShowAddRelationship(false)}
                   />
                 ) : (
                   <DocumentRelationshipsList 
@@ -195,49 +241,9 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
                   />
                 )}
               </div>
-              
-              <Separator />
-              
-              {/* Version History */}
-              <div className="space-y-2">
-                <h4 className="font-medium text-sm flex items-center">
-                  <Link className="h-4 w-4 mr-1" />
-                  Version History
-                </h4>
-                
-                {document.document_id && (
-                  <DocumentVersionHistoryCard 
-                    documentId={document.document_id} 
-                  />
-                )}
-              </div>
             </div>
-            
-            <div className="mt-auto pt-4">
-              <DialogFooter className="flex gap-2 flex-row">
-                <Button
-                  variant="outline"
-                  onClick={handleDownload}
-                  className="flex-1"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-                
-                {onDelete && (
-                  <Button
-                    variant="outline"
-                    onClick={onDelete}
-                    className="flex-1 text-destructive hover:text-destructive border-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                )}
-              </DialogFooter>
-            </div>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
