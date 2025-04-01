@@ -1,163 +1,154 @@
 
 import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription
-} from '@/components/ui/dialog';
-import { Document } from './schemas/documentSchema';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, X, AlertCircle, Download as DownloadIcon, File } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Download, ExternalLink, FileText, FileUp, X } from 'lucide-react';
+import { Document } from './schemas/documentSchema';
+import { formatDistanceToNow } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 interface DocumentViewerProps {
   document: Document | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUploadNewVersion?: () => void;
+  showVersionUpload?: boolean;
 }
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
   document,
   open,
-  onOpenChange
+  onOpenChange,
+  onUploadNewVersion,
+  showVersionUpload = false
 }) => {
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [hasError, setHasError] = React.useState(false);
-  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+  if (!document) return null;
 
-  // Reset loading state when document changes
-  React.useEffect(() => {
-    if (document && open) {
-      setIsLoading(true);
-      setHasError(false);
-    }
-  }, [document, open]);
-
-  const handleLoad = () => {
-    setIsLoading(false);
+  const isPdf = document.file_type?.includes('pdf');
+  const isImage = document.file_type?.includes('image');
+  const created = document.created_at ? formatDistanceToNow(new Date(document.created_at), { addSuffix: true }) : '';
+  
+  // Format file size
+  const formatFileSize = (bytes?: number | null) => {
+    if (!bytes) return 'Unknown size';
+    if (bytes < 1024) return `${bytes} bytes`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
-
-  const handleError = () => {
-    setIsLoading(false);
-    setHasError(true);
-  };
-
-  // Detect document type
-  const isImage = document?.file_type?.startsWith('image/');
-  const isPdf = document?.file_type === 'application/pdf';
-  const isSupported = isImage || isPdf;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-4 border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg truncate">
-                {document?.file_name || 'Document Viewer'}
-              </DialogTitle>
-              {document && (
-                <DialogDescription className="text-sm">
-                  {new Date(document.created_at).toLocaleString()} · {document.file_type} · {(document.file_size || 0) / 1024 / 1024 < 1 ? `${Math.ceil((document.file_size || 0) / 1024)} KB` : `${((document.file_size || 0) / 1024 / 1024).toFixed(2)} MB`}
-                </DialogDescription>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {document?.url && (
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogTitle className="text-base truncate max-w-md">{document.file_name}</DialogTitle>
+          <div className="flex gap-2">
+            {document.url && (
+              <>
                 <Button variant="outline" size="sm" asChild>
                   <a href={document.url} download={document.file_name} target="_blank" rel="noopener noreferrer">
-                    <DownloadIcon className="h-4 w-4 mr-1" />
+                    <Download className="h-4 w-4 mr-1" />
                     Download
                   </a>
                 </Button>
-              )}
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => onOpenChange(false)}
-              >
-                <X className="h-4 w-4" />
+                <Button variant="outline" size="sm" asChild>
+                  <a href={document.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    Open
+                  </a>
+                </Button>
+              </>
+            )}
+            {showVersionUpload && onUploadNewVersion && (
+              <Button variant="outline" size="sm" onClick={onUploadNewVersion}>
+                <FileUp className="h-4 w-4 mr-1" />
+                New Version
               </Button>
-            </div>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </DialogHeader>
-
-        <div className="flex-1 min-h-0 relative bg-muted/30">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-              <div className="animate-pulse flex flex-col items-center gap-2">
-                <File className="h-12 w-12 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">Loading document...</p>
-              </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div className="md:col-span-2 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-auto h-[50vh] border rounded-md bg-gray-50">
+              {isPdf && document.url ? (
+                <iframe 
+                  src={`${document.url}#toolbar=0`} 
+                  className="w-full h-full" 
+                  title={document.file_name}
+                />
+              ) : isImage && document.url ? (
+                <div className="flex items-center justify-center h-full p-4">
+                  <img 
+                    src={document.url} 
+                    alt={document.file_name} 
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-3" />
+                  <h3 className="text-lg font-medium">Preview not available</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This file type doesn't support preview. Please download or open to view.
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-
-          {hasError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
-              <div className="flex flex-col items-center gap-2 max-w-md text-center p-6">
-                <AlertCircle className="h-12 w-12 text-destructive/80" />
-                <h3 className="font-medium text-lg">Unable to preview this document</h3>
-                <p className="text-sm text-muted-foreground">
-                  This file type cannot be previewed in the browser. Try downloading it instead.
-                </p>
-                {document?.url && (
-                  <Button variant="default" className="mt-2" asChild>
-                    <a href={document.url} download={document.file_name} target="_blank" rel="noopener noreferrer">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download File
-                    </a>
-                  </Button>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="p-4 border rounded-md bg-gray-50">
+              <h3 className="font-medium mb-2">Document Details</h3>
+              
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Type:</span> {document.file_type || 'Unknown'}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Size:</span> {formatFileSize(document.file_size)}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Uploaded:</span> {created}
+                </div>
+                {document.version && (
+                  <div>
+                    <span className="text-muted-foreground">Version:</span> {document.version}
+                  </div>
+                )}
+                {document.category && (
+                  <div>
+                    <span className="text-muted-foreground">Category:</span> {document.category}
+                  </div>
                 )}
               </div>
-            </div>
-          )}
-
-          <ScrollArea className="h-[calc(90vh-120px)]">
-            {document?.url && isImage && (
-              <div className="flex items-center justify-center p-4">
-                <img 
-                  src={document.url} 
-                  alt={document.file_name || 'Document preview'} 
-                  className="max-w-full max-h-[calc(90vh-120px)] object-contain"
-                  onLoad={handleLoad}
-                  onError={handleError}
-                />
-              </div>
-            )}
-
-            {document?.url && isPdf && (
-              <iframe
-                ref={iframeRef}
-                src={document.url}
-                className="w-full h-[calc(90vh-120px)]"
-                onLoad={handleLoad}
-                onError={handleError}
-              />
-            )}
-
-            {document?.url && !isSupported && (
-              <div className="flex items-center justify-center p-8">
-                <div className="flex flex-col items-center gap-4 text-center">
-                  <File className="h-16 w-16 text-muted-foreground/50" />
-                  <div>
-                    <h3 className="font-medium text-lg">Preview not available</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      This file type ({document.file_type}) cannot be previewed in the browser.
-                    </p>
-                    <Button asChild>
-                      <a href={document.url} download={document.file_name} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download File
-                      </a>
-                    </Button>
+              
+              <Separator className="my-3" />
+              
+              {document.tags && document.tags.length > 0 && (
+                <div className="mt-3">
+                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Tags</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {document.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="bg-gray-100">
+                        {tag}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
-              </div>
-            )}
-          </ScrollArea>
+              )}
+              
+              {document.notes && (
+                <div className="mt-3">
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Notes</h4>
+                  <p className="text-sm">{document.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
