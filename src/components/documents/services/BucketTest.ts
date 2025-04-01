@@ -1,5 +1,5 @@
 
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BucketTestResult {
   success: boolean;
@@ -27,8 +27,9 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // Log all available buckets to help with debugging
-    console.log('Available buckets:', buckets?.map(b => `${b.id} (${b.name})`));
+    // Detailed logging of all buckets
+    console.log('Available buckets:', 
+      buckets?.map(b => `ID: ${b.id}, Name: ${b.name}, Public: ${b.public}`));
     
     if (!buckets || buckets.length === 0) {
       console.error('No storage buckets found in the project');
@@ -38,11 +39,19 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // Look specifically for the bucket using the constant bucket ID
-    const constructionBucket = buckets.find(bucket => bucket.id === DOCUMENTS_BUCKET_ID);
+    // Search for the specific bucket we're interested in
+    const constructionBucket = buckets.find(
+      bucket => bucket.id === 'construction_documents' || 
+                bucket.name === 'Construction Documents'
+    );
     
     if (constructionBucket) {
-      console.log('Found construction documents bucket:', constructionBucket.id);
+      console.log('Found construction documents bucket:', {
+        id: constructionBucket.id,
+        name: constructionBucket.name,
+        isPublic: constructionBucket.public
+      });
+      
       return {
         success: true,
         bucketId: constructionBucket.id,
@@ -50,23 +59,20 @@ export const testBucketAccess = async (): Promise<BucketTestResult> => {
       };
     }
     
-    // If we still don't find the expected bucket, just use the first one as fallback
-    // but provide a clear warning
-    const fallbackBucket = buckets[0];
+    // If we don't find the exact bucket, provide more context
     console.warn(
-      `${DOCUMENTS_BUCKET_ID} bucket not found. Using fallback bucket:`, 
-      fallbackBucket.id,
-      `- Please create a bucket with ID "${DOCUMENTS_BUCKET_ID}" in Supabase.`
+      'Specific construction documents bucket not found. ' + 
+      'Available buckets:', 
+      buckets.map(b => b.id)
     );
     
     return {
-      success: true,
-      bucketId: fallbackBucket.id,
-      bucketName: fallbackBucket.name
+      success: false,
+      error: 'Construction documents bucket not found'
     };
     
   } catch (error) {
-    console.error('Error testing bucket access:', error);
+    console.error('Unexpected error testing bucket access:', error);
     return {
       success: false,
       error
