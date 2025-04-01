@@ -10,10 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Document } from './schemas/documentSchema';
-import { Download, FileText, FileImage, File } from 'lucide-react';
+import { Calendar, Download, FileText, FileImage, File } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { getCategoryConfig, DocumentCategoryBadge } from './utils/categoryIcons';
+import { DocumentCategoryBadge } from './utils/categoryIcons';
 
 export interface DocumentViewerProps {
   document: Document | null;
@@ -64,13 +63,16 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             )}
           </DialogTitle>
           <DialogDescription className="flex items-center justify-between">
-            <span>
-              {description || (
-                <>
-                  {formatDate(document.created_at || '')} - {formatFileSize(document.file_size)}
-                </>
-              )}
-            </span>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <span>
+                {description || (
+                  <>
+                    {formatDate(document.created_at || '')} - {formatFileSize(document.file_size)}
+                  </>
+                )}
+              </span>
+            </div>
             
             {document.category && (
               <DocumentCategoryBadge category={document.category} />

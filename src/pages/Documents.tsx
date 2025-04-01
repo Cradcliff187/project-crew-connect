@@ -15,9 +15,11 @@ import DocumentViews from '@/components/documents/DocumentViews';
 import DocumentDetailView from '@/components/documents/DocumentDetailView';
 import DeleteConfirmation from '@/components/documents/DeleteConfirmation';
 import PageHeader from '@/components/layout/PageHeader';
+import RecentDocumentsSection from '@/components/documents/RecentDocumentsSection';
 
 import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
+import { useRecentDocuments } from '@/components/documents/hooks/useRecentDocuments';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -58,6 +60,19 @@ const DocumentsPage: React.FC = () => {
     handleUploadSuccess
   } = useDocumentActions(fetchDocuments);
 
+  // Use the recent documents hook
+  const { 
+    recentDocuments, 
+    recentDocumentsLoading, 
+    refreshRecentDocuments 
+  } = useRecentDocuments();
+
+  // Handler for successful upload that refreshes both document lists
+  const handleDocumentUploadSuccess = () => {
+    handleUploadSuccess();
+    refreshRecentDocuments();
+  };
+
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
@@ -77,6 +92,13 @@ const DocumentsPage: React.FC = () => {
         </PageHeader>
 
         <Separator className="my-6" />
+        
+        {/* Recent Documents Section */}
+        <RecentDocumentsSection 
+          documents={recentDocuments}
+          loading={recentDocumentsLoading}
+          onViewDocument={handleDocumentSelect}
+        />
         
         {/* Unified Filter Area */}
         <DocumentFilters
@@ -130,7 +152,7 @@ const DocumentsPage: React.FC = () => {
             </DialogHeader>
             <EnhancedDocumentUpload 
               entityType="PROJECT" 
-              onSuccess={handleUploadSuccess}
+              onSuccess={handleDocumentUploadSuccess}
               onCancel={() => setIsUploadOpen(false)}
             />
           </DialogContent>
