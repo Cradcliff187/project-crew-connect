@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
-import { EntityType } from './schemas/documentSchema';
+import { EntityType, DocumentUploadFormValues } from './schemas/documentSchema';
 
 // Import refactored components
 import DropzoneUploader from './components/DropzoneUploader';
@@ -107,7 +107,7 @@ const EnhancedDocumentUpload = React.memo(({
     }
     
     formSubmitted.current = true;
-    form.handleSubmit((data) => {
+    form.handleSubmit((data: DocumentUploadFormValues) => {
       onSubmit(data);
     })(e);
   };

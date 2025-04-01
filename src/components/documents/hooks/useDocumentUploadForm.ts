@@ -4,7 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { DocumentService } from '../services/DocumentService';
-import { DocumentMetadata, documentUploadSchema, EntityType } from '../schemas/documentSchema';
+import { 
+  DocumentMetadata, 
+  documentUploadSchema, 
+  EntityType,
+  DocumentCategory,
+  DocumentUploadFormValues,
+  VendorType 
+} from '../schemas/documentSchema';
 
 interface UseDocumentUploadFormProps {
   entityType: EntityType;
@@ -35,12 +42,12 @@ export function useDocumentUploadForm({
   const [showVendorSelector, setShowVendorSelector] = useState(isReceiptUpload);
   
   // Initialize form with default values
-  const form = useForm({
+  const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
       files: [],
       metadata: {
-        category: isReceiptUpload ? 'receipt' : 'other',
+        category: (isReceiptUpload ? 'receipt' : 'other') as DocumentCategory,
         entityType,
         entityId: entityId || '',
         amount: prefillData?.amount,
@@ -54,16 +61,16 @@ export function useDocumentUploadForm({
   
   // Watch form values
   const watchFiles = form.watch('files');
-  const watchCategory = form.watch('metadata.category');
+  const watchCategory = form.watch('metadata.category') as DocumentCategory;
   const watchIsExpense = form.watch('metadata.isExpense');
-  const watchVendorType = form.watch('metadata.vendorType');
+  const watchVendorType = form.watch('metadata.vendorType') as VendorType;
   
   // Initialize form with prefill data and reset
   const initializeForm = useCallback(() => {
-    const defaultValues = {
+    const defaultValues: DocumentUploadFormValues = {
       files: [],
       metadata: {
-        category: isReceiptUpload ? 'receipt' : 'other',
+        category: (isReceiptUpload ? 'receipt' : 'other') as DocumentCategory,
         entityType,
         entityId: entityId || '',
         amount: prefillData?.amount,
@@ -98,7 +105,7 @@ export function useDocumentUploadForm({
   }, [form, previewURL]);
   
   // Handle form submission
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: DocumentUploadFormValues) => {
     if (data.files.length === 0) {
       toast({
         title: 'No files selected',

@@ -1,131 +1,151 @@
 
 import { useState, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { Document } from '../schemas/documentSchema';
 import { DocumentService } from '../services/DocumentService';
-import { toast } from '@/hooks/use-toast';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 
-export function useDocumentActions(onRefetch?: () => void) {
+export function useDocumentActions(fetchDocuments: () => void) {
+  // State for document operations
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [hasReferences, setHasReferences] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Handle document selection for viewing
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Select a document to view details
   const handleDocumentSelect = useCallback((document: Document) => {
     setSelectedDocument(document);
     setIsDetailOpen(true);
   }, []);
-  
-  // Handle opening the delete confirmation dialog
+
+  // Open delete confirmation dialog
   const handleDeleteDialogOpen = useCallback((document: Document) => {
     setSelectedDocument(document);
     setDeleteError(null);
     setHasReferences(false);
     setIsDeleteOpen(true);
   }, []);
-  
+
   // Handle document deletion
   const handleDeleteDocument = useCallback(async () => {
     if (!selectedDocument) return;
     
-    setIsLoading(true);
+    setIsDeleting(true);
     setDeleteError(null);
     
     try {
-      const { success, error } = await DocumentService.deleteDocument(selectedDocument.document_id);
+      // Check if document has references in other tables
+      const { data: references, error: refError } = await supabase.rpc(
+        'check_document_references',
+        { document_id: selectedDocument.document_id }
+      );
       
-      if (success) {
-        setIsDeleteOpen(false);
-        setSelectedDocument(null);
-        toast({
-          title: 'Document deleted',
-          description: 'The document has been successfully deleted',
-        });
-        
-        if (onRefetch) {
-          onRefetch();
-        }
-      } else if (error) {
-        if (error.message.includes('referenced')) {
-          setHasReferences(true);
-          setDeleteError(error.message);
-        } else {
-          setDeleteError(error.message);
-        }
-      }
-    } catch (err: any) {
-      setDeleteError(err.message || 'An error occurred while deleting the document');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedDocument, onRefetch]);
-  
-  // Handle force delete (ignoring references)
-  const handleForceDelete = useCallback(async () => {
-    if (!selectedDocument) return;
-    
-    setIsLoading(true);
-    setDeleteError(null);
-    
-    try {
-      // Implement force delete with a direct call to storage deletion
-      const { data: document } = await supabase
-        .from('documents')
-        .select('storage_path')
-        .eq('document_id', selectedDocument.document_id)
-        .single();
-        
-      if (document?.storage_path) {
-        // Delete storage file
-        await supabase.storage
-          .from(DOCUMENTS_BUCKET_ID)
-          .remove([document.storage_path]);
+      if (refError) throw refError;
+      
+      // If document has references, show warning but don't delete
+      if (references && references.has_references) {
+        setHasReferences(true);
+        setDeleteError('This document is referenced by other records in the system.');
+        return;
       }
       
-      // Delete document record forcefully
-      const { error } = await supabase
+      // Delete the document from the database
+      const { error: deleteError } = await supabase
         .from('documents')
         .delete()
         .eq('document_id', selectedDocument.document_id);
-        
-      if (error) throw error;
       
-      setIsDeleteOpen(false);
-      setSelectedDocument(null);
+      if (deleteError) throw deleteError;
+      
+      // Delete the file from storage
+      const { error: storageError } = await supabase
+        .storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .remove([selectedDocument.storage_path]);
+      
+      if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+        toast({
+          title: 'File deleted from database',
+          description: 'File was removed from database, but could not be deleted from storage.',
+          variant: 'default',
+        });
+      }
       
       toast({
         title: 'Document deleted',
-        description: 'The document has been forcefully deleted',
+        description: 'Document has been permanently deleted.',
       });
       
-      if (onRefetch) {
-        onRefetch();
-      }
-    } catch (err: any) {
-      setDeleteError(err.message || 'An error occurred during force deletion');
+      // Close the dialog and refresh the documents list
+      setIsDeleteOpen(false);
+      fetchDocuments();
+      
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      setDeleteError(error.message || 'An error occurred while deleting the document');
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
     }
-  }, [selectedDocument, onRefetch]);
+  }, [selectedDocument, fetchDocuments]);
   
-  // Handle upload success
+  // Force delete even with references (danger!)
+  const handleForceDelete = useCallback(async () => {
+    if (!selectedDocument) return;
+    
+    setIsDeleting(true);
+    setDeleteError(null);
+    
+    try {
+      // Force delete the document
+      const { error: deleteError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('document_id', selectedDocument.document_id);
+      
+      if (deleteError) throw deleteError;
+      
+      // Delete the file from storage
+      const { error: storageError } = await supabase
+        .storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .remove([selectedDocument.storage_path]);
+      
+      if (storageError) {
+        console.error('Error deleting file from storage:', storageError);
+      }
+      
+      toast({
+        title: 'Document force deleted',
+        description: 'Document has been permanently deleted, but references may still exist.',
+        variant: 'destructive',
+      });
+      
+      // Close the dialog and refresh the documents list
+      setIsDeleteOpen(false);
+      fetchDocuments();
+      
+    } catch (error: any) {
+      console.error('Error force deleting document:', error);
+      setDeleteError(error.message || 'An error occurred while deleting the document');
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [selectedDocument, fetchDocuments]);
+
+  // Handle successful upload
   const handleUploadSuccess = useCallback((documentId?: string) => {
     setIsUploadOpen(false);
-    if (documentId) {
-      toast({
-        title: 'Upload successful',
-        description: 'Your document has been uploaded',
-      });
-      
-      if (onRefetch) {
-        onRefetch();
-      }
-    }
-  }, [onRefetch]);
-  
+    fetchDocuments();
+    toast({
+      title: 'Document uploaded',
+      description: 'Document has been successfully uploaded.',
+    });
+  }, [fetchDocuments]);
+
   return {
     selectedDocument,
     isDetailOpen,
@@ -133,10 +153,10 @@ export function useDocumentActions(onRefetch?: () => void) {
     isUploadOpen,
     deleteError,
     hasReferences,
-    isLoading,
+    isDeleting,
+    setIsUploadOpen,
     setIsDetailOpen,
     setIsDeleteOpen,
-    setIsUploadOpen,
     handleDocumentSelect,
     handleDeleteDialogOpen,
     handleDeleteDocument,

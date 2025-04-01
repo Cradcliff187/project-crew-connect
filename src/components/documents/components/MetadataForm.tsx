@@ -1,7 +1,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 import { UseFormReturn, Control } from 'react-hook-form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
+import { DocumentUploadFormValues, VendorType } from '../schemas/documentSchema';
 import EntitySelector from './EntitySelector';
 import ExpenseTypeSelector from './ExpenseTypeSelector';
 import DocumentCategorySelector from './DocumentCategorySelector';
@@ -17,7 +17,7 @@ interface MetadataFormProps {
   form: UseFormReturn<DocumentUploadFormValues>;
   control: Control<DocumentUploadFormValues>;
   watchIsExpense: boolean;
-  watchVendorType: 'vendor' | 'subcontractor' | 'other' | undefined;
+  watchVendorType: VendorType | undefined;
   isReceiptUpload?: boolean;
   showVendorSelector: boolean;
   prefillData?: {
