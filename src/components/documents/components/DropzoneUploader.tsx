@@ -1,5 +1,5 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Upload, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -24,13 +24,14 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   label = 'Upload Document',
   instanceId = 'main-dropzone'
 }) => {
-  // Create deterministic ID based on provided instanceId
-  const inputId = `file-input-${instanceId.replace(/[^a-zA-Z0-9-]/g, '-')}`;
+  // Create a ref for the file input instead of using document.getElementById
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Log to verify component is rendering with correct props
   console.log('DropzoneUploader rendering with ID:', instanceId, {
     files: watchFiles.length > 0 ? watchFiles.map(f => f.name) : 'none',
-    previewURL: previewURL ? 'has preview' : 'no preview'
+    previewURL: previewURL ? 'has preview' : 'no preview',
+    fileInputRef: fileInputRef.current ? 'ref exists' : 'ref not yet assigned'
   });
   
   // Use memoized callback to prevent unnecessary re-renders
@@ -49,28 +50,27 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
     e.stopPropagation();
     e.preventDefault();
     
-    console.log(`Dropzone clicked for ${instanceId}, activating input with ID:`, inputId);
-    // Get input element by ID
-    const inputElement = document.getElementById(inputId);
-    if (inputElement) {
-      inputElement.click();
+    // Use the ref directly instead of getElementById
+    console.log(`Dropzone clicked for ${instanceId}, activating input via ref`);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     } else {
-      console.error(`Could not find input element with ID: ${inputId}`);
+      console.error(`Could not access file input ref for ${instanceId}`);
     }
-  }, [inputId, instanceId]);
+  }, [instanceId]);
   
   // Use memoized callback to prevent unnecessary re-renders
   const handleBrowseClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     
-    const inputElement = document.getElementById(inputId);
-    if (inputElement) {
-      inputElement.click();
+    // Use the ref directly instead of getElementById
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     } else {
-      console.error(`Could not find input element with ID: ${inputId}`);
+      console.error(`Could not access file input ref for ${instanceId}`);
     }
-  }, [inputId]);
+  }, [instanceId]);
   
   return (
     <FormField
@@ -126,7 +126,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   </div>
                 )}
                 <input
-                  id={inputId}
+                  ref={fileInputRef}
                   type="file"
                   className="hidden"
                   multiple={false}

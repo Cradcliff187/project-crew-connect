@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
 
@@ -17,13 +18,28 @@ const MobileCaptureWrapper: React.FC<MobileCaptureWrapperProps> = ({
   showMobileCapture,
   setShowMobileCapture
 }) => {
-  // Simple file input ref for capturing images on mobile
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  // Use ref instead of direct DOM access
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Handle file selection from camera
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('Mobile camera capture file change triggered');
     if (e.target.files && e.target.files.length > 0) {
+      console.log('File captured from mobile camera:', e.target.files[0].name);
       onCapture(e.target.files[0]);
+    }
+  };
+  
+  // Handle camera button click
+  const handleCameraClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Camera button clicked, activating input via ref');
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    } else {
+      console.error('Could not access camera input ref');
     }
   };
   
@@ -35,11 +51,7 @@ const MobileCaptureWrapper: React.FC<MobileCaptureWrapperProps> = ({
           type="button"
           variant="outline"
           className="w-full"
-          onClick={() => {
-            if (fileInputRef.current) {
-              fileInputRef.current.click();
-            }
-          }}
+          onClick={handleCameraClick}
         >
           <Camera className="h-4 w-4 mr-2" />
           Take Photo

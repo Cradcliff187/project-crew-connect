@@ -32,12 +32,32 @@ export const uploadDocument = async (
   try {
     console.log('Uploading document with data:', data);
     
+    // Validate that files are present
+    if (!data.files || data.files.length === 0) {
+      console.error('No files provided for upload');
+      throw new Error('No files provided for upload');
+    }
+    
+    // Validate that metadata is present
+    if (!data.metadata) {
+      console.error('No metadata provided for upload');
+      throw new Error('No metadata provided for upload');
+    }
+    
     let uploadedDocumentId: string | undefined;
     
     const { files, metadata } = data;
     
     // We'll handle multiple files if they're provided
     for (const file of files) {
+      // Validate the file object
+      if (!(file instanceof File)) {
+        console.error('Not a valid File object:', file);
+        throw new Error('Invalid file object provided');
+      }
+      
+      console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size} bytes`);
+      
       // Create a unique file name using timestamp and original name
       const timestamp = new Date().getTime();
       const fileExt = file.name.split('.').pop() || '';
@@ -49,12 +69,6 @@ export const uploadDocument = async (
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
       console.log(`Uploading file directly to ${DOCUMENTS_BUCKET_ID}/${filePath}`);
-      
-      // Check if file is actually a File object
-      if (!(file instanceof File)) {
-        console.error('Not a valid File object:', file);
-        throw new Error('Invalid file object provided');
-      }
       
       // Determine the proper content type based on file extension if needed
       let contentType = file.type;
@@ -72,6 +86,7 @@ export const uploadDocument = async (
       };
       
       // Use the constant bucket ID directly
+      console.log(`Starting upload to Supabase storage with options:`, fileOptions);
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
         .upload(filePath, file, fileOptions);
@@ -81,7 +96,9 @@ export const uploadDocument = async (
           message: uploadError.message,
           error: uploadError,
           name: uploadError.name,
-          stack: uploadError.stack
+          stack: uploadError.stack,
+          status: uploadError.status,
+          details: uploadError.details
         });
         throw uploadError;
       }
@@ -127,7 +144,10 @@ export const uploadDocument = async (
       if (insertError) {
         console.error('Document metadata insert error:', {
           message: insertError.message,
-          error: insertError
+          error: insertError,
+          code: insertError.code,
+          details: insertError.details,
+          hint: insertError.hint
         });
         throw insertError;
       }
@@ -151,7 +171,10 @@ export const uploadDocument = async (
       errorMessage: error.message,
       errorObject: error,
       name: error.name,
-      stack: error.stack
+      stack: error.stack,
+      code: error.code,
+      details: error.details || 'No additional details',
+      status: error.status || 'No status code'
     });
     
     return {
