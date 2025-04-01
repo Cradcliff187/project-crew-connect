@@ -1,16 +1,16 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from '@/hooks/use-toast';
-import { uploadDocument } from '../services/DocumentUploader';
 import { 
   DocumentUploadFormValues, 
   documentUploadSchema, 
-  EntityType,
-  DocumentCategory
+  EntityType
 } from '../schemas/documentSchema';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useFileSelectionHandling } from './useFileSelectionHandling';
+import { useFormSubmitHandler } from './useFormSubmitHandler';
+import { useFormValueWatchers } from './useFormValueWatchers';
+import { useFormInitialization } from './useFormInitialization';
 
 interface UseDocumentUploadFormProps {
   entityType: EntityType;
@@ -39,138 +39,44 @@ export const useDocumentUploadForm = ({
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   
-  // Create the form with properly typed default values
-  const defaultValues = useMemo(() => ({
-    files: [] as File[],
-    metadata: {
-      category: (isReceiptUpload ? 'receipt' : 'other') as DocumentCategory,
-      entityType: entityType,
-      entityId: entityId || '',
-      version: 1,
-      tags: [] as string[],
-      isExpense: isReceiptUpload ? true : false,
-      vendorId: '',
-      vendorType: 'vendor' as const,
-      expenseType: 'materials' as const, // Default to materials for receipt uploads
-    }
-  }), [isReceiptUpload, entityType, entityId]);
-  
+  // Create form with default values
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
-    defaultValues,
+    defaultValues: {
+      files: [] as File[],
+      metadata: {
+        category: (isReceiptUpload ? 'receipt' : 'other'),
+        entityType: entityType,
+        entityId: entityId || '',
+        version: 1,
+        tags: [] as string[],
+        isExpense: isReceiptUpload ? true : false,
+        vendorId: '',
+        vendorType: 'vendor',
+        expenseType: 'materials',
+      }
+    },
     mode: 'onChange'
   });
 
-  // Memoize the file selection handler to prevent recreating on each render
-  const handleFileSelect = useCallback((files: File[]) => {
-    if (!files.length) return;
-    
-    // Update the form value
-    form.setValue('files', files, { shouldValidate: true });
-    
-    // Create a preview URL for images
-    if (files[0].type.startsWith('image/')) {
-      const previewUrl = URL.createObjectURL(files[0]);
-      setPreviewURL(previewUrl);
-    } else {
-      setPreviewURL(null);
-    }
-  }, [form]);
-
-  // Use debounced values for form watches to prevent excessive re-renders
-  const watchIsExpense = useDebounce(form.watch('metadata.isExpense'), 300);
-  const watchVendorType = useDebounce(form.watch('metadata.vendorType'), 300);
-  const watchCategory = useDebounce(form.watch('metadata.category'), 300);
-  const watchExpenseType = useDebounce(form.watch('metadata.expenseType'), 300);
+  // Use our custom hooks to handle different aspects of the form
+  const { handleFileSelect } = useFileSelectionHandling(form, setPreviewURL);
+  const { onSubmit } = useFormSubmitHandler(form, isUploading, setIsUploading, onSuccess, previewURL);
+  const { watchIsExpense, watchVendorType, watchFiles, watchCategory, watchExpenseType } = 
+    useFormValueWatchers(form);
   
-  // Don't debounce files as we need immediate feedback
-  const watchFiles = form.watch('files');
-
-  // Memoize the submit handler to prevent recreation on each render
-  const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
-    if (isUploading) return; // Prevent multiple simultaneous submissions
-    
-    try {
-      setIsUploading(true);
-      
-      // Only log in development environment
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Submitting document upload form', data);
-      }
-      
-      const result = await uploadDocument(data);
-      
-      if (!result.success) {
-        throw result.error || new Error('Upload failed');
-      }
-      
-      toast({
-        title: isReceiptUpload ? "Receipt uploaded successfully" : "Document uploaded successfully",
-        description: isReceiptUpload 
-          ? "Your receipt has been attached to this expense." 
-          : "Your document has been uploaded and indexed."
-      });
-      
-      // Reset form state
-      form.reset();
-      
-      // Clean up preview URL if it exists
-      if (previewURL) {
-        URL.revokeObjectURL(previewURL);
-        setPreviewURL(null);
-      }
-      
-      // Call success callback with documentId
-      if (onSuccess) {
-        onSuccess(result.documentId);
-      }
-      
-    } catch (error: any) {
-      toast({
-        title: "Upload failed",
-        description: error.message || "There was an error uploading your document.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  }, [form, isReceiptUpload, isUploading, onSuccess, previewURL]);
-
-  // Initialize form values only once - memoized to prevent unnecessary re-renders
-  const initializeForm = useCallback(() => {
-    if (isFormInitialized) return;
-
-    // Only update these fields once to avoid re-rendering loops
-    form.setValue('metadata.entityType', entityType);
-    form.setValue('metadata.entityId', entityId || '');
-    
-    if (isReceiptUpload) {
-      form.setValue('metadata.category', 'receipt' as DocumentCategory);
-      form.setValue('metadata.isExpense', true);
-      form.setValue('metadata.expenseType', 'materials');
-      setShowVendorSelector(true);
-    }
-    
-    // Apply prefill data if available - optimized to only run once
-    if (prefillData) {
-      if (prefillData.amount) {
-        form.setValue('metadata.amount', prefillData.amount);
-      }
-      
-      if (prefillData.vendorId) {
-        form.setValue('metadata.vendorId', prefillData.vendorId);
-      }
-      
-      const itemName = prefillData.expenseName || prefillData.materialName;
-      if (itemName) {
-        form.setValue('metadata.tags', [itemName]);
-        form.setValue('metadata.notes', `Receipt for: ${itemName}`);
-      }
-    }
-    
-    setIsFormInitialized(true);
-  }, [entityId, entityType, form, isFormInitialized, isReceiptUpload, prefillData]);
-
+  const { initializeForm, handleCancel } = useFormInitialization({
+    form,
+    entityType,
+    entityId,
+    isReceiptUpload,
+    prefillData,
+    isFormInitialized,
+    setIsFormInitialized,
+    previewURL,
+    onCancel
+  });
+  
   // Run initialization once on mount
   useEffect(() => {
     initializeForm();
@@ -182,23 +88,6 @@ export const useDocumentUploadForm = ({
       }
     };
   }, [initializeForm, previewURL]);
-
-  // Create stable cancel handler
-  const handleCancel = useCallback(() => {
-    // Clean up before cancelling
-    if (previewURL) {
-      URL.revokeObjectURL(previewURL);
-      setPreviewURL(null);
-    }
-    
-    // Reset form
-    form.reset();
-    
-    // Call parent cancel handler
-    if (onCancel) {
-      onCancel();
-    }
-  }, [form, onCancel, previewURL]);
 
   return {
     form,

@@ -69,10 +69,26 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   };
 
-  const handleNext = async () => {
+  const handleNext = async (e?: React.MouseEvent) => {
+    // Prevent event propagation to avoid form submission
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     const isValid = await validateCurrentStep();
     if (isValid) {
       goToNextStep();
+    }
+  };
+
+  // Handle the final submit with proper event handling
+  const handleFinalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isLastStep) {
+      form.handleSubmit(onSubmit)(e);
     }
   };
 
@@ -90,7 +106,18 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
       >
         <div className="flex-1 overflow-y-auto px-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form 
+              onSubmit={(e) => {
+                // Prevent default submit behavior when not on last step
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (isLastStep) {
+                  form.handleSubmit(onSubmit)(e);
+                }
+              }} 
+              className="space-y-6"
+            >
               <EstimateStepContent 
                 currentStep={currentStep}
                 customerTab={customerTab}
@@ -112,7 +139,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
             onNext={isLastStep ? undefined : handleNext}
             isLastStep={isLastStep}
             currentStep={currentStep}
-            onSubmit={isLastStep ? form.handleSubmit(onSubmit) : undefined}
+            onSubmit={isLastStep ? handleFinalSubmit : undefined}
             isSubmitting={isSubmitting}
           />
         </div>

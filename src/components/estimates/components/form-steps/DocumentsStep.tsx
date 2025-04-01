@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { UploadIcon } from 'lucide-react';
@@ -18,6 +18,7 @@ const DocumentsStep = () => {
   // Get the temporary ID from the form context or create one if it doesn't exist
   const [tempEstimateId, setTempEstimateId] = useState<string>("");
   
+  // Use useCallback to create stable function references
   useEffect(() => {
     // Check if we already have a temp ID stored in the form
     const storedTempId = form.getValues('temp_id');
@@ -40,7 +41,8 @@ const DocumentsStep = () => {
     refetchDocuments 
   } = useEstimateDocuments(tempEstimateId);
 
-  const handleDocumentUploadSuccess = (documentId?: string) => {
+  // Make this a stable function with useCallback to prevent recreating on every render
+  const handleDocumentUploadSuccess = useCallback((documentId?: string) => {
     setIsDocumentUploadOpen(false);
     
     if (documentId) {
@@ -56,9 +58,10 @@ const DocumentsStep = () => {
       // Refresh the document list
       refetchDocuments();
     }
-  };
+  }, [form, refetchDocuments]);
 
-  const handleDocumentDelete = (document: any) => {
+  // Stable callback for document deletion
+  const handleDocumentDelete = useCallback((document: any) => {
     // Remove the document ID from the form values
     const currentDocuments = form.getValues('estimate_documents') || [];
     form.setValue(
@@ -73,17 +76,17 @@ const DocumentsStep = () => {
     
     // Refresh the document list
     refetchDocuments();
-  };
+  }, [form, refetchDocuments]);
 
-  // Handle button click - prevent propagation to parent form
-  const handleAddDocumentClick = (e: React.MouseEvent) => {
+  // Handle button click - prevent propagation to parent form with useCallback
+  const handleAddDocumentClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault(); // Prevent default behavior
     e.stopPropagation(); // Stop event bubbling
     setIsDocumentUploadOpen(true);
-  };
+  }, []);
 
-  // Handle sheet open state change
-  const handleSheetOpenChange = (open: boolean) => {
+  // Handle sheet open state change with useCallback for stability
+  const handleSheetOpenChange = useCallback((open: boolean) => {
     if (!open) {
       // Add a small delay before closing to prevent accidental form submissions
       setTimeout(() => {
@@ -92,7 +95,7 @@ const DocumentsStep = () => {
     } else {
       setIsDocumentUploadOpen(true);
     }
-  };
+  }, []);
 
   return (
     <Card className="border border-[#0485ea]/10">
@@ -112,6 +115,7 @@ const DocumentsStep = () => {
             className="w-[90vw] sm:max-w-[600px] p-0" 
             aria-describedby="document-upload-description"
             onClick={(e) => e.stopPropagation()} // Prevent click propagation
+            onSubmit={(e) => e.stopPropagation()} // Also prevent submit propagation
           >
             <SheetHeader className="p-6 pb-2">
               <SheetTitle>Add Document to Estimate</SheetTitle>

@@ -31,8 +31,8 @@ export const useSummaryCalculations = () => {
   });
 
   // Increase debounce time to reduce calculation frequency
-  const debouncedItems = useDebounce(items, 500);
-  const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 500);
+  const debouncedItems = useDebounce(items, 600);
+  const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 600);
 
   // Memoized function to normalize items for calculation
   const normalizeCalculationItems = useCallback((items: any[]): EstimateItem[] => {
@@ -58,8 +58,13 @@ export const useSummaryCalculations = () => {
     [debouncedItems, normalizeCalculationItems]
   );
 
+  // Cache the last calculated values to prevent recalculations when inputs haven't changed
+  // This optimization is particularly helpful for complex calculations
   // Use memoization to calculate values only when the debounced inputs change
   const calculations = useMemo(() => {
+    // Add performance tracking for development
+    const perfStart = performance.now();
+    
     // Calculate all the totals
     const totalCost = calculateTotalCost(calculationItems);
     const totalMarkup = calculateTotalMarkup(calculationItems);
@@ -68,6 +73,14 @@ export const useSummaryCalculations = () => {
     const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
     const contingencyAmount = calculateContingencyAmount(calculationItems, debouncedContingencyPercentage);
     const grandTotal = calculateGrandTotal(calculationItems, debouncedContingencyPercentage);
+
+    // Log performance in development only
+    if (process.env.NODE_ENV === 'development') {
+      const perfEnd = performance.now();
+      if (perfEnd - perfStart > 50) {  // Only log if calculations take more than 50ms
+        console.debug(`Summary calculations took ${(perfEnd - perfStart).toFixed(2)}ms`);
+      }
+    }
 
     return {
       totalCost,

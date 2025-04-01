@@ -1,19 +1,24 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface UseEstimateFormDataProps {
   open: boolean;
   customerId: string;
+  isNewCustomer?: boolean;
 }
 
-export const useEstimateFormData = ({ open, customerId }: UseEstimateFormDataProps) => {
+export const useEstimateFormData = ({ open, customerId, isNewCustomer }: UseEstimateFormDataProps) => {
   const [customers, setCustomers] = useState<{ id: string; name: string; address?: string; city?: string; state?: string; zip?: string; }[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCustomerAddress, setSelectedCustomerAddress] = useState<string | null>(null);
   const [selectedCustomerName, setSelectedCustomerName] = useState<string | null>(null);
-
-  // Fetch customers when the dialog opens
+  
+  // Debounce the customerId to prevent multiple rapid fetches
+  const debouncedCustomerId = useDebounce(customerId, 300);
+  
+  // Fetch customers when the form opens
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
@@ -24,6 +29,7 @@ export const useEstimateFormData = ({ open, customerId }: UseEstimateFormDataPro
           .order('customername');
           
         if (error) throw error;
+        
         setCustomers(data?.map(c => ({ 
           id: c.customerid, 
           name: c.customername || '',
@@ -44,10 +50,10 @@ export const useEstimateFormData = ({ open, customerId }: UseEstimateFormDataPro
     }
   }, [open]);
 
-  // Update selected customer details when customer ID changes
+  // Fetch customer address when customer is selected
   useEffect(() => {
-    if (customerId) {
-      const selectedCustomer = customers.find(c => c.id === customerId);
+    if (debouncedCustomerId && !isNewCustomer) {
+      const selectedCustomer = customers.find(c => c.id === debouncedCustomerId);
       
       if (selectedCustomer) {
         setSelectedCustomerName(selectedCustomer.name);
@@ -63,12 +69,12 @@ export const useEstimateFormData = ({ open, customerId }: UseEstimateFormDataPro
       setSelectedCustomerAddress(null);
       setSelectedCustomerName(null);
     }
-  }, [customerId, customers]);
+  }, [debouncedCustomerId, customers, isNewCustomer]);
 
   return {
     customers,
     loading,
     selectedCustomerAddress,
-    selectedCustomerName,
+    selectedCustomerName
   };
 };
