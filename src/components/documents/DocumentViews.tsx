@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
-import { Document } from './schemas/documentSchema';
-import { DocumentList } from './DocumentList';
-import { DocumentTable } from './DocumentTable';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { FolderIcon, FilterIcon, LayoutGrid, List, Table } from 'lucide-react';
+import DocumentList from './DocumentList';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { FolderIcon, FilterIcon, LayoutGrid, List, Table, Loader2, FileText, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Document } from './schemas/documentSchema';
 
 interface DocumentViewsProps {
   documents: Document[];
@@ -27,9 +28,9 @@ const DocumentViews: React.FC<DocumentViewsProps> = ({
   onUploadClick,
   showNavigationButtons = false
 }) => {
-  const [view, setView] = useState<'grid' | 'list' | 'table'>('grid');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
 
-  const handleSwitchLayout = (newView: 'grid' | 'list' | 'table') => {
+  const handleSwitchLayout = (newView: 'grid' | 'list') => {
     setView(newView);
   };
 
@@ -59,9 +60,6 @@ const DocumentViews: React.FC<DocumentViewsProps> = ({
             </ToggleGroupItem>
             <ToggleGroupItem value="list" aria-label="List view">
               <List className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="table" aria-label="Table view">
-              <Table className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
@@ -106,19 +104,6 @@ const DocumentViews: React.FC<DocumentViewsProps> = ({
               loading={loading}
               onView={onView}
               onDocumentDelete={onDelete}
-              onBatchDelete={onBatchDelete}
-              onUploadClick={onUploadClick}
-              showEntityInfo={true}
-              showCategories={true}
-              showNavigationButtons={showNavigationButtons}
-            />
-          )}
-          {view === 'table' && (
-            <DocumentTable
-              documents={documents}
-              loading={loading}
-              onView={onView}
-              onDelete={onDelete}
               onBatchDelete={onBatchDelete}
               onUploadClick={onUploadClick}
               showEntityInfo={true}

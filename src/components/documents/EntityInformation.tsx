@@ -2,7 +2,7 @@
 import React from 'react';
 import { Document } from './schemas/documentSchema';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Briefcase, Tool, Landmark, Receipt, Clock, User, FileText } from 'lucide-react';
+import { ExternalLink, Briefcase, Wrench, Landmark, Receipt, Clock, User, FileText } from 'lucide-react';
 import { useDocumentNavigation } from './hooks/useDocumentNavigation';
 
 interface EntityInformationProps {
@@ -21,7 +21,7 @@ const EntityInformation: React.FC<EntityInformationProps> = ({ document }) => {
       case 'PROJECT':
         return <Briefcase className="h-4 w-4" />;
       case 'WORK_ORDER':
-        return <Tool className="h-4 w-4" />;
+        return <Wrench className="h-4 w-4" />;
       case 'ESTIMATE':
         return <FileText className="h-4 w-4" />;
       case 'CUSTOMER':
@@ -29,7 +29,7 @@ const EntityInformation: React.FC<EntityInformationProps> = ({ document }) => {
       case 'VENDOR':
         return <Landmark className="h-4 w-4" />;
       case 'SUBCONTRACTOR':
-        return <Tool className="h-4 w-4" />;
+        return <Wrench className="h-4 w-4" />;
       case 'EXPENSE':
         return <Receipt className="h-4 w-4" />;
       case 'TIME_ENTRY':

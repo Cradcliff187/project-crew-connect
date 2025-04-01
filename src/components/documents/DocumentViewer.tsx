@@ -1,131 +1,112 @@
 
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
 import { Document } from './schemas/documentSchema';
-import { Calendar, Download, FileText, FileImage, File } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
-import { DocumentCategoryBadge } from './utils/categoryIcons';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText, Image, AlertCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
-export interface DocumentViewerProps {
-  document: Document | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title?: string;
-  description?: string;
+interface DocumentViewerProps {
+  document: Document;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  className?: string;
+  embedded?: boolean; // This prop is now properly defined
 }
 
-const DocumentViewer: React.FC<DocumentViewerProps> = ({
-  document,
-  open,
-  onOpenChange,
-  title,
-  description
+const DocumentViewer: React.FC<DocumentViewerProps> = ({ 
+  document, 
+  className,
+  embedded = false
 }) => {
-  if (!document) return null;
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   
-  const isImage = document.file_type?.startsWith('image/');
-  const isPdf = document.file_type?.includes('pdf');
-  
-  const getFileIcon = () => {
-    if (isImage) return <FileImage className="h-8 w-8 text-blue-400" />;
-    if (isPdf) return <FileText className="h-8 w-8 text-red-400" />;
-    return <File className="h-8 w-8 text-gray-400" />;
+  const handleImageLoad = () => {
+    setIsLoading(false);
   };
   
-  const formatFileSize = (size?: number) => {
-    if (!size) return 'Unknown size';
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  const handleImageError = () => {
+    setIsLoading(false);
+    setHasError(true);
   };
-
-  // Use url property instead of file_url
-  const fileUrl = document.url || '';
-
+  
+  // Show when there is no preview available 
+  const renderNoPreview = () => (
+    <div className="flex flex-col items-center justify-center h-full bg-gray-50 py-12">
+      <FileText className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
+      <h3 className="font-medium text-lg mb-2">Preview not available</h3>
+      <p className="text-sm text-muted-foreground text-center max-w-sm">
+        This file type cannot be previewed directly. Please download the file to view its contents.
+      </p>
+    </div>
+  );
+  
+  // Show when there is an error loading the preview
+  const renderError = () => (
+    <div className="flex flex-col items-center justify-center h-full bg-gray-50 py-12">
+      <AlertCircle className="h-16 w-16 text-destructive opacity-50 mb-4" />
+      <h3 className="font-medium text-lg mb-2">Unable to load preview</h3>
+      <p className="text-sm text-muted-foreground text-center max-w-sm">
+        There was an error loading the preview for this document. The file may be corrupted or in an unsupported format.
+      </p>
+    </div>
+  );
+  
+  // Determine the preview type based on the file type
+  const getPreviewType = () => {
+    if (!document.file_type) return 'none';
+    
+    const fileType = document.file_type.toLowerCase();
+    
+    if (fileType.includes('image/')) {
+      return 'image';
+    } else if (fileType.includes('pdf')) {
+      return 'pdf';
+    } else {
+      return 'none';
+    }
+  };
+  
+  const previewType = getPreviewType();
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {title || (
-              <>
-                {getFileIcon()}
-                <span className="truncate">{document.file_name}</span>
-              </>
-            )}
-          </DialogTitle>
-          <DialogDescription className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-gray-400" />
-              <span>
-                {description || (
-                  <>
-                    {formatDate(document.created_at || '')} - {formatFileSize(document.file_size)}
-                  </>
-                )}
-              </span>
-            </div>
-            
-            {document.category && (
-              <DocumentCategoryBadge category={document.category} />
-            )}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex-1 overflow-auto min-h-[50vh] bg-gray-50 rounded-md flex items-center justify-center">
-          {isImage && fileUrl ? (
-            <img 
-              src={fileUrl} 
-              alt={document.file_name} 
-              className="max-w-full max-h-[60vh] object-contain"
-            />
-          ) : isPdf && fileUrl ? (
-            <iframe
-              src={fileUrl}
-              className="w-full h-[60vh]"
-              title={document.file_name}
-            />
-          ) : (
-            <div className="text-center p-8">
-              <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">
-                Preview not available for this file type
-              </p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => window.open(fileUrl, '_blank')}
-              >
-                Open in new tab
-              </Button>
+    <div className={cn("relative w-full h-full flex items-center justify-center", className)}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+          <Skeleton className="h-[80%] w-[80%] rounded-md" />
+        </div>
+      )}
+      
+      {hasError ? (
+        renderError()
+      ) : (
+        <>
+          {previewType === 'image' && document.url && (
+            <div className="flex items-center justify-center h-full w-full overflow-auto bg-gray-50">
+              <img 
+                src={document.url} 
+                alt={document.file_name} 
+                className="max-w-full max-h-full object-contain"
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+              />
             </div>
           )}
-        </div>
-        
-        <DialogFooter className="flex justify-between items-center">
-          <div className="text-sm text-gray-500">
-            {document.notes && (
-              <p><strong>Notes:</strong> {document.notes}</p>
-            )}
-            {document.entity_type && (
-              <p><strong>Associated with:</strong> {document.entity_type.replace('_', ' ').toLowerCase()}</p>
-            )}
-          </div>
-          <Button onClick={() => window.open(fileUrl, '_blank')}>
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          
+          {previewType === 'pdf' && document.url && (
+            <iframe 
+              src={`${document.url}#toolbar=0`}
+              className="w-full h-full"
+              onLoad={() => setIsLoading(false)}
+              onError={handleImageError}
+            />
+          )}
+          
+          {previewType === 'none' && renderNoPreview()}
+        </>
+      )}
+    </div>
   );
 };
 
