@@ -167,25 +167,23 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={`Select a ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'}`} />
+                        <SelectValue placeholder={`Select ${entityType?.toLowerCase() || 'entity'}`} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {entities.map((entity) => (
-                        <SelectItem key={entity.id} value={entity.id}>
+                        <SelectItem key={entity.id} value={entity.id || "_placeholder"}>
                           {entity.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 ) : (
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder={loading ? "Loading..." : `Enter ${entityType ? entityType.toLowerCase().replace(/_/g, ' ') : 'entity'} ID`}
-                      disabled={loading || (isReceiptUpload && !!field.value)}
-                    />
-                  </FormControl>
+                  <Input 
+                    placeholder={`Enter ${entityType?.toLowerCase() || 'entity'} ID`}
+                    {...field}
+                    disabled={isReceiptUpload && !!field.value}
+                  />
                 )}
                 <FormMessage />
               </FormItem>

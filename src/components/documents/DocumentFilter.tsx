@@ -67,12 +67,12 @@ const DocumentFilter: React.FC<DocumentFilterProps> = ({
       
       <div className="flex flex-wrap gap-2">
         {/* Category Filter */}
-        <Select value={value.category || ''} onValueChange={handleCategoryChange}>
+        <Select value={value.category || 'all_categories'} onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all_categories">All Categories</SelectItem>
             <SelectItem value="contract">Contracts</SelectItem>
             <SelectItem value="invoice">Invoices</SelectItem>
             <SelectItem value="receipt">Receipts</SelectItem>
@@ -86,12 +86,12 @@ const DocumentFilter: React.FC<DocumentFilterProps> = ({
         </Select>
 
         {/* Entity Type Filter */}
-        <Select value={value.entityType || ''} onValueChange={handleEntityTypeChange}>
+        <Select value={value.entityType || 'all_entities'} onValueChange={handleEntityTypeChange}>
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Entity Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Entities</SelectItem>
+            <SelectItem value="all_entities">All Entities</SelectItem>
             <SelectItem value="PROJECT">Projects</SelectItem>
             <SelectItem value="CUSTOMER">Customers</SelectItem>
             <SelectItem value="VENDOR">Vendors</SelectItem>
@@ -144,6 +144,7 @@ const DocumentFilter: React.FC<DocumentFilterProps> = ({
               selected={value.dateRange}
               onSelect={handleDateRangeChange}
               numberOfMonths={2}
+              className="pointer-events-auto"
             />
           </PopoverContent>
         </Popover>
