@@ -21,7 +21,7 @@ export const useSummaryCalculations = () => {
   const items = useWatch({
     control: form.control,
     name: 'items',
-    defaultValue: [] as EstimateItem[]
+    defaultValue: []
   });
 
   const contingencyPercentage = useWatch({
@@ -35,10 +35,10 @@ export const useSummaryCalculations = () => {
   const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 600);
 
   // Memoized function to normalize items for calculation
-  const normalizeCalculationItems = useCallback((items: EstimateItem[]): EstimateItem[] => {
-    if (!Array.isArray(items)) return [];
+  const normalizeCalculationItems = useCallback((formItems: any[]): EstimateItem[] => {
+    if (!Array.isArray(formItems)) return [];
     
-    return items.map((item: EstimateItem) => ({
+    return formItems.map((item) => ({
       cost: item?.cost || '0',
       markup_percentage: item?.markup_percentage || '0',
       quantity: item?.quantity || '1',

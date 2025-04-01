@@ -8,7 +8,7 @@ import { useSummaryCalculations } from '../../hooks/useSummaryCalculations';
 
 const ContingencyInput = () => {
   const form = useFormContext<EstimateFormValues>();
-  const { subtotal, contingencyAmount } = useSummaryCalculations();
+  const { contingencyAmount } = useSummaryCalculations();
   
   return (
     <div className="space-y-2">

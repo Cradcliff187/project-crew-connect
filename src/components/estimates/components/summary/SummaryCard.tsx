@@ -4,16 +4,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { useSummaryCalculations } from '../../hooks/useSummaryCalculations';
 
-interface SummaryCardProps {
-  contingencyAmount: number;
-}
-
-const SummaryCard = ({ contingencyAmount }: SummaryCardProps) => {
+const SummaryCard = () => {
   const {
     subtotal,
     totalCost,
     grandTotal,
-    overallMarginPercentage
+    overallMarginPercentage,
+    contingencyAmount
   } = useSummaryCalculations();
   
   // Calculate gross profit
