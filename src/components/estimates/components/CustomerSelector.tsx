@@ -7,7 +7,7 @@ import { EstimateFormValues } from '../schemas/estimateFormSchema';
 
 interface CustomerSelectorProps {
   customers: { id: string; name: string; address?: string; city?: string; state?: string; zip?: string; }[];
-  selectedCustomerAddress: string | null;
+  selectedCustomerAddress?: string | null;
 }
 
 const CustomerSelector: React.FC<CustomerSelectorProps> = ({ 

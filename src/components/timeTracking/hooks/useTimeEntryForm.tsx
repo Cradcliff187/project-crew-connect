@@ -4,8 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { toast } from '@/hooks/use-toast';
-import { useTimeEntrySubmit } from './useTimeEntrySubmit';
+import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -36,7 +35,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmationData, setConfirmationData] = useState<TimeEntryFormValues | null>(null);
   
-  // Use our new submission hook
+  // Use our submission hook
   const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
   
   const form = useForm<TimeEntryFormValues>({

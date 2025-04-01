@@ -62,7 +62,10 @@ const EditFormContent = ({
               <TabsTrigger value="new">New Customer</TabsTrigger>
             </TabsList>
             <TabsContent value="existing">
-              <CustomerSelector customers={customers} />
+              <CustomerSelector 
+                customers={customers}
+                selectedCustomerAddress={selectedCustomerAddress}
+              />
             </TabsContent>
             <TabsContent value="new">
               <CustomerFormFields />

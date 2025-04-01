@@ -1,12 +1,28 @@
 
 import { useState } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Save } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -14,7 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -24,89 +42,107 @@ interface TimelogAddSheetProps {
   onSuccess: () => void;
 }
 
+const formSchema = z.object({
+  hours: z.coerce.number().min(0.1, { message: 'Hours must be greater than 0' }),
+  date: z.date(),
+  description: z.string().optional(),
+  employee_id: z.string().optional(),
+});
+
 const TimelogAddSheet = ({
   open,
   onOpenChange,
   workOrderId,
   employees,
-  onSuccess,
+  onSuccess
 }: TimelogAddSheetProps) => {
-  const [hours, setHours] = useState('');
-  const [notes, setNotes] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(
-    employees.length > 0 ? employees[0].employee_id : null
-  );
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      hours: 1,
+      date: new Date(),
+      description: '',
+      employee_id: '',
+    },
+  });
 
   const resetForm = () => {
-    setHours('');
-    setNotes('');
-    setSelectedEmployee(employees.length > 0 ? employees[0].employee_id : null);
+    form.reset({
+      hours: 1,
+      date: new Date(),
+      description: '',
+      employee_id: '',
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!hours || parseFloat(hours) <= 0) {
-      toast({
-        title: 'Invalid Hours',
-        description: 'Please enter a valid number of hours.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    setSubmitting(true);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
     
     try {
-      // Get the current time to use as both start and end times
-      const now = new Date();
-      const currentTime = now.toTimeString().substring(0, 5); // HH:MM format
-      
-      const hoursValue = parseFloat(hours);
-      // Calculate a reasonable end time based on hours worked
-      const startTime = "09:00"; // Default start time (9 AM)
-      const endHours = Math.floor(9 + hoursValue);
-      const endMinutes = Math.floor((hoursValue % 1) * 60);
-      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-      
-      console.log('Submitting time log with data:', {
-        entity_type: 'work_order' as 'work_order' | 'project',
+      const timeEntryData = {
+        entity_type: 'work_order',
         entity_id: workOrderId,
-        employee_id: selectedEmployee,
-        hours_worked: hoursValue,
-        start_time: startTime,
-        end_time: endTime,
-        notes,
-        date_worked: new Date().toISOString().split('T')[0],
-      });
+        date_worked: format(values.date, 'yyyy-MM-dd'),
+        hours_worked: values.hours,
+        notes: values.description || null,
+        employee_id: values.employee_id || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      // Insert directly into time_entries table
-      const { data, error } = await supabase
+      const { error, data } = await supabase
         .from('time_entries')
-        .insert({
-          entity_type: 'work_order' as 'work_order' | 'project',
-          entity_id: workOrderId,
-          employee_id: selectedEmployee,
-          hours_worked: hoursValue,
-          notes,
-          date_worked: new Date().toISOString().split('T')[0], // Just the date part
-          start_time: startTime,
-          end_time: endTime,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select();
+        .insert(timeEntryData)
+        .select('id')
+        .single();
       
-      if (error) {
-        throw error;
+      if (error) throw error;
+      
+      // Create expense entry for the labor time
+      if (values.hours > 0) {
+        // Get employee rate if available
+        let hourlyRate = 75; // Default rate
+        
+        if (values.employee_id) {
+          const { data: empData } = await supabase
+            .from('employees')
+            .select('hourly_rate')
+            .eq('employee_id', values.employee_id)
+            .maybeSingle();
+            
+          if (empData?.hourly_rate) {
+            hourlyRate = empData.hourly_rate;
+          }
+        }
+        
+        const totalAmount = values.hours * hourlyRate;
+        
+        const { error: expenseError } = await supabase
+          .from('expenses')
+          .insert({
+            entity_type: 'WORK_ORDER',
+            entity_id: workOrderId,
+            description: `Labor: ${values.hours} hours${values.description ? ' - ' + values.description : ''}`,
+            expense_type: 'LABOR',
+            amount: totalAmount,
+            time_entry_id: data.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            quantity: values.hours,
+            unit_price: hourlyRate,
+            vendor_id: null
+          });
+          
+        if (expenseError) {
+          console.error('Error creating labor expense:', expenseError);
+        }
       }
       
-      console.log('Time log created successfully:', data);
-      
       toast({
-        title: 'Time Logged',
-        description: 'Time has been logged successfully.',
+        title: 'Time log added',
+        description: 'Time has been successfully logged.',
       });
       
       resetForm();
@@ -115,100 +151,145 @@ const TimelogAddSheet = ({
     } catch (error: any) {
       console.error('Error logging time:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to log time. Please try again.',
+        title: 'Error adding time log',
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full md:max-w-md overflow-y-auto">
+      <SheetContent>
         <SheetHeader>
-          <SheetTitle>Log Time for Work Order</SheetTitle>
+          <SheetTitle>Log Time</SheetTitle>
         </SheetHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="hours">Hours Worked *</Label>
-              <Input
-                id="hours"
-                type="number"
-                step="0.25"
-                min="0.25"
-                placeholder="0.00"
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
-                required
+        <div className="mt-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="employee">Employee</Label>
-              <Select 
-                value={selectedEmployee || undefined} 
-                onValueChange={(value) => setSelectedEmployee(value)}
-              >
-                <SelectTrigger id="employee">
-                  <SelectValue placeholder="Select employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee.employee_id} value={employee.employee_id}>
-                      {employee.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Enter notes about the work performed"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
+              
+              <FormField
+                control={form.control}
+                name="hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hours Worked</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.25" min="0.25" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => {
-                resetForm();
-                onOpenChange(false);
-              }}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Log Time
-                </>
+              
+              {employees.length > 0 && (
+                <FormField
+                  control={form.control}
+                  name="employee_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Employee</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an employee" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Unassigned</SelectItem>
+                          {employees.map((employee) => (
+                            <SelectItem key={employee.employee_id} value={employee.employee_id}>
+                              {employee.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            </Button>
-          </div>
-        </form>
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Describe the work done" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex justify-end gap-3">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    resetForm();
+                    onOpenChange(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="bg-[#0485ea] hover:bg-[#0373ce]"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : 'Log Time'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </SheetContent>
     </Sheet>
   );

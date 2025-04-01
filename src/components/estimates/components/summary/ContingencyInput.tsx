@@ -10,7 +10,7 @@ const ContingencyInput = () => {
   
   // Calculate contingency amount based on current items
   const items = form.watch('items') || [];
-  const totalBeforeContingency = items.reduce((sum, item) => {
+  const totalBeforeContingency = items.reduce((sum: number, item: any) => {
     const cost = parseFloat(item.cost) || 0;
     const markup = parseFloat(item.markup_percentage) || 0;
     const markupAmount = cost * (markup / 100);
