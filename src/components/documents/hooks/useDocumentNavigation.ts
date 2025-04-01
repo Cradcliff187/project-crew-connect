@@ -35,24 +35,25 @@ export const useDocumentNavigation = () => {
     const route = entityRouteMap[document.entity_type.toUpperCase()];
 
     if (route) {
-      navigate(route)
-        .then(() => {
-          toast({
-            title: 'Navigation successful',
-            description: `Navigated to ${document.entity_type.toLowerCase()}`
-          });
-        })
-        .catch((error) => {
-          console.error('Navigation error:', error);
-          toast({
-            title: 'Navigation failed',
-            description: 'Could not navigate to the entity page',
-            variant: 'destructive'
-          });
-        })
-        .finally(() => {
-          setIsNavigating(false);
+      try {
+        // React Router's navigate function doesn't return a Promise, so we can't use .then()
+        navigate(route);
+        
+        // Show success toast after navigation
+        toast({
+          title: 'Navigation successful',
+          description: `Navigated to ${document.entity_type.toLowerCase()}`
         });
+      } catch (error) {
+        console.error('Navigation error:', error);
+        toast({
+          title: 'Navigation failed',
+          description: 'Could not navigate to the entity page',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsNavigating(false);
+      }
     } else {
       toast({
         title: 'Navigation error',

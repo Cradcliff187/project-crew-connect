@@ -50,3 +50,63 @@ export function getFileIconByType(fileType: string): string {
   
   return 'file';
 }
+
+/**
+ * Format a time range from start and end time strings
+ * @param startTime Start time in 24h format (e.g. "09:00")
+ * @param endTime End time in 24h format (e.g. "17:00")
+ * @returns Formatted time range (e.g. "9:00 AM - 5:00 PM")
+ */
+export function formatTimeRange(startTime?: string, endTime?: string): string {
+  if (!startTime || !endTime) return "N/A";
+  
+  try {
+    // Parse hours and minutes
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    
+    // Create date objects to use date-fns formatting
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setHours(startHour, startMinute, 0);
+    
+    const endDate = new Date(today);
+    endDate.setHours(endHour, endMinute, 0);
+    
+    // Format the times
+    const formattedStart = format(startDate, "h:mm a");
+    const formattedEnd = format(endDate, "h:mm a");
+    
+    return `${formattedStart} - ${formattedEnd}`;
+  } catch (error) {
+    console.error("Error formatting time range:", error);
+    return "Invalid time range";
+  }
+}
+
+/**
+ * Calculate the number of days until a due date
+ * @param dueDate Due date string in ISO format
+ * @returns Number of days until due (negative if overdue), or null if no due date
+ */
+export function calculateDaysUntilDue(dueDate?: string | null): number | null {
+  if (!dueDate) return null;
+  
+  try {
+    const due = new Date(dueDate);
+    const today = new Date();
+    
+    // Reset hours to make sure we're just comparing days
+    due.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    
+    // Calculate difference in days
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  } catch (error) {
+    console.error("Error calculating days until due:", error);
+    return null;
+  }
+}
