@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { FileIcon, FileTextIcon, PlusIcon, TrashIcon, UploadIcon } from 'lucide-react';
+import { UploadIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
 import DocumentList from '@/components/documents/DocumentList';
@@ -82,11 +82,23 @@ const DocumentsStep = () => {
     setIsDocumentUploadOpen(true);
   };
 
+  // Handle sheet open state change
+  const handleSheetOpenChange = (open: boolean) => {
+    if (!open) {
+      // Add a small delay before closing to prevent accidental form submissions
+      setTimeout(() => {
+        setIsDocumentUploadOpen(false);
+      }, 50);
+    } else {
+      setIsDocumentUploadOpen(true);
+    }
+  };
+
   return (
     <Card className="border border-[#0485ea]/10">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg font-medium">Supporting Documents</CardTitle>
-        <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
+        <Sheet open={isDocumentUploadOpen} onOpenChange={handleSheetOpenChange}>
           <Button 
             onClick={handleAddDocumentClick}
             className="bg-[#0485ea] hover:bg-[#0373ce]"
@@ -96,7 +108,11 @@ const DocumentsStep = () => {
             Add Document
           </Button>
           
-          <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" aria-describedby="document-upload-description">
+          <SheetContent 
+            className="w-[90vw] sm:max-w-[600px] p-0" 
+            aria-describedby="document-upload-description"
+            onClick={(e) => e.stopPropagation()} // Prevent click propagation
+          >
             <SheetHeader className="p-6 pb-2">
               <SheetTitle>Add Document to Estimate</SheetTitle>
               <SheetDescription id="document-upload-description">
@@ -110,6 +126,7 @@ const DocumentsStep = () => {
                 entityId={tempEstimateId}
                 onSuccess={handleDocumentUploadSuccess}
                 onCancel={() => setIsDocumentUploadOpen(false)}
+                preventFormPropagation={true} // Enable explicit form propagation prevention
               />
             )}
           </SheetContent>

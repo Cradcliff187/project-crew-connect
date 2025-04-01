@@ -1,6 +1,6 @@
 
 import { useFormContext, useWatch } from 'react-hook-form';
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { 
   calculateSubtotal, 
   calculateContingencyAmount, 
@@ -30,15 +30,15 @@ export const useSummaryCalculations = () => {
     defaultValue: "0"
   });
 
-  // Debounce values to reduce calculation frequency
-  const debouncedItems = useDebounce(items, 300);
-  const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 300);
+  // Increase debounce time to reduce calculation frequency
+  const debouncedItems = useDebounce(items, 500);
+  const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 500);
 
-  // Use useMemo to prevent recalculation if the inputs haven't changed
-  const calculationItems: EstimateItem[] = useMemo(() => {
-    if (!Array.isArray(debouncedItems)) return [];
+  // Memoized function to normalize items for calculation
+  const normalizeCalculationItems = useCallback((items: any[]): EstimateItem[] => {
+    if (!Array.isArray(items)) return [];
     
-    return debouncedItems.map((item: any) => ({
+    return items.map((item: any) => ({
       cost: item?.cost || '0',
       markup_percentage: item?.markup_percentage || '0',
       quantity: item?.quantity || '1',
@@ -50,7 +50,13 @@ export const useSummaryCalculations = () => {
       expense_type: item?.expense_type,
       custom_type: item?.custom_type
     }));
-  }, [debouncedItems]);
+  }, []);
+
+  // Use memoization for calculation items to prevent recreation on each render
+  const calculationItems = useMemo(() => 
+    normalizeCalculationItems(debouncedItems), 
+    [debouncedItems, normalizeCalculationItems]
+  );
 
   // Use memoization to calculate values only when the debounced inputs change
   const calculations = useMemo(() => {

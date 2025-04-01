@@ -12,7 +12,10 @@ export const uploadDocument = async (
   data: DocumentUploadFormValues
 ): Promise<UploadResult> => {
   try {
-    console.log('Uploading document with data:', data);
+    // Only log in development environment
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Uploading document with data:', data);
+    }
     
     let uploadedDocumentId: string | undefined;
     
@@ -30,21 +33,16 @@ export const uploadDocument = async (
       const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
       
-      console.log(`Uploading file to construction_documents bucket, path: ${filePath}`);
-      console.log(`File object:`, { 
-        name: file.name, 
-        type: file.type, 
-        size: file.size 
-      });
+      // Only log in development environment
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Uploading file to construction_documents bucket, path: ${filePath}`);
+      }
       
       // Check if file is actually a File object
       if (!(file instanceof File)) {
         console.error('Not a valid File object:', file);
         throw new Error('Invalid file object provided');
       }
-      
-      // Enhanced logging for Content-Type debugging
-      console.log('File MIME type from browser:', file.type);
       
       // Determine the proper content type based on file extension if needed
       let contentType = file.type;
@@ -65,7 +63,11 @@ export const uploadDocument = async (
         
         if (fileExt && mimeMap[fileExt.toLowerCase()]) {
           contentType = mimeMap[fileExt.toLowerCase()];
-          console.log(`File type not provided, using extension-based type: ${contentType}`);
+          
+          // Only log in development environment
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`File type not provided, using extension-based type: ${contentType}`);
+          }
         }
       }
       
@@ -78,17 +80,7 @@ export const uploadDocument = async (
         duplex: 'half' as const
       };
       
-      // Enhanced debugging for upload
-      console.log('About to execute upload with params:', {
-        bucket: 'construction_documents',
-        path: filePath,
-        fileType: contentType,
-        fileSize: file.size,
-        options: fileOptions
-      });
-      
       // Upload the file to Supabase Storage with explicit content type
-      // The headers issue is fixed by removing the global Content-Type header in the Supabase client
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file, fileOptions);
@@ -103,14 +95,20 @@ export const uploadDocument = async (
         throw uploadError;
       }
       
-      console.log('File uploaded successfully:', uploadData);
+      // Only log in development environment
+      if (process.env.NODE_ENV === 'development') {
+        console.log('File uploaded successfully:', uploadData);
+      }
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('construction_documents')
         .getPublicUrl(filePath);
         
-      console.log('Public URL generated:', publicUrl);
+      // Only log in development environment
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Public URL generated:', publicUrl);
+      }
       
       // Now insert document metadata to Supabase
       const documentData = {
@@ -133,7 +131,10 @@ export const uploadDocument = async (
         expense_type: metadata.expenseType || null,
       };
       
-      console.log('Inserting document metadata:', documentData);
+      // Only log in development environment
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Inserting document metadata:', documentData);
+      }
       
       // For this DB call we need to ensure headers are correctly sent
       const { data: insertedData, error: insertError } = await supabase
@@ -150,7 +151,10 @@ export const uploadDocument = async (
         throw insertError;
       }
       
-      console.log('Document metadata inserted:', insertedData);
+      // Only log in development environment
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Document metadata inserted:', insertedData);
+      }
       
       // Store the document ID for the first file
       if (insertedData) {
@@ -164,13 +168,17 @@ export const uploadDocument = async (
     };
     
   } catch (error: any) {
-    // Enhanced error logging
-    console.error('Upload error (detailed):', {
-      errorMessage: error.message,
-      errorObject: error,
-      name: error.name,
-      stack: error.stack
-    });
+    // Enhanced error logging, but only critical errors are always shown
+    console.error('Upload error:', error.message);
+    
+    // More detailed error only in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Upload error details:', {
+        errorObject: error,
+        name: error.name,
+        stack: error.stack
+      });
+    }
     
     return {
       success: false,
