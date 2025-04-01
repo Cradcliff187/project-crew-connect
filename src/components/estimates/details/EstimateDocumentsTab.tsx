@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, FileIcon, ExternalLink, PaperclipIcon, AlertTriangle } from "lucide-react";
+import { PlusCircle, FileIcon, ExternalLink, PaperclipIcon, AlertTriangle, Mail } from "lucide-react";
 import { useEstimateDocuments } from '@/components/documents/hooks/useEstimateDocuments';
 import { useDocumentViewer } from '@/hooks/useDocumentViewer';
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Document } from '@/components/documents/schemas/documentSchema';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import DocumentShareDialog from '../detail/dialogs/DocumentShareDialog';
 
 type EstimateDocumentsTabProps = {
   estimateId: string;
@@ -17,6 +18,8 @@ type EstimateDocumentsTabProps = {
 
 const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId }) => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const { documents, loading, error, refetchDocuments } = useEstimateDocuments(estimateId);
   const { viewDocument, isViewerOpen, currentDocument, closeViewer } = useDocumentViewer();
   
@@ -36,6 +39,11 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
   const handleDocumentUploadSuccess = () => {
     setIsUploadOpen(false);
     refetchDocuments();
+  };
+
+  const handleShareDocument = (doc: Document) => {
+    setSelectedDocument(doc);
+    setIsShareOpen(true);
   };
   
   const getDocumentTypeColor = (doc: Document) => {
@@ -115,10 +123,7 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
                 <TooltipProvider key={doc.document_id}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div 
-                        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-[#0485ea]/30"
-                        onClick={() => viewDocument(doc.document_id)}
-                      >
+                      <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-start gap-3">
                           <div className="bg-blue-50 p-2 rounded-lg">
                             <FileIcon className="h-8 w-8 text-[#0485ea]" />
@@ -151,12 +156,38 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
                                 </span>
                               )}
                             </div>
+                            <div className="flex items-center gap-2 mt-3">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 px-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  viewDocument(doc.document_id);
+                                }}
+                              >
+                                <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                                <span className="text-xs">View</span>
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 px-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleShareDocument(doc);
+                                }}
+                              >
+                                <Mail className="h-3.5 w-3.5 mr-1" />
+                                <span className="text-xs">Share</span>
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Click to view document</p>
+                      <p>Document options</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -186,6 +217,17 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
                     </Button>
                   </a>
                 )}
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShareDocument(currentDocument);
+                  }}
+                >
+                  <Mail className="h-4 w-4 mr-1" />
+                  Share
+                </Button>
                 <Button size="sm" variant="ghost" onClick={closeViewer}>
                   Close
                 </Button>
@@ -216,6 +258,13 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({ estimateId 
           </div>
         </div>
       )}
+      
+      <DocumentShareDialog
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        document={selectedDocument}
+        estimateId={estimateId}
+      />
     </>
   );
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent,
@@ -17,6 +17,7 @@ import EstimateItemsTab from './EstimateItemsTab';
 import EstimateRevisionsTab from './EstimateRevisionsTab';
 import EstimateDocumentsTab from './EstimateDocumentsTab';
 import EstimateRevisionDialog from '../detail/dialogs/EstimateRevisionDialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({ 
   estimate, 
@@ -29,6 +30,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   const [activeTab, setActiveTab] = useState('details');
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
   const [currentVersion, setCurrentVersion] = useState(1);
+  const [clientEmail, setClientEmail] = useState<string | undefined>(undefined);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -40,12 +42,35 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   };
 
   // Find the current version from revisions
-  React.useEffect(() => {
+  useEffect(() => {
     const currentRevision = revisions.find(rev => rev.is_current);
     if (currentRevision) {
       setCurrentVersion(currentRevision.version);
     }
   }, [revisions]);
+  
+  // Fetch client email when the estimate dialog opens
+  useEffect(() => {
+    const fetchClientEmail = async () => {
+      if (estimate?.client && open) {
+        try {
+          const { data, error } = await supabase
+            .from('contacts')
+            .select('email')
+            .eq('id', estimate.client)
+            .single();
+            
+          if (data && !error) {
+            setClientEmail(data.email);
+          }
+        } catch (err) {
+          console.error("Error fetching client email:", err);
+        }
+      }
+    };
+    
+    fetchClientEmail();
+  }, [estimate?.client, open]);
 
   const handleCreateRevision = () => {
     setRevisionDialogOpen(true);
