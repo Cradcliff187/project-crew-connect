@@ -26,7 +26,7 @@ export const FileUpload = React.forwardRef<HTMLInputElement, FileUploadProps>(
     selectedFiles = [],
     allowCamera = true,
     allowMultiple = false,
-    acceptedFileTypes = "image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain",
+    acceptedFileTypes = "image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip",
     maxFileSize = 10, // 10MB default
     className,
     dropzoneText = "Drag files here or click to upload",

@@ -1,18 +1,10 @@
 
-import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { uploadDocument } from '../services/DocumentUploader';
-import { testBucketAccess } from '../services/BucketTest';
-import { 
-  DocumentUploadFormValues, 
-  documentUploadSchema, 
-  EntityType,
-  DocumentCategory,
-  ExpenseType,
-  VendorType
-} from '../schemas/documentSchema';
+import { DocumentMetadata, documentUploadSchema, EntityType } from '../schemas/documentSchema';
+import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 
 interface UseDocumentUploadFormProps {
   entityType: EntityType;
@@ -29,221 +21,209 @@ interface UseDocumentUploadFormProps {
   instanceId?: string;
 }
 
-export const useDocumentUploadForm = ({
+export function useDocumentUploadForm({
   entityType,
   entityId,
   onSuccess,
   onCancel,
   isReceiptUpload = false,
   prefillData,
-  instanceId = 'default-form'
-}: UseDocumentUploadFormProps) => {
+  instanceId = 'default'
+}: UseDocumentUploadFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
-  const [showVendorSelector, setShowVendorSelector] = useState(false);
-  const [bucketInfo, setBucketInfo] = useState<{id: string, name: string} | null>(null);
+  const [showVendorSelector, setShowVendorSelector] = useState(isReceiptUpload);
   
-  // Create stable refs for all props to prevent effects from re-running
-  const entityTypeRef = useRef(entityType);
-  const entityIdRef = useRef(entityId);
-  const isReceiptUploadRef = useRef(isReceiptUpload);
-  const prefillDataRef = useRef(prefillData);
-  const formInitialized = useRef(false);
-  const uploadInProgress = useRef(false);
-  
-  // Update refs when props change
-  useEffect(() => {
-    entityTypeRef.current = entityType;
-    entityIdRef.current = entityId;
-    isReceiptUploadRef.current = isReceiptUpload;
-    prefillDataRef.current = prefillData;
-  }, [entityType, entityId, isReceiptUpload, prefillData]);
-
-  // Create default values with stable references
-  const defaultValues = useRef<DocumentUploadFormValues>({
-    files: [],
-    metadata: {
-      category: isReceiptUpload ? 'receipt' as DocumentCategory : 'other' as DocumentCategory,
-      entityType: entityType,
-      entityId: entityId || '',
-      version: 1,
-      tags: [],
-      isExpense: isReceiptUpload,
-      vendorId: '',
-      vendorType: 'vendor' as VendorType,
-      expenseType: 'materials' as ExpenseType,
-    }
-  }).current;
-
-  // Create form with stable default values
-  const form = useForm<DocumentUploadFormValues>({
+  // Initialize form with default values
+  const form = useForm({
     resolver: zodResolver(documentUploadSchema),
-    defaultValues,
-    mode: 'onBlur', // Less validation, less re-renders
+    defaultValues: {
+      files: [],
+      metadata: {
+        category: isReceiptUpload ? 'receipt' : 'other',
+        entityType,
+        entityId: entityId || '',
+        amount: prefillData?.amount,
+        isExpense: isReceiptUpload,
+        vendorId: prefillData?.vendorId,
+        tags: [],
+        version: 1,
+      }
+    }
   });
-
-  // Check bucket access once
-  useEffect(() => {
-    let isMounted = true;
-    
-    const checkBucket = async () => {
-      try {
-        const result = await testBucketAccess();
-        if (isMounted && result.success && result.bucketId) {
-          setBucketInfo({
-            id: result.bucketId, 
-            name: result.bucketName || result.bucketId
-          });
-        } else if (isMounted) {
-          setBucketInfo({
-            id: 'construction_documents', 
-            name: 'Construction Documents'
-          });
-        }
-      } catch (error) {
-        if (isMounted) {
-          setBucketInfo({
-            id: 'construction_documents', 
-            name: 'Construction Documents'
-          });
-        }
+  
+  // Watch form values
+  const watchFiles = form.watch('files');
+  const watchCategory = form.watch('metadata.category');
+  const watchIsExpense = form.watch('metadata.isExpense');
+  const watchVendorType = form.watch('metadata.vendorType');
+  
+  // Initialize form with prefill data and reset
+  const initializeForm = useCallback(() => {
+    const defaultValues = {
+      files: [],
+      metadata: {
+        category: isReceiptUpload ? 'receipt' : 'other',
+        entityType,
+        entityId: entityId || '',
+        amount: prefillData?.amount,
+        isExpense: isReceiptUpload,
+        vendorId: prefillData?.vendorId,
+        tags: [],
+        version: 1,
       }
     };
     
-    checkBucket();
+    form.reset(defaultValues);
     
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Clean up preview URL when component unmounts
-  useEffect(() => {
-    return () => {
-      if (previewURL) {
-        URL.revokeObjectURL(previewURL);
-      }
-    };
-  }, [previewURL]);
-
-  // Handle file selection with a stable reference
+    if (previewURL) {
+      URL.revokeObjectURL(previewURL);
+      setPreviewURL(null);
+    }
+  }, [form, entityType, entityId, isReceiptUpload, prefillData, previewURL]);
+  
+  // Handle file selection
   const handleFileSelect = useCallback((files: File[]) => {
-    form.setValue('files', files, { shouldValidate: false });
+    form.setValue('files', files);
     
+    // Create preview URL for the first file if it's an image
     if (files.length > 0 && files[0].type.startsWith('image/')) {
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
       }
-      const newPreviewUrl = URL.createObjectURL(files[0]);
-      setPreviewURL(newPreviewUrl);
+      setPreviewURL(URL.createObjectURL(files[0]));
     } else {
-      if (previewURL) {
-        URL.revokeObjectURL(previewURL);
-      }
       setPreviewURL(null);
     }
   }, [form, previewURL]);
-
-  // Handle form submission with a stable reference and upload guard
-  const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
-    // Prevent double submission
-    if (uploadInProgress.current) {
+  
+  // Handle form submission
+  const onSubmit = async (data: any) => {
+    if (data.files.length === 0) {
+      toast({
+        title: 'No files selected',
+        description: 'Please select at least one file to upload',
+        variant: 'destructive',
+      });
       return;
     }
-
+    
+    if (!data.metadata.entityId) {
+      toast({
+        title: 'Missing entity ID',
+        description: 'Entity ID is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    
     try {
-      uploadInProgress.current = true;
-      setIsUploading(true);
+      console.log('Starting file upload with data:', data);
+      const file = data.files[0]; // Take the first file
       
-      const result = await uploadDocument(data);
+      // Generate a unique file path
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
       
-      if (!result.success) {
-        throw result.error || new Error('Upload failed');
+      // Create a logical folder structure for organization
+      const basePath = data.metadata.entityType.toLowerCase();
+      const filePath = `${basePath}/${data.metadata.entityId}/${fileName}`;
+      
+      console.log('Uploading file to path:', filePath);
+      
+      // Upload the file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .upload(filePath, file);
+      
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        throw new Error(`Error uploading file: ${uploadError.message}`);
       }
       
-      // Show success message
+      console.log('File uploaded successfully, now creating document record');
+      
+      // Create a document record in the database
+      const documentData = {
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        storage_path: filePath,
+        entity_type: data.metadata.entityType,
+        entity_id: data.metadata.entityId,
+        category: data.metadata.category,
+        tags: data.metadata.tags,
+        is_expense: data.metadata.isExpense,
+        amount: data.metadata.amount,
+        expense_date: data.metadata.expenseDate,
+        vendor_id: data.metadata.vendorId,
+        vendor_type: data.metadata.vendorType,
+        expense_type: data.metadata.expenseType,
+        notes: data.metadata.notes,
+      };
+      
+      const { data: document, error: documentError } = await supabase
+        .from('documents')
+        .insert(documentData)
+        .select()
+        .single();
+      
+      if (documentError) {
+        console.error('Error creating document record:', documentError);
+        throw new Error(`Error creating document record: ${documentError.message}`);
+      }
+      
+      console.log('Document record created successfully:', document);
+      
       toast({
-        title: isReceiptUploadRef.current ? "Receipt uploaded successfully" : "Document uploaded successfully",
-        description: isReceiptUploadRef.current 
-          ? "Your receipt has been attached to this expense." 
-          : "Your document has been uploaded and indexed."
+        title: 'Upload successful',
+        description: 'Your document has been uploaded successfully.',
       });
       
-      // Reset form state
+      // Reset the form
       form.reset();
       
+      // Revoke any object URLs to prevent memory leaks
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
         setPreviewURL(null);
       }
       
-      // Call success callback with documentId
+      // Call the success callback
       if (onSuccess) {
-        onSuccess(result.documentId);
+        onSuccess(document.document_id);
       }
-      
     } catch (error: any) {
+      console.error('Error in document upload:', error);
       toast({
-        title: "Upload failed",
-        description: error.message || "There was an error uploading your document.",
-        variant: "destructive"
+        title: 'Upload failed',
+        description: error.message || 'An unexpected error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsUploading(false);
-      uploadInProgress.current = false;
     }
-  }, [form, previewURL, onSuccess]);
-
-  // Initialize form once
-  const initializeForm = useCallback(() => {
-    if (formInitialized.current) return;
+  };
+  
+  // Handle cancellation
+  const handleCancel = () => {
+    // Reset form
+    form.reset();
     
-    // Set the receipt category and expense flag for receipt uploads
-    if (isReceiptUploadRef.current) {
-      form.setValue('metadata.category', 'receipt', { shouldValidate: false });
-      form.setValue('metadata.isExpense', true, { shouldValidate: false });
-      form.setValue('metadata.expenseType', 'materials', { shouldValidate: false });
-      setShowVendorSelector(true);
-    }
-    
-    // Ensure entity ID and type are updated
-    form.setValue('metadata.entityId', entityIdRef.current || '', { shouldValidate: false });
-    form.setValue('metadata.entityType', entityTypeRef.current, { shouldValidate: false });
-    
-    // Apply prefill data if available
-    if (prefillDataRef.current) {
-      if (prefillDataRef.current.amount) {
-        form.setValue('metadata.amount', prefillDataRef.current.amount, { shouldValidate: false });
-      }
-      
-      if (prefillDataRef.current.vendorId) {
-        form.setValue('metadata.vendorId', prefillDataRef.current.vendorId, { shouldValidate: false });
-      }
-      
-      const itemName = prefillDataRef.current.expenseName || prefillDataRef.current.materialName;
-      if (itemName) {
-        form.setValue('metadata.tags', [itemName], { shouldValidate: false });
-        form.setValue('metadata.notes', `Receipt for: ${itemName}`, { shouldValidate: false });
-      }
-    }
-    
-    formInitialized.current = true;
-  }, [form]);
-
-  // Cancel handler with proper cleanup
-  const handleCancel = useCallback(() => {
+    // Clean up any object URLs
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
       setPreviewURL(null);
     }
     
-    form.reset();
-    
+    // Call the cancel callback
     if (onCancel) {
       onCancel();
     }
-  }, [form, previewURL, onCancel]);
-
+  };
+  
   return {
     form,
     isUploading,
@@ -253,12 +233,10 @@ export const useDocumentUploadForm = ({
     handleFileSelect,
     onSubmit,
     initializeForm,
-    bucketInfo,
-    handleCancel,
-    // Watch what's needed with unique keys to avoid needless renders
-    watchIsExpense: form.watch('metadata.isExpense'),
-    watchVendorType: form.watch('metadata.vendorType'),
-    watchFiles: form.watch('files'),
-    watchCategory: form.watch('metadata.category')
+    watchIsExpense,
+    watchVendorType,
+    watchFiles,
+    watchCategory,
+    handleCancel
   };
-};
+}

@@ -554,29 +554,7 @@ export type Database = {
           document_id?: string
           id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "document_access_logs_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "document_access_logs_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "document_access_logs_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
-            referencedColumns: ["document_id"]
-          },
-        ]
+        Relationships: []
       }
       document_relationships: {
         Row: {
@@ -606,50 +584,7 @@ export type Database = {
           target_document_id?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "document_relationships_source_document_id_fkey"
-            columns: ["source_document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "document_relationships_source_document_id_fkey"
-            columns: ["source_document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "document_relationships_source_document_id_fkey"
-            columns: ["source_document_id"]
-            isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "document_relationships_target_document_id_fkey"
-            columns: ["target_document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "document_relationships_target_document_id_fkey"
-            columns: ["target_document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "document_relationships_target_document_id_fkey"
-            columns: ["target_document_id"]
-            isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
-            referencedColumns: ["document_id"]
-          },
-        ]
+        Relationships: []
       }
       documents: {
         Row: {
@@ -666,7 +601,6 @@ export type Database = {
           file_type: string | null
           is_expense: boolean | null
           is_latest_version: boolean | null
-          mime_type: string | null
           notes: string | null
           parent_document_id: string | null
           storage_path: string
@@ -674,7 +608,6 @@ export type Database = {
           updated_at: string
           uploaded_by: string | null
           vendor_id: string | null
-          vendor_type: string | null
           version: number | null
         }
         Insert: {
@@ -691,7 +624,6 @@ export type Database = {
           file_type?: string | null
           is_expense?: boolean | null
           is_latest_version?: boolean | null
-          mime_type?: string | null
           notes?: string | null
           parent_document_id?: string | null
           storage_path: string
@@ -699,7 +631,6 @@ export type Database = {
           updated_at?: string
           uploaded_by?: string | null
           vendor_id?: string | null
-          vendor_type?: string | null
           version?: number | null
         }
         Update: {
@@ -716,7 +647,6 @@ export type Database = {
           file_type?: string | null
           is_expense?: boolean | null
           is_latest_version?: boolean | null
-          mime_type?: string | null
           notes?: string | null
           parent_document_id?: string | null
           storage_path?: string
@@ -724,17 +654,9 @@ export type Database = {
           updated_at?: string
           uploaded_by?: string | null
           vendor_id?: string | null
-          vendor_type?: string | null
           version?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "documents_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
           {
             foreignKeyName: "documents_parent_document_id_fkey"
             columns: ["parent_document_id"]
@@ -746,10 +668,88 @@ export type Database = {
             foreignKeyName: "documents_parent_document_id_fkey"
             columns: ["parent_document_id"]
             isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
+            referencedRelation: "documents_with_urls"
             referencedColumns: ["document_id"]
           },
         ]
+      }
+      documents_backup: {
+        Row: {
+          amount: number | null
+          category: string | null
+          created_at: string | null
+          document_id: string | null
+          entity_id: string | null
+          entity_type: string | null
+          expense_date: string | null
+          expense_type: string | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          is_expense: boolean | null
+          is_latest_version: boolean | null
+          mime_type: string | null
+          notes: string | null
+          parent_document_id: string | null
+          storage_path: string | null
+          tags: string[] | null
+          updated_at: string | null
+          uploaded_by: string | null
+          vendor_id: string | null
+          vendor_type: string | null
+          version: number | null
+        }
+        Insert: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expense_date?: string | null
+          expense_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          is_expense?: boolean | null
+          is_latest_version?: boolean | null
+          mime_type?: string | null
+          notes?: string | null
+          parent_document_id?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          vendor_id?: string | null
+          vendor_type?: string | null
+          version?: number | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expense_date?: string | null
+          expense_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          is_expense?: boolean | null
+          is_latest_version?: boolean | null
+          mime_type?: string | null
+          notes?: string | null
+          parent_document_id?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          vendor_id?: string | null
+          vendor_type?: string | null
+          version?: number | null
+        }
+        Relationships: []
       }
       employees: {
         Row: {
@@ -933,27 +933,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "estimate_items_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "estimate_items_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "estimate_items_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
-            referencedColumns: ["document_id"]
-          },
-          {
             foreignKeyName: "estimate_items_estimate_id_fkey"
             columns: ["estimate_id"]
             isOneToOne: false
@@ -1036,27 +1015,6 @@ export type Database = {
           version?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "estimate_revisions_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "estimate_revisions_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "estimate_revisions_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
-            referencedColumns: ["document_id"]
-          },
           {
             foreignKeyName: "fk_estimate_revisions_estimateid"
             columns: ["estimate_id"]
@@ -1729,27 +1687,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "subcontractor_associations_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "subcontractor_associations_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "subcontractor_associations_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
-            referencedColumns: ["document_id"]
-          },
-          {
             foreignKeyName: "subcontractor_associations_subcontractor_id_fkey"
             columns: ["subcontractor_id"]
             isOneToOne: false
@@ -1981,27 +1918,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "time_entry_document_links_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "time_entry_document_links_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "time_entry_document_links_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
-            referencedColumns: ["document_id"]
-          },
-          {
             foreignKeyName: "time_entry_document_links_time_entry_id_fkey"
             columns: ["time_entry_id"]
             isOneToOne: false
@@ -2226,44 +2142,7 @@ export type Database = {
         }
         Relationships: []
       }
-      document_versions: {
-        Row: {
-          created_at: string | null
-          document_id: string | null
-          entity_id: string | null
-          entity_type: string | null
-          file_name: string | null
-          is_latest_version: boolean | null
-          parent_document_id: string | null
-          storage_path: string | null
-          version: number | null
-          version_count: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "documents_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "documents_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "documents"
-            referencedColumns: ["document_id"]
-          },
-          {
-            foreignKeyName: "documents_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
-            referencedColumns: ["document_id"]
-          },
-        ]
-      }
-      estimate_consolidated_documents: {
+      documents_with_urls: {
         Row: {
           amount: number | null
           category: string | null
@@ -2278,27 +2157,68 @@ export type Database = {
           file_type: string | null
           is_expense: boolean | null
           is_latest_version: boolean | null
-          item_description: string | null
-          item_id: string | null
-          mime_type: string | null
           notes: string | null
           parent_document_id: string | null
+          path: string | null
           storage_path: string | null
           tags: string[] | null
           updated_at: string | null
           uploaded_by: string | null
+          url: string | null
           vendor_id: string | null
-          vendor_type: string | null
           version: number | null
         }
+        Insert: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expense_date?: string | null
+          expense_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          is_expense?: boolean | null
+          is_latest_version?: boolean | null
+          notes?: string | null
+          parent_document_id?: string | null
+          path?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          url?: never
+          vendor_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expense_date?: string | null
+          expense_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          is_expense?: boolean | null
+          is_latest_version?: boolean | null
+          notes?: string | null
+          parent_document_id?: string | null
+          path?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          url?: never
+          vendor_id?: string | null
+          version?: number | null
+        }
         Relationships: [
-          {
-            foreignKeyName: "documents_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "document_versions"
-            referencedColumns: ["document_id"]
-          },
           {
             foreignKeyName: "documents_parent_document_id_fkey"
             columns: ["parent_document_id"]
@@ -2310,7 +2230,7 @@ export type Database = {
             foreignKeyName: "documents_parent_document_id_fkey"
             columns: ["parent_document_id"]
             isOneToOne: false
-            referencedRelation: "estimate_consolidated_documents"
+            referencedRelation: "documents_with_urls"
             referencedColumns: ["document_id"]
           },
         ]
