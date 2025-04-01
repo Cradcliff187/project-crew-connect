@@ -1,230 +1,114 @@
 
 import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
-import { Document } from '../schemas/documentSchema';
+import { v4 as uuidv4 } from 'uuid';
+import { Document, EntityType, DocumentCategory } from '../schemas/documentSchema';
 
-export class DocumentService {
+interface DocumentMetadata {
+  category?: DocumentCategory;
+  description?: string;
+  isExpense?: boolean;
+  vendorId?: string;
+  vendorType?: string;
+  amount?: number;
+  expenseDate?: Date;
+  expenseType?: string;
+  notes?: string;
+  tags?: string[];
+  version?: number;
+}
+
+export const DocumentService = {
   /**
-   * Fetches a document by ID and includes a public URL
+   * Uploads a document to the specified entity and returns the created document record
    */
-  static async getDocumentById(documentId: string): Promise<Document | null> {
-    try {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('document_id', documentId)
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data) {
-        return null;
-      }
-      
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .getPublicUrl(data.storage_path);
-      
-      return { ...data, url: publicUrl };
-    } catch (error) {
-      console.error('Error fetching document:', error);
-      return null;
-    }
-  }
-  
-  /**
-   * Uploads a document and creates the associated metadata
-   */
-  static async uploadDocument(
+  uploadDocument: async (
     file: File,
-    entityType: string,
+    entityType: EntityType,
     entityId: string,
-    metadata: {
-      category?: string;
-      isExpense?: boolean;
-      vendorId?: string;
-      vendorType?: string;
-      amount?: number;
-      expenseDate?: Date;
-      expenseType?: string;
-      notes?: string;
-      tags?: string[];
-    }
-  ): Promise<Document | null> {
+    metadata: DocumentMetadata = {}
+  ): Promise<Document | null> => {
     try {
-      // Create a unique file name using timestamp and original name
-      const timestamp = new Date().getTime();
-      const fileExt = file.name.split('.').pop() || '';
-      const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      console.log('Starting document upload', {
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        entityType,
+        entityId,
+        metadata
+      });
       
-      const entityTypePath = entityType.toLowerCase().replace(/_/g, '-');
-      const filePath = `${entityTypePath}/${entityId}/${fileName}`;
+      // Create a unique file path
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const fileKey = `${entityType.toLowerCase()}/${entityId}/${Date.now()}-${uuidv4()}.${fileExt}`;
       
-      // Upload file to storage
+      // Upload the file to storage
       const { error: uploadError } = await supabase.storage
         .from(DOCUMENTS_BUCKET_ID)
-        .upload(filePath, file, {
-          contentType: file.type,
-          cacheControl: '3600',
-          upsert: true
+        .upload(fileKey, file, {
+          contentType: file.type || `application/${fileExt}`,
+          cacheControl: '3600'
         });
-        
+      
       if (uploadError) {
+        console.error('Error uploading file to storage:', uploadError);
         throw uploadError;
       }
       
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .getPublicUrl(filePath);
-        
-      // Insert document metadata to database
-      const documentData = {
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-        storage_path: filePath,
-        entity_type: entityType,
-        entity_id: entityId,
-        tags: metadata.tags || [],
-        category: metadata.category,
-        amount: metadata.amount || null,
-        expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
-        version: 1,
-        is_expense: metadata.isExpense || false,
-        notes: metadata.notes || null,
-        vendor_id: metadata.vendorId || null,
-        vendor_type: metadata.vendorType || null,
-        expense_type: metadata.expenseType || null,
-      };
-      
-      const { data: insertedData, error: insertError } = await supabase
+      // Create the document record
+      const { data: documentData, error: documentError } = await supabase
         .from('documents')
-        .insert(documentData)
-        .select('*')
+        .insert({
+          file_name: file.name,
+          file_type: file.type,
+          mime_type: file.type || `application/${fileExt}`,
+          file_size: file.size,
+          storage_path: fileKey,
+          entity_type: entityType,
+          entity_id: entityId,
+          category: metadata.category || 'other',
+          description: metadata.description,
+          is_expense: metadata.isExpense,
+          vendor_id: metadata.vendorId,
+          vendor_type: metadata.vendorType,
+          amount: metadata.amount,
+          expense_date: metadata.expenseDate,
+          expense_type: metadata.expenseType,
+          notes: metadata.notes,
+          tags: metadata.tags,
+          version: metadata.version || 1,
+          is_latest_version: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
         .single();
-        
-      if (insertError) {
-        throw insertError;
+      
+      if (documentError) {
+        console.error('Error creating document record:', documentError);
+        throw documentError;
       }
       
-      return { ...insertedData, url: publicUrl };
+      // Get the public URL for the document
+      const { data: urlData } = supabase.storage
+        .from(DOCUMENTS_BUCKET_ID)
+        .getPublicUrl(fileKey);
+      
+      return {
+        ...documentData,
+        url: urlData.publicUrl
+      };
     } catch (error) {
-      console.error('Error uploading document:', error);
+      console.error('Document upload failed:', error);
       return null;
     }
-  }
+  },
   
   /**
-   * Creates a new version of an existing document
+   * Deletes a document by ID
    */
-  static async createNewVersion(
-    documentId: string,
-    file: File,
-    notes?: string
-  ): Promise<Document | null> {
+  deleteDocument: async (documentId: string): Promise<boolean> => {
     try {
-      // Get the original document
-      const { data: originalDoc, error: fetchError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('document_id', documentId)
-        .single();
-        
-      if (fetchError) {
-        throw fetchError;
-      }
-      
-      if (!originalDoc) {
-        throw new Error('Original document not found');
-      }
-      
-      // Upload the new version file
-      const timestamp = new Date().getTime();
-      const fileExt = file.name.split('.').pop() || '';
-      const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      
-      const entityTypePath = originalDoc.entity_type.toLowerCase().replace(/_/g, '-');
-      const filePath = `${entityTypePath}/${originalDoc.entity_id}/${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .upload(filePath, file, {
-          contentType: file.type,
-          cacheControl: '3600',
-          upsert: true
-        });
-        
-      if (uploadError) {
-        throw uploadError;
-      }
-      
-      // Calculate new version number
-      let newVersion = 1;
-      
-      // If the original document has a parent, it means it's already a version
-      const parentId = originalDoc.parent_document_id || originalDoc.document_id;
-      
-      // Get all existing versions to determine the next version number
-      const { data: existingVersions, error: versionsError } = await supabase
-        .from('documents')
-        .select('version')
-        .or(`document_id.eq.${parentId},parent_document_id.eq.${parentId}`);
-        
-      if (versionsError) {
-        throw versionsError;
-      }
-      
-      if (existingVersions && existingVersions.length > 0) {
-        const versions = existingVersions.map(v => v.version || 1);
-        newVersion = Math.max(...versions) + 1;
-      }
-      
-      // Insert the new version
-      const newVersionData = {
-        ...originalDoc,
-        document_id: undefined, // Let Supabase generate a new ID
-        parent_document_id: parentId,
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-        storage_path: filePath,
-        version: newVersion,
-        notes: notes || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
-      const { data: insertedData, error: insertError } = await supabase
-        .from('documents')
-        .insert(newVersionData)
-        .select('*')
-        .single();
-        
-      if (insertError) {
-        throw insertError;
-      }
-      
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .getPublicUrl(filePath);
-        
-      return { ...insertedData, url: publicUrl };
-    } catch (error) {
-      console.error('Error creating document version:', error);
-      return null;
-    }
-  }
-  
-  /**
-   * Deletes a document from storage and database
-   */
-  static async deleteDocument(documentId: string): Promise<boolean> {
-    try {
-      // First, get the document to find its storage path
+      // First get the document to retrieve the storage path
       const { data, error } = await supabase
         .from('documents')
         .select('storage_path')
@@ -235,20 +119,19 @@ export class DocumentService {
         throw error;
       }
       
-      if (!data) {
-        throw new Error('Document not found');
-      }
-      
       // Delete the file from storage
-      const { error: storageError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET_ID)
-        .remove([data.storage_path]);
-      
-      if (storageError) {
-        throw storageError;
+      if (data.storage_path) {
+        const { error: storageError } = await supabase.storage
+          .from(DOCUMENTS_BUCKET_ID)
+          .remove([data.storage_path]);
+        
+        if (storageError) {
+          console.error('Error deleting file from storage:', storageError);
+          // Continue with document deletion even if storage deletion fails
+        }
       }
       
-      // Delete the database record
+      // Delete the document record
       const { error: deleteError } = await supabase
         .from('documents')
         .delete()
@@ -264,4 +147,4 @@ export class DocumentService {
       return false;
     }
   }
-}
+};

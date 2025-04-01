@@ -1,359 +1,269 @@
 import React from 'react';
-import { Search, Filter, X, Calendar } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Search, Filter, Calendar, Tags, ArrowDownWideNarrow } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose
-} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { cn, formatDate } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { DocumentCategory, EntityType, entityTypes } from './schemas/documentSchema';
-import DocumentCategorySelector from './DocumentCategorySelector';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { EntityType, DocumentCategory } from './schemas/documentSchema';
 import { DocumentFiltersState } from './hooks/useDocuments';
+
+// Available entity types for filtering
+const entityTypes = [
+  { value: 'VENDOR', label: 'Vendor' },
+  { value: 'CUSTOMER', label: 'Customer' },
+  { value: 'PROJECT', label: 'Project' },
+  { value: 'WORK_ORDER', label: 'Work Order' },
+  { value: 'ESTIMATE', label: 'Estimate' },
+  { value: 'ESTIMATE_ITEM', label: 'Estimate Item' },
+  { value: 'TIME_ENTRY', label: 'Time Entry' },
+];
+
+// Available document categories for filtering
+const documentCategories: { value: DocumentCategory; label: string }[] = [
+  { value: 'other', label: 'Other' },
+  { value: 'invoice', label: 'Invoice' },
+  { value: 'receipt', label: 'Receipt' },
+  { value: '3rd_party_estimate', label: '3rd Party Estimate' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'insurance', label: 'Insurance' },
+  { value: 'certification', label: 'Certification' },
+  { value: 'photo', label: 'Photo' },
+];
+
+// Available sort options
+const sortOptions = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'name_asc', label: 'Name (A-Z)' },
+  { value: 'name_desc', label: 'Name (Z-A)' },
+  { value: 'size_asc', label: 'Size (Small to Large)' },
+  { value: 'size_desc', label: 'Size (Large to Small)' },
+];
 
 interface DocumentFiltersProps {
   filters: DocumentFiltersState;
-  onFilterChange: (key: keyof DocumentFiltersState, value: any) => void;
-  onReset: () => void;
   activeFiltersCount: number;
+  onFilterChange: (key: keyof DocumentFiltersState, value: any) => void;
+  onResetFilters: () => void;
 }
 
-const DocumentFilters: React.FC<DocumentFiltersProps> = ({
+export const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   filters,
+  activeFiltersCount,
   onFilterChange,
-  onReset,
-  activeFiltersCount
+  onResetFilters,
 }) => {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [tempFilters, setTempFilters] = React.useState<DocumentFiltersState>(filters);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange('search', e.target.value);
+  };
 
-  React.useEffect(() => {
-    if (isDialogOpen) {
-      setTempFilters(filters);
+  const handleCategoryChange = (value: DocumentCategory) => {
+    onFilterChange('category', value);
+  };
+
+  const handleEntityTypeChange = (value: EntityType) => {
+    onFilterChange('entityType', value);
+  };
+
+  const handleExpenseChange = (value: string) => {
+    onFilterChange('isExpense', value === 'true' ? true : value === 'false' ? false : undefined);
+  };
+
+  const handleDateFromChange = (date: Date | undefined) => {
+    onFilterChange('dateRange', { ...filters.dateRange, from: date });
+  };
+
+  const handleDateToChange = (date: Date | undefined) => {
+    onFilterChange('dateRange', { ...filters.dateRange, to: date });
+  };
+
+  const handleSortChange = (value: string) => {
+    onFilterChange('sortBy', value);
+  };
+
+  const getFilterLabel = (key: keyof DocumentFiltersState): string => {
+    switch (key) {
+      case 'category':
+        return documentCategories.find(cat => cat.value === filters.category)?.label || 'Category';
+      case 'entityType':
+        return entityTypes.find(et => et.value === filters.entityType)?.label || 'Entity Type';
+      case 'isExpense':
+        return filters.isExpense === true ? 'Expense: Yes' : filters.isExpense === false ? 'Expense: No' : 'Expense';
+      case 'dateRange':
+        if (filters.dateRange?.from && filters.dateRange?.to) {
+          return `${format(filters.dateRange.from, 'MMM d, yyyy')} - ${format(filters.dateRange.to, 'MMM d, yyyy')}`;
+        } else if (filters.dateRange?.from) {
+          return `From ${format(filters.dateRange.from, 'MMM d, yyyy')}`;
+        } else if (filters.dateRange?.to) {
+          return `Until ${format(filters.dateRange.to, 'MMM d, yyyy')}`;
+        }
+        return 'Date Range';
+      default:
+        return '';
     }
-  }, [isDialogOpen, filters]);
-
-  const handleApplyFilters = () => {
-    Object.entries(tempFilters).forEach(([key, value]) => {
-      onFilterChange(key as keyof DocumentFiltersState, value);
-    });
-    setIsDialogOpen(false);
-  };
-
-  const handleTempFilterChange = (key: keyof DocumentFiltersState, value: any) => {
-    setTempFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleRemoveFilter = (filterKey: keyof DocumentFiltersState) => {
-    if (filterKey === 'category') {
-      onFilterChange('category', undefined);
-    } else if (filterKey === 'entityType') {
-      onFilterChange('entityType', undefined);
-    } else if (filterKey === 'dateRange') {
-      onFilterChange('dateRange', undefined);
-    } else if (filterKey === 'isExpense') {
-      onFilterChange('isExpense', undefined);
-    }
-  };
-
-  const dateRangeText = filters.dateRange?.from && filters.dateRange?.to 
-    ? `${formatDate(filters.dateRange.from)} - ${formatDate(filters.dateRange.to)}`
-    : filters.dateRange?.from 
-      ? `From ${formatDate(filters.dateRange.from)}`
-      : filters.dateRange?.to 
-        ? `Until ${formatDate(filters.dateRange.to)}`
-        : undefined;
-
-  const groupedEntityTypes = {
-    business: ['PROJECT', 'WORK_ORDER', 'ESTIMATE'],
-    people: ['CUSTOMER', 'VENDOR', 'SUBCONTRACTOR'],
-    financial: ['EXPENSE']
   };
 
   return (
-    <div className="space-y-4 w-full">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search documents..."
-            className="pl-8"
-            value={filters.search}
-            onChange={(e) => onFilterChange('search', e.target.value)}
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Select
-            value={filters.sortBy || 'newest'}
-            onValueChange={(value) => onFilterChange('sortBy', value)}
-          >
-            <SelectTrigger className="w-[130px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="oldest">Oldest first</SelectItem>
-              <SelectItem value="name_asc">Name (A-Z)</SelectItem>
-              <SelectItem value="name_desc">Name (Z-A)</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <Button 
-              onClick={() => setIsDialogOpen(true)} 
-              variant="outline" 
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4 text-[#0485ea]" />
-              <span>Filter</span>
-              {activeFiltersCount > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full">
-                  {activeFiltersCount}
-                </Badge>
-              )}
-            </Button>
-            
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Filter Documents</DialogTitle>
-                <DialogDescription>
-                  Apply filters to narrow down your document list
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Document Type</h4>
-                  <DocumentCategorySelector
-                    value={tempFilters.category || 'other'}
-                    onChange={(category) => handleTempFilterChange('category', category)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Related To</h4>
-                  <Select
-                    value={tempFilters.entityType || 'all'}
-                    onValueChange={(value) => 
-                      handleTempFilterChange('entityType', value === 'all' ? undefined : value)
+    <Accordion type="single" collapsible className="w-full">
+      <AccordionItem value="filters">
+        <AccordionTrigger className="data-[state=open]:text-foreground">
+          <Filter className="mr-2 h-4 w-4" />
+          Filters
+          {activeFiltersCount > 0 && (
+            <Badge variant="secondary" className="ml-2">
+              {activeFiltersCount}
+            </Badge>
+          )}
+        </AccordionTrigger>
+        <AccordionContent className="pt-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <Label htmlFor="search">Search</Label>
+              <Input
+                id="search"
+                placeholder="Search by file name..."
+                value={filters.search}
+                onChange={handleSearchChange}
+              />
+            </div>
+
+            <div>
+              <Label>Category</Label>
+              <Select onValueChange={handleCategoryChange} defaultValue={filters.category || ''}>
+                <SelectTrigger>
+                  <SelectValue placeholder={getFilterLabel('category')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  {documentCategories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Entity Type</Label>
+              <Select onValueChange={handleEntityTypeChange} defaultValue={filters.entityType || ''}>
+                <SelectTrigger>
+                  <SelectValue placeholder={getFilterLabel('entityType')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Entity Types</SelectItem>
+                  {entityTypes.map((entityType) => (
+                    <SelectItem key={entityType.value} value={entityType.value}>
+                      {entityType.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Is Expense</Label>
+              <Select onValueChange={handleExpenseChange} defaultValue={filters.isExpense === undefined ? '' : filters.isExpense.toString()}>
+                <SelectTrigger>
+                  <SelectValue placeholder={getFilterLabel('isExpense')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="true">Yes</SelectItem>
+                  <SelectItem value="false">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Date Range</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={
+                      "w-full justify-start text-left font-normal" +
+                      (filters.dateRange?.from || filters.dateRange?.to
+                        ? ""
+                        : " text-muted-foreground")
                     }
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All entities" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All entities</SelectItem>
-                      
-                      <SelectItem value="PROJECT">Projects</SelectItem>
-                      <SelectItem value="WORK_ORDER">Work Orders</SelectItem>
-                      <SelectItem value="ESTIMATE">Estimates</SelectItem>
-                      
-                      <SelectItem value="CUSTOMER">Customers</SelectItem>
-                      <SelectItem value="VENDOR">Vendors</SelectItem>
-                      <SelectItem value="SUBCONTRACTOR">Subcontractors</SelectItem>
-                      
-                      <SelectItem value="EXPENSE">Expenses</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="expense-only"
-                    checked={tempFilters.isExpense === true}
-                    onCheckedChange={(checked) => {
-                      handleTempFilterChange('isExpense', checked ? true : undefined);
-                    }}
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <label
-                      htmlFor="expense-only"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Show Expenses Only
-                    </label>
-                    <p className="text-sm text-muted-foreground">
-                      Only show documents marked as expenses
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Date Range</h4>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {tempFilters.dateRange?.from || tempFilters.dateRange?.to ? (
-                          <span>
-                            {tempFilters.dateRange.from && formatDate(tempFilters.dateRange.from)}
-                            {tempFilters.dateRange.from && tempFilters.dateRange.to && " - "}
-                            {tempFilters.dateRange.to && formatDate(tempFilters.dateRange.to)}
-                          </span>
-                        ) : (
-                          <span>Pick a date range</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    <span>{getFilterLabel('dateRange')}</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="flex w-auto flex-col space-y-2 p-2">
+                  <div className="flex space-x-2">
+                    <div>
+                      <Label className="text-xs">From</Label>
                       <CalendarComponent
-                        initialFocus
-                        mode="range"
-                        selected={{
-                          from: tempFilters.dateRange?.from || undefined,
-                          to: tempFilters.dateRange?.to || undefined
-                        }}
-                        onSelect={(range) => {
-                          if (!range) {
-                            handleTempFilterChange('dateRange', undefined);
-                          } else {
-                            handleTempFilterChange('dateRange', range);
-                          }
-                        }}
-                        numberOfMonths={1}
-                        className="pointer-events-auto"
+                        mode="single"
+                        selected={filters.dateRange?.from}
+                        onSelect={handleDateFromChange}
+                        className="rounded-md border"
                       />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-              
-              <DialogFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => {
-                  setTempFilters({
-                    ...filters,
-                    category: undefined,
-                    entityType: undefined,
-                    isExpense: undefined,
-                    dateRange: undefined
-                  });
-                }}>
-                  Reset Filters
-                </Button>
-                <Button 
-                  onClick={handleApplyFilters}
-                  className="bg-[#0485ea] hover:bg-[#0375d1]"
-                >
-                  Apply Filters
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-      
-      {activeFiltersCount > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2">
-          {filters.category && (
-            <Badge 
-              variant="outline" 
-              className="flex items-center gap-1 bg-gray-50 px-2 py-1"
-            >
-              <span>Type: {filters.category}</span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-4 w-4 p-0 ml-1" 
-                onClick={() => handleRemoveFilter('category')}
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove</span>
-              </Button>
-            </Badge>
-          )}
-          
-          {filters.entityType && (
-            <Badge 
-              variant="outline" 
-              className="flex items-center gap-1 bg-gray-50 px-2 py-1"
-            >
-              <span>Related to: {filters.entityType.replace('_', ' ').toLowerCase()}</span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-4 w-4 p-0 ml-1" 
-                onClick={() => handleRemoveFilter('entityType')}
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove</span>
-              </Button>
-            </Badge>
-          )}
-          
-          {filters.isExpense && (
-            <Badge 
-              variant="outline" 
-              className="flex items-center gap-1 bg-gray-50 px-2 py-1"
-            >
-              <span>Expenses only</span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-4 w-4 p-0 ml-1" 
-                onClick={() => handleRemoveFilter('isExpense')}
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove</span>
-              </Button>
-            </Badge>
-          )}
-          
-          {dateRangeText && (
-            <Badge 
-              variant="outline" 
-              className="flex items-center gap-1 bg-gray-50 px-2 py-1"
-            >
-              <span>Date: {dateRangeText}</span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-4 w-4 p-0 ml-1" 
-                onClick={() => handleRemoveFilter('dateRange')}
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove</span>
-              </Button>
-            </Badge>
-          )}
-          
-          {activeFiltersCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={onReset}
-            >
-              Clear all
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">To</Label>
+                      <CalendarComponent
+                        mode="single"
+                        selected={filters.dateRange?.to}
+                        onSelect={handleDateToChange}
+                        className="rounded-md border"
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <Button variant="link" size="sm" className="mt-4" onClick={onResetFilters}>
+            Reset Filters
+          </Button>
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="sort">
+        <AccordionTrigger className="data-[state=open]:text-foreground">
+          <ArrowDownWideNarrow className="mr-2 h-4 w-4" />
+          Sort By
+        </AccordionTrigger>
+        <AccordionContent className="pt-4">
+          <Select onValueChange={handleSortChange} defaultValue={filters.sortBy}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sort by..." />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 };
-
-export default DocumentFilters;

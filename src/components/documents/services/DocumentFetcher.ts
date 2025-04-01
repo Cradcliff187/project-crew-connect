@@ -39,7 +39,7 @@ export const fetchDocumentWithUrl = async (
     
     if (isImage && options.imageOptions) {
       const { width, height, quality } = options.imageOptions;
-      // Fixed: Removed format as it's not a valid TransformOptions property
+      // Fix: Only include the valid transform options
       const transformOptions = {
         width,
         height,
