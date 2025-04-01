@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, CheckCircle, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { 
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
@@ -15,10 +15,11 @@ import DocumentViews from '@/components/documents/DocumentViews';
 import DocumentDetailView from '@/components/documents/DocumentDetailView';
 import DeleteConfirmation from '@/components/documents/DeleteConfirmation';
 import PageHeader from '@/components/layout/PageHeader';
+import { toast } from '@/hooks/use-toast';
 
 import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
-import { DocumentFiltersState } from '@/components/documents/DocumentFilters';
+import { testBucketAccess } from '@/components/documents/services/BucketTest';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -59,6 +60,26 @@ const DocumentsPage: React.FC = () => {
     handleUploadSuccess
   } = useDocumentActions(fetchDocuments);
 
+  // Run bucket test on page load and log results
+  const runBucketTest = async () => {
+    const result = await testBucketAccess();
+    console.log('Bucket Test Result:', result);
+    
+    if (result.success) {
+      toast({
+        title: 'Bucket Check Successful',
+        description: `Found bucket: ${result.bucketName} (ID: ${result.bucketId})`,
+        variant: 'default',
+      });
+    } else {
+      toast({
+        title: 'Bucket Check Failed',
+        description: result.error || 'Unknown error checking bucket',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
@@ -67,6 +88,15 @@ const DocumentsPage: React.FC = () => {
           description="Upload and manage documents for your projects"
         >
           <div className="flex-1"></div>
+          <Button 
+            className="mr-2 bg-gray-500 hover:bg-gray-600" 
+            size={isMobile ? "icon" : "default"}
+            onClick={runBucketTest}
+            variant="outline"
+          >
+            <CheckCircle className="h-4 w-4 mr-1" />
+            {!isMobile && <span>Test Bucket</span>}
+          </Button>
           <Button 
             className="bg-[#0485ea] hover:bg-[#0375d1]" 
             size={isMobile ? "icon" : "default"}
