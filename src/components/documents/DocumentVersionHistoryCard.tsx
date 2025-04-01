@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileHistory, Upload, Eye, Clock, Info } from 'lucide-react';
+import { History, Upload, Eye, Clock, Info } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
 import { formatDate } from '@/lib/utils';
 import { useDocumentVersions } from './hooks/useDocumentVersions';
@@ -109,7 +109,7 @@ const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <FileHistory className="mr-2 h-5 w-5" />
+            <History className="mr-2 h-5 w-5" />
             Document History
           </CardTitle>
         </CardHeader>
@@ -127,7 +127,7 @@ const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <FileHistory className="mr-2 h-5 w-5" />
+            <History className="mr-2 h-5 w-5" />
             Document History
           </CardTitle>
         </CardHeader>
@@ -189,7 +189,7 @@ const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle className="flex items-center">
-            <FileHistory className="mr-2 h-5 w-5" />
+            <History className="mr-2 h-5 w-5" />
             Document History
           </CardTitle>
           <CardDescription>

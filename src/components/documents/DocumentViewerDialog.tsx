@@ -31,9 +31,12 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
   const isImage = document.file_type?.startsWith('image/');
   const isPdf = document.file_type?.includes('pdf');
   
+  // Use url property instead of file_url
+  const fileUrl = document.url || '';
+  
   const handleDownload = () => {
-    if (document.file_url) {
-      window.open(document.file_url, '_blank');
+    if (fileUrl) {
+      window.open(fileUrl, '_blank');
     }
   };
   
@@ -70,15 +73,15 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
         </DialogHeader>
         
         <div className="flex-1 overflow-auto min-h-[60vh] bg-gray-50 rounded-md flex items-center justify-center">
-          {isImage && document.file_url ? (
+          {isImage && fileUrl ? (
             <img 
-              src={document.file_url} 
+              src={fileUrl} 
               alt={document.file_name} 
               className="max-w-full max-h-[60vh] object-contain"
             />
-          ) : isPdf && document.file_url ? (
+          ) : isPdf && fileUrl ? (
             <iframe
-              src={document.file_url}
+              src={fileUrl}
               className="w-full h-[60vh]"
               title={document.file_name}
             />

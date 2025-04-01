@@ -42,6 +42,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Use url property instead of file_url
+  const fileUrl = document.url || '';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
@@ -56,15 +59,15 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </DialogHeader>
         
         <div className="flex-1 overflow-auto min-h-[50vh] bg-gray-50 rounded-md flex items-center justify-center">
-          {isImage && document.file_url ? (
+          {isImage && fileUrl ? (
             <img 
-              src={document.file_url} 
+              src={fileUrl} 
               alt={document.file_name} 
               className="max-w-full max-h-[60vh] object-contain"
             />
-          ) : isPdf && document.file_url ? (
+          ) : isPdf && fileUrl ? (
             <iframe
-              src={document.file_url}
+              src={fileUrl}
               className="w-full h-[60vh]"
               title={document.file_name}
             />
@@ -77,7 +80,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <Button 
                 variant="outline" 
                 className="mt-4"
-                onClick={() => window.open(document.file_url, '_blank')}
+                onClick={() => window.open(fileUrl, '_blank')}
               >
                 Open in new tab
               </Button>
@@ -94,7 +97,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <p><strong>Associated with:</strong> {document.entity_type.toLowerCase()}</p>
             )}
           </div>
-          <Button onClick={() => window.open(document.file_url, '_blank')}>
+          <Button onClick={() => window.open(fileUrl, '_blank')}>
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>

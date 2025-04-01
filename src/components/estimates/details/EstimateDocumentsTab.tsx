@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, FileText, Share2 } from 'lucide-react';
@@ -16,10 +17,10 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
   estimateId,
   onShareDocument
 }) => {
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
   const { documents, loading, error, refetchDocuments } = useEstimateDocuments(estimateId);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (estimateId) {
       refetchDocuments();
     }
@@ -103,7 +104,7 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
                 <div className="border-t p-3 flex justify-between">
                   <Button variant="ghost" size="sm" asChild>
                     <a 
-                      href={doc.file_url} 
+                      href={doc.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-[#0485ea]"
@@ -130,13 +131,15 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
         </div>
       )}
       
-      <DocumentUploadDialog
-        projectId={estimateId}
-        entityType="ESTIMATE"
-        entityId={estimateId}
-        onSuccess={handleUploadComplete}
-        onCancel={() => setUploadDialogOpen(false)}
-      />
+      {uploadDialogOpen && (
+        <DocumentUploadDialog
+          projectId={estimateId}
+          entityType="ESTIMATE"
+          entityId={estimateId}
+          onSuccess={handleUploadComplete}
+          onCancel={() => setUploadDialogOpen(false)}
+        />
+      )}
     </div>
   );
 };

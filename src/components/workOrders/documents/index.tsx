@@ -29,16 +29,6 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
     window.open(document.url, '_blank');
   };
 
-  // Find documents with the same parent_document_id as the selected document
-  const documentVersions = selectedDocument 
-    ? documents.filter(doc => 
-        (selectedDocument.parent_document_id && doc.parent_document_id === selectedDocument.parent_document_id) || 
-        (selectedDocument.parent_document_id && doc.document_id === selectedDocument.parent_document_id) ||
-        (doc.parent_document_id && doc.parent_document_id === selectedDocument.document_id) ||
-        doc.document_id === selectedDocument.document_id
-      )
-    : [];
-  
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center bg-[#0485ea]/10 p-4 rounded-md">
@@ -73,12 +63,14 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
           </Card>
         </div>
         
-        {selectedDocument && documentVersions.length > 0 && (
+        {selectedDocument && selectedDocument.document_id && (
           <div className="md:col-span-1">
             <DocumentVersionHistoryCard 
-              documents={documentVersions}
-              currentVersion={selectedDocument.version || 1}
-              onVersionSelect={handleViewDocument}
+              documentId={selectedDocument.document_id}
+              onVersionChange={(document) => {
+                // Cast the Document type to WorkOrderDocument to satisfy TypeScript
+                handleViewDocument(document as unknown as WorkOrderDocument);
+              }}
             />
           </div>
         )}
@@ -87,6 +79,8 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
       {showUpload && (
         <DocumentUpload
           projectId={workOrderId}
+          entityType={entityType}
+          entityId={workOrderId}
           onSuccess={handleUploadComplete}
           onCancel={() => setShowUpload(false)}
         />

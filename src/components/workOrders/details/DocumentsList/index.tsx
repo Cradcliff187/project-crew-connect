@@ -41,16 +41,6 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
   const handleCloseViewer = () => {
     setViewDocument(null);
   };
-
-  // Find documents with the same parent_document_id as the selected document
-  const documentVersions = viewDocument 
-    ? documents.filter(doc => 
-        (viewDocument.parent_document_id && doc.parent_document_id === viewDocument.parent_document_id) || 
-        (viewDocument.parent_document_id && doc.document_id === viewDocument.parent_document_id) ||
-        (doc.parent_document_id && doc.parent_document_id === viewDocument.document_id) ||
-        doc.document_id === viewDocument.document_id
-      )
-    : [];
   
   return (
     <div className="space-y-6">
@@ -109,12 +99,14 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
           )}
         </div>
         
-        {viewDocument && documentVersions.length > 0 && (
+        {viewDocument && viewDocument.document_id && (
           <div className="md:col-span-1">
             <DocumentVersionHistoryCard 
-              documents={documentVersions}
-              currentVersion={viewDocument.version || 1}
-              onVersionSelect={handleViewDocument}
+              documentId={viewDocument.document_id}
+              onVersionChange={(document) => {
+                // Cast the Document type to WorkOrderDocument
+                handleViewDocument(document as unknown as WorkOrderDocument);
+              }}
             />
           </div>
         )}
