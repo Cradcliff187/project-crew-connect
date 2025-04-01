@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
@@ -12,6 +13,11 @@ export const useDocumentActions = (fetchDocuments: () => void) => {
   const [hasReferences, setHasReferences] = useState(false);
   const [batchDeleteLoading, setBatchDeleteLoading] = useState(false);
   const { toast } = useToast();
+
+  // Function to handle refreshing documents after successful operations
+  const onSuccessfulDelete = () => {
+    fetchDocuments();
+  };
 
   const handleDocumentSelect = (document: Document) => {
     setSelectedDocument(document);
