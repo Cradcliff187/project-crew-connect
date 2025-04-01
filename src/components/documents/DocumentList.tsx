@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Document } from './schemas/documentSchema';
 import { FileText, Loader2, Upload, Download, Trash2 } from 'lucide-react';
@@ -13,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 interface DocumentListProps {
   documents: Document[];
   loading: boolean;
+  onView?: (document: Document) => void;
   onUploadClick?: () => void;
   onDocumentDelete?: (document: Document) => void;
   onBatchDelete?: (documentIds: string[]) => void;
@@ -25,6 +25,7 @@ interface DocumentListProps {
 const DocumentList = ({
   documents,
   loading,
+  onView,
   onUploadClick,
   onDocumentDelete,
   onBatchDelete,
@@ -50,7 +51,14 @@ const DocumentList = ({
       handleToggleSelection(document.document_id);
       return;
     }
-    viewDocument(document.document_id);
+    
+    // If an external view handler is provided, use it
+    if (onView) {
+      onView(document);
+    } else {
+      // Otherwise use the internal document viewer
+      viewDocument(document.document_id);
+    }
   };
 
   // Handle document selection
@@ -235,7 +243,7 @@ const DocumentList = ({
       </div>
       
       {/* Batch Actions Bar */}
-      {renderBatchActions()}
+      {renderBatchActions && renderBatchActions()}
 
       {showCategories && Object.keys(documentsByCategory).length > 0 ? (
         // Show documents grouped by category
@@ -309,7 +317,7 @@ const DocumentList = ({
         </div>
       )}
 
-      {currentDocument && (
+      {!onView && currentDocument && (
         <DocumentViewer
           document={currentDocument}
           open={isViewerOpen}

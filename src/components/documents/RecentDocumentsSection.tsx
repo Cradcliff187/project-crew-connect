@@ -1,11 +1,9 @@
 
 import React from 'react';
 import { Document } from './schemas/documentSchema';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, ArrowRight } from 'lucide-react';
-import DocumentCard from './DocumentCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DocumentPreviewCard from './DocumentPreviewCard';
+import { Clock, Loader2 } from 'lucide-react';
 
 interface RecentDocumentsSectionProps {
   documents: Document[];
@@ -14,58 +12,56 @@ interface RecentDocumentsSectionProps {
   showNavigationButtons?: boolean;
 }
 
-const RecentDocumentsSection: React.FC<RecentDocumentsSectionProps> = ({ 
-  documents, 
+const RecentDocumentsSection: React.FC<RecentDocumentsSectionProps> = ({
+  documents,
   loading,
   onViewDocument,
   showNavigationButtons = false
 }) => {
   if (loading) {
     return (
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium flex items-center">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
             <Clock className="mr-2 h-5 w-5 text-[#0485ea]" />
             Recent Documents
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-[120px] w-full" />
-          ))}
-        </div>
-      </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center p-4">
+            <Loader2 className="h-8 w-8 text-[#0485ea] animate-spin" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  if (!documents.length) {
-    return null;
+  if (documents.length === 0) {
+    return null; // Don't show the section if there are no recent documents
   }
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-medium flex items-center">
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center">
           <Clock className="mr-2 h-5 w-5 text-[#0485ea]" />
           Recent Documents
-        </h2>
-        <Button variant="link" className="text-[#0485ea]">
-          <ArrowRight className="h-4 w-4 mr-1" />
-          View all
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {documents.map((document) => (
-          <DocumentCard 
-            key={document.document_id}
-            document={document}
-            onView={() => onViewDocument(document)}
-            showNavigationButton={showNavigationButtons}
-          />
-        ))}
-      </div>
-    </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {documents.map((document) => (
+            <DocumentPreviewCard
+              key={document.document_id}
+              document={document}
+              onView={() => onViewDocument(document)}
+              showEntityInfo={true}
+              showNavigationButton={showNavigationButtons}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

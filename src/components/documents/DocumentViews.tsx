@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import DocumentList from './DocumentList';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { FolderIcon, FilterIcon, LayoutGrid, List, Table, Loader2, FileText, Upload } from 'lucide-react';
+import { FolderIcon, FilterIcon, LayoutGrid, List, Loader2, FileText, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Document } from './schemas/documentSchema';
@@ -11,7 +11,7 @@ interface DocumentViewsProps {
   documents: Document[];
   loading: boolean;
   activeFiltersCount: number;
-  onView: (document: Document) => void;
+  onView?: (document: Document) => void;
   onDelete?: (document: Document) => void;
   onBatchDelete?: (documentIds: string[]) => void;
   onUploadClick?: () => void;
@@ -90,6 +90,7 @@ const DocumentViews: React.FC<DocumentViewsProps> = ({
             <DocumentList
               documents={documents}
               loading={loading}
+              onView={onView}
               onDocumentDelete={onDelete}
               onBatchDelete={onBatchDelete}
               onUploadClick={onUploadClick}

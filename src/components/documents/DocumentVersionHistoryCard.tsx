@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface DocumentVersionHistoryCardProps {
   documentId: string;
-  minimal?: boolean; // This prop is now properly defined
+  minimal?: boolean; 
   onVersionChange?: (document: Document) => void;
 }
 
@@ -65,20 +65,20 @@ const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
         
         <div className="space-y-2">
           {versions.map((version, index) => (
-            <div key={version.version_id || index} className="group">
+            <div key={version.document_id || index} className="group">
               <div 
-                className={`flex items-center justify-between ${minimal ? "py-1 text-xs" : "py-2"} group-hover:bg-muted/50 px-2 rounded-md transition-colors ${currentVersion === version.version_id ? "bg-blue-50" : ""}`}
+                className={`flex items-center justify-between ${minimal ? "py-1 text-xs" : "py-2"} group-hover:bg-muted/50 px-2 rounded-md transition-colors ${currentVersion === version.document_id ? "bg-blue-50" : ""}`}
               >
                 <div className="flex flex-col">
                   <span className={`${minimal ? "text-xs" : "text-sm"} font-medium`}>
-                    {version.version_id === currentVersion ? "Current" : `Version ${versions.length - index}`}
+                    {version.document_id === currentVersion ? "Current" : `Version ${versions.length - index}`}
                   </span>
                   <span className={`${minimal ? "text-[10px]" : "text-xs"} text-muted-foreground`}>
                     {formatDate(version.created_at)} ({formatFileSize(version.file_size || 0)})
                   </span>
                 </div>
                 
-                {onVersionChange && version.version_id !== currentVersion && (
+                {onVersionChange && version.document_id !== currentVersion && (
                   <Button 
                     variant="ghost" 
                     size="icon" 
