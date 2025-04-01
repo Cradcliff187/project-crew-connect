@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -15,6 +15,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+interface EstimateItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  cost: number;
+  markup_percentage: number;
+  item_type: string;
+}
 
 interface EstimateRevisionDialogProps {
   open: boolean;
@@ -34,7 +46,89 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
   const [notes, setNotes] = useState('');
   const [copyAllItems, setCopyAllItems] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showItemSelection, setShowItemSelection] = useState(false);
+  const [items, setItems] = useState<EstimateItem[]>([]);
+  const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
+  const [currentRevisionId, setCurrentRevisionId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Fetch the current items when dialog opens
+  useEffect(() => {
+    if (open && !copyAllItems) {
+      fetchCurrentItems();
+    }
+  }, [open, copyAllItems]);
+
+  const fetchCurrentItems = async () => {
+    setLoading(true);
+    try {
+      // First fetch the current revision
+      const { data: revision, error: revisionError } = await supabase
+        .from('estimate_revisions')
+        .select('id')
+        .eq('estimate_id', estimateId)
+        .eq('is_current', true)
+        .single();
+
+      if (revisionError) throw revisionError;
+      
+      if (revision) {
+        setCurrentRevisionId(revision.id);
+        
+        // Then fetch the items for this revision
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('estimate_items')
+          .select('*')
+          .eq('revision_id', revision.id)
+          .order('id');
+
+        if (itemsError) throw itemsError;
+        
+        if (itemsData) {
+          setItems(itemsData);
+          // Initialize all items as selected
+          const initialSelectedState: Record<string, boolean> = {};
+          itemsData.forEach(item => {
+            initialSelectedState[item.id] = true;
+          });
+          setSelectedItems(initialSelectedState);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching items:", error);
+      toast({
+        title: "Error fetching items",
+        description: "Could not load estimate items. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleItemSelectionToggle = (itemId: string) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
+
+  const toggleAllItems = (selected: boolean) => {
+    const newSelectedState: Record<string, boolean> = {};
+    items.forEach(item => {
+      newSelectedState[item.id] = selected;
+    });
+    setSelectedItems(newSelectedState);
+  };
+
+  const handleCopyAllChange = (checked: boolean) => {
+    setCopyAllItems(checked);
+    if (!checked && items.length === 0) {
+      fetchCurrentItems();
+    }
+    setShowItemSelection(!checked);
+  };
 
   const handleCreateRevision = async () => {
     if (isSubmitting) return;
@@ -70,8 +164,43 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
 
       if (statusError) throw statusError;
 
-      // Note: We don't need to copy items explicitly as the DB trigger copy_estimate_items_to_revision
-      // will handle this automatically when is_current is set to true for the new revision
+      // 3. Manually copy selected items if not using automatic copy
+      if (!copyAllItems && currentRevisionId) {
+        const selectedItemIds = Object.entries(selectedItems)
+          .filter(([_, isSelected]) => isSelected)
+          .map(([id]) => id);
+        
+        if (selectedItemIds.length > 0) {
+          // Fetch the selected items
+          const { data: itemsToCopy, error: fetchError } = await supabase
+            .from('estimate_items')
+            .select('*')
+            .in('id', selectedItemIds);
+            
+          if (fetchError) throw fetchError;
+          
+          if (itemsToCopy && itemsToCopy.length > 0) {
+            // Prepare items for insertion with new revision ID
+            const itemsToInsert = itemsToCopy.map(item => {
+              // Create a new item without the ID (will be auto-generated)
+              const { id, ...itemWithoutId } = item;
+              return {
+                ...itemWithoutId,
+                revision_id: newRevision.id,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+            });
+            
+            // Insert the items
+            const { error: insertError } = await supabase
+              .from('estimate_items')
+              .insert(itemsToInsert);
+              
+            if (insertError) throw insertError;
+          }
+        }
+      }
 
       toast({
         title: "Revision created successfully",
@@ -98,7 +227,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Create New Revision</DialogTitle>
           <DialogDescription>
@@ -106,32 +235,96 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="revisionNotes">Revision Notes</Label>
-            <Textarea
-              id="revisionNotes"
-              placeholder="Add notes describing the changes in this revision..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="revisionNotes">Revision Notes</Label>
+              <Textarea
+                id="revisionNotes"
+                placeholder="Add notes describing the changes in this revision..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="copyItems"
-              checked={copyAllItems}
-              onCheckedChange={(checked) => setCopyAllItems(checked as boolean)}
-            />
-            <Label htmlFor="copyItems" className="cursor-pointer">
-              Copy all items from previous version
-            </Label>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="copyItems"
+                checked={copyAllItems}
+                onCheckedChange={(checked) => handleCopyAllChange(checked as boolean)}
+              />
+              <Label htmlFor="copyItems" className="cursor-pointer">
+                Copy all items from previous version
+              </Label>
+            </div>
+            
+            {!copyAllItems && (
+              <div className="space-y-2 pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Select items to copy</Label>
+                  <div className="flex space-x-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => toggleAllItems(true)}
+                    >
+                      Select All
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => toggleAllItems(false)}
+                    >
+                      Deselect All
+                    </Button>
+                  </div>
+                </div>
+                
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : items.length > 0 ? (
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[50px]">Select</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="w-[80px] text-right">Price</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {items.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedItems[item.id] || false}
+                                onCheckedChange={() => handleItemSelectionToggle(item.id)}
+                              />
+                            </TableCell>
+                            <TableCell>{item.description}</TableCell>
+                            <TableCell className="text-right">${item.total_price.toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground border rounded-md">
+                    No items found in the current version
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <p className="text-sm text-muted-foreground">
+              After creating this revision, you'll be able to edit all details and line items.
+            </p>
           </div>
-          
-          <p className="text-sm text-muted-foreground">
-            After creating this revision, you'll be able to edit all details and line items.
-          </p>
         </div>
 
         <DialogFooter>
