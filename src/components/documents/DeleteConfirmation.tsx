@@ -1,16 +1,14 @@
 
 import React from 'react';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 
 interface DeleteConfirmationProps {
   open: boolean;
@@ -19,101 +17,63 @@ interface DeleteConfirmationProps {
   onForceDelete?: () => void;
   error?: string | null;
   hasReferences?: boolean;
-  isLoading?: boolean;
 }
 
-const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
-  open,
-  onClose,
-  onConfirm,
+const DeleteConfirmation = ({ 
+  open, 
+  onClose, 
+  onConfirm, 
   onForceDelete,
   error,
-  hasReferences = false,
-  isLoading = false
-}) => {
+  hasReferences 
+}: DeleteConfirmationProps) => {
   return (
-    <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {error ? (
-              <div className="flex items-center text-red-600">
-                <AlertTriangle className="h-5 w-5 mr-2" />
-                Error
-              </div>
-            ) : hasReferences ? (
-              <div className="flex items-center text-amber-600">
-                <AlertCircle className="h-5 w-5 mr-2" />
-                Document Has References
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
-                Delete Document
-              </div>
-            )}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {error ? (
-              <div className="space-y-2">
-                <p className="text-red-600">{error}</p>
-                {hasReferences && (
-                  <p>
-                    This document is referenced by other records. Deleting it may cause data inconsistencies.
-                  </p>
-                )}
-              </div>
-            ) : hasReferences ? (
-              <div className="space-y-2">
-                <p>
-                  This document is referenced by other records in the system, such as estimates, 
-                  work orders, or expenses.
-                </p>
-                <div className="flex items-start mt-2 bg-amber-50 p-3 rounded-md">
-                  <Info className="h-5 w-5 text-amber-500 mr-2 mt-0.5" />
-                  <p className="text-sm text-amber-800">
-                    Deleting this document may cause data inconsistencies. 
-                    Consider removing the references first, or use Force Delete only if you understand the consequences.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              'This action cannot be undone. This will permanently delete the document from your system.'
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-          {error ? (
-            hasReferences && onForceDelete ? (
-              <AlertDialogAction 
-                onClick={onForceDelete}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={isLoading}
-              >
-                Force Delete
-              </AlertDialogAction>
-            ) : null
-          ) : hasReferences && onForceDelete ? (
-            <AlertDialogAction 
-              onClick={onForceDelete}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Deleting...' : 'Force Delete'}
-            </AlertDialogAction>
-          ) : (
-            <AlertDialogAction 
-              onClick={onConfirm}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Delete Document</DialogTitle>
+          <DialogDescription>
+            {!error 
+              ? "Are you sure you want to delete this document? This action cannot be undone."
+              : "This document cannot be deleted"
+            }
+          </DialogDescription>
+        </DialogHeader>
+        
+        {error && (
+          <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-md mt-2 text-sm text-destructive">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>{error}</div>
+          </div>
+        )}
+        
+        {hasReferences && (
+          <div className="flex items-start gap-2 p-3 bg-yellow-100 rounded-md mt-2 text-sm text-yellow-800">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              This document is linked to work order materials. You can force delete, 
+              which will remove the document reference from those materials.
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={onClose}>
+            {error && !hasReferences ? "Close" : "Cancel"}
+          </Button>
+          {!error && !hasReferences && (
+            <Button variant="destructive" onClick={onConfirm}>
+              Delete
+            </Button>
           )}
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          {hasReferences && onForceDelete && (
+            <Button variant="destructive" onClick={onForceDelete}>
+              Force Delete
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

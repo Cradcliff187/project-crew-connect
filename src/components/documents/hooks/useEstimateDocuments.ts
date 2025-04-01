@@ -1,132 +1,291 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 
-export function useEstimateDocuments(estimateId: string) {
+export const useEstimateDocuments = (estimateId: string) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  
-  useEffect(() => {
-    const fetchDocuments = async () => {
+
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
       if (!estimateId) {
         setDocuments([]);
-        setLoading(false);
         return;
       }
       
-      try {
-        setLoading(true);
-        setError(null);
+      console.log(`Fetching documents for estimate: ${estimateId}`);
+      
+      // Fetch documents associated directly with this estimate
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('entity_type', 'ESTIMATE')
+        .eq('entity_id', estimateId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log(`Found ${data?.length || 0} documents directly associated with estimate ${estimateId}`);
+      
+      // Transform the data to include document URLs
+      const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
+        let publicUrl = '';
         
-        // First fetch direct estimate documents
-        const { data: directDocs, error: directError } = await supabase
-          .from('documents')
-          .select('*')
-          .eq('entity_type', 'ESTIMATE')
-          .eq('entity_id', estimateId);
+        try {
+          // Get the public URL for the document
+          const { data: urlData } = supabase.storage
+            .from('construction_documents')
+            .getPublicUrl(doc.storage_path);
           
-        if (directError) throw directError;
-        
-        // Check if this is a temporary ID (starts with "temp-")
-        const isTemporaryEstimate = estimateId.startsWith('temp-');
-        
-        let lineItemDocs: any[] = [];
-        
-        // For temporary estimates, we shouldn't try to join with estimate_items
-        // as they might not be saved in the database yet
-        if (!isTemporaryEstimate) {
-          // Only attempt to fetch line item documents with JOIN for permanent estimates
-          try {
-            const { data, error: lineItemError } = await supabase
-              .from('documents')
-              .select('*, estimate_items!inner(id, description)')
-              .eq('entity_type', 'ESTIMATE_ITEM')
-              .eq('estimate_items.estimate_id', estimateId);
-              
-            if (!lineItemError && data) {
-              lineItemDocs = data;
-            }
-          } catch (err) {
-            console.warn('Could not fetch line item documents with join:', err);
-            
-            // Fallback: Just get ESTIMATE_ITEM documents without the join
-            const { data: fallbackData } = await supabase
-              .from('documents')
-              .select('*')
-              .eq('entity_type', 'ESTIMATE_ITEM')
-              .filter('entity_id', 'like', `${estimateId}-%`);
-              
-            lineItemDocs = fallbackData || [];
-          }
-        } else {
-          // For temporary estimates, just look for documents with entity_id
-          // that includes the temp ID pattern
-          const { data: tempItemDocs } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('entity_type', 'ESTIMATE_ITEM')
-            .filter('entity_id', 'like', `${estimateId}-%`);
-            
-          lineItemDocs = tempItemDocs || [];
+          publicUrl = urlData.publicUrl;
+        } catch (err) {
+          console.error('Error getting public URL:', err);
+          publicUrl = ''; // Set default empty URL on error
         }
         
-        // Combine and process
-        const allDocs = [
-          ...(directDocs || []).map(doc => ({
-            ...doc,
-            is_line_item_doc: false
-          })),
-          ...(lineItemDocs || []).map(doc => ({
-            ...doc,
-            is_line_item_doc: true,
-            item_reference: doc.estimate_items ? 
-              `Item: ${doc.estimate_items.description}` : 
-              'Line Item Document'
-          }))
-        ];
+        // Check if this document is attached to an estimate item
+        let itemDescription = '';
+        if (doc.notes && doc.notes.includes('Item:')) {
+          itemDescription = doc.notes.split('Item:')[1].trim();
+        }
         
-        // Add URLs to all documents
-        const docsWithUrls = await Promise.all(
-          allDocs.map(async (doc) => {
-            if (doc.storage_path) {
-              const { data: urlData } = await supabase.storage
-                .from(DOCUMENTS_BUCKET_ID)
-                .createSignedUrl(doc.storage_path, 300);
-                
-              if (urlData) {
-                return {
-                  ...doc,
-                  url: urlData.signedUrl
-                };
-              }
-            }
-            
-            return {
-              ...doc,
-              url: ''
-            };
-          })
-        );
+        return { 
+          ...doc,
+          url: publicUrl,
+          item_reference: itemDescription || null,
+          item_id: null, // Will be populated if this is a line item document
+          is_latest_version: doc.is_latest_version ?? true,
+          mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+        } as Document;
+      }));
+      
+      // Fetch all revisions for this estimate, not just the current one
+      const { data: allRevisions, error: revisionsError } = await supabase
+        .from('estimate_revisions')
+        .select('id')
+        .eq('estimate_id', estimateId);
         
-        setDocuments(docsWithUrls as Document[]);
-      } catch (err: any) {
-        console.error('Error fetching estimate documents:', err);
-        setError(err.message || 'An error occurred while fetching documents');
-        setDocuments([]);
-      } finally {
-        setLoading(false);
+      if (revisionsError) {
+        console.error('Error fetching estimate revisions:', revisionsError);
       }
-    };
-    
-    fetchDocuments();
-  }, [estimateId, refreshTrigger]);
-  
-  const refetchDocuments = () => {
-    setRefreshTrigger(prev => prev + 1);
+      
+      let itemDocuments: Document[] = [];
+      
+      // If we have revisions, fetch documents for items in each revision
+      if (allRevisions && allRevisions.length > 0) {
+        const revisionIds = allRevisions.map(rev => rev.id);
+        
+        // Fetch all items that have document associations for all revisions
+        const { data: items, error: itemsError } = await supabase
+          .from('estimate_items')
+          .select('id, description, document_id, revision_id')
+          .eq('estimate_id', estimateId)
+          .in('revision_id', revisionIds)
+          .not('document_id', 'is', null);
+          
+        if (!itemsError && items && items.length > 0) {
+          console.log(`Found ${items.length} items with attached documents across all revisions`);
+          
+          // Get the unique document IDs
+          const documentIds = items.map(item => item.document_id).filter(Boolean);
+          
+          if (documentIds.length > 0) {
+            const { data: itemDocData, error: itemDocsError } = await supabase
+              .from('documents')
+              .select('*')
+              .in('document_id', documentIds);
+              
+            if (!itemDocsError && itemDocData) {
+              // Process these documents and add them to our array
+              const itemDocsWithUrls = await Promise.all(itemDocData.map(async (doc) => {
+                let publicUrl = '';
+                
+                try {
+                  const { data: urlData } = supabase.storage
+                    .from('construction_documents')
+                    .getPublicUrl(doc.storage_path);
+                  
+                  publicUrl = urlData.publicUrl;
+                } catch (err) {
+                  console.error('Error getting public URL:', err);
+                  publicUrl = ''; // Set default empty URL on error
+                }
+                
+                // Find the related item for this document
+                const relatedItem = items.find(item => item.document_id === doc.document_id);
+                
+                return { 
+                  ...doc,
+                  url: publicUrl,
+                  item_reference: relatedItem ? `Item: ${relatedItem.description}` : null,
+                  item_id: relatedItem ? relatedItem.id : null,
+                  revision_id: relatedItem?.revision_id,
+                  is_latest_version: doc.is_latest_version ?? true,
+                  mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+                } as Document;
+              }));
+              
+              itemDocuments = itemDocsWithUrls;
+            }
+          }
+        }
+      }
+      
+      // Additionally fetch vendor-associated documents for estimate items
+      const { data: allItems, error: allItemsError } = await supabase
+        .from('estimate_items')
+        .select('id, description, vendor_id, subcontractor_id')
+        .eq('estimate_id', estimateId)
+        .or('vendor_id.is.not.null,subcontractor_id.is.not.null');
+        
+      if (!allItemsError && allItems && allItems.length > 0) {
+        console.log(`Found ${allItems.length} items with vendor or subcontractor associations`);
+        
+        // Process vendors
+        const vendorIds = allItems
+          .filter(item => item.vendor_id)
+          .map(item => item.vendor_id);
+          
+        if (vendorIds.length > 0) {
+          const { data: vendorDocs, error: vendorDocsError } = await supabase
+            .from('documents')
+            .select('*')
+            .eq('entity_type', 'VENDOR')
+            .in('entity_id', vendorIds)
+            .order('created_at', { ascending: false });
+            
+          if (!vendorDocsError && vendorDocs && vendorDocs.length > 0) {
+            console.log(`Found ${vendorDocs.length} vendor documents`);
+            
+            // Process and add vendor documents
+            const vendorDocsWithUrls = await Promise.all(vendorDocs.map(async (doc) => {
+              let publicUrl = '';
+              
+              try {
+                const { data: urlData } = supabase.storage
+                  .from('construction_documents')
+                  .getPublicUrl(doc.storage_path);
+                
+                publicUrl = urlData.publicUrl;
+              } catch (err) {
+                console.error('Error getting public URL:', err);
+                publicUrl = ''; // Set default empty URL on error
+              }
+              
+              // Find the related items for this vendor
+              const relatedItems = allItems.filter(item => item.vendor_id === doc.entity_id);
+              const itemDescriptions = relatedItems.map(item => item.description).join(', ');
+              
+              // Ensure all required properties are included
+              return { 
+                ...doc,
+                url: publicUrl,
+                item_reference: `Vendor Document - Related to: ${itemDescriptions}`,
+                is_vendor_doc: true,
+                item_id: null, // These are vendor documents, not directly attached to items
+                is_latest_version: doc.is_latest_version ?? true,
+                mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+              } as Document;
+            }));
+            
+            // Add these documents to our array
+            docsWithUrls.push(...vendorDocsWithUrls);
+          }
+        }
+        
+        // Process subcontractors
+        const subcontractorIds = allItems
+          .filter(item => item.subcontractor_id)
+          .map(item => item.subcontractor_id);
+          
+        if (subcontractorIds.length > 0) {
+          const { data: subDocs, error: subDocsError } = await supabase
+            .from('documents')
+            .select('*')
+            .eq('entity_type', 'SUBCONTRACTOR')
+            .in('entity_id', subcontractorIds)
+            .order('created_at', { ascending: false });
+            
+          if (!subDocsError && subDocs && subDocs.length > 0) {
+            console.log(`Found ${subDocs.length} subcontractor documents`);
+            
+            // Process and add subcontractor documents
+            const subDocsWithUrls = await Promise.all(subDocs.map(async (doc) => {
+              let publicUrl = '';
+              
+              try {
+                const { data: urlData } = supabase.storage
+                  .from('construction_documents')
+                  .getPublicUrl(doc.storage_path);
+                
+                publicUrl = urlData.publicUrl;
+              } catch (err) {
+                console.error('Error getting public URL:', err);
+                publicUrl = ''; // Set default empty URL on error
+              }
+              
+              // Find the related items for this subcontractor
+              const relatedItems = allItems.filter(item => item.subcontractor_id === doc.entity_id);
+              const itemDescriptions = relatedItems.map(item => item.description).join(', ');
+              
+              // Ensure all required properties are included
+              return { 
+                ...doc,
+                url: publicUrl,
+                item_reference: `Subcontractor Document - Related to: ${itemDescriptions}`,
+                is_subcontractor_doc: true,
+                item_id: null, // These are subcontractor documents, not directly attached to items
+                is_latest_version: doc.is_latest_version ?? true,
+                mime_type: doc.mime_type || doc.file_type || 'application/octet-stream'
+              } as Document;
+            }));
+            
+            // Add these documents to our array
+            docsWithUrls.push(...subDocsWithUrls);
+          }
+        }
+      }
+      
+      // Add item documents to our collection
+      docsWithUrls.push(...itemDocuments);
+      
+      // Remove any duplicate documents (by document_id)
+      const uniqueDocs = Array.from(
+        new Map(docsWithUrls.map(doc => [doc.document_id, doc])).values()
+      );
+      
+      console.log(`Found a total of ${uniqueDocs.length} unique documents for estimate ${estimateId} across all revisions`);
+      
+      setDocuments(uniqueDocs);
+    } catch (err: any) {
+      console.error('Error fetching estimate documents:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  return { documents, loading, error, refetchDocuments };
-}
+
+  useEffect(() => {
+    if (estimateId) {
+      fetchDocuments();
+    }
+  }, [estimateId]);
+
+  const refetchDocuments = () => {
+    fetchDocuments();
+  };
+
+  return {
+    documents,
+    loading,
+    error,
+    refetchDocuments
+  };
+};

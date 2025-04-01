@@ -2,94 +2,65 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 
-interface ImageTransformOptions {
-  width?: number;
-  height?: number;
-  quality?: number;
-}
-
-interface FetchOptions {
-  imageOptions?: ImageTransformOptions;
-  expiresIn?: number;
+interface FetchDocumentOptions {
+  imageOptions?: {
+    width?: number;
+    height?: number;
+    quality?: number;
+  };
+  expiresIn?: number; // Expiration time in seconds
 }
 
 /**
- * Fetches a document by ID and includes a public URL
+ * Fetch a document by ID and generate a public URL for it
  */
 export const fetchDocumentWithUrl = async (
-  documentId: string, 
-  options: FetchOptions = {}
+  documentId: string,
+  options: FetchDocumentOptions = {}
 ): Promise<Document | null> => {
   try {
+    // Fetch the document metadata from the database
     const { data, error } = await supabase
       .from('documents')
       .select('*')
       .eq('document_id', documentId)
       .single();
     
-    if (error) {
-      throw error;
-    }
-    
-    if (!data) {
+    if (error || !data) {
+      console.error('Error fetching document:', error);
       return null;
     }
     
-    // Get URL based on file type and options
-    let url: string;
-    const isImage = data.file_type?.toLowerCase().startsWith('image/');
+    // Generate a public URL for the document
+    const { data: { publicUrl } } = supabase.storage
+      .from('construction_documents')
+      .getPublicUrl(data.storage_path, {
+        transform: data.file_type?.startsWith('image/') ? options.imageOptions : undefined,
+        download: false,
+      });
     
-    if (isImage && options.imageOptions) {
-      const { width, height, quality } = options.imageOptions;
-      // Create valid transform options
-      const transformOptions: Record<string, any> = {};
-      
-      if (width) transformOptions.width = width;
-      if (height) transformOptions.height = height;
-      if (quality) transformOptions.quality = quality;
-      
-      const { data: transformData } = supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(data.storage_path, {
-          transform: Object.keys(transformOptions).length > 0 ? transformOptions : undefined,
-        });
-      
-      url = transformData.publicUrl;
-    } else if (options.expiresIn) {
-      // Get signed URL with expiration
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from('construction_documents')
-        .createSignedUrl(data.storage_path, options.expiresIn);
-      
-      if (signedError) {
-        throw signedError;
-      }
-      
-      url = signedData.signedUrl;
-    } else {
-      // Get standard public URL
-      const { data: publicData } = supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(data.storage_path);
-      
-      url = publicData.publicUrl;
-    }
+    // Return the document with the URL
+    return {
+      ...data,
+      url: publicUrl
+    } as Document;
     
-    return { ...data, url };
   } catch (error) {
-    console.error('Error fetching document with URL:', error);
+    console.error('Error in fetchDocumentWithUrl:', error);
     return null;
   }
 };
 
 /**
- * Fetches multiple documents by entity
+ * Fetch multiple documents by entity type and ID
  */
 export const fetchDocumentsByEntity = async (
   entityType: string,
-  entityId: string
+  entityId: string,
+  options: FetchDocumentOptions = {}
 ): Promise<Document[]> => {
   try {
+    // Fetch document metadata
     const { data, error } = await supabase
       .from('documents')
       .select('*')
@@ -98,25 +69,31 @@ export const fetchDocumentsByEntity = async (
       .order('created_at', { ascending: false });
     
     if (error) {
-      throw error;
-    }
-    
-    if (!data || data.length === 0) {
+      console.error('Error fetching documents:', error);
       return [];
     }
     
-    // Add URLs to all documents
-    const docsWithUrls = await Promise.all(data.map(async (doc) => {
-      const { data: { publicUrl } } = supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(doc.storage_path);
-      
-      return { ...doc, url: publicUrl };
-    }));
+    // Add URLs to each document
+    const documentsWithUrls = await Promise.all(
+      (data || []).map(async (doc) => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('construction_documents')
+          .getPublicUrl(doc.storage_path, {
+            transform: doc.file_type?.startsWith('image/') ? options.imageOptions : undefined,
+            download: false,
+          });
+        
+        return {
+          ...doc,
+          url: publicUrl
+        } as Document;
+      })
+    );
     
-    return docsWithUrls;
+    return documentsWithUrls;
+    
   } catch (error) {
-    console.error('Error fetching entity documents:', error);
+    console.error('Error in fetchDocumentsByEntity:', error);
     return [];
   }
 };

@@ -1,5 +1,5 @@
 
-import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BucketTestResult {
   success: boolean;
@@ -10,35 +10,44 @@ interface BucketTestResult {
 
 /**
  * Tests access to the storage bucket
- * This helps validate that the storage bucket is properly configured
+ * This is helpful to validate that the storage bucket is properly configured
  */
 export const testBucketAccess = async (): Promise<BucketTestResult> => {
   try {
-    // Simply try to list files in the known bucket instead of listing buckets
-    const { data, error } = await supabase
+    // Get the list of buckets to check if construction_documents exists
+    const { data: buckets, error: bucketsError } = await supabase
       .storage
-      .from(DOCUMENTS_BUCKET_ID)
-      .list();
-      
-    if (error) {
-      console.error(`Error accessing files in ${DOCUMENTS_BUCKET_ID} bucket:`, error);
-      return {
-        success: false,
-        bucketId: DOCUMENTS_BUCKET_ID,
-        bucketName: DOCUMENTS_BUCKET_ID,
-        error: `Cannot access files: ${error.message}`
+      .listBuckets();
+    
+    if (bucketsError) {
+      console.error('Error listing buckets:', bucketsError);
+      return { 
+        success: false, 
+        error: bucketsError 
       };
     }
     
-    console.log(`Successfully accessed ${DOCUMENTS_BUCKET_ID} bucket with ${data?.length || 0} files`);
+    // Find construction_documents bucket
+    const constructionBucket = buckets.find(bucket => 
+      bucket.name === 'construction_documents'
+    );
+    
+    if (!constructionBucket) {
+      console.error('construction_documents bucket not found');
+      return { 
+        success: false, 
+        error: 'construction_documents bucket not found' 
+      };
+    }
     
     return {
       success: true,
-      bucketId: DOCUMENTS_BUCKET_ID,
-      bucketName: DOCUMENTS_BUCKET_ID
+      bucketId: constructionBucket.id,
+      bucketName: constructionBucket.name
     };
+    
   } catch (error) {
-    console.error('Unexpected error testing bucket access:', error);
+    console.error('Error testing bucket access:', error);
     return {
       success: false,
       error

@@ -9,14 +9,12 @@ interface AmountFieldProps {
   control: Control<DocumentUploadFormValues>;
   isReceiptUpload?: boolean;
   prefillAmount?: number;
-  instanceId?: string; // Added instanceId prop
 }
 
 const AmountField: React.FC<AmountFieldProps> = ({ 
   control, 
   isReceiptUpload = false,
-  prefillAmount,
-  instanceId = 'default-amount'  // Default value
+  prefillAmount
 }) => {
   return (
     <FormField
@@ -45,7 +43,6 @@ const AmountField: React.FC<AmountFieldProps> = ({
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                id={`${instanceId}-amount-input`}
                 onChange={handleChange}
                 value={field.value === undefined ? '' : field.value}
               />

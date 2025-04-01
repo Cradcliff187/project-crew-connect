@@ -40,28 +40,24 @@ export function useEstimateDocumentManager(options: UseEstimateDocumentManagerOp
       }
 
       setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('documents')
-          .select('*')
-          .in('document_id', documentIds);
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .in('document_id', documentIds);
 
-        if (error) {
-          console.error('Error fetching documents:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to load attached documents',
-            variant: 'destructive',
-          });
-          return;
-        }
-
-        setAttachedDocuments(data || []);
-      } catch (err) {
-        console.error('Error in document fetch:', err);
-      } finally {
+      if (error) {
+        console.error('Error fetching documents:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load attached documents',
+          variant: 'destructive',
+        });
         setLoading(false);
+        return;
       }
+
+      setAttachedDocuments(data || []);
+      setLoading(false);
     };
 
     fetchDocuments();

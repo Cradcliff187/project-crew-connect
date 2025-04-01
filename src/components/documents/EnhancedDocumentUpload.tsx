@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
-import { EntityType, DocumentUploadFormValues } from './schemas/documentSchema';
+import { EntityType } from './schemas/documentSchema';
 
 // Import refactored components
 import DropzoneUploader from './components/DropzoneUploader';
@@ -26,23 +26,28 @@ interface EnhancedDocumentUploadProps {
     materialName?: string;
     expenseName?: string;
   };
-  instanceId?: string;
 }
 
-const EnhancedDocumentUpload = React.memo(({
+const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   entityType,
   entityId,
   onSuccess,
   onCancel,
   isReceiptUpload = false,
-  prefillData,
-  instanceId = 'default-upload'
-}: EnhancedDocumentUploadProps) => {
+  prefillData
+}) => {
   const [showMobileCapture, setShowMobileCapture] = useState(false);
   const { isMobile, hasCamera } = useDeviceCapabilities();
-  const formSubmitted = useRef(false);
   
-  // Use the custom hook for form management with instanceId passed through
+  // Log props for debugging
+  console.log('EnhancedDocumentUpload props:', { 
+    entityType, 
+    entityId, 
+    isReceiptUpload, 
+    prefillData 
+  });
+
+  // Use the custom hook for form management
   const {
     form,
     isUploading,
@@ -56,36 +61,27 @@ const EnhancedDocumentUpload = React.memo(({
     watchVendorType,
     watchFiles,
     watchCategory,
-    handleCancel
+    watchExpenseType
   } = useDocumentUploadForm({
     entityType,
     entityId,
     onSuccess,
     onCancel,
     isReceiptUpload,
-    prefillData,
-    instanceId
+    prefillData
   });
 
   // Initialize form with prefill data if available
   useEffect(() => {
     initializeForm();
-    formSubmitted.current = false;
-    
-    // Return a cleanup function to reset form when component unmounts
-    return () => {
-      if (previewURL) {
-        URL.revokeObjectURL(previewURL);
-      }
-    };
-  }, [isReceiptUpload, prefillData, entityId, instanceId, initializeForm, previewURL]);
+  }, [isReceiptUpload, prefillData]);
 
   // Auto-show vendor selector when receipt category is selected
   useEffect(() => {
     if (watchCategory === 'receipt' || watchCategory === 'invoice') {
       setShowVendorSelector(true);
     }
-  }, [watchCategory, setShowVendorSelector]);
+  }, [watchCategory]);
 
   // Handle capture from mobile device
   const handleMobileCapture = (file: File) => {
@@ -96,37 +92,15 @@ const EnhancedDocumentUpload = React.memo(({
   // If prefill data is available and it's a receipt upload, simplify the UI
   const simplifiedUpload = isReceiptUpload && prefillData;
 
-  // Handle form submission with STRONG event prevention
+  // Handle form submission with event prevention
   const handleFormSubmit = (e: React.FormEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    // Prevent double submissions
-    if (formSubmitted.current || isUploading) {
-      return;
-    }
-    
-    formSubmitted.current = true;
-    form.handleSubmit((data: DocumentUploadFormValues) => {
-      onSubmit(data);
-    })(e);
+    e.preventDefault(); // Prevent event bubbling to parent forms
+    e.stopPropagation(); // Stop propagation
+    form.handleSubmit(onSubmit)(e);
   };
-
-  // Handle cancel with proper cleanup
-  const handleCancelUpload = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    handleCancel();
-  };
-
-  // Create a unique form ID for this specific instance
-  const formId = `document-form-${instanceId}`;
 
   return (
-    <Card 
-      className={`w-full ${isUploading ? 'uploading' : ''}`} 
-      onClick={(e) => e.stopPropagation()}
-    >
+    <Card className="w-full">
       {!simplifiedUpload && (
         <CardHeader>
           <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
@@ -139,7 +113,7 @@ const EnhancedDocumentUpload = React.memo(({
       )}
       
       <Form {...form}>
-        <form onSubmit={handleFormSubmit} onClick={(e) => e.stopPropagation()} id={formId}>
+        <form onSubmit={handleFormSubmit}>
           <CardContent className="p-0">
             <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
               <div className="space-y-6">
@@ -150,7 +124,6 @@ const EnhancedDocumentUpload = React.memo(({
                   previewURL={previewURL}
                   watchFiles={watchFiles}
                   label={isReceiptUpload ? "Upload Receipt" : "Upload Document"}
-                  instanceId={`dropzone-${instanceId}`}
                 />
                 
                 {/* Mobile Capture Component */}
@@ -171,7 +144,6 @@ const EnhancedDocumentUpload = React.memo(({
                   isReceiptUpload={isReceiptUpload}
                   showVendorSelector={showVendorSelector}
                   prefillData={prefillData}
-                  instanceId={instanceId}
                 />
               </div>
             </ScrollArea>
@@ -182,16 +154,15 @@ const EnhancedDocumentUpload = React.memo(({
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleCancelUpload}
+                onClick={onCancel}
               >
                 Cancel
               </Button>
             )}
             <Button
               type="submit" 
-              className={`bg-[#0485ea] hover:bg-[#0375d1] ${isUploading ? 'uploading' : ''}`}
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isUploading || watchFiles.length === 0}
-              form={formId}
             >
               {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
             </Button>
@@ -200,9 +171,6 @@ const EnhancedDocumentUpload = React.memo(({
       </Form>
     </Card>
   );
-});
-
-// Add display name
-EnhancedDocumentUpload.displayName = 'EnhancedDocumentUpload';
+};
 
 export default EnhancedDocumentUpload;

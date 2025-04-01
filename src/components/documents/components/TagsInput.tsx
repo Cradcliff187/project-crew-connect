@@ -1,87 +1,97 @@
 
-import React, { KeyboardEvent, useState } from 'react';
-import { Control, Controller } from 'react-hook-form';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import React, { useState } from 'react';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Control } from 'react-hook-form';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface TagsInputProps {
   control: Control<DocumentUploadFormValues>;
-  name: 'metadata.tags'; // This enforces that we only use this for tags
-  instanceId?: string; // Added instanceId prop
+  name?: string;
+  label?: string;
+  description?: string;
 }
 
 const TagsInput: React.FC<TagsInputProps> = ({ 
   control, 
-  name,
-  instanceId = 'default-tags'  // Default value
+  name = "metadata.tags", 
+  label = "Tags", 
+  description = "Add tags to help organize and search for this document later" 
 }) => {
-  const [inputValue, setInputValue] = useState<string>('');
-
-  const handleKeyDown = (
-    e: KeyboardEvent<HTMLInputElement>, 
-    onChange: (value: string[]) => void, 
-    currentTags: string[]
-  ) => {
-    if ((e.key === 'Enter' || e.key === ',') && inputValue.trim()) {
-      e.preventDefault();
-      const newTag = inputValue.trim();
-      
-      // Don't add duplicates
-      if (!currentTags.includes(newTag)) {
-        onChange([...currentTags, newTag]);
-      }
-      
-      setInputValue('');
-    }
-  };
-
-  const removeTag = (tagToRemove: string, onChange: (value: string[]) => void, currentTags: string[]) => {
-    onChange(currentTags.filter(tag => tag !== tagToRemove));
-  };
-
   return (
     <FormField
       control={control}
-      name={name}
+      name="metadata.tags"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Tags</FormLabel>
-          <div className="flex flex-wrap gap-1 mb-2">
-            {field.value && field.value.map((tag, index) => (
-              <Badge 
-                key={`${tag}-${index}`} 
-                variant="secondary"
-                className="flex items-center gap-1"
-              >
-                {tag}
-                <button 
-                  type="button" 
-                  className="h-3 w-3 rounded-full"
-                  onClick={() => removeTag(tag, field.onChange, field.value || [])}
-                  aria-label={`Remove tag ${tag}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
+          <FormLabel>{label}</FormLabel>
           <FormControl>
-            <Input
-              id={`${instanceId}-tags-input`}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, field.onChange, field.value || [])}
-              placeholder="Type and press Enter to add tags"
-              className="flex-1"
+            <TagsInputField
+              value={field.value || []}
+              onChange={field.onChange}
+              placeholder="Type and press Enter to add a tag"
             />
           </FormControl>
+          {description && <FormDescription>{description}</FormDescription>}
           <FormMessage />
         </FormItem>
       )}
     />
+  );
+};
+
+export interface TagsInputFieldProps {
+  value: string[];
+  onChange: (value: string[]) => void;
+  placeholder?: string;
+}
+
+export const TagsInputField: React.FC<TagsInputFieldProps> = ({ 
+  value = [], 
+  onChange, 
+  placeholder = "Add tag..." 
+}) => {
+  const [inputValue, setInputValue] = useState('');
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      e.preventDefault();
+      if (!value.includes(inputValue.trim())) {
+        onChange([...value, inputValue.trim()]);
+      }
+      setInputValue('');
+    } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
+      // Remove the last tag when backspace is pressed and input is empty
+      onChange(value.slice(0, -1));
+    }
+  };
+  
+  const removeTag = (tag: string) => {
+    onChange(value.filter(t => t !== tag));
+  };
+  
+  return (
+    <div className="flex flex-wrap gap-2 p-2 border rounded-md items-center bg-background">
+      {value.map((tag, index) => (
+        <Badge key={index} variant="secondary" className="gap-1">
+          {tag}
+          <X 
+            className="h-3 w-3 cursor-pointer hover:text-destructive" 
+            onClick={() => removeTag(tag)} 
+          />
+        </Badge>
+      ))}
+      <Input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={value.length === 0 ? placeholder : ''}
+        className="flex-grow border-0 px-2 py-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+    </div>
   );
 };
 

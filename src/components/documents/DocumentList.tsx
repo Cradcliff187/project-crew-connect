@@ -1,63 +1,72 @@
 
 import React from 'react';
 import { Document } from './schemas/documentSchema';
+import { FileText, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FileIcon, Loader2, Upload, FileText, FileArchive, FilePlus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import DocumentPreviewCard from './DocumentPreviewCard';
+import { useDocumentViewer } from '@/hooks/useDocumentViewer';
+import DocumentViewer from './DocumentViewer';
 
 interface DocumentListProps {
   documents: Document[];
-  loading?: boolean;
-  onDocumentClick?: (document: Document) => void;
-  onDocumentDelete?: (document: Document) => void;
+  loading: boolean;
   onUploadClick?: () => void;
-  emptyMessage?: string;
+  onDocumentDelete?: (document: Document) => void;
   showEntityInfo?: boolean;
+  emptyMessage?: string;
   showCategories?: boolean;
 }
 
-const getDocumentIcon = (document: Document) => {
-  const fileType = document.file_type?.toLowerCase() || '';
-  
-  if (fileType.includes('image')) return '🖼️';
-  if (fileType.includes('pdf')) return '📄';
-  if (fileType.includes('word') || fileType.includes('doc')) return '📝';
-  if (fileType.includes('excel') || fileType.includes('sheet')) return '📊';
-  if (fileType.includes('zip') || fileType.includes('rar')) return '🗜️';
-  
-  return '📎';
-};
-
-const DocumentList: React.FC<DocumentListProps> = ({
+const DocumentList = ({
   documents,
-  loading = false,
-  onDocumentClick,
-  onDocumentDelete,
+  loading,
   onUploadClick,
+  onDocumentDelete,
+  showEntityInfo = false,
   emptyMessage = "No documents found",
-  showEntityInfo = true,
-  showCategories = true
-}) => {
+  showCategories = false
+}: DocumentListProps) => {
+  const { 
+    viewDocument, 
+    closeViewer, 
+    isViewerOpen, 
+    currentDocument 
+  } = useDocumentViewer();
+
+  const handleViewDocument = (document: Document) => {
+    viewDocument(document.document_id);
+  };
+
+  // Categorize documents by type if needed
+  const documentsByCategory: Record<string, Document[]> = {};
+  if (showCategories) {
+    documents.forEach(doc => {
+      const category = doc.category || 'Other';
+      if (!documentsByCategory[category]) {
+        documentsByCategory[category] = [];
+      }
+      documentsByCategory[category].push(doc);
+    });
+  }
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8 text-muted-foreground">
-        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-        <span>Loading documents...</span>
+      <div className="flex flex-col items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 text-[#0485ea] animate-spin mb-4" />
+        <p className="text-muted-foreground">Loading documents...</p>
       </div>
     );
   }
-  
+
   if (documents.length === 0) {
     return (
-      <div className="text-center p-8 border border-dashed rounded-md">
-        <FileArchive className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-        <p className="text-muted-foreground">{emptyMessage}</p>
+      <div className="text-center py-8">
+        <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+        <h3 className="font-medium mb-2">{emptyMessage}</h3>
         {onUploadClick && (
           <Button 
-            onClick={onUploadClick} 
-            variant="outline" 
-            className="mt-4"
+            onClick={onUploadClick}
+            className="mt-4 bg-[#0485ea] hover:bg-[#0375d1]"
           >
             <Upload className="h-4 w-4 mr-2" />
             Upload Document
@@ -66,51 +75,21 @@ const DocumentList: React.FC<DocumentListProps> = ({
       </div>
     );
   }
-  
-  // Group documents by category if needed
-  let groupedDocuments = documents;
-  let categories: Record<string, Document[]> = {};
-  
-  if (showCategories) {
-    documents.forEach(doc => {
-      const category = doc.category || 'other';
-      if (!categories[category]) {
-        categories[category] = [];
-      }
-      categories[category].push(doc);
-    });
-  }
-  
-  const formatTimestamp = (timestamp: string) => {
-    try {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-    } catch (e) {
-      return 'Unknown date';
-    }
-  };
-  
-  const formatCategoryName = (category: string) => {
-    return category
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
 
   return (
-    <div className="space-y-4">
-      {showCategories && Object.keys(categories).length > 0 ? (
-        Object.entries(categories).map(([category, docs]) => (
-          <div key={category} className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              {formatCategoryName(category)}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {docs.map(document => (
-                <DocumentListItem
+    <div className="space-y-6">
+      {showCategories && Object.keys(documentsByCategory).length > 0 ? (
+        // Show documents grouped by category
+        Object.entries(documentsByCategory).map(([category, docs]) => (
+          <div key={category} className="space-y-3">
+            <h3 className="font-medium text-sm text-gray-600 capitalize">{category}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {docs.map((document) => (
+                <DocumentPreviewCard
                   key={document.document_id}
                   document={document}
-                  onClick={onDocumentClick}
-                  onDelete={onDocumentDelete}
+                  onView={() => handleViewDocument(document)}
+                  onDelete={onDocumentDelete ? () => onDocumentDelete(document) : undefined}
                   showEntityInfo={showEntityInfo}
                 />
               ))}
@@ -118,99 +97,27 @@ const DocumentList: React.FC<DocumentListProps> = ({
           </div>
         ))
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {documents.map(document => (
-            <DocumentListItem
+        // Show documents without categories
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {documents.map((document) => (
+            <DocumentPreviewCard
               key={document.document_id}
               document={document}
-              onClick={onDocumentClick}
-              onDelete={onDocumentDelete}
+              onView={() => handleViewDocument(document)}
+              onDelete={onDocumentDelete ? () => onDocumentDelete(document) : undefined}
               showEntityInfo={showEntityInfo}
             />
           ))}
         </div>
       )}
-    </div>
-  );
-};
 
-interface DocumentListItemProps {
-  document: Document;
-  onClick?: (document: Document) => void;
-  onDelete?: (document: Document) => void;
-  showEntityInfo: boolean;
-}
-
-const DocumentListItem: React.FC<DocumentListItemProps> = ({
-  document,
-  onClick,
-  onDelete,
-  showEntityInfo
-}) => {
-  const icon = getDocumentIcon(document);
-  const isClickable = !!onClick;
-  const uploadedDate = formatDistanceToNow(new Date(document.created_at), { addSuffix: true });
-  
-  const formatFileSize = (bytes?: number | null) => {
-    if (!bytes) return '';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-  
-  const handleClick = () => {
-    if (onClick) onClick(document);
-  };
-  
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDelete) onDelete(document);
-  };
-
-  return (
-    <div
-      className={`border rounded-md p-3 flex items-start gap-3 ${
-        isClickable 
-          ? 'cursor-pointer hover:bg-gray-50 hover:border-[#0485ea]/30' 
-          : ''
-      }`}
-      onClick={isClickable ? handleClick : undefined}
-    >
-      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-blue-50 rounded border border-blue-100">
-        <span className="text-lg" aria-hidden="true">{icon}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 truncate">
-            <p className="font-medium text-sm truncate" title={document.file_name}>
-              {document.file_name}
-            </p>
-            <p className="text-xs text-muted-foreground flex items-center mt-1 gap-1">
-              <span>{uploadedDate}</span>
-              {document.file_size && (
-                <>
-                  <span className="inline-block mx-1">•</span>
-                  <span>{formatFileSize(document.file_size)}</span>
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-        
-        {showEntityInfo && document.entity_type && (
-          <div className="mt-2">
-            <Badge variant="outline" className="text-xs bg-gray-50">
-              {document.entity_type.replace(/_/g, ' ').toLowerCase()}
-            </Badge>
-          </div>
-        )}
-        
-        {document.is_expense && (
-          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 mt-2">
-            Receipt
-          </Badge>
-        )}
-      </div>
+      {currentDocument && (
+        <DocumentViewer
+          document={currentDocument}
+          open={isViewerOpen}
+          onOpenChange={(open) => !open && closeViewer()}
+        />
+      )}
     </div>
   );
 };

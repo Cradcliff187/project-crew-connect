@@ -1,154 +1,102 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Download, FileText, Image, File, X } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
-import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Download, ExternalLink, FileText, AlertTriangle, X } from 'lucide-react';
+import { formatBytes } from '@/lib/utils';
 
 interface DocumentViewerProps {
   document: Document | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDelete?: () => void;
-  title?: string;
-  description?: string;
 }
 
-const DocumentViewer: React.FC<DocumentViewerProps> = ({
-  document,
-  open,
-  onOpenChange,
-  onDelete,
-  title,
-  description
-}) => {
-  if (!document) {
-    return null;
-  }
+const DocumentViewer = ({ document, open, onOpenChange }: DocumentViewerProps) => {
+  if (!document) return null;
 
-  const isImage = document.file_type?.startsWith('image/');
-  const isPDF = document.file_type === 'application/pdf';
-  
-  // Format the file size
-  const formatFileSize = (bytes: number | null | undefined): string => {
-    if (!bytes) return 'Unknown size';
-    if (bytes < 1024) return bytes + ' bytes';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  const getFileType = () => {
+    if (!document.file_type) return 'unknown';
+    const fileType = document.file_type.toLowerCase();
+    if (fileType.startsWith('image/')) return 'image';
+    if (fileType.includes('pdf')) return 'pdf';
+    return 'other';
   };
 
-  const dialogTitle = title || `Document: ${document.file_name}`;
-  const dialogDescription = description || (document.category 
-    ? `${document.category.replace(/_/g, ' ')} document` 
-    : `${document.file_type || 'Document'} preview`);
+  const fileType = getFileType();
+  const fileName = document.file_name || 'Document';
+  const fileSize = document.file_size ? formatBytes(document.file_size) : 'Unknown size';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {isImage ? (
-              <Image className="h-5 w-5 text-blue-500" />
-            ) : isPDF ? (
-              <FileText className="h-5 w-5 text-red-500" />
-            ) : (
-              <File className="h-5 w-5 text-gray-500" />
-            )}
-            {dialogTitle}
+            <FileText className="h-5 w-5" />
+            {fileName}
           </DialogTitle>
-          {description && <p className="text-sm text-gray-500">{dialogDescription}</p>}
+          <DialogDescription>
+            {document.file_type || 'Document'} • {fileSize}
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden min-h-[60vh]">
-          {isImage && document.url ? (
-            <div className="h-full flex items-center justify-center bg-gray-50 rounded-md overflow-auto">
-              <img 
-                src={document.url} 
-                alt={document.file_name || 'Document preview'} 
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
-          ) : isPDF && document.url ? (
-            <iframe 
-              src={document.url} 
-              className="w-full h-full rounded-md"
-              title={document.file_name || 'PDF Document'}
+        <div className="min-h-[60vh] flex items-center justify-center bg-muted/20 rounded-md overflow-hidden">
+          {fileType === 'image' ? (
+            <img
+              src={document.url}
+              alt={fileName}
+              className="max-h-[60vh] object-contain"
+              onError={() => console.error('Error loading image')}
+            />
+          ) : fileType === 'pdf' ? (
+            <iframe
+              src={`${document.url}#toolbar=1`}
+              className="w-full h-[60vh]"
+              title={fileName}
             />
           ) : (
-            <div className="h-full flex items-center justify-center bg-gray-50 rounded-md">
-              <div className="text-center p-6">
-                <File className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">
-                  Preview not available for this file type
-                </p>
-                <p className="text-sm text-gray-400 mt-2">
-                  {document.file_type || 'Unknown file type'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <div className="mt-4 space-y-2">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-gray-500">File Type</p>
-              <p>{document.file_type || 'Unknown'}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Size</p>
-              <p>{formatFileSize(document.file_size)}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Uploaded</p>
-              <p>
-                {document.created_at 
-                  ? format(new Date(document.created_at), 'MMM d, yyyy h:mm a') 
-                  : 'Unknown date'}
+            <div className="text-center p-4">
+              <AlertTriangle className="h-16 w-16 text-amber-500 mx-auto mb-4" />
+              <p className="mb-2 font-medium">This file type cannot be previewed</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {document.file_type || 'Unknown file type'}
               </p>
             </div>
-            {document.category && (
-              <div>
-                <p className="text-gray-500">Category</p>
-                <p className="capitalize">
-                  {document.category.replace(/_/g, ' ')}
-                </p>
-              </div>
-            )}
-          </div>
-          
-          {document.notes && (
-            <div className="mt-2">
-              <p className="text-gray-500">Notes</p>
-              <p className="text-sm">{document.notes}</p>
-            </div>
           )}
         </div>
-        
-        <DialogFooter className="flex justify-between mt-4">
-          {onDelete && (
-            <Button 
+
+        <DialogFooter className="flex items-center justify-between mt-4">
+          <div>
+            {document.category && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full capitalize">
+                {document.category}
+              </span>
+            )}
+            {document.created_at && (
+              <span className="text-xs text-muted-foreground ml-2">
+                Added {new Date(document.created_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
               variant="outline" 
-              className="text-red-600 border-red-200 hover:bg-red-50"
-              onClick={onDelete}
+              size="sm"
+              onClick={() => window.open(document.url, '_blank')}
             >
-              <X className="h-4 w-4 mr-2" />
-              Delete
+              <Download className="h-4 w-4 mr-2" />
+              Download
             </Button>
-          )}
-          
-          <Button 
-            className="ml-auto bg-[#0485ea] hover:bg-[#0375d1]"
-            onClick={() => {
-              if (document.url) {
-                window.open(document.url, '_blank');
-              }
-            }}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-[#0485ea] text-white hover:bg-[#0373ce]"
+              onClick={() => window.open(document.url, '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open in New Tab
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

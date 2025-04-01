@@ -11,8 +11,6 @@ import EstimateStepContent from './components/form-steps/EstimateStepContent';
 import FormActions from './components/form-steps/FormActions';
 import { useEstimateFormData } from './hooks/useEstimateFormData';
 import { useEstimateForm } from './hooks/useEstimateForm';
-import { ensureStorageBucket } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 
 interface EstimateMultiStepFormProps {
   open: boolean;
@@ -41,37 +39,13 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     isLastStep
   } = useEstimateForm({ open, onClose });
 
-  // Generate a temp ID only once when dialog opens
+  // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
-      // First check if we already have a temp ID
-      const existingTempId = form.getValues('temp_id');
-      
-      if (!existingTempId) {
-        // Generate a new temporary ID when form opens and there isn't one
-        const newTempId = "temp-" + Math.random().toString(36).substring(2, 9);
-        form.setValue('temp_id', newTempId);
-        console.log('Generated new temp ID for estimate:', newTempId);
-      } else {
-        console.log('Using existing temp ID for estimate:', existingTempId);
-      }
-      
-      // Ensure the storage bucket exists when creating a new estimate
-      ensureStorageBucket().then(result => {
-        if (result.success) {
-          console.log('Storage bucket verified for document uploads');
-        } else {
-          console.warn('Storage bucket check failed:', result.error);
-          toast({
-            title: 'Document Storage Warning',
-            description: 'Document uploads may not work due to storage configuration issues',
-            variant: 'destructive',
-          });
-        }
-      }).catch(error => {
-        console.error('Failed to verify storage bucket:', error);
-      });
-    } else if (!open) {
+      // Generate a new temporary ID when form opens
+      const newTempId = "temp-" + Math.random().toString(36).substr(2, 9);
+      form.setValue('temp_id', newTempId);
+    } else {
       resetForm();
     }
   }, [open, form, resetForm]);
@@ -102,9 +76,6 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   };
 
-  // Generate a stable dialog ID for accessibility
-  const dialogDescriptionId = "estimate-form-description";
-
   return (
     <Dialog 
       open={open} 
@@ -119,14 +90,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
       >
         <div className="flex-1 overflow-y-auto px-6">
           <Form {...form}>
-            <form 
-              onSubmit={form.handleSubmit(onSubmit)} 
-              className="space-y-6"
-              aria-describedby={dialogDescriptionId}
-            >
-              <p id={dialogDescriptionId} className="sr-only">
-                Form to create a new estimate with multiple steps
-              </p>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <EstimateStepContent 
                 currentStep={currentStep}
                 customerTab={customerTab}

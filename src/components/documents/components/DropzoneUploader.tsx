@@ -1,5 +1,5 @@
 
-import React, { useCallback, useRef } from 'react';
+import React from 'react';
 import { Upload, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
@@ -13,7 +13,6 @@ interface DropzoneUploaderProps {
   previewURL: string | null;
   watchFiles: File[];
   label?: string;
-  instanceId?: string;
 }
 
 const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
@@ -21,53 +20,20 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   onFileSelect,
   previewURL,
   watchFiles,
-  label = 'Upload Document',
-  instanceId = 'main-dropzone'
+  label = 'Upload Document'
 }) => {
-  // Create a ref for the file input instead of using document.getElementById
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
   // Log to verify component is rendering with correct props
-  console.log('DropzoneUploader rendering with ID:', instanceId, {
-    files: watchFiles.length > 0 ? watchFiles.map(f => f.name) : 'none',
-    previewURL: previewURL ? 'has preview' : 'no preview',
-    fileInputRef: fileInputRef.current ? 'ref exists' : 'ref not yet assigned'
-  });
+  console.log('DropzoneUploader rendering with files:', watchFiles);
   
-  // Use memoized callback to prevent unnecessary re-renders
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       // Ensure we're passing proper File objects
       const fileArray = Array.from(files);
-      console.log(`Files selected for ${instanceId}:`, fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
+      console.log('Files selected:', fileArray.map(f => ({name: f.name, type: f.type, size: f.size})));
       onFileSelect(fileArray);
     }
-  }, [onFileSelect, instanceId]);
-  
-  // Use memoized callback to prevent unnecessary re-renders
-  const handleDropzoneClick = useCallback(() => {
-    console.log(`Dropzone clicked for ${instanceId}, activating input via ref`);
-    if (fileInputRef.current) {
-      // Use the click() method directly on the input element
-      fileInputRef.current.click();
-    } else {
-      console.error(`Could not access file input ref for ${instanceId}`);
-    }
-  }, [instanceId]);
-  
-  // Use memoized callback to prevent unnecessary re-renders
-  const handleBrowseClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    console.log(`Browse button clicked for ${instanceId}, activating input via ref`);
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    } else {
-      console.error(`Could not access file input ref for ${instanceId}`);
-    }
-  }, [instanceId]);
+  };
   
   return (
     <FormField
@@ -83,8 +49,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   "flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
                   watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
                 )}
-                onClick={handleDropzoneClick}
-                data-dropzone-id={instanceId}
+                onClick={() => document.getElementById('dropzone-file')?.click()}
               >
                 {previewURL ? (
                   <div className="w-full h-full p-2 flex flex-col items-center justify-center">
@@ -101,14 +66,17 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-10 h-10 mb-3 text-[#0485ea]" />
                     <p className="mb-2 text-sm">
-                      <span className="font-semibold text-[#0485ea]">Click here</span> or drag and drop your file
+                      <span className="font-semibold text-[#0485ea]">Drag and drop</span> your file here
                     </p>
                     <Button 
                       type="button"
                       variant="outline" 
                       size="sm"
                       className="mt-2 border-[#0485ea] text-[#0485ea]"
-                      onClick={handleBrowseClick}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        document.getElementById('dropzone-file')?.click();
+                      }}
                     >
                       <FolderOpen className="h-4 w-4 mr-2" />
                       Browse Files
@@ -123,7 +91,7 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                   </div>
                 )}
                 <input
-                  ref={fileInputRef}
+                  id="dropzone-file"
                   type="file"
                   className="hidden"
                   multiple={false}
@@ -154,4 +122,4 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   );
 };
 
-export default React.memo(DropzoneUploader);
+export default DropzoneUploader;

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import StepNavigation from './StepNavigation';
 import EstimateStepTabs from './EstimateStepTabs';
 import { EstimateStep } from './EstimateStepConstants';
@@ -22,20 +22,13 @@ const DialogContent = ({
   steps,
   setCurrentStep
 }: DialogContentProps) => {
-  // Generate stable IDs for accessibility
-  const dialogId = React.useId();
-  const descriptionId = `estimate-dialog-desc-${dialogId}`;
-  const titleId = `estimate-dialog-title-${dialogId}`;
-  
   return (
     <ShadcnDialogContent 
       className="max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[90vh] overflow-hidden p-0 flex flex-col"
-      aria-describedby={descriptionId}
-      aria-labelledby={titleId}
-      id={`estimate-dialog-${dialogId}`}
+      aria-describedby="estimate-form-description"
     >
       <DialogHeader className="px-6 pt-6 pb-2">
-        <DialogTitle id={titleId} className="text-2xl font-semibold text-[#0485ea] flex items-center">
+        <DialogTitle className="text-2xl font-semibold text-[#0485ea] flex items-center">
           Create New Estimate
           <StepNavigation 
             isFirstStep={isFirstStep}
@@ -43,9 +36,9 @@ const DialogContent = ({
             currentStep={currentStep}
           />
         </DialogTitle>
-        <DialogDescription id={descriptionId}>
+        <p id="estimate-form-description" className="text-sm text-muted-foreground">
           Create and manage estimates for your customers
-        </DialogDescription>
+        </p>
       </DialogHeader>
 
       <div className="px-6 py-4">

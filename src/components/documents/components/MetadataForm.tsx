@@ -1,7 +1,7 @@
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { UseFormReturn, Control } from 'react-hook-form';
-import { DocumentUploadFormValues, VendorType } from '../schemas/documentSchema';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 import EntitySelector from './EntitySelector';
 import ExpenseTypeSelector from './ExpenseTypeSelector';
 import DocumentCategorySelector from './DocumentCategorySelector';
@@ -17,7 +17,7 @@ interface MetadataFormProps {
   form: UseFormReturn<DocumentUploadFormValues>;
   control: Control<DocumentUploadFormValues>;
   watchIsExpense: boolean;
-  watchVendorType: VendorType | undefined;
+  watchVendorType: 'vendor' | 'subcontractor' | 'other' | undefined;
   isReceiptUpload?: boolean;
   showVendorSelector: boolean;
   prefillData?: {
@@ -26,7 +26,6 @@ interface MetadataFormProps {
     materialName?: string;
     expenseName?: string;
   };
-  instanceId?: string;
 }
 
 const MetadataForm: React.FC<MetadataFormProps> = ({
@@ -36,33 +35,25 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   watchVendorType,
   isReceiptUpload = false,
   showVendorSelector,
-  prefillData,
-  instanceId = 'default-metadata'
+  prefillData
 }) => {
-  // Prefill data setup - extracted to a stable callback to prevent re-runs
-  const setupPrefillData = useCallback(() => {
-    console.log(`[${instanceId}] Setting up MetadataForm with prefillData:`, prefillData);
-    
+  // Set initial values from prefillData
+  useEffect(() => {
     if (prefillData) {
       if (prefillData.amount) {
-        form.setValue('metadata.amount', prefillData.amount, {shouldValidate: false});
+        form.setValue('metadata.amount', prefillData.amount);
       }
       if (prefillData.vendorId) {
-        form.setValue('metadata.vendorId', prefillData.vendorId, {shouldValidate: false});
+        form.setValue('metadata.vendorId', prefillData.vendorId);
       }
       
       // Add any notes with material name if available
       if (prefillData.materialName || prefillData.expenseName) {
         const itemName = prefillData.materialName || prefillData.expenseName;
-        form.setValue('metadata.notes', `Receipt for: ${itemName}`, {shouldValidate: false});
+        form.setValue('metadata.notes', `Receipt for: ${itemName}`);
       }
     }
-  }, [form, prefillData, instanceId]);
-  
-  // Run setup once on mount
-  useEffect(() => {
-    setupPrefillData();
-  }, [setupPrefillData]);
+  }, [prefillData, form]);
   
   // Get the watchCategory value
   const watchCategory = form.watch('metadata.category');
@@ -77,30 +68,24 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
       {!isReceiptUpload && (
         <DocumentCategorySelector 
           control={control} 
-          isReceiptUpload={isReceiptUpload}
-          instanceId={`${instanceId}-category`}
+          isReceiptUpload={isReceiptUpload} 
         />
       )}
       
       <EntitySelector 
         control={control} 
-        isReceiptUpload={isReceiptUpload}
-        instanceId={`${instanceId}-entity`}
+        isReceiptUpload={isReceiptUpload} 
       />
       
       {!isReceiptUpload && showExpenseFields && (
-        <VendorTypeSelector 
-          control={control}
-          instanceId={`${instanceId}-vendor-type`}
-        />
+        <VendorTypeSelector control={control} />
       )}
       
       {showVendorSelector && watchVendorType && (
         <VendorSelector 
           control={control} 
           vendorType={watchVendorType} 
-          prefillVendorId={prefillData?.vendorId}
-          instanceId={`${instanceId}-vendor`}
+          prefillVendorId={prefillData?.vendorId} 
         />
       )}
       
@@ -111,31 +96,22 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
               control={control}
               isReceiptUpload={isReceiptUpload}
               prefillAmount={prefillData?.amount}
-              instanceId={`${instanceId}-amount`}
             />
-            <ExpenseDatePicker 
-              control={control}
-              instanceId={`${instanceId}-date`}
-            />
+            <ExpenseDatePicker control={control} />
           </div>
           
-          <ExpenseTypeSelector 
-            control={control}
-            instanceId={`${instanceId}-expense-type`}
-          />
+          <ExpenseTypeSelector control={control} />
         </>
       )}
       
       <TagsInput
         control={control}
         name="metadata.tags"
-        instanceId={`${instanceId}-tags`}
       />
       
       <NotesField 
         control={control} 
-        prefillText={prefillData?.materialName ? `Receipt for: ${prefillData.materialName}` : undefined}
-        instanceId={`${instanceId}-notes`}
+        prefillText={prefillData?.materialName ? `Receipt for: ${prefillData.materialName}` : undefined} 
       />
       
       {watchEntityType && (
@@ -147,4 +123,4 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   );
 };
 
-export default React.memo(MetadataForm);
+export default MetadataForm;

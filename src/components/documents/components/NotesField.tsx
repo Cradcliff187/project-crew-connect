@@ -8,14 +8,9 @@ import { DocumentUploadFormValues } from '../schemas/documentSchema';
 interface NotesFieldProps {
   control: Control<DocumentUploadFormValues>;
   prefillText?: string;
-  instanceId?: string; // Added instanceId prop
 }
 
-const NotesField: React.FC<NotesFieldProps> = ({ 
-  control, 
-  prefillText,
-  instanceId = 'default-notes'  // Default value
-}) => {
+const NotesField: React.FC<NotesFieldProps> = ({ control, prefillText }) => {
   return (
     <FormField
       control={control}
@@ -26,7 +21,6 @@ const NotesField: React.FC<NotesFieldProps> = ({
           <FormControl>
             <Textarea
               {...field}
-              id={`${instanceId}-notes-textarea`}
               placeholder="Add any notes or additional information about this document"
               className="resize-none"
               value={field.value || prefillText || ''}

@@ -1,5 +1,5 @@
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
@@ -17,18 +17,6 @@ interface SubcontractorSelectorProps {
 const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, subcontractors, loading }) => {
   const form = useFormContext<EstimateFormValues>();
   
-  // Optimize value change handler with useCallback
-  const handleValueChange = useCallback((value: string) => {
-    // Use a direct value check instead of an equality comparison for better stability
-    const finalValue = value === "none" ? "" : value;
-    
-    // Use setValue with minimal options to reduce re-renders
-    form.setValue(`items.${index}.subcontractor_id` as const, finalValue, { 
-      shouldDirty: true,
-      shouldValidate: false, // Don't validate on change to reduce calculations
-    });
-  }, [form, index]);
-  
   return (
     <div className="col-span-12 md:col-span-3">
       <FormField
@@ -45,7 +33,9 @@ const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, su
                 </Badge>
               )}
             </FormLabel>
-            <Select value={field.value || "none"} onValueChange={handleValueChange}>
+            <Select value={field.value || "none"} onValueChange={(value) => {
+              field.onChange(value === "none" ? "" : value);
+            }}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder={loading ? "Loading..." : "Select subcontractor"} />
@@ -68,4 +58,4 @@ const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, su
   );
 };
 
-export default React.memo(SubcontractorSelector);
+export default SubcontractorSelector;
