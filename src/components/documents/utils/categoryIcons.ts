@@ -1,5 +1,6 @@
 
 import { FileText, Receipt, LucideIcon, FileImage, FileBadge, Shield, Award, File } from 'lucide-react';
+import React from 'react';
 
 export type DocumentCategoryType = 
   | 'invoice' 
@@ -85,18 +86,20 @@ export const getCategoryConfig = (category?: string): CategoryIconConfig => {
 
 /**
  * Component that renders a category badge with icon and color
+ * Note: This function returns a React element, not JSX
  */
 export const DocumentCategoryBadge = ({ category }: { category?: string }) => {
   const config = getCategoryConfig(category);
   const Icon = config.icon;
   
-  return (
-    <div 
-      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-      style={{ backgroundColor: config.bgColor, color: config.color }}
-    >
-      <Icon className="h-3 w-3 mr-1" />
-      {config.label}
-    </div>
+  // Using React.createElement instead of JSX
+  return React.createElement(
+    'div',
+    {
+      className: "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+      style: { backgroundColor: config.bgColor, color: config.color }
+    },
+    React.createElement(Icon, { className: "h-3 w-3 mr-1" }),
+    config.label
   );
 };
