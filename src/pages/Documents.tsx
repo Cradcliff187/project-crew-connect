@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Plus, CheckCircle } from "lucide-react";
+import { Plus, CheckCircle, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { 
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
@@ -18,7 +19,8 @@ import { toast } from '@/hooks/use-toast';
 
 import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
-import { testBucketAccess, ensureStorageBucket } from '@/components/documents/services/BucketTest';
+import { testBucketAccess } from '@/components/documents/services/BucketTest';
+import { ensureStorageBucket } from '@/integrations/supabase/client';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
