@@ -53,10 +53,12 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
     await submitEstimate(data, customers, onClose);
   };
 
-  // Fixed type error by accepting the MouseEvent parameter
-  const handlePreview = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Handle preview with proper type
+  const handlePreview = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
     const isValid = await form.trigger();
     if (isValid) {

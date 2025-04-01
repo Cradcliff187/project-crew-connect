@@ -5,12 +5,12 @@ import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 interface FormActionsProps {
   onCancel: () => void;
   onPrevious?: () => void;
-  onNext?: () => void;
+  onNext?: (e?: React.MouseEvent) => void;
   isLastStep?: boolean;
   currentStep?: string;
-  onPreview?: () => void;
+  onPreview?: (e?: React.MouseEvent) => void;
   isPreviewStep?: boolean;
-  onSubmit?: () => void;
+  onSubmit?: (e?: React.FormEvent) => void;
   isSubmitting?: boolean;
 }
 
@@ -46,7 +46,7 @@ const FormActions = ({
             <Button 
               type="button" 
               className="bg-[#0485ea] hover:bg-[#0373ce] min-w-[120px]" 
-              onClick={onSubmit}
+              onClick={(e) => onSubmit(e)}
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -62,7 +62,7 @@ const FormActions = ({
             <Button 
               type="button" 
               className="bg-[#0485ea] hover:bg-[#0373ce]" 
-              onClick={onNext}
+              onClick={(e) => onNext(e)}
             >
               Next
               <ArrowRight className="h-4 w-4 ml-1" />
@@ -83,7 +83,7 @@ const FormActions = ({
         <Button 
           type="button" 
           className="bg-[#0485ea] hover:bg-[#0373ce]" 
-          onClick={onPreview}
+          onClick={(e) => onPreview(e)}
         >
           Preview Estimate
         </Button>

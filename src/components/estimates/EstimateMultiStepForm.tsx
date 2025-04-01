@@ -82,13 +82,15 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   };
 
-  // Handle the final submit with proper event handling
-  const handleFinalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Handle the final submit with proper type
+  const handleFinalSubmit = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
     if (isLastStep) {
-      form.handleSubmit(onSubmit)(e);
+      form.handleSubmit(onSubmit)(e as any);
     }
   };
 

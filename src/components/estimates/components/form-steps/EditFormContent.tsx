@@ -1,19 +1,18 @@
 
-import React from 'react';
+import { useFormContext } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useFormContext } from 'react-hook-form';
-import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+import { EstimateFormValues } from '../../schemas/estimateFormSchema';
+import CustomerFormFields from '../CustomerFormFields';
 import CustomerSelector from '../CustomerSelector';
-import CustomerForm from '../CustomerForm';
 import LocationFields from '../LocationFields';
-import ContingencyInput from '../summary/ContingencyInput';
 import EstimateItemFields from '../EstimateItemFields';
+import ContingencyInput from '../summary/ContingencyInput';
 import EstimateSummary from '../EstimateSummary';
-import EstimateDocumentUpload from '../EstimateDocumentUpload';
-import { Button } from '@/components/ui/button';
+import FormActions from './FormActions';
 
 interface EditFormContentProps {
   customers: { id: string; name: string; address?: string; city?: string; state?: string; zip?: string; }[];
@@ -22,11 +21,11 @@ interface EditFormContentProps {
   customerTab: 'existing' | 'new';
   onNewCustomer: () => void;
   onExistingCustomer: () => void;
-  onPreview: () => void;
+  onPreview: (e?: React.MouseEvent) => void;
   onCancel: () => void;
 }
 
-const EditFormContent: React.FC<EditFormContentProps> = ({
+const EditFormContent = ({
   customers,
   selectedCustomerAddress,
   selectedCustomerName,
@@ -35,39 +34,52 @@ const EditFormContent: React.FC<EditFormContentProps> = ({
   onExistingCustomer,
   onPreview,
   onCancel
-}) => {
+}: EditFormContentProps) => {
   const form = useFormContext<EstimateFormValues>();
-  const showSiteLocation = form.watch('showSiteLocation');
   
   return (
-    <div className="space-y-6">
-      {/* Project Details */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
           name="project"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Project Name*</FormLabel>
+              <FormLabel>Project Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter project name" {...field} />
+                <Input placeholder="Project name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        
+        <div>
+          <div className="mb-2 font-medium">Customer</div>
+          <Tabs value={customerTab} onValueChange={(value) => value === 'new' ? onNewCustomer() : onExistingCustomer()}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="existing">Existing Customer</TabsTrigger>
+              <TabsTrigger value="new">New Customer</TabsTrigger>
+            </TabsList>
+            <TabsContent value="existing">
+              <CustomerSelector customers={customers} />
+            </TabsContent>
+            <TabsContent value="new">
+              <CustomerFormFields />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-
-      {/* Description */}
+      
       <FormField
         control={form.control}
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description</FormLabel>
+            <FormLabel>Project Description</FormLabel>
             <FormControl>
-              <Textarea 
-                placeholder="Enter description" 
+              <Textarea
+                placeholder="Provide a detailed description of the work"
                 className="resize-none min-h-[100px]"
                 {...field}
               />
@@ -77,59 +89,29 @@ const EditFormContent: React.FC<EditFormContentProps> = ({
         )}
       />
       
-      {/* Customer Tabs */}
-      <div className="space-y-4">
-        <FormLabel>Customer</FormLabel>
-        <Tabs defaultValue={customerTab} onValueChange={(value) => {
-          if (value === 'existing') onExistingCustomer();
-          if (value === 'new') onNewCustomer();
-        }}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="existing">Existing Customer</TabsTrigger>
-            <TabsTrigger value="new">New Customer</TabsTrigger>
-          </TabsList>
-          <TabsContent value="existing">
-            <CustomerSelector 
-              customers={customers} 
-              selectedCustomerAddress={selectedCustomerAddress}
-            />
-          </TabsContent>
-          <TabsContent value="new">
-            <CustomerForm />
-          </TabsContent>
-        </Tabs>
-      </div>
+      <LocationFields 
+        selectedCustomerAddress={selectedCustomerAddress} 
+      />
       
-      {/* Site Location */}
-      <LocationFields />
-      
-      {/* Document Upload - NEW COMPONENT */}
-      <EstimateDocumentUpload />
-      
-      {/* Line Items */}
+      <h3 className="text-lg font-semibold mt-8 mb-4">Line Items</h3>
       <EstimateItemFields />
       
-      {/* Summary */}
-      <EstimateSummary />
-      
-      {/* Form Actions */}
-      <div className="flex justify-between pt-6">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-          onClick={onPreview}
-        >
-          Review Estimate
-        </Button>
+      <h3 className="text-lg font-semibold mt-8 mb-4">Estimate Summary</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <ContingencyInput />
+        </div>
+        <div className="md:col-span-2">
+          <EstimateSummary />
+        </div>
       </div>
-    </div>
+      
+      <FormActions 
+        onCancel={onCancel}
+        onPreview={onPreview}
+        isPreviewStep={false}
+      />
+    </>
   );
 };
 

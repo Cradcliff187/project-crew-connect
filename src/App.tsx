@@ -20,7 +20,7 @@ import ActiveWork from './pages/ActiveWork';
 import SubcontractorDetail from './components/subcontractors/SubcontractorDetail';
 import WorkOrderDetail from './components/workOrders/details/WorkOrderDetail';
 import VendorDetail from './components/vendors/detail/VendorDetail';
-import { FormFallbackProvider } from './hooks/useFormContext';
+import { FormFallbackProvider } from './hooks/useFormContext.tsx';
 
 // Create a client
 const queryClient = new QueryClient();

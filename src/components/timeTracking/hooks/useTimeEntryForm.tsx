@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useTimeEntrySubmit } from './useTimeEntrySubmit';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -32,10 +32,12 @@ const defaultFormValues: TimeEntryFormValues = {
 };
 
 export function useTimeEntryForm(onSuccess: () => void) {
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmationData, setConfirmationData] = useState<TimeEntryFormValues | null>(null);
+  
+  // Use our new submission hook
+  const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
   
   const form = useForm<TimeEntryFormValues>({
     resolver: zodResolver(timeEntryFormSchema),
@@ -83,122 +85,21 @@ export function useTimeEntryForm(onSuccess: () => void) {
   const confirmSubmit = async () => {
     if (!confirmationData) return;
     
-    setIsLoading(true);
-    
     try {
-      let employeeRate = null;
-      if (confirmationData.employeeId) {
-        const { data: empData } = await supabase
-          .from('employees')
-          .select('hourly_rate')
-          .eq('employee_id', confirmationData.employeeId)
-          .maybeSingle();
-        
-        employeeRate = empData?.hourly_rate;
-      }
-      
-      const timeEntry = {
-        entity_type: confirmationData.entityType,
-        entity_id: confirmationData.entityId,
-        date_worked: format(confirmationData.workDate, 'yyyy-MM-dd'),
-        start_time: confirmationData.startTime,
-        end_time: confirmationData.endTime,
-        hours_worked: confirmationData.hoursWorked,
-        employee_id: confirmationData.employeeId || null,
-        employee_rate: employeeRate,
-        notes: confirmationData.notes,
-        has_receipts: selectedFiles.length > 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      const { data: insertedEntry, error } = await supabase
-        .from('time_entries')
-        .insert(timeEntry)
-        .select('id')
-        .single();
-        
-      if (error) throw error;
-      
-      if (selectedFiles.length > 0 && insertedEntry) {
-        // Use the improved document upload approach
-        for (const file of selectedFiles) {
-          // First upload file to storage
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-          const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('construction_documents')
-            .upload(filePath, file);
-            
-          if (uploadError) throw uploadError;
-          
-          // Determine MIME type from file
-          const mimeType = file.type || `application/${fileExt}`;
-          
-          // Then create document record
-          const { data: documentData, error: documentError } = await supabase
-            .from('documents')
-            .insert({
-              file_name: file.name,
-              file_type: file.type,
-              mime_type: mimeType,
-              file_size: file.size,
-              storage_path: filePath,
-              entity_type: 'TIME_ENTRY',
-              entity_id: insertedEntry.id,
-              category: 'receipt',
-              is_expense: true,
-              uploaded_by: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              tags: ['receipt', 'time-entry']
-            })
-            .select('document_id')
-            .single();
-            
-          if (documentError) throw documentError;
-          
-          // Use the fixed function to link document to time entry
-          const { data: linkResult, error: linkError } = await supabase
-            .rpc('attach_document_to_time_entry', {
-              p_time_entry_id: insertedEntry.id,
-              p_document_id: documentData.document_id
-            });
-            
-          if (linkError) {
-            console.error('Error linking document to time entry:', linkError);
-          }
-        }
-      }
-      
-      toast({
-        title: 'Time entry submitted',
-        description: 'Your time entry has been successfully recorded.',
-      });
+      await submitTimeEntry(confirmationData, selectedFiles);
       
       form.reset(defaultFormValues);
-      
       setSelectedFiles([]);
       setShowConfirmDialog(false);
-      
-      onSuccess();
-    } catch (error: any) {
-      console.error('Error submitting time entry:', error);
-      toast({
-        title: 'Error submitting time entry',
-        description: error.message || 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      // Error handling is already done in submitTimeEntry
+      console.error("Error in confirmSubmit:", error);
     }
   };
   
   return {
     form,
-    isLoading,
+    isLoading: isSubmitting,
     showConfirmDialog,
     setShowConfirmDialog,
     selectedFiles,
