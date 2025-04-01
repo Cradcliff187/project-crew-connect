@@ -52,6 +52,14 @@ export function useStatusOptions(entityType: EntityType, currentStatus?: string)
             { value: 'APPROVED', label: 'Approved' },
             { value: 'ACTIVE', label: 'Active' },
             { value: 'INACTIVE', label: 'Inactive' }
+          ],
+          'ESTIMATE': [
+            { value: 'draft', label: 'Draft' },
+            { value: 'sent', label: 'Sent' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'rejected', label: 'Rejected' },
+            { value: 'converted', label: 'Converted' }
           ]
         };
         
@@ -127,6 +135,14 @@ function filterOptionsByAllowedTransitions(
       'APPROVED': ['ACTIVE', 'INACTIVE'],
       'ACTIVE': ['INACTIVE'],
       'INACTIVE': ['ACTIVE']
+    },
+    'ESTIMATE': {
+      'draft': ['sent'],
+      'sent': ['approved', 'rejected'],
+      'pending': ['approved', 'rejected'],
+      'approved': ['converted'],
+      'rejected': ['draft'],
+      'converted': []
     }
   };
   

@@ -48,6 +48,14 @@ export const validateStatusTransition = (
       'APPROVED': ['ACTIVE', 'INACTIVE'],
       'ACTIVE': ['INACTIVE'],
       'INACTIVE': ['ACTIVE']
+    },
+    'ESTIMATE': {
+      'draft': ['sent'],
+      'sent': ['approved', 'rejected'],
+      'pending': ['approved', 'rejected'],
+      'approved': ['converted'],
+      'rejected': ['draft'],
+      'converted': []
     }
   };
 
