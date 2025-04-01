@@ -29,22 +29,11 @@ import { cn, formatDate } from '@/lib/utils';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { DocumentCategory, EntityType, entityTypes } from './schemas/documentSchema';
 import DocumentCategorySelector from './DocumentCategorySelector';
-
-interface FilterOptions {
-  search: string;
-  category?: DocumentCategory;
-  entityType?: EntityType;
-  isExpense?: boolean;
-  dateRange?: {
-    from?: Date;
-    to?: Date;
-  };
-  sortBy?: string;
-}
+import { DocumentFiltersState } from './hooks/useDocuments';
 
 interface DocumentFiltersProps {
-  filters: FilterOptions;
-  onFilterChange: (filters: FilterOptions) => void;
+  filters: DocumentFiltersState;
+  onFilterChange: (key: keyof DocumentFiltersState, value: any) => void;
   onReset: () => void;
   activeFiltersCount: number;
 }
@@ -56,7 +45,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   activeFiltersCount
 }) => {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [tempFilters, setTempFilters] = React.useState<FilterOptions>(filters);
+  const [tempFilters, setTempFilters] = React.useState<DocumentFiltersState>(filters);
 
   // Reset temp filters when dialog opens
   React.useEffect(() => {
@@ -66,28 +55,29 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   }, [isDialogOpen, filters]);
 
   const handleApplyFilters = () => {
-    onFilterChange(tempFilters);
+    // Update each filter individually
+    Object.entries(tempFilters).forEach(([key, value]) => {
+      onFilterChange(key as keyof DocumentFiltersState, value);
+    });
     setIsDialogOpen(false);
   };
 
-  const handleTempFilterChange = (key: keyof FilterOptions, value: any) => {
+  const handleTempFilterChange = (key: keyof DocumentFiltersState, value: any) => {
     setTempFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleRemoveFilter = (filterKey: keyof FilterOptions) => {
+  const handleRemoveFilter = (filterKey: keyof DocumentFiltersState) => {
     const newFilters = { ...filters };
     
     if (filterKey === 'category') {
-      newFilters.category = undefined;
+      onFilterChange('category', undefined);
     } else if (filterKey === 'entityType') {
-      newFilters.entityType = undefined;
+      onFilterChange('entityType', undefined);
     } else if (filterKey === 'dateRange') {
-      newFilters.dateRange = undefined;
+      onFilterChange('dateRange', undefined);
     } else if (filterKey === 'isExpense') {
-      newFilters.isExpense = undefined;
+      onFilterChange('isExpense', undefined);
     }
-    
-    onFilterChange(newFilters);
   };
 
   // Format date range for display
@@ -116,7 +106,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
             placeholder="Search documents..."
             className="pl-8"
             value={filters.search}
-            onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
+            onChange={(e) => onFilterChange('search', e.target.value)}
           />
         </div>
         
@@ -124,7 +114,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
         <div className="flex items-center gap-2">
           <Select
             value={filters.sortBy || 'newest'}
-            onValueChange={(value) => onFilterChange({ ...filters, sortBy: value })}
+            onValueChange={(value) => onFilterChange('sortBy', value)}
           >
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Sort by" />

@@ -114,8 +114,8 @@ export const useDocuments = (initialFilters: DocumentFiltersState) => {
     }
   };
 
-  const handleFilterChange = (newFilters: DocumentFiltersState) => {
-    setFilters(newFilters);
+  const handleFilterChange = (key: keyof DocumentFiltersState, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const handleResetFilters = () => {

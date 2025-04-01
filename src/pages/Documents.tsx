@@ -16,9 +16,8 @@ import DocumentDetailView from '@/components/documents/DocumentDetailView';
 import DeleteConfirmation from '@/components/documents/DeleteConfirmation';
 import PageHeader from '@/components/layout/PageHeader';
 
-import { useDocuments } from '@/components/documents/hooks/useDocuments';
+import { useDocuments, DocumentFiltersState } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
-import { FilterOptions } from '@/components/documents/hooks/useDocuments';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
@@ -81,8 +80,8 @@ const DocumentsPage: React.FC = () => {
         
         {/* Unified Filter Area */}
         <DocumentFilters
-          filters={filters as FilterOptions}
-          onFilterChange={(key, value) => handleFilterChange(key as keyof FilterOptions, value)}
+          filters={filters}
+          onFilterChange={handleFilterChange}
           onReset={handleResetFilters}
           activeFiltersCount={activeFiltersCount}
         />
