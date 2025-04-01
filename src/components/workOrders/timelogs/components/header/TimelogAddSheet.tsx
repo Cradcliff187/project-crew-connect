@@ -44,12 +44,25 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
+      // Get current date and create placeholder time values
+      const currentDate = new Date().toISOString().split('T')[0];
+      const currentTime = new Date();
+      // Set start time at 9 AM
+      const startTime = `09:00:00`;
+      // Calculate end time based on hours worked
+      const hoursNum = parseFloat(hours);
+      const endHour = Math.min(9 + hoursNum, 23);
+      const endMinutes = (hoursNum % 1) * 60;
+      const endTime = `${Math.floor(endHour).toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
+      
       const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
         employee_id: employeeId || null,
-        hours_worked: parseFloat(hours),
-        date_worked: new Date().toISOString().split('T')[0],
+        hours_worked: hoursNum,
+        date_worked: currentDate,
+        start_time: startTime,
+        end_time: endTime,
         notes: notes || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
