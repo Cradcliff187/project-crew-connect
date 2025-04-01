@@ -51,6 +51,8 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const [currentRevisionId, setCurrentRevisionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
   const { toast } = useToast();
 
   // Fetch the current items when dialog opens
@@ -59,6 +61,17 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       fetchCurrentItems();
     }
   }, [open, copyAllItems]);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setNotes('');
+      setCopyAllItems(true);
+      setShowItemSelection(false);
+      setLoading(true);
+      fetchCurrentItems();
+    }
+  }, [open]);
 
   const fetchCurrentItems = async () => {
     setLoading(true);
@@ -87,6 +100,12 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
         
         if (itemsData) {
           setItems(itemsData);
+          
+          // Calculate totals
+          const total = itemsData.reduce((sum, item) => sum + (item.total_price || 0), 0);
+          setTotalAmount(total);
+          setTotalItems(itemsData.length);
+          
           // Initialize all items as selected
           const initialSelectedState: Record<string, boolean> = {};
           itemsData.forEach(item => {
@@ -128,6 +147,16 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       fetchCurrentItems();
     }
     setShowItemSelection(!checked);
+  };
+
+  const getSelectedItemCount = () => {
+    return Object.values(selectedItems).filter(selected => selected).length;
+  };
+
+  const getSelectedItemsTotal = () => {
+    return items
+      .filter(item => selectedItems[item.id])
+      .reduce((sum, item) => sum + (item.total_price || 0), 0);
   };
 
   const handleCreateRevision = async () => {
@@ -248,6 +277,20 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
               />
             </div>
 
+            <div className="bg-slate-50 p-4 rounded-md my-4">
+              <h3 className="text-sm font-medium mb-2">Current Version Summary</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Total Items:</span>
+                  <span className="ml-2 font-medium">{totalItems}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Total Amount:</span>
+                  <span className="ml-2 font-medium">${totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="copyItems"
@@ -288,31 +331,40 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : items.length > 0 ? (
-                  <div className="border rounded-md overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[50px]">Select</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead className="w-[80px] text-right">Price</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {items.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedItems[item.id] || false}
-                                onCheckedChange={() => handleItemSelectionToggle(item.id)}
-                              />
-                            </TableCell>
-                            <TableCell>{item.description}</TableCell>
-                            <TableCell className="text-right">${item.total_price.toFixed(2)}</TableCell>
+                  <>
+                    <div className="border rounded-md overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[50px]">Select</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="w-[80px] text-right">Price</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        </TableHeader>
+                        <TableBody>
+                          {items.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedItems[item.id] || false}
+                                  onCheckedChange={() => handleItemSelectionToggle(item.id)}
+                                />
+                              </TableCell>
+                              <TableCell>{item.description}</TableCell>
+                              <TableCell className="text-right">${item.total_price.toFixed(2)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    <div className="bg-slate-50 p-3 rounded-md mt-4 text-sm">
+                      <div className="flex justify-between">
+                        <span>Selected Items: {getSelectedItemCount()} of {items.length}</span>
+                        <span>Selected Total: ${getSelectedItemsTotal().toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <div className="text-center py-6 text-muted-foreground border rounded-md">
                     No items found in the current version
