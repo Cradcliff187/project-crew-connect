@@ -32,17 +32,29 @@ export const useDocumentSharing = () => {
       
       // In a production environment, this would call a serverless function
       // to handle the actual email sending process
+      const detailsJson = JSON.stringify({
+        document_id: options.documentId,
+        entity_id: options.estimateId || options.projectId,
+        entity_type: options.estimateId ? 'ESTIMATE' : 'PROJECT',
+        recipient_email: options.recipientEmail,
+        subject: options.subject,
+        message: options.message,
+        include_entity_link: options.includeEntityLink || false,
+        sent_at: new Date().toISOString(),
+      });
+      
       const { error: shareError } = await supabase
-        .from('document_share_log')
+        .from('activitylog')
         .insert({
-          document_id: options.documentId,
-          entity_id: options.estimateId || options.projectId,
-          entity_type: options.estimateId ? 'ESTIMATE' : 'PROJECT',
-          recipient_email: options.recipientEmail,
-          subject: options.subject,
-          message: options.message,
-          include_entity_link: options.includeEntityLink || false,
-          sent_at: new Date().toISOString(),
+          logid: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          action: 'DOCUMENT_SHARE',
+          moduletype: 'DOCUMENTS',
+          referenceid: options.documentId,
+          detailsjson: detailsJson,
+          status: 'SENT',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
       
       if (shareError) {

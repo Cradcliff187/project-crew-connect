@@ -56,18 +56,31 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
     setIsSending(true);
     
     try {
-      // In a real implementation, this would call a serverless function to send an email
-      // For demonstration, we'll log to the document_share_log table
+      // Format details as JSON string
+      const detailsJson = JSON.stringify({
+        document_id: document.document_id,
+        entity_id: estimateId,
+        entity_type: 'ESTIMATE',
+        recipient_email: email,
+        subject: subject,
+        message: message,
+        include_estimate_link: includeEstimateLink,
+        sent_at: new Date().toISOString()
+      });
+      
+      // Log to activitylog
       const { error } = await supabase
-        .from('document_share_log')
+        .from('activitylog')
         .insert({
-          document_id: document.document_id,
-          entity_id: estimateId,
-          entity_type: 'ESTIMATE',
-          recipient_email: email,
-          subject: subject,
-          message: message,
-          include_estimate_link: includeEstimateLink,
+          logid: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          action: 'DOCUMENT_SHARE',
+          moduletype: 'DOCUMENTS',
+          referenceid: document.document_id,
+          detailsjson: detailsJson,
+          status: 'SENT',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
       
       if (error) throw error;
