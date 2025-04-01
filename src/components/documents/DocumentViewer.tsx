@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Document } from './schemas/documentSchema';
 import { Download, FileText, FileImage, File } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { getCategoryConfig } from './utils/categoryIcons';
 
 export interface DocumentViewerProps {
   document: Document | null;
@@ -48,6 +50,10 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
   // Use url property instead of file_url
   const fileUrl = document.url || '';
+  
+  // Get category styling info if available
+  const categoryInfo = document.category ? getCategoryConfig(document.category) : null;
+  const CategoryIcon = categoryInfo?.icon;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,11 +67,26 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               </>
             )}
           </DialogTitle>
-          <DialogDescription>
-            {description || (
-              <>
-                {formatDate(document.created_at || '')} - {formatFileSize(document.file_size)}
-              </>
+          <DialogDescription className="flex items-center justify-between">
+            <span>
+              {description || (
+                <>
+                  {formatDate(document.created_at || '')} - {formatFileSize(document.file_size)}
+                </>
+              )}
+            </span>
+            
+            {document.category && categoryInfo && (
+              <Badge 
+                className="flex items-center gap-1 text-xs px-2 py-0.5 font-medium" 
+                style={{ 
+                  backgroundColor: categoryInfo.bgColor, 
+                  color: categoryInfo.color 
+                }}
+              >
+                {CategoryIcon && <CategoryIcon className="h-3 w-3" />}
+                <span>{categoryInfo.label}</span>
+              </Badge>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -106,7 +127,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <p><strong>Notes:</strong> {document.notes}</p>
             )}
             {document.entity_type && (
-              <p><strong>Associated with:</strong> {document.entity_type.toLowerCase()}</p>
+              <p><strong>Associated with:</strong> {document.entity_type.replace('_', ' ').toLowerCase()}</p>
             )}
           </div>
           <Button onClick={() => window.open(fileUrl, '_blank')}>

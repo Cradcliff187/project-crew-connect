@@ -12,6 +12,8 @@ import { Document } from './schemas/documentSchema';
 import { Download, FileText, History } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import DocumentVersionHistory from './DocumentVersionHistory';
+import { getCategoryConfig } from './utils/categoryIcons';
+import { Badge } from '@/components/ui/badge';
 
 interface DocumentViewerDialogProps {
   document: Document | null;
@@ -50,6 +52,10 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
+  
+  // Get category styling info if available
+  const categoryInfo = document.category ? getCategoryConfig(document.category) : null;
+  const CategoryIcon = categoryInfo?.icon;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,11 +116,23 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
         
         <DialogFooter>
           <div className="w-full flex justify-between items-center text-sm text-gray-500">
-            <div>
+            <div className="space-y-1">
               <p><strong>Uploaded:</strong> {formatDate(document.created_at || '')}</p>
               <p><strong>Size:</strong> {formatFileSize(document.file_size)}</p>
               {document.version && (
                 <p><strong>Version:</strong> {document.version}</p>
+              )}
+              {document.category && categoryInfo && (
+                <Badge 
+                  className="flex items-center gap-1 text-xs px-2 py-0.5 font-medium mt-1" 
+                  style={{ 
+                    backgroundColor: categoryInfo.bgColor, 
+                    color: categoryInfo.color 
+                  }}
+                >
+                  {CategoryIcon && <CategoryIcon className="h-3 w-3" />}
+                  <span>{categoryInfo.label}</span>
+                </Badge>
               )}
             </div>
             <div className="text-right">

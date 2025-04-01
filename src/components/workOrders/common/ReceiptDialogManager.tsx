@@ -68,7 +68,7 @@ export const ReceiptViewerDialog = ({
       open={open}
       onOpenChange={onOpenChange}
       document={receiptDocument}
-      title={title}
+      title={title || `Receipt for ${receiptDocument.file_name}`}
       description={description}
     />
   );

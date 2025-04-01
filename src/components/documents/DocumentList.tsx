@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import DocumentPreviewCard from './DocumentPreviewCard';
 import { useDocumentViewer } from '@/hooks/useDocumentViewer';
 import DocumentViewer from './DocumentViewer';
+import { getCategoryConfig } from './utils/categoryIcons';
 
 interface DocumentListProps {
   documents: Document[];
@@ -80,22 +81,32 @@ const DocumentList = ({
     <div className="space-y-6">
       {showCategories && Object.keys(documentsByCategory).length > 0 ? (
         // Show documents grouped by category
-        Object.entries(documentsByCategory).map(([category, docs]) => (
-          <div key={category} className="space-y-3">
-            <h3 className="font-medium text-sm text-gray-600 capitalize">{category}</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {docs.map((document) => (
-                <DocumentPreviewCard
-                  key={document.document_id}
-                  document={document}
-                  onView={() => handleViewDocument(document)}
-                  onDelete={onDocumentDelete ? () => onDocumentDelete(document) : undefined}
-                  showEntityInfo={showEntityInfo}
-                />
-              ))}
+        Object.entries(documentsByCategory).map(([category, docs]) => {
+          // Get category config for styling
+          const categoryConfig = getCategoryConfig(category);
+          const CategoryIcon = categoryConfig.icon;
+          
+          return (
+            <div key={category} className="space-y-3">
+              <h3 className="font-medium text-sm flex items-center gap-2" style={{ color: categoryConfig.color }}>
+                <CategoryIcon className="h-4 w-4" />
+                <span>{categoryConfig.label}</span>
+                <span className="text-gray-500 font-normal">({docs.length})</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {docs.map((document) => (
+                  <DocumentPreviewCard
+                    key={document.document_id}
+                    document={document}
+                    onView={() => handleViewDocument(document)}
+                    onDelete={onDocumentDelete ? () => onDocumentDelete(document) : undefined}
+                    showEntityInfo={showEntityInfo}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ))
+          );
+        })
       ) : (
         // Show documents without categories
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

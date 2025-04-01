@@ -7,6 +7,7 @@ import { Eye, Download, Trash2, FileText, FileImage, File, Info } from 'lucide-r
 import { Document } from './schemas/documentSchema';
 import { formatDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getCategoryConfig } from './utils/categoryIcons';
 
 interface DocumentPreviewCardProps {
   document: Document;
@@ -56,6 +57,10 @@ const DocumentPreviewCard = ({
 
   // Check if document has an item reference (from the consolidated view)
   const hasItemReference = document.item_reference || document.item_description;
+  
+  // Get category config for styling
+  const categoryConfig = getCategoryConfig(document.category);
+  const CategoryIcon = categoryConfig.icon;
 
   return (
     <Card 
@@ -80,18 +85,28 @@ const DocumentPreviewCard = ({
           
           <div className="flex flex-wrap gap-1">
             {document.category && (
-              <Badge variant="outline" className="capitalize text-xs">
-                {document.category}
+              <Badge 
+                className="flex items-center gap-1 text-xs px-2 py-0.5 font-medium" 
+                style={{ 
+                  backgroundColor: categoryConfig.bgColor, 
+                  color: categoryConfig.color 
+                }}
+              >
+                <CategoryIcon className="h-3 w-3" />
+                <span className="capitalize">{categoryConfig.label}</span>
               </Badge>
             )}
+            
             {showEntityInfo && document.entity_type && (
               <Badge variant="secondary" className="text-xs">
                 {document.entity_type.replace(/_/g, ' ').toLowerCase()}
               </Badge>
             )}
+            
             {document.is_expense && (
               <Badge className="bg-green-500 text-xs">Receipt</Badge>
             )}
+            
             {hasItemReference && (
               <TooltipProvider>
                 <Tooltip>
