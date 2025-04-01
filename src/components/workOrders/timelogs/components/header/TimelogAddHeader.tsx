@@ -10,15 +10,15 @@ interface TimelogAddHeaderProps {
   onTimeLogAdded: () => void;
 }
 
-const TimelogAddHeader = ({
+const TimelogAddHeader = ({ 
   workOrderId,
   employees,
-  onTimeLogAdded
+  onTimeLogAdded 
 }: TimelogAddHeaderProps) => {
   const [showAddSheet, setShowAddSheet] = useState(false);
   
   return (
-    <CardHeader className="flex flex-row items-center justify-between">
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
       <CardTitle className="text-lg">Time Tracking</CardTitle>
       <TimelogAddButton onClick={() => setShowAddSheet(true)} />
       
@@ -27,7 +27,10 @@ const TimelogAddHeader = ({
         onOpenChange={setShowAddSheet}
         workOrderId={workOrderId}
         employees={employees}
-        onSuccess={onTimeLogAdded}
+        onSuccess={() => {
+          setShowAddSheet(false);
+          onTimeLogAdded();
+        }}
       />
     </CardHeader>
   );

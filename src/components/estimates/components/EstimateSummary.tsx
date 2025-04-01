@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { EstimateFormValues } from '../schemas/estimateFormSchema';
+import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
 import SummaryCard from './summary/SummaryCard';
 
 const EstimateSummary = () => {
@@ -9,11 +9,11 @@ const EstimateSummary = () => {
   
   // Calculate contingency amount
   const items = form.watch('items') || [];
-  const totalBeforeContingency = items.reduce((sum: number, item: any) => {
-    const cost = parseFloat(item.cost) || 0;
-    const markup = parseFloat(item.markup_percentage) || 0;
+  const totalBeforeContingency = items.reduce((sum: number, item: EstimateItem) => {
+    const cost = parseFloat(item.cost || '0');
+    const markup = parseFloat(item.markup_percentage || '0');
     const markupAmount = cost * (markup / 100);
-    const quantity = parseFloat(item.quantity) || 1;
+    const quantity = parseFloat(item.quantity || '1');
     return sum + ((cost + markupAmount) * quantity);
   }, 0);
   

@@ -2,37 +2,11 @@
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -42,13 +16,6 @@ interface TimelogAddSheetProps {
   onSuccess: () => void;
 }
 
-const formSchema = z.object({
-  hours: z.coerce.number().min(0.1, { message: 'Hours must be greater than 0' }),
-  date: z.date(),
-  description: z.string().optional(),
-  employee_id: z.string().optional(),
-});
-
 const TimelogAddSheet = ({
   open,
   onOpenChange,
@@ -56,128 +23,66 @@ const TimelogAddSheet = ({
   employees,
   onSuccess
 }: TimelogAddSheetProps) => {
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      hours: 1,
-      date: new Date(),
-      description: '',
-      employee_id: '',
-    },
-  });
-
-  const resetForm = () => {
-    form.reset({
-      hours: 1,
-      date: new Date(),
-      description: '',
-      employee_id: '',
-    });
-  };
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const [hours, setHours] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
+  const [notes, setNotes] = useState('');
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!hours || parseFloat(hours) <= 0) {
+      toast({
+        title: 'Invalid hours',
+        description: 'Please enter a valid number of hours worked.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      // Get the current time for start/end time
-      const currentHour = new Date().getHours();
-      const currentMinute = new Date().getMinutes();
-      
-      // Create default start and end times based on hours worked
-      const startTime = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
-      
-      // Calculate end time (simple approach for now)
-      const endHour = Math.min(currentHour + Math.floor(values.hours), 23);
-      const endMinute = currentMinute + Math.round((values.hours % 1) * 60);
-      const adjustedEndHour = endMinute >= 60 ? endHour + 1 : endHour;
-      const adjustedEndMinute = endMinute >= 60 ? endMinute - 60 : endMinute;
-      
-      const endTime = `${adjustedEndHour.toString().padStart(2, '0')}:${adjustedEndMinute.toString().padStart(2, '0')}`;
-      
-      const timeEntryData = {
+      const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
-        date_worked: format(values.date, 'yyyy-MM-dd'),
-        start_time: startTime,
-        end_time: endTime,
-        hours_worked: values.hours,
-        notes: values.description || null,
-        employee_id: values.employee_id || null,
-        has_receipts: false,
+        employee_id: employeeId || null,
+        hours_worked: parseFloat(hours),
+        date_worked: new Date().toISOString().split('T')[0],
+        notes: notes || null,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
       
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from('time_entries')
-        .insert(timeEntryData)
-        .select('id')
-        .single();
-      
+        .insert(timelogEntry);
+        
       if (error) throw error;
       
-      // Create expense entry for the labor time
-      if (values.hours > 0) {
-        // Get employee rate if available
-        let hourlyRate = 75; // Default rate
-        
-        if (values.employee_id) {
-          const { data: empData } = await supabase
-            .from('employees')
-            .select('hourly_rate')
-            .eq('employee_id', values.employee_id)
-            .maybeSingle();
-            
-          if (empData?.hourly_rate) {
-            hourlyRate = empData.hourly_rate;
-          }
-        }
-        
-        const totalAmount = values.hours * hourlyRate;
-        
-        const { error: expenseError } = await supabase
-          .from('expenses')
-          .insert({
-            entity_type: 'WORK_ORDER',
-            entity_id: workOrderId,
-            description: `Labor: ${values.hours} hours${values.description ? ' - ' + values.description : ''}`,
-            expense_type: 'LABOR',
-            amount: totalAmount,
-            time_entry_id: data.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            quantity: values.hours,
-            unit_price: hourlyRate,
-            vendor_id: null
-          });
-          
-        if (expenseError) {
-          console.error('Error creating labor expense:', expenseError);
-        }
-      }
-      
       toast({
-        title: 'Time log added',
-        description: 'Time has been successfully logged.',
+        title: 'Time entry added',
+        description: `${hours} hours have been logged successfully.`,
       });
       
-      resetForm();
+      // Reset form and close sheet
+      setHours('');
+      setEmployeeId('');
+      setNotes('');
       onSuccess();
-      onOpenChange(false);
     } catch (error: any) {
-      console.error('Error logging time:', error);
+      console.error('Error adding time entry:', error);
       toast({
-        title: 'Error adding time log',
-        description: error.message || 'An unexpected error occurred',
+        title: 'Error',
+        description: error.message || 'Failed to add time entry.',
         variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -185,129 +90,67 @@ const TimelogAddSheet = ({
           <SheetTitle>Log Time</SheetTitle>
         </SheetHeader>
         
-        <div className="mt-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="hours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hours Worked</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.25" min="0.25" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {employees.length > 0 && (
-                <FormField
-                  control={form.control}
-                  name="employee_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Employee</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select an employee" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="">Unassigned</SelectItem>
-                          {employees.map((employee) => (
-                            <SelectItem key={employee.employee_id} value={employee.employee_id}>
-                              {employee.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Describe the work done" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end gap-3">
-                <Button 
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    resetForm();
-                    onOpenChange(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-[#0485ea] hover:bg-[#0373ce]"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Saving...' : 'Log Time'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="hours">Hours Worked</Label>
+            <Input
+              id="hours"
+              type="number"
+              step="0.25"
+              min="0.25"
+              placeholder="Enter hours"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="employee">Employee</Label>
+            <select
+              id="employee"
+              className="w-full border border-input bg-background px-3 py-2 rounded-md"
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+            >
+              <option value="">Select Employee</option>
+              {employees.map((employee) => (
+                <option key={employee.employee_id} value={employee.employee_id}>
+                  {employee.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Textarea
+              id="notes"
+              placeholder="Add notes about work performed..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+            />
+          </div>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
+            >
+              {isSubmitting ? 'Saving...' : 'Log Time'}
+            </Button>
+          </div>
+        </form>
       </SheetContent>
     </Sheet>
   );

@@ -30,7 +30,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
-          name="address"
+          name="location.address"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Street Address</FormLabel>
@@ -44,7 +44,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
         
         <FormField
           control={form.control}
-          name="city"
+          name="location.city"
           render={({ field }) => (
             <FormItem>
               <FormLabel>City</FormLabel>
@@ -60,7 +60,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
-          name="state"
+          name="location.state"
           render={({ field }) => (
             <FormItem>
               <FormLabel>State</FormLabel>
@@ -74,7 +74,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
         
         <FormField
           control={form.control}
-          name="zip"
+          name="location.zip"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Zip Code</FormLabel>

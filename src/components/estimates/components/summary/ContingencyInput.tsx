@@ -1,54 +1,62 @@
 
 import React from 'react';
-import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
-import { EstimateFormValues } from '../../schemas/estimateFormSchema';
+import { EstimateFormValues, EstimateItem } from '../../schemas/estimateFormSchema';
 
 const ContingencyInput = () => {
   const form = useFormContext<EstimateFormValues>();
   
-  // Calculate contingency amount based on current items
   const items = form.watch('items') || [];
-  const totalBeforeContingency = items.reduce((sum: number, item: any) => {
-    const cost = parseFloat(item.cost) || 0;
-    const markup = parseFloat(item.markup_percentage) || 0;
+  
+  // Calculate subtotal (for display only)
+  const subtotal = items.reduce((sum: number, item: EstimateItem) => {
+    const cost = parseFloat(item.cost || '0');
+    const markup = parseFloat(item.markup_percentage || '0');
     const markupAmount = cost * (markup / 100);
-    const quantity = parseFloat(item.quantity) || 1;
+    const quantity = parseFloat(item.quantity || '1');
     return sum + ((cost + markupAmount) * quantity);
   }, 0);
   
+  // Format contingency amount display
   const contingencyPercentage = parseFloat(form.watch('contingency_percentage') || '0');
-  const contingencyAmount = totalBeforeContingency * (contingencyPercentage / 100);
-
+  const contingencyAmount = subtotal * (contingencyPercentage / 100);
+  
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex-1">
-        <FormField
-          control={form.control}
-          name="contingency_percentage"
-          render={({ field }) => (
-            <FormItem className="flex items-center gap-2">
-              <FormLabel className="text-sm text-gray-600 flex-shrink-0 m-0">
-                Contingency:
-              </FormLabel>
-              <div className="flex items-center gap-1">
-                <FormControl>
-                  <Input 
-                    type="number"
-                    min="0"
-                    max="100"
-                    className="w-20 h-8"
-                    {...field}
-                  />
-                </FormControl>
-                <span>%</span>
+    <div className="space-y-2">
+      <FormField
+        control={form.control}
+        name="contingency_percentage"
+        render={({ field }) => (
+          <FormItem>
+            <div className="flex justify-between">
+              <FormLabel>Contingency</FormLabel>
+              {contingencyAmount > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  ${contingencyAmount.toFixed(2)}
+                </span>
+              )}
+            </div>
+            <FormControl>
+              <div className="relative">
+                <Input
+                  {...field}
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  placeholder="0"
+                />
+                <div className="absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
+                  %
+                </div>
               </div>
-            </FormItem>
-          )}
-        />
-      </div>
-      <span className="font-medium">${contingencyAmount.toFixed(2)}</span>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };

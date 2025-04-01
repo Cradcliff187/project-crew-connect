@@ -2,46 +2,71 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent } from '@/components/ui/card';
-import { EstimateFormValues } from '../../schemas/estimateFormSchema';
+import { formatCurrency } from '@/lib/utils';
+import { EstimateFormValues, EstimateItem } from '../../schemas/estimateFormSchema';
 
 interface SummaryCardProps {
-  contingencyAmount?: number;
+  contingencyAmount: number;
 }
 
-const SummaryCard: React.FC<SummaryCardProps> = ({ contingencyAmount = 0 }) => {
+const SummaryCard = ({ contingencyAmount }: SummaryCardProps) => {
   const form = useFormContext<EstimateFormValues>();
-  
-  // Calculate totals
   const items = form.watch('items') || [];
-  const subtotal = items.reduce((sum: number, item: any) => {
-    const cost = parseFloat(item.cost) || 0;
-    const markup = parseFloat(item.markup_percentage) || 0;
+  
+  // Calculate subtotal
+  const subtotal = items.reduce((sum: number, item: EstimateItem) => {
+    const cost = parseFloat(item.cost || '0');
+    const markup = parseFloat(item.markup_percentage || '0');
     const markupAmount = cost * (markup / 100);
-    const quantity = parseFloat(item.quantity) || 1;
+    const quantity = parseFloat(item.quantity || '1');
     return sum + ((cost + markupAmount) * quantity);
   }, 0);
   
-  const total = subtotal + contingencyAmount;
+  // Calculate grand total
+  const grandTotal = subtotal + contingencyAmount;
+  
+  // Calculate total cost (for profit margin calculation)
+  const totalCost = items.reduce((sum: number, item: EstimateItem) => {
+    const cost = parseFloat(item.cost || '0');
+    const quantity = parseFloat(item.quantity || '1');
+    return sum + (cost * quantity);
+  }, 0);
+  
+  // Calculate profit margin
+  const grossProfit = grandTotal - totalCost;
+  const grossMarginPercentage = totalCost > 0 ? (grossProfit / grandTotal) * 100 : 0;
   
   return (
     <Card>
       <CardContent className="p-6">
-        <h4 className="text-lg font-semibold mb-4">Estimate Summary</h4>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
+        <div className="space-y-3">
+          <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Subtotal:</span>
-            <span>${subtotal.toFixed(2)}</span>
+            <span>{formatCurrency(subtotal)}</span>
           </div>
           
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Contingency:</span>
-            <span>${contingencyAmount.toFixed(2)}</span>
+            <span>{formatCurrency(contingencyAmount)}</span>
           </div>
           
-          <div className="border-t pt-2 mt-2 flex justify-between font-medium">
-            <span>Total:</span>
-            <span>${total.toFixed(2)}</span>
+          <div className="h-px bg-gray-200 my-2"></div>
+          
+          <div className="flex justify-between items-center font-semibold text-base">
+            <span>Grand Total:</span>
+            <span>{formatCurrency(grandTotal)}</span>
+          </div>
+          
+          <div className="h-px bg-gray-200 my-2"></div>
+          
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Est. Gross Margin:</span>
+            <span>{grossMarginPercentage.toFixed(1)}%</span>
+          </div>
+          
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Gross Profit:</span>
+            <span>{formatCurrency(grossProfit)}</span>
           </div>
         </div>
       </CardContent>
