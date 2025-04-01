@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
 
 interface DeleteConfirmationProps {
   open: boolean;
@@ -41,8 +41,16 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
                 <AlertTriangle className="h-5 w-5 mr-2" />
                 Error
               </div>
+            ) : hasReferences ? (
+              <div className="flex items-center text-amber-600">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                Document Has References
+              </div>
             ) : (
-              'Delete Document'
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 mr-2 text-red-600" />
+                Delete Document
+              </div>
             )}
           </AlertDialogTitle>
           <AlertDialogDescription>
@@ -54,6 +62,20 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
                     This document is referenced by other records. Deleting it may cause data inconsistencies.
                   </p>
                 )}
+              </div>
+            ) : hasReferences ? (
+              <div className="space-y-2">
+                <p>
+                  This document is referenced by other records in the system, such as estimates, 
+                  work orders, or expenses.
+                </p>
+                <div className="flex items-start mt-2 bg-amber-50 p-3 rounded-md">
+                  <Info className="h-5 w-5 text-amber-500 mr-2 mt-0.5" />
+                  <p className="text-sm text-amber-800">
+                    Deleting this document may cause data inconsistencies. 
+                    Consider removing the references first, or use Force Delete only if you understand the consequences.
+                  </p>
+                </div>
               </div>
             ) : (
               'This action cannot be undone. This will permanently delete the document from your system.'
@@ -72,6 +94,14 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
                 Force Delete
               </AlertDialogAction>
             ) : null
+          ) : hasReferences && onForceDelete ? (
+            <AlertDialogAction 
+              onClick={onForceDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Deleting...' : 'Force Delete'}
+            </AlertDialogAction>
           ) : (
             <AlertDialogAction 
               onClick={onConfirm}

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Document } from './schemas/documentSchema';
 import { format } from 'date-fns';
-import { FileText, Clock } from 'lucide-react';
+import { FileText, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface DocumentVersionHistoryCardProps {
@@ -45,12 +45,20 @@ const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
                 <div className="flex items-center gap-3">
                   <FileText className={`h-5 w-5 ${isCurrentVersion ? 'text-[#0485ea]' : 'text-gray-400'}`} />
                   <div>
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium flex items-center">
                       Version {version}
-                      {isCurrentVersion && <span className="text-xs ml-2 text-[#0485ea]">(Current)</span>}
+                      {isCurrentVersion && (
+                        <span className="text-xs ml-2 text-[#0485ea] flex items-center">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Current
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-gray-500">
                       {doc.created_at ? format(new Date(doc.created_at), 'MMM d, yyyy h:mm a') : 'Unknown date'}
+                      {doc.is_latest_version && !isCurrentVersion && (
+                        <span className="ml-2 text-green-500">Latest</span>
+                      )}
                     </p>
                   </div>
                 </div>

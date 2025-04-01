@@ -120,6 +120,94 @@ export async function fetchDocumentsByEntity(
 }
 
 /**
+ * Fetch document versions (both parent and children)
+ */
+export async function fetchDocumentVersions(
+  documentId: string,
+  options: FetchDocumentOptions = {}
+): Promise<Document[]> {
+  try {
+    // Get the document first to determine if it's a parent or child
+    const document = await fetchDocumentWithUrl(documentId, options);
+    if (!document) {
+      throw new Error(`Document with ID ${documentId} not found`);
+    }
+    
+    // Array to store all versions
+    let versionDocuments: Document[] = [document];
+    
+    // If this is a child document, get the parent and siblings
+    if (document.parent_document_id) {
+      // Get parent document
+      const parent = await fetchDocumentWithUrl(document.parent_document_id, options);
+      if (parent) {
+        versionDocuments.push(parent);
+      }
+      
+      // Get other child documents with the same parent
+      const { data: siblings, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('parent_document_id', document.parent_document_id)
+        .neq('document_id', document.document_id);
+        
+      if (!error && siblings && siblings.length > 0) {
+        // Get URLs for siblings
+        const siblingDocs = await Promise.all(
+          siblings.map(async (doc) => {
+            if (doc.storage_path) {
+              const { data: urlData } = await supabase.storage
+                .from(DOCUMENTS_BUCKET_ID)
+                .createSignedUrl(doc.storage_path, options.expiresIn || 300);
+                
+              if (urlData) {
+                return { ...doc, url: urlData.signedUrl };
+              }
+            }
+            return { ...doc, url: '' };
+          })
+        );
+        
+        versionDocuments = [...versionDocuments, ...siblingDocs];
+      }
+    } 
+    // If this is a parent document, get all children
+    else {
+      const { data: children, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('parent_document_id', document.document_id);
+        
+      if (!error && children && children.length > 0) {
+        // Get URLs for children
+        const childDocs = await Promise.all(
+          children.map(async (doc) => {
+            if (doc.storage_path) {
+              const { data: urlData } = await supabase.storage
+                .from(DOCUMENTS_BUCKET_ID)
+                .createSignedUrl(doc.storage_path, options.expiresIn || 300);
+                
+              if (urlData) {
+                return { ...doc, url: urlData.signedUrl };
+              }
+            }
+            return { ...doc, url: '' };
+          })
+        );
+        
+        versionDocuments = [...versionDocuments, ...childDocs];
+      }
+    }
+    
+    // Sort by version number (highest/latest first)
+    return versionDocuments.sort((a, b) => (b.version || 1) - (a.version || 1));
+  } catch (error) {
+    console.error('Error in fetchDocumentVersions:', error);
+    return [];
+  }
+}
+
+/**
  * Ensure the storage bucket exists
  */
 export async function ensureStorageBucket(): Promise<boolean> {
