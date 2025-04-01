@@ -21,8 +21,7 @@ export const useSummaryCalculations = () => {
   const items = useWatch({
     control: form.control,
     name: 'items',
-    defaultValue: []
-  });
+  }) || [];
 
   const contingencyPercentage = useWatch({
     control: form.control,
