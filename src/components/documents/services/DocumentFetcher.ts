@@ -24,7 +24,7 @@ export async function fetchDocumentWithUrl(
   try {
     console.log('Fetching document with ID:', documentId);
     
-    // Fetch document and generate signed URL using DocumentService
+    // Fetch document using DocumentService
     return await DocumentService.getDocumentById(documentId);
   } catch (error) {
     console.error('Error in fetchDocumentWithUrl:', error);
@@ -45,10 +45,12 @@ export async function fetchDocumentsWithUrls(
   try {
     console.log('Fetching multiple documents:', documentIds);
     
-    // Fetch all documents in parallel
-    const documents = await Promise.all(
-      documentIds.map(id => DocumentService.getDocumentById(id))
+    // Fetch all documents in parallel using Promise.all
+    const documentPromises = documentIds.map(id => 
+      DocumentService.getDocumentById(id)
     );
+    
+    const documents = await Promise.all(documentPromises);
     
     // Filter out any nulls (failed fetches)
     return documents.filter(Boolean) as Document[];

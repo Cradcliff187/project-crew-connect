@@ -1,110 +1,78 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { formatDate } from '@/lib/utils';
-import { Clock, Download, Eye, Calendar, FileIcon } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { Document } from './schemas/documentSchema';
+import { Button } from '@/components/ui/button';
+import { FileIcon, Clock, CheckCircle } from 'lucide-react';
 
 interface DocumentVersionHistoryCardProps {
   documents: Document[];
-  currentVersion?: number;
-  className?: string;
-  onVersionSelect?: (document: Document) => void;
-  showDownloadButton?: boolean;
+  currentVersion: number;
+  onVersionSelect: (document: Document) => void;
 }
 
 const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
   documents,
-  currentVersion = 1,
-  className = '',
-  onVersionSelect,
-  showDownloadButton = true
+  currentVersion,
+  onVersionSelect
 }) => {
-  // Sort documents by version, with the newest first
+  // Sort documents by version, newest first
   const sortedDocuments = [...documents].sort((a, b) => 
     (b.version || 1) - (a.version || 1)
   );
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium flex items-center">
-          Version History
-          <Badge variant="outline" className="ml-2 font-normal">
-            {documents.length} {documents.length === 1 ? 'version' : 'versions'}
-          </Badge>
+    <Card className="shadow-sm border-[#0485ea]/10">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+          <Clock className="h-4 w-4 text-[#0485ea]" />
+          Document Version History
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 pt-0">
-        {sortedDocuments.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No version history available</p>
-        ) : (
-          <div className="space-y-2">
-            {sortedDocuments.map((doc) => (
-              <div 
-                key={doc.document_id}
-                className={`flex items-center justify-between p-2 rounded-md transition-colors ${
-                  (doc.version || 1) === currentVersion 
-                    ? 'bg-[#0485ea]/5 border border-[#0485ea]/30' 
-                    : 'hover:bg-muted/50 border border-transparent'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <FileIcon className={`h-5 w-5 ${(doc.version || 1) === currentVersion ? 'text-[#0485ea]' : 'text-muted-foreground'}`} />
-                  <div>
-                    <div className="flex items-center">
-                      <span className="font-medium">Version {doc.version || 1}</span>
-                      {(doc.version || 1) === currentVersion && (
-                        <Badge variant="outline" className="ml-2 bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/30">Current</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1 space-x-3">
-                      <span className="flex items-center">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {formatDate(doc.created_at)}
-                      </span>
-                      {doc.uploaded_by && (
-                        <span className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {doc.uploaded_by}
+      <CardContent className="px-2 py-1">
+        <ul className="space-y-1">
+          {sortedDocuments.map((doc) => {
+            const isCurrentVersion = (doc.version || 1) === currentVersion;
+            const timeAgo = doc.created_at 
+              ? formatDistanceToNow(new Date(doc.created_at), { addSuffix: true })
+              : 'Unknown date';
+            
+            return (
+              <li key={doc.document_id} className="border-b last:border-b-0 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileIcon className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium">
+                          Version {doc.version || 1}
                         </span>
-                      )}
+                        {isCurrentVersion && (
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">{timeAgo}</div>
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onVersionSelect(doc)}
+                    className={isCurrentVersion ? "text-[#0485ea]" : ""}
+                  >
+                    View
+                  </Button>
                 </div>
-                <div className="flex space-x-2">
-                  {showDownloadButton && doc.url && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(doc.url, '_blank');
-                      }}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span className="sr-only">Download</span>
-                    </Button>
-                  )}
-                  {onVersionSelect && (doc.version || 1) !== currentVersion && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onVersionSelect(doc)}
-                      className="h-8"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                {doc.notes && (
+                  <div className="mt-1 text-xs text-gray-600 ml-6">
+                    Note: {doc.notes}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </CardContent>
     </Card>
   );

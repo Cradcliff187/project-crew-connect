@@ -1,4 +1,3 @@
-
 import { supabase, DOCUMENTS_BUCKET_ID } from '@/integrations/supabase/client';
 import { Document, EntityType } from '../schemas/documentSchema';
 
@@ -205,7 +204,7 @@ export class DocumentService {
   }
 
   /**
-   * Fetch multiple documents by entity
+   * Fetch documents by entity
    */
   static async getDocumentsByEntity(
     entityType: EntityType,
@@ -368,6 +367,89 @@ export class DocumentService {
     } catch (error) {
       console.error('Error in createDocumentVersion:', error);
       return null;
+    }
+  }
+
+  /**
+   * Get documents that share the same parent document
+   */
+  static async getDocumentsWithParent(parentDocumentId: string): Promise<{ data: Document[] | null, error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('parent_document_id', parentDocumentId);
+        
+      if (error) {
+        return { data: null, error };
+      }
+      
+      // Convert to Document type
+      return { data: data as Document[], error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Search for documents based on metadata
+   */
+  static async searchDocuments(
+    searchText: string,
+    filters?: {
+      entityType?: EntityType;
+      category?: string;
+      isExpense?: boolean;
+      fromDate?: string;
+      toDate?: string;
+    }
+  ): Promise<Document[]> {
+    try {
+      let query = supabase
+        .from('documents')
+        .select('*');
+      
+      // Apply text search if provided
+      if (searchText) {
+        query = query.or(
+          `file_name.ilike.%${searchText}%,tags.cs.{${searchText}},notes.ilike.%${searchText}%`
+        );
+      }
+      
+      // Apply filters if provided
+      if (filters) {
+        if (filters.entityType) {
+          query = query.eq('entity_type', filters.entityType);
+        }
+        
+        if (filters.category) {
+          query = query.eq('category', filters.category);
+        }
+        
+        if (filters.isExpense !== undefined) {
+          query = query.eq('is_expense', filters.isExpense);
+        }
+        
+        if (filters.fromDate) {
+          query = query.gte('created_at', filters.fromDate);
+        }
+        
+        if (filters.toDate) {
+          query = query.lte('created_at', filters.toDate);
+        }
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error searching documents:', error);
+        return [];
+      }
+      
+      return data as Document[];
+    } catch (error) {
+      console.error('Error in searchDocuments:', error);
+      return [];
     }
   }
 }
