@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
   DialogContent,
@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X } from 'lucide-react';
+import { X, Share2 } from 'lucide-react';
 import { EstimateDetailsProps } from '../EstimateDetails';
 import EstimateDetailsTab from './EstimateDetailsTab';
 import EstimateItemsTab from './EstimateItemsTab';
@@ -18,6 +18,9 @@ import EstimateRevisionsTab from './EstimateRevisionsTab';
 import EstimateDocumentsTab from './EstimateDocumentsTab';
 import EstimateRevisionDialog from '../detail/dialogs/EstimateRevisionDialog';
 import { supabase } from '@/integrations/supabase/client';
+import PDFExportButton from '../detail/PDFExportButton';
+import DocumentShareDialog from '../detail/dialogs/DocumentShareDialog';
+import { Document } from '@/components/documents/schemas/documentSchema';
 
 const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({ 
   estimate, 
@@ -31,6 +34,11 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
   const [currentVersion, setCurrentVersion] = useState(1);
   const [clientEmail, setClientEmail] = useState<string | undefined>(undefined);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  
+  // Ref for PDF export
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -82,6 +90,11 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     }
   };
 
+  const handleShareDocument = (document: Document) => {
+    setSelectedDocument(document);
+    setShareDialogOpen(true);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
@@ -116,17 +129,27 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
             </TabsList>
           </Tabs>
           
-          <Button
-            variant="outline"
-            size="sm"
-            className="ml-4"
-            onClick={handleCreateRevision}
-          >
-            Create Revision
-          </Button>
+          <div className="flex gap-2">
+            <PDFExportButton 
+              estimateId={estimate.id}
+              clientName={estimate.client}
+              projectName={estimate.project || ''}
+              date={estimate.date}
+              contentRef={contentRef}
+            />
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-2"
+              onClick={handleCreateRevision}
+            >
+              Create Revision
+            </Button>
+          </div>
         </div>
         
-        <div className="flex-1 overflow-auto p-6">
+        <div ref={contentRef} className="flex-1 overflow-auto p-6">
           <TabsContent value="details" className="m-0">
             <EstimateDetailsTab estimate={estimate} />
           </TabsContent>
@@ -144,7 +167,10 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
           </TabsContent>
           
           <TabsContent value="documents" className="m-0">
-            <EstimateDocumentsTab estimateId={estimate.id} />
+            <EstimateDocumentsTab 
+              estimateId={estimate.id} 
+              onShareDocument={handleShareDocument}
+            />
           </TabsContent>
         </div>
       </DialogContent>
@@ -155,6 +181,14 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
         estimateId={estimate.id}
         currentVersion={currentVersion}
         onSuccess={handleRevisionSuccess}
+      />
+
+      <DocumentShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        document={selectedDocument}
+        estimateId={estimate.id}
+        clientEmail={clientEmail}
       />
     </Dialog>
   );
