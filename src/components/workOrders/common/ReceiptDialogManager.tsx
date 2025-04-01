@@ -50,12 +50,16 @@ interface ReceiptViewerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   receiptDocument: Document | null;
+  title?: string;
+  description?: string;
 }
 
 export const ReceiptViewerDialog = ({
   open,
   onOpenChange,
   receiptDocument,
+  title,
+  description
 }: ReceiptViewerDialogProps) => {
   if (!receiptDocument) return null;
 
@@ -64,8 +68,8 @@ export const ReceiptViewerDialog = ({
       open={open}
       onOpenChange={onOpenChange}
       document={receiptDocument}
-      title={`Receipt: ${receiptDocument.file_name}`}
-      description={`${receiptDocument.file_type || 'Document'} preview`}
+      title={title}
+      description={description}
     />
   );
 };

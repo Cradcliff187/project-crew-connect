@@ -18,13 +18,17 @@ interface DocumentViewerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onVersionChange?: (document: Document) => void;
+  title?: string;
+  description?: string;
 }
 
 const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
   document,
   open,
   onOpenChange,
-  onVersionChange
+  onVersionChange,
+  title,
+  description
 }) => {
   if (!document) return null;
   
@@ -51,7 +55,9 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="font-medium truncate">{document.file_name}</DialogTitle>
+          <DialogTitle className="font-medium truncate">
+            {title || document.file_name}
+          </DialogTitle>
           <div className="flex items-center gap-2">
             {document.document_id && (
               <DocumentVersionHistory 
@@ -117,6 +123,9 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
               )}
               {document.notes && (
                 <p><strong>Notes:</strong> {document.notes}</p>
+              )}
+              {description && (
+                <p>{description}</p>
               )}
             </div>
           </div>

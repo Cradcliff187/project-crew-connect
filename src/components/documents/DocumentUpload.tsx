@@ -32,7 +32,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const [currentEntityType, setCurrentEntityType] = useState<EntityType>(entityType || 'PROJECT');
   const [currentEntityId, setCurrentEntityId] = useState(entityId || projectId || '');
   
-  const { upload, isUploading } = useDocumentUpload();
+  const { uploadDocument, loading } = useDocumentUpload(currentEntityType, currentEntityId, {
+    onSuccess,
+  });
   
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
@@ -65,15 +67,13 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     }
     
     try {
-      await upload({
-        files: selectedFiles,
-        metadata: {
+      // Upload each file individually
+      for (const file of selectedFiles) {
+        await uploadDocument(file, {
           category,
-          entityType: currentEntityType,
-          entityId: currentEntityId,
           notes,
-        }
-      });
+        });
+      }
       
       toast({
         title: "Upload successful",
@@ -184,8 +184,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             Cancel
           </Button>
         )}
-        <Button onClick={handleUpload} disabled={isUploading || selectedFiles.length === 0}>
-          {isUploading ? 'Uploading...' : 'Upload'}
+        <Button onClick={handleUpload} disabled={loading || selectedFiles.length === 0}>
+          {loading ? 'Uploading...' : 'Upload'}
         </Button>
       </CardFooter>
     </Card>
