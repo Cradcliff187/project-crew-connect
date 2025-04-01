@@ -65,9 +65,51 @@ export function useDocumentActions(onRefetch?: () => void) {
   
   // Handle force delete (ignoring references)
   const handleForceDelete = useCallback(async () => {
-    // This would need backend changes to implement properly
-    setDeleteError('Force delete is not currently supported');
-  }, []);
+    if (!selectedDocument) return;
+    
+    setIsLoading(true);
+    setDeleteError(null);
+    
+    try {
+      // Implement force delete with a direct call to storage deletion
+      const { data: document } = await supabase
+        .from('documents')
+        .select('storage_path')
+        .eq('document_id', selectedDocument.document_id)
+        .single();
+        
+      if (document?.storage_path) {
+        // Delete storage file
+        await supabase.storage
+          .from(DOCUMENTS_BUCKET_ID)
+          .remove([document.storage_path]);
+      }
+      
+      // Delete document record forcefully
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('document_id', selectedDocument.document_id);
+        
+      if (error) throw error;
+      
+      setIsDeleteOpen(false);
+      setSelectedDocument(null);
+      
+      toast({
+        title: 'Document deleted',
+        description: 'The document has been forcefully deleted',
+      });
+      
+      if (onRefetch) {
+        onRefetch();
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || 'An error occurred during force deletion');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedDocument, onRefetch]);
   
   // Handle upload success
   const handleUploadSuccess = useCallback((documentId?: string) => {

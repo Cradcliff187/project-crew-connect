@@ -2,153 +2,142 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, FileText, FileUp, X } from 'lucide-react';
+import { Download, FileText, Image, File } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
-import { formatDistanceToNow } from 'date-fns';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 interface DocumentViewerProps {
   document: Document | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUploadNewVersion?: () => void;
-  showVersionUpload?: boolean;
+  onDelete?: () => void;
 }
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
   document,
   open,
   onOpenChange,
-  onUploadNewVersion,
-  showVersionUpload = false
+  onDelete
 }) => {
-  if (!document) return null;
+  if (!document) {
+    return null;
+  }
 
-  const isPdf = document.file_type?.includes('pdf');
-  const isImage = document.file_type?.includes('image');
-  const created = document.created_at ? formatDistanceToNow(new Date(document.created_at), { addSuffix: true }) : '';
+  const isImage = document.file_type?.startsWith('image/');
+  const isPDF = document.file_type === 'application/pdf';
   
-  // Format file size
-  const formatFileSize = (bytes?: number | null) => {
+  // Format the file size
+  const formatFileSize = (bytes: number | null | undefined): string => {
     if (!bytes) return 'Unknown size';
-    if (bytes < 1024) return `${bytes} bytes`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (bytes < 1024) return bytes + ' bytes';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-base truncate max-w-md">{document.file_name}</DialogTitle>
-          <div className="flex gap-2">
-            {document.url && (
-              <>
-                <Button variant="outline" size="sm" asChild>
-                  <a href={document.url} download={document.file_name} target="_blank" rel="noopener noreferrer">
-                    <Download className="h-4 w-4 mr-1" />
-                    Download
-                  </a>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <a href={document.url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    Open
-                  </a>
-                </Button>
-              </>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {isImage ? (
+              <Image className="h-5 w-5 text-blue-500" />
+            ) : isPDF ? (
+              <FileText className="h-5 w-5 text-red-500" />
+            ) : (
+              <File className="h-5 w-5 text-gray-500" />
             )}
-            {showVersionUpload && onUploadNewVersion && (
-              <Button variant="outline" size="sm" onClick={onUploadNewVersion}>
-                <FileUp className="h-4 w-4 mr-1" />
-                New Version
-              </Button>
-            )}
-            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+            {document.file_name}
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div className="md:col-span-2 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto h-[50vh] border rounded-md bg-gray-50">
-              {isPdf && document.url ? (
-                <iframe 
-                  src={`${document.url}#toolbar=0`} 
-                  className="w-full h-full" 
-                  title={document.file_name}
-                />
-              ) : isImage && document.url ? (
-                <div className="flex items-center justify-center h-full p-4">
-                  <img 
-                    src={document.url} 
-                    alt={document.file_name} 
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground mb-3" />
-                  <h3 className="text-lg font-medium">Preview not available</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    This file type doesn't support preview. Please download or open to view.
-                  </p>
-                </div>
-              )}
+        <div className="flex-1 overflow-hidden min-h-[60vh]">
+          {isImage && document.url ? (
+            <div className="h-full flex items-center justify-center bg-gray-50 rounded-md overflow-auto">
+              <img 
+                src={document.url} 
+                alt={document.file_name || 'Document preview'} 
+                className="max-w-full max-h-full object-contain"
+              />
             </div>
+          ) : isPDF && document.url ? (
+            <iframe 
+              src={document.url} 
+              className="w-full h-full rounded-md"
+              title={document.file_name || 'PDF Document'}
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center bg-gray-50 rounded-md">
+              <div className="text-center p-6">
+                <File className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">
+                  Preview not available for this file type
+                </p>
+                <p className="text-sm text-gray-400 mt-2">
+                  {document.file_type || 'Unknown file type'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-4 space-y-2">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-500">File Type</p>
+              <p>{document.file_type || 'Unknown'}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Size</p>
+              <p>{formatFileSize(document.file_size)}</p>
+            </div>
+            <div>
+              <p className="text-gray-500">Uploaded</p>
+              <p>
+                {document.created_at 
+                  ? format(new Date(document.created_at), 'MMM d, yyyy h:mm a') 
+                  : 'Unknown date'}
+              </p>
+            </div>
+            {document.category && (
+              <div>
+                <p className="text-gray-500">Category</p>
+                <p className="capitalize">
+                  {document.category.replace(/_/g, ' ')}
+                </p>
+              </div>
+            )}
           </div>
           
-          <div className="space-y-4">
-            <div className="p-4 border rounded-md bg-gray-50">
-              <h3 className="font-medium mb-2">Document Details</h3>
-              
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Type:</span> {document.file_type || 'Unknown'}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Size:</span> {formatFileSize(document.file_size)}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Uploaded:</span> {created}
-                </div>
-                {document.version && (
-                  <div>
-                    <span className="text-muted-foreground">Version:</span> {document.version}
-                  </div>
-                )}
-                {document.category && (
-                  <div>
-                    <span className="text-muted-foreground">Category:</span> {document.category}
-                  </div>
-                )}
-              </div>
-              
-              <Separator className="my-3" />
-              
-              {document.tags && document.tags.length > 0 && (
-                <div className="mt-3">
-                  <h4 className="text-xs font-medium text-muted-foreground mb-2">Tags</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {document.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="bg-gray-100">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {document.notes && (
-                <div className="mt-3">
-                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Notes</h4>
-                  <p className="text-sm">{document.notes}</p>
-                </div>
-              )}
+          {document.notes && (
+            <div className="mt-2">
+              <p className="text-gray-500">Notes</p>
+              <p className="text-sm">{document.notes}</p>
             </div>
-          </div>
+          )}
+        </div>
+        
+        <div className="flex justify-between mt-4">
+          {onDelete && (
+            <Button 
+              variant="outline" 
+              className="text-red-600 border-red-200 hover:bg-red-50"
+              onClick={onDelete}
+            >
+              Delete
+            </Button>
+          )}
+          
+          <Button 
+            className="ml-auto bg-[#0485ea] hover:bg-[#0375d1]"
+            onClick={() => {
+              if (document.url) {
+                window.open(document.url, '_blank');
+              }
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

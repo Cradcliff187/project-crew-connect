@@ -19,6 +19,7 @@ interface DeleteConfirmationProps {
   onForceDelete?: () => void;
   error?: string | null;
   hasReferences?: boolean;
+  isLoading?: boolean;
 }
 
 const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
@@ -27,7 +28,8 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
   onConfirm,
   onForceDelete,
   error,
-  hasReferences = false
+  hasReferences = false,
+  isLoading = false
 }) => {
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
@@ -59,12 +61,13 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
           {error ? (
             hasReferences && onForceDelete ? (
               <AlertDialogAction 
                 onClick={onForceDelete}
                 className="bg-red-600 hover:bg-red-700"
+                disabled={isLoading}
               >
                 Force Delete
               </AlertDialogAction>
@@ -73,8 +76,9 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
             <AlertDialogAction 
               onClick={onConfirm}
               className="bg-red-600 hover:bg-red-700"
+              disabled={isLoading}
             >
-              Delete
+              {isLoading ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           )}
         </AlertDialogFooter>

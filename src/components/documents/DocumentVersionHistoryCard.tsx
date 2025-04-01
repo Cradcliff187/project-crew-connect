@@ -2,11 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Document } from './schemas/documentSchema';
-import { formatDistanceToNow } from 'date-fns';
-import { FileText, Clock, Check } from 'lucide-react';
+import { format } from 'date-fns';
+import { FileText, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DocumentVersionHistoryCardProps {
   documents: Document[];
@@ -19,76 +17,62 @@ const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
   currentVersion,
   onVersionSelect
 }) => {
-  // Sort documents by version in descending order
+  // Sort documents by version, with latest version first
   const sortedDocuments = [...documents].sort((a, b) => 
     (b.version || 1) - (a.version || 1)
   );
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium flex items-center">
-          <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-          Version History
+    <Card className="shadow-sm border-[#0485ea]/10">
+      <CardHeader className="bg-[#0485ea]/5 py-3">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Clock className="h-4 w-4 text-[#0485ea]" />
+          Document Version History
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-2">
-        <ScrollArea className="h-[calc(100vh-320px)] md:max-h-[500px] pr-4">
-          <div className="space-y-2">
-            {sortedDocuments.map((doc) => {
-              const isCurrentVersion = doc.version === currentVersion;
-              const createdDate = new Date(doc.created_at);
-              const timeAgo = formatDistanceToNow(createdDate, { addSuffix: true });
-              
-              return (
-                <TooltipProvider key={doc.document_id}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={isCurrentVersion ? "default" : "ghost"}
-                        onClick={() => onVersionSelect(doc)}
-                        className={`w-full justify-start h-auto py-2 px-3 ${
-                          isCurrentVersion 
-                            ? "bg-[#0485ea]/10 text-[#0485ea] hover:bg-[#0485ea]/20" 
-                            : "hover:bg-gray-100"
-                        }`}
-                      >
-                        <div className="flex items-start gap-2 w-full">
-                          <div className={`mt-0.5 ${isCurrentVersion ? "text-[#0485ea]" : "text-muted-foreground"}`}>
-                            <FileText className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="flex items-center justify-between w-full">
-                              <span className="font-medium">Version {doc.version || 1}</span>
-                              {isCurrentVersion && (
-                                <Check className="h-4 w-4 text-[#0485ea]" />
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1 truncate" title={timeAgo}>
-                              {timeAgo}
-                            </div>
-                            {doc.notes && (
-                              <div className="text-xs text-muted-foreground mt-1 line-clamp-2" title={doc.notes}>
-                                {doc.notes}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        {isCurrentVersion 
-                          ? "Current version" 
-                          : `View version ${doc.version || 1}`}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              );
-            })}
-          </div>
-        </ScrollArea>
+      <CardContent className="p-0">
+        <div className="divide-y divide-gray-100">
+          {sortedDocuments.map((doc) => {
+            const version = doc.version || 1;
+            const isCurrentVersion = version === currentVersion;
+            
+            return (
+              <div 
+                key={doc.document_id} 
+                className={`flex items-center justify-between p-3 
+                  ${isCurrentVersion ? 'bg-[#0485ea]/5' : 'hover:bg-gray-50'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className={`h-5 w-5 ${isCurrentVersion ? 'text-[#0485ea]' : 'text-gray-400'}`} />
+                  <div>
+                    <p className="text-sm font-medium">
+                      Version {version}
+                      {isCurrentVersion && <span className="text-xs ml-2 text-[#0485ea]">(Current)</span>}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {doc.created_at ? format(new Date(doc.created_at), 'MMM d, yyyy h:mm a') : 'Unknown date'}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => onVersionSelect(doc)}
+                  disabled={isCurrentVersion}
+                  className={!isCurrentVersion ? 'text-[#0485ea] hover:text-[#0375d1] hover:bg-[#0485ea]/10' : ''}
+                >
+                  {isCurrentVersion ? 'Current' : 'View'}
+                </Button>
+              </div>
+            );
+          })}
+          
+          {sortedDocuments.length === 0 && (
+            <div className="p-4 text-center text-gray-500 text-sm">
+              No version history available
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
