@@ -42,7 +42,7 @@ const DocumentList = ({
   const documentsByCategory: Record<string, Document[]> = {};
   if (showCategories) {
     documents.forEach(doc => {
-      const category = doc.category || 'Other';
+      const category = doc.category || 'other';
       if (!documentsByCategory[category]) {
         documentsByCategory[category] = [];
       }
