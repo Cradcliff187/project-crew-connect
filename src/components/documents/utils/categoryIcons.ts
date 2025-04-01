@@ -92,7 +92,7 @@ export const DocumentCategoryBadge = ({ category }: { category?: string }) => {
   
   return (
     <div 
-      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold" 
+      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
       style={{ backgroundColor: config.bgColor, color: config.color }}
     >
       <Icon className="h-3 w-3 mr-1" />
