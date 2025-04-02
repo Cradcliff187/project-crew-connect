@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -75,6 +75,12 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0" aria-describedby="estimate-form-description">
+        {/* Add hidden DialogTitle and DialogDescription for accessibility */}
+        <DialogTitle className="sr-only">Create New Estimate</DialogTitle>
+        <DialogDescription id="estimate-form-description" className="sr-only">
+          Form for creating a new estimate with project details, customer information, and line items.
+        </DialogDescription>
+        
         <EstimateFormHeader 
           step={step}
           onBackToEdit={handleBackToEdit}

@@ -12,6 +12,14 @@ interface LocationFieldsProps {
 const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress }) => {
   const form = useFormContext<EstimateFormValues>();
   
+  // Ensure California is set as the default state
+  React.useEffect(() => {
+    const currentState = form.getValues('location.state');
+    if (!currentState) {
+      form.setValue('location.state', 'California');
+    }
+  }, [form]);
+  
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mt-8 mb-4">Project Location</h3>
@@ -65,7 +73,14 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
             <FormItem>
               <FormLabel>State</FormLabel>
               <FormControl>
-                <Input placeholder="State" {...field} />
+                <Input 
+                  placeholder="State" 
+                  {...field} 
+                  defaultValue="California"
+                  value={field.value || "California"}
+                  readOnly
+                  className="bg-gray-50"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

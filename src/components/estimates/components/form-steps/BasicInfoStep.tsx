@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface BasicInfoStepProps {
   customerTab: 'existing' | 'new';
@@ -28,6 +29,20 @@ const BasicInfoStep = ({
 }: BasicInfoStepProps) => {
   const form = useFormContext<EstimateFormValues>();
   const showSiteLocation = form.watch('showSiteLocation');
+  
+  // Ensure California is set as the default state
+  useEffect(() => {
+    const currentNewCustomerState = form.getValues('newCustomer.state');
+    const currentLocationState = form.getValues('location.state');
+    
+    if (!currentNewCustomerState) {
+      form.setValue('newCustomer.state', 'California');
+    }
+    
+    if (showSiteLocation && !currentLocationState) {
+      form.setValue('location.state', 'California');
+    }
+  }, [form, showSiteLocation]);
   
   return (
     <div className="space-y-6">
@@ -180,7 +195,14 @@ const BasicInfoStep = ({
                     <FormItem>
                       <FormLabel>State</FormLabel>
                       <FormControl>
-                        <Input placeholder="State" {...field} />
+                        <Input 
+                          placeholder="State" 
+                          {...field} 
+                          defaultValue="California"
+                          value={field.value || "California"}
+                          readOnly
+                          className="bg-gray-50"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -282,7 +304,14 @@ const BasicInfoStep = ({
                   <FormItem>
                     <FormLabel>State</FormLabel>
                     <FormControl>
-                      <Input placeholder="State" {...field} />
+                      <Input 
+                        placeholder="State" 
+                        {...field}
+                        defaultValue="California"
+                        value={field.value || "California"}
+                        readOnly
+                        className="bg-gray-50"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
