@@ -37,7 +37,7 @@ export function useMaterials(workOrderId: string) {
     loading,
     submitting,
     error,
-    vendors,
+    vendors, // This was missing in the original implementation
     totalMaterialsCost,
     handleAddMaterial,
     handleDelete,

@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { useToast } from '@/hooks/use-toast';
-import UniversalStatusControl from '@/components/common/status/UniversalStatusControl';
+import UniversalStatusControl, { StatusOption } from '@/components/common/status/UniversalStatusControl';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
-import { StatusOption } from '@/components/common/status/UniversalStatusControl';
 
 interface EstimateStatusManagerProps {
   estimateId: string;

@@ -1,78 +1,39 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { CheckIcon, ChevronDown } from 'lucide-react';
+import UniversalStatusControl, { StatusOption } from '@/components/common/status/UniversalStatusControl';
+import { Contact } from '@/types/contact';
 
-import { useStatusOptions } from '@/hooks/useStatusOptions';
-import UniversalStatusControl from '@/components/common/status/UniversalStatusControl';
-import { StatusOption } from '@/components/common/status/UniversalStatusControl';
-
-export interface StatusDropdownProps {
-  contact: any;
-  onStatusChange: (contact: any, newStatus: string) => void;
-  statusOptions?: StatusOption[];
+interface ContactsStatusDropdownProps {
+  contact: Contact;
+  onStatusChange: () => void;
 }
 
-const StatusDropdown = ({ contact, onStatusChange, statusOptions: providedStatusOptions }: StatusDropdownProps) => {
-  const contactType = contact.contact_type || contact.type || 'client';
-  const currentStatus = contact.status || 'active';
-  
-  // Get appropriate status options based on contact type, or use provided options
-  const { statusOptions: derivedStatusOptions } = useStatusOptions('CONTACT', currentStatus);
-  const statusOptions = providedStatusOptions || derivedStatusOptions;
-  
-  if (!statusOptions.length) return null;
-  
-  // Handle status change event
-  const handleStatusChange = () => {
-    onStatusChange(contact, currentStatus);
-  };
-  
+const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({ contact, onStatusChange }) => {
+  const [open, setOpen] = useState(false);
+
+  const statusOptions: StatusOption[] = useMemo(() => [
+    { value: 'active', label: 'Active' },
+    { value: 'inactive', label: 'Inactive' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'archived', label: 'Archived' },
+  ], []);
+
   return (
-    <UniversalStatusControl 
-      entityId={contact.id || contact.customerid || contact.subid || contact.vendorid || ''}
-      entityType="CONTACT"
-      currentStatus={currentStatus}
-      statusOptions={statusOptions}
-      tableName={getTableNameFromContactType(contactType)}
-      idField={getIdFieldFromContactType(contactType)}
-      onStatusChange={handleStatusChange}
-      showStatusBadge={true}
-      size="sm"
-    />
+    <div className="flex items-center relative z-10">
+      <UniversalStatusControl
+        entityId={contact.contactid}
+        entityType="CONTACT"
+        currentStatus={contact.status}
+        statusOptions={statusOptions}
+        tableName="contacts"
+        idField="contactid"
+        onStatusChange={onStatusChange}
+        size="sm"
+        showStatusBadge={true}
+      />
+    </div>
   );
 };
 
-// Helper function to determine database table name based on contact type
-function getTableNameFromContactType(type: string): string {
-  switch (type.toLowerCase()) {
-    case 'client':
-    case 'customer':
-      return 'customers';
-    case 'supplier':
-    case 'vendor':
-      return 'vendors';
-    case 'subcontractor':
-      return 'subcontractors';
-    case 'employee':
-      return 'employees';
-    default:
-      return 'contacts';
-  }
-}
-
-// Helper function to determine ID field name based on contact type
-function getIdFieldFromContactType(type: string): string {
-  switch (type.toLowerCase()) {
-    case 'client':
-    case 'customer':
-      return 'customerid';
-    case 'supplier':
-    case 'vendor':
-      return 'vendorid';
-    case 'subcontractor':
-      return 'subid';
-    case 'employee':
-      return 'employee_id';
-    default:
-      return 'id';
-  }
-}
-
-export default StatusDropdown;
+export default ContactsStatusDropdown;

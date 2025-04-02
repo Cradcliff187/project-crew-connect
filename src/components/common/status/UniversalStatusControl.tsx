@@ -1,195 +1,241 @@
-
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronDown } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import StatusBadge from './StatusBadge';
-import { updateEntityStatus } from '@/utils/statusTransitions';
-import { useStatusHistory, EntityType } from '@/hooks/useStatusHistory';
+import { Check, ChevronDown, Loader2 } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import StatusHistoryDialog from './StatusHistoryDialog';
+import StatusTransitionPrompt from './StatusTransitionPrompt';
 import { toast } from '@/hooks/use-toast';
 
-// Export the StatusOption interface so other components can import it
 export interface StatusOption {
   value: string;
   label: string;
-  icon?: React.ReactNode;
+  color?: string;
+  description?: string;
+  canTransitionTo?: string[];
+  requiresApproval?: boolean;
 }
 
 export interface StatusControlProps {
   entityId: string;
-  entityType: EntityType;
+  entityType: string;
   currentStatus: string;
   statusOptions: StatusOption[];
   tableName: string;
-  idField?: string;
-  onStatusChange?: () => void;
-  additionalUpdateFields?: Record<string, any> | ((newStatus: string) => Record<string, any>);
+  idField: string;
+  onStatusChange: () => void;
+  recordHistory?: boolean;
   size?: 'sm' | 'md' | 'lg';
   showStatusBadge?: boolean;
-  buttonLabel?: string;
-  recordHistory?: boolean;
-  className?: string;
-  userIdentifier?: string;
+  additionalUpdateFields?: (newStatus: string) => Record<string, any>;
+  className?: string; // Added className prop to fix TypeScript error
   notes?: string;
 }
 
-const UniversalStatusControl = ({
+const UniversalStatusControl: React.FC<StatusControlProps> = ({
   entityId,
   entityType,
   currentStatus,
   statusOptions,
   tableName,
-  idField = 'id',
+  idField,
   onStatusChange,
-  additionalUpdateFields = {},
+  recordHistory = false,
   size = 'md',
-  showStatusBadge = false,
-  buttonLabel,
-  recordHistory = true,
+  showStatusBadge = true,
+  additionalUpdateFields,
   className = '',
-  userIdentifier,
   notes
-}: StatusControlProps) => {
-  const [updating, setUpdating] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState(false);
-  const { recordStatusChange } = useStatusHistory({ entityId, entityType });
+}) => {
+  const [open, setOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showTransitionPrompt, setShowTransitionPrompt] = useState(false);
+  const [transitionNotes, setTransitionNotes] = useState('');
+  
+  const filteredStatusOptions = statusOptions.filter(option => option.value !== currentStatus);
   
   const handleStatusChange = async (newStatus: string) => {
-    setUpdating(true);
-    setOpenDropdown(false);
+    setPendingStatus(newStatus);
+    setShowTransitionPrompt(true);
+  };
+  
+  const confirmStatusChange = async () => {
+    if (!pendingStatus) return;
     
+    setLoading(true);
     try {
-      // Get additional fields - can be an object or a function that returns an object
-      const extraFields = typeof additionalUpdateFields === 'function' 
-        ? additionalUpdateFields(newStatus) 
-        : { ...additionalUpdateFields };
+      const updateFields: Record<string, any> = { status: pendingStatus };
       
-      // If moving to COMPLETED status, calculate additional fields
-      if (newStatus === 'COMPLETED') {
-        extraFields.progress = 100;
-        extraFields.completed_date = new Date().toISOString();
+      if (additionalUpdateFields) {
+        const additionalFields = additionalUpdateFields(pendingStatus);
+        for (const key in additionalFields) {
+          updateFields[key] = additionalFields[key];
+        }
       }
       
-      // Update the entity status
-      const success = await updateEntityStatus(
-        entityType,
-        entityId,
-        currentStatus,
-        newStatus,
-        tableName,
-        idField,
-        'status',
-        extraFields
-      );
-      
-      if (success && recordHistory) {
-        // Record the status change in the history
-        await recordStatusChange(
-          newStatus,
-          currentStatus,
-          userIdentifier || 'system', // Use provided user identifier or default
-          notes || `Status changed from ${currentStatus} to ${newStatus}`
-        );
+      // Automatically set progress to 100 if status is COMPLETED
+      if (pendingStatus === 'COMPLETED' && entityType === 'WORK_ORDER') {
+        updateFields.progress = 100;
       }
       
-      // Notify parent component of the status change
-      if (onStatusChange) {
-        onStatusChange();
+      const { error } = await supabase
+        .from(tableName)
+        .update(updateFields)
+        .eq(idField, entityId);
+      
+      if (error) {
+        throw error;
       }
-    } catch (error: any) {
-      console.error(`Error updating ${entityType} status:`, error);
+      
+      if (recordHistory) {
+        const { error: historyError } = await supabase
+          .from('status_history')
+          .insert({
+            entity_id: entityId,
+            entity_type: entityType,
+            table_name: tableName,
+            previous_status: currentStatus,
+            status: pendingStatus,
+            notes: transitionNotes
+          });
+        
+        if (historyError) {
+          console.error('Error recording status history:', historyError);
+        }
+      }
+      
       toast({
-        title: "Status Update Failed",
-        description: error.message,
-        variant: "destructive"
+        title: 'Status Updated',
+        description: `Status changed to ${pendingStatus}`,
+      });
+      
+      onStatusChange();
+    } catch (error: any) {
+      console.error('Error updating status:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not update status: ' + error.message,
+        variant: 'destructive',
       });
     } finally {
-      setUpdating(false);
+      setLoading(false);
+      setOpen(false);
+      setShowTransitionPrompt(false);
+      setTransitionNotes('');
+      setPendingStatus(null);
     }
   };
   
-  // Size-specific classes
-  const sizeClasses = {
-    sm: {
-      button: 'px-2 py-1 text-xs h-7',
-      icon: 'h-3 w-3 ml-1',
-      checkIcon: 'h-3 w-3 mr-1'
-    },
-    md: {
-      button: 'px-3 py-1.5 text-sm h-9',
-      icon: 'h-4 w-4 ml-1.5',
-      checkIcon: 'h-4 w-4 mr-1.5' 
-    },
-    lg: {
-      button: 'px-4 py-2 text-base h-10',
-      icon: 'h-5 w-5 ml-2',
-      checkIcon: 'h-5 w-5 mr-2'
-    }
+  const cancelStatusChange = () => {
+    setShowTransitionPrompt(false);
+    setPendingStatus(null);
+    setTransitionNotes('');
   };
   
-  // Don't show dropdown if there are no status options
-  if (statusOptions.length === 0) {
-    return (
-      <div className={`flex items-center ${className}`}>
-        {showStatusBadge && (
-          <StatusBadge status={currentStatus} entityType={entityType} size={size} />
-        )}
-        {!showStatusBadge && (
-          <Button variant="outline" size="sm" disabled={true} className={className}>
-            No Status Options
-          </Button>
-        )}
-      </div>
-    );
-  }
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setTransitionNotes(e.target.value);
+  };
+  
+  const getStatusLabel = (status: string): string => {
+    const option = statusOptions.find(opt => opt.value === status);
+    return option?.label || status;
+  };
+  
+  const getStatusColor = (status: string): string => {
+    const option = statusOptions.find(opt => opt.value === status);
+    return option?.color || 'neutral';
+  };
   
   return (
-    <DropdownMenu open={openDropdown} onOpenChange={setOpenDropdown}>
-      <DropdownMenuTrigger asChild>
+    <div className={`flex items-center ${className}`}>
+      {showStatusBadge && (
+        <StatusBadge 
+          label={getStatusLabel(currentStatus)}
+          color={getStatusColor(currentStatus)}
+        />
+      )}
+      
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size={size}
+            role="combobox"
+            aria-expanded={open}
+            className="w-[150px] justify-between ml-2"
+            disabled={loading}
+          >
+            {getStatusLabel(currentStatus)}
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0">
+          <Command>
+            <CommandInput placeholder="Search status..." />
+            <CommandEmpty>No status found.</CommandEmpty>
+            <CommandGroup>
+              {filteredStatusOptions.map((status) => (
+                <CommandItem
+                  key={status.value}
+                  value={status.value}
+                  onSelect={() => handleStatusChange(status.value)}
+                >
+                  <Check
+                    className="mr-2 h-4 w-4"
+                    style={{color: status.color}}
+                    aria-hidden="true"
+                  />
+                  {status.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            {loading && (
+              <div className="flex items-center justify-center p-2">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Updating Status...
+              </div>
+            )}
+          </Command>
+        </PopoverContent>
+      </Popover>
+      
+      {recordHistory && (
         <Button 
-          variant={showStatusBadge ? "outline" : "default"}
-          size={size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : 'default'}
-          className={`${showStatusBadge ? "ml-2 border-muted" : ""} ${className}`}
-          disabled={updating || statusOptions.length === 0}
+          variant="ghost" 
+          size={size} 
+          className="ml-2"
+          onClick={() => setShowHistory(true)}
         >
-          {showStatusBadge ? (
-            <>
-              {buttonLabel || "Change Status"}
-              <ChevronDown className={sizeClasses[size].icon} />
-            </>
-          ) : (
-            <>
-              {currentStatus}
-              <ChevronDown className={sizeClasses[size].icon} />
-            </>
-          )}
+          History
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuRadioGroup value={currentStatus} onValueChange={handleStatusChange}>
-          {statusOptions.map((option) => (
-            <DropdownMenuRadioItem 
-              key={option.value} 
-              value={option.value}
-              className="cursor-pointer"
-            >
-              {option.icon || (
-                <Check 
-                  className={`${sizeClasses[size].checkIcon} opacity-0 group-data-[state=checked]:opacity-100`} 
-                />
-              )}
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      )}
+      
+      <StatusHistoryDialog
+        open={showHistory}
+        onOpenChange={setShowHistory}
+        entityId={entityId}
+        entityType={entityType}
+        tableName={tableName}
+        idField={idField}
+        currentStatus={currentStatus}
+        statusOptions={statusOptions}
+      />
+      
+      <StatusTransitionPrompt
+        open={showTransitionPrompt}
+        onOpenChange={setShowTransitionPrompt}
+        onConfirm={confirmStatusChange}
+        onCancel={cancelStatusChange}
+        notes={transitionNotes}
+        onNotesChange={handleNotesChange}
+        statusOptions={statusOptions}
+        pendingStatus={pendingStatus || ''}
+      />
+    </div>
   );
 };
 

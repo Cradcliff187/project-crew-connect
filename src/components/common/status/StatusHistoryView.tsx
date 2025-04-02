@@ -1,275 +1,99 @@
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Check, AlertCircle, Pause, X, Play, Clock, ArrowUpRight } from 'lucide-react';
+import React from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { CheckCircle2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { StatusOption } from './UniversalStatusControl';
-import { useStatusOptions } from '@/hooks/useStatusOptions';
-import { EntityType } from '@/hooks/useStatusHistory';
 
-export interface StatusHistoryEntry {
-  id?: string;
-  logid?: string;
+interface StatusHistoryEntry {
   status: string;
   previous_status?: string;
-  previousstatus?: string;
-  changed_date?: string;
-  timestamp?: string;
+  changed_date: string;
   changed_by?: string;
-  useremail?: string;
   notes?: string;
-  action?: string;
 }
 
 interface StatusHistoryViewProps {
-  entityId: string;
-  entityType: EntityType;
-  historyTable?: string;
-  entityIdField?: string;
-  className?: string;
+  history: StatusHistoryEntry[];
+  statusOptions: StatusOption[];
+  currentStatus: string;
+  showEmpty?: boolean;
 }
 
 const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
-  entityId,
-  entityType,
-  historyTable,
-  entityIdField,
-  className = ''
+  history,
+  statusOptions,
+  currentStatus,
+  showEmpty = true
 }) => {
-  const [history, setHistory] = useState<StatusHistoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { statusOptions } = useStatusOptions(entityType, '');
-  
-  // Map entity types to their respective tables and id fields
-  const getHistoryTableInfo = () => {
-    switch (entityType) {
-      case 'CHANGE_ORDER':
-        return {
-          table: historyTable || 'change_order_status_history',
-          idField: entityIdField || 'change_order_id'
-        };
-      case 'PROJECT':
-        return {
-          table: historyTable || 'project_status_history',
-          idField: entityIdField || 'projectid'
-        };
-      case 'WORK_ORDER':
-        return {
-          table: historyTable || 'work_order_status_history',
-          idField: entityIdField || 'work_order_id'
-        };
-      case 'CONTACT':
-        return {
-          table: historyTable || 'contact_status_history',
-          idField: entityIdField || 'contact_id'
-        };
-      case 'VENDOR':
-        return {
-          table: historyTable || 'vendor_status_history',
-          idField: entityIdField || 'vendorid'
-        };
-      default:
-        return {
-          table: 'activitylog',
-          idField: 'referenceid'
-        };
-    }
-  };
-  
-  useEffect(() => {
-    const fetchStatusHistory = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { table, idField } = getHistoryTableInfo();
-        
-        // First try to fetch from the specific status history table
-        try {
-          // Use type assertion for the table name to satisfy TypeScript
-          const { data, error } = await supabase
-            .from(table as any)
-            .select('*')
-            .eq(idField, entityId)
-            .order('changed_date', { ascending: false });
-            
-          if (error) throw error;
-          
-          if (data && data.length > 0) {
-            // Cast the data to StatusHistoryEntry[]
-            setHistory(data as unknown as StatusHistoryEntry[]);
-            return;
-          }
-        } catch (err) {
-          console.info(`Falling back to activitylog for ${entityType}`);
-          // Fall through to activity log query
-        }
-        
-        // Fall back to activity log
-        const { data: activityData, error: activityError } = await supabase
-          .from('activitylog')
-          .select('*')
-          .eq('referenceid', entityId)
-          .eq('moduletype', entityType)
-          .order('timestamp', { ascending: false });
-          
-        if (activityError) throw activityError;
-        
-        if (activityData && activityData.length > 0) {
-          const activityHistory = activityData.map(activity => ({
-            id: activity.logid,
-            logid: activity.logid,
-            status: activity.status || 'unknown',
-            previous_status: activity.previousstatus,
-            previousstatus: activity.previousstatus,
-            changed_date: activity.timestamp || activity.created_at,
-            timestamp: activity.timestamp,
-            changed_by: activity.useremail,
-            useremail: activity.useremail,
-            notes: activity.action,
-            action: activity.action
-          }));
-          setHistory(activityHistory);
-        } else {
-          setHistory([]);
-        }
-      } catch (error: any) {
-        console.error('Error fetching status history:', error);
-        setError(error.message);
-        setHistory([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if (entityId) {
-      fetchStatusHistory();
-    }
-  }, [entityId, entityType, historyTable, entityIdField]);
-  
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'PPP p');
-    } catch (error) {
-      return 'Invalid date';
-    }
-  };
-  
-  const getStatusIcon = (status: string) => {
-    const statusLower = status.toLowerCase();
-    if (statusLower.includes('active') || statusLower.includes('progress')) {
-      return <Play className="h-4 w-4 text-emerald-500" />;
-    } else if (statusLower.includes('hold') || statusLower.includes('pending')) {
-      return <Pause className="h-4 w-4 text-amber-500" />;
-    } else if (statusLower.includes('complete')) {
-      return <Check className="h-4 w-4 text-green-500" />;
-    } else if (statusLower.includes('cancel') || statusLower.includes('reject')) {
-      return <X className="h-4 w-4 text-red-500" />;
-    } else if (statusLower.includes('new')) {
-      return <ArrowUpRight className="h-4 w-4 text-purple-500" />;
-    } else if (statusLower.includes('wait') || statusLower.includes('review')) {
-      return <Clock className="h-4 w-4 text-blue-500" />;
-    } else {
-      return <AlertCircle className="h-4 w-4 text-gray-500" />;
-    }
-  };
-  
-  const getStatusLabel = (statusCode: string): string => {
-    // Find matching status option from our options
+  if (history.length === 0 && !showEmpty) {
+    return null;
+  }
+
+  const getStatusLabel = (status: string): string => {
     const option = statusOptions.find(opt => 
-      opt.value.toLowerCase() === statusCode.toLowerCase()
+      opt.value.toLowerCase() === status?.toLowerCase()
     );
-    
-    if (option) return option.label;
-    
-    // If no option found, format the status code nicely
-    return statusCode
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+    return option?.label || status;
   };
-  
-  const getStatusColor = (status: string) => {
-    const statusLower = status.toLowerCase();
-    
-    if (statusLower.includes('active') || statusLower.includes('progress')) {
-      return 'text-emerald-800 bg-emerald-50 border-emerald-100';
-    } else if (statusLower.includes('hold') || statusLower.includes('pending')) {
-      return 'text-amber-800 bg-amber-50 border-amber-100';
-    } else if (statusLower.includes('complete')) {
-      return 'text-green-800 bg-green-50 border-green-100';
-    } else if (statusLower.includes('cancel') || statusLower.includes('reject')) {
-      return 'text-red-800 bg-red-50 border-red-100';
-    } else if (statusLower.includes('new')) {
-      return 'text-purple-800 bg-purple-50 border-purple-100';
-    } else if (statusLower.includes('wait') || statusLower.includes('review')) {
-      return 'text-blue-800 bg-blue-50 border-blue-100';
-    } else {
-      return 'text-gray-800 bg-gray-50 border-gray-100';
+
+  // Helper function to get the time period in readable format
+  const getTimePeriod = (dateString: string): string => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (error) {
+      return 'Unknown time';
     }
   };
-  
+
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="text-lg">Status History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-16 w-full" />
-          </div>
-        ) : error ? (
-          <div className="text-red-500 text-sm">{error}</div>
-        ) : history.length === 0 ? (
-          <div className="text-muted-foreground text-sm">No status history available.</div>
-        ) : (
-          <div className="space-y-4">
-            {history.map((entry, index) => (
-              <div 
-                key={entry.id || entry.logid || index}
-                className="border-l-2 border-gray-200 pl-4 py-2"
-              >
-                <div className="flex justify-between items-start">
+    <div className="space-y-4">
+      {history.length === 0 ? (
+        <Card>
+          <CardContent className="p-4 text-center text-muted-foreground">
+            No status history available.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {history.map((entry, index) => (
+            <div key={index} className="flex items-start gap-2 p-3 rounded-md border bg-card">
+              <div className="mt-0.5">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="flex items-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(entry.status)}`}>
-                        {getStatusIcon(entry.status)}
-                        <span className="ml-1">{getStatusLabel(entry.status)}</span>
-                      </span>
-                      
-                      {(entry.previous_status || entry.previousstatus) && (
-                        <span className="text-xs text-muted-foreground ml-2">
-                          from {getStatusLabel(entry.previous_status || entry.previousstatus || '')}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {formatDate(entry.changed_date || entry.timestamp || '')}
-                    </div>
+                    <p className="font-medium">
+                      Status changed to <span className="text-primary">{getStatusLabel(entry.status)}</span>
+                    </p>
+                    {entry.previous_status && (
+                      <p className="text-sm text-muted-foreground">
+                        From {getStatusLabel(entry.previous_status)}
+                      </p>
+                    )}
                   </div>
-                  
-                  {(entry.changed_by || entry.useremail) && (
-                    <div className="text-sm font-medium">{entry.changed_by || entry.useremail}</div>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {getTimePeriod(entry.changed_date)}
+                  </p>
                 </div>
-                
-                {(entry.notes || entry.action) && (
-                  <div className="mt-2 text-sm bg-muted/50 p-2 rounded-md">
-                    {entry.notes || entry.action}
+                {entry.changed_by && (
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">By:</span> {entry.changed_by}
+                  </p>
+                )}
+                {entry.notes && (
+                  <div className="mt-1 text-sm">
+                    <p className="text-muted-foreground font-medium">Notes:</p>
+                    <p className="mt-1 text-foreground">{entry.notes}</p>
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
