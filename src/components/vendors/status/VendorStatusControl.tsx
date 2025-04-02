@@ -14,7 +14,7 @@ interface VendorStatusControlProps {
 const VendorStatusControl: React.FC<VendorStatusControlProps> = ({ 
   vendor, 
   onStatusChange,
-  size = 'md', // Changed from 'default' to 'md' to match allowed values
+  size = 'md',
   showBadge = true
 }) => {
   const { statusOptions } = useStatusOptions('VENDOR', vendor.status);

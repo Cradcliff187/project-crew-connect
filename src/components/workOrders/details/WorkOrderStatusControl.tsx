@@ -1,3 +1,4 @@
+
 import { WorkOrder } from '@/types/workOrder';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
 import UniversalStatusControl from '@/components/common/status/UniversalStatusControl';
@@ -9,6 +10,17 @@ interface WorkOrderStatusControlProps {
 
 const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusControlProps) => {
   const { statusOptions } = useStatusOptions('WORK_ORDER', workOrder.status);
+  
+  const getAdditionalUpdateFields = (newStatus: string) => {
+    const updateFields: Record<string, any> = {};
+    
+    // If the status is COMPLETED, the progress will be set to 100 by the universal component
+    if (newStatus === 'COMPLETED') {
+      updateFields.progress = 100;
+    }
+    
+    return updateFields;
+  };
   
   return (
     <div className="flex items-center relative z-10">
@@ -22,9 +34,7 @@ const WorkOrderStatusControl = ({ workOrder, onStatusChange }: WorkOrderStatusCo
         tableName="maintenance_work_orders"
         idField="work_order_id"
         onStatusChange={onStatusChange}
-        additionalUpdateFields={{
-          // If the status is COMPLETED, the progress will be set to 100 by the universal component
-        }}
+        additionalUpdateFields={getAdditionalUpdateFields}
         size="sm"
         showStatusBadge={true}
       />

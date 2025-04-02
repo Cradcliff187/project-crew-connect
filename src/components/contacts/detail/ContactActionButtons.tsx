@@ -17,14 +17,14 @@ import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 
 interface ContactActionButtonsProps {
   contact: any;
-  onStatusChange?: (newStatus: string) => void;
+  onStatusChange?: () => void;
   onSchedule?: () => void;
 }
 
 const ContactActionButtons = ({ 
   contact, 
-  onStatusChange,
-  onSchedule
+  onStatusChange = () => {},
+  onSchedule = () => {}
 }: ContactActionButtonsProps) => {
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -49,7 +49,7 @@ const ContactActionButtons = ({
           {
             label: 'Schedule',
             icon: <CalendarIcon className="h-4 w-4" />,
-            onClick: () => onSchedule && onSchedule()
+            onClick: onSchedule
           }
         ]
       },
@@ -81,7 +81,6 @@ const ContactActionButtons = ({
         <StatusDropdown 
           contact={contact} 
           onStatusChange={onStatusChange} 
-          statusOptions={statusOptions}
         />
         
         {/* Show main buttons on larger screens */}

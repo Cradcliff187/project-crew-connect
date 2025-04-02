@@ -1,15 +1,18 @@
 
 import React from 'react';
-import { Contact } from '@/pages/Contacts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getStatusColorClass, getStatusDisplayName } from '@/utils/statusTransitions';
 import StatusDropdown from './StatusDropdown';
-import ContactStatusHistory from '../ContactStatusHistory';
+
+interface Contact {
+  contactid: string;
+  status: string;
+}
 
 interface ContactStatusSectionProps {
   contact: Contact;
-  onStatusChange: (contact: Contact, newStatus: string) => void;
+  onStatusChange: () => void;
 }
 
 const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({
@@ -54,10 +57,6 @@ const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({
           </div>
         </CardContent>
       </Card>
-      
-      <ContactStatusHistory 
-        contact={contact}
-      />
     </div>
   );
 };

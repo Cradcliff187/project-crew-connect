@@ -13,7 +13,7 @@ interface StatusHistoryEntry {
   notes?: string;
 }
 
-interface StatusHistoryViewProps {
+export interface StatusHistoryViewProps {
   history: StatusHistoryEntry[];
   statusOptions: StatusOption[];
   currentStatus: string;
@@ -32,7 +32,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
 
   const getStatusLabel = (status: string): string => {
     const option = statusOptions.find(opt => 
-      opt.value.toLowerCase() === status?.toLowerCase()
+      opt.value?.toLowerCase() === status?.toLowerCase()
     );
     return option?.label || status;
   };

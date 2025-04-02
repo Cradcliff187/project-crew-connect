@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import StatusBadge from './StatusBadge';
 import StatusHistoryDialog from './StatusHistoryDialog';
 import StatusTransitionPrompt from './StatusTransitionPrompt';
 import { toast } from '@/hooks/use-toast';
@@ -30,7 +31,7 @@ export interface StatusControlProps {
   size?: 'sm' | 'md' | 'lg';
   showStatusBadge?: boolean;
   additionalUpdateFields?: (newStatus: string) => Record<string, any>;
-  className?: string; // Added className prop to fix TypeScript error
+  className?: string;
   notes?: string;
 }
 
@@ -93,14 +94,17 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
       
       if (recordHistory) {
         const { error: historyError } = await supabase
-          .from('status_history')
+          .from('activitylog')
           .insert({
-            entity_id: entityId,
-            entity_type: entityType,
-            table_name: tableName,
-            previous_status: currentStatus,
+            action: 'Status Change',
+            moduletype: entityType,
+            referenceid: entityId,
             status: pendingStatus,
-            notes: transitionNotes
+            previousstatus: currentStatus,
+            timestamp: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            detailsjson: transitionNotes ? JSON.stringify({ notes: transitionNotes }) : null
           });
         
         if (historyError) {
@@ -163,7 +167,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            size={size}
+            size={size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : 'default'}
             role="combobox"
             aria-expanded={open}
             className="w-[150px] justify-between ml-2"
@@ -206,7 +210,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
       {recordHistory && (
         <Button 
           variant="ghost" 
-          size={size} 
+          size={size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : 'default'}
           className="ml-2"
           onClick={() => setShowHistory(true)}
         >

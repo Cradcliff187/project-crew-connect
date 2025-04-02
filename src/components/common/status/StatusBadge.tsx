@@ -1,34 +1,53 @@
 
 import React from 'react';
-import { getStatusColorClass, getStatusDisplayName } from '@/utils/statusTransitions';
-import { EntityType } from '@/hooks/useStatusHistory';
+import { Badge } from '@/components/ui/badge';
 
 interface StatusBadgeProps {
-  status: string;
-  entityType: EntityType;
-  size?: 'sm' | 'md' | 'lg';
+  status?: string;
+  label: string;
+  color?: string;
+  size?: 'sm' | 'default';
+  className?: string;
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ 
   status,
-  entityType,
-  size = 'md'
+  label, 
+  color = 'neutral', 
+  size = 'default',
+  className = '' 
 }) => {
-  const colorClass = getStatusColorClass(entityType, status);
-  const displayName = getStatusDisplayName(entityType, status);
-  
-  const sizeClasses = {
-    sm: 'py-0.5 px-2 text-xs',
-    md: 'py-1 px-2.5 text-sm',
-    lg: 'py-1.5 px-3 text-base'
+  const getColorClasses = () => {
+    switch (color) {
+      case 'green':
+      case 'success':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'blue':
+      case 'info':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'amber':
+      case 'warning':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'red':
+      case 'error':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'purple':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'neutral':
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
   };
-  
+
+  const sizeClasses = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2.5 py-0.5 text-xs';
+
   return (
-    <span 
-      className={`inline-flex items-center rounded-full border ${colorClass} ${sizeClasses[size]} font-medium`}
+    <Badge
+      variant="outline"
+      className={`${getColorClasses()} font-medium border ${sizeClasses} ${className}`}
     >
-      {displayName}
-    </span>
+      {label}
+    </Badge>
   );
 };
 

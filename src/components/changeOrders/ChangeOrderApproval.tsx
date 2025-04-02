@@ -1,13 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ChangeOrder, ChangeOrderStatus } from '@/types/changeOrders';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import UniversalStatusControl, { StatusOption } from '@/components/common/status/UniversalStatusControl';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
 import StatusHistoryView from '@/components/common/status/StatusHistoryView';
@@ -32,18 +32,31 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
   }, [changeOrderId]);
 
   const fetchHistory = async () => {
+    if (!changeOrderId) return;
+    
     try {
       const { data, error } = await supabase
-        .from('status_history')
+        .from('activitylog')
         .select('*')
-        .eq('entity_id', changeOrderId)
-        .eq('entity_type', 'CHANGE_ORDER')
-        .order('changed_date', { ascending: false });
+        .eq('referenceid', changeOrderId)
+        .eq('moduletype', 'CHANGE_ORDER')
+        .order('timestamp', { ascending: false });
       
       if (error) throw error;
-      setHistory(data || []);
+      
+      // Transform the data to match our expected format
+      const formattedHistory = data?.map(item => ({
+        status: item.status,
+        previous_status: item.previousstatus,
+        changed_date: item.timestamp,
+        changed_by: item.useremail,
+        notes: item.detailsjson
+      })) || [];
+      
+      setHistory(formattedHistory);
     } catch (error: any) {
       console.error('Error fetching status history:', error);
+      setHistory([]);
     }
   };
 
@@ -52,11 +65,13 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
   };
 
   const handleSaveNotes = async () => {
+    if (!changeOrderId) return;
+    
     setIsSavingNotes(true);
     try {
       const { error } = await supabase
         .from('change_orders')
-        .update({ notes: notes })
+        .update({ approval_notes: notes })
         .eq('id', changeOrderId);
       
       if (error) throw error;
@@ -122,20 +137,21 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
         </CardContent>
       </Card>
       
-      <UniversalStatusControl
-        entityId={changeOrderId || ''}
-        entityType="CHANGE_ORDER"
-        currentStatus={currentStatus}
-        statusOptions={statusOptions}
-        tableName="change_orders"
-        idField="id"
-        onStatusChange={handleStatusChange}
-        recordHistory={true}
-        size="md"
-        showStatusBadge={true}
-        notes={notes}
-        className=""
-      />
+      <div className="flex justify-end mt-4">
+        <UniversalStatusControl
+          entityId={changeOrderId || ''}
+          entityType="CHANGE_ORDER"
+          currentStatus={currentStatus}
+          statusOptions={statusOptions}
+          tableName="change_orders"
+          idField="id"
+          onStatusChange={handleStatusChange}
+          recordHistory={true}
+          size="md"
+          showStatusBadge={true}
+          className=""
+        />
+      </div>
     </div>
   );
 };
