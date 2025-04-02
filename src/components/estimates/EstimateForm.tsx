@@ -74,7 +74,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0" aria-describedby="estimate-form-description">
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0" aria-describedby="estimate-form-description">
         {/* Add hidden DialogTitle and DialogDescription for accessibility */}
         <DialogTitle className="sr-only">Create New Estimate</DialogTitle>
         <DialogDescription id="estimate-form-description" className="sr-only">
@@ -86,41 +86,43 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
           onBackToEdit={handleBackToEdit}
         />
 
-        <Form {...form}>
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (step === 'preview') {
-                form.handleSubmit(onSubmit)(e);
-              }
-            }} 
-            className="space-y-6 px-6 pb-6"
-          >
-            {step === 'edit' ? (
-              <EditFormContent 
-                customers={customers}
-                selectedCustomerAddress={selectedCustomerAddress}
-                selectedCustomerName={selectedCustomerName}
-                customerTab={customerTab}
-                onNewCustomer={handleNewCustomer}
-                onExistingCustomer={handleExistingCustomer}
-                onPreview={handlePreview}
-                onCancel={onClose}
-              />
-            ) : (
-              <>
-                <EstimatePreview 
-                  formData={form.getValues()} 
-                  selectedCustomerName={selectedCustomerName}
+        <div className="overflow-y-auto px-6 pb-6">
+          <Form {...form}>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (step === 'preview') {
+                  form.handleSubmit(onSubmit)(e);
+                }
+              }} 
+              className="space-y-6"
+            >
+              {step === 'edit' ? (
+                <EditFormContent 
+                  customers={customers}
                   selectedCustomerAddress={selectedCustomerAddress}
+                  selectedCustomerName={selectedCustomerName}
+                  customerTab={customerTab}
+                  onNewCustomer={handleNewCustomer}
+                  onExistingCustomer={handleExistingCustomer}
+                  onPreview={handlePreview}
+                  onCancel={onClose}
                 />
-                <EstimateFormButtons onCancel={onClose} isSubmitting={isSubmitting} />
-              </>
-            )}
-          </form>
-        </Form>
+              ) : (
+                <>
+                  <EstimatePreview 
+                    formData={form.getValues()} 
+                    selectedCustomerName={selectedCustomerName}
+                    selectedCustomerAddress={selectedCustomerAddress}
+                  />
+                  <EstimateFormButtons onCancel={onClose} isSubmitting={isSubmitting} />
+                </>
+              )}
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );

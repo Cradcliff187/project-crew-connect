@@ -102,7 +102,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
       onOpenChange={(open) => !open && onClose()}
     >
       <DialogContent 
-        className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden" 
+        className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0" 
         aria-describedby="estimate-form-description"
       >
         {/* Add hidden DialogTitle and DialogDescription for accessibility */}
@@ -135,7 +135,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto px-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             <Form {...form}>
               <form 
                 onSubmit={(e) => {
