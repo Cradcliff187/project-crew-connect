@@ -98,10 +98,11 @@ const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({
         )}
       </CardContent>
       
+      {/* Pass contact instead of currentType to the dialog */}
       <TypeTransitionDialog
         open={typeDialogOpen}
         onOpenChange={setTypeDialogOpen}
-        currentType={contact.type}
+        contact={contact}
         onTypeChange={handleTypeChange}
       />
     </Card>

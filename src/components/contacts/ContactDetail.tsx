@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -88,7 +89,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     }
   };
 
-  // Handler for generic status changes and refreshes
+  // Handler for generic data refreshes
   const handleDataRefresh = () => {
     console.log("Refreshing contact data after status or data changes");
     // Refresh data

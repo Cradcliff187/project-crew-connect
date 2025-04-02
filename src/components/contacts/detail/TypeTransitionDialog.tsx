@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Check, AlertCircle } from 'lucide-react';
 import {
@@ -35,9 +34,11 @@ import { transitionContactType } from './util/contactTransitions';
 import { toast } from '@/hooks/use-toast';
 
 interface TypeTransitionDialogProps {
-  contact: Contact;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  contact?: Contact;
+  currentType?: string;
+  onTypeChange: (newType: string) => Promise<void> | void;
   onSuccess?: () => void;
 }
 
@@ -76,12 +77,16 @@ const getTypeDescription = (type: string) => {
 };
 
 const TypeTransitionDialog = ({ 
-  contact, 
   open, 
   onOpenChange,
+  contact,
+  currentType,
+  onTypeChange,
   onSuccess
 }: TypeTransitionDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const contactType = contact?.type || currentType;
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -94,7 +99,7 @@ const TypeTransitionDialog = ({
   const selectedType = form.watch('newType');
   
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (values.newType === contact.type) {
+    if (values.newType === contactType) {
       toast({
         title: "No Change",
         description: "The selected type is the same as the current type.",
@@ -106,9 +111,26 @@ const TypeTransitionDialog = ({
     setIsSubmitting(true);
     
     try {
-      const success = await transitionContactType(contact, values.newType);
-      
-      if (success) {
+      if (contact) {
+        const success = await transitionContactType(contact, values.newType);
+        
+        if (success) {
+          toast({
+            title: "Type Changed",
+            description: `Contact has been updated to ${values.newType}.`,
+            variant: "default"
+          });
+          
+          onOpenChange(false);
+          form.reset();
+          
+          if (onSuccess) {
+            onSuccess();
+          }
+        }
+      } else {
+        await onTypeChange(values.newType);
+        
         toast({
           title: "Type Changed",
           description: `Contact has been updated to ${values.newType}.`,
@@ -140,7 +162,7 @@ const TypeTransitionDialog = ({
         <DialogHeader>
           <DialogTitle>Change Contact Type</DialogTitle>
           <DialogDescription>
-            Change the type of contact from <strong>{contact.type}</strong> to a new type. This may affect how the contact is managed in the system.
+            Change the type of contact from <strong>{contactType}</strong> to a new type. This may affect how the contact is managed in the system.
           </DialogDescription>
         </DialogHeader>
         
