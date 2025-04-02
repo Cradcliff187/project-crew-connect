@@ -2,9 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
-import { StatusOption } from './UniversalStatusControl';
 import StatusHistoryView from './StatusHistoryView';
+import { StatusOption } from './UniversalStatusControl';
 
 interface StatusHistoryDialogProps {
   open: boolean;
@@ -31,17 +30,15 @@ const StatusHistoryDialog: React.FC<StatusHistoryDialogProps> = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (open && entityId) {
       fetchHistory();
     }
   }, [open, entityId]);
 
   const fetchHistory = async () => {
-    if (!entityId) return;
-    
     setLoading(true);
     try {
-      // First try to get from status_history
+      // Fetch from activitylog which is guaranteed to exist
       const { data, error } = await supabase
         .from('activitylog')
         .select('*')
@@ -49,23 +46,20 @@ const StatusHistoryDialog: React.FC<StatusHistoryDialogProps> = ({
         .eq('moduletype', entityType)
         .order('timestamp', { ascending: false });
       
-      if (error) {
-        console.error('Error fetching status history:', error);
-        setHistory([]);
-      } else {
-        // Transform the data to match our expected format
-        const formattedHistory = data?.map(item => ({
-          status: item.status,
-          previous_status: item.previousstatus,
-          changed_date: item.timestamp,
-          changed_by: item.useremail,
-          notes: item.detailsjson || item.action
-        })) || [];
-        
-        setHistory(formattedHistory);
-      }
-    } catch (error) {
-      console.error('Error in history fetch:', error);
+      if (error) throw error;
+      
+      // Transform the data to match our expected format
+      const formattedHistory = data?.map(item => ({
+        status: item.status,
+        previous_status: item.previousstatus,
+        changed_date: item.timestamp,
+        changed_by: item.useremail,
+        notes: item.detailsjson ? JSON.parse(item.detailsjson)?.notes : item.action
+      })) || [];
+      
+      setHistory(formattedHistory);
+    } catch (error: any) {
+      console.error('Error fetching status history:', error);
       setHistory([]);
     } finally {
       setLoading(false);
@@ -74,22 +68,22 @@ const StatusHistoryDialog: React.FC<StatusHistoryDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Status History</DialogTitle>
         </DialogHeader>
         
-        {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <StatusHistoryView 
-            history={history} 
-            statusOptions={statusOptions}
-            currentStatus={currentStatus}
-          />
-        )}
+        <div className="py-4">
+          {loading ? (
+            <div className="text-center py-4">Loading history...</div>
+          ) : (
+            <StatusHistoryView 
+              history={history}
+              statusOptions={statusOptions}
+              currentStatus={currentStatus}
+            />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

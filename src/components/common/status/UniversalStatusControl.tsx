@@ -83,8 +83,9 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
         updateFields.progress = 100;
       }
       
+      // Use a type assertion to handle dynamic table names
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .update(updateFields)
         .eq(idField, entityId);
       
@@ -93,6 +94,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
       }
       
       if (recordHistory) {
+        // Use activitylog table for history which is guaranteed to exist
         const { error: historyError } = await supabase
           .from('activitylog')
           .insert({

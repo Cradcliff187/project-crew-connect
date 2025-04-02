@@ -5,7 +5,7 @@ import { CheckIcon, ChevronDown } from 'lucide-react';
 import UniversalStatusControl, { StatusOption } from '@/components/common/status/UniversalStatusControl';
 
 interface Contact {
-  contactid: string;
+  id: string;
   status: string;
 }
 
@@ -22,22 +22,21 @@ const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
 }) => {
   const statusOptions: StatusOption[] = useMemo(() => 
     providedStatusOptions || [
-      { value: 'active', label: 'Active', color: 'green' },
-      { value: 'inactive', label: 'Inactive', color: 'neutral' },
-      { value: 'pending', label: 'Pending', color: 'amber' },
-      { value: 'archived', label: 'Archived', color: 'neutral' },
+      { value: 'ACTIVE', label: 'Active', color: 'green' },
+      { value: 'INACTIVE', label: 'Inactive', color: 'neutral' },
+      { value: 'PROSPECT', label: 'Prospect', color: 'blue' },
     ]
   , [providedStatusOptions]);
 
   return (
     <div className="flex items-center relative z-10">
       <UniversalStatusControl
-        entityId={contact.contactid}
+        entityId={contact.id}
         entityType="CONTACT"
-        currentStatus={contact.status}
+        currentStatus={contact.status || 'PROSPECT'}
         statusOptions={statusOptions}
         tableName="contacts"
-        idField="contactid"
+        idField="id"
         onStatusChange={onStatusChange}
         size="sm"
         showStatusBadge={true}

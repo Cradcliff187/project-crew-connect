@@ -6,7 +6,7 @@ import ContactStatusSection from './ContactStatusSection';
 
 interface ContactDetailInformationProps {
   contact: Contact;
-  onStatusChange: (contact: Contact, newStatus: string) => void;
+  onStatusChange: () => void;
 }
 
 const ContactDetailInformation: React.FC<ContactDetailInformationProps> = ({

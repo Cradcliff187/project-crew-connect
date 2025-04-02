@@ -1,9 +1,16 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { StatusOption } from './UniversalStatusControl';
 
 interface StatusTransitionPromptProps {
@@ -11,10 +18,10 @@ interface StatusTransitionPromptProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   onCancel: () => void;
-  statusOptions: StatusOption[];
-  pendingStatus: string;
   notes: string;
   onNotesChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  statusOptions: StatusOption[];
+  pendingStatus: string;
 }
 
 const StatusTransitionPrompt: React.FC<StatusTransitionPromptProps> = ({
@@ -22,65 +29,42 @@ const StatusTransitionPrompt: React.FC<StatusTransitionPromptProps> = ({
   onOpenChange,
   onConfirm,
   onCancel,
-  statusOptions,
-  pendingStatus,
   notes,
-  onNotesChange
+  onNotesChange,
+  statusOptions,
+  pendingStatus
 }) => {
   const getStatusLabel = (status: string): string => {
     const option = statusOptions.find(opt => opt.value === status);
     return option?.label || status;
   };
 
-  const handleConfirm = () => {
-    onConfirm();
-    onOpenChange(false);
-  };
-
-  const handleCancel = () => {
-    onCancel();
-    onOpenChange(false);
-  };
-  
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      if (!open) {
-        onCancel();
-      }
-      onOpenChange(open);
-    }}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Confirm Status Change</DialogTitle>
+          <DialogDescription>
+            You are about to change the status to <strong>{getStatusLabel(pendingStatus)}</strong>. 
+            Would you like to add any notes?
+          </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">
-          <p className="mb-4">
-            Are you sure you want to change the status to <strong>{getStatusLabel(pendingStatus)}</strong>?
-          </p>
-          
-          <div className="space-y-2">
-            <Label htmlFor="transition-notes">Add notes (optional)</Label>
-            <Textarea
-              id="transition-notes"
-              placeholder="Add any notes about this status change..."
-              value={notes}
-              onChange={onNotesChange}
-              rows={3}
-            />
-          </div>
+          <Label htmlFor="transition-notes">Notes (optional)</Label>
+          <Textarea
+            id="transition-notes"
+            value={notes}
+            onChange={onNotesChange}
+            placeholder="Add any relevant information about this status change..."
+            className="mt-2"
+            rows={4}
+          />
         </div>
         
         <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={handleCancel}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleConfirm}
-          >
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button onClick={onConfirm} className="bg-[#0485ea] hover:bg-[#0375d1]">
             Confirm Change
           </Button>
         </DialogFooter>

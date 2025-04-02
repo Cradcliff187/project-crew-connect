@@ -4,11 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getStatusColorClass, getStatusDisplayName } from '@/utils/statusTransitions';
 import StatusDropdown from './StatusDropdown';
-
-interface Contact {
-  contactid: string;
-  status: string;
-}
+import { Contact } from '@/pages/Contacts';
 
 interface ContactStatusSectionProps {
   contact: Contact;
