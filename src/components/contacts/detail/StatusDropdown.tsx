@@ -3,11 +3,7 @@ import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, ChevronDown } from 'lucide-react';
 import UniversalStatusControl, { StatusOption } from '@/components/common/status/UniversalStatusControl';
-
-interface Contact {
-  id: string;
-  status: string;
-}
+import { Contact } from '@/pages/Contacts';
 
 interface ContactsStatusDropdownProps {
   contact: Contact;

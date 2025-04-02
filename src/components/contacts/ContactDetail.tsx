@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -96,9 +95,8 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
 
   // This wrapper function adapts the handleStatusChange to match the expected signature
   const handleStatusChangeWrapper = () => {
-    // This is just a wrapper to match the function signature expected by components
-    // The actual status change is handled by components passing the new status
-    console.log("Status change called via wrapper");
+    console.log("Status change wrapper called");
+    // The actual status change is handled by components that will pass the new status
   };
   
   return (
