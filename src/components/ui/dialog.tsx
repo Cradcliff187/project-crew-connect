@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
@@ -30,11 +29,8 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
-    // Add default aria props to improve accessibility
-    "aria-describedby"?: string;
-  }
->(({ className, children, "aria-describedby": ariaDescribedby, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => {
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -52,7 +48,6 @@ const DialogContent = React.forwardRef<
         // Add proper accessibility attributes if not specified
         aria-modal="true"
         role="dialog"
-        aria-describedby={ariaDescribedby || "dialog-description"}
         {...props}
       >
         {children}
@@ -123,7 +118,6 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    id="dialog-description"
     className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />

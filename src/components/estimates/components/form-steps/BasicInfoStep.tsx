@@ -1,3 +1,4 @@
+
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
@@ -7,8 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
-import AddressAutocomplete from '@/components/common/AddressAutocomplete';
 
 interface BasicInfoStepProps {
   customerTab: 'existing' | 'new';
@@ -29,64 +28,6 @@ const BasicInfoStep = ({
 }: BasicInfoStepProps) => {
   const form = useFormContext<EstimateFormValues>();
   const showSiteLocation = form.watch('showSiteLocation');
-  
-  // Ensure California is set as the default state
-  useEffect(() => {
-    const currentNewCustomerState = form.getValues('newCustomer.state');
-    const currentLocationState = form.getValues('location.state');
-    
-    if (!currentNewCustomerState) {
-      form.setValue('newCustomer.state', 'California');
-    }
-    
-    if (showSiteLocation && !currentLocationState) {
-      form.setValue('location.state', 'California');
-    }
-  }, [form, showSiteLocation]);
-  
-  const handleCustomerAddressSelect = (addressData: {
-    fullAddress: string;
-    street?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
-  }) => {
-    if (addressData.street) {
-      form.setValue('newCustomer.address', addressData.street);
-    }
-    
-    if (addressData.city) {
-      form.setValue('newCustomer.city', addressData.city);
-    }
-    
-    // Keep California as the fixed state
-    
-    if (addressData.zip) {
-      form.setValue('newCustomer.zip', addressData.zip);
-    }
-  };
-  
-  const handleSiteAddressSelect = (addressData: {
-    fullAddress: string;
-    street?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
-  }) => {
-    if (addressData.street) {
-      form.setValue('location.address', addressData.street);
-    }
-    
-    if (addressData.city) {
-      form.setValue('location.city', addressData.city);
-    }
-    
-    // Keep California as the fixed state
-    
-    if (addressData.zip) {
-      form.setValue('location.zip', addressData.zip);
-    }
-  };
   
   return (
     <div className="space-y-6">
@@ -210,11 +151,7 @@ const BasicInfoStep = ({
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <AddressAutocomplete 
-                        placeholder="Enter address" 
-                        {...field} 
-                        onAddressSelect={handleCustomerAddressSelect}
-                      />
+                      <Input placeholder="Enter address" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -243,14 +180,7 @@ const BasicInfoStep = ({
                     <FormItem>
                       <FormLabel>State</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="State" 
-                          {...field} 
-                          defaultValue="California"
-                          value={field.value || "California"}
-                          readOnly
-                          className="bg-gray-50"
-                        />
+                        <Input placeholder="State" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -323,11 +253,7 @@ const BasicInfoStep = ({
                 <FormItem>
                   <FormLabel>Site Address</FormLabel>
                   <FormControl>
-                    <AddressAutocomplete 
-                      placeholder="Enter job site address" 
-                      {...field} 
-                      onAddressSelect={handleSiteAddressSelect}
-                    />
+                    <Input placeholder="Enter job site address" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -356,14 +282,7 @@ const BasicInfoStep = ({
                   <FormItem>
                     <FormLabel>State</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="State" 
-                        {...field}
-                        defaultValue="California"
-                        value={field.value || "California"}
-                        readOnly
-                        className="bg-gray-50"
-                      />
+                      <Input placeholder="State" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

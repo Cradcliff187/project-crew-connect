@@ -1,9 +1,9 @@
+
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
-import AddressAutocomplete from '@/components/common/AddressAutocomplete';
 
 interface LocationFieldsProps {
   selectedCustomerAddress?: string | null;
@@ -11,41 +11,6 @@ interface LocationFieldsProps {
 
 const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress }) => {
   const form = useFormContext<EstimateFormValues>();
-  
-  // Ensure California is set as the default state
-  React.useEffect(() => {
-    const currentState = form.getValues('location.state');
-    if (!currentState) {
-      form.setValue('location.state', 'California');
-    }
-  }, [form]);
-  
-  const handleAddressSelect = (addressData: {
-    fullAddress: string;
-    street?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
-  }) => {
-    // Update form values with the selected address data
-    if (addressData.street) {
-      form.setValue('location.address', addressData.street);
-    }
-    
-    if (addressData.city) {
-      form.setValue('location.city', addressData.city);
-    }
-    
-    // Only set state if it's available and we're allowing state changes
-    if (addressData.state) {
-      // We'll keep California as the fixed state, but log what was selected
-      console.log(`Google provided state: ${addressData.state}`);
-    }
-    
-    if (addressData.zip) {
-      form.setValue('location.zip', addressData.zip);
-    }
-  };
   
   return (
     <div className="space-y-4">
@@ -70,11 +35,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
             <FormItem>
               <FormLabel>Street Address</FormLabel>
               <FormControl>
-                <AddressAutocomplete 
-                  placeholder="Enter street address" 
-                  {...field} 
-                  onAddressSelect={handleAddressSelect}
-                />
+                <Input placeholder="Street address" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -104,14 +65,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
             <FormItem>
               <FormLabel>State</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="State" 
-                  {...field} 
-                  defaultValue="California"
-                  value={field.value || "California"}
-                  readOnly
-                  className="bg-gray-50"
-                />
+                <Input placeholder="State" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

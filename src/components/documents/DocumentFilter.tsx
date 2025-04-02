@@ -57,8 +57,7 @@ const DocumentFilter: React.FC<DocumentFilterProps> = ({
     onChange({ ...value, sortBy: sortBy as 'newest' | 'oldest' | 'name' | 'size' });
   };
 
-  const handleClearDateRange = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClearDateRange = () => {
     onChange({ ...value, dateRange: undefined });
   };
 
@@ -127,13 +126,13 @@ const DocumentFilter: React.FC<DocumentFilterProps> = ({
                 <span>Date Range</span>
               )}
               {value.dateRange && (
-                <button 
-                  onClick={handleClearDateRange}
-                  className="ml-auto"
-                  aria-label="Clear date range"
-                >
-                  <X className="h-4 w-4 opacity-50 hover:opacity-100" />
-                </button>
+                <X 
+                  className="ml-auto h-4 w-4 opacity-50 hover:opacity-100" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClearDateRange();
+                  }}
+                />
               )}
             </Button>
           </PopoverTrigger>
