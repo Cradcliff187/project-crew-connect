@@ -32,12 +32,12 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     if (!document?.url) return;
     
     // Create a temporary anchor element to trigger download
-    const a = document.createElement('a');
+    const a = window.document.createElement('a');
     a.href = document.url;
     a.download = document.file_name;
-    document.body.appendChild(a);
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
   };
 
   return (
@@ -86,15 +86,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
         
         <DialogFooter className="p-4 border-t">
           <Button
-            onClick={() => {
-              // Use the global document object instead of the document parameter
-              const a = window.document.createElement('a');
-              a.href = document.url;
-              a.download = document.file_name;
-              window.document.body.appendChild(a);
-              a.click();
-              window.document.body.removeChild(a);
-            }}
+            onClick={handleDownload}
             className="bg-[#0485ea] hover:bg-[#0375d1]"
           >
             <Download className="h-4 w-4 mr-2" />
