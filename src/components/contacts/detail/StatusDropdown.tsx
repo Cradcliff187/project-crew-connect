@@ -24,6 +24,13 @@ const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
     ]
   , [providedStatusOptions]);
 
+  // This is called after the status update is successful in UniversalStatusControl
+  const handleStatusChange = () => {
+    console.log('Status change callback triggered');
+    // Call the parent's onStatusChange callback
+    onStatusChange();
+  };
+
   return (
     <div className="flex items-center relative z-10">
       <UniversalStatusControl
@@ -33,7 +40,7 @@ const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
         statusOptions={statusOptions}
         tableName="contacts"
         idField="id"
-        onStatusChange={onStatusChange}
+        onStatusChange={handleStatusChange}
         size="sm"
         showStatusBadge={true}
       />
