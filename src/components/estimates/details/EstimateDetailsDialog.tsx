@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import PDFExportButton from '../detail/PDFExportButton';
 import DocumentShareDialog from '../detail/dialogs/DocumentShareDialog';
 import { Document } from '@/components/documents/schemas/documentSchema';
+import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
 
 const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({ 
   estimate, 
@@ -95,6 +96,29 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     setShareDialogOpen(true);
   };
 
+  // Map the items to the expected format for EstimateItemsTab
+  const mappedItems: EstimateItem[] = items.map(item => ({
+    ...item,
+    total_price: item.total,
+    // Include any other required properties from EstimateItem type
+  }));
+
+  // Map the revisions to the expected format for EstimateRevisionsTab
+  const mappedRevisions: EstimateRevision[] = revisions.map(rev => ({
+    ...rev,
+    estimate_id: estimate.id,
+    revision_date: rev.date,
+    // Include any other required properties from EstimateRevision type
+  }));
+
+  // Prepare estimate for EstimateDetailsTab
+  const detailsEstimate = {
+    ...estimate,
+    project: estimate.project || '',
+    amount: estimate.total || 0,
+    versions: revisions.length,
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
@@ -130,16 +154,16 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
           
             <div ref={contentRef} className="flex-1 overflow-auto p-6 mt-4">
               <TabsContent value="details" className="m-0">
-                <EstimateDetailsTab estimate={estimate} />
+                <EstimateDetailsTab estimate={detailsEstimate} />
               </TabsContent>
               
               <TabsContent value="items" className="m-0">
-                <EstimateItemsTab items={items} />
+                <EstimateItemsTab items={mappedItems} />
               </TabsContent>
               
               <TabsContent value="revisions" className="m-0">
                 <EstimateRevisionsTab 
-                  revisions={revisions} 
+                  revisions={mappedRevisions} 
                   formatDate={formatDate} 
                   estimateId={estimate.id}
                 />
