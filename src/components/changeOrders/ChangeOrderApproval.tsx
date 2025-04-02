@@ -145,12 +145,12 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
                 tableName="change_orders"
                 idField="id"
                 onStatusChange={handleStatusChanged}
-                additionalUpdateFields={getAdditionalFieldsForStatus(form.getValues().status)}
-                className="w-full"
+                additionalUpdateFields={getAdditionalFieldsForStatus}
                 showStatusBadge={false}
                 buttonLabel="Update Status"
                 userIdentifier={form.getValues().approved_by}
                 notes={form.getValues().approval_notes}
+                className="w-full"
               />
             )}
           </CardFooter>

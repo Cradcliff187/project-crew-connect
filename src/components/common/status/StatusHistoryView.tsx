@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -40,7 +41,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
   const [history, setHistory] = useState<StatusHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { allStatusOptions } = useStatusOptions(entityType);
+  const { statusOptions } = useStatusOptions(entityType, '');
   
   // Map entity types to their respective tables and id fields
   const getHistoryTableInfo = () => {
@@ -177,7 +178,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
   
   const getStatusLabel = (statusCode: string): string => {
     // Find matching status option from our options
-    const option = allStatusOptions.find(opt => 
+    const option = statusOptions.find(opt => 
       opt.value.toLowerCase() === statusCode.toLowerCase()
     );
     

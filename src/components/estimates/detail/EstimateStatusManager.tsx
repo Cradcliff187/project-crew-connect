@@ -11,7 +11,7 @@ interface EstimateStatusManagerProps {
   currentStatus: string;
   onStatusChange: () => void;
   showDevMode?: boolean;
-  size?: 'sm' | 'default';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
@@ -20,7 +20,7 @@ const EstimateStatusManager: React.FC<EstimateStatusManagerProps> = ({
   currentStatus,
   onStatusChange,
   showDevMode = false,
-  size = 'default',
+  size = 'md',
   className = ''
 }) => {
   const { toast } = useToast();

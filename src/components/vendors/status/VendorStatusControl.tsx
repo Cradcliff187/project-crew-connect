@@ -7,14 +7,14 @@ import UniversalStatusControl from '@/components/common/status/UniversalStatusCo
 interface VendorStatusControlProps {
   vendor: Vendor;
   onStatusChange: () => void;
-  size?: 'sm' | 'default';
+  size?: 'sm' | 'md' | 'lg';
   showBadge?: boolean;
 }
 
 const VendorStatusControl: React.FC<VendorStatusControlProps> = ({ 
   vendor, 
   onStatusChange,
-  size = 'default',
+  size = 'md',
   showBadge = true
 }) => {
   const { statusOptions } = useStatusOptions('VENDOR', vendor.status);

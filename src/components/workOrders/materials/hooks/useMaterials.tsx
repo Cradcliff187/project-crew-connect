@@ -1,7 +1,9 @@
 
+import { useState, useEffect } from 'react';
 import { useMaterialsFetch } from './useMaterialsFetch';
 import { useMaterialOperations } from './useMaterialOperations';
 import { useReceiptOperations } from './useReceiptOperations';
+import { useVendors } from './useVendors';
 
 export function useMaterials(workOrderId: string) {
   // Fetch materials data
@@ -24,6 +26,9 @@ export function useMaterials(workOrderId: string) {
     handleReceiptUploaded 
   } = useReceiptOperations(fetchMaterials);
   
+  // Fetch vendors
+  const { vendors } = useVendors();
+  
   // Calculate total materials cost
   const totalMaterialsCost = materials.reduce((sum, material) => sum + material.total_price, 0);
   
@@ -32,6 +37,7 @@ export function useMaterials(workOrderId: string) {
     loading,
     submitting,
     error,
+    vendors,
     totalMaterialsCost,
     handleAddMaterial,
     handleDelete,

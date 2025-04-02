@@ -33,11 +33,10 @@ const MaterialsInterface: React.FC<MaterialsInterfaceProps> = ({
   // Handle material added
   const handleMaterialPrompt = async (materialData: any) => {
     await handleAddMaterial({
-      expenseName: materialData.materialName,
+      materialName: materialData.materialName,
       quantity: materialData.quantity,
       unitPrice: materialData.unitPrice,
-      vendorId: materialData.vendorId,
-      expenseType: 'MATERIAL'
+      vendorId: materialData.vendorId
     });
 
     // Refresh materials and notify parent

@@ -14,17 +14,29 @@ import { updateEntityStatus } from '@/utils/statusTransitions';
 import { useStatusHistory, EntityType } from '@/hooks/useStatusHistory';
 import { toast } from '@/hooks/use-toast';
 
-interface StatusControlProps {
+// Export the StatusOption interface so other components can import it
+export interface StatusOption {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+export interface StatusControlProps {
   entityId: string;
   entityType: EntityType;
   currentStatus: string;
-  statusOptions: { value: string; label: string }[];
+  statusOptions: StatusOption[];
   tableName: string;
   idField?: string;
   onStatusChange?: () => void;
-  additionalUpdateFields?: Record<string, any>;
+  additionalUpdateFields?: Record<string, any> | ((newStatus: string) => Record<string, any>);
   size?: 'sm' | 'md' | 'lg';
   showStatusBadge?: boolean;
+  buttonLabel?: string;
+  recordHistory?: boolean;
+  className?: string;
+  userIdentifier?: string;
+  notes?: string;
 }
 
 const UniversalStatusControl = ({
@@ -37,7 +49,12 @@ const UniversalStatusControl = ({
   onStatusChange,
   additionalUpdateFields = {},
   size = 'md',
-  showStatusBadge = false
+  showStatusBadge = false,
+  buttonLabel,
+  recordHistory = true,
+  className = '',
+  userIdentifier,
+  notes
 }: StatusControlProps) => {
   const [updating, setUpdating] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -48,8 +65,12 @@ const UniversalStatusControl = ({
     setOpenDropdown(false);
     
     try {
+      // Get additional fields - can be an object or a function that returns an object
+      const extraFields = typeof additionalUpdateFields === 'function' 
+        ? additionalUpdateFields(newStatus) 
+        : { ...additionalUpdateFields };
+      
       // If moving to COMPLETED status, calculate additional fields
-      const extraFields = { ...additionalUpdateFields };
       if (newStatus === 'COMPLETED') {
         extraFields.progress = 100;
         extraFields.completed_date = new Date().toISOString();
@@ -67,19 +88,19 @@ const UniversalStatusControl = ({
         extraFields
       );
       
-      if (success) {
+      if (success && recordHistory) {
         // Record the status change in the history
         await recordStatusChange(
           newStatus,
           currentStatus,
-          'system', // TODO: Use actual user data when available
-          `Status changed from ${currentStatus} to ${newStatus}`
+          userIdentifier || 'system', // Use provided user identifier or default
+          notes || `Status changed from ${currentStatus} to ${newStatus}`
         );
-        
-        // Notify parent component of the status change
-        if (onStatusChange) {
-          onStatusChange();
-        }
+      }
+      
+      // Notify parent component of the status change
+      if (onStatusChange) {
+        onStatusChange();
       }
     } catch (error: any) {
       console.error(`Error updating ${entityType} status:`, error);
@@ -115,12 +136,12 @@ const UniversalStatusControl = ({
   // Don't show dropdown if there are no status options
   if (statusOptions.length === 0) {
     return (
-      <div className="flex items-center">
+      <div className={`flex items-center ${className}`}>
         {showStatusBadge && (
           <StatusBadge status={currentStatus} entityType={entityType} size={size} />
         )}
         {!showStatusBadge && (
-          <Button variant="outline" size="sm" disabled={true}>
+          <Button variant="outline" size="sm" disabled={true} className={className}>
             No Status Options
           </Button>
         )}
@@ -134,12 +155,12 @@ const UniversalStatusControl = ({
         <Button 
           variant={showStatusBadge ? "outline" : "default"}
           size={size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : 'default'}
-          className={showStatusBadge ? "ml-2 border-muted" : ""}
+          className={`${showStatusBadge ? "ml-2 border-muted" : ""} ${className}`}
           disabled={updating || statusOptions.length === 0}
         >
           {showStatusBadge ? (
             <>
-              Change Status
+              {buttonLabel || "Change Status"}
               <ChevronDown className={sizeClasses[size].icon} />
             </>
           ) : (
@@ -158,9 +179,11 @@ const UniversalStatusControl = ({
               value={option.value}
               className="cursor-pointer"
             >
-              <Check 
-                className={`${sizeClasses[size].checkIcon} opacity-0 group-data-[state=checked]:opacity-100`} 
-              />
+              {option.icon || (
+                <Check 
+                  className={`${sizeClasses[size].checkIcon} opacity-0 group-data-[state=checked]:opacity-100`} 
+                />
+              )}
               {option.label}
             </DropdownMenuRadioItem>
           ))}

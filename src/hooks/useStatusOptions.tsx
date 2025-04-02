@@ -6,10 +6,21 @@ import { EntityType } from '@/types/common';
 
 export function useStatusOptions(entityType: EntityType, currentStatus?: string) {
   const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
+  const [allOptions, setAllOptions] = useState<StatusOption[]>([]);
   
   useEffect(() => {
-    setStatusOptions(getStatusOptionsForType(entityType));
-  }, [entityType]);
+    const options = getStatusOptionsForType(entityType);
+    setAllOptions(options);
+    
+    // If currentStatus is provided, filter out that status from options
+    if (currentStatus) {
+      setStatusOptions(options.filter(
+        option => option.value.toLowerCase() !== currentStatus.toLowerCase()
+      ));
+    } else {
+      setStatusOptions(options);
+    }
+  }, [entityType, currentStatus]);
   
   const getStatusOptionsForType = (type: EntityType): StatusOption[] => {
     switch (type) {
@@ -149,13 +160,8 @@ export function useStatusOptions(entityType: EntityType, currentStatus?: string)
     }
   };
   
-  // If currentStatus is provided, filter out that status from options
-  const filteredOptions = currentStatus 
-    ? statusOptions.filter(option => option.value.toLowerCase() !== currentStatus.toLowerCase())
-    : statusOptions;
-  
   return {
-    statusOptions: filteredOptions,
-    allStatusOptions: statusOptions
+    statusOptions,
+    allStatusOptions: allOptions
   };
 }
