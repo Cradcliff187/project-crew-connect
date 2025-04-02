@@ -74,7 +74,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] p-0" aria-describedby="estimate-form-description">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0" aria-describedby="estimate-form-description">
         {/* Add hidden DialogTitle and DialogDescription for accessibility */}
         <DialogTitle className="sr-only">Create New Estimate</DialogTitle>
         <DialogDescription id="estimate-form-description" className="sr-only">
@@ -86,7 +86,7 @@ const EstimateForm = ({ open, onClose }: EstimateFormProps) => {
           onBackToEdit={handleBackToEdit}
         />
 
-        <div className="overflow-y-auto px-6 pb-6">
+        <div className="overflow-y-auto px-6 pb-6 max-h-[calc(90vh-60px)]">
           <Form {...form}>
             <form 
               onSubmit={(e) => {
