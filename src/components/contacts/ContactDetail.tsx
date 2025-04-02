@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -93,14 +92,6 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     // Refresh the contact data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
-
-  // Fix: Update the signature to match what ContactDetailInformation expects
-  // This will act as a wrapper that can be passed to the component with the correct signature
-  const handleStatusChangeWrapper = () => {
-    // This wrapper function doesn't do anything directly
-    // It's just meeting the expected type signature for the onStatusChange prop
-    console.log("Status change wrapper called");
-  };
   
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden">
@@ -178,7 +169,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
         <TabsContent value="details" className="flex-1 overflow-y-auto p-4">
           <ContactDetailInformation 
             contact={contact} 
-            onStatusChange={handleStatusChangeWrapper}
+            onStatusChange={handleStatusChange}
           />
         </TabsContent>
       </Tabs>

@@ -7,7 +7,7 @@ import { Contact } from '@/pages/Contacts';
 
 interface ContactsStatusDropdownProps {
   contact: Contact;
-  onStatusChange: () => void;
+  onStatusChange: (newStatus: string) => void; // Updated to accept status parameter
   statusOptions?: StatusOption[];
 }
 
@@ -24,6 +24,13 @@ const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
     ]
   , [providedStatusOptions]);
 
+  // Create wrapper that calls onStatusChange with the new status
+  const handleStatusChange = () => {
+    // This function doesn't need to do anything directly
+    // The UniversalStatusControl component will call onStatusChange with the new status
+    console.log("Status change delegated to UniversalStatusControl");
+  };
+
   return (
     <div className="flex items-center relative z-10">
       <UniversalStatusControl
@@ -33,7 +40,8 @@ const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
         statusOptions={statusOptions}
         tableName="contacts"
         idField="id"
-        onStatusChange={onStatusChange}
+        onStatusChange={handleStatusChange}
+        additionalUpdateHandler={(newStatus: string) => onStatusChange(newStatus)}
         size="sm"
         showStatusBadge={true}
       />

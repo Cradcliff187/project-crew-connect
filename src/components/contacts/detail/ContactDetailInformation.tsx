@@ -6,7 +6,7 @@ import ContactStatusSection from './ContactStatusSection';
 
 interface ContactDetailInformationProps {
   contact: Contact;
-  onStatusChange: () => void; // Updated to match the expected signature
+  onStatusChange: (newStatus: string) => void; // Updated to accept a status parameter
 }
 
 const ContactDetailInformation: React.FC<ContactDetailInformationProps> = ({

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -27,6 +26,7 @@ export interface StatusControlProps {
   tableName: string;
   idField: string;
   onStatusChange: () => void;
+  additionalUpdateHandler?: (newStatus: string) => void;
   recordHistory?: boolean;
   size?: 'sm' | 'md' | 'lg';
   showStatusBadge?: boolean;
@@ -43,6 +43,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   tableName,
   idField,
   onStatusChange,
+  additionalUpdateHandler,
   recordHistory = false,
   size = 'md',
   showStatusBadge = true,
@@ -119,7 +120,13 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
         description: `Status changed to ${pendingStatus}`,
       });
       
+      // Call the standard onStatusChange callback
       onStatusChange();
+      
+      // Call the additional handler if provided
+      if (additionalUpdateHandler) {
+        additionalUpdateHandler(pendingStatus);
+      }
     } catch (error: any) {
       console.error('Error updating status:', error);
       toast({
