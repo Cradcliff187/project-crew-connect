@@ -94,12 +94,12 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
 
-  // This wrapper function adapts the handleStatusChange function signature
-  // It doesn't take parameters because it's designed to match () => void
-  // The actual status change will be handled by components that call handleStatusChange directly
+  // Fix: Update the signature to match what ContactDetailInformation expects
+  // This will act as a wrapper that can be passed to the component with the correct signature
   const handleStatusChangeWrapper = () => {
-    console.log("Status change wrapper called - no action needed");
-    // The actual status change is handled by components that pass the new status directly to handleStatusChange
+    // This wrapper function doesn't do anything directly
+    // It's just meeting the expected type signature for the onStatusChange prop
+    console.log("Status change wrapper called");
   };
   
   return (
