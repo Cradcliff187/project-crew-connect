@@ -7,7 +7,7 @@ import { Contact } from '@/pages/Contacts';
 
 interface ContactsStatusDropdownProps {
   contact: Contact;
-  onStatusChange: (newStatus: string) => void; // Updated to accept status parameter
+  onStatusChange: (newStatus: string) => void; // Function that accepts status parameter
   statusOptions?: StatusOption[];
 }
 
@@ -24,7 +24,8 @@ const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
     ]
   , [providedStatusOptions]);
 
-  // Handler that will be passed to UniversalStatusControl's onStatusChange prop
+  // This empty handler will be passed to UniversalStatusControl's onStatusChange prop
+  // It satisfies the () => void signature requirement
   const handleStatusChangeInternal = () => {
     // This function is called by UniversalStatusControl with no parameters
     // The actual status change is handled by additionalUpdateHandler

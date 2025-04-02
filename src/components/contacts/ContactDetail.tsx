@@ -101,6 +101,13 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     });
   };
 
+  // Create a no-parameter wrapper function for components that expect () => void
+  const handleStatusChangeNoParams = (): void => {
+    console.log("Status change triggered with no parameters");
+    // This function doesn't need to do anything as it's used where a no-param function is expected
+    // The actual status change is handled through additionalUpdateHandler in StatusDropdown
+  };
+
   const handleInteractionAdded = () => {
     // Refresh the contact data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
