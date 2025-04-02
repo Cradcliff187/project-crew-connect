@@ -89,7 +89,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     }
   };
 
-  // Create a wrapper function that matches the expected signature
+  // Create a wrapper function for passing to components that expect a (newStatus: string) => void function
   const handleStatusChangeWrapper = (newStatus: string): void => {
     handleStatusChange(newStatus).catch(error => {
       console.error("Error updating status:", error);

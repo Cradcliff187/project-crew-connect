@@ -24,10 +24,10 @@ const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
     ]
   , [providedStatusOptions]);
 
-  // Create wrapper that calls onStatusChange with the new status
-  const handleStatusChange = () => {
-    // This function doesn't need to do anything directly
-    // The UniversalStatusControl component will call onStatusChange with the new status
+  // Handler that will be passed to UniversalStatusControl's onStatusChange prop
+  const handleStatusChangeInternal = () => {
+    // This function is called by UniversalStatusControl with no parameters
+    // The actual status change is handled by additionalUpdateHandler
     console.log("Status change delegated to UniversalStatusControl");
   };
 
@@ -40,7 +40,7 @@ const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
         statusOptions={statusOptions}
         tableName="contacts"
         idField="id"
-        onStatusChange={handleStatusChange}
+        onStatusChange={handleStatusChangeInternal} // No-argument function
         additionalUpdateHandler={(newStatus: string) => onStatusChange(newStatus)}
         size="sm"
         showStatusBadge={true}
