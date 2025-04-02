@@ -28,7 +28,10 @@ export const updateContactStatus = async (contactId: string, newStatus: string):
     // Update the contact status
     const { error: updateError } = await supabase
       .from('contacts')
-      .update({ status: newStatus })
+      .update({ 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', contactId);
     
     if (updateError) {
@@ -77,7 +80,7 @@ export const transitionContactType = async (contact: Contact, newType: string): 
     // Determine the default status for the new type
     let defaultStatus = 'ACTIVE';
     
-    switch (newType) {
+    switch (newType.toLowerCase()) {
       case 'client':
       case 'customer':
         defaultStatus = 'PROSPECT';
@@ -92,6 +95,8 @@ export const transitionContactType = async (contact: Contact, newType: string): 
         defaultStatus = 'ACTIVE';
         break;
     }
+    
+    console.log(`Transitioning contact from ${contact.type} to ${newType} with status ${defaultStatus}`);
     
     // Update contact with new type and default status
     const { error: updateError } = await supabase

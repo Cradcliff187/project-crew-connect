@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -66,7 +65,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
 
   const queryClient = useQueryClient();
   
-  // This handler expects a status parameter and updates the contact status
+  // Handler for explicit status changes that need to notify parent
   const handleStatusChange = async (newStatus: string): Promise<void> => {
     const success = await updateContactStatus(contact.id, newStatus);
     
@@ -89,16 +88,15 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     }
   };
 
-  const handleInteractionAdded = () => {
-    // Refresh the contact data
+  // Handler for generic status changes and refreshes
+  const handleDataRefresh = () => {
+    console.log("Refreshing contact data after status or data changes");
+    // Refresh data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
 
-  // This wrapper function adapts the handleStatusChange to match the expected signature
-  // for components that expect a () => void function rather than one that takes a parameter
-  const handleStatusChangeWrapper = () => {
-    console.log("Status change wrapper called - this refreshes data after status updates");
-    // Just refresh data - the actual status change is handled in components with direct access
+  const handleInteractionAdded = () => {
+    // Refresh the contact data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
   
@@ -178,7 +176,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
         <TabsContent value="details" className="flex-1 overflow-y-auto p-4">
           <ContactDetailInformation 
             contact={contact} 
-            onStatusChange={handleStatusChangeWrapper}
+            onStatusChange={handleDataRefresh}
           />
         </TabsContent>
       </Tabs>

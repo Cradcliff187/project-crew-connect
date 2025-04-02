@@ -1,21 +1,46 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Contact } from '@/pages/Contacts';
 import StatusDropdown from './StatusDropdown';
 import { getStatusOptions } from './util/statusTransitions';
+import { Button } from '@/components/ui/button';
+import { UserRound } from 'lucide-react';
+import TypeTransitionDialog from './TypeTransitionDialog';
+import { transitionContactType } from './util/contactTransitions';
+import { toast } from '@/hooks/use-toast';
 
 interface ContactStatusSectionProps {
   contact: Contact;
-  onStatusChange: () => void; // This function doesn't take a parameter
+  onStatusChange: () => void;
 }
 
-const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ contact, onStatusChange }) => {
-  // Use contact's type to determine available status options
+const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ 
+  contact, 
+  onStatusChange 
+}) => {
+  const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const contactType = contact.type?.toLowerCase() || '';
   
   // Get appropriate status options based on contact type and current status
   const statusOptions = getStatusOptions(contactType, contact.status || '');
+  
+  const handleTypeChange = async (newType: string) => {
+    try {
+      const success = await transitionContactType(contact, newType);
+      
+      if (success) {
+        toast({
+          title: "Contact Type Updated",
+          description: `Contact has been converted to ${newType}.`,
+          className: 'bg-[#0485ea]',
+        });
+        onStatusChange(); // Refresh data using parent callback
+      }
+    } catch (error) {
+      console.error('Error changing contact type:', error);
+    }
+  };
   
   return (
     <Card>
@@ -23,22 +48,33 @@ const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ contact, on
         <CardTitle className="text-lg font-semibold">Status & Classification</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <h3 className="text-sm font-medium mb-2">Contact Type</h3>
-          <div className="p-2 bg-muted rounded-md">
-            {contact.type ? (
-              <span className="capitalize">{contact.type.toLowerCase()}</span>
-            ) : (
-              <span className="text-muted-foreground">Not specified</span>
-            )}
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-sm font-medium mb-2">Contact Type</h3>
+            <div className="p-2 bg-muted rounded-md flex">
+              {contact.type ? (
+                <span className="capitalize">{contact.type.toLowerCase()}</span>
+              ) : (
+                <span className="text-muted-foreground">Not specified</span>
+              )}
+            </div>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setTypeDialogOpen(true)}
+            className="h-8 px-2"
+          >
+            <UserRound className="h-3.5 w-3.5 mr-1" />
+            Change Type
+          </Button>
         </div>
         
         <div>
           <h3 className="text-sm font-medium mb-2">Current Status</h3>
           <StatusDropdown 
-            contact={contact} 
-            onStatusChange={onStatusChange} 
+            contact={contact}
+            onStatusChange={onStatusChange}
             statusOptions={statusOptions}
           />
         </div>
@@ -61,6 +97,13 @@ const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ contact, on
           </div>
         )}
       </CardContent>
+      
+      <TypeTransitionDialog
+        open={typeDialogOpen}
+        onOpenChange={setTypeDialogOpen}
+        currentType={contact.type}
+        onTypeChange={handleTypeChange}
+      />
     </Card>
   );
 };
