@@ -7,12 +7,12 @@ import { getStatusOptions } from './util/statusTransitions';
 
 interface ContactStatusSectionProps {
   contact: Contact;
-  onStatusChange: (newStatus: string) => void; // Function that accepts status parameter
+  onStatusChange: () => void; // This follows the expected signature pattern
 }
 
 const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ contact, onStatusChange }) => {
   // Use contact's type to determine available status options
-  const contactType = contact.type.toLowerCase() || '';
+  const contactType = contact.contact_type?.toLowerCase() || '';
   
   // Get appropriate status options based on contact type and current status
   const statusOptions = getStatusOptions(contactType, contact.status || '');
@@ -26,8 +26,8 @@ const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ contact, on
         <div>
           <h3 className="text-sm font-medium mb-2">Contact Type</h3>
           <div className="p-2 bg-muted rounded-md">
-            {contact.type ? (
-              <span className="capitalize">{contact.type.toLowerCase()}</span>
+            {contact.contact_type ? (
+              <span className="capitalize">{contact.contact_type.toLowerCase()}</span>
             ) : (
               <span className="text-muted-foreground">Not specified</span>
             )}
