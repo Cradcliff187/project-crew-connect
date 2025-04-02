@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -88,6 +89,18 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     }
   };
 
+  // Create a wrapper function that matches the expected signature
+  const handleStatusChangeWrapper = (newStatus: string): void => {
+    handleStatusChange(newStatus).catch(error => {
+      console.error("Error updating status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update contact status",
+        variant: "destructive"
+      });
+    });
+  };
+
   const handleInteractionAdded = () => {
     // Refresh the contact data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
@@ -169,7 +182,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
         <TabsContent value="details" className="flex-1 overflow-y-auto p-4">
           <ContactDetailInformation 
             contact={contact} 
-            onStatusChange={handleStatusChange}
+            onStatusChange={handleStatusChangeWrapper}
           />
         </TabsContent>
       </Tabs>
