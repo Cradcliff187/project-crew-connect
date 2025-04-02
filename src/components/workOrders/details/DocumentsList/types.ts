@@ -1,44 +1,20 @@
 
-// Define the base document type that will be used across different document types
-export interface BaseDocument {
+export interface WorkOrderDocument {
   document_id: string;
   file_name: string;
-  file_type?: string | null;
+  file_type?: string;
+  file_size?: number;
   storage_path: string;
-  entity_type: string;
+  url: string;
   entity_id: string;
+  entity_type: string;
   created_at: string;
   updated_at: string;
-  url: string;
-  id?: string; // For backward compatibility
-  file_url?: string; // For backward compatibility
-  project_id?: string; // For backward compatibility
-}
-
-// WorkOrderDocument extends the base document with work order specific fields
-export interface WorkOrderDocument extends BaseDocument {
   category?: string;
-  tags?: string[];
-  mime_type?: string | null;
-  file_size?: number | null;
-  uploaded_by?: string | null;
-  version?: number;
   is_receipt?: boolean;
-  amount?: number | null;
-  vendor_id?: string | null;
-  vendor_type?: string | null;
-  expense_type?: string | null;
-  notes?: string | null;
-  expense_date?: string | null;
-  is_expense?: boolean;
-  parent_document_id?: string | null; // For document versioning support
-}
-
-// Make the ProjectDocument type consistent with the unified document system
-export interface ProjectDocument extends BaseDocument {
-  id: string; // For backward compatibility
-  project_id: string;
-  description?: string;
-  category?: string;
-  file_url?: string; // For backward compatibility
+  tags?: string[];
+  uploaded_by?: string;
+  version?: number;
+  is_latest_version?: boolean;
+  parent_document_id?: string;
 }

@@ -1,55 +1,78 @@
 
+import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrderFormValues } from '../WorkOrderFormSchema';
 
-/**
- * Hook for handling creation of new locations
- */
 export const useLocationCreate = () => {
+  const [isCreating, setIsCreating] = useState(false);
+
   /**
-   * Creates a new location if a custom address is used
-   * @param values The form values from the work order form
-   * @returns The location ID (either new or existing)
+   * Creates a new location if needed based on form data
+   * @returns The location_id of either the selected or newly created location
    */
   const createLocationIfNeeded = async (values: WorkOrderFormValues): Promise<string | null> => {
-    // If not using custom address, just return the selected location ID
-    if (!values.use_custom_address) {
+    // If using an existing location, just return the selected ID
+    if (values.location_id) {
       return values.location_id;
     }
     
-    // If using custom address but address is missing, return null
-    if (!values.address) {
+    // If no address data is provided, return null (no location)
+    if (!values.address && !values.city && !values.state && !values.zip) {
       return null;
     }
-
+    
+    setIsCreating(true);
+    
     try {
-      // Insert a new location and get the ID
-      const { data: newLocation, error: locationError } = await supabase
+      console.log('Creating new location with data:', {
+        address: values.address,
+        city: values.city,
+        state: values.state || 'California', // Fallback to California
+        zip: values.zip,
+        customer_id: values.customer_id
+      });
+      
+      // Create a location name based on address or customer
+      const locationName = values.address 
+        ? `${values.address}, ${values.city || ''}`
+        : `Location for WO: ${new Date().toISOString().substring(0, 10)}`;
+      
+      // Insert new location
+      const { data, error } = await supabase
         .from('site_locations')
         .insert({
-          location_name: `${values.address}, ${values.city || ''} ${values.state || ''} ${values.zip || ''}`.trim(),
+          location_name: locationName,
           address: values.address,
           city: values.city,
-          state: values.state,
+          state: values.state || 'California', // Ensure state has a default
           zip: values.zip,
-          customer_id: values.customer_id || null,
-          is_active: true
+          customer_id: values.customer_id
         })
         .select('location_id')
         .single();
       
-      if (locationError) {
-        throw locationError;
+      if (error) {
+        throw error;
       }
       
-      return newLocation?.location_id || null;
-    } catch (error) {
-      console.error('Error creating new location:', error);
-      throw error;
+      console.log('Created new location:', data);
+      return data.location_id;
+    } catch (error: any) {
+      console.error('Error creating location:', error);
+      toast({
+        title: 'Error creating location',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setIsCreating(false);
     }
   };
 
   return {
+    isCreating,
     createLocationIfNeeded
   };
 };
