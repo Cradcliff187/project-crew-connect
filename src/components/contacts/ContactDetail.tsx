@@ -66,7 +66,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
 
   const queryClient = useQueryClient();
   
-  // Handle status changes from any component
+  // Handle status changes with async function that returns Promise<void>
   const handleStatusChange = async (newStatus: string): Promise<void> => {
     const success = await updateContactStatus(contact.id, newStatus);
     

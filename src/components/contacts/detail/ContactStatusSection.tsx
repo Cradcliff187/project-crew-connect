@@ -7,7 +7,7 @@ import { getStatusOptions } from './util/statusTransitions';
 
 interface ContactStatusSectionProps {
   contact: Contact;
-  onStatusChange: (newStatus: string) => void; // Updated to accept status parameter
+  onStatusChange: (newStatus: string) => void; // Function that accepts status parameter
 }
 
 const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ contact, onStatusChange }) => {
