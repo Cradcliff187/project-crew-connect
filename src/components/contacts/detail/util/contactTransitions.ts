@@ -1,5 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Contact } from '@/pages/Contacts';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Updates a contact's status and logs the status change in history
@@ -54,6 +56,88 @@ export const updateContactStatus = async (contactId: string, newStatus: string):
     return true;
   } catch (error) {
     console.error('Error in updateContactStatus:', error);
+    return false;
+  }
+};
+
+/**
+ * Transitions a contact from one type to another
+ * This may affect status values and related records
+ * @param contact The contact to transition
+ * @param newType The new contact type
+ * @returns Success boolean
+ */
+export const transitionContactType = async (contact: Contact, newType: string): Promise<boolean> => {
+  try {
+    if (contact.type === newType) {
+      console.log('Contact is already of this type, no transition needed');
+      return true;
+    }
+    
+    // Determine the default status for the new type
+    let defaultStatus = 'ACTIVE';
+    
+    switch (newType) {
+      case 'client':
+      case 'customer':
+        defaultStatus = 'PROSPECT';
+        break;
+      case 'supplier':
+        defaultStatus = 'POTENTIAL';
+        break;
+      case 'subcontractor':
+        defaultStatus = 'PENDING';
+        break;
+      case 'employee':
+        defaultStatus = 'ACTIVE';
+        break;
+    }
+    
+    // Update contact with new type and default status
+    const { error: updateError } = await supabase
+      .from('contacts')
+      .update({
+        contact_type: newType,
+        status: defaultStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', contact.id);
+    
+    if (updateError) {
+      console.error('Error updating contact type:', updateError);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update contact type. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    // Log type transition in history
+    const { error: historyError } = await supabase
+      .from('contact_status_history')
+      .insert({
+        contact_id: contact.id,
+        previous_status: contact.status,
+        status: defaultStatus,
+        changed_by: null,
+        notes: `Contact type changed from ${contact.type} to ${newType}. Status reset to ${defaultStatus}.`
+      });
+    
+    if (historyError) {
+      console.error('Error logging type transition:', historyError);
+      // We don't return false since the type was updated successfully
+    }
+    
+    console.log(`Contact type updated from ${contact.type} to ${newType}`);
+    return true;
+  } catch (error) {
+    console.error('Error in transitionContactType:', error);
+    toast({
+      title: "Error",
+      description: "Failed to update contact type. Please try again.",
+      variant: "destructive"
+    });
     return false;
   }
 };

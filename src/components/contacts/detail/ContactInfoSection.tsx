@@ -79,14 +79,14 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ contact }) => {
           </div>
         )}
         
-        {contact.last_contact && (
+        {contact.lastContact && (
           <div className="pt-2">
             <div className="flex items-start">
               <Calendar className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
               <div>
                 <p className="text-sm font-medium">Last Contact</p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(contact.last_contact), 'PPP')}
+                  {format(new Date(contact.lastContact), 'PPP')}
                 </p>
               </div>
             </div>

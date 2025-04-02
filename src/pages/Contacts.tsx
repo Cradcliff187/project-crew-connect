@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Search, Users, Plus, Filter, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,12 +25,12 @@ export type Contact = {
   city?: string;
   state?: string;
   zip?: string;
-  type: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee';
+  type: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee'; // Changed from contact_type
   status?: StatusType | string;
-  lastContact?: string;
+  lastContact?: string;  // Changed from last_contact
   notes?: string;
   specialty?: string;
-  hourlyRate?: string;
+  hourlyRate?: string;  // Changed from hourly_rate
   materials?: string;
   rating?: number;
 };
