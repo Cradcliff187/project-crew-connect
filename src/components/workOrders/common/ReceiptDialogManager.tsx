@@ -1,10 +1,18 @@
 
-import { ReactNode } from 'react';
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Document } from '@/components/documents/schemas/documentSchema';
-import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
-import BaseReceiptUploadDialog from '@/components/documents/ReceiptUploadDialog';
+import { Receipt, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import DocumentViewer from '../details/DocumentsList/DocumentViewer';
 
-interface ReceiptUploadProps {
+interface ReceiptUploadDialogProps {
   open: boolean;
   workOrderId: string;
   vendorName: string;
@@ -12,10 +20,10 @@ interface ReceiptUploadProps {
   itemId: string;
   onSuccess: (itemId: string, documentId: string) => Promise<void>;
   onCancel: () => void;
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-export const ReceiptUploadDialog = ({
+export const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
   open,
   workOrderId,
   vendorName,
@@ -24,25 +32,30 @@ export const ReceiptUploadDialog = ({
   onSuccess,
   onCancel,
   children
-}: ReceiptUploadProps) => {
-  const handleReceiptSuccess = (documentId?: string) => {
-    if (documentId) {
-      onSuccess(itemId, documentId);
-    } else {
-      // Even if no documentId, still call onCancel to close the dialog
-      onCancel();
-    }
-  };
-
+}) => {
   return (
-    <BaseReceiptUploadDialog
-      open={open}
-      onOpenChange={(open) => !open && onCancel()}
-      title="Upload Receipt"
-      description={`Upload a receipt for this ${itemName}`}
-    >
-      {children}
-    </BaseReceiptUploadDialog>
+    <Dialog open={open} onOpenChange={(openState) => {
+      if (!openState) onCancel();
+    }}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <div className="flex justify-between items-center">
+            <DialogTitle className="flex items-center text-[#0485ea]">
+              <Receipt className="h-5 w-5 mr-2" />
+              Upload Receipt for {itemName}
+            </DialogTitle>
+            <Button variant="ghost" size="icon" onClick={onCancel}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Upload a receipt or invoice for this {itemName.toLowerCase()} from {vendorName || 'the vendor'}.
+          </p>
+        </DialogHeader>
+        
+        {children}
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -50,26 +63,35 @@ interface ReceiptViewerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   receiptDocument: Document | null;
-  title?: string;
-  description?: string;
 }
 
-export const ReceiptViewerDialog = ({
+export const ReceiptViewerDialog: React.FC<ReceiptViewerDialogProps> = ({
   open,
   onOpenChange,
-  receiptDocument,
-  title,
-  description
-}: ReceiptViewerDialogProps) => {
+  receiptDocument
+}) => {
   if (!receiptDocument) return null;
-
+  
+  // Convert Document type to WorkOrderDocument type for the viewer
+  const documentForViewer = {
+    ...receiptDocument,
+    document_id: receiptDocument.document_id,
+    file_name: receiptDocument.file_name,
+    file_type: receiptDocument.file_type,
+    file_size: receiptDocument.file_size,
+    url: receiptDocument.url,
+    entity_id: receiptDocument.entity_id,
+    entity_type: receiptDocument.entity_type,
+    created_at: receiptDocument.created_at,
+    updated_at: receiptDocument.updated_at,
+    is_receipt: true
+  };
+  
   return (
-    <DocumentViewerDialog
+    <DocumentViewer
+      document={documentForViewer as any}
       open={open}
       onOpenChange={onOpenChange}
-      document={receiptDocument}
-      title={title || `Receipt for ${receiptDocument.file_name}`}
-      description={description}
     />
   );
 };

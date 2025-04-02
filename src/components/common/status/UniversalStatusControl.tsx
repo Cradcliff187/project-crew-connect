@@ -1,264 +1,172 @@
 
-import React, { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import StatusBadge from '@/components/ui/StatusBadge';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Check, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import StatusBadge from './StatusBadge';
+import { updateEntityStatus } from '@/utils/statusTransitions';
 import { useStatusHistory, EntityType } from '@/hooks/useStatusHistory';
+import { toast } from '@/hooks/use-toast';
 
-export interface StatusOption {
-  value: string;
-  label: string;
-  description?: string;
-  icon?: React.ReactNode;
-}
-
-export interface UniversalStatusControlProps {
+interface StatusControlProps {
   entityId: string;
   entityType: EntityType;
   currentStatus: string;
-  statusOptions: StatusOption[];
+  statusOptions: { value: string; label: string }[];
   tableName: string;
-  idField: string;
-  statusField?: string;
-  onStatusChange: () => void;
-  additionalUpdateFields?: Record<string, any> | ((newStatus: string) => Record<string, any>);
-  className?: string;
-  size?: 'sm' | 'default';
+  idField?: string;
+  onStatusChange?: () => void;
+  additionalUpdateFields?: Record<string, any>;
+  size?: 'sm' | 'md' | 'lg';
   showStatusBadge?: boolean;
-  buttonLabel?: string;
-  recordHistory?: boolean;
-  userIdentifier?: string;
-  notes?: string;
 }
 
-const UniversalStatusControl: React.FC<UniversalStatusControlProps> = ({
+const UniversalStatusControl = ({
   entityId,
   entityType,
   currentStatus,
   statusOptions,
   tableName,
-  idField,
-  statusField = 'status',
+  idField = 'id',
   onStatusChange,
   additionalUpdateFields = {},
-  className = '',
-  size = 'default',
-  showStatusBadge = true,
-  buttonLabel = 'Change Status',
-  recordHistory = true,
-  userIdentifier,
-  notes
-}) => {
+  size = 'md',
+  showStatusBadge = false
+}: StatusControlProps) => {
   const [updating, setUpdating] = useState(false);
-  const [open, setOpen] = useState(false);
-  const { toast } = useToast();
-  const { recordStatusChange } = useStatusHistory({
-    entityId,
-    entityType
-  });
-
+  const [openDropdown, setOpenDropdown] = useState(false);
+  const { recordStatusChange } = useStatusHistory({ entityId, entityType });
+  
   const handleStatusChange = async (newStatus: string) => {
-    // If the status hasn't changed, just close the dropdown and return
-    if (newStatus === currentStatus) {
-      setOpen(false);
-      return;
-    }
-
     setUpdating(true);
+    setOpenDropdown(false);
+    
     try {
-      console.log(`Updating ${entityType} ${entityId} status to ${newStatus}`);
-      
-      // Prepare the update data
-      const updateData: Record<string, any> = {
-        [statusField]: newStatus,
-        updated_at: new Date().toISOString(),
-      };
-      
-      // Handle additionalUpdateFields as either an object or a function
-      if (typeof additionalUpdateFields === 'function') {
-        const additionalFields = additionalUpdateFields(newStatus);
-        Object.assign(updateData, additionalFields);
-      } else {
-        Object.assign(updateData, additionalUpdateFields);
+      // If moving to COMPLETED status, calculate additional fields
+      const extraFields = { ...additionalUpdateFields };
+      if (newStatus === 'COMPLETED') {
+        extraFields.progress = 100;
+        extraFields.completed_date = new Date().toISOString();
       }
       
-      // Special case: If changing to "COMPLETED" for work orders or projects, set progress to 100%
-      if ((entityType === 'WORK_ORDER' || entityType === 'PROJECT') && 
-          newStatus.toUpperCase() === 'COMPLETED') {
-        if (entityType === 'WORK_ORDER') {
-          updateData.progress = 100;
-        } else if (entityType === 'PROJECT') {
-          // For projects, we'll update the progress table after the main update
-        }
-      }
+      // Update the entity status
+      const success = await updateEntityStatus(
+        entityType,
+        entityId,
+        currentStatus,
+        newStatus,
+        tableName,
+        idField,
+        'status',
+        extraFields
+      );
       
-      // Update the entity in the database - using type assertion for tableName
-      const { error } = await supabase
-        .from(tableName as any)
-        .update(updateData)
-        .eq(idField, entityId);
-      
-      if (error) throw error;
-      
-      // Special case for projects when status is "COMPLETED": Update progress to 100%
-      if (entityType === 'PROJECT' && newStatus.toUpperCase() === 'COMPLETED') {
-        await updateProjectProgress(entityId);
-      }
-      
-      // If the entity is an estimate, also update the current revision
-      if (entityType === 'ESTIMATE') {
-        await updateEstimateRevision(entityId, newStatus);
-      }
-      
-      // Record the status change in history table or activity log
-      if (recordHistory) {
+      if (success) {
+        // Record the status change in the history
         await recordStatusChange(
           newStatus,
           currentStatus,
-          userIdentifier,
-          notes
+          'system', // TODO: Use actual user data when available
+          `Status changed from ${currentStatus} to ${newStatus}`
         );
+        
+        // Notify parent component of the status change
+        if (onStatusChange) {
+          onStatusChange();
+        }
       }
-      
-      // Find the status label for the toast message
-      const statusOption = statusOptions.find(opt => opt.value === newStatus);
-      const statusLabel = statusOption?.label || newStatus;
-      
-      toast({
-        title: 'Status Updated',
-        description: `Status changed to ${statusLabel.toLowerCase()}.${
-          (entityType === 'WORK_ORDER' || entityType === 'PROJECT') && 
-          newStatus.toUpperCase() === 'COMPLETED' ? 
-          ' Progress automatically set to 100%.' : ''
-        }`,
-        className: 'bg-[#0485ea]',
-      });
-      
-      setOpen(false);
-      onStatusChange();
     } catch (error: any) {
-      console.error('Error updating status:', error);
-      
+      console.error(`Error updating ${entityType} status:`, error);
       toast({
-        title: 'Error Updating Status',
-        description: error.message || 'Failed to update status. Please try again.',
-        variant: 'destructive',
+        title: "Status Update Failed",
+        description: error.message,
+        variant: "destructive"
       });
     } finally {
       setUpdating(false);
     }
   };
-
-  // Helper function to update estimate's current revision status
-  const updateEstimateRevision = async (estimateId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('estimate_revisions')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString(),
-          ...(newStatus === 'sent' ? { sent_date: new Date().toISOString() } : {})
-        })
-        .eq('estimate_id', estimateId)
-        .eq('is_current', true);
-        
-      if (error) {
-        console.error('Error updating estimate revision:', error);
-      }
-    } catch (error) {
-      console.error('Error updating estimate revision:', error);
+  
+  // Size-specific classes
+  const sizeClasses = {
+    sm: {
+      button: 'px-2 py-1 text-xs h-7',
+      icon: 'h-3 w-3 ml-1',
+      checkIcon: 'h-3 w-3 mr-1'
+    },
+    md: {
+      button: 'px-3 py-1.5 text-sm h-9',
+      icon: 'h-4 w-4 ml-1.5',
+      checkIcon: 'h-4 w-4 mr-1.5' 
+    },
+    lg: {
+      button: 'px-4 py-2 text-base h-10',
+      icon: 'h-5 w-5 ml-2',
+      checkIcon: 'h-5 w-5 mr-2'
     }
   };
   
-  // Helper function to update project progress to 100%
-  const updateProjectProgress = async (projectId: string) => {
-    try {
-      // Check if a progress record exists
-      const { data: progressData } = await supabase
-        .from('project_progress' as any)
-        .select('id')
-        .eq('projectid', projectId)
-        .maybeSingle();
-      
-      if (progressData) {
-        // Update existing record
-        await supabase
-          .from('project_progress' as any)
-          .update({ progress_percentage: 100 })
-          .eq('projectid', projectId);
-      } else {
-        // Create new progress record with 100%
-        await supabase
-          .from('project_progress' as any)
-          .insert({ 
-            projectid: projectId, 
-            progress_percentage: 100 
-          });
-      }
-    } catch (error) {
-      console.error('Error updating project progress to 100%:', error);
-      // We don't want to fail the status update if progress update fails,
-      // so we just log the error and continue
-    }
-  };
-
-  // Filter out the current status from options
-  const availableStatusOptions = statusOptions.filter(option => 
-    option.value.toLowerCase() !== currentStatus.toLowerCase()
-  );
-
-  return (
-    <div className={cn("flex items-center relative z-10", className)}>
-      {showStatusBadge && (
-        <StatusBadge status={currentStatus.toLowerCase() as any} size={size} />
-      )}
-      
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="outline" 
-            size={size} 
-            disabled={updating || availableStatusOptions.length === 0}
-            className={cn(
-              "ml-2 border-[#0485ea]/30 hover:border-[#0485ea] hover:bg-[#0485ea]/10",
-              size === 'sm' ? "text-xs px-2 h-7" : ""
-            )}
-          >
-            {updating ? 'Updating...' : buttonLabel}
-            <ChevronDown className={cn("ml-1", size === 'sm' ? "h-3 w-3" : "h-4 w-4")} />
+  // Don't show dropdown if there are no status options
+  if (statusOptions.length === 0) {
+    return (
+      <div className="flex items-center">
+        {showStatusBadge && (
+          <StatusBadge status={currentStatus} entityType={entityType} size={size} />
+        )}
+        {!showStatusBadge && (
+          <Button variant="outline" size="sm" disabled={true}>
+            No Status Options
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[180px]">
-          {availableStatusOptions.length > 0 ? (
-            availableStatusOptions.map((option) => (
-              <DropdownMenuItem 
-                key={option.value}
-                onClick={() => handleStatusChange(option.value)}
-                className="cursor-pointer flex items-center justify-between"
-              >
-                <div className="flex items-center">
-                  {option.icon && <span className="mr-2">{option.icon}</span>}
-                  <span>{option.label}</span>
-                </div>
-              </DropdownMenuItem>
-            ))
+        )}
+      </div>
+    );
+  }
+  
+  return (
+    <DropdownMenu open={openDropdown} onOpenChange={setOpenDropdown}>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant={showStatusBadge ? "outline" : "default"}
+          size={size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : 'default'}
+          className={showStatusBadge ? "ml-2 border-muted" : ""}
+          disabled={updating || statusOptions.length === 0}
+        >
+          {showStatusBadge ? (
+            <>
+              Change Status
+              <ChevronDown className={sizeClasses[size].icon} />
+            </>
           ) : (
-            <div className="py-2 px-3 text-sm text-muted-foreground">
-              No status options available
-            </div>
+            <>
+              {currentStatus}
+              <ChevronDown className={sizeClasses[size].icon} />
+            </>
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuRadioGroup value={currentStatus} onValueChange={handleStatusChange}>
+          {statusOptions.map((option) => (
+            <DropdownMenuRadioItem 
+              key={option.value} 
+              value={option.value}
+              className="cursor-pointer"
+            >
+              <Check 
+                className={`${sizeClasses[size].checkIcon} opacity-0 group-data-[state=checked]:opacity-100`} 
+              />
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

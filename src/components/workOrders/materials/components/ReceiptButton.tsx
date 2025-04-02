@@ -10,18 +10,21 @@ interface ReceiptButtonProps {
 }
 
 const ReceiptButton: React.FC<ReceiptButtonProps> = ({ material, onClick }) => {
+  // Determine if material has a receipt
+  const hasReceipt = Boolean(material.receipt_document_id);
+  
   return (
     <Button
       variant="outline"
       size="sm"
       onClick={() => onClick(material)}
       className={
-        material.receipt_document_id
+        hasReceipt
           ? "text-green-600 hover:text-green-800 hover:bg-green-50 border-green-200"
-          : "text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
+          : "text-[#0485ea] hover:text-[#0485ea]/80 hover:bg-[#0485ea]/10 border-[#0485ea]/20"
       }
     >
-      {material.receipt_document_id ? (
+      {hasReceipt ? (
         <>
           <FileText className="h-4 w-4 mr-1" />
           View Receipt

@@ -8,20 +8,21 @@ export function useVendors() {
   const [error, setError] = useState<string | null>(null);
   
   const fetchVendors = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      
       const { data, error } = await supabase
         .from('vendors')
         .select('vendorid, vendorname')
-        .eq('status', 'ACTIVE')  // Only fetch active vendors
+        .eq('status', 'ACTIVE')
         .order('vendorname');
-        
+      
       if (error) throw error;
       
       setVendors(data || []);
-    } catch (err: any) {
-      console.error('Error fetching vendors:', err);
-      setError(err.message);
+    } catch (error: any) {
+      console.error('Error fetching vendors:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -31,5 +32,10 @@ export function useVendors() {
     fetchVendors();
   }, []);
   
-  return { vendors, loading, error, fetchVendors };
+  return {
+    vendors,
+    loading,
+    error,
+    fetchVendors
+  };
 }
