@@ -1,59 +1,67 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { getStatusColorClass, getStatusDisplayName } from '@/utils/statusTransitions';
-import StatusDropdown from './StatusDropdown';
 import { Contact } from '@/pages/Contacts';
+import StatusDropdown from './StatusDropdown';
+import { getStatusOptions } from './util/statusTransitions';
 
 interface ContactStatusSectionProps {
   contact: Contact;
-  onStatusChange: () => void;
+  onStatusChange: () => void; // This follows the expected signature pattern
 }
 
-const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({
-  contact,
-  onStatusChange
-}) => {
-  const currentStatus = contact.status || 'PROSPECT';
+const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ contact, onStatusChange }) => {
+  // Use contact's type to determine available status options
+  const contactType = contact.contact_type?.toLowerCase() || '';
   
-  // Status descriptions for each contact status
-  const getStatusDescription = (status: string): string => {
-    switch (status.toUpperCase()) {
-      case 'PROSPECT':
-        return "This contact is a prospect and has not yet engaged in business with your company.";
-      case 'ACTIVE':
-        return "This contact is actively engaged with your company.";
-      case 'INACTIVE':
-        return "This contact is currently inactive and not actively engaged.";
-      default:
-        return "Status information not available.";
-    }
-  };
+  // Get appropriate status options based on contact type and current status
+  const statusOptions = getStatusOptions(contactType, contact.status || '');
   
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row justify-between items-center">
-          <CardTitle className="text-lg">Contact Status</CardTitle>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold">Status & Classification</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <h3 className="text-sm font-medium mb-2">Contact Type</h3>
+          <div className="p-2 bg-muted rounded-md">
+            {contact.contact_type ? (
+              <span className="capitalize">{contact.contact_type.toLowerCase()}</span>
+            ) : (
+              <span className="text-muted-foreground">Not specified</span>
+            )}
+          </div>
+        </div>
+        
+        <div>
+          <h3 className="text-sm font-medium mb-2">Current Status</h3>
           <StatusDropdown 
             contact={contact} 
             onStatusChange={onStatusChange} 
+            statusOptions={statusOptions}
           />
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <Badge className={getStatusColorClass('CONTACT', currentStatus)}>
-              {getStatusDisplayName('CONTACT', currentStatus)}
-            </Badge>
-            
-            <div className="text-sm text-muted-foreground">
-              {getStatusDescription(currentStatus)}
+        </div>
+        
+        {contact.specialty && (
+          <div>
+            <h3 className="text-sm font-medium mb-2">Specialty</h3>
+            <div className="p-2 bg-muted rounded-md">
+              {contact.specialty}
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+        
+        {contact.rating !== undefined && contact.rating !== null && (
+          <div>
+            <h3 className="text-sm font-medium mb-2">Rating</h3>
+            <div className="p-2 bg-muted rounded-md">
+              {contact.rating} / 5
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

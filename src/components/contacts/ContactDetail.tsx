@@ -67,7 +67,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
   const queryClient = useQueryClient();
   
   // Handle status changes from any component
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string): Promise<void> => {
     const success = await updateContactStatus(contact.id, newStatus);
     
     if (success) {
@@ -94,11 +94,11 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
 
-  // This wrapper function adapts the handleStatusChange to match the expected signature
-  // It will be passed to components that need the function but don't use the parameter
+  // This wrapper function adapts the handleStatusChange to match the expected signature for components
+  // that expect a () => void function rather than one that takes a parameter
   const handleStatusChangeWrapper = () => {
     console.log("Status change wrapper called");
-    // The actual status change is handled by components that will pass the new status
+    // The actual status change is handled by components that will pass the new status directly to handleStatusChange
   };
   
   return (

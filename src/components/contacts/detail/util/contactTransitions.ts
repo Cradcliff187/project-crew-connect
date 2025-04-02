@@ -1,134 +1,59 @@
 
-import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Contact } from '@/pages/Contacts';
 
-// Function to update contact status with proper transitions
-export const updateContactStatus = async (
-  contactId: string, 
-  newStatus: string
-): Promise<boolean> => {
+/**
+ * Updates a contact's status and logs the status change in history
+ * @param contactId The ID of the contact to update
+ * @param newStatus The new status to set
+ * @returns Success boolean
+ */
+export const updateContactStatus = async (contactId: string, newStatus: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    // First, get the current status to record in history
+    const { data: currentData, error: fetchError } = await supabase
       .from('contacts')
-      .update({
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      })
+      .select('status')
       .eq('id', contactId)
-      .select('*')
       .single();
-
-    if (error) throw error;
     
-    // Log the status change to activity log if needed
-    await logStatusChange(contactId, newStatus);
+    if (fetchError) {
+      console.error('Error fetching current contact status:', fetchError);
+      return false;
+    }
     
-    return true;
-  } catch (error: any) {
-    console.error("Error updating contact status:", error);
-    toast({
-      title: "Status Update Failed",
-      description: error.message,
-      variant: "destructive"
-    });
-    return false;
-  }
-};
-
-// Log status changes to activity log
-const logStatusChange = async (contactId: string, newStatus: string) => {
-  try {
-    await supabase
-      .from('activitylog')
-      .insert({
-        action: 'Status Change',
-        moduletype: 'CONTACTS',
-        referenceid: contactId,
-        status: newStatus,
-        timestamp: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-  } catch (error) {
-    console.error("Error logging status change:", error);
-  }
-};
-
-// Function to handle contact type transition with proper status updates
-export const transitionContactType = async (
-  contact: Contact,
-  newType: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee'
-): Promise<boolean> => {
-  try {
-    // Determine appropriate default status for the new type
-    const newStatus = getDefaultStatusForType(newType);
+    const previousStatus = currentData?.status;
     
-    const { data, error } = await supabase
+    // Update the contact status
+    const { error: updateError } = await supabase
       .from('contacts')
-      .update({
-        contact_type: newType,
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', contact.id)
-      .select('*')
-      .single();
-
-    if (error) throw error;
+      .update({ status: newStatus })
+      .eq('id', contactId);
     
-    // Log the type transition
-    await logTypeTransition(contact.id, contact.type, newType);
+    if (updateError) {
+      console.error('Error updating contact status:', updateError);
+      return false;
+    }
     
-    return true;
-  } catch (error: any) {
-    console.error("Error transitioning contact type:", error);
-    toast({
-      title: "Type Transition Failed",
-      description: error.message,
-      variant: "destructive"
-    });
-    return false;
-  }
-};
-
-// Get default status for a contact type
-export const getDefaultStatusForType = (type: string): string => {
-  switch (type) {
-    case 'client':
-    case 'customer':
-      return 'PROSPECT';
-    case 'supplier':
-      return 'POTENTIAL';
-    case 'subcontractor':
-      return 'PENDING';
-    case 'employee':
-      return 'ACTIVE';
-    default:
-      return '';
-  }
-};
-
-// Log type transitions to activity log
-const logTypeTransition = async (
-  contactId: string, 
-  previousType: string,
-  newType: string
-) => {
-  try {
-    await supabase
-      .from('activitylog')
+    // Log the status change in history
+    const { error: historyError } = await supabase
+      .from('contact_status_history')
       .insert({
-        action: 'Type Change',
-        moduletype: 'CONTACTS',
-        referenceid: contactId,
-        status: newType,
-        previousstatus: previousType,
-        timestamp: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        contact_id: contactId,
+        previous_status: previousStatus,
+        status: newStatus,
+        changed_by: null, // Can be updated to use authenticated user
+        notes: `Status changed from ${previousStatus || 'none'} to ${newStatus}`
       });
+    
+    if (historyError) {
+      console.error('Error logging status history:', historyError);
+      // We don't return false here since the status was updated successfully
+    }
+    
+    console.log(`Contact status updated from ${previousStatus} to ${newStatus}`);
+    return true;
   } catch (error) {
-    console.error("Error logging type transition:", error);
+    console.error('Error in updateContactStatus:', error);
+    return false;
   }
 };

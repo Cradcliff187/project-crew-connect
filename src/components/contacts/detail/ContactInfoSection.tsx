@@ -1,93 +1,108 @@
 
-import { Mail, Phone } from 'lucide-react';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, Mail, Phone, Building2, Calendar } from 'lucide-react';
+import { Contact } from '@/pages/Contacts';
 import { format } from 'date-fns';
-import StatusBadge from '@/components/ui/StatusBadge';
-import { Star } from '@/components/ui/star';
 
 interface ContactInfoSectionProps {
-  contact: any;
+  contact: Contact;
 }
 
-const ContactInfoSection = ({ contact }: ContactInfoSectionProps) => {
+const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ contact }) => {
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-3">Contact Information</h3>
-        <div className="space-y-3">
-          <div className="flex items-center">
-            <Mail className="h-4 w-4 mr-3 text-muted-foreground" />
-            <a href={`mailto:${contact.email}`} className="text-[#0485ea] hover:underline">{contact.email}</a>
-          </div>
-          <div className="flex items-center">
-            <Phone className="h-4 w-4 mr-3 text-muted-foreground" />
-            <a href={`tel:${contact.phone}`} className="hover:text-[#0485ea]">{contact.phone}</a>
-          </div>
-          <div className="flex items-start">
-            <Mail className="h-4 w-4 mr-3 text-muted-foreground mt-0.5" />
-            <span className="text-muted-foreground">{contact.address}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-medium mb-3">Company Information</h3>
-        <div className="space-y-3">
-          <div className="flex items-center">
-            <span className="text-muted-foreground w-24">Company:</span>
-            <span>{contact.company}</span>
-          </div>
-          <div className="flex items-center">
-            <span className="text-muted-foreground w-24">Role:</span>
-            <span>{contact.role}</span>
-          </div>
-          <div className="flex items-center">
-            <span className="text-muted-foreground w-24">Type:</span>
-            <span className="capitalize">{contact.type}</span>
-          </div>
-          <div className="flex items-center">
-            <span className="text-muted-foreground w-24">Status:</span>
-            {contact.status ? (
-              <StatusBadge status={contact.status.toLowerCase() as any} />
-            ) : (
-              <span>Not set</span>
-            )}
-          </div>
-          {contact.rating && (
-            <div className="flex items-center">
-              <span className="text-muted-foreground w-24">Rating:</span>
-              <div className="flex">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star 
-                    key={i} 
-                    className={`h-4 w-4 ${i < contact.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
-                  />
-                ))}
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold">Contact Information</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {contact.email && (
+            <div className="flex items-start">
+              <Mail className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Email</p>
+                <p className="text-sm text-muted-foreground">{contact.email}</p>
+              </div>
+            </div>
+          )}
+          
+          {contact.phone && (
+            <div className="flex items-start">
+              <Phone className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Phone</p>
+                <p className="text-sm text-muted-foreground">{contact.phone}</p>
+              </div>
+            </div>
+          )}
+          
+          {contact.company && (
+            <div className="flex items-start">
+              <Building2 className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Company</p>
+                <p className="text-sm text-muted-foreground">{contact.company}</p>
+              </div>
+            </div>
+          )}
+          
+          {contact.role && (
+            <div className="flex items-start">
+              <Building2 className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Role</p>
+                <p className="text-sm text-muted-foreground">{contact.role}</p>
               </div>
             </div>
           )}
         </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-medium mb-3">Additional Information</h3>
-        <div className="space-y-3">
-          <div className="flex items-center">
-            <span className="text-muted-foreground w-24">Last Contact:</span>
-            <span>{format(new Date(contact.lastContact), 'PP')}</span>
-          </div>
-          <div className="flex items-center">
-            <span className="text-muted-foreground w-24">ID:</span>
-            <span className="text-muted-foreground">{contact.id}</span>
-          </div>
-          {contact.notes && (
-            <div className="flex flex-col">
-              <span className="text-muted-foreground mb-1">Notes:</span>
-              <p className="bg-muted p-3 rounded-md text-sm">{contact.notes}</p>
+        
+        {(contact.address || contact.city || contact.state || contact.zip) && (
+          <div className="pt-2">
+            <div className="flex items-start">
+              <MapPin className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Address</p>
+                <div className="text-sm text-muted-foreground">
+                  {contact.address && <p>{contact.address}</p>}
+                  {(contact.city || contact.state || contact.zip) && (
+                    <p>
+                      {contact.city && `${contact.city}, `}
+                      {contact.state && `${contact.state} `}
+                      {contact.zip && contact.zip}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div>
+        )}
+        
+        {contact.last_contact && (
+          <div className="pt-2">
+            <div className="flex items-start">
+              <Calendar className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Last Contact</p>
+                <p className="text-sm text-muted-foreground">
+                  {format(new Date(contact.last_contact), 'PPP')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {contact.notes && (
+          <div className="border-t pt-4 mt-4">
+            <p className="text-sm font-medium mb-1">Notes</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-line">
+              {contact.notes}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
