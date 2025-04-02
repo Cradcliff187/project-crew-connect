@@ -127,6 +127,31 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               <TabsTrigger value="revisions">Revisions</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
             </TabsList>
+          
+            <div ref={contentRef} className="flex-1 overflow-auto p-6 mt-4">
+              <TabsContent value="details" className="m-0">
+                <EstimateDetailsTab estimate={estimate} />
+              </TabsContent>
+              
+              <TabsContent value="items" className="m-0">
+                <EstimateItemsTab items={items} />
+              </TabsContent>
+              
+              <TabsContent value="revisions" className="m-0">
+                <EstimateRevisionsTab 
+                  revisions={revisions} 
+                  formatDate={formatDate} 
+                  estimateId={estimate.id}
+                />
+              </TabsContent>
+              
+              <TabsContent value="documents" className="m-0">
+                <EstimateDocumentsTab 
+                  estimateId={estimate.id} 
+                  onShareDocument={handleShareDocument}
+                />
+              </TabsContent>
+            </div>
           </Tabs>
           
           <div className="flex gap-2">
@@ -147,31 +172,6 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               Create Revision
             </Button>
           </div>
-        </div>
-        
-        <div ref={contentRef} className="flex-1 overflow-auto p-6">
-          <TabsContent value="details" className="m-0">
-            <EstimateDetailsTab estimate={estimate} />
-          </TabsContent>
-          
-          <TabsContent value="items" className="m-0">
-            <EstimateItemsTab items={items} />
-          </TabsContent>
-          
-          <TabsContent value="revisions" className="m-0">
-            <EstimateRevisionsTab 
-              revisions={revisions} 
-              formatDate={formatDate} 
-              estimateId={estimate.id}
-            />
-          </TabsContent>
-          
-          <TabsContent value="documents" className="m-0">
-            <EstimateDocumentsTab 
-              estimateId={estimate.id} 
-              onShareDocument={handleShareDocument}
-            />
-          </TabsContent>
         </div>
       </DialogContent>
       

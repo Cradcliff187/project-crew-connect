@@ -1,51 +1,39 @@
 
 import React from 'react';
 import EstimateDetailsDialog from './details/EstimateDetailsDialog';
-import { EstimateItem, EstimateRevision } from './types/estimateTypes';
-import { StatusType } from '@/types/common';
 
-export type EstimateDetailsProps = {
+export interface EstimateDetailsProps {
   estimate: {
     id: string;
     client: string;
-    project: string;
+    project?: string;
     date: string;
-    amount: number;
-    status: StatusType | string;
-    versions: number;
-    location?: {
-      address?: string;
-      city?: string;
-      state?: string;
-      zip?: string;
-    };
+    status: string;
+    total?: number;
     description?: string;
   };
-  items?: EstimateItem[];
-  revisions?: EstimateRevision[];
+  items: {
+    id: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total: number;
+  }[];
+  revisions: {
+    id: string;
+    version: number;
+    date: string;
+    notes?: string;
+    status: string;
+    is_current: boolean;
+  }[];
   open: boolean;
   onClose: () => void;
   onStatusChange?: () => void;
-};
+}
 
-const EstimateDetails: React.FC<EstimateDetailsProps> = ({ 
-  estimate, 
-  items = [], 
-  revisions = [], 
-  open, 
-  onClose,
-  onStatusChange
-}) => {
-  return (
-    <EstimateDetailsDialog
-      estimate={estimate}
-      items={items}
-      revisions={revisions}
-      open={open}
-      onClose={onClose}
-      onStatusChange={onStatusChange}
-    />
-  );
+const EstimateDetails: React.FC<EstimateDetailsProps> = (props) => {
+  return <EstimateDetailsDialog {...props} />;
 };
 
 export default EstimateDetails;
