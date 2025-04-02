@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { LoaderCircle } from 'lucide-react';
@@ -15,9 +14,8 @@ interface AddressAutocompleteProps extends React.InputHTMLAttributes<HTMLInputEl
   apiKey?: string;
 }
 
-// This is a demonstration key and should be replaced with a real one
-// This will be loaded from environment variables in a real app
-const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY'; 
+// Using the provided API key
+const GOOGLE_API_KEY = 'AIzaSyBE-qjPRvQwxuEigwu4b5YK_wH77LDyTC0'; 
 
 const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   onAddressSelect,
