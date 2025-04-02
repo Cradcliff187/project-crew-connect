@@ -1,5 +1,5 @@
 
-export interface WorkOrderDocument {
+export interface BaseDocument {
   document_id: string;
   file_name: string;
   file_type?: string;
@@ -17,4 +17,8 @@ export interface WorkOrderDocument {
   version?: number;
   is_latest_version?: boolean;
   parent_document_id?: string;
+}
+
+export interface WorkOrderDocument extends BaseDocument {
+  // Additional fields specific to work order documents can be added here
 }
