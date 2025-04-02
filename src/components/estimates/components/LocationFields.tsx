@@ -12,6 +12,14 @@ interface LocationFieldsProps {
 const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress }) => {
   const form = useFormContext<EstimateFormValues>();
   
+  // Set default state if none is provided
+  React.useEffect(() => {
+    const currentState = form.getValues('location.state');
+    if (!currentState) {
+      form.setValue('location.state', 'California');
+    }
+  }, [form]);
+  
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mt-8 mb-4">Project Location</h3>
