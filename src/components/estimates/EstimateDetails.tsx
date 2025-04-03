@@ -17,12 +17,14 @@ export interface EstimateDetailsProps {
     description: string;
     quantity: number;
     unit_price: number;
-    total: number;
+    total_price?: number; // Make this optional to handle both formats
+    total?: number; // Support legacy format
   }[];
   revisions: {
     id: string;
     version: number;
-    date: string;
+    date?: string; // Legacy field
+    revision_date?: string; // New field name
     notes?: string;
     status: string;
     is_current: boolean;

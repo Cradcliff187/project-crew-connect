@@ -11,7 +11,7 @@ type EstimateItemsTabProps = {
 
 const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items }) => {
   const calculateTotal = () => {
-    return items.reduce((sum, item) => sum + Number(item.total_price), 0);
+    return items.reduce((sum, item) => sum + Number(item.total_price || 0), 0);
   };
 
   return (

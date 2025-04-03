@@ -14,6 +14,9 @@ export interface EstimateItem {
   document_id?: string;
   notes?: string;
   revision_id?: string;
+  
+  // For backward compatibility with older data
+  total?: number;
 }
 
 export interface EstimateRevision {
@@ -28,4 +31,7 @@ export interface EstimateRevision {
   amount?: number;
   revision_by?: string;
   document_id?: string;
+  
+  // For backward compatibility with older data
+  date?: string;
 }

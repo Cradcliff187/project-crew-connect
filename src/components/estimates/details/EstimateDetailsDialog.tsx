@@ -112,7 +112,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   // Map the items to the expected format for EstimateItemsTab
   const mappedItems: EstimateItem[] = items.map(item => ({
     ...item,
-    total_price: item.total,
+    total_price: item.total_price || item.total || 0, // Handle both field names for backward compatibility
     // Include any other required properties from EstimateItem type
   }));
 
@@ -120,7 +120,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   const mappedRevisions: EstimateRevision[] = revisions.map(rev => ({
     ...rev,
     estimate_id: estimate.id,
-    revision_date: rev.date,
+    revision_date: rev.revision_date || rev.date || new Date().toISOString(),
     // Include any other required properties from EstimateRevision type
   }));
 
