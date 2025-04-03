@@ -13,7 +13,6 @@ import {
   FileText,
   Building,
   Hammer,
-  Receipt2,
   FileCheck 
 } from 'lucide-react';
 import { useDocumentNavigation } from './hooks/useDocumentNavigation';
@@ -49,7 +48,7 @@ const EntityInformation: React.FC<EntityInformationProps> = ({ document }) => {
       case 'CHANGE_ORDER':
         return <FileCheck className="h-4 w-4" />;
       case 'EXPENSE':
-        return <Receipt2 className="h-4 w-4" />;
+        return <Receipt className="h-4 w-4" />;
       case 'MAINTENANCE_WORK_ORDER':
         return <Building className="h-4 w-4" />;
       default:

@@ -1,27 +1,37 @@
 
-import React, { useState } from 'react';
-import { Document } from './schemas/documentSchema';
-import {
-  Dialog,
+import React from 'react';
+import { 
+  Dialog, 
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Download, Eye, FileText, Pencil, Trash2, Info, LinkIcon } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
-import { getCategoryConfig } from './utils/categoryIcons';
+import { 
+  Download, 
+  Calendar, 
+  FileText, 
+  Tag,
+  LinkIcon,
+  Trash2
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { formatDate, formatFileSize } from '@/lib/utils';
+import { Document } from './schemas/documentSchema';
 import DocumentViewer from './DocumentViewer';
-import DocumentRelationshipsTab from './DocumentRelationshipsTab';
+import EntityInformation from './EntityInformation';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useScreenSize } from '@/hooks/use-screen-size';
+import RelatedDocuments from './RelatedDocuments';
 import NavigateToEntityButton from './NavigateToEntityButton';
 
 interface DocumentDetailViewProps {
   document: Document | null;
   open: boolean;
   onClose: () => void;
-  onDelete?: () => void;
-  onEditMetadata?: () => void;
+  onDelete?: (document: Document) => void;
   onViewRelatedDocument?: (document: Document) => void;
 }
 
@@ -30,235 +40,151 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
   open,
   onClose,
   onDelete,
-  onEditMetadata,
   onViewRelatedDocument
 }) => {
-  const [activeTab, setActiveTab] = useState('preview');
+  const { isMobile } = useScreenSize();
+  
+  const handleDownload = () => {
+    if (!document?.url) return;
+    
+    const a = document.createElement('a');
+    a.href = document.url;
+    a.download = document.file_name || 'document';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
   
   if (!document) return null;
   
-  const handleDownload = () => {
-    if (document.url) {
-      window.open(document.url, '_blank');
-    }
-  };
-  
-  // Get category configuration for styling
-  const categoryConfig = document.category 
-    ? getCategoryConfig(document.category) 
-    : { color: '#6b7280', label: 'Document', icon: FileText };
-    
-  const CategoryIcon = categoryConfig.icon;
-  
-  // Get entity type display name
-  const getEntityTypeDisplay = (entityType: string) => {
-    switch (entityType.toUpperCase()) {
-      case 'PROJECT':
-        return 'Project';
-      case 'WORK_ORDER':
-        return 'Work Order';
-      case 'CONTACT':
-        return 'Contact';
-      case 'VENDOR':
-        return 'Vendor';
-      case 'SUBCONTRACTOR':
-        return 'Subcontractor';
-      case 'ESTIMATE':
-        return 'Estimate';
-      default:
-        return entityType;
-    }
-  };
-  
+  const showMetadata = Boolean(
+    document.tags?.length || 
+    document.category || 
+    document.description
+  );
+
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className={isMobile ? "w-[95vw] max-w-full" : "sm:max-w-[900px] max-h-[90vh]"}>
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="truncate pr-8">{document.file_name}</DialogTitle>
-            <div className="flex gap-1">
-              {/* Navigate to entity button */}
-              {document.entity_type && document.entity_id && (
-                <NavigateToEntityButton document={document} variant="outline" size="sm" />
+          <DialogTitle className="flex items-center text-[#0485ea]">
+            <FileText className="h-5 w-5 mr-2" />
+            <span className="truncate">{document.file_name}</span>
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex flex-col md:flex-row gap-6 overflow-hidden">
+          {/* Document Preview */}
+          <div className="flex-1 min-h-[300px] md:max-h-[500px] overflow-hidden flex flex-col">
+            <DocumentViewer document={document} />
+          </div>
+          
+          {/* Document Details */}
+          <div className="w-full md:w-80 flex flex-col">
+            <ScrollArea className="flex-1 pr-4 max-h-[500px]">
+              {/* Entity Link */}
+              {document.entity_id && document.entity_type && document.entity_id !== 'detached' && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium mb-2">Related To</h3>
+                  <div className="bg-muted rounded-md p-3">
+                    <EntityInformation document={document} />
+                  </div>
+                </div>
               )}
               
-              {/* Download button */}
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Document Information</h3>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
+                    <div className="text-muted-foreground">Type:</div>
+                    <div>{document.file_type || 'Unknown'}</div>
+                    
+                    <div className="text-muted-foreground">Size:</div>
+                    <div>{formatFileSize(document.file_size || 0)}</div>
+                    
+                    <div className="text-muted-foreground">Uploaded:</div>
+                    <div>{formatDate(document.created_at)}</div>
+                    
+                    {document.category && (
+                      <>
+                        <div className="text-muted-foreground">Category:</div>
+                        <div className="capitalize">{document.category}</div>
+                      </>
+                    )}
+                    
+                    {document.version && (
+                      <>
+                        <div className="text-muted-foreground">Version:</div>
+                        <div>{document.version}</div>
+                      </>
+                    )}
+                    
+                    {document.is_expense && (
+                      <>
+                        <div className="text-muted-foreground">Type:</div>
+                        <div>
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                            Receipt
+                          </Badge>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Tags */}
+                {document.tags && document.tags.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Tags</h3>
+                    <div className="flex flex-wrap gap-1">
+                      {document.tags.map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Description */}
+                {document.description && (
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Description</h3>
+                    <p className="text-sm whitespace-pre-wrap">{document.description}</p>
+                  </div>
+                )}
+                
+                {/* Related Documents */}
+                <RelatedDocuments 
+                  documentId={document.document_id || ''} 
+                  onDocumentSelect={onViewRelatedDocument}
+                />
+              </div>
+            </ScrollArea>
+            
+            <div className="mt-4 pt-4 space-y-2 border-t">
               <Button 
-                variant="outline" 
-                size="sm"
                 onClick={handleDownload}
-                disabled={!document.url}
+                className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
               >
-                <Download className="h-4 w-4 mr-1" />
+                <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>
               
-              {/* Edit metadata button (if provided) */}
-              {onEditMetadata && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={onEditMetadata}
-                >
-                  <Pencil className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-              )}
-              
-              {/* Delete button (if provided) */}
               {onDelete && (
                 <Button 
+                  onClick={() => onDelete(document)}
                   variant="outline" 
-                  size="sm"
-                  onClick={onDelete}
-                  className="text-destructive hover:bg-destructive/10"
+                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
               )}
             </div>
           </div>
-        </DialogHeader>
-        
-        <Tabs 
-          value={activeTab} 
-          onValueChange={setActiveTab}
-          className="flex-1 flex flex-col overflow-hidden"
-        >
-          <TabsList>
-            <TabsTrigger value="preview" className="flex items-center">
-              <Eye className="h-4 w-4 mr-1" />
-              Preview
-            </TabsTrigger>
-            <TabsTrigger value="details" className="flex items-center">
-              <Info className="h-4 w-4 mr-1" />
-              Details
-            </TabsTrigger>
-            <TabsTrigger value="relationships" className="flex items-center">
-              <LinkIcon className="h-4 w-4 mr-1" />
-              Relationships
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent 
-            value="preview" 
-            className="flex-1 overflow-auto border rounded-md mt-4 bg-muted/20"
-          >
-            <DocumentViewer 
-              document={document} 
-              embedded={true}
-            />
-          </TabsContent>
-          
-          <TabsContent 
-            value="details" 
-            className="flex-1 overflow-auto p-4 border rounded-md mt-4"
-          >
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium mb-2">Document Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">File Name</span>
-                    <span className="font-medium truncate">{document.file_name}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">File Type</span>
-                    <span className="font-medium">{document.file_type || 'Unknown'}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">Created</span>
-                    <span className="font-medium">{formatDate(document.created_at)}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-muted-foreground">Last Updated</span>
-                    <span className="font-medium">{formatDate(document.updated_at)}</span>
-                  </div>
-                  {document.file_size && (
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">File Size</span>
-                      <span className="font-medium">
-                        {(document.file_size / 1024).toFixed(1)} KB
-                      </span>
-                    </div>
-                  )}
-                  {document.version && (
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">Version</span>
-                      <span className="font-medium">v{document.version}</span>
-                    </div>
-                  )}
-                  {document.category && (
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">Category</span>
-                      <span className="font-medium flex items-center">
-                        <CategoryIcon className="h-4 w-4 mr-1" style={{ color: categoryConfig.color }} />
-                        {categoryConfig.label}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {document.entity_type && document.entity_id && (
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Associated Entity</h3>
-                  <div className="border rounded-md p-3 bg-muted/20">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {getEntityTypeDisplay(document.entity_type)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          ID: {document.entity_id}
-                        </p>
-                      </div>
-                      <NavigateToEntityButton document={document} variant="outline" size="sm" />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Document notes */}
-              {document.notes && (
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Notes</h3>
-                  <div className="border rounded-md p-3 bg-muted/20">
-                    <p className="text-sm whitespace-pre-line">{document.notes}</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Document tags */}
-              {document.tags && document.tags.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {document.tags.map((tag, index) => (
-                      <span 
-                        key={index} 
-                        className="px-2 py-1 bg-muted text-xs rounded-md"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent 
-            value="relationships" 
-            className="flex-1 overflow-auto p-4 border rounded-md mt-4"
-          >
-            <DocumentRelationshipsTab 
-              document={document}
-              onViewDocument={onViewRelatedDocument || (() => {})}
-            />
-          </TabsContent>
-        </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

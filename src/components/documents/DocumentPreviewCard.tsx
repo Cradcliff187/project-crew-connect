@@ -1,198 +1,233 @@
 
 import React from 'react';
-import { Document } from './schemas/documentSchema';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Calendar, 
-  Eye, 
+  Download, 
+  ExternalLink, 
+  File, 
+  FileImage, 
+  FilePdf, 
   FileText, 
-  Trash2, 
-  Tag,
-  RefreshCw,
-  User,
-  ExternalLink
+  MoreVertical, 
+  Tag, 
+  Trash2 
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { formatDate, getFileIconByType } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatDate, formatFileSize } from '@/lib/utils';
+import { Document } from './schemas/documentSchema';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { getCategoryConfig } from './utils/categoryIcons';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import NavigateToEntityButton from './NavigateToEntityButton';
+import EntityInformation from './EntityInformation';
 
 interface DocumentPreviewCardProps {
   document: Document;
-  onView: () => void;
-  onDelete?: () => void;
-  showEntityInfo?: boolean;
-  isSelected?: boolean;
-  batchMode?: boolean;
-  showNavigationButton?: boolean;
+  onView: (document: Document) => void;
+  onDelete?: (document: Document) => void;
+  className?: string;
+  showNavigationButtons?: boolean;
 }
 
-const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
-  document,
-  onView,
+const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({ 
+  document, 
+  onView, 
   onDelete,
-  showEntityInfo = false,
-  isSelected = false,
-  batchMode = false,
-  showNavigationButton = false
+  className = '',
+  showNavigationButtons = true
 }) => {
-  const FileIcon = getFileIconByType(document.file_type);
-  
-  // Get the category configuration for styling
-  const categoryConfig = document.category ? getCategoryConfig(document.category) : { 
-    color: '#6b7280',
-    label: 'Document',
-    icon: FileText
-  };
-  
-  // Create a component for the Category Icon using the configuration
-  const CategoryIcon = categoryConfig.icon;
-  
-  // Format file size if available
-  const formatFileSize = (sizeInBytes?: number) => {
-    if (!sizeInBytes) return 'Unknown size';
+  const getFileIcon = () => {
+    if (!document.file_type) return <File className="h-12 w-12 text-gray-400" />;
     
-    if (sizeInBytes < 1024) {
-      return `${sizeInBytes} B`;
-    } else if (sizeInBytes < 1024 * 1024) {
-      return `${(sizeInBytes / 1024).toFixed(1)} KB`;
-    } else {
-      return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (document.file_type.startsWith('image/')) {
+      return <FileImage className="h-12 w-12 text-blue-500" />;
     }
+    
+    if (document.file_type === 'application/pdf') {
+      return <FilePdf className="h-12 w-12 text-red-500" />;
+    }
+    
+    return <FileText className="h-12 w-12 text-gray-500" />;
   };
   
-  // Get entity type display name
-  const getEntityTypeDisplay = (entityType: string) => {
-    switch (entityType.toUpperCase()) {
-      case 'PROJECT':
-        return 'Project';
-      case 'WORK_ORDER':
-        return 'Work Order';
-      case 'CONTACT':
-        return 'Contact';
-      case 'VENDOR':
-        return 'Vendor';
-      case 'SUBCONTRACTOR':
-        return 'Subcontractor';
-      case 'ESTIMATE':
-        return 'Estimate';
-      default:
-        return entityType;
+  const getCardStyle = () => {
+    // Determine background hint color based on document category or entity type
+    if (document.category === 'receipt' || document.is_expense) {
+      return {
+        borderColor: 'rgb(251, 191, 36)',
+        bgColor: 'rgba(251, 191, 36, 0.1)'
+      };
     }
+    
+    if (document.entity_type === 'PROJECT') {
+      return {
+        borderColor: '#0485ea',
+        bgColor: 'rgba(4, 133, 234, 0.05)'
+      };
+    }
+    
+    if (document.entity_type === 'WORK_ORDER') {
+      return {
+        borderColor: 'rgb(16, 185, 129)',
+        bgColor: 'rgba(16, 185, 129, 0.05)'
+      };
+    }
+    
+    if (document.entity_type === 'VENDOR') {
+      return {
+        borderColor: 'rgb(139, 92, 246)',
+        bgColor: 'rgba(139, 92, 246, 0.05)'
+      };
+    }
+    
+    if (document.entity_type === 'CUSTOMER') {
+      return {
+        borderColor: 'rgb(249, 115, 22)',
+        bgColor: 'rgba(249, 115, 22, 0.05)'
+      };
+    }
+    
+    // Default style
+    return {
+      borderColor: 'rgb(226, 232, 240)',
+      bgColor: 'white'
+    };
+  };
+  
+  const styles = getCardStyle();
+  
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!document.url) return;
+    
+    const a = document.createElement('a');
+    a.href = document.url;
+    a.download = document.file_name || 'document';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
   
   return (
     <Card 
-      className={`overflow-hidden border transition-all duration-200 h-full flex flex-col ${
-        isSelected 
-          ? 'border-blue-500 bg-blue-50/30 shadow-md' 
-          : 'hover:border-gray-300 hover:shadow-sm'
-      }`}
-      onClick={batchMode ? undefined : onView}
+      className={`overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${className}`}
+      style={{ borderLeft: `4px solid ${styles.borderColor}`, background: styles.bgColor }}
+      onClick={() => onView(document)}
     >
-      <div 
-        className="h-32 flex items-center justify-center p-4"
-        style={{ backgroundColor: `${categoryConfig.color}15` }}
-      >
-        <div className="relative">
-          <FileIcon 
-            className="h-16 w-16" 
-            style={{ color: categoryConfig.color }}
-          />
-          {document.version && document.version > 1 && (
-            <Badge 
-              className="absolute -top-2 -right-2 text-xs px-1.5 py-0.5"
-              style={{ 
-                backgroundColor: categoryConfig.color,
-                border: `1px solid ${categoryConfig.color}`
-              }}
-            >
-              v{document.version}
-            </Badge>
-          )}
-        </div>
-      </div>
-      
-      <CardContent className="flex-1 p-4 pt-3">
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <h4 className="text-sm font-medium truncate flex-1" title={document.file_name}>
-            {document.file_name}
-          </h4>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div className="flex gap-3">
+            {getFileIcon()}
+            <div className="space-y-1">
+              <h3 className="font-medium text-sm leading-tight line-clamp-2" title={document.file_name}>
+                {document.file_name}
+              </h3>
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <span className="flex items-center">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {formatDate(document.created_at)}
+                </span>
+                <span>
+                  {formatFileSize(document.file_size || 0)}
+                </span>
+              </div>
+              
+              {/* Show entity relation if available */}
+              {document.entity_id && document.entity_type && document.entity_id !== 'detached' && (
+                <div className="mt-1">
+                  <EntityInformation document={document} />
+                </div>
+              )}
+              
+              {/* Show tags if available */}
+              {document.tags && document.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {document.tags.slice(0, 2).map((tag, index) => (
+                    <Badge key={index} variant="outline" className="text-xs py-0 h-5 bg-muted">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {document.tags.length > 2 && (
+                    <Badge variant="outline" className="text-xs py-0 h-5 bg-muted">
+                      +{document.tags.length - 2}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           
-          {/* Navigation button to related entity */}
-          {showNavigationButton && (
-            <NavigateToEntityButton document={document} />
-          )}
-        </div>
-        
-        <div className="flex items-center text-xs text-muted-foreground mb-2">
-          <Calendar className="h-3 w-3 mr-1" />
-          <span>{formatDate(document.created_at)}</span>
-        </div>
-        
-        {document.file_type && (
-          <div className="flex items-center text-xs text-muted-foreground mb-2">
-            <FileIcon className="h-3 w-3 mr-1" />
-            <span className="uppercase">{document.file_type}</span>
-            {document.file_size && (
-              <span className="ml-1">({formatFileSize(document.file_size)})</span>
+          <div className="flex items-start gap-1 ml-2">
+            {showNavigationButtons && document.entity_type && document.entity_id && document.entity_id !== 'detached' && (
+              <NavigateToEntityButton 
+                document={document} 
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+              />
             )}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={e => { e.stopPropagation(); onView(document); }}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  View Document
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownload}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </DropdownMenuItem>
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={(e) => { e.stopPropagation(); onDelete(document); }}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        )}
-        
-        {document.entity_type && document.entity_id && showEntityInfo && (
-          <div className="flex items-center text-xs text-muted-foreground mb-2">
-            <CategoryIcon className="h-3 w-3 mr-1" />
-            <span>{getEntityTypeDisplay(document.entity_type)}</span>
-          </div>
-        )}
-        
-        {document.category && (
-          <Badge 
-            variant="outline" 
-            className="mt-1 text-xs font-normal capitalize"
-            style={{ 
-              color: categoryConfig.color,
-              borderColor: `${categoryConfig.color}50`
-            }}
-          >
-            <CategoryIcon className="h-3 w-3 mr-1" />
-            {categoryConfig.label}
-          </Badge>
-        )}
+        </div>
       </CardContent>
-      
-      <CardFooter className="p-3 pt-0 border-t flex justify-between items-center">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 text-xs flex-1 text-[#0485ea]"
-          onClick={(e) => {
-            if (batchMode) e.stopPropagation();
-            if (!batchMode) onView();
-          }}
-        >
-          <Eye className="h-3.5 w-3.5 mr-1" />
-          View
-        </Button>
-        
-        {onDelete && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 w-8 p-0 text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 };
 
 export default DocumentPreviewCard;
+
+// Loading skeleton for documents
+export const DocumentCardSkeleton = () => (
+  <Card className="overflow-hidden">
+    <CardContent className="p-4">
+      <div className="flex gap-3">
+        <Skeleton className="h-12 w-12 rounded" />
+        <div className="space-y-2 flex-1">
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <div className="flex gap-2">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
