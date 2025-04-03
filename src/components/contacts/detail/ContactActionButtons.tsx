@@ -34,6 +34,18 @@ const ContactActionButtons = ({
   const handleTypeTransitionSuccess = () => {
     // Invalidate the contacts query to refresh the data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    
+    // Call the parent's callback to refresh data
+    if (onStatusChange) {
+      onStatusChange();
+    }
+  };
+  
+  const handleTypeChange = async (newType: string) => {
+    // This method is passed to the TypeTransitionDialog
+    // The actual type change logic is handled inside the dialog
+    // We'll be notified via the success callback
+    console.log(`Changing contact type to ${newType}`);
   };
   
   // Main action groups for desktop view
@@ -129,6 +141,7 @@ const ContactActionButtons = ({
         contact={contact}
         open={typeDialogOpen}
         onOpenChange={setTypeDialogOpen}
+        onTypeChange={handleTypeChange}
         onSuccess={handleTypeTransitionSuccess}
       />
     </div>

@@ -89,7 +89,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     }
   };
 
-  // Handler for generic data refreshes
+  // Handler for generic data refreshes - wrapper function with no parameters
   const handleDataRefresh = () => {
     console.log("Refreshing contact data after status or data changes");
     // Refresh data
@@ -111,7 +111,7 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
       
       <ContactActionButtons 
         contact={contact} 
-        onStatusChange={handleStatusChange} 
+        onStatusChange={handleDataRefresh} 
         onSchedule={() => {
           setActiveTab('schedule');
         }} 
