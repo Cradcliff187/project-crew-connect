@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Share2 } from 'lucide-react';
+import { FileDown } from 'lucide-react';
 import { EstimateDetailsProps } from '../EstimateDetails';
 import EstimateDetailsTab from './EstimateDetailsTab';
 import EstimateItemsTab from './EstimateItemsTab';
@@ -130,16 +130,18 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="px-6 py-2 border-b">
-          <div className="flex justify-between items-center mb-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList>
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="items">Items</TabsTrigger>
-                <TabsTrigger value="revisions">Revisions</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-              </TabsList>
-            </Tabs>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="px-6 py-2 border-b flex justify-between items-center">
+            <div className="flex-1">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList>
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="items">Items</TabsTrigger>
+                  <TabsTrigger value="revisions">Revisions</TabsTrigger>
+                  <TabsTrigger value="documents">Documents</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
             
             <div className="flex gap-2 ml-4">
               <PDFExportButton 
@@ -159,31 +161,33 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               </Button>
             </div>
           </div>
-        </div>
-        
-        <div ref={contentRef} className="flex-1 overflow-auto p-6">
-          <TabsContent value="details" className="m-0 mt-2">
-            <EstimateDetailsTab estimate={detailsEstimate} />
-          </TabsContent>
           
-          <TabsContent value="items" className="m-0 mt-2">
-            <EstimateItemsTab items={mappedItems} />
-          </TabsContent>
-          
-          <TabsContent value="revisions" className="m-0 mt-2">
-            <EstimateRevisionsTab 
-              revisions={mappedRevisions} 
-              formatDate={formatDate} 
-              estimateId={estimate.id}
-            />
-          </TabsContent>
-          
-          <TabsContent value="documents" className="m-0 mt-2">
-            <EstimateDocumentsTab 
-              estimateId={estimate.id} 
-              onShareDocument={handleShareDocument}
-            />
-          </TabsContent>
+          <div ref={contentRef} className="flex-1 overflow-auto p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsContent value="details" className="m-0 mt-2">
+                <EstimateDetailsTab estimate={detailsEstimate} />
+              </TabsContent>
+              
+              <TabsContent value="items" className="m-0 mt-2">
+                <EstimateItemsTab items={mappedItems} />
+              </TabsContent>
+              
+              <TabsContent value="revisions" className="m-0 mt-2">
+                <EstimateRevisionsTab 
+                  revisions={mappedRevisions} 
+                  formatDate={formatDate} 
+                  estimateId={estimate.id}
+                />
+              </TabsContent>
+              
+              <TabsContent value="documents" className="m-0 mt-2">
+                <EstimateDocumentsTab 
+                  estimateId={estimate.id} 
+                  onShareDocument={handleShareDocument}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </DialogContent>
       
