@@ -47,13 +47,13 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
   const handleDownload = () => {
     if (!document?.url) return;
     
-    // Create a download link
-    const a = document.createElement('a');
+    // Use window API instead of document reference
+    const a = window.document.createElement('a');
     a.href = document.url;
     a.download = document.file_name || 'document';
-    document.body.appendChild(a);
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
   };
   
   if (!document) return null;
@@ -166,11 +166,7 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
             
             <div className="mt-4 pt-4 space-y-2 border-t">
               <Button 
-                onClick={() => {
-                  if (document?.url) {
-                    window.open(document.url, '_blank');
-                  }
-                }}
+                onClick={handleDownload}
                 className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
               >
                 <Download className="h-4 w-4 mr-2" />
