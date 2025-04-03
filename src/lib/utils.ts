@@ -1,7 +1,7 @@
 
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, isToday, isYesterday } from "date-fns";
+import { format, isToday, isYesterday, differenceInDays } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -31,4 +31,46 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Format a number as currency (USD)
+ */
+export function formatCurrency(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined) return '$0.00';
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+}
+
+/**
+ * Format a time range in a human-readable format
+ */
+export function formatTimeRange(startTime: string, endTime: string): string {
+  if (!startTime || !endTime) return "Invalid time range";
+  
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return "Invalid time range";
+  
+  return `${format(start, "h:mm a")} - ${format(end, "h:mm a")}`;
+}
+
+/**
+ * Calculate days until due from a due date
+ */
+export function calculateDaysUntilDue(dueDate: string | null): number | null {
+  if (!dueDate) return null;
+  
+  const today = new Date();
+  const due = new Date(dueDate);
+  
+  if (isNaN(due.getTime())) return null;
+  
+  return differenceInDays(due, today);
 }
