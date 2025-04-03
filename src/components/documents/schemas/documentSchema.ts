@@ -46,6 +46,19 @@ export const expenseTypes = [
 // For backward compatibility - alias expenseTypes as costTypes
 export const costTypes = expenseTypes;
 
+// Entity-specific category mapping
+export const entityCategoryMap: Record<string, string[]> = {
+  'PROJECT': ['contract', 'photo', 'certification', 'other'],
+  'CUSTOMER': ['contract', 'invoice', 'other'],
+  'ESTIMATE': ['3rd_party_estimate', 'contract', 'other'],
+  'WORK_ORDER': ['receipt', 'photo', 'other'],
+  'VENDOR': ['invoice', 'certification', 'contract', 'other'],
+  'SUBCONTRACTOR': ['certification', 'insurance', 'contract', 'other'],
+  'CONTACT': ['contract', 'certification', 'other'],
+  'EXPENSE': ['receipt', 'invoice', 'other'],
+  'TIME_ENTRY': ['receipt', 'photo', 'other']
+};
+
 // Define the document metadata schema
 export const documentMetadataSchema = z.object({
   category: z.enum(documentCategories),
@@ -119,3 +132,8 @@ export type ExpenseType = typeof expenseTypes[number];
 export type DocumentMetadata = z.infer<typeof documentMetadataSchema>;
 export type DocumentUploadFormValues = z.infer<typeof documentUploadSchema>;
 export type Document = z.infer<typeof documentSchema>;
+
+// Helper function to get available categories for a specific entity type
+export const getEntityCategories = (entityType: string): DocumentCategory[] => {
+  return (entityCategoryMap[entityType] || documentCategories) as DocumentCategory[];
+};

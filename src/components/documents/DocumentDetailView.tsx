@@ -110,7 +110,7 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
                     {document.category && (
                       <>
                         <div className="text-muted-foreground">Category:</div>
-                        <div className="capitalize">{document.category}</div>
+                        <div className="capitalize">{document.category.replace(/_/g, ' ')}</div>
                       </>
                     )}
                     
