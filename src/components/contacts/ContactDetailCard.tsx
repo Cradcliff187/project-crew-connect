@@ -14,7 +14,7 @@ import {
   Clock, 
   CalendarDays, 
   Star,
-  Tool, 
+  Wrench, 
   DollarSign,
   Package
 } from 'lucide-react';
@@ -114,7 +114,7 @@ const ContactDetailCard: React.FC<ContactDetailCardProps> = ({ contact }) => {
           <h3 className="text-lg font-medium mb-2">Business Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex items-start">
-              <Tool className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
+              <Wrench className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
               <div>
                 <p className="text-sm font-medium">Type</p>
                 <Badge variant="outline">
@@ -125,7 +125,7 @@ const ContactDetailCard: React.FC<ContactDetailCardProps> = ({ contact }) => {
 
             {contact.role && (
               <div className="flex items-start">
-                <Tool className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
+                <Wrench className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium">Role</p>
                   <p className="text-muted-foreground">{contact.role}</p>
@@ -135,7 +135,7 @@ const ContactDetailCard: React.FC<ContactDetailCardProps> = ({ contact }) => {
 
             {contact.specialty && (
               <div className="flex items-start">
-                <Tool className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
+                <Wrench className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium">Specialty</p>
                   <p className="text-muted-foreground">{contact.specialty}</p>

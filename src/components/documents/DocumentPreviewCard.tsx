@@ -93,12 +93,13 @@ const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
       return;
     }
     
-    const a = document.createElement('a');
+    // Use the window.document API for download
+    const a = window.document.createElement('a');
     a.href = document.url;
     a.download = document.file_name || 'document';
-    document.body.appendChild(a);
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
   };
   
   // Display an image preview for image files

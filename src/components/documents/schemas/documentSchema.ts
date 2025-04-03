@@ -1,4 +1,3 @@
-
 import * as z from 'zod';
 
 // Define the category options
@@ -24,7 +23,8 @@ export const entityTypes = [
   'EXPENSE',
   'TIME_ENTRY',
   'EMPLOYEE',
-  'ESTIMATE_ITEM' // Added for line item documents
+  'ESTIMATE_ITEM',
+  'CONTACT'
 ] as const;
 
 // Define vendor types

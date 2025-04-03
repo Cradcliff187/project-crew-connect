@@ -3,7 +3,17 @@ import { useState } from 'react';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
 
-export function useDocumentViewer() {
+interface DocumentViewerOptions {
+  imageOptions?: {
+    width?: number;
+    height?: number;
+    quality?: number;
+    format?: 'webp' | 'png' | 'jpeg';
+  };
+  onClose?: () => void;
+}
+
+export function useDocumentViewer(options?: DocumentViewerOptions) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
@@ -53,14 +63,19 @@ export function useDocumentViewer() {
   
   const closeViewer = () => {
     setIsViewerOpen(false);
+    if (options?.onClose) {
+      options.onClose();
+    }
   };
   
   return {
     viewDocument,
     closeViewer,
     isViewerOpen,
+    setIsViewerOpen,
     currentDocument,
     loading,
+    isLoading: loading,
     error,
   };
 }

@@ -10,7 +10,7 @@ interface ContactDocumentsProps {
 const ContactDocuments: React.FC<ContactDocumentsProps> = ({ contactId }) => {
   return (
     <DocumentsSection
-      entityType="CONTACT" as EntityType
+      entityType="CUSTOMER" as EntityType
       entityId={contactId}
       title="Contact Documents"
       description="Upload and manage documents associated with this contact"
