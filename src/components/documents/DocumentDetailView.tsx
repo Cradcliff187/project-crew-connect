@@ -166,7 +166,11 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
             
             <div className="mt-4 pt-4 space-y-2 border-t">
               <Button 
-                onClick={handleDownload}
+                onClick={() => {
+                  if (document?.url) {
+                    window.open(document.url, '_blank');
+                  }
+                }}
                 className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
               >
                 <Download className="h-4 w-4 mr-2" />
