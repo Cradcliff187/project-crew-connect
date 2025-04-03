@@ -37,6 +37,17 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
     setCompareDialogOpen(true);
   };
 
+  // Safe date formatting helper
+  const safeFormatDate = (dateString?: string) => {
+    if (!dateString) return "—";
+    try {
+      return formatDate(dateString);
+    } catch (error) {
+      console.error("Error formatting date:", error, dateString);
+      return "Invalid date";
+    }
+  };
+
   return (
     <>
       <Card>
@@ -60,7 +71,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{formatDate(revision.revision_date)}</span>
+                        <span className="text-sm text-muted-foreground">{safeFormatDate(revision.revision_date)}</span>
                         {previousRevision && (
                           <Button 
                             variant="outline" 
@@ -99,7 +110,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
                             <p>Status: {revision.status}</p>
                           )}
                           {revision.sent_date && (
-                            <p>Sent: {formatDate(revision.sent_date)}</p>
+                            <p>Sent: {safeFormatDate(revision.sent_date)}</p>
                           )}
                           {revision.revision_by && (
                             <p>Revised by: {revision.revision_by}</p>

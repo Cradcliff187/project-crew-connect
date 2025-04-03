@@ -21,6 +21,7 @@ import PDFExportButton from '../detail/PDFExportButton';
 import DocumentShareDialog from '../detail/dialogs/DocumentShareDialog';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
+import { formatDate as formatDateUtil } from '@/lib/utils';
 
 const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({ 
   estimate, 
@@ -41,12 +42,25 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    }).format(date);
+    if (!dateString) return "—";
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return "Invalid date";
+      }
+      
+      return new Intl.DateTimeFormat('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }).format(date);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Date error";
+    }
   };
 
   // Find the current version from revisions
