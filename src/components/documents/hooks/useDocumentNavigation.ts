@@ -46,6 +46,20 @@ export const useDocumentNavigation = () => {
         case 'ESTIMATE':
           navigate(`/estimates?id=${document.entity_id}`);
           break;
+        case 'MAINTENANCE_WORK_ORDER':
+          navigate(`/maintenance/work-orders/${document.entity_id}`);
+          break;
+        case 'CHANGE_ORDER':
+          // For change orders, we need to determine if it's for a project or other entity
+          // This might need additional context from the document metadata
+          navigate(`/change-orders?id=${document.entity_id}`);
+          break;
+        case 'INVOICE':
+          navigate(`/invoices?id=${document.entity_id}`);
+          break;
+        case 'EXPENSE':
+          navigate(`/expenses?id=${document.entity_id}`);
+          break;
         default:
           // Default to document detail page
           toast({

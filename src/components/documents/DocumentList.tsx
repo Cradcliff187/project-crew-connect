@@ -41,27 +41,22 @@ const DocumentList = ({
     currentDocument 
   } = useDocumentViewer();
   
-  // State for batch selection
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [batchMode, setBatchMode] = useState(false);
 
   const handleViewDocument = (document: Document) => {
-    // In batch mode, toggle selection instead of viewing
     if (batchMode) {
       handleToggleSelection(document.document_id);
       return;
     }
     
-    // If an external view handler is provided, use it
     if (onView) {
       onView(document);
     } else {
-      // Otherwise use the internal document viewer
       viewDocument(document.document_id);
     }
   };
 
-  // Handle document selection
   const handleToggleSelection = (documentId: string) => {
     setSelectedDocuments(prev => 
       prev.includes(documentId)
@@ -70,16 +65,13 @@ const DocumentList = ({
     );
   };
 
-  // Toggle batch mode
   const toggleBatchMode = () => {
     setBatchMode(prev => !prev);
     if (batchMode) {
-      // Clear selection when exiting batch mode
       setSelectedDocuments([]);
     }
   };
 
-  // Batch download
   const handleBatchDownload = () => {
     if (selectedDocuments.length === 0) {
       toast({
@@ -90,12 +82,10 @@ const DocumentList = ({
       return;
     }
 
-    // Find the selected documents
     const docsToDownload = documents.filter(doc => 
       selectedDocuments.includes(doc.document_id) && doc.url
     );
 
-    // Download each document
     docsToDownload.forEach(doc => {
       if (doc.url) {
         window.open(doc.url, '_blank');
@@ -108,7 +98,6 @@ const DocumentList = ({
     });
   };
 
-  // Batch delete
   const handleBatchDelete = () => {
     if (selectedDocuments.length === 0) {
       toast({
@@ -125,13 +114,10 @@ const DocumentList = ({
     }
   };
 
-  // Select all documents
   const handleSelectAll = () => {
     if (selectedDocuments.length === documents.length) {
-      // Deselect all if all are already selected
       setSelectedDocuments([]);
     } else {
-      // Select all documents
       setSelectedDocuments(documents.map(doc => doc.document_id));
     }
   };
@@ -163,7 +149,6 @@ const DocumentList = ({
     );
   }
 
-  // Batch operations UI
   const renderBatchActions = () => {
     if (!batchMode) return null;
 
@@ -216,7 +201,6 @@ const DocumentList = ({
     );
   };
 
-  // Categorize documents by type if needed
   const documentsByCategory: Record<string, Document[]> = {};
   if (showCategories) {
     documents.forEach(doc => {
@@ -230,7 +214,6 @@ const DocumentList = ({
 
   return (
     <div className="space-y-6">
-      {/* Batch Mode Toggle */}
       <div className="flex justify-end mb-2">
         <Button 
           variant={batchMode ? "default" : "outline"} 
@@ -242,13 +225,10 @@ const DocumentList = ({
         </Button>
       </div>
       
-      {/* Batch Actions Bar */}
       {renderBatchActions && renderBatchActions()}
 
       {showCategories && Object.keys(documentsByCategory).length > 0 ? (
-        // Show documents grouped by category
         Object.entries(documentsByCategory).map(([category, docs]) => {
-          // Get category config for styling
           const categoryConfig = getCategoryConfig(category);
           const CategoryIcon = categoryConfig.icon;
           
@@ -262,7 +242,6 @@ const DocumentList = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {docs.map((document) => (
                   <div key={document.document_id} className="relative">
-                    {/* Checkbox for batch selection */}
                     {batchMode && (
                       <div className="absolute top-2 left-2 z-10">
                         <Checkbox
@@ -288,11 +267,9 @@ const DocumentList = ({
           );
         })
       ) : (
-        // Show documents without categories, add showNavigationButton prop
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {documents.map((document) => (
             <div key={document.document_id} className="relative">
-              {/* Checkbox for batch selection */}
               {batchMode && (
                 <div className="absolute top-2 left-2 z-10">
                   <Checkbox

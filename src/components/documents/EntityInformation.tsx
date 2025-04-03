@@ -2,7 +2,20 @@
 import React from 'react';
 import { Document } from './schemas/documentSchema';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Briefcase, Wrench, Landmark, Receipt, Clock, User, FileText } from 'lucide-react';
+import { 
+  ExternalLink, 
+  Briefcase, 
+  Wrench, 
+  Landmark, 
+  Receipt, 
+  Clock, 
+  User, 
+  FileText,
+  Building,
+  Hammer,
+  Receipt2,
+  FileCheck 
+} from 'lucide-react';
 import { useDocumentNavigation } from './hooks/useDocumentNavigation';
 
 interface EntityInformationProps {
@@ -25,54 +38,70 @@ const EntityInformation: React.FC<EntityInformationProps> = ({ document }) => {
       case 'ESTIMATE':
         return <FileText className="h-4 w-4" />;
       case 'CUSTOMER':
+      case 'CONTACT':
         return <User className="h-4 w-4" />;
       case 'VENDOR':
         return <Landmark className="h-4 w-4" />;
       case 'SUBCONTRACTOR':
-        return <Wrench className="h-4 w-4" />;
-      case 'EXPENSE':
+        return <Hammer className="h-4 w-4" />;
+      case 'INVOICE':
         return <Receipt className="h-4 w-4" />;
-      case 'TIME_ENTRY':
-        return <Clock className="h-4 w-4" />;
+      case 'CHANGE_ORDER':
+        return <FileCheck className="h-4 w-4" />;
+      case 'EXPENSE':
+        return <Receipt2 className="h-4 w-4" />;
+      case 'MAINTENANCE_WORK_ORDER':
+        return <Building className="h-4 w-4" />;
       default:
         return <FileText className="h-4 w-4" />;
     }
   };
 
-  const formatEntityId = (id: string) => {
-    // For display purposes, show only the last part of the ID
-    if (id.includes('-')) {
-      const parts = id.split('-');
-      return parts[parts.length - 1];
-    }
-    // Or last 5 characters
-    return id.slice(-5);
-  };
-
   const getEntityName = () => {
-    return document.entity_type.toLowerCase().replace('_', ' ');
+    switch (document.entity_type.toUpperCase()) {
+      case 'PROJECT':
+        return 'Project';
+      case 'WORK_ORDER':
+        return 'Work Order';
+      case 'ESTIMATE':
+        return 'Estimate';
+      case 'CUSTOMER':
+        return 'Customer';
+      case 'CONTACT':
+        return 'Contact';
+      case 'VENDOR':
+        return 'Vendor';
+      case 'SUBCONTRACTOR':
+        return 'Subcontractor';
+      case 'INVOICE':
+        return 'Invoice';
+      case 'CHANGE_ORDER':
+        return 'Change Order';
+      case 'EXPENSE':
+        return 'Expense';
+      case 'MAINTENANCE_WORK_ORDER':
+        return 'Maintenance Work Order';
+      default:
+        return document.entity_type;
+    }
   };
 
   return (
-    <div className="flex flex-col space-y-2">
-      <div className="flex items-center gap-2 text-sm">
-        <span className="font-medium">Associated with:</span>
-        <div className="flex items-center gap-1.5 text-[#0485ea]">
-          {getEntityIcon()}
-          <span className="capitalize">{getEntityName()}</span>
-          <span>#{formatEntityId(document.entity_id)}</span>
-        </div>
+    <div className="flex items-center justify-between">
+      <div className="flex items-center">
+        {getEntityIcon()}
+        <span className="text-sm ml-1">{getEntityName()}</span>
       </div>
       
-      <Button 
-        variant="outline" 
+      <Button
+        variant="ghost"
         size="sm"
-        className="mt-1 text-xs h-8"
+        className="h-7 px-2 text-[#0485ea]"
         onClick={() => navigateToEntity(document)}
         disabled={isNavigating}
       >
         <ExternalLink className="h-3.5 w-3.5 mr-1" />
-        Go to {getEntityName()}
+        <span className="text-xs">View</span>
       </Button>
     </div>
   );
