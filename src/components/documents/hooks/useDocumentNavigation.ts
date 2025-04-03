@@ -1,68 +1,69 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Document } from '../schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
 
 export const useDocumentNavigation = () => {
-  const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  const navigateToEntity = useCallback((document: Document) => {
-    if (!document.entity_type || !document.entity_id) {
+  /**
+   * Navigate to the appropriate entity page based on the document's entity type
+   */
+  const navigateToEntity = (document: Document) => {
+    if (!document.entity_type || !document.entity_id || document.entity_id === 'detached') {
       toast({
         title: 'Navigation error',
         description: 'This document is not associated with any entity',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
 
     setIsNavigating(true);
-
-    // Map entity types to their corresponding routes
-    const entityRouteMap: Record<string, string> = {
-      'PROJECT': `/projects/${document.entity_id}`,
-      'WORK_ORDER': `/work-orders/${document.entity_id}`,
-      'ESTIMATE': `/estimates/${document.entity_id}`,
-      'CUSTOMER': `/customers/${document.entity_id}`,
-      'VENDOR': `/vendors/${document.entity_id}`,
-      'SUBCONTRACTOR': `/subcontractors/${document.entity_id}`,
-      'EXPENSE': `/expenses/${document.entity_id}`,
-      'TIME_ENTRY': `/time-tracking?id=${document.entity_id}`
-    };
-
-    const route = entityRouteMap[document.entity_type.toUpperCase()];
-
-    if (route) {
-      try {
-        // React Router's navigate doesn't return a Promise, so don't use .then()
-        navigate(route);
-        
-        // Show success toast after navigation
-        toast({
-          title: 'Navigation successful',
-          description: `Navigated to ${document.entity_type.toLowerCase()}`
-        });
-      } catch (error) {
-        console.error('Navigation error:', error);
-        toast({
-          title: 'Navigation failed',
-          description: 'Could not navigate to the entity page',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsNavigating(false);
+    
+    try {
+      switch (document.entity_type.toUpperCase()) {
+        case 'PROJECT':
+          navigate(`/projects/${document.entity_id}`);
+          break;
+        case 'WORK_ORDER':
+          navigate(`/work-orders/${document.entity_id}`);
+          break;
+        case 'CUSTOMER':
+        case 'CONTACT':
+          // Handle contact navigation - this will open the contact detail
+          // For now, navigate to contacts page with query param
+          navigate(`/contacts?id=${document.entity_id}`);
+          break;
+        case 'VENDOR':
+          navigate(`/vendors/${document.entity_id}`);
+          break;
+        case 'SUBCONTRACTOR':
+          navigate(`/subcontractors/${document.entity_id}`);
+          break;
+        case 'ESTIMATE':
+          navigate(`/estimates?id=${document.entity_id}`);
+          break;
+        default:
+          // Default to document detail page
+          toast({
+            title: 'Navigation',
+            description: `Entity type ${document.entity_type} doesn't have a dedicated page`,
+          });
       }
-    } else {
+    } catch (error) {
+      console.error('Navigation error:', error);
       toast({
         title: 'Navigation error',
-        description: `No route defined for entity type: ${document.entity_type}`,
-        variant: 'destructive'
+        description: 'Failed to navigate to the entity page',
+        variant: 'destructive',
       });
+    } finally {
       setIsNavigating(false);
     }
-  }, [navigate]);
+  };
 
   return {
     navigateToEntity,

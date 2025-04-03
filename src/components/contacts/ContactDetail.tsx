@@ -7,7 +7,8 @@ import {
   ClipboardList, 
   Users, 
   BarChart4,
-  Info
+  Info,
+  FileText
 } from 'lucide-react';
 
 // Import refactored components
@@ -19,6 +20,7 @@ import ContactDetailInformation from './detail/ContactDetailInformation';
 import RelationshipsSection from './detail/RelationshipsSection';
 import InteractionsSection from './detail/InteractionsSection';
 import PerformanceSection from './detail/PerformanceSection';
+import DocumentsSection from './detail/DocumentsSection';
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -133,6 +135,10 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
               <Calendar className="mr-1 h-4 w-4" />
               Schedule
             </TabsTrigger>
+            <TabsTrigger value="documents" className="flex-1">
+              <FileText className="mr-1 h-4 w-4" />
+              Documents
+            </TabsTrigger>
             <TabsTrigger value="relationships" className="flex-1 hidden md:flex">
               <Users className="mr-1 h-4 w-4" />
               Relationships
@@ -160,6 +166,13 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
             appointments={appointments} 
             setAppointments={setAppointments} 
             contactId={contact.id} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="documents" className="flex-1 overflow-y-auto p-4">
+          <DocumentsSection 
+            contact={contact}
+            onDocumentAdded={handleDataRefresh}
           />
         </TabsContent>
         
