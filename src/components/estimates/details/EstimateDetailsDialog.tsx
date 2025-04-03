@@ -66,7 +66,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   const mappedRevisions: EstimateRevision[] = revisions.map(rev => ({
     ...rev,
     estimate_id: estimate.id,
-    revision_date: rev.date,
+    revision_date: rev.date, // Map date to revision_date
     // Include any other required properties from EstimateRevision type
   }));
 
