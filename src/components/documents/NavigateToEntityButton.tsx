@@ -1,37 +1,59 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Loader2 } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
-import { useDocumentNavigation } from './hooks/useDocumentNavigation';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useNavigate } from 'react-router-dom';
 
 interface NavigateToEntityButtonProps {
   document: Document;
-  className?: string;
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
-  size?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
-const NavigateToEntityButton: React.FC<NavigateToEntityButtonProps> = ({
-  document,
-  className = '',
-  variant = 'ghost',
-  size = 'sm'
-}) => {
-  const { navigateToEntity, isNavigating } = useDocumentNavigation();
-
-  // Don't render anything if the document has no entity
-  if (!document.entity_type || !document.entity_id || document.entity_id === 'detached') {
-    return null;
-  }
-
-  const getEntityName = () => {
-    switch (document.entity_type.toUpperCase()) {
+const NavigateToEntityButton: React.FC<NavigateToEntityButtonProps> = ({ document }) => {
+  const navigate = useNavigate();
+  
+  // Function to get entity URL
+  const getEntityUrl = () => {
+    const entityType = document.entity_type?.toUpperCase();
+    const entityId = document.entity_id;
+    
+    if (!entityType || !entityId || entityId === 'detached') {
+      return null;
+    }
+    
+    switch (entityType) {
+      case 'PROJECT':
+        return `/projects/${entityId}`;
+      case 'CONTACT':
+        return `/contacts/${entityId}`;
+      case 'CUSTOMER':
+        return `/customers/${entityId}`;
+      case 'VENDOR':
+        return `/vendors/${entityId}`;
+      case 'SUBCONTRACTOR':
+        return `/subcontractors/${entityId}`;
+      case 'ESTIMATE':
+        return `/estimates/${entityId}`;
+      case 'WORK_ORDER':
+        return `/work-orders/${entityId}`;
+      case 'MAINTENANCE_WORK_ORDER':
+        return `/maintenance/work-orders/${entityId}`;
+      case 'TIME_ENTRY':
+        return `/time-tracking/${entityId}`;
+      default:
+        return null;
+    }
+  };
+  
+  // Get entity label
+  const getEntityLabel = () => {
+    const entityType = document.entity_type?.toUpperCase();
+    
+    if (!entityType) return 'Entity';
+    
+    switch (entityType) {
       case 'PROJECT':
         return 'Project';
-      case 'WORK_ORDER':
-        return 'Work Order';
       case 'CONTACT':
         return 'Contact';
       case 'CUSTOMER':
@@ -42,45 +64,31 @@ const NavigateToEntityButton: React.FC<NavigateToEntityButtonProps> = ({
         return 'Subcontractor';
       case 'ESTIMATE':
         return 'Estimate';
+      case 'WORK_ORDER':
+        return 'Work Order';
       case 'MAINTENANCE_WORK_ORDER':
-        return 'Maintenance Work Order';
-      case 'CHANGE_ORDER':
-        return 'Change Order';
-      case 'INVOICE':
-        return 'Invoice';
+        return 'Maintenance';
+      case 'TIME_ENTRY':
+        return 'Time Entry';
       default:
-        return document.entity_type;
+        return entityType;
     }
   };
-
-  const tooltipText = `Go to ${getEntityName()} Page`;
-
+  
+  const url = getEntityUrl();
+  
+  if (!url) return null;
+  
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigateToEntity(document);
-            }}
-            variant={variant}
-            size={size}
-            className={className}
-            disabled={isNavigating}
-          >
-            {isNavigating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ExternalLink className="h-4 w-4" />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{tooltipText}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 px-2 text-xs text-[#0485ea]"
+      onClick={() => navigate(url)}
+    >
+      <ExternalLink className="h-3.5 w-3.5 mr-1" />
+      <span>View {getEntityLabel()}</span>
+    </Button>
   );
 };
 

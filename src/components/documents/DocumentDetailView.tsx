@@ -47,6 +47,7 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
   const handleDownload = () => {
     if (!document?.url) return;
     
+    // Create a download link
     const a = document.createElement('a');
     a.href = document.url;
     a.download = document.file_name || 'document';
@@ -60,7 +61,7 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
   const showMetadata = Boolean(
     document.tags?.length || 
     document.category || 
-    document.description
+    document.notes
   );
 
   return (
@@ -147,11 +148,11 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
                   </div>
                 )}
                 
-                {/* Description */}
-                {document.description && (
+                {/* Notes */}
+                {document.notes && (
                   <div>
-                    <h3 className="text-sm font-medium mb-2">Description</h3>
-                    <p className="text-sm whitespace-pre-wrap">{document.description}</p>
+                    <h3 className="text-sm font-medium mb-2">Notes</h3>
+                    <p className="text-sm whitespace-pre-wrap">{document.notes}</p>
                   </div>
                 )}
                 

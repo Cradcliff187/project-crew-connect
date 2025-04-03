@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Document } from './schemas/documentSchema';
 import { FileText, Loader2, Upload, Download, Trash2 } from 'lucide-react';
@@ -46,14 +47,14 @@ const DocumentList = ({
 
   const handleViewDocument = (document: Document) => {
     if (batchMode) {
-      handleToggleSelection(document.document_id);
+      handleToggleSelection(document.document_id || '');
       return;
     }
     
     if (onView) {
       onView(document);
     } else {
-      viewDocument(document.document_id);
+      viewDocument(document.document_id || '');
     }
   };
 
@@ -83,7 +84,7 @@ const DocumentList = ({
     }
 
     const docsToDownload = documents.filter(doc => 
-      selectedDocuments.includes(doc.document_id) && doc.url
+      selectedDocuments.includes(doc.document_id || '') && doc.url
     );
 
     docsToDownload.forEach(doc => {
@@ -118,7 +119,7 @@ const DocumentList = ({
     if (selectedDocuments.length === documents.length) {
       setSelectedDocuments([]);
     } else {
-      setSelectedDocuments(documents.map(doc => doc.document_id));
+      setSelectedDocuments(documents.map(doc => doc.document_id || '').filter(Boolean));
     }
   };
 
@@ -225,7 +226,7 @@ const DocumentList = ({
         </Button>
       </div>
       
-      {renderBatchActions && renderBatchActions()}
+      {renderBatchActions()}
 
       {showCategories && Object.keys(documentsByCategory).length > 0 ? (
         Object.entries(documentsByCategory).map(([category, docs]) => {
@@ -245,8 +246,8 @@ const DocumentList = ({
                     {batchMode && (
                       <div className="absolute top-2 left-2 z-10">
                         <Checkbox
-                          checked={selectedDocuments.includes(document.document_id)}
-                          onCheckedChange={() => handleToggleSelection(document.document_id)}
+                          checked={selectedDocuments.includes(document.document_id || '')}
+                          onCheckedChange={() => handleToggleSelection(document.document_id || '')}
                           className="bg-white border-gray-300"
                         />
                       </div>
@@ -256,7 +257,7 @@ const DocumentList = ({
                       onView={() => handleViewDocument(document)}
                       onDelete={onDocumentDelete && !batchMode ? () => onDocumentDelete(document) : undefined}
                       showEntityInfo={showEntityInfo}
-                      isSelected={selectedDocuments.includes(document.document_id)}
+                      isSelected={selectedDocuments.includes(document.document_id || '')}
                       batchMode={batchMode}
                       showNavigationButton={showNavigationButtons}
                     />
@@ -273,8 +274,8 @@ const DocumentList = ({
               {batchMode && (
                 <div className="absolute top-2 left-2 z-10">
                   <Checkbox
-                    checked={selectedDocuments.includes(document.document_id)}
-                    onCheckedChange={() => handleToggleSelection(document.document_id)}
+                    checked={selectedDocuments.includes(document.document_id || '')}
+                    onCheckedChange={() => handleToggleSelection(document.document_id || '')}
                     className="bg-white border-gray-300"
                   />
                 </div>
@@ -285,7 +286,7 @@ const DocumentList = ({
                 onView={() => handleViewDocument(document)}
                 onDelete={onDocumentDelete && !batchMode ? () => onDocumentDelete(document) : undefined}
                 showEntityInfo={showEntityInfo}
-                isSelected={selectedDocuments.includes(document.document_id)}
+                isSelected={selectedDocuments.includes(document.document_id || '')}
                 batchMode={batchMode}
                 showNavigationButton={showNavigationButtons}
               />
