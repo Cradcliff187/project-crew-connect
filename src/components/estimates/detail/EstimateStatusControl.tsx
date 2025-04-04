@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { StatusType } from '@/types/common';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,9 +104,12 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
 
   const options = getAvailableStatusOptions();
 
+  // Ensure the currentStatus is cast to StatusType safely
+  const safeStatus = currentStatus as StatusType;
+
   return (
     <div className={`flex items-center ${className}`}>
-      <StatusBadge status={currentStatus} />
+      <StatusBadge status={safeStatus} />
       
       {options.length > 0 && (
         <DropdownMenu>
