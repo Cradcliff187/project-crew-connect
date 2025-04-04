@@ -2,6 +2,11 @@
 import { format, parse } from 'date-fns';
 import { TimeOfDay } from '@/types/timeTracking';
 
+// Parse a time string into a Date object for easier formatting
+export const parseTime = (timeStr: string): Date => {
+  return parse(timeStr, 'HH:mm', new Date());
+};
+
 // Generate time options for the 24-hour day in 15-minute increments
 export const generateTimeOptions = () => {
   const options = [];
@@ -20,11 +25,6 @@ export const generateTimeOptions = () => {
 };
 
 export const timeOptions = generateTimeOptions();
-
-// Parse a time string into a Date object for easier formatting
-export const parseTime = (timeStr: string): Date => {
-  return parse(timeStr, 'HH:mm', new Date());
-};
 
 // Determine the time of day category
 export const getTimeOfDay = (hour: number): TimeOfDay => {
