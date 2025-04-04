@@ -1,9 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Timer, Upload, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { 
+  Calendar as CalendarIcon, 
+  Timer, 
+  Upload, 
+  CheckCircle2, 
+  Clock, 
+  Receipt, 
+  Briefcase,
+  User,
+  AlertCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,7 +21,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
@@ -19,20 +33,30 @@ import TimeRangeSelector from './form/TimeRangeSelector';
 import ReceiptUploader from './form/ReceiptUploader';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import { useEntityData } from './hooks/useEntityData';
+import ReceiptMetadataForm from './form/ReceiptMetadataForm';
 
 interface TimeEntryFormWizardProps {
   onSuccess: () => void;
 }
 
+const steps = [
+  { id: 'work', title: 'Work Details', icon: Briefcase },
+  { id: 'time', title: 'Time & Date', icon: Clock },
+  { id: 'receipts', title: 'Receipts', icon: Receipt },
+  { id: 'review', title: 'Review', icon: CheckCircle2 },
+];
+
 const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess }) => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [hasReceipts, setHasReceipts] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  
   const {
     form,
     isLoading,
     selectedFiles,
+    receiptMetadata,
     handleFilesSelected,
     handleFileClear,
+    updateReceiptMetadata,
     handleSubmit,
   } = useTimeEntryForm(onSuccess);
 
@@ -50,58 +74,134 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess }) 
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   const hoursWorked = form.watch('hoursWorked');
+  const hasReceipts = form.watch('hasReceipts');
   const selectedEntity = getSelectedEntityDetails();
 
+  // Calculate completion percentage for the progress bar
+  const getProgressPercent = () => {
+    return Math.round(((currentStep + 1) / steps.length) * 100);
+  };
+
+  // Navigation functions with validation
   const nextStep = () => {
-    if (currentStep === 1 && !entityId) {
+    // Validate current step
+    let canProceed = true;
+    let errorMessage = '';
+
+    if (currentStep === 0 && !entityId) {
+      canProceed = false;
+      errorMessage = `Please select a ${entityType === 'work_order' ? 'work order' : 'project'}`;
       form.setError('entityId', { 
         type: 'required', 
-        message: `Please select a ${entityType === 'work_order' ? 'work order' : 'project'}` 
+        message: errorMessage
+      });
+    }
+    
+    if (currentStep === 1 && (!startTime || !endTime)) {
+      canProceed = false;
+      if (!startTime) {
+        form.setError('startTime', { type: 'required', message: 'Start time is required' });
+        errorMessage = 'Please select start and end times';
+      }
+      if (!endTime) {
+        form.setError('endTime', { type: 'required', message: 'End time is required' });
+        errorMessage = errorMessage || 'Please select start and end times';
+      }
+    }
+    
+    if (!canProceed) {
+      toast({
+        title: "Missing information",
+        description: errorMessage,
+        variant: "destructive",
       });
       return;
     }
     
-    if (currentStep === 2 && (!startTime || !endTime)) {
-      if (!startTime) form.setError('startTime', { type: 'required', message: 'Start time is required' });
-      if (!endTime) form.setError('endTime', { type: 'required', message: 'End time is required' });
-      return;
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(prevStep => prevStep + 1);
     }
-    
-    setCurrentStep(prev => Math.min(prev + 1, 4));
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    if (currentStep > 0) {
+      setCurrentStep(prevStep => prevStep - 1);
+    }
   };
   
-  const submitForm = () => {
-    handleSubmit(form.getValues(), selectedFiles, hasReceipts);
+  const goToStep = (index: number) => {
+    // Only allow going to completed steps or next step
+    if (index <= currentStep + 1) {
+      setCurrentStep(index);
+    }
   };
 
-  const renderStepIndicator = () => {
+  // Handle form submission
+  const onFormSubmit = () => {
+    handleSubmit(form.getValues());
+  };
+
+  // Render step header and navigation
+  const renderStepHeader = () => {
     return (
-      <div className="flex items-center justify-center space-x-2 mb-4">
-        {[1, 2, 3, 4].map(step => (
-          <div
-            key={step}
-            className={`w-2.5 h-2.5 rounded-full ${
-              step === currentStep ? 'bg-[#0485ea]' : 'bg-gray-300'
-            }`}
-          />
-        ))}
+      <div className="mb-6">
+        <div className="flex justify-between mb-2">
+          {steps.map((step, index) => {
+            const isActive = index === currentStep;
+            const isCompleted = index < currentStep;
+            const isPending = index > currentStep;
+            
+            return (
+              <div 
+                key={step.id} 
+                className={cn(
+                  "flex flex-col items-center cursor-pointer transition-all",
+                  {
+                    "text-[#0485ea] font-medium": isActive,
+                    "text-muted-foreground": !isActive && !isCompleted,
+                    "text-green-500": isCompleted,
+                  }
+                )}
+                onClick={() => goToStep(index)}
+              >
+                <div 
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center border mb-1",
+                    {
+                      "bg-[#0485ea] text-white border-[#0485ea]": isActive,
+                      "bg-green-500 text-white border-green-500": isCompleted,
+                      "border-muted-foreground": isPending,
+                    }
+                  )}
+                >
+                  {isCompleted ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : (
+                    <step.icon className="h-4 w-4" />
+                  )}
+                </div>
+                <span className="text-xs hidden sm:block">{step.title}</span>
+              </div>
+            );
+          })}
+        </div>
+        <Progress value={getProgressPercent()} className="h-2 mb-4" />
       </div>
     );
   };
 
+  // Render the content for each step
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1:
+      case 0: // Work Details
         return (
-          <>
-            <CardHeader>
-              <CardTitle>Step 1: Select Work</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-[#0485ea]">Work Details</h2>
+              <p className="text-sm text-muted-foreground">Select the work order or project you worked on</p>
+            </div>
+            
+            <div className="space-y-4">
               <EntityTypeSelector 
                 entityType={entityType} 
                 onChange={(value) => form.setValue('entityType', value, { shouldValidate: true })}
@@ -134,25 +234,29 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess }) 
                   ))}
                 </select>
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button 
-                onClick={nextStep} 
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-                disabled={!entityId}
-              >
-                Next <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </>
+              
+              {selectedEntity && (
+                <div className="mt-4 p-3 bg-muted rounded-md">
+                  <h3 className="font-medium mb-1">Selected {entityType === 'work_order' ? 'Work Order' : 'Project'}</h3>
+                  <p className="text-sm font-medium">{selectedEntity.title}</p>
+                  {selectedEntity.location && (
+                    <p className="text-xs text-muted-foreground">{selectedEntity.location}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         );
-      case 2:
+        
+      case 1: // Time & Date
         return (
-          <>
-            <CardHeader>
-              <CardTitle>Step 2: Time Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-[#0485ea]">Time & Date</h2>
+              <p className="text-sm text-muted-foreground">When did you perform this work?</p>
+            </div>
+            
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Date</Label>
                 <Popover>
@@ -199,6 +303,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess }) 
                   endTime={endTime}
                   onStartTimeChange={(value) => {
                     form.setValue('startTime', value, { shouldValidate: true });
+                    
                     // Automatically adjust end time if needed
                     if (endTime) {
                       const [startHour, startMinute] = value.split(':').map(Number);
@@ -231,28 +336,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess }) 
                   className="bg-muted"
                 />
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button 
-                onClick={nextStep} 
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-                disabled={!startTime || !endTime}
-              >
-                Next <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </>
-        );
-      case 3:
-        return (
-          <>
-            <CardHeader>
-              <CardTitle>Step 3: Notes & Receipts</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes (Optional)</Label>
                 <Textarea
@@ -262,120 +346,182 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess }) 
                   rows={3}
                 />
               </div>
-              
-              <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
-                <div>
-                  <h4 className="font-medium">Attach Receipt(s)</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Do you have any receipts to upload for this time entry?
-                  </p>
-                </div>
-                <Switch
-                  checked={hasReceipts}
-                  onCheckedChange={setHasReceipts}
-                  className="data-[state=checked]:bg-[#0485ea]"
-                />
+            </div>
+          </div>
+        );
+        
+      case 2: // Receipts
+        return (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-[#0485ea]">Receipts & Documents</h2>
+              <p className="text-sm text-muted-foreground">
+                Do you have any receipts or documents related to this work?
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
+              <div>
+                <h4 className="font-medium">Attach Receipt(s)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Toggle on if you have receipts to upload
+                </p>
               </div>
-              
-              {hasReceipts && (
+              <Switch
+                checked={hasReceipts}
+                onCheckedChange={(checked) => form.setValue('hasReceipts', checked)}
+                className="data-[state=checked]:bg-[#0485ea]"
+              />
+            </div>
+            
+            {hasReceipts && (
+              <div className="space-y-4">
                 <ReceiptUploader
                   selectedFiles={selectedFiles}
                   onFilesSelected={handleFilesSelected}
                   onFileClear={handleFileClear}
                 />
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button 
-                onClick={nextStep} 
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-              >
-                Review <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </>
+                
+                {selectedFiles.length > 0 && (
+                  <ReceiptMetadataForm
+                    metadata={receiptMetadata}
+                    updateMetadata={updateReceiptMetadata}
+                    entityType={entityType}
+                  />
+                )}
+              </div>
+            )}
+            
+            {!hasReceipts && (
+              <div className="flex items-center p-4 border rounded-md bg-muted/50">
+                <AlertCircle className="h-5 w-5 mr-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  You can continue without attaching any receipts. Toggle the switch above if you need to add receipts.
+                </p>
+              </div>
+            )}
+          </div>
         );
-      case 4:
+        
+      case 3: // Review
         return (
-          <>
-            <CardHeader>
-              <CardTitle>Step 4: Review & Submit</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-muted rounded-md p-4">
-                  <div className="grid grid-cols-2 gap-y-2">
-                    <div className="text-sm text-muted-foreground">Type:</div>
-                    <div className="text-sm font-medium capitalize">{entityType.replace('_', ' ')}</div>
-                    
-                    <div className="text-sm text-muted-foreground">Name:</div>
-                    <div className="text-sm font-medium">{selectedEntity?.title || entityId}</div>
-                    
-                    <div className="text-sm text-muted-foreground">Date:</div>
-                    <div className="text-sm font-medium">
-                      {format(form.watch('workDate'), "MMMM d, yyyy")}
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-[#0485ea]">Review & Submit</h2>
+              <p className="text-sm text-muted-foreground">
+                Please review your time entry before submitting.
+              </p>
+            </div>
+            
+            <div className="space-y-3 bg-muted rounded-md p-4">
+              <div className="grid grid-cols-2 gap-y-2">
+                <div className="text-sm font-medium">Type:</div>
+                <div className="text-sm capitalize">{entityType.replace('_', ' ')}</div>
+                
+                <div className="text-sm font-medium">Name:</div>
+                <div className="text-sm">{selectedEntity?.title || entityId}</div>
+                
+                <div className="text-sm font-medium">Date:</div>
+                <div className="text-sm">
+                  {format(form.watch('workDate'), "MMMM d, yyyy")}
+                </div>
+                
+                <div className="text-sm font-medium">Time:</div>
+                <div className="text-sm">
+                  {startTime} - {endTime} ({hoursWorked.toFixed(2)} hours)
+                </div>
+                
+                {form.watch('employeeId') && employees.length > 0 && (
+                  <>
+                    <div className="text-sm font-medium">Employee:</div>
+                    <div className="text-sm">
+                      {employees.find(e => e.employee_id === form.watch('employeeId'))?.name}
                     </div>
-                    
-                    <div className="text-sm text-muted-foreground">Time:</div>
-                    <div className="text-sm font-medium">
-                      {startTime} - {endTime}
-                    </div>
-                    
-                    <div className="text-sm text-muted-foreground">Duration:</div>
-                    <div className="text-sm font-medium">
-                      {hoursWorked.toFixed(2)} hours
-                    </div>
-                    
-                    {form.watch('employeeId') && employees.length > 0 && (
-                      <>
-                        <div className="text-sm text-muted-foreground">Employee:</div>
-                        <div className="text-sm font-medium">
-                          {employees.find(e => e.employee_id === form.watch('employeeId'))?.name}
-                        </div>
-                      </>
-                    )}
-                    
-                    {form.watch('notes') && (
-                      <>
-                        <div className="text-sm text-muted-foreground">Notes:</div>
-                        <div className="text-sm font-medium">{form.watch('notes')}</div>
-                      </>
-                    )}
-                    
-                    <div className="text-sm text-muted-foreground">Receipts:</div>
-                    <div className="text-sm font-medium">
-                      {hasReceipts && selectedFiles.length > 0 ? `${selectedFiles.length} file(s) attached` : 'None'}
+                  </>
+                )}
+              </div>
+              
+              {form.watch('notes') && (
+                <div className="pt-2 border-t">
+                  <div className="text-sm font-medium mb-1">Notes:</div>
+                  <div className="text-sm">{form.watch('notes')}</div>
+                </div>
+              )}
+              
+              <div className="pt-2 border-t">
+                <div className="text-sm font-medium mb-1">Receipts:</div>
+                {hasReceipts && selectedFiles.length > 0 ? (
+                  <div>
+                    <Badge className="mb-1 bg-[#0485ea]">{selectedFiles.length} receipt(s) attached</Badge>
+                    <div className="text-xs text-muted-foreground">
+                      {receiptMetadata.expenseType && (
+                        <span>Type: {receiptMetadata.expenseType}</span>
+                      )}
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-sm">None</div>
+                )}
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={prevStep}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <Button 
-                onClick={submitForm} 
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Submitting...' : 'Submit Time Entry'} <Check className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </>
+            </div>
+          </div>
         );
+        
       default:
         return null;
     }
   };
 
   return (
-    <Card>
-      {renderStepIndicator()}
-      {renderStepContent()}
+    <Card className="w-full">
+      <CardContent className="p-6">
+        {renderStepHeader()}
+        
+        <ScrollArea className="pr-4" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+          {renderStepContent()}
+        </ScrollArea>
+        
+        <div className="flex justify-between mt-6 pt-4 border-t">
+          {currentStep > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={prevStep}
+              disabled={isLoading}
+            >
+              Previous
+            </Button>
+          )}
+          
+          {currentStep === 0 && (
+            <Button 
+              variant="outline" 
+              onClick={prevStep}
+              disabled={isLoading}
+              className="opacity-0 cursor-default"
+            >
+              Previous
+            </Button>
+          )}
+          
+          {currentStep < steps.length - 1 ? (
+            <Button 
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
+              onClick={nextStep}
+              disabled={isLoading}
+            >
+              Next
+            </Button>
+          ) : (
+            <Button 
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
+              onClick={onFormSubmit}
+              disabled={isLoading}
+            >
+              {isLoading ? "Submitting..." : "Submit Time Entry"}
+            </Button>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 };

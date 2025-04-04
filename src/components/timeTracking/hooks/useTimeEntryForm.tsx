@@ -16,6 +16,7 @@ const timeEntryFormSchema = z.object({
   hoursWorked: z.number().min(0.01, "Hours must be greater than 0"),
   notes: z.string().optional(),
   employeeId: z.string().optional(),
+  hasReceipts: z.boolean().default(false),
 });
 
 export type TimeEntryFormValues = z.infer<typeof timeEntryFormSchema>;
@@ -29,10 +30,20 @@ const defaultFormValues: TimeEntryFormValues = {
   hoursWorked: 0,
   notes: '',
   employeeId: '',
+  hasReceipts: false,
 };
 
 export function useTimeEntryForm(onSuccess: () => void) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [receiptMetadata, setReceiptMetadata] = useState<{
+    category: string,
+    expenseType: string | null,
+    tags: string[]
+  }>({
+    category: 'receipt',
+    expenseType: null,
+    tags: ['time-entry']
+  });
   
   // Use our submission hook
   const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
@@ -44,6 +55,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
   
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
+  const hasReceipts = form.watch('hasReceipts');
   
   useEffect(() => {
     if (startTime && endTime) {
@@ -67,17 +79,39 @@ export function useTimeEntryForm(onSuccess: () => void) {
     }
   }, [startTime, endTime, form]);
   
+  // Updated handlers for receipt-related functionality
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
+    // Automatically set hasReceipts to true if files are selected
+    if (files.length > 0 && !hasReceipts) {
+      form.setValue('hasReceipts', true);
+    }
   };
   
   const handleFileClear = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles(prev => {
+      const newFiles = prev.filter((_, i) => i !== index);
+      // If no files left, optionally reset hasReceipts to false
+      if (newFiles.length === 0) {
+        form.setValue('hasReceipts', false);
+      }
+      return newFiles;
+    });
   };
   
-  const handleSubmit = (data: TimeEntryFormValues, files: File[], hasReceipts: boolean) => {
+  // Update receipt metadata (category, expense type, tags)
+  const updateReceiptMetadata = (
+    data: Partial<{category: string, expenseType: string | null, tags: string[]}>
+  ) => {
+    setReceiptMetadata(prev => ({
+      ...prev,
+      ...data
+    }));
+  };
+  
+  const handleSubmit = (data: TimeEntryFormValues) => {
     // If hasReceipts is true but no files were selected
-    if (hasReceipts && files.length === 0) {
+    if (data.hasReceipts && selectedFiles.length === 0) {
       toast({
         title: 'Receipt required',
         description: 'You indicated you have receipts but none were uploaded. Please upload at least one receipt or turn off the receipt option.',
@@ -86,15 +120,18 @@ export function useTimeEntryForm(onSuccess: () => void) {
       return;
     }
     
-    submitTimeEntry(data, files);
+    // Submit with enhanced receipt metadata
+    submitTimeEntry(data, selectedFiles, receiptMetadata);
   };
   
   return {
     form,
     isLoading: isSubmitting,
     selectedFiles,
+    receiptMetadata,
     handleFilesSelected,
     handleFileClear,
+    updateReceiptMetadata,
     handleSubmit,
   };
 }

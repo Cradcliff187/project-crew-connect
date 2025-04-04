@@ -2,18 +2,20 @@
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
-import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
-import EntityTypeSelector from './form/EntityTypeSelector';
-import EntitySelector from './form/EntitySelector';
-import { useEntityData } from './hooks/useEntityData';
-import { useForm } from 'react-hook-form';
-import { TimeEntryFormValues } from './hooks/useTimeEntryForm';
-import TimeRangeSelector from './form/TimeRangeSelector';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import ReceiptUploader from './form/ReceiptUploader';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon, Clock, Receipt } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { TimeEntryFormValues } from './hooks/useTimeEntryForm';
+import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
+import { toast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { FileUpload } from '@/components/ui/file-upload';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -28,350 +30,221 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   onSuccess,
   selectedDate
 }) => {
-  const [step, setStep] = useState(1);
-  const [hasReceipts, setHasReceipts] = useState(false);
+  const [workDate, setWorkDate] = useState<Date>(selectedDate);
+  const [hours, setHours] = useState('1');
+  const [entityType, setEntityType] = useState<'work_order' | 'project'>('work_order');
+  const [entityId, setEntityId] = useState('');
+  const [hasReceipt, setHasReceipt] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  
-  const form = useForm<TimeEntryFormValues>({
-    defaultValues: {
-      entityType: 'work_order' as 'work_order' | 'project',
-      entityId: '',
-      workDate: selectedDate,
-      startTime: format(new Date().setMinutes(0), 'HH:00'),
-      endTime: format(new Date().setHours(new Date().getHours() + 1).setMinutes(0), 'HH:00'),
-      hoursWorked: 1,
-      notes: '',
-      employeeId: ''
-    }
-  });
-  
-  const { 
-    workOrders, 
-    projects, 
-    isLoadingEntities, 
-    getSelectedEntityDetails 
-  } = useEntityData(form);
 
   const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
-  
-  const entityType = form.watch('entityType');
-  const entityId = form.watch('entityId');
-  const startTime = form.watch('startTime');
-  const endTime = form.watch('endTime');
-  const hoursWorked = form.watch('hoursWorked');
-  
-  const selectedEntity = getSelectedEntityDetails();
-  
-  const handleFilesSelected = (files: File[]) => {
-    setSelectedFiles(files);
+
+  const resetForm = () => {
+    setWorkDate(selectedDate);
+    setHours('1');
+    setEntityType('work_order');
+    setEntityId('');
+    setHasReceipt(false);
+    setSelectedFiles([]);
   };
-  
-  const handleFileClear = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-  
-  const handleNext = () => {
-    if (step === 1 && !entityId) {
-      form.setError('entityId', { 
-        type: 'required', 
-        message: `Please select a ${entityType === 'work_order' ? 'work order' : 'project'}` 
+
+  const handleQuickSubmit = async () => {
+    if (!entityId) {
+      toast({
+        title: "Missing information",
+        description: `Please enter a ${entityType.replace('_', ' ')} ID.`,
+        variant: "destructive",
       });
       return;
     }
-    
-    setStep(prev => prev + 1);
-  };
-  
-  const handleBack = () => {
-    setStep(prev => prev - 1);
-  };
-  
-  const handleSubmit = async () => {
-    try {
-      await submitTimeEntry({
-        entityType: entityType,
-        entityId: entityId,
-        workDate: selectedDate,
-        startTime: startTime,
-        endTime: endTime,
-        hoursWorked: hoursWorked,
-        notes: form.getValues('notes') || `Quick log entry for ${selectedEntity?.title || 'selected entity'}`,
-        employeeId: form.getValues('employeeId') || ''
-      }, selectedFiles);
-      onOpenChange(false);
-      setStep(1);
-      form.reset({
-        entityType: 'work_order',
-        entityId: '',
-        workDate: selectedDate,
-        startTime: format(new Date().setMinutes(0), 'HH:00'),
-        endTime: format(new Date().setHours(new Date().getHours() + 1).setMinutes(0), 'HH:00'),
-        hoursWorked: 1,
-        notes: '',
-        employeeId: ''
+
+    if (!hours || isNaN(Number(hours)) || Number(hours) <= 0) {
+      toast({
+        title: "Invalid hours",
+        description: "Please enter a valid number of hours.",
+        variant: "destructive",
       });
-      setSelectedFiles([]);
-      setHasReceipts(false);
-    } catch (error) {
-      console.error('Error submitting quick log:', error);
+      return;
+    }
+
+    const hoursWorked = Number(hours);
+    
+    // Calculate reasonable start and end times based on the number of hours
+    const now = new Date();
+    const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    const startDate = new Date(now);
+    startDate.setHours(startDate.getHours() - hoursWorked);
+    const startTime = `${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`;
+
+    const formData: TimeEntryFormValues = {
+      entityType,
+      entityId,
+      workDate,
+      startTime,
+      endTime,
+      hoursWorked,
+      notes: 'Quick log entry',
+      hasReceipts: hasReceipt && selectedFiles.length > 0
+    };
+
+    // Prepare receipt metadata
+    const receiptMetadata = {
+      category: 'receipt',
+      expenseType: 'other',
+      tags: ['time-entry', 'quick-log', entityType]
+    };
+
+    // Submit the time entry
+    await submitTimeEntry(formData, selectedFiles, receiptMetadata);
+    
+    // Reset form and close sheet
+    resetForm();
+    onOpenChange(false);
+  };
+
+  const handleFileSelect = (files: File[]) => {
+    setSelectedFiles(files);
+    if (files.length > 0) {
+      setHasReceipt(true);
     }
   };
-  
-  const renderStepContent = () => {
-    switch (step) {
-      case 1:
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Select a {entityType === 'work_order' ? 'work order' : 'project'} to log time for.
-            </p>
-            
-            <EntityTypeSelector 
-              entityType={entityType} 
-              onChange={(value) => form.setValue('entityType', value)} 
-            />
-            
-            <EntitySelector
-              entityType={entityType}
-              entityId={entityId}
-              workOrders={workOrders}
-              projects={projects}
-              isLoading={isLoadingEntities}
-              onChange={(value) => form.setValue('entityId', value)}
-              error={form.formState.errors.entityId?.message}
-              selectedEntity={selectedEntity}
-            />
-            
-            <div className="flex justify-end mt-4">
-              <Button 
-                onClick={handleNext}
-                className="bg-[#0485ea] hover:bg-[#0375d1] text-white"
-                disabled={!entityId}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 2:
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Set time details for {selectedEntity?.title || 'selected entity'}
-            </p>
-            
-            <TimeRangeSelector
-              startTime={startTime}
-              endTime={endTime}
-              onStartTimeChange={(value) => {
-                form.setValue('startTime', value);
-                // Recalculate hours
-                const [startHour, startMinute] = value.split(':').map(Number);
-                const [endHour, endMinute] = endTime.split(':').map(Number);
-                
-                let hours = endHour - startHour;
-                let minutes = endMinute - startMinute;
-                
-                if (minutes < 0) {
-                  hours -= 1;
-                  minutes += 60;
-                }
-                
-                if (hours < 0) {
-                  hours += 24; // Handle overnight shifts
-                }
-                
-                const totalHours = hours + (minutes / 60);
-                form.setValue('hoursWorked', parseFloat(totalHours.toFixed(2)));
-              }}
-              onEndTimeChange={(value) => {
-                form.setValue('endTime', value);
-                // Recalculate hours
-                const [startHour, startMinute] = startTime.split(':').map(Number);
-                const [endHour, endMinute] = value.split(':').map(Number);
-                
-                let hours = endHour - startHour;
-                let minutes = endMinute - startMinute;
-                
-                if (minutes < 0) {
-                  hours -= 1;
-                  minutes += 60;
-                }
-                
-                if (hours < 0) {
-                  hours += 24; // Handle overnight shifts
-                }
-                
-                const totalHours = hours + (minutes / 60);
-                form.setValue('hoursWorked', parseFloat(totalHours.toFixed(2)));
-              }}
-              startTimeError=""
-              endTimeError=""
-            />
-            
-            <div className="flex items-center space-x-2 text-sm">
-              <span className="text-muted-foreground">Total hours:</span>
-              <span className="font-medium">{hoursWorked.toFixed(2)}</span>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any notes about the work performed..."
-                value={form.watch('notes')}
-                onChange={(e) => form.setValue('notes', e.target.value)}
-                rows={2}
-              />
-            </div>
-            
-            <div className="flex justify-between mt-4">
-              <Button 
-                variant="outline" 
-                onClick={handleBack}
-              >
-                Back
-              </Button>
-              <Button 
-                onClick={handleNext}
-                className="bg-[#0485ea] hover:bg-[#0375d1] text-white"
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 3:
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Do you have any receipts to upload for this time entry?
-            </p>
-            
-            <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
-              <div>
-                <h4 className="font-medium">Attach Receipt(s)</h4>
-                <p className="text-sm text-muted-foreground">
-                  Toggle on to upload receipt images or documents
-                </p>
-              </div>
-              <Switch
-                checked={hasReceipts}
-                onCheckedChange={setHasReceipts}
-                className="data-[state=checked]:bg-[#0485ea]"
-              />
-            </div>
-            
-            {hasReceipts && (
-              <ReceiptUploader
-                selectedFiles={selectedFiles}
-                onFilesSelected={handleFilesSelected}
-                onFileClear={handleFileClear}
-              />
-            )}
-            
-            <div className="flex justify-between mt-4">
-              <Button 
-                variant="outline" 
-                onClick={handleBack}
-              >
-                Back
-              </Button>
-              <Button 
-                onClick={handleNext}
-                className="bg-[#0485ea] hover:bg-[#0375d1] text-white"
-              >
-                Review
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 4:
-        return (
-          <div className="space-y-4">
-            <p className="font-medium text-lg">Review Time Entry</p>
-            
-            <div className="rounded-md border p-4 space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <span className="text-sm text-muted-foreground">Type:</span>
-                <span className="text-sm capitalize">{entityType.replace('_', ' ')}</span>
-                
-                <span className="text-sm text-muted-foreground">Name:</span>
-                <span className="text-sm font-medium">{selectedEntity?.title || entityId}</span>
-                
-                <span className="text-sm text-muted-foreground">Date:</span>
-                <span className="text-sm">{format(selectedDate, 'MMMM d, yyyy')}</span>
-                
-                <span className="text-sm text-muted-foreground">Time:</span>
-                <span className="text-sm">{startTime} - {endTime}</span>
-                
-                <span className="text-sm text-muted-foreground">Hours:</span>
-                <span className="text-sm">{hoursWorked.toFixed(2)}</span>
-                
-                {form.watch('notes') && (
-                  <>
-                    <span className="text-sm text-muted-foreground">Notes:</span>
-                    <span className="text-sm">{form.watch('notes')}</span>
-                  </>
-                )}
-                
-                <span className="text-sm text-muted-foreground">Receipts:</span>
-                <span className="text-sm">{selectedFiles.length > 0 ? `${selectedFiles.length} file(s)` : 'None'}</span>
-              </div>
-            </div>
-            
-            <div className="flex justify-between mt-4">
-              <Button 
-                variant="outline" 
-                onClick={handleBack}
-              >
-                Back
-              </Button>
-              <Button 
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="bg-[#0485ea] hover:bg-[#0375d1] text-white"
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Time'}
-              </Button>
-            </div>
-          </div>
-        );
-        
-      default:
-        return null;
-    }
-  };
-  
-  return (
-    <Sheet open={open} onOpenChange={(o) => {
-      if (!o) {
-        setStep(1);
-        form.reset({
-          entityType: 'work_order',
-          entityId: '',
-          workDate: selectedDate,
-          startTime: format(new Date().setMinutes(0), 'HH:00'),
-          endTime: format(new Date().setHours(new Date().getHours() + 1).setMinutes(0), 'HH:00'),
-          hoursWorked: 1,
-          notes: '',
-          employeeId: ''
-        });
-        setSelectedFiles([]);
-        setHasReceipts(false);
+
+  const handleFileClear = (index: number) => {
+    setSelectedFiles(prev => {
+      const newFiles = prev.filter((_, i) => i !== index);
+      if (newFiles.length === 0) {
+        setHasReceipt(false);
       }
-      onOpenChange(o);
-    }}>
-      <SheetContent side="bottom" className="h-[60vh] overflow-y-auto">
+      return newFiles;
+    });
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="h-[80vh]">
         <SheetHeader>
-          <SheetTitle>Log Time {step > 1 && selectedEntity?.title ? `- ${selectedEntity.title}` : ''}</SheetTitle>
+          <SheetTitle>Quick Log Entry</SheetTitle>
         </SheetHeader>
-        
-        <div className="py-4">
-          {renderStepContent()}
+
+        <div className="py-4 space-y-4">
+          <Tabs defaultValue="work_order">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger 
+                value="work_order"
+                onClick={() => setEntityType('work_order')}
+              >
+                Work Order
+              </TabsTrigger>
+              <TabsTrigger 
+                value="project"
+                onClick={() => setEntityType('project')}
+              >
+                Project
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="entityId">{entityType === 'work_order' ? 'Work Order' : 'Project'} ID</Label>
+              <Input
+                id="entityId"
+                value={entityId}
+                onChange={(e) => setEntityId(e.target.value)}
+                placeholder={`Enter ${entityType === 'work_order' ? 'work order' : 'project'} ID`}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {format(workDate, "MMMM d, yyyy")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={workDate}
+                    onSelect={(date) => date && setWorkDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hours">Hours Worked</Label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="hours"
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  value={hours}
+                  onChange={(e) => setHours(e.target.value)}
+                />
+                <Clock className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <Receipt className="h-4 w-4 mr-2 text-[#0485ea]" />
+                    <Label htmlFor="has-receipt" className="cursor-pointer">
+                      I have receipt(s)
+                    </Label>
+                  </div>
+                  <Switch
+                    id="has-receipt"
+                    checked={hasReceipt}
+                    onCheckedChange={setHasReceipt}
+                    className="data-[state=checked]:bg-[#0485ea]"
+                  />
+                </div>
+
+                {hasReceipt && (
+                  <FileUpload
+                    onFilesSelected={handleFileSelect}
+                    onFileClear={handleFileClear}
+                    selectedFiles={selectedFiles}
+                    allowMultiple={true}
+                    acceptedFileTypes="image/*,application/pdf"
+                    dropzoneText="Tap to upload receipt"
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  resetForm();
+                  onOpenChange(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleQuickSubmit}
+                className="bg-[#0485ea] hover:bg-[#0375d1]"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Save Quick Log"}
+              </Button>
+            </div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

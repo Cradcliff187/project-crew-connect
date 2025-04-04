@@ -5,10 +5,24 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
+interface ReceiptMetadata {
+  category: string;
+  expenseType: string | null;
+  tags: string[];
+}
+
 export function useTimeEntrySubmit(onSuccess: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const submitTimeEntry = async (data: TimeEntryFormValues, selectedFiles: File[]) => {
+  const submitTimeEntry = async (
+    data: TimeEntryFormValues, 
+    selectedFiles: File[],
+    receiptMetadata: ReceiptMetadata = { 
+      category: 'receipt', 
+      expenseType: null, 
+      tags: ['time-entry'] 
+    }
+  ) => {
     setIsSubmitting(true);
     
     try {
@@ -46,6 +60,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         
       if (error) throw error;
       
+      // Upload receipts if provided, with enhanced metadata
       if (selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
           const fileExt = file.name.split('.').pop();
@@ -60,28 +75,34 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           
           const mimeType = file.type || `application/${fileExt}`;
           
+          // Enhanced document metadata for better categorization
+          const documentData = {
+            file_name: file.name,
+            file_type: file.type,
+            mime_type: mimeType,
+            file_size: file.size,
+            storage_path: filePath,
+            entity_type: 'TIME_ENTRY',
+            entity_id: insertedEntry.id,
+            category: receiptMetadata.category || 'receipt',
+            is_expense: true,
+            uploaded_by: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tags: receiptMetadata.tags || ['receipt', 'time-entry'],
+            // Additional expense metadata
+            expense_type: receiptMetadata.expenseType || 'other'
+          };
+          
           const { data: documentData, error: documentError } = await supabase
             .from('documents')
-            .insert({
-              file_name: file.name,
-              file_type: file.type,
-              mime_type: mimeType,
-              file_size: file.size,
-              storage_path: filePath,
-              entity_type: 'TIME_ENTRY',
-              entity_id: insertedEntry.id,
-              category: 'receipt',
-              is_expense: true,
-              uploaded_by: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              tags: ['receipt', 'time-entry']
-            })
+            .insert(documentData)
             .select('document_id')
             .single();
             
           if (documentError) throw documentError;
           
+          // Link document to time entry
           const { data: linkResult, error: linkError } = await supabase
             .rpc('attach_document_to_time_entry', {
               p_time_entry_id: insertedEntry.id,
@@ -92,15 +113,16 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             console.error('Error linking document to time entry:', linkError);
           }
           
+          // Create expense entries for work orders
           if (data.entityType === 'work_order') {
-            // Create an expense entry for the time entry receipt
+            // Create a more detailed expense entry for the time entry receipt
             const { error: expenseError } = await supabase
               .from('expenses')
               .insert({
                 entity_type: 'WORK_ORDER',
                 entity_id: data.entityId,
                 description: `Time entry receipt: ${file.name}`,
-                expense_type: 'TIME_RECEIPT',
+                expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
                 amount: 0,
                 document_id: documentData.document_id,
                 time_entry_id: insertedEntry.id,
@@ -114,6 +136,12 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             if (expenseError) {
               console.error('Error creating expense for receipt:', expenseError);
             }
+          }
+          
+          // For project entities, we would add similar handling here
+          if (data.entityType === 'project') {
+            // Create project expense records as needed
+            // This would be implemented when project expenses are designed
           }
         }
       }

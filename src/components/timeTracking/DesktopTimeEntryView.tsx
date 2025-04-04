@@ -73,7 +73,10 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
                 />
               </TabsContent>
               <TabsContent value="add" className="mt-4">
-                <TimeEntryFormWizard onSuccess={onAddSuccess} />
+                <TimeEntryFormWizard onSuccess={() => {
+                  onAddSuccess();
+                  setActiveTab('entries');
+                }} />
               </TabsContent>
             </Tabs>
           </CardContent>
