@@ -12,10 +12,14 @@ import PageTransition from '@/components/layout/PageTransition';
 import DateNavigation from './DateNavigation';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
 import MobileQuickLogSheet from './MobileQuickLogSheet';
+import { DateRange } from './hooks/useTimeEntries';
 
 interface MobileTimeEntryViewProps {
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
+  dateRange: DateRange;
+  onDateRangeChange: (dateRange: DateRange) => void;
+  onNextWeek: () => void;
+  onPrevWeek: () => void;
+  onCurrentWeek: () => void;
   timeEntries: TimeEntry[];
   isLoading: boolean;
   onAddSuccess: () => void;
@@ -25,8 +29,11 @@ interface MobileTimeEntryViewProps {
 }
 
 const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
-  selectedDate,
-  setSelectedDate,
+  dateRange,
+  onDateRangeChange,
+  onNextWeek,
+  onPrevWeek,
+  onCurrentWeek,
   timeEntries,
   isLoading,
   onAddSuccess,
@@ -45,10 +52,13 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   return (
     <PageTransition>
       <div className="container px-4 py-4">
-        {/* Date Selection Header */}
+        {/* Date Navigation Header */}
         <DateNavigation
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
+          dateRange={dateRange}
+          onDateRangeChange={onDateRangeChange}
+          onNextWeek={onNextWeek}
+          onPrevWeek={onPrevWeek}
+          onCurrentWeek={onCurrentWeek}
           totalHours={totalHours}
           isMobile={true}
         />
@@ -62,7 +72,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
         <div className="mb-4 px-3 py-2 bg-muted rounded-md flex items-center">
           <Clock className="h-4 w-4 mr-2 text-[#0485ea]" />
           <span className="text-sm">
-            Total Hours Today: <span className="font-medium text-[#0485ea]">{totalHours.toFixed(1)}</span>
+            Total Hours This Week: <span className="font-medium text-[#0485ea]">{totalHours.toFixed(1)}</span>
           </span>
         </div>
         
@@ -94,7 +104,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
         {/* Time entries list */}
         <Card className="mb-6 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Today's Entries</CardTitle>
+            <CardTitle className="text-lg">Weekly Entries</CardTitle>
           </CardHeader>
           <CardContent>
             <TimeEntryList 
@@ -118,7 +128,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
                   setShowAddForm(false);
                   onAddSuccess();
                 }}
-                date={selectedDate}
+                date={new Date()}
               />
             </div>
           </SheetContent>
@@ -129,7 +139,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           open={showQuickLog}
           onOpenChange={setShowQuickLog}
           onSuccess={handleQuickLogSuccess}
-          date={selectedDate}
+          date={new Date()}
         />
       </div>
     </PageTransition>

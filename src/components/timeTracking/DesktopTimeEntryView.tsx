@@ -9,10 +9,14 @@ import { TimeEntry } from '@/types/timeTracking';
 import { TimeEntryList } from './TimeEntryList';
 import TimeEntryFormWizard from './TimeEntryFormWizard';
 import DateNavigation from './DateNavigation';
+import { DateRange } from './hooks/useTimeEntries';
 
 interface DesktopTimeEntryViewProps {
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
+  dateRange: DateRange;
+  onDateRangeChange: (dateRange: DateRange) => void;
+  onNextWeek: () => void;
+  onPrevWeek: () => void;
+  onCurrentWeek: () => void;
   timeEntries: TimeEntry[];
   isLoading: boolean;
   onAddSuccess: () => void;
@@ -20,8 +24,11 @@ interface DesktopTimeEntryViewProps {
 }
 
 const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
-  selectedDate,
-  setSelectedDate,
+  dateRange,
+  onDateRangeChange,
+  onNextWeek,
+  onPrevWeek,
+  onCurrentWeek,
   timeEntries,
   isLoading,
   onAddSuccess,
@@ -46,8 +53,11 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <DateNavigation 
-              selectedDate={selectedDate} 
-              onDateChange={setSelectedDate}
+              dateRange={dateRange}
+              onDateRangeChange={onDateRangeChange}
+              onNextWeek={onNextWeek}
+              onPrevWeek={onPrevWeek}
+              onCurrentWeek={onCurrentWeek}
               totalHours={totalHours}
             />
             <CardDescription>
@@ -78,7 +88,7 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
                     onAddSuccess();
                     setActiveTab('entries');
                   }}
-                  date={selectedDate}
+                  date={new Date()}
                 />
               </TabsContent>
             </Tabs>

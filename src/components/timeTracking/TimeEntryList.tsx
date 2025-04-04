@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { TimeEntry, TimeOfDay } from '@/types/timeTracking';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import {
   MapPin, 
   Trash2, 
   Edit, 
-  FileSpreadsheet 
+  FileSpreadsheet,
+  Calendar
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // Define the props interface
 export interface TimeEntryListProps {
@@ -59,7 +61,7 @@ const groupEntriesByDate = (entries: TimeEntry[]) => {
   });
 
   return new Map([...grouped.entries()]
-    .sort((a, b) => b[0].localeCompare(a[0])));
+    .sort((a, b) => a[0].localeCompare(b[0]))); // Sort chronologically (ascending)
 };
 
 const getTimeOfDay = (hour: number): TimeOfDay => {
@@ -84,6 +86,28 @@ const formatTime = (time: string): string => {
   const period = hours >= 12 ? 'PM' : 'AM';
   const hour12 = hours % 12 || 12;
   return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
+
+// Format the date for the day header
+const formatDayHeader = (dateStr: string): string => {
+  const date = parseISO(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  // Check if it's today or yesterday for special formatting
+  if (format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
+    return `Today, ${format(date, 'EEEE, MMMM d')}`;
+  } else if (format(date, 'yyyy-MM-dd') === format(yesterday, 'yyyy-MM-dd')) {
+    return `Yesterday, ${format(date, 'EEEE, MMMM d')}`;
+  } else {
+    return format(date, 'EEEE, MMMM d');
+  }
+};
+
+// Calculate daily total hours
+const calculateDailyTotal = (entries: TimeEntry[]): number => {
+  return entries.reduce((sum, entry) => sum + entry.hours_worked, 0);
 };
 
 // Main component export
@@ -121,7 +145,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
   if (entries.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground">
-        No time entries for this day. Add one to get started.
+        No time entries for this week. Add one to get started.
       </div>
     );
   }
@@ -130,88 +154,106 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
   const groupedEntries = groupEntriesByDate(entries);
   
   return (
-    <div className="space-y-4">
-      {Array.from(groupedEntries.entries()).map(([date, dateEntries]) => (
-        <div key={date} className="space-y-2">
-          {dateEntries.map((entry) => {
-            // Get time of day for visual indication
-            const startHour = parseInt(entry.start_time.split(':')[0]);
-            const timeOfDay = getTimeOfDay(startHour);
-            const timeOfDayColor = getTimeOfDayColor(timeOfDay);
+    <div className="space-y-6">
+      {Array.from(groupedEntries.entries()).map(([date, dayEntries]) => {
+        const dailyTotal = calculateDailyTotal(dayEntries);
+        
+        return (
+          <div key={date} className="space-y-2">
+            {/* Day header with total hours */}
+            <div className="flex items-center justify-between border-b pb-2">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-[#0485ea]" />
+                <h3 className="text-sm font-medium">{formatDayHeader(date)}</h3>
+              </div>
+              <span className="text-sm font-medium text-[#0485ea]">
+                {dailyTotal.toFixed(1)} hours
+              </span>
+            </div>
             
-            return (
-              <Card key={entry.id} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <div className="flex items-center">
-                          <span className="font-medium">
-                            {entry.entity_name || `${entry.entity_type.charAt(0).toUpperCase() + entry.entity_type.slice(1)} ${entry.entity_id.slice(0, 8)}`}
-                          </span>
-                          <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${timeOfDayColor}`}>
-                            {timeOfDay}
+            {/* Time entries for this day */}
+            <div className="space-y-2 pl-0 lg:pl-6">
+              {dayEntries.map((entry) => {
+                // Get time of day for visual indication
+                const startHour = parseInt(entry.start_time.split(':')[0]);
+                const timeOfDay = getTimeOfDay(startHour);
+                const timeOfDayColor = getTimeOfDayColor(timeOfDay);
+                
+                return (
+                  <Card key={entry.id} className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center">
+                              <span className="font-medium">
+                                {entry.entity_name || `${entry.entity_type.charAt(0).toUpperCase() + entry.entity_type.slice(1)} ${entry.entity_id.slice(0, 8)}`}
+                              </span>
+                              <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${timeOfDayColor}`}>
+                                {timeOfDay}
+                              </span>
+                            </div>
+                            
+                            {entry.entity_location && (
+                              <div className="text-sm text-muted-foreground flex items-center">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {entry.entity_location}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-[#0485ea]">
+                              {formatDuration(entry.hours_worked)}
+                            </span>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                {entry.has_receipts && (
+                                  <DropdownMenuItem>
+                                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                                    View Receipts
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem className="text-destructive">
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center text-sm text-muted-foreground mt-2">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>
+                            {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
                           </span>
                         </div>
                         
-                        {entry.entity_location && (
-                          <div className="text-sm text-muted-foreground flex items-center">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {entry.entity_location}
+                        {entry.notes && (
+                          <div className="mt-2 text-sm border-t pt-2">
+                            {entry.notes}
                           </div>
                         )}
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-[#0485ea]">
-                          {formatDuration(entry.hours_worked)}
-                        </span>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            {entry.has_receipts && (
-                              <DropdownMenuItem>
-                                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                                View Receipts
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem className="text-destructive">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-muted-foreground mt-2">
-                      <Clock className="h-3 w-3 mr-1" />
-                      <span>
-                        {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
-                      </span>
-                    </div>
-                    
-                    {entry.notes && (
-                      <div className="mt-2 text-sm border-t pt-2">
-                        {entry.notes}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

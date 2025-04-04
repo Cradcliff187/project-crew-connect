@@ -1,21 +1,18 @@
 
 import { useState, useCallback } from 'react';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { TimeEntry } from '@/types/timeTracking';
 
-// Default date range - current week
+// Default date range - current week starting from Monday
 const getDefaultDateRange = () => {
   const today = new Date();
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
-  
-  const endOfWeek = new Date(today);
-  endOfWeek.setDate(today.getDate() + (6 - today.getDay())); // Saturday
+  const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 = Monday
+  const endOfCurrentWeek = endOfWeek(today, { weekStartsOn: 1 });
   
   return {
-    startDate: startOfWeek,
-    endDate: endOfWeek
+    startDate: startOfCurrentWeek,
+    endDate: endOfCurrentWeek
   };
 };
 
@@ -44,7 +41,7 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
         .select('*')
         .gte('date_worked', startDateStr)
         .lte('date_worked', endDateStr)
-        .order('date_worked', { ascending: false });
+        .order('date_worked', { ascending: true });
       
       if (fetchError) throw fetchError;
       
@@ -69,6 +66,27 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
     }
   }, [dateRange]);
   
+  // Navigate to next week
+  const goToNextWeek = () => {
+    setDateRange(current => ({
+      startDate: addWeeks(current.startDate, 1),
+      endDate: addWeeks(current.endDate, 1)
+    }));
+  };
+
+  // Navigate to previous week
+  const goToPrevWeek = () => {
+    setDateRange(current => ({
+      startDate: subWeeks(current.startDate, 1),
+      endDate: subWeeks(current.endDate, 1)
+    }));
+  };
+
+  // Go to current week
+  const goToCurrentWeek = () => {
+    setDateRange(getDefaultDateRange());
+  };
+
   // Helper to enhance time entry with entity and receipt data
   const enhanceTimeEntry = async (entry: TimeEntry): Promise<TimeEntry> => {
     try {
@@ -157,6 +175,9 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
     error,
     dateRange,
     setDateRange,
+    goToNextWeek,
+    goToPrevWeek,
+    goToCurrentWeek,
     refreshEntries: fetchTimeEntries
   };
 };
