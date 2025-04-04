@@ -1,3 +1,4 @@
+
 import { TableRow, TableCell } from '@/components/ui/table';
 import { useNavigate } from 'react-router-dom';
 import { Subcontractor } from '../utils/types';
@@ -96,7 +97,7 @@ const SubcontractorTableRow = ({
     );
   };
 
-  const getStatusType = (status: string | null) => {
+  const getStatusType = (status: string | null): StatusType => {
     if (!status) return 'neutral';
     
     switch (status.toUpperCase()) {
