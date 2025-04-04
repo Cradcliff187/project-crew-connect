@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/ui/StatusBadge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +30,6 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
   const { toast } = useToast();
 
   const handleStatusChange = async (newStatus: string) => {
-    // If the status is 'rejected', open the reject dialog instead
     if (newStatus === 'rejected') {
       setRejectDialogOpen(true);
       return;
@@ -39,7 +37,6 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
 
     setUpdating(true);
     try {
-      // Update the estimate status
       const { error } = await supabase
         .from('estimates')
         .update({
@@ -52,7 +49,6 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
 
       if (error) throw error;
 
-      // Update the current revision status as well
       const { error: revisionError } = await supabase
         .from('estimate_revisions')
         .update({
@@ -96,10 +92,8 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
           { value: 'rejected', label: 'Reject', icon: <XIcon className="h-4 w-4 mr-2" /> }
         ];
       case 'approved':
-        // Approved estimates can be converted to projects (handled elsewhere)
         return [];
       case 'rejected':
-        // Rejected estimates can be revised (handled by EstimateRejectDialog)
         return [];
       default:
         return [];

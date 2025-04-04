@@ -43,10 +43,15 @@ const WorkOrderStatus: React.FC<WorkOrderStatusProps> = ({
     }
   };
 
+  // Generate display label from status
+  const getDisplayLabel = () => {
+    return workOrder.status.replace('_', ' ');
+  };
+
   return (
     <Badge className={`text-xs px-2 py-1 flex items-center font-opensans ${getStatusColor(workOrder.status)}`}>
       {getStatusIcon()}
-      <span className="capitalize">{workOrder.status.replace('_', ' ')}</span>
+      <span className="capitalize">{getDisplayLabel()}</span>
     </Badge>
   );
 };
