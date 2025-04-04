@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { TimeEntry, TimeOfDay } from '@/types/timeTracking';
@@ -20,6 +20,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
+import TimeEntryEditDialog from './TimeEntryEditDialog';
+import { useTimeEntryOperations } from './hooks/useTimeEntryOperations';
+import { formatTime, getTimeOfDay } from './utils/timeUtils';
 
 export interface TimeEntryListProps {
   entries: TimeEntry[];
@@ -62,13 +66,6 @@ const groupEntriesByDate = (entries: TimeEntry[]) => {
     .sort((a, b) => a[0].localeCompare(b[0]))); // Sort chronologically (ascending)
 };
 
-const getTimeOfDay = (hour: number): TimeOfDay => {
-  if (hour >= 5 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 17) return 'afternoon';
-  if (hour >= 17 && hour < 21) return 'evening';
-  return 'night';
-};
-
 const getTimeOfDayColor = (timeOfDay: TimeOfDay): string => {
   switch (timeOfDay) {
     case 'morning': return 'bg-blue-100 text-blue-800';
@@ -77,13 +74,6 @@ const getTimeOfDayColor = (timeOfDay: TimeOfDay): string => {
     case 'night': return 'bg-indigo-100 text-indigo-800';
     default: return 'bg-gray-100 text-gray-800';
   }
-};
-
-const formatTime = (time: string): string => {
-  const [hours, minutes] = time.split(':').map(Number);
-  const period = hours >= 12 ? 'PM' : 'AM';
-  const hour12 = hours % 12 || 12;
-  return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
 
 const formatDayHeader = (dateStr: string): string => {
@@ -111,6 +101,21 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
   onEntryChange,
   isMobile = false
 }) => {
+  const {
+    isDeleting,
+    entryToDelete,
+    showDeleteDialog,
+    setShowDeleteDialog,
+    startDelete,
+    confirmDelete,
+    isSaving,
+    entryToEdit,
+    showEditDialog,
+    setShowEditDialog,
+    startEdit,
+    saveEdit
+  } = useTimeEntryOperations(onEntryChange);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -143,17 +148,6 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
   }
 
   const groupedEntries = groupEntriesByDate(entries);
-
-  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
-
-  const handleEdit = (entry: TimeEntry) => {
-    console.log('Editing entry:', entry);
-    setEditingEntry(entry);
-  };
-
-  const handleDelete = (entry: TimeEntry) => {
-    console.log('Deleting entry:', entry);
-  };
 
   return (
     <div className="space-y-6">
@@ -214,7 +208,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem 
-                                  onSelect={() => handleEdit(entry)}
+                                  onSelect={() => startEdit(entry)}
                                   className="cursor-pointer"
                                 >
                                   <Edit className="h-4 w-4 mr-2" />
@@ -227,7 +221,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem 
-                                  onSelect={() => handleDelete(entry)}
+                                  onSelect={() => startDelete(entry)}
                                   className="text-destructive cursor-pointer"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
@@ -259,6 +253,22 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
           </div>
         );
       })}
+      
+      <TimeEntryDeleteDialog
+        timeEntry={entryToDelete}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
+      />
+      
+      <TimeEntryEditDialog
+        timeEntry={entryToEdit}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSave={saveEdit}
+        isSaving={isSaving}
+      />
     </div>
   );
 };
