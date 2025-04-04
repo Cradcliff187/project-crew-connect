@@ -140,13 +140,13 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
 
   return (
     <TableRow onClick={handleRowClick} className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors">
-      <TableCell>
+      <TableCell className="py-3">
         <div className="flex flex-col">
           <span className="font-medium">{vendor.vendorname}</span>
           <span className="text-xs text-muted-foreground">{vendor.vendorid}</span>
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <div className="flex flex-col gap-1">
           {vendor.email && (
             <div className="flex items-center gap-1">
@@ -165,19 +165,21 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
           )}
         </div>
       </TableCell>
-      <TableCell>
-        <div className="flex items-start gap-1">
+      <TableCell className="py-3">
+        <div className="flex items-center gap-1">
           <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <span className="text-sm">{formatAddress()}</span>
         </div>
       </TableCell>
-      <TableCell>
-        <StatusBadge 
-          status={getStatusColor(vendor.status)} 
-          label={vendor.status || 'Unknown'} 
-        />
+      <TableCell className="py-3 text-center">
+        <div className="flex justify-center">
+          <StatusBadge 
+            status={getStatusColor(vendor.status)} 
+            label={vendor.status || 'Unknown'} 
+          />
+        </div>
       </TableCell>
-      <TableCell onClick={(e) => e.stopPropagation()}>
+      <TableCell className="py-3 text-right" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-end">
           <ActionMenu groups={getVendorActions()} />
         </div>
