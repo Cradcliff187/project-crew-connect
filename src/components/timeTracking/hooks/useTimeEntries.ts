@@ -1,117 +1,157 @@
 
-import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { TimeEntry } from '@/types/timeTracking';
+import { format } from 'date-fns';
 
-export function useTimeEntries(selectedDate: Date) {
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+// Default date range - current week
+const getDefaultDateRange = () => {
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay()); // Sunday
   
-  const fetchTimeEntries = async () => {
-    setIsLoading(true);
+  const endOfWeek = new Date(today);
+  endOfWeek.setDate(today.getDate() + (6 - today.getDay())); // Saturday
+  
+  return {
+    startDate: startOfWeek,
+    endDate: endOfWeek
+  };
+};
+
+interface DateRange {
+  startDate: Date;
+  endDate: Date;
+}
+
+export const useTimeEntries = (initialDateRange?: DateRange) => {
+  const [dateRange, setDateRange] = useState<DateRange>(initialDateRange || getDefaultDateRange());
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const fetchTimeEntries = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      const startDateStr = format(dateRange.startDate, 'yyyy-MM-dd');
+      const endDateStr = format(dateRange.endDate, 'yyyy-MM-dd');
       
-      // Fetch time entries for the selected date
-      const { data, error } = await supabase
+      // Fetch time entries within date range
+      const { data: timeEntries, error: fetchError } = await supabase
         .from('time_entries')
         .select('*')
-        .eq('date_worked', formattedDate)
-        .order('start_time', { ascending: true });
-        
-      if (error) throw error;
+        .gte('date_worked', startDateStr)
+        .lte('date_worked', endDateStr)
+        .order('date_worked', { ascending: false });
       
-      // If no entries, return empty array
-      if (!data || data.length === 0) {
-        setTimeEntries([]);
-        return;
+      if (fetchError) throw fetchError;
+      
+      // Convert raw entries to TimeEntry type with additional data
+      const enhancedEntriesPromises = (timeEntries || []).map(async (entry) => {
+        // Type assertion to handle string vs enum type mismatch
+        const typedEntry = {
+          ...entry,
+          entity_type: entry.entity_type as "work_order" | "project"
+        };
+        
+        return await enhanceTimeEntry(typedEntry);
+      });
+      
+      const enhancedEntries = await Promise.all(enhancedEntriesPromises);
+      setEntries(enhancedEntries);
+    } catch (err) {
+      console.error('Error fetching time entries:', err);
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
+  }, [dateRange]);
+  
+  // Fetch entries when date range changes
+  useEffect(() => {
+    fetchTimeEntries();
+  }, [fetchTimeEntries]);
+  
+  // Helper to enhance time entry with entity and receipt data
+  const enhanceTimeEntry = async (entry: TimeEntry): Promise<TimeEntry> => {
+    try {
+      let entityName = '';
+      let entityLocation = '';
+      
+      // Fetch entity details based on type
+      if (entry.entity_type === 'work_order') {
+        const { data } = await supabase
+          .from('maintenance_work_orders')
+          .select('title, address, city, state')
+          .eq('work_order_id', entry.entity_id)
+          .single();
+        
+        if (data) {
+          entityName = data.title;
+          entityLocation = data.address ? 
+            `${data.address}, ${data.city || ''} ${data.state || ''}`.trim() : 
+            '';
+        }
+      } else if (entry.entity_type === 'project') {
+        const { data } = await supabase
+          .from('projects')
+          .select('projectname, address, city, state')
+          .eq('projectid', entry.entity_id)
+          .single();
+        
+        if (data) {
+          entityName = data.projectname || entry.entity_id;
+          entityLocation = data.address ? 
+            `${data.address}, ${data.city || ''} ${data.state || ''}`.trim() : 
+            '';
+        }
       }
       
-      // Enhance the entries with additional entity data
-      const enhancedEntries = await Promise.all(data.map(async (entry: TimeEntry) => {
-        let entityName = '';
-        let entityLocation = '';
+      // Fetch documents/receipts if any
+      let documents = [];
+      if (entry.has_receipts) {
+        const { data: receipts } = await supabase
+          .from('time_entry_receipts')
+          .select('*')
+          .eq('time_entry_id', entry.id);
         
-        // Get employee name if employeeId exists
-        let employeeName = '';
-        if (entry.employee_id) {
-          const { data: empData } = await supabase
-            .from('employees')
-            .select('first_name, last_name')
-            .eq('employee_id', entry.employee_id)
-            .maybeSingle();
+        if (receipts && receipts.length > 0) {
+          // Add URLs for receipts
+          documents = await Promise.all(receipts.map(async (receipt) => {
+            const { data } = await supabase
+              .storage
+              .from('receipts')
+              .createSignedUrl(receipt.storage_path, 60 * 60); // 1 hour expiry
             
-          if (empData) {
-            employeeName = `${empData.first_name} ${empData.last_name}`;
-          }
+            return {
+              ...receipt,
+              url: data?.signedUrl
+            };
+          }));
         }
-        
-        // Get entity details based on type
-        if (entry.entity_type === 'work_order') {
-          const { data: woData } = await supabase
-            .from('maintenance_work_orders')
-            .select('title, location_id')
-            .eq('work_order_id', entry.entity_id)
-            .maybeSingle();
-            
-          if (woData) {
-            entityName = woData.title;
-            
-            // Get location if available
-            if (woData.location_id) {
-              const { data: locData } = await supabase
-                .from('site_locations')
-                .select('location_name, address, city, state')
-                .eq('location_id', woData.location_id)
-                .maybeSingle();
-                
-              if (locData) {
-                entityLocation = locData.location_name || `${locData.address}, ${locData.city}, ${locData.state}`;
-              }
-            }
-          }
-        } else if (entry.entity_type === 'project') {
-          const { data: projData } = await supabase
-            .from('projects')
-            .select('projectname, sitelocationaddress, sitelocationcity, sitelocationstate')
-            .eq('projectid', entry.entity_id)
-            .maybeSingle();
-            
-          if (projData) {
-            entityName = projData.projectname;
-            
-            if (projData.sitelocationaddress) {
-              entityLocation = `${projData.sitelocationaddress}, ${projData.sitelocationcity || ''}, ${projData.sitelocationstate || ''}`;
-            }
-          }
-        }
-        
-        return {
-          ...entry,
-          entity_name: entityName,
-          entity_location: entityLocation,
-          employee_name: employeeName
-        };
-      }));
+      }
       
-      setTimeEntries(enhancedEntries);
+      // Return enhanced entry
+      return {
+        ...entry,
+        entity_name: entityName,
+        entity_location: entityLocation,
+        documents: documents
+      };
     } catch (error) {
-      console.error('Error fetching time entries:', error);
-      setTimeEntries([]);
-    } finally {
-      setIsLoading(false);
+      console.error('Error enhancing time entry:', error);
+      return entry;
     }
   };
   
-  // Re-fetch entries when date changes
-  useEffect(() => {
-    fetchTimeEntries();
-  }, [selectedDate]);
-  
   return {
-    timeEntries,
-    isLoading,
-    refetch: fetchTimeEntries
+    entries,
+    loading,
+    error,
+    dateRange,
+    setDateRange,
+    refreshEntries: fetchTimeEntries
   };
-}
+};

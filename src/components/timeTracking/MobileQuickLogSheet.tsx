@@ -1,440 +1,528 @@
 
-import React, { useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import React, { useState, useEffect } from 'react';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { format } from 'date-fns';
+import { Briefcase, Building, Clock, CameraIcon, Clock3, Loader2, X } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Clock, Receipt, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { TimeEntryFormValues } from './hooks/useTimeEntryForm';
-import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
-import { toast } from '@/hooks/use-toast';
-import { Switch } from '@/components/ui/switch';
-import { FileUpload } from '@/components/ui/file-upload';
-import ReceiptMetadataForm from './form/ReceiptMetadataForm';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import EntityTypeSelector from './form/EntityTypeSelector';
 import TimePickerMobile from './form/TimePickerMobile';
-import { useMediaQuery } from '@/hooks/use-media-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useTimeEntrySubmit } from './hooks/useTimeEntrySubmit';
+import { useTimeEntryReceipts } from './hooks/useTimeEntryReceipts';
+import { useEntityData } from './hooks/useEntityData';
+import VendorSelector from '@/components/documents/vendor-selector';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
-  selectedDate: Date;
+  onSuccess?: () => void;
+  date: Date;
+}
+
+interface QuickLogFormValues {
+  entityType: 'work_order' | 'project';
+  entityId: string;
+  startTime: string;
+  endTime: string;
+  hoursWorked: number;
+  notes: string;
 }
 
 const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   open,
   onOpenChange,
   onSuccess,
-  selectedDate
+  date
 }) => {
-  const [workDate, setWorkDate] = useState<Date>(selectedDate);
-  const [hours, setHours] = useState('1');
-  const [entityType, setEntityType] = useState<'work_order' | 'project'>('work_order');
-  const [entityId, setEntityId] = useState<string>('');
-  const [entityOptions, setEntityOptions] = useState<{id: string, name: string}[]>([]);
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [loadingEntities, setLoadingEntities] = useState(false);
-  const [attachReceipt, setAttachReceipt] = useState(false);
+  const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:00');
-  const { submitTimeEntry } = useTimeEntrySubmit(onSuccess);
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [showCamera, setShowCamera] = useState(false);
+  const [hasReceipts, setHasReceipts] = useState(false);
+  const [vendorId, setVendorId] = useState('');
+  const [expenseType, setExpenseType] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState<number | undefined>(undefined);
   
-  const [receiptMetadata, setReceiptMetadata] = useState<{
-    category: string,
-    expenseType: string | null,
-    tags: string[],
-    vendorId?: string,
-    vendorType?: 'vendor' | 'subcontractor' | 'other',
-    amount?: number
-  }>({
-    category: 'receipt',
-    expenseType: null,
-    tags: ['time-entry'],
-    vendorType: 'vendor'
+  const { toast } = useToast();
+  const { submitTimeEntry } = useTimeEntrySubmit();
+  const { uploadReceipts } = useTimeEntryReceipts();
+  
+  const form = useForm<QuickLogFormValues>({
+    defaultValues: {
+      entityType: 'work_order',
+      entityId: '',
+      startTime: '09:00',
+      endTime: '17:00',
+      hoursWorked: 8,
+      notes: ''
+    },
+    resolver: zodResolver(
+      z.object({
+        entityType: z.enum(['work_order', 'project']),
+        entityId: z.string().min(1, "Please select a work order or project"),
+        startTime: z.string(),
+        endTime: z.string(),
+        hoursWorked: z.number().min(0.1),
+        notes: z.string().optional()
+      })
+    )
   });
   
-  // Update receipt metadata
-  const updateReceiptMetadata = (
-    data: Partial<{
-      category: string, 
-      expenseType: string | null, 
-      tags: string[],
-      vendorId?: string,
-      vendorType?: 'vendor' | 'subcontractor' | 'other',
-      amount?: number
-    }>
-  ) => {
-    setReceiptMetadata(prev => ({
-      ...prev,
-      ...data
-    }));
-  };
+  const { 
+    workOrders, 
+    projects, 
+    isLoadingEntities,
+    getSelectedEntityDetails
+  } = useEntityData(form);
   
-  // Load entities based on type
-  React.useEffect(() => {
-    const fetchEntities = async () => {
-      setLoadingEntities(true);
+  const entityType = form.watch('entityType');
+  const entityId = form.watch('entityId');
+  const startTime = form.watch('startTime');
+  const endTime = form.watch('endTime');
+  
+  const selectedEntity = entityId ? getSelectedEntityDetails() : null;
+  
+  // Update hours worked when start or end time changes
+  useEffect(() => {
+    if (startTime && endTime) {
       try {
-        if (entityType === 'work_order') {
-          const { data } = await supabase
-            .from('maintenance_work_orders')
-            .select('work_order_id, title')
-            .order('created_at', { ascending: false });
-          
-          setEntityOptions((data || []).map(wo => ({
-            id: wo.work_order_id,
-            name: wo.title
-          })));
-        } else {
-          const { data } = await supabase
-            .from('projects')
-            .select('projectid, projectname')
-            .order('createdon', { ascending: false });
-          
-          setEntityOptions((data || []).map(p => ({
-            id: p.projectid,
-            name: p.projectname
-          })));
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
+        
+        const startMinutes = startHour * 60 + startMinute;
+        const endMinutes = endHour * 60 + endMinute;
+        
+        if (endMinutes > startMinutes) {
+          const hoursWorked = parseFloat(((endMinutes - startMinutes) / 60).toFixed(2));
+          form.setValue('hoursWorked', hoursWorked);
         }
       } catch (error) {
-        console.error('Error fetching entities:', error);
-      } finally {
-        setLoadingEntities(false);
+        console.error('Error calculating hours worked:', error);
       }
-    };
-    
-    fetchEntities();
-  }, [entityType]);
+    }
+  }, [startTime, endTime, form]);
   
-  // Calculate hours based on start and end time
-  React.useEffect(() => {
-    if (startTime && endTime) {
-      const [startHour, startMinute] = startTime.split(':').map(Number);
-      const [endHour, endMinute] = endTime.split(':').map(Number);
-      
-      let hours = endHour - startHour;
-      let minutes = endMinute - startMinute;
-      
-      if (minutes < 0) {
-        hours -= 1;
-        minutes += 60;
-      }
-      
-      if (hours < 0) {
-        hours += 24; // Handle overnight shifts
-      }
-      
-      const totalHours = hours + (minutes / 60);
-      setHours(totalHours.toFixed(2));
+  // Reset form and state when sheet opens/closes
+  useEffect(() => {
+    if (!open) {
+      setTimeout(() => {
+        setStep(1);
+        form.reset({
+          entityType: 'work_order',
+          entityId: '',
+          startTime: '09:00',
+          endTime: '17:00',
+          hoursWorked: 8,
+          notes: ''
+        });
+        setSelectedFiles([]);
+        setHasReceipts(false);
+        setVendorId('');
+        setExpenseType('');
+        setExpenseAmount(undefined);
+      }, 300);
     }
-  }, [startTime, endTime]);
+  }, [open, form]);
   
-  const handleSubmit = async () => {
-    if (!entityId) {
-      toast({
-        title: 'Missing information',
-        description: `Please select a ${entityType === 'work_order' ? 'work order' : 'project'}.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    if (!hours || isNaN(parseFloat(hours)) || parseFloat(hours) <= 0) {
-      toast({
-        title: 'Invalid hours',
-        description: 'Please enter a valid number of hours worked.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    const validateReceiptData = () => {
-      // If attachment is enabled but no files were selected
-      if (attachReceipt && selectedFiles.length === 0) {
-        toast({
-          title: 'Receipt required',
-          description: 'You indicated you have receipts but none were uploaded. Please upload at least one receipt or turn off the receipt option.',
-          variant: 'destructive',
-        });
-        return false;
-      }
-      
-      // If we have receipts but no expense type
-      if (attachReceipt && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
-        toast({
-          title: 'Expense type required',
-          description: 'Please select an expense type for your receipt.',
-          variant: 'destructive',
-        });
-        return false;
-      }
-      
-      // If we have receipts but no vendor selected (unless it's 'other')
-      if (attachReceipt && selectedFiles.length > 0 && 
-          receiptMetadata.vendorType !== 'other' && 
-          !receiptMetadata.vendorId) {
-        toast({
-          title: 'Vendor required',
-          description: `Please select a ${receiptMetadata.vendorType} for this receipt.`,
-          variant: 'destructive',
-        });
-        return false;
-      }
-      
-      return true;
-    };
-    
-    if (!validateReceiptData()) {
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      const formData: TimeEntryFormValues = {
-        entityType,
-        entityId,
-        workDate,
-        startTime,
-        endTime,
-        hoursWorked: parseFloat(hours),
-        notes,
-        hasReceipts: attachReceipt && selectedFiles.length > 0
-      };
-      
-      await submitTimeEntry(formData, selectedFiles, receiptMetadata);
-      
-      toast({
-        title: 'Time logged successfully',
-        description: `You've logged ${hours} hours.`,
-      });
-      
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error('Error logging time:', error);
-      toast({
-        title: 'Error logging time',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
+  // Handle next step
+  const handleNext = async () => {
+    if (step === 1) {
+      const isValid = await form.trigger(['entityType', 'entityId']);
+      if (isValid) setStep(2);
+    } else if (step === 2) {
+      const isValid = await form.trigger(['startTime', 'endTime', 'hoursWorked']);
+      if (isValid) setStep(3);
     }
   };
   
+  // Handle back
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+  
+  // Handle file selection
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files);
+    setHasReceipts(files.length > 0);
+  };
+  
+  // Handle file removal
+  const handleRemoveFile = (index: number) => {
+    const newFiles = [...selectedFiles];
+    newFiles.splice(index, 1);
+    setSelectedFiles(newFiles);
+    setHasReceipts(newFiles.length > 0);
+    
+    if (newFiles.length === 0) {
+      setVendorId('');
+      setExpenseType('');
+      setExpenseAmount(undefined);
+    }
+  };
+  
+  // Handle form submission
+  const onSubmit: SubmitHandler<QuickLogFormValues> = async (data) => {
+    setIsSubmitting(true);
+    
+    try {
+      // Prepare time entry data
+      const timeEntryData = {
+        entity_type: data.entityType,
+        entity_id: data.entityId,
+        date_worked: format(date, 'yyyy-MM-dd'),
+        start_time: data.startTime,
+        end_time: data.endTime,
+        hours_worked: data.hoursWorked,
+        notes: data.notes || '',
+        location_data: null
+      };
+      
+      // Submit time entry
+      const result = await submitTimeEntry(timeEntryData);
+      
+      // Upload receipts if any
+      if (selectedFiles.length > 0 && result.id) {
+        await uploadReceipts(
+          result.id, 
+          selectedFiles, 
+          {
+            vendorId,
+            expenseType,
+            amount: expenseAmount
+          }
+        );
+      }
+      
+      // Show success toast
+      toast({
+        title: "Time entry saved",
+        description: `${data.hoursWorked} hours logged for ${selectedEntity?.name}`,
+      });
+      
+      // Close sheet and call success callback
+      onOpenChange(false);
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error('Error submitting time entry:', error);
+      
+      toast({
+        title: "Error saving time entry",
+        description: "Please try again",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // File selection handler for input element
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const fileArray = Array.from(event.target.files);
+      handleFileSelect([...selectedFiles, ...fileArray]);
+    }
   };
   
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] pt-6">
-        <SheetHeader>
-          <SheetTitle>Quick Log Time</SheetTitle>
+      <SheetContent side="bottom" className="h-[90%] overflow-y-auto">
+        <SheetHeader className="mb-4">
+          <SheetTitle>
+            {step === 1 ? 'Select Work Item' : 
+             step === 2 ? 'Time Details' : 
+             'Add Receipt (Optional)'}
+          </SheetTitle>
         </SheetHeader>
         
-        <div className="mt-6 space-y-4 overflow-y-auto pb-20">
-          <Tabs defaultValue="hours" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="hours">
-                <Clock className="h-4 w-4 mr-2" />
-                Hours
-              </TabsTrigger>
-              <TabsTrigger value="range">
-                <Clock className="h-4 w-4 mr-2" />
-                Time Range
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="hours" className="mt-4 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="hours">Hours Worked</Label>
-                <Input
-                  id="hours"
-                  type="number"
-                  step="0.25"
-                  min="0.25"
-                  value={hours}
-                  onChange={(e) => setHours(e.target.value)}
-                  placeholder="Enter hours"
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="range" className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <TimePickerMobile
-                  label="Start Time"
-                  value={startTime}
-                  onChange={setStartTime}
-                />
-                
-                <TimePickerMobile
-                  label="End Time"
-                  value={endTime}
-                  onChange={setEndTime}
-                />
-              </div>
-              
-              <div className="text-sm font-medium text-center">
-                Total: {hours} hours
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date"
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !workDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {workDate ? format(workDate, 'PPP') : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={workDate}
-                  onSelect={(date) => date && setWorkDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="entityType">Type</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant={entityType === 'work_order' ? 'default' : 'outline'}
-                className={entityType === 'work_order' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
-                onClick={() => {
-                  setEntityType('work_order');
-                  setEntityId('');
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Step 1: Entity Selection */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <EntityTypeSelector
+                value={entityType}
+                onChange={(value) => {
+                  form.setValue('entityType', value as 'work_order' | 'project');
+                  form.setValue('entityId', '');
                 }}
-              >
-                Work Order
-              </Button>
-              <Button
-                type="button"
-                variant={entityType === 'project' ? 'default' : 'outline'}
-                className={entityType === 'project' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
-                onClick={() => {
-                  setEntityType('project');
-                  setEntityId('');
-                }}
-              >
-                Project
-              </Button>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="entityId">{entityType === 'work_order' ? 'Work Order' : 'Project'}</Label>
-            <select
-              id="entityId"
-              className="w-full border border-input bg-background px-3 py-2 rounded-md"
-              value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
-              disabled={loadingEntities}
-            >
-              <option value="">Select {entityType === 'work_order' ? 'Work Order' : 'Project'}</option>
-              {entityOptions.map(option => (
-                <option key={option.id} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-            {loadingEntities && (
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                Loading...
-              </div>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <textarea
-              id="notes"
-              className="w-full border border-input bg-background px-3 py-2 rounded-md"
-              rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add notes about the work performed..."
-            />
-          </div>
-          
-          <div className="pt-2">
-            <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
-              <div>
-                <h4 className="font-medium">Attach Receipt</h4>
-                <p className="text-sm text-muted-foreground">
-                  Do you have a receipt for this time entry?
-                </p>
-              </div>
-              <Switch
-                checked={attachReceipt}
-                onCheckedChange={setAttachReceipt}
-                className="data-[state=checked]:bg-[#0485ea]"
               />
-            </div>
-          </div>
-          
-          {attachReceipt && (
-            <div className="space-y-4 pt-2">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <Label>Upload Receipt</Label>
-                    <FileUpload
-                      onChange={handleFileSelect}
-                      maxFiles={1}
-                      accept="image/*,application/pdf"
-                      maxSize={5 * 1024 * 1024} // 5MB
-                    />
-                  </div>
-                </CardContent>
-              </Card>
               
-              {selectedFiles.length > 0 && (
-                <ReceiptMetadataForm
-                  metadata={receiptMetadata}
-                  updateMetadata={updateReceiptMetadata}
-                  entityType={entityType}
-                  entityId={entityId}
-                />
+              <div className="space-y-2">
+                <Label>Select {entityType === 'work_order' ? 'Work Order' : 'Project'}</Label>
+                {isLoadingEntities ? (
+                  <div className="h-10 flex items-center px-3 border rounded-md text-muted-foreground">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </div>
+                ) : (
+                  <select
+                    className="w-full h-11 rounded-md border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#0485ea]/20 focus:border-[#0485ea]"
+                    value={entityId}
+                    onChange={(e) => form.setValue('entityId', e.target.value)}
+                  >
+                    <option value="">Select {entityType === 'work_order' ? 'Work Order' : 'Project'}</option>
+                    {(entityType === 'work_order' ? workOrders : projects).map(entity => (
+                      <option key={entity.id} value={entity.id}>
+                        {entity.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {form.formState.errors.entityId && (
+                  <div className="text-sm text-red-500">
+                    {form.formState.errors.entityId.message}
+                  </div>
+                )}
+              </div>
+              
+              {entityId && selectedEntity && (
+                <div className="rounded-md bg-muted p-3 text-sm">
+                  <div className="font-medium">
+                    {entityType === 'work_order' ? (
+                      <div className="flex items-center">
+                        <Briefcase className="h-3.5 w-3.5 mr-1.5 text-[#0485ea]" />
+                        {selectedEntity.name}
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <Building className="h-3.5 w-3.5 mr-1.5 text-[#0485ea]" />
+                        {selectedEntity.name}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )}
           
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !entityId || parseFloat(hours) <= 0}
-            className="w-full bg-[#0485ea] hover:bg-[#0375d1] mt-4"
-          >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Log Time
-          </Button>
-        </div>
+          {/* Step 2: Time Selection */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="rounded-md border p-3">
+                <div className="flex items-center mb-2">
+                  {entityType === 'work_order' ? (
+                    <Briefcase className="h-4 w-4 mr-2 text-[#0485ea]" />
+                  ) : (
+                    <Building className="h-4 w-4 mr-2 text-[#0485ea]" />
+                  )}
+                  <span className="font-medium">{selectedEntity?.name}</span>
+                </div>
+                
+                <div className="text-sm text-muted-foreground">
+                  {format(date, 'EEEE, MMMM d, yyyy')}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Start Time</Label>
+                    <TimePickerMobile
+                      value={startTime}
+                      onChange={(value) => form.setValue('startTime', value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>End Time</Label>
+                    <TimePickerMobile
+                      value={endTime}
+                      onChange={(value) => form.setValue('endTime', value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="rounded-md bg-muted p-3 flex items-center justify-between">
+                  <div className="flex items-center text-sm">
+                    <Clock className="h-4 w-4 mr-2 text-[#0485ea]" />
+                    <span>Total Hours</span>
+                  </div>
+                  <div className="font-medium">{form.watch('hoursWorked')}</div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (optional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Add any details about this time entry"
+                  {...form.register('notes')}
+                  className="h-20"
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Step 3: Receipt Upload */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="rounded-md border p-3">
+                <div className="flex items-center mb-2">
+                  {entityType === 'work_order' ? (
+                    <Briefcase className="h-4 w-4 mr-2 text-[#0485ea]" />
+                  ) : (
+                    <Building className="h-4 w-4 mr-2 text-[#0485ea]" />
+                  )}
+                  <span className="font-medium">{selectedEntity?.name}</span>
+                </div>
+                
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Clock3 className="h-4 w-4 mr-1" />
+                  <span>{startTime} - {endTime} ({form.watch('hoursWorked')} hrs)</span>
+                </div>
+              </div>
+              
+              <div className="rounded-md border p-4">
+                <p className="text-sm mb-3">
+                  Upload receipts for expenses related to this time entry.
+                </p>
+                
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                  >
+                    Select Files
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowCamera(true)}
+                  >
+                    <CameraIcon className="h-4 w-4 mr-2" />
+                    Take Photo
+                  </Button>
+                  
+                  <input
+                    id="file-upload"
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                  />
+                </div>
+                
+                {/* Selected Files */}
+                {selectedFiles.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    <p className="text-sm font-medium">Selected Files:</p>
+                    
+                    <div className="space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between border rounded-md p-2 text-sm"
+                        >
+                          <div className="truncate">{file.name}</div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleRemoveFile(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Receipt Metadata */}
+                {hasReceipts && (
+                  <div className="space-y-3 border-t pt-3">
+                    <p className="text-sm font-medium">Receipt Details:</p>
+                    
+                    <div className="space-y-3">
+                      <VendorSelector
+                        vendorType="vendor"
+                        value={vendorId}
+                        onChange={setVendorId}
+                        showAddNewOption={true}
+                        label="Vendor"
+                      />
+                      
+                      <div className="space-y-2">
+                        <Label>Expense Type</Label>
+                        <select
+                          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0485ea]/20 focus:border-[#0485ea]"
+                          value={expenseType}
+                          onChange={(e) => setExpenseType(e.target.value)}
+                        >
+                          <option value="">Select expense type</option>
+                          <option value="MATERIALS">Materials</option>
+                          <option value="TOOLS">Tools & Equipment</option>
+                          <option value="FUEL">Fuel</option>
+                          <option value="MEALS">Meals & Entertainment</option>
+                          <option value="OTHER">Other</option>
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Amount</Label>
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          step="0.01"
+                          min="0"
+                          value={expenseAmount || ''}
+                          onChange={(e) => setExpenseAmount(
+                            e.target.value ? parseFloat(e.target.value) : undefined
+                          )}
+                          className="h-10"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Navigation Buttons */}
+          <div className="flex justify-between pt-2 sticky bottom-0 bg-background pb-2">
+            {step === 1 ? (
+              <SheetClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </SheetClose>
+            ) : (
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+            )}
+            
+            {step < 3 ? (
+              <Button type="button" onClick={handleNext}>
+                Next
+              </Button>
+            ) : (
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="bg-[#0485ea] hover:bg-[#0375d1]"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit
+              </Button>
+            )}
+          </div>
+        </form>
       </SheetContent>
     </Sheet>
   );

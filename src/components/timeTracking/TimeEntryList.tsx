@@ -1,352 +1,298 @@
 
-import React, { useState } from 'react';
-import { format } from 'date-fns';
-import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { format, parseISO } from 'date-fns';
+import { Briefcase, Building, Clock, ArrowRight, Receipt, ExternalLink as ExternalLinkIcon, Download as DownloadIcon } from 'lucide-react';
+import { TimeEntry } from '@/types/timeTracking';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Trash, Edit, MoreVertical, Building, Briefcase, File } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { TimeEntry, TimeEntryReceipt } from '@/types/timeTracking';
+import { DotsVerticalIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { Skeleton } from '@/components/ui/skeleton';
-import TimeEntryReceipts from './TimeEntryReceipts';
+import { formatDuration } from '@/components/estimates/utils/estimateCalculations';
 
 interface TimeEntryListProps {
-  timeEntries: TimeEntry[];
-  isLoading: boolean;
-  onEntryChange: () => void;
-  isMobile?: boolean;
+  entries: TimeEntry[];
+  onEdit?: (entry: TimeEntry) => void;
+  onDelete?: (entry: TimeEntry) => void;
+  onViewReceipt?: (url: string) => void;
 }
 
+type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
+
+// Group entries by date
+const groupEntriesByDate = (entries: TimeEntry[]) => {
+  const grouped = new Map<string, TimeEntry[]>();
+
+  entries.forEach(entry => {
+    const dateKey = entry.date_worked;
+    if (!grouped.has(dateKey)) {
+      grouped.set(dateKey, []);
+    }
+    grouped.get(dateKey)?.push(entry);
+  });
+
+  // Sort entries within each day
+  grouped.forEach((entriesForDate, date) => {
+    grouped.set(date, [...entriesForDate].sort((a, b) => 
+      a.start_time.localeCompare(b.start_time)
+    ));
+  });
+
+  // Sort dates in descending order (newest first)
+  return new Map([...grouped.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0])));
+};
+
+// Determine time of day based on hour
+const getTimeOfDay = (hour: number): TimeOfDay => {
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 21) return 'evening';
+  return 'night';
+};
+
+// Get color based on time of day
+const getTimeOfDayColor = (timeOfDay: TimeOfDay): string => {
+  switch (timeOfDay) {
+    case 'morning': return 'bg-blue-100 text-blue-800';
+    case 'afternoon': return 'bg-amber-100 text-amber-800';
+    case 'evening': return 'bg-purple-100 text-purple-800';
+    case 'night': return 'bg-indigo-100 text-indigo-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
+// Format start time with AM/PM
+const formatTime = (time: string): string => {
+  const [hours, minutes] = time.split(':').map(Number);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+  return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
+
 const TimeEntryList: React.FC<TimeEntryListProps> = ({ 
-  timeEntries, 
-  isLoading,
-  onEntryChange,
-  isMobile = false
+  entries,
+  onEdit,
+  onDelete,
+  onViewReceipt
 }) => {
-  const [selectedReceipt, setSelectedReceipt] = useState<TimeEntryReceipt | null>(null);
-  const smallScreen = useMediaQuery("(max-width: 640px)");
-  const useCompactLayout = isMobile || smallScreen;
+  const [showReceiptDialog, setShowReceiptDialog] = React.useState(false);
+  const [selectedReceipt, setSelectedReceipt] = React.useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
   
-  const handleViewReceipt = (receipt: TimeEntryReceipt) => {
-    setSelectedReceipt(receipt);
+  // Group entries by date
+  const groupedEntries = groupEntriesByDate(entries);
+  
+  const handleViewReceipt = (url: string) => {
+    setSelectedReceipt(url);
+    setShowReceiptDialog(true);
+    
+    if (onViewReceipt) {
+      onViewReceipt(url);
+    }
   };
   
-  if (isLoading) {
+  if (entries.length === 0) {
     return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-4 space-y-2">
-                <div className="flex justify-between">
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-4 w-1/4" />
-                </div>
-                <div className="flex justify-between items-center">
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-1/5" />
-                </div>
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="flex flex-col items-center justify-center py-10 text-center">
+        <Clock className="h-12 w-12 text-muted-foreground/50 mb-3" />
+        <h3 className="font-medium text-lg">No time entries</h3>
+        <p className="text-muted-foreground mt-1">
+          There are no time entries for this period
+        </p>
       </div>
     );
   }
   
-  if (timeEntries.length === 0) {
-    return (
-      <div className="text-center py-6 text-muted-foreground">
-        No time entries found for this date
-      </div>
-    );
-  }
-  
-  // For compact mobile layout
-  if (useCompactLayout) {
-    return (
-      <div className="space-y-3">
-        {timeEntries.map((entry) => (
-          <Card key={entry.id} className="overflow-hidden">
-            <CardContent className="p-3">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <div className="flex items-center">
-                    {entry.entity_type === 'project' ? (
-                      <Building className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                    ) : (
-                      <Briefcase className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                    )}
-                    <span className="font-medium truncate max-w-[180px]">
-                      {entry.entity_name || entry.entity_id}
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    {format(new Date(`${entry.date_worked}T${entry.start_time}`), 'h:mm a')} - 
-                    {format(new Date(`${entry.date_worked}T${entry.end_time}`), 'h:mm a')}
-                  </div>
-                  
-                  {entry.employee_name && (
-                    <div className="text-xs text-muted-foreground">
-                      {entry.employee_name}
-                    </div>
-                  )}
-                  
-                  {entry.notes && (
-                    <div className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                      {entry.notes}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex flex-col items-end">
-                  <span className="font-semibold text-[#0485ea]">
-                    {entry.hours_worked.toFixed(1)}h
-                  </span>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Trash className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-              
-              {entry.has_receipts && (
-                <div className="mt-2 pt-2 border-t">
-                  <TimeEntryReceipts 
-                    timeEntryId={entry.id} 
-                    onViewReceipt={handleViewReceipt}
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-        
-        {/* Receipt Viewer Dialog */}
-        <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Receipt</DialogTitle>
-            </DialogHeader>
-            
-            {selectedReceipt && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">{selectedReceipt.file_name}</div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      if (selectedReceipt.url) {
-                        window.open(selectedReceipt.url, '_blank');
-                      }
-                    }}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Type:</span>{' '}
-                    {selectedReceipt.expense_type || 'Not specified'}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Amount:</span>{' '}
-                    {selectedReceipt.amount ? `$${selectedReceipt.amount.toFixed(2)}` : 'Not specified'}
-                  </div>
-                </div>
-                
-                {selectedReceipt.url && selectedReceipt.file_type?.startsWith('image/') && (
-                  <div className="border rounded-md overflow-hidden">
-                    <img 
-                      src={selectedReceipt.url} 
-                      alt="Receipt" 
-                      className="w-full h-auto max-h-[300px] object-contain"
-                    />
-                  </div>
-                )}
-                
-                {selectedReceipt.url && selectedReceipt.file_type === 'application/pdf' && (
-                  <div className="text-center py-4 border rounded-md">
-                    <File className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <div className="mt-2">PDF Document</div>
-                    <Button 
-                      variant="link" 
-                      onClick={() => window.open(selectedReceipt.url, '_blank')}
-                      className="mt-2"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Open PDF
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
-  }
-  
-  // Desktop layout
   return (
-    <div className="space-y-2">
-      {timeEntries.map((entry) => (
-        <Card key={entry.id}>
-          <CardContent className="p-4">
-            <div className="flex justify-between">
-              <div className="space-y-2 flex-1">
-                <div className="flex items-center">
-                  {entry.entity_type === 'project' ? (
-                    <Building className="h-4 w-4 mr-2 text-muted-foreground" />
-                  ) : (
-                    <Briefcase className="h-4 w-4 mr-2 text-muted-foreground" />
-                  )}
-                  <span className="font-medium">
-                    {entry.entity_name || entry.entity_id}
-                  </span>
-                </div>
+    <>
+      <div className="space-y-6">
+        {Array.from(groupedEntries.entries()).map(([date, entriesForDate]) => (
+          <div key={date} className="space-y-2">
+            <h3 className="font-medium text-sm text-muted-foreground sticky top-0 bg-background py-1">
+              {format(parseISO(date), 'EEEE, MMMM d, yyyy')}
+            </h3>
+            
+            <div className="space-y-3">
+              {entriesForDate.map(entry => {
+                // Get the start hour for time of day styling
+                const startHour = parseInt(entry.start_time.split(':')[0], 10);
+                const timeOfDay = getTimeOfDay(startHour);
+                const timeOfDayColor = getTimeOfDayColor(timeOfDay);
                 
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <span>
-                    {format(new Date(`${entry.date_worked}T${entry.start_time}`), 'h:mm a')} - 
-                    {format(new Date(`${entry.date_worked}T${entry.end_time}`), 'h:mm a')}
-                  </span>
-                  {entry.employee_name && (
-                    <span className="ml-4 pl-4 border-l">
-                      {entry.employee_name}
-                    </span>
-                  )}
-                </div>
-                
-                {entry.notes && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {entry.notes}
-                  </div>
-                )}
-                
-                {entry.has_receipts && (
-                  <div className="mt-2">
-                    <TimeEntryReceipts 
-                      timeEntryId={entry.id} 
-                      onViewReceipt={handleViewReceipt}
-                    />
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex flex-col items-end">
-                <span className="font-semibold text-[#0485ea] text-lg">
-                  {entry.hours_worked.toFixed(1)}h
-                </span>
-                
-                <div className="flex space-x-1 mt-2">
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+                return (
+                  <Card key={entry.id} className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center">
+                            {entry.entity_type === 'work_order' ? (
+                              <Briefcase className="h-4 w-4 text-[#0485ea] mr-2 shrink-0" />
+                            ) : (
+                              <Building className="h-4 w-4 text-[#0485ea] mr-2 shrink-0" />
+                            )}
+                            <div>
+                              <h4 className="font-medium">{entry.entity_name}</h4>
+                              {entry.entity_location && (
+                                <p className="text-xs text-muted-foreground">
+                                  {entry.entity_location}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <DotsVerticalIcon className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {onEdit && (
+                                <DropdownMenuItem onClick={() => onEdit(entry)}>
+                                  Edit
+                                </DropdownMenuItem>
+                              )}
+                              {onDelete && (
+                                <DropdownMenuItem 
+                                  onClick={() => onDelete(entry)}
+                                  className="text-red-600"
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Badge className={timeOfDayColor}>
+                              {formatTime(entry.start_time)}
+                            </Badge>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                            <Badge className={timeOfDayColor}>
+                              {formatTime(entry.end_time)}
+                            </Badge>
+                          </div>
+                          
+                          <Badge variant="outline" className="ml-2">
+                            {entry.hours_worked} hrs
+                          </Badge>
+                        </div>
+                        
+                        {entry.notes && (
+                          <div className="mt-3 text-sm text-muted-foreground">
+                            {entry.notes}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {entry.has_receipts && entry.documents && entry.documents.length > 0 && (
+                        <div className="border-t pt-2 pb-3 px-4">
+                          <div className="flex items-center text-xs text-muted-foreground mb-2">
+                            <Receipt className="h-3 w-3 mr-1" />
+                            Receipt{entry.documents.length > 1 ? 's' : ''}
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2">
+                            {entry.documents.map((doc: any) => (
+                              <div 
+                                key={doc.id} 
+                                className="rounded-md border px-3 py-1 text-xs flex items-center gap-1"
+                              >
+                                <span className="truncate max-w-[100px]">
+                                  {doc.file_name}
+                                </span>
+                                
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5"
+                                    onClick={() => handleViewReceipt(doc.url || '')}
+                                  >
+                                    <ExternalLinkIcon className="h-3 w-3" />
+                                  </Button>
+                                  
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5"
+                                    asChild
+                                  >
+                                    <a href={doc.url} download target="_blank" rel="noopener noreferrer">
+                                      <DownloadIcon className="h-3 w-3" />
+                                    </a>
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {entry.total_cost && (
+                            <div className="mt-2 text-xs flex justify-end">
+                              <span className="font-medium">
+                                Expense: ${entry.total_cost.toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
-      ))}
+          </div>
+        ))}
+      </div>
       
       {/* Receipt Viewer Dialog */}
-      <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Receipt</DialogTitle>
-          </DialogHeader>
-          
-          {selectedReceipt && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="font-medium">{selectedReceipt.file_name}</div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    if (selectedReceipt.url) {
-                      window.open(selectedReceipt.url, '_blank');
-                    }
-                  }}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Type:</span>{' '}
-                  {selectedReceipt.expense_type || 'Not specified'}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Amount:</span>{' '}
-                  {selectedReceipt.amount ? `$${selectedReceipt.amount.toFixed(2)}` : 'Not specified'}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Uploaded:</span>{' '}
-                  {format(new Date(selectedReceipt.uploaded_at), 'MMM d, yyyy')}
-                </div>
-              </div>
-              
-              {selectedReceipt.url && selectedReceipt.file_type?.startsWith('image/') && (
-                <div className="border rounded-md overflow-hidden">
-                  <img 
-                    src={selectedReceipt.url} 
-                    alt="Receipt" 
-                    className="w-full h-auto max-h-[500px] object-contain"
-                  />
-                </div>
-              )}
-              
-              {selectedReceipt.url && selectedReceipt.file_type === 'application/pdf' && (
-                <div className="text-center py-6 border rounded-md">
-                  <File className="h-16 w-16 mx-auto text-muted-foreground" />
-                  <div className="mt-2">PDF Document</div>
+      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+        <DialogContent className={isMobile ? "w-[95vw] max-w-[500px] p-0" : "w-[500px] p-0"}>
+          <DialogTitle className="px-4 py-3 border-b">Receipt</DialogTitle>
+          <div className="overflow-auto max-h-[80vh]">
+            {selectedReceipt && (
+              <div className="flex flex-col items-center">
+                <img 
+                  src={selectedReceipt} 
+                  alt="Receipt" 
+                  className="w-full object-contain"
+                />
+                <div className="py-3 px-4 w-full flex justify-between">
                   <Button 
-                    variant="link" 
-                    onClick={() => window.open(selectedReceipt.url, '_blank')}
-                    className="mt-2"
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowReceiptDialog(false)}
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open PDF
+                    Close
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                  >
+                    <a href={selectedReceipt} download target="_blank" rel="noopener noreferrer">
+                      <DownloadIcon className="h-3.5 w-3.5 mr-1.5" />
+                      Download
+                    </a>
                   </Button>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 

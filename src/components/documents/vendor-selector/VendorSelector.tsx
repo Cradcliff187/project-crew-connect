@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,7 @@ interface VendorSelectorProps {
   onChange: (value: string) => void;
   entityType?: string;
   entityId?: string;
-  showAddNew?: boolean;
+  showAddNewOption?: boolean; // Renamed to avoid conflict
   disabled?: boolean;
   className?: string;
   label?: string;
@@ -39,7 +39,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
   onChange,
   entityType,
   entityId,
-  showAddNew = false,
+  showAddNewOption = false, // Renamed to avoid conflict
   disabled = false,
   className = '',
   label
@@ -194,7 +194,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
                   {isLoading ? 'Loading...' : 'No vendors found'}
                 </div>
               )}
-              {showAddNew && (
+              {showAddNewOption && (
                 <div className="p-2 border-t">
                   <Button
                     variant="outline"
@@ -239,34 +239,6 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
             </div>
           </SheetContent>
         </Sheet>
-        
-        {showAddNew && !isMobile && (
-          <div className="mt-2 space-y-2">
-            <Input
-              placeholder="New vendor name"
-              value={newVendorName}
-              onChange={(e) => setNewVendorName(e.target.value)}
-            />
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowAddNew(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleAddVendor} 
-                disabled={!newVendorName.trim() || isAddingVendor}
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-              >
-                {isAddingVendor && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -315,7 +287,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
                 </SelectContent>
               </Select>
               
-              {showAddNew && (
+              {showAddNewOption && (
                 <Button
                   variant="outline"
                   size="icon"

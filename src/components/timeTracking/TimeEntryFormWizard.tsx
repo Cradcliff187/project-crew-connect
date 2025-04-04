@@ -1,528 +1,350 @@
 
-import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { 
-  Calendar as CalendarIcon, 
-  Timer, 
-  Upload, 
-  CheckCircle2, 
-  Clock, 
-  Receipt, 
-  Briefcase,
-  User,
-  AlertCircle
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { Switch } from '@/components/ui/switch';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { toast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
-
+import { Building, Briefcase, CreditCard, Clock, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { TimeEntryFormValues, useTimeEntryForm } from './hooks/useTimeEntryForm';
+import { useTimeEntrySubmit } from './hooks/useTimeEntrySubmit';
+import { useTimeEntryReceipts } from './hooks/useTimeEntryReceipts';
 import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
 import TimeRangeSelector from './form/TimeRangeSelector';
 import ReceiptUploader from './form/ReceiptUploader';
-import { useTimeEntryForm } from './hooks/useTimeEntryForm';
-import { useEntityData } from './hooks/useEntityData';
 import ReceiptMetadataForm from './form/ReceiptMetadataForm';
+import { useEntityData } from './hooks/useEntityData';
+import VendorSelector from '@/components/documents/vendor-selector';
+import { Textarea } from '@/components/ui/textarea';
 
 interface TimeEntryFormWizardProps {
-  onSuccess: () => void;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  date: Date;
 }
 
-const steps = [
-  { id: 'work', title: 'Work Details', icon: Briefcase },
-  { id: 'time', title: 'Time & Date', icon: Clock },
-  { id: 'receipts', title: 'Receipts', icon: Receipt },
-  { id: 'review', title: 'Review', icon: CheckCircle2 },
-];
-
-const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess }) => {
-  const [currentStep, setCurrentStep] = useState(0);
+const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
+  onSuccess,
+  onCancel,
+  date
+}) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [hasReceipts, setHasReceipts] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [receiptMetadata, setReceiptMetadata] = useState({
+    vendorId: '',
+    expenseType: '',
+    amount: undefined as number | undefined
+  });
   
-  const {
-    form,
-    isLoading,
-    selectedFiles,
-    receiptMetadata,
-    handleFilesSelected,
-    handleFileClear,
-    updateReceiptMetadata,
-    handleSubmit,
-  } = useTimeEntryForm(onSuccess);
-
-  const {
-    workOrders,
-    projects,
-    employees,
+  // Initialize form with default values
+  const form = useForm<TimeEntryFormValues>({
+    defaultValues: {
+      entityType: 'work_order',
+      entityId: '',
+      date: date,
+      startTime: '09:00',
+      endTime: '17:00',
+      hoursWorked: 8,
+      notes: '',
+      receipts: [] as File[]
+    },
+    resolver: zodResolver(
+      z.object({
+        entityType: z.enum(['work_order', 'project']),
+        entityId: z.string().min(1, "Please select a work order or project"),
+        date: z.date(),
+        startTime: z.string(),
+        endTime: z.string(),
+        hoursWorked: z.number().min(0.1, "Hours must be greater than 0"),
+        notes: z.string().optional(),
+        receipts: z.any().optional()
+      })
+    )
+  });
+  
+  // Custom hooks
+  const { entityData } = useTimeEntryForm(form.watch());
+  const { submitTimeEntry } = useTimeEntrySubmit();
+  const { uploadReceipts } = useTimeEntryReceipts();
+  const { 
+    workOrders, 
+    projects, 
+    employees, 
     isLoadingEntities,
     getSelectedEntityDetails
   } = useEntityData(form);
-
-  // Watch form values
+  
+  // Watch form fields
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
-  const hoursWorked = form.watch('hoursWorked');
-  const hasReceipts = form.watch('hasReceipts');
-  const selectedEntity = getSelectedEntityDetails();
-
-  // Calculate completion percentage for the progress bar
-  const getProgressPercent = () => {
-    return Math.round(((currentStep + 1) / steps.length) * 100);
-  };
-
-  // Navigation functions with validation
-  const nextStep = () => {
-    // Validate current step
-    let canProceed = true;
-    let errorMessage = '';
-
-    if (currentStep === 0 && !entityId) {
-      canProceed = false;
-      errorMessage = `Please select a ${entityType === 'work_order' ? 'work order' : 'project'}`;
-      form.setError('entityId', { 
-        type: 'required', 
-        message: errorMessage
-      });
-    }
-    
-    if (currentStep === 1 && (!startTime || !endTime)) {
-      canProceed = false;
-      if (!startTime) {
-        form.setError('startTime', { type: 'required', message: 'Start time is required' });
-        errorMessage = 'Please select start and end times';
-      }
-      if (!endTime) {
-        form.setError('endTime', { type: 'required', message: 'End time is required' });
-        errorMessage = errorMessage || 'Please select start and end times';
+  
+  // Selected entity details
+  const selectedEntity = entityId ? getSelectedEntityDetails() : null;
+  
+  // Update hours worked when start or end time changes
+  useEffect(() => {
+    if (startTime && endTime) {
+      try {
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
+        
+        const startMinutes = startHour * 60 + startMinute;
+        const endMinutes = endHour * 60 + endMinute;
+        
+        if (endMinutes > startMinutes) {
+          const hoursWorked = parseFloat(((endMinutes - startMinutes) / 60).toFixed(2));
+          form.setValue('hoursWorked', hoursWorked);
+        }
+      } catch (error) {
+        console.error('Error calculating hours worked:', error);
       }
     }
+  }, [startTime, endTime, form]);
+  
+  // Update receipt files when selected files change
+  useEffect(() => {
+    form.setValue('receipts', selectedFiles);
+  }, [selectedFiles, form]);
+  
+  // Form submission handler
+  const onSubmit: SubmitHandler<TimeEntryFormValues> = async (data) => {
+    setIsSubmitting(true);
     
-    if (!canProceed) {
-      toast({
-        title: "Missing information",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(prevStep => prevStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prevStep => prevStep - 1);
+    try {
+      console.log('Submitting time entry:', data);
+      
+      // Convert form values to API format
+      const timeEntryData = {
+        entity_type: data.entityType,
+        entity_id: data.entityId,
+        date_worked: format(data.date, 'yyyy-MM-dd'),
+        start_time: data.startTime,
+        end_time: data.endTime,
+        hours_worked: data.hoursWorked,
+        notes: data.notes || '',
+        // Add employee ID if available
+        employee_id: employees.length > 0 ? employees[0].employee_id : undefined,
+        location_data: null
+      };
+      
+      console.log('Prepared time entry data:', timeEntryData);
+      
+      // Submit time entry
+      const result = await submitTimeEntry(timeEntryData);
+      
+      console.log('Time entry submission result:', result);
+      
+      // Upload receipts if any
+      if (selectedFiles.length > 0 && result.id) {
+        console.log('Uploading receipts for time entry:', result.id);
+        
+        await uploadReceipts(
+          result.id, 
+          selectedFiles, 
+          {
+            vendorId: receiptMetadata.vendorId,
+            expenseType: receiptMetadata.expenseType,
+            amount: receiptMetadata.amount
+          }
+        );
+      }
+      
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error submitting time entry:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
-  const goToStep = (index: number) => {
-    // Only allow going to completed steps or next step
-    if (index <= currentStep + 1) {
-      setCurrentStep(index);
+  // Handle next step
+  const handleNext = async () => {
+    const currentFields = currentStep === 1 
+      ? ['entityType', 'entityId'] 
+      : ['startTime', 'endTime', 'hoursWorked'];
+    
+    const isValid = await form.trigger(currentFields as any);
+    
+    if (isValid) {
+      setCurrentStep(prev => prev + 1);
     }
   };
-
-  // Handle form submission
-  const onFormSubmit = () => {
-    handleSubmit(form.getValues());
+  
+  // Handle back step
+  const handleBack = () => {
+    setCurrentStep(prev => prev - 1);
   };
-
-  // Render step header and navigation
-  const renderStepHeader = () => {
-    return (
-      <div className="mb-6">
-        <div className="flex justify-between mb-2">
-          {steps.map((step, index) => {
-            const isActive = index === currentStep;
-            const isCompleted = index < currentStep;
-            const isPending = index > currentStep;
+  
+  // Handle receipt file selection
+  const handleFileSelect = (files: File[]) => {
+    setSelectedFiles(files);
+    setHasReceipts(files.length > 0);
+  };
+  
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Step 1: Select Entity */}
+        {currentStep === 1 && (
+          <div className="space-y-4">
+            <div className="text-lg font-medium">Select Work Item</div>
             
-            return (
-              <div 
-                key={step.id} 
-                className={cn(
-                  "flex flex-col items-center cursor-pointer transition-all",
-                  {
-                    "text-[#0485ea] font-medium": isActive,
-                    "text-muted-foreground": !isActive && !isCompleted,
-                    "text-green-500": isCompleted,
-                  }
+            <EntityTypeSelector 
+              value={entityType} 
+              onChange={(value) => {
+                form.setValue('entityType', value as 'work_order' | 'project');
+                form.setValue('entityId', '');
+              }}
+            />
+            
+            <EntitySelector
+              entityType={entityType}
+              entityId={entityId}
+              workOrders={workOrders}
+              projects={projects}
+              isLoading={isLoadingEntities}
+              onChange={(value) => form.setValue('entityId', value)}
+              error={form.formState.errors.entityId?.message}
+              selectedEntity={selectedEntity ? {
+                name: selectedEntity.name,
+                location: selectedEntity.type === 'work_order' ? 'Location info' : undefined
+              } : null}
+            />
+            
+            {form.formState.errors.entityId && (
+              <div className="text-sm text-red-500">
+                {form.formState.errors.entityId.message}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Step 2: Time Range Selection */}
+        {currentStep === 2 && (
+          <div className="space-y-4">
+            <div className="text-lg font-medium">Time Details</div>
+            
+            <div className="rounded-md border p-4">
+              <div className="flex items-center mb-3">
+                {entityType === 'work_order' ? (
+                  <Briefcase className="h-5 w-5 mr-2 text-[#0485ea]" />
+                ) : (
+                  <Building className="h-5 w-5 mr-2 text-[#0485ea]" />
                 )}
-                onClick={() => goToStep(index)}
-              >
-                <div 
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center border mb-1",
-                    {
-                      "bg-[#0485ea] text-white border-[#0485ea]": isActive,
-                      "bg-green-500 text-white border-green-500": isCompleted,
-                      "border-muted-foreground": isPending,
-                    }
-                  )}
-                >
-                  {isCompleted ? (
-                    <CheckCircle2 className="h-5 w-5" />
-                  ) : (
-                    <step.icon className="h-4 w-4" />
-                  )}
-                </div>
-                <span className="text-xs hidden sm:block">{step.title}</span>
+                <span className="font-medium">{selectedEntity?.name}</span>
               </div>
-            );
-          })}
-        </div>
-        <Progress value={getProgressPercent()} className="h-2 mb-4" />
-      </div>
-    );
-  };
-
-  // Render the content for each step
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0: // Work Details
-        return (
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold text-[#0485ea]">Work Details</h2>
-              <p className="text-sm text-muted-foreground">Select the work order or project you worked on</p>
+              
+              <div className="text-sm text-muted-foreground">
+                {format(date, 'EEEE, MMMM d, yyyy')}
+              </div>
             </div>
             
-            <div className="space-y-4">
-              <EntityTypeSelector 
-                entityType={entityType} 
-                onChange={(value) => form.setValue('entityType', value, { shouldValidate: true })}
+            <TimeRangeSelector
+              startTime={startTime}
+              endTime={endTime}
+              onStartTimeChange={(value) => form.setValue('startTime', value)}
+              onEndTimeChange={(value) => form.setValue('endTime', value)}
+              hoursWorked={form.watch('hoursWorked')}
+              error={form.formState.errors.startTime?.message || form.formState.errors.endTime?.message}
+            />
+            
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add any additional details about this time entry"
+                {...form.register('notes')}
+                className="h-24"
               />
-              
-              <EntitySelector
-                entityType={entityType}
-                entityId={entityId}
-                workOrders={workOrders}
-                projects={projects}
-                isLoading={isLoadingEntities}
-                onChange={(value) => form.setValue('entityId', value, { shouldValidate: true })}
-                error={form.formState.errors.entityId?.message}
-                selectedEntity={selectedEntity}
-              />
-              
-              <div className="space-y-2">
-                <Label htmlFor="employee">Employee</Label>
-                <select
-                  id="employee"
-                  className="w-full border border-gray-300 rounded-md p-2"
-                  value={form.watch('employeeId') || ''}
-                  onChange={(e) => form.setValue('employeeId', e.target.value, { shouldValidate: true })}
-                >
-                  <option value="">Select Employee</option>
-                  {employees.map(employee => (
-                    <option key={employee.employee_id} value={employee.employee_id}>
-                      {employee.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              {selectedEntity && (
-                <div className="mt-4 p-3 bg-muted rounded-md">
-                  <h3 className="font-medium mb-1">Selected {entityType === 'work_order' ? 'Work Order' : 'Project'}</h3>
-                  <p className="text-sm font-medium">{selectedEntity.title}</p>
-                  {selectedEntity.location && (
-                    <p className="text-xs text-muted-foreground">{selectedEntity.location}</p>
-                  )}
-                </div>
-              )}
             </div>
           </div>
-        );
+        )}
         
-      case 1: // Time & Date
-        return (
+        {/* Step 3: Receipts */}
+        {currentStep === 3 && (
           <div className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold text-[#0485ea]">Time & Date</h2>
-              <p className="text-sm text-muted-foreground">When did you perform this work?</p>
+            <div className="text-lg font-medium">Receipts & Expenses</div>
+            
+            <div className="rounded-md border p-4">
+              <div className="flex items-center mb-3">
+                {entityType === 'work_order' ? (
+                  <Briefcase className="h-5 w-5 mr-2 text-[#0485ea]" />
+                ) : (
+                  <Building className="h-5 w-5 mr-2 text-[#0485ea]" />
+                )}
+                <span className="font-medium">{selectedEntity?.name}</span>
+              </div>
+              
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Clock className="h-4 w-4 mr-1" />
+                <span>{startTime} - {endTime} ({form.watch('hoursWorked')} hrs)</span>
+              </div>
             </div>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !form.watch('workDate') && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.watch('workDate') ? (
-                        format(form.watch('workDate'), "MMMM d, yyyy")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={form.watch('workDate')}
-                      onSelect={(date) => date && form.setValue('workDate', date, { shouldValidate: true })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label>Time Range</Label>
-                  {startTime && endTime && (
-                    <div className="flex items-center text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
-                      <Timer className="h-3.5 w-3.5 mr-1" />
-                      <span>Duration: {hoursWorked.toFixed(2)} hours</span>
-                    </div>
-                  )}
-                </div>
-                
-                <TimeRangeSelector
-                  startTime={startTime}
-                  endTime={endTime}
-                  onStartTimeChange={(value) => {
-                    form.setValue('startTime', value, { shouldValidate: true });
-                    
-                    // Automatically adjust end time if needed
-                    if (endTime) {
-                      const [startHour, startMinute] = value.split(':').map(Number);
-                      const [endHour, endMinute] = endTime.split(':').map(Number);
-                      const startTotal = startHour * 60 + startMinute;
-                      const endTotal = endHour * 60 + endMinute;
-                      
-                      if (endTotal <= startTotal && endTotal > startTotal - 120) {
-                        let newEndHour = startHour + 1;
-                        if (newEndHour >= 24) newEndHour -= 24;
-                        const newEndTime = `${newEndHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
-                        form.setValue('endTime', newEndTime, { shouldValidate: true });
-                      }
-                    }
-                  }}
-                  onEndTimeChange={(value) => form.setValue('endTime', value, { shouldValidate: true })}
-                  startTimeError={form.formState.errors.startTime?.message}
-                  endTimeError={form.formState.errors.endTime?.message}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="hoursWorked">Total Hours</Label>
-                <Input
-                  id="hoursWorked"
-                  type="number"
-                  step="0.01"
-                  readOnly
-                  value={hoursWorked}
-                  className="bg-muted"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes (Optional)</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Add any notes about the work performed..."
-                  {...form.register('notes')}
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 2: // Receipts
-        return (
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold text-[#0485ea]">Receipts & Documents</h2>
-              <p className="text-sm text-muted-foreground">
-                Do you have any receipts or documents related to this work?
-              </p>
-            </div>
-            
-            <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
-              <div>
-                <h4 className="font-medium">Attach Receipt(s)</h4>
-                <p className="text-sm text-muted-foreground">
-                  Toggle on if you have receipts to upload
-                </p>
-              </div>
-              <Switch
-                checked={hasReceipts}
-                onCheckedChange={(checked) => form.setValue('hasReceipts', checked)}
-                className="data-[state=checked]:bg-[#0485ea]"
+            <div className="rounded-md border p-4 pb-0">
+              <ReceiptUploader 
+                onFilesSelected={handleFileSelect}
+                selectedFiles={selectedFiles}
               />
             </div>
             
             {hasReceipts && (
-              <div className="space-y-4">
-                <ReceiptUploader
-                  selectedFiles={selectedFiles}
-                  onFilesSelected={handleFilesSelected}
-                  onFileClear={handleFileClear}
+              <div className="rounded-md border p-4">
+                <div className="mb-3 font-medium flex items-center">
+                  <CreditCard className="h-4 w-4 mr-2 text-[#0485ea]" />
+                  Receipt Details
+                </div>
+                
+                <ReceiptMetadataForm
+                  vendorId={receiptMetadata.vendorId}
+                  expenseType={receiptMetadata.expenseType}
+                  amount={receiptMetadata.amount}
+                  onVendorChange={(value) => setReceiptMetadata(prev => ({ ...prev, vendorId: value }))}
+                  onExpenseTypeChange={(value) => setReceiptMetadata(prev => ({ ...prev, expenseType: value }))}
+                  onAmountChange={(value) => setReceiptMetadata(prev => ({ ...prev, amount: value }))}
                 />
-                
-                {selectedFiles.length > 0 && (
-                  <ReceiptMetadataForm
-                    metadata={receiptMetadata}
-                    updateMetadata={updateReceiptMetadata}
-                    entityType={entityType}
-                  />
-                )}
-              </div>
-            )}
-            
-            {!hasReceipts && (
-              <div className="flex items-center p-4 border rounded-md bg-muted/50">
-                <AlertCircle className="h-5 w-5 mr-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  You can continue without attaching any receipts. Toggle the switch above if you need to add receipts.
-                </p>
               </div>
             )}
           </div>
-        );
+        )}
         
-      case 3: // Review
-        return (
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold text-[#0485ea]">Review & Submit</h2>
-              <p className="text-sm text-muted-foreground">
-                Please review your time entry before submitting.
-              </p>
-            </div>
-            
-            <div className="space-y-3 bg-muted rounded-md p-4">
-              <div className="grid grid-cols-2 gap-y-2">
-                <div className="text-sm font-medium">Type:</div>
-                <div className="text-sm capitalize">{entityType.replace('_', ' ')}</div>
-                
-                <div className="text-sm font-medium">Name:</div>
-                <div className="text-sm">{selectedEntity?.title || entityId}</div>
-                
-                <div className="text-sm font-medium">Date:</div>
-                <div className="text-sm">
-                  {format(form.watch('workDate'), "MMMM d, yyyy")}
-                </div>
-                
-                <div className="text-sm font-medium">Time:</div>
-                <div className="text-sm">
-                  {startTime} - {endTime} ({hoursWorked.toFixed(2)} hours)
-                </div>
-                
-                {form.watch('employeeId') && employees.length > 0 && (
-                  <>
-                    <div className="text-sm font-medium">Employee:</div>
-                    <div className="text-sm">
-                      {employees.find(e => e.employee_id === form.watch('employeeId'))?.name}
-                    </div>
-                  </>
-                )}
-              </div>
-              
-              {form.watch('notes') && (
-                <div className="pt-2 border-t">
-                  <div className="text-sm font-medium mb-1">Notes:</div>
-                  <div className="text-sm">{form.watch('notes')}</div>
-                </div>
-              )}
-              
-              <div className="pt-2 border-t">
-                <div className="text-sm font-medium mb-1">Receipts:</div>
-                {hasReceipts && selectedFiles.length > 0 ? (
-                  <div>
-                    <Badge className="mb-1 bg-[#0485ea]">{selectedFiles.length} receipt(s) attached</Badge>
-                    <div className="text-xs text-muted-foreground">
-                      {receiptMetadata.expenseType && (
-                        <span>Type: {receiptMetadata.expenseType}</span>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-sm">None</div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
+        <Separator />
         
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <Card className="w-full">
-      <CardContent className="p-6">
-        {renderStepHeader()}
-        
-        <ScrollArea className="pr-4" style={{ maxHeight: 'calc(100vh - 300px)' }}>
-          {renderStepContent()}
-        </ScrollArea>
-        
-        <div className="flex justify-between mt-6 pt-4 border-t">
-          {currentStep > 0 && (
-            <Button 
-              variant="outline" 
-              onClick={prevStep}
-              disabled={isLoading}
-            >
-              Previous
+        {/* Navigation Buttons */}
+        <div className="flex justify-between">
+          {currentStep === 1 ? (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" onClick={handleBack}>
+              Back
             </Button>
           )}
           
-          {currentStep === 0 && (
-            <Button 
-              variant="outline" 
-              onClick={prevStep}
-              disabled={isLoading}
-              className="opacity-0 cursor-default"
-            >
-              Previous
-            </Button>
-          )}
-          
-          {currentStep < steps.length - 1 ? (
-            <Button 
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-              onClick={nextStep}
-              disabled={isLoading}
-            >
+          {currentStep < 3 ? (
+            <Button type="button" onClick={handleNext} disabled={isSubmitting}>
               Next
             </Button>
           ) : (
-            <Button 
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-              onClick={onFormSubmit}
-              disabled={isLoading}
-            >
-              {isLoading ? "Submitting..." : "Submit Time Entry"}
+            <Button type="submit" disabled={isSubmitting} className="bg-[#0485ea] hover:bg-[#0375d1]">
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </form>
+    </FormProvider>
   );
 };
 
