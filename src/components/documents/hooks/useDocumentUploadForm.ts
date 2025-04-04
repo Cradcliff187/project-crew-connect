@@ -6,6 +6,7 @@ import {
   DocumentUploadFormValues, 
   documentUploadSchema, 
   EntityType,
+  DocumentCategory,
   getEntityCategories
 } from '../schemas/documentSchema';
 import { useFileSelectionHandling } from './useFileSelectionHandling';
@@ -49,13 +50,21 @@ export const useDocumentUploadForm = ({
   const [showVendorSelector, setShowVendorSelector] = useState(isReceiptUpload || !!prefillData?.vendorId);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   
+  // Get default category with proper type casting
+  const getDefaultCategory = (): DocumentCategory => {
+    if (prefillData?.category && isValidDocumentCategory(prefillData.category)) {
+      return prefillData.category as DocumentCategory;
+    }
+    return isReceiptUpload ? 'receipt' : 'other';
+  };
+  
   // Create form with default values
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
       files: [] as File[],
       metadata: {
-        category: (prefillData?.category || (isReceiptUpload ? 'receipt' : 'other')),
+        category: getDefaultCategory(),
         entityType: entityType || 'PROJECT',
         entityId: entityId || '',
         version: 1,
@@ -69,6 +78,12 @@ export const useDocumentUploadForm = ({
     },
     mode: 'onChange'
   });
+
+  // Helper function to validate if a string is a valid DocumentCategory
+  function isValidDocumentCategory(category: string): boolean {
+    return ['invoice', 'receipt', '3rd_party_estimate', 'contract', 'insurance', 
+            'certification', 'photo', 'other'].includes(category);
+  }
 
   // Use our custom hooks to handle different aspects of the form
   const { handleFileSelect } = useFileSelectionHandling(form, setPreviewURL);

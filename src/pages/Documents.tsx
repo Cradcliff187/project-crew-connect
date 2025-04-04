@@ -35,14 +35,7 @@ const DocumentsPage: React.FC = () => {
     handleFilterChange,
     handleResetFilters,
     fetchDocuments
-  } = useDocuments({
-    search: '',
-    category: undefined,
-    entityType: undefined,
-    isExpense: undefined,
-    dateRange: undefined,
-    sortBy: 'newest'
-  });
+  } = useDocuments();
   
   // Use the custom hook for document actions
   const {
