@@ -4,10 +4,10 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import MobileTimeEntryView from '@/components/timeTracking/MobileTimeEntryView';
 import DesktopTimeEntryView from '@/components/timeTracking/DesktopTimeEntryView';
 import { useTimeEntries } from '@/components/timeTracking/hooks/useTimeEntries';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 
 const TimeTracking = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Detect if we're on a mobile device
