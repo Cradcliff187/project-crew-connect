@@ -48,15 +48,16 @@ export const costTypes = expenseTypes;
 
 // Entity-specific category mapping
 export const entityCategoryMap: Record<string, string[]> = {
-  'PROJECT': ['contract', 'photo', 'certification', 'other'],
+  'PROJECT': ['contract', 'photo', 'certification', 'receipt', 'invoice', 'other'],
   'CUSTOMER': ['contract', 'invoice', 'other'],
   'ESTIMATE': ['3rd_party_estimate', 'contract', 'other'],
-  'WORK_ORDER': ['receipt', 'photo', 'other'],
-  'VENDOR': ['invoice', 'certification', 'contract', 'other'],
-  'SUBCONTRACTOR': ['certification', 'insurance', 'contract', 'other'],
+  'WORK_ORDER': ['receipt', 'photo', 'invoice', 'other'],
+  'VENDOR': ['invoice', 'certification', 'contract', 'receipt', 'other'],
+  'SUBCONTRACTOR': ['certification', 'insurance', 'contract', 'invoice', 'other'],
   'CONTACT': ['contract', 'certification', 'other'],
   'EXPENSE': ['receipt', 'invoice', 'other'],
-  'TIME_ENTRY': ['receipt', 'photo', 'other']
+  'TIME_ENTRY': ['receipt', 'photo', 'other'],
+  'ESTIMATE_ITEM': ['receipt', 'invoice', '3rd_party_estimate', 'other']
 };
 
 // Define the document metadata schema
@@ -135,5 +136,55 @@ export type Document = z.infer<typeof documentSchema>;
 
 // Helper function to get available categories for a specific entity type
 export const getEntityCategories = (entityType: string): DocumentCategory[] => {
-  return (entityCategoryMap[entityType] || documentCategories) as DocumentCategory[];
+  if (entityType in entityCategoryMap) {
+    return entityCategoryMap[entityType] as DocumentCategory[];
+  }
+  return documentCategories as unknown as DocumentCategory[];
+};
+
+// Helper function to determine if a document is an expense based on category and entity type
+export const isDocumentExpense = (category: string, entityType?: string): boolean => {
+  if (category === 'receipt' || category === 'invoice') {
+    return true;
+  }
+  
+  if (entityType === 'EXPENSE') {
+    return true;
+  }
+  
+  return false;
+};
+
+// Helper function to get suggested tags based on entity type and category
+export const getSuggestedTags = (entityType: string, category: string): string[] => {
+  const tags: string[] = [];
+  
+  // Add category as tag
+  tags.push(category);
+  
+  // Add entity type as tag
+  tags.push(entityType.toLowerCase());
+  
+  // Add special tags based on combinations
+  if (category === 'receipt' || category === 'invoice') {
+    tags.push('expense');
+    
+    if (entityType === 'PROJECT') {
+      tags.push('project_expense');
+    } else if (entityType === 'WORK_ORDER') {
+      tags.push('work_order_expense');
+    }
+  }
+  
+  if (category === 'insurance' && 
+      (entityType === 'VENDOR' || entityType === 'SUBCONTRACTOR')) {
+    tags.push('compliance');
+  }
+  
+  if (category === 'certification' && 
+      (entityType === 'VENDOR' || entityType === 'SUBCONTRACTOR')) {
+    tags.push('compliance');
+  }
+  
+  return tags;
 };

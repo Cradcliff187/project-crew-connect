@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -72,8 +72,8 @@ const DocumentsPage: React.FC = () => {
   } = useRecentDocuments();
 
   // Handler for successful upload that refreshes both document lists
-  const handleDocumentUploadSuccess = () => {
-    handleUploadSuccess();
+  const handleDocumentUploadSuccess = (documentId?: string) => {
+    handleUploadSuccess(documentId);
     refreshRecentDocuments();
   };
   
@@ -93,12 +93,15 @@ const DocumentsPage: React.FC = () => {
     setSelectedEntityType(type);
   };
 
+  // Get the total count of documents
+  const totalDocuments = documents?.length || 0;
+
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
         <PageHeader
           title="Documents"
-          description="Upload and manage documents for your projects"
+          description={`${totalDocuments} documents in your repository`}
         >
           <div className="flex-1"></div>
           <Button 

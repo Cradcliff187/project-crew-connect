@@ -19,6 +19,8 @@ interface MetadataFormProps {
   control: Control<DocumentUploadFormValues>;
   watchIsExpense: boolean;
   watchVendorType: 'vendor' | 'subcontractor' | 'other' | undefined;
+  watchCategory: string;
+  watchEntityType: EntityType;
   isReceiptUpload?: boolean;
   showVendorSelector: boolean;
   prefillData?: {
@@ -26,6 +28,9 @@ interface MetadataFormProps {
     vendorId?: string;
     materialName?: string;
     expenseName?: string;
+    notes?: string;
+    tags?: string[];
+    category?: string;
   };
   allowEntityTypeSelection?: boolean;
 }
@@ -35,36 +40,54 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   control,
   watchIsExpense,
   watchVendorType,
+  watchCategory,
+  watchEntityType,
   isReceiptUpload = false,
   showVendorSelector,
   prefillData,
   allowEntityTypeSelection = false
 }) => {
-  // Set initial values from prefillData
-  useEffect(() => {
-    if (prefillData) {
-      if (prefillData.amount) {
-        form.setValue('metadata.amount', prefillData.amount);
-      }
-      if (prefillData.vendorId) {
-        form.setValue('metadata.vendorId', prefillData.vendorId);
-      }
-      
-      // Add any notes with material name if available
-      if (prefillData.materialName || prefillData.expenseName) {
-        const itemName = prefillData.materialName || prefillData.expenseName;
-        form.setValue('metadata.notes', `Receipt for: ${itemName}`);
-      }
-    }
-  }, [prefillData, form]);
-  
-  // Get the watchCategory and watchEntityType values
-  const watchCategory = form.watch('metadata.category');
-  const watchEntityType = form.watch('metadata.entityType');
-  
   // Helper to determine if we should show expense fields
   const showExpenseFields = isReceiptUpload || watchIsExpense || 
                           watchCategory === 'receipt' || watchCategory === 'invoice';
+  
+  // Handle entity type changes
+  const handleEntityTypeChange = (value: string) => {
+    const newEntityType = value as EntityType;
+    form.setValue('metadata.entityType', newEntityType);
+    
+    // Reset entity ID when changing entity type
+    form.setValue('metadata.entityId', '');
+    
+    // Update category if necessary
+    const currentCategory = form.getValues('metadata.category');
+    
+    // Set default category based on entity type
+    if (newEntityType === 'VENDOR' || newEntityType === 'SUBCONTRACTOR') {
+      // For vendor/subcontractor, default to certification if not already receipt/invoice
+      if (!['receipt', 'invoice'].includes(currentCategory)) {
+        form.setValue('metadata.category', 'certification');
+      }
+    } else if (newEntityType === 'PROJECT') {
+      // For projects, default to photo if not already receipt/invoice
+      if (!['receipt', 'invoice'].includes(currentCategory)) {
+        form.setValue('metadata.category', 'photo');
+      }
+    } else if (newEntityType === 'WORK_ORDER') {
+      // For work orders, default to receipt if not already set
+      if (!['receipt', 'invoice'].includes(currentCategory)) {
+        form.setValue('metadata.category', 'receipt');
+      }
+    }
+  };
+  
+  // Effect to handle category changes
+  useEffect(() => {
+    if (watchCategory === 'receipt' || watchCategory === 'invoice') {
+      // Set isExpense to true for receipts and invoices
+      form.setValue('metadata.isExpense', true);
+    }
+  }, [watchCategory, form]);
   
   return (
     <div className="space-y-4">
@@ -77,7 +100,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
               <FormLabel>Document Type</FormLabel>
               <Select
                 value={field.value}
-                onValueChange={field.onChange}
+                onValueChange={handleEntityTypeChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select document type" />
@@ -102,6 +125,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
         <DocumentCategorySelector 
           control={control} 
           isReceiptUpload={isReceiptUpload} 
+          entityType={watchEntityType}
         />
       )}
       
@@ -145,7 +169,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
       
       <NotesField 
         control={control} 
-        prefillText={prefillData?.materialName ? `Receipt for: ${prefillData.materialName}` : undefined} 
+        prefillText={prefillData?.notes || (prefillData?.materialName ? `Receipt for: ${prefillData.materialName}` : undefined)} 
       />
       
       {watchEntityType && (

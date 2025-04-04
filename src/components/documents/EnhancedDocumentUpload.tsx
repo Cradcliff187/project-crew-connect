@@ -24,6 +24,9 @@ interface EnhancedDocumentUploadProps {
     vendorId?: string;
     materialName?: string;
     expenseName?: string;
+    notes?: string;
+    category?: string;
+    tags?: string[];
   };
   preventFormPropagation?: boolean;
   allowEntityTypeSelection?: boolean;
@@ -55,6 +58,8 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     onSubmit,
     initializeForm,
     handleCancel,
+    handleFormSubmit,
+    availableCategories,
     watchIsExpense,
     watchVendorType,
     watchFiles,
@@ -68,27 +73,10 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     onCancel,
     isReceiptUpload,
     prefillData,
-    allowEntityTypeSelection
+    allowEntityTypeSelection,
+    preventFormPropagation,
+    onEntityTypeChange
   });
-
-  // Initialize form with prefill data if available
-  useEffect(() => {
-    initializeForm();
-  }, [initializeForm]);
-
-  // Auto-show vendor selector when receipt category is selected
-  useEffect(() => {
-    if (watchCategory === 'receipt' || watchCategory === 'invoice') {
-      setShowVendorSelector(true);
-    }
-  }, [watchCategory, setShowVendorSelector]);
-
-  // Notify parent about entity type changes if callback provided
-  useEffect(() => {
-    if (onEntityTypeChange && watchEntityType) {
-      onEntityTypeChange(watchEntityType);
-    }
-  }, [watchEntityType, onEntityTypeChange]);
 
   // Handle capture from mobile device
   const handleMobileCapture = useCallback((file: File) => {
@@ -99,28 +87,52 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   // If prefill data is available and it's a receipt upload, simplify the UI
   const simplifiedUpload = isReceiptUpload && prefillData;
 
-  // Handle form submission with explicit event prevention
-  const handleFormSubmit = useCallback((e: React.FormEvent) => {
-    // Always prevent default to handle submission manually
-    e.preventDefault(); 
-    
-    // Stop propagation if requested (prevents bubbling to parent forms)
-    if (preventFormPropagation) {
-      e.stopPropagation();
-    }
-    
-    // Use the form submission handler from the custom hook
-    form.handleSubmit((data) => {
-      onSubmit(data);
-    })(e);
-  }, [form, onSubmit, preventFormPropagation]);
-
   // Click handler for buttons to prevent event bubbling
   const handleButtonClick = useCallback((e: React.MouseEvent) => {
     if (preventFormPropagation) {
       e.stopPropagation();
     }
   }, [preventFormPropagation]);
+
+  // Get the proper title based on context
+  const getTitle = () => {
+    if (isReceiptUpload) return "Upload Receipt";
+    
+    if (watchEntityType === 'VENDOR' || watchEntityType === 'SUBCONTRACTOR') {
+      return `Upload ${watchEntityType === 'VENDOR' ? 'Vendor' : 'Subcontractor'} Document`;
+    }
+    
+    return "Upload Document";
+  };
+
+  // Get the proper description based on context
+  const getDescription = () => {
+    if (isReceiptUpload) {
+      return "Upload receipts for expenses related to this work order or project.";
+    }
+    
+    if (watchEntityType === 'VENDOR') {
+      return "Upload documents related to this vendor such as certifications or contracts.";
+    }
+    
+    if (watchEntityType === 'SUBCONTRACTOR') {
+      return "Upload documents related to this subcontractor such as insurance, certifications or contracts.";
+    }
+    
+    if (watchEntityType === 'PROJECT') {
+      return "Upload documents for this project such as photos, contracts or specifications.";
+    }
+    
+    if (watchEntityType === 'WORK_ORDER') {
+      return "Upload documents for this work order such as receipts, photos or contracts.";
+    }
+    
+    if (watchEntityType === 'ESTIMATE') {
+      return "Upload documents for this estimate such as contracts, specifications or reference materials.";
+    }
+    
+    return "Upload and categorize documents for your projects, invoices, and more.";
+  };
 
   return (
     <Card 
@@ -129,12 +141,8 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     >
       {!simplifiedUpload && (
         <CardHeader>
-          <CardTitle>{isReceiptUpload ? "Upload Receipt" : "Upload Document"}</CardTitle>
-          <CardDescription>
-            {isReceiptUpload 
-              ? "Upload receipts for expenses related to this work order."
-              : "Upload and categorize documents for your projects, invoices, and more."}
-          </CardDescription>
+          <CardTitle>{getTitle()}</CardTitle>
+          <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
       )}
       
@@ -149,7 +157,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                   onFileSelect={handleFileSelect}
                   previewURL={previewURL}
                   watchFiles={watchFiles}
-                  label={isReceiptUpload ? "Upload Receipt" : "Upload Document"}
+                  label={getTitle()}
                 />
                 
                 {/* Mobile Capture Component */}
@@ -167,6 +175,8 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                   control={form.control}
                   watchIsExpense={watchIsExpense}
                   watchVendorType={watchVendorType}
+                  watchCategory={watchCategory}
+                  watchEntityType={watchEntityType}
                   isReceiptUpload={isReceiptUpload}
                   showVendorSelector={showVendorSelector}
                   prefillData={prefillData}
@@ -196,7 +206,9 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               disabled={isUploading || watchFiles.length === 0}
               onClick={handleButtonClick}
             >
-              {isUploading ? "Uploading..." : (isReceiptUpload ? "Upload Receipt" : "Upload Document")}
+              {isUploading ? "Uploading..." : (
+                isReceiptUpload ? "Upload Receipt" : `Upload ${watchCategory || 'Document'}`
+              )}
             </Button>
           </CardFooter>
         </form>

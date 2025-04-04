@@ -10,6 +10,26 @@ export const useFormValueWatchers = (form: UseFormReturn<DocumentUploadFormValue
   const watchCategory = form.watch('metadata.category');
   const watchExpenseType = form.watch('metadata.expenseType');
   const watchEntityType = form.watch('metadata.entityType') as EntityType;
+  const watchEntityId = form.watch('metadata.entityId');
+  const watchAmount = form.watch('metadata.amount');
+  const watchExpenseDate = form.watch('metadata.expenseDate');
+  const watchTags = form.watch('metadata.tags') || [];
+
+  // Helper to determine if vendor selection is needed
+  const needsVendorSelection = useCallback(() => {
+    return (
+      watchIsExpense || 
+      watchCategory === 'receipt' || 
+      watchCategory === 'invoice' ||
+      watchEntityType === 'VENDOR' ||
+      watchEntityType === 'SUBCONTRACTOR'
+    );
+  }, [watchIsExpense, watchCategory, watchEntityType]);
+
+  // Helper to determine if entity selection is needed
+  const needsEntitySelection = useCallback(() => {
+    return !!(watchEntityType && !watchEntityId);
+  }, [watchEntityType, watchEntityId]);
 
   return {
     watchIsExpense,
@@ -17,6 +37,12 @@ export const useFormValueWatchers = (form: UseFormReturn<DocumentUploadFormValue
     watchFiles,
     watchCategory,
     watchExpenseType,
-    watchEntityType
+    watchEntityType,
+    watchEntityId,
+    watchAmount,
+    watchExpenseDate,
+    watchTags,
+    needsVendorSelection,
+    needsEntitySelection
   };
 };

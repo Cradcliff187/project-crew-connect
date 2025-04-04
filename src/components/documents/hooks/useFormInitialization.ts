@@ -13,6 +13,9 @@ interface UseFormInitializationProps {
     vendorId?: string;
     materialName?: string;
     expenseName?: string;
+    category?: string;
+    tags?: string[];
+    notes?: string;
   };
   isFormInitialized: boolean;
   setIsFormInitialized: (initialized: boolean) => void;
@@ -36,6 +39,14 @@ export const useFormInitialization = ({
   // Initialize the form
   const initializeForm = useCallback(() => {
     if (!isFormInitialized) {
+      console.log('Initializing document upload form with:', {
+        entityType,
+        entityId,
+        isReceiptUpload,
+        prefillData,
+        allowEntityTypeSelection
+      });
+      
       // Only set entityType if not allowing selection or if it's provided
       if (entityType && (!allowEntityTypeSelection || isReceiptUpload)) {
         form.setValue('metadata.entityType', entityType);
@@ -45,17 +56,48 @@ export const useFormInitialization = ({
         form.setValue('metadata.entityId', entityId);
       }
       
-      if (isReceiptUpload) {
+      // Set default category based on context or prefill data
+      if (prefillData?.category) {
+        form.setValue('metadata.category', prefillData.category);
+      } else if (isReceiptUpload) {
         form.setValue('metadata.category', 'receipt');
+      }
+      
+      // Set expense-related fields if this is a receipt upload
+      if (isReceiptUpload) {
         form.setValue('metadata.isExpense', true);
         form.setValue('metadata.expenseType', 'materials');
-        if (prefillData?.vendorId) {
+        
+        // Prefill default tags for receipts
+        const defaultTags = ['receipt'];
+        if (entityType === 'WORK_ORDER') {
+          defaultTags.push('work_order_expense');
+        } else if (entityType === 'PROJECT') {
+          defaultTags.push('project_expense');
+        }
+        form.setValue('metadata.tags', defaultTags);
+      }
+      
+      // Apply prefill data when available
+      if (prefillData) {
+        if (prefillData.vendorId) {
           form.setValue('metadata.vendorId', prefillData.vendorId);
         }
-        if (prefillData?.amount) {
+        
+        if (prefillData.amount) {
           form.setValue('metadata.amount', prefillData.amount);
         }
-        form.setValue('metadata.tags', ['receipt']);
+        
+        if (prefillData.notes) {
+          form.setValue('metadata.notes', prefillData.notes);
+        } else if (prefillData.materialName || prefillData.expenseName) {
+          const itemName = prefillData.materialName || prefillData.expenseName;
+          form.setValue('metadata.notes', `Receipt for: ${itemName}`);
+        }
+        
+        if (prefillData.tags && prefillData.tags.length > 0) {
+          form.setValue('metadata.tags', prefillData.tags);
+        }
       }
       
       setIsFormInitialized(true);
