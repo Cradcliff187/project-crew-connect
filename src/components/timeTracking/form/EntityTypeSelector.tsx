@@ -1,37 +1,29 @@
 
-import { Button } from '@/components/ui/button';
-import { Briefcase, Wrench } from 'lucide-react';
+import React from 'react';
+import { Briefcase, Building } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface EntityTypeSelectorProps {
-  entityType: 'work_order' | 'project';
+  value: 'work_order' | 'project';
   onChange: (value: 'work_order' | 'project') => void;
 }
 
-const EntityTypeSelector: React.FC<EntityTypeSelectorProps> = ({ entityType, onChange }) => {
+const EntityTypeSelector: React.FC<EntityTypeSelectorProps> = ({ value, onChange }) => {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">Time Entry Type</label>
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          type="button"
-          variant={entityType === 'work_order' ? 'default' : 'outline'}
-          className={entityType === 'work_order' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
-          onClick={() => onChange('work_order')}
-        >
-          <Wrench className="h-4 w-4 mr-2" />
-          Work Order
-        </Button>
-        
-        <Button
-          type="button"
-          variant={entityType === 'project' ? 'default' : 'outline'}
-          className={entityType === 'project' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
-          onClick={() => onChange('project')}
-        >
-          <Briefcase className="h-4 w-4 mr-2" />
-          Project
-        </Button>
-      </div>
+      <label className="text-sm font-medium">Type of Work</label>
+      <ToggleGroup type="single" value={value} onValueChange={(val) => {
+        if (val) onChange(val as 'work_order' | 'project');
+      }} className="justify-start">
+        <ToggleGroupItem value="work_order" className="flex items-center gap-1.5">
+          <Briefcase className="h-4 w-4" />
+          <span>Work Order</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem value="project" className="flex items-center gap-1.5">
+          <Building className="h-4 w-4" />
+          <span>Project</span>
+        </ToggleGroupItem>
+      </ToggleGroup>
     </div>
   );
 };

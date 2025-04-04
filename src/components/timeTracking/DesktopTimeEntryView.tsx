@@ -67,16 +67,19 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
               </TabsList>
               <TabsContent value="entries" className="mt-4">
                 <TimeEntryList 
-                  timeEntries={timeEntries} 
+                  entries={timeEntries} 
                   isLoading={isLoading}
                   onEntryChange={onAddSuccess}
                 />
               </TabsContent>
               <TabsContent value="add" className="mt-4">
-                <TimeEntryFormWizard onSuccess={() => {
-                  onAddSuccess();
-                  setActiveTab('entries');
-                }} />
+                <TimeEntryFormWizard 
+                  onSuccess={() => {
+                    onAddSuccess();
+                    setActiveTab('entries');
+                  }}
+                  date={selectedDate}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>

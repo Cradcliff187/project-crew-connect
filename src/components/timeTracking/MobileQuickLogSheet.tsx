@@ -4,7 +4,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { Briefcase, Building, Clock, CameraIcon, Clock3, Loader2, X } from 'lucide-react';
+import { Briefcase, Building, Clock, Camera, Clock3, Loader2, X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -14,10 +14,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import EntityTypeSelector from './form/EntityTypeSelector';
 import TimePickerMobile from './form/TimePickerMobile';
-import { useTimeEntrySubmit } from './hooks/useTimeEntrySubmit';
-import { useTimeEntryReceipts } from './hooks/useTimeEntryReceipts';
+import { supabase } from '@/integrations/supabase/client';
+import VendorSelector from '@/components/documents/vendor-selector/VendorSelector';
 import { useEntityData } from './hooks/useEntityData';
-import VendorSelector from '@/components/documents/vendor-selector';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -51,8 +50,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [expenseAmount, setExpenseAmount] = useState<number | undefined>(undefined);
   
   const { toast } = useToast();
-  const { submitTimeEntry } = useTimeEntrySubmit();
-  const { uploadReceipts } = useTimeEntryReceipts();
   
   const form = useForm<QuickLogFormValues>({
     defaultValues: {
@@ -169,37 +166,102 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     }
   };
   
+  // Upload receipts function
+  const uploadReceipts = async (timeEntryId: string, files: File[]) => {
+    for (const file of selectedFiles) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `receipts/time_entries/${timeEntryId}/${fileName}`;
+      
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('construction_documents')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        continue;
+      }
+      
+      // Create document record
+      const { data: document, error: documentError } = await supabase
+        .from('documents')
+        .insert({
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          storage_path: filePath,
+          entity_type: 'TIME_ENTRY',
+          entity_id: timeEntryId,
+          category: 'receipt',
+          is_expense: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          expense_type: expenseType || null,
+          vendor_id: vendorId || null,
+          amount: expenseAmount || null,
+          tags: ['receipt', 'time-entry']
+        })
+        .select('document_id')
+        .single();
+        
+      if (documentError) {
+        console.error('Error creating document record:', documentError);
+        continue;
+      }
+      
+      // Link document to time entry
+      const { error: linkError } = await supabase
+        .from('time_entry_document_links')
+        .insert({
+          time_entry_id: timeEntryId,
+          document_id: document.document_id,
+          created_at: new Date().toISOString()
+        });
+        
+      if (linkError) {
+        console.error('Error linking document to time entry:', linkError);
+      }
+    }
+  };
+  
+  // Submit time entry
+  const submitTimeEntry = async (data: QuickLogFormValues): Promise<{ id: string }> => {
+    const timeEntry = {
+      entity_type: data.entityType,
+      entity_id: data.entityId,
+      date_worked: format(date, 'yyyy-MM-dd'),
+      start_time: data.startTime,
+      end_time: data.endTime,
+      hours_worked: data.hoursWorked,
+      notes: data.notes || '',
+      has_receipts: selectedFiles.length > 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      location_data: null
+    };
+    
+    const { data: result, error } = await supabase
+      .from('time_entries')
+      .insert(timeEntry)
+      .select('id')
+      .single();
+      
+    if (error) throw error;
+    return result;
+  };
+  
   // Handle form submission
   const onSubmit: SubmitHandler<QuickLogFormValues> = async (data) => {
     setIsSubmitting(true);
     
     try {
-      // Prepare time entry data
-      const timeEntryData = {
-        entity_type: data.entityType,
-        entity_id: data.entityId,
-        date_worked: format(date, 'yyyy-MM-dd'),
-        start_time: data.startTime,
-        end_time: data.endTime,
-        hours_worked: data.hoursWorked,
-        notes: data.notes || '',
-        location_data: null
-      };
-      
       // Submit time entry
-      const result = await submitTimeEntry(timeEntryData);
+      const result = await submitTimeEntry(data);
       
       // Upload receipts if any
-      if (selectedFiles.length > 0 && result.id) {
-        await uploadReceipts(
-          result.id, 
-          selectedFiles, 
-          {
-            vendorId,
-            expenseType,
-            amount: expenseAmount
-          }
-        );
+      if (selectedFiles.length > 0) {
+        await uploadReceipts(result.id, selectedFiles);
       }
       
       // Show success toast
@@ -250,7 +312,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
               <EntityTypeSelector
                 value={entityType}
                 onChange={(value) => {
-                  form.setValue('entityType', value as 'work_order' | 'project');
+                  form.setValue('entityType', value);
                   form.setValue('entityId', '');
                 }}
               />
@@ -323,21 +385,17 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
               
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Start Time</Label>
-                    <TimePickerMobile
-                      value={startTime}
-                      onChange={(value) => form.setValue('startTime', value)}
-                    />
-                  </div>
+                  <TimePickerMobile
+                    value={startTime}
+                    onChange={(value) => form.setValue('startTime', value)}
+                    label="Start Time"
+                  />
                   
-                  <div className="space-y-2">
-                    <Label>End Time</Label>
-                    <TimePickerMobile
-                      value={endTime}
-                      onChange={(value) => form.setValue('endTime', value)}
-                    />
-                  </div>
+                  <TimePickerMobile
+                    value={endTime}
+                    onChange={(value) => form.setValue('endTime', value)}
+                    label="End Time"
+                  />
                 </div>
                 
                 <div className="rounded-md bg-muted p-3 flex items-center justify-between">
@@ -401,7 +459,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
                     className="flex-1"
                     onClick={() => setShowCamera(true)}
                   >
-                    <CameraIcon className="h-4 w-4 mr-2" />
+                    <Camera className="h-4 w-4 mr-2" />
                     Take Photo
                   </Button>
                   

@@ -1,18 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Loader2, Building, Briefcase } from 'lucide-react';
-import { useMediaQuery } from '@/hooks/use-media-query';
+import { Briefcase, Building, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface EntitySelectorProps {
   entityType: 'work_order' | 'project';
@@ -35,102 +25,60 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
   error,
   selectedEntity
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  
-  const options = entityType === 'work_order' ? workOrders : projects;
-  
-  // Filter options based on search
-  const filteredOptions = options.filter(
-    option => option.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  
-  // Reset search when entity type changes
-  useEffect(() => {
-    setSearchQuery('');
-  }, [entityType]);
+  const entities = entityType === 'work_order' ? workOrders : projects;
   
   return (
     <div className="space-y-2">
-      <Label htmlFor="entity">
-        {entityType === 'work_order' ? 'Work Order' : 'Project'}
-      </Label>
+      <Label>{entityType === 'work_order' ? 'Work Order' : 'Project'}</Label>
       
-      <div className="space-y-2">
+      {isLoading ? (
+        <div className="flex items-center space-x-2 border rounded-md p-2 h-10">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <span className="text-muted-foreground">Loading...</span>
+        </div>
+      ) : (
         <Select
           value={entityId}
           onValueChange={onChange}
-          disabled={isLoading}
         >
-          <SelectTrigger id="entity" className={entityId ? '' : 'text-muted-foreground'}>
-            <SelectValue placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`}>
-              {selectedEntity?.name || `Select ${entityType === 'work_order' ? 'work order' : 'project'}`}
-            </SelectValue>
+          <SelectTrigger>
+            <SelectValue placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`} />
           </SelectTrigger>
           <SelectContent>
-            <div className="p-2 border-b">
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="mb-0"
-              />
-            </div>
-            
-            {isLoading ? (
-              <div className="flex items-center justify-center p-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Loading...
-              </div>
-            ) : filteredOptions.length > 0 ? (
-              <div className={isMobile ? "max-h-[200px] overflow-y-auto" : ""}>
-                {filteredOptions.map(option => (
-                  <SelectItem key={option.id} value={option.id}>
-                    <div className="flex items-center">
-                      {entityType === 'work_order' ? (
-                        <Briefcase className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                      ) : (
-                        <Building className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                      )}
-                      <span className="truncate">{option.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </div>
+            {entities.length > 0 ? (
+              entities.map(entity => (
+                <SelectItem key={entity.id} value={entity.id}>
+                  {entity.name}
+                </SelectItem>
+              ))
             ) : (
-              <div className="p-2 text-center text-sm text-muted-foreground">
+              <div className="py-2 px-2 text-center text-sm text-muted-foreground">
                 No {entityType === 'work_order' ? 'work orders' : 'projects'} found
               </div>
             )}
           </SelectContent>
         </Select>
-        
-        {error && <div className="text-sm text-destructive">{error}</div>}
-        
-        {selectedEntity && entityId && (
-          <div className="rounded-md bg-muted px-3 py-2 text-sm">
-            <div className="font-medium">
-              {entityType === 'work_order' ? (
-                <div className="flex items-center">
-                  <Briefcase className="h-3.5 w-3.5 mr-1.5 text-[#0485ea]" />
-                  {selectedEntity.name}
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <Building className="h-3.5 w-3.5 mr-1.5 text-[#0485ea]" />
-                  {selectedEntity.name}
-                </div>
-              )}
-            </div>
-            
-            {selectedEntity.location && (
-              <div className="text-xs text-muted-foreground mt-1 ml-5">
-                {selectedEntity.location}
-              </div>
+      )}
+      
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      
+      {selectedEntity && (
+        <div className="mt-2 p-3 bg-muted rounded-md">
+          <div className="flex items-center">
+            {entityType === 'work_order' ? (
+              <Briefcase className="h-4 w-4 mr-2 text-[#0485ea]" />
+            ) : (
+              <Building className="h-4 w-4 mr-2 text-[#0485ea]" />
             )}
+            <span className="font-medium">{selectedEntity.name}</span>
           </div>
-        )}
-      </div>
+          {selectedEntity.location && (
+            <p className="text-xs text-muted-foreground mt-1 ml-6">
+              {selectedEntity.location}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

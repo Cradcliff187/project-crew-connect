@@ -8,23 +8,36 @@ import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Building, Briefcase, CreditCard, Clock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { TimeEntryFormValues, useTimeEntryForm } from './hooks/useTimeEntryForm';
-import { useTimeEntrySubmit } from './hooks/useTimeEntrySubmit';
-import { useTimeEntryReceipts } from './hooks/useTimeEntryReceipts';
+import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
 import TimeRangeSelector from './form/TimeRangeSelector';
 import ReceiptUploader from './form/ReceiptUploader';
 import ReceiptMetadataForm from './form/ReceiptMetadataForm';
 import { useEntityData } from './hooks/useEntityData';
-import VendorSelector from '@/components/documents/vendor-selector';
-import { Textarea } from '@/components/ui/textarea';
 
 interface TimeEntryFormWizardProps {
-  onSuccess?: () => void;
+  onSuccess: () => void;
   onCancel?: () => void;
   date: Date;
 }
+
+// Form schema
+const formSchema = z.object({
+  entityType: z.enum(['work_order', 'project']),
+  entityId: z.string().min(1, "Please select a work order or project"),
+  workDate: z.date(),
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
+  hoursWorked: z.number().min(0.01, "Hours must be greater than 0"),
+  notes: z.string().optional(),
+  employeeId: z.string().optional(),
+  hasReceipts: z.boolean().default(false)
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   onSuccess,
@@ -35,42 +48,28 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [hasReceipts, setHasReceipts] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [receiptMetadata, setReceiptMetadata] = useState({
-    vendorId: '',
-    expenseType: '',
-    amount: undefined as number | undefined
-  });
+  const [vendor, setVendor] = useState('');
+  const [expenseType, setExpenseType] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState<number | undefined>(undefined);
+  
+  const { toast } = useToast();
   
   // Initialize form with default values
-  const form = useForm<TimeEntryFormValues>({
+  const form = useForm<FormValues>({
     defaultValues: {
       entityType: 'work_order',
       entityId: '',
-      date: date,
+      workDate: date,
       startTime: '09:00',
       endTime: '17:00',
       hoursWorked: 8,
       notes: '',
-      receipts: [] as File[]
+      hasReceipts: false
     },
-    resolver: zodResolver(
-      z.object({
-        entityType: z.enum(['work_order', 'project']),
-        entityId: z.string().min(1, "Please select a work order or project"),
-        date: z.date(),
-        startTime: z.string(),
-        endTime: z.string(),
-        hoursWorked: z.number().min(0.1, "Hours must be greater than 0"),
-        notes: z.string().optional(),
-        receipts: z.any().optional()
-      })
-    )
+    resolver: zodResolver(formSchema)
   });
   
-  // Custom hooks
-  const { entityData } = useTimeEntryForm(form.watch());
-  const { submitTimeEntry } = useTimeEntrySubmit();
-  const { uploadReceipts } = useTimeEntryReceipts();
+  // Get entity data
   const { 
     workOrders, 
     projects, 
@@ -108,53 +107,113 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     }
   }, [startTime, endTime, form]);
   
-  // Update receipt files when selected files change
+  // Update form when receipts are added or removed
   useEffect(() => {
-    form.setValue('receipts', selectedFiles);
+    form.setValue('hasReceipts', selectedFiles.length > 0);
   }, [selectedFiles, form]);
   
+  // Upload receipts function
+  const uploadReceipts = async (timeEntryId: string, files: File[]) => {
+    for (const file of selectedFiles) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `receipts/time_entries/${timeEntryId}/${fileName}`;
+      
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('construction_documents')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        continue;
+      }
+      
+      // Create document record
+      const { data: document, error: documentError } = await supabase
+        .from('documents')
+        .insert({
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          storage_path: filePath,
+          entity_type: 'TIME_ENTRY',
+          entity_id: timeEntryId,
+          category: 'receipt',
+          is_expense: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          expense_type: expenseType || null,
+          vendor_id: vendor || null,
+          amount: expenseAmount || null,
+          tags: ['receipt', 'time-entry']
+        })
+        .select('document_id')
+        .single();
+        
+      if (documentError) {
+        console.error('Error creating document record:', documentError);
+        continue;
+      }
+      
+      // Link document to time entry
+      const { error: linkError } = await supabase
+        .from('time_entry_document_links')
+        .insert({
+          time_entry_id: timeEntryId,
+          document_id: document.document_id,
+          created_at: new Date().toISOString()
+        });
+        
+      if (linkError) {
+        console.error('Error linking document to time entry:', linkError);
+      }
+    }
+  };
+  
+  // Submit time entry
+  const submitTimeEntry = async (data: FormValues): Promise<{ id: string }> => {
+    const timeEntry = {
+      entity_type: data.entityType,
+      entity_id: data.entityId,
+      date_worked: format(data.workDate, 'yyyy-MM-dd'),
+      start_time: data.startTime,
+      end_time: data.endTime,
+      hours_worked: data.hoursWorked,
+      notes: data.notes || '',
+      has_receipts: selectedFiles.length > 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      location_data: null
+    };
+    
+    const { data: result, error } = await supabase
+      .from('time_entries')
+      .insert(timeEntry)
+      .select('id')
+      .single();
+      
+    if (error) throw error;
+    return result;
+  };
+  
   // Form submission handler
-  const onSubmit: SubmitHandler<TimeEntryFormValues> = async (data) => {
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setIsSubmitting(true);
     
     try {
-      console.log('Submitting time entry:', data);
-      
-      // Convert form values to API format
-      const timeEntryData = {
-        entity_type: data.entityType,
-        entity_id: data.entityId,
-        date_worked: format(data.date, 'yyyy-MM-dd'),
-        start_time: data.startTime,
-        end_time: data.endTime,
-        hours_worked: data.hoursWorked,
-        notes: data.notes || '',
-        // Add employee ID if available
-        employee_id: employees.length > 0 ? employees[0].employee_id : undefined,
-        location_data: null
-      };
-      
-      console.log('Prepared time entry data:', timeEntryData);
-      
       // Submit time entry
-      const result = await submitTimeEntry(timeEntryData);
-      
-      console.log('Time entry submission result:', result);
+      const result = await submitTimeEntry(data);
       
       // Upload receipts if any
-      if (selectedFiles.length > 0 && result.id) {
-        console.log('Uploading receipts for time entry:', result.id);
-        
-        await uploadReceipts(
-          result.id, 
-          selectedFiles, 
-          {
-            vendorId: receiptMetadata.vendorId,
-            expenseType: receiptMetadata.expenseType,
-            amount: receiptMetadata.amount
-          }
-        );
+      if (selectedFiles.length > 0) {
+        await uploadReceipts(result.id, selectedFiles);
       }
+      
+      toast({
+        title: 'Time entry submitted',
+        description: 'Your time entry has been successfully recorded.',
+      });
       
       // Call success callback if provided
       if (onSuccess) {
@@ -162,6 +221,11 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       }
     } catch (error) {
       console.error('Error submitting time entry:', error);
+      toast({
+        title: 'Error submitting time entry',
+        description: 'An error occurred. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -191,6 +255,14 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     setHasReceipts(files.length > 0);
   };
   
+  // Handle file removal
+  const handleFileClear = (index: number) => {
+    const newFiles = [...selectedFiles];
+    newFiles.splice(index, 1);
+    setSelectedFiles(newFiles);
+    setHasReceipts(newFiles.length > 0);
+  };
+  
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -202,7 +274,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
             <EntityTypeSelector 
               value={entityType} 
               onChange={(value) => {
-                form.setValue('entityType', value as 'work_order' | 'project');
+                form.setValue('entityType', value);
                 form.setValue('entityId', '');
               }}
             />
@@ -254,7 +326,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
               endTime={endTime}
               onStartTimeChange={(value) => form.setValue('startTime', value)}
               onEndTimeChange={(value) => form.setValue('endTime', value)}
-              hoursWorked={form.watch('hoursWorked')}
               error={form.formState.errors.startTime?.message || form.formState.errors.endTime?.message}
             />
             
@@ -295,6 +366,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
               <ReceiptUploader 
                 onFilesSelected={handleFileSelect}
                 selectedFiles={selectedFiles}
+                onFileClear={handleFileClear}
               />
             </div>
             
@@ -306,12 +378,12 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
                 </div>
                 
                 <ReceiptMetadataForm
-                  vendorId={receiptMetadata.vendorId}
-                  expenseType={receiptMetadata.expenseType}
-                  amount={receiptMetadata.amount}
-                  onVendorChange={(value) => setReceiptMetadata(prev => ({ ...prev, vendorId: value }))}
-                  onExpenseTypeChange={(value) => setReceiptMetadata(prev => ({ ...prev, expenseType: value }))}
-                  onAmountChange={(value) => setReceiptMetadata(prev => ({ ...prev, amount: value }))}
+                  vendor={vendor}
+                  expenseType={expenseType}
+                  amount={expenseAmount}
+                  onVendorChange={setVendor}
+                  onExpenseTypeChange={setExpenseType}
+                  onAmountChange={setExpenseAmount}
                 />
               </div>
             )}

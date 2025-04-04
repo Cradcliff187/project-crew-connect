@@ -98,7 +98,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           </CardHeader>
           <CardContent>
             <TimeEntryList 
-              timeEntries={timeEntries} 
+              entries={timeEntries} 
               isLoading={isLoading}
               onEntryChange={onAddSuccess}
               isMobile={true}
@@ -117,7 +117,8 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
                 onSuccess={() => {
                   setShowAddForm(false);
                   onAddSuccess();
-                }} 
+                }}
+                date={selectedDate}
               />
             </div>
           </SheetContent>
@@ -128,7 +129,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           open={showQuickLog}
           onOpenChange={setShowQuickLog}
           onSuccess={handleQuickLogSuccess}
-          selectedDate={selectedDate}
+          date={selectedDate}
         />
       </div>
     </PageTransition>

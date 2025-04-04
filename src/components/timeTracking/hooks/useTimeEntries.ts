@@ -1,8 +1,8 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { TimeEntry } from '@/types/timeTracking';
-import { format } from 'date-fns';
 
 // Default date range - current week
 const getDefaultDateRange = () => {
@@ -19,7 +19,7 @@ const getDefaultDateRange = () => {
   };
 };
 
-interface DateRange {
+export interface DateRange {
   startDate: Date;
   endDate: Date;
 }
@@ -69,11 +69,6 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
     }
   }, [dateRange]);
   
-  // Fetch entries when date range changes
-  useEffect(() => {
-    fetchTimeEntries();
-  }, [fetchTimeEntries]);
-  
   // Helper to enhance time entry with entity and receipt data
   const enhanceTimeEntry = async (entry: TimeEntry): Promise<TimeEntry> => {
     try {
@@ -84,52 +79,62 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
       if (entry.entity_type === 'work_order') {
         const { data } = await supabase
           .from('maintenance_work_orders')
-          .select('title, address, city, state')
+          .select('title, description')
           .eq('work_order_id', entry.entity_id)
           .single();
         
         if (data) {
-          entityName = data.title;
-          entityLocation = data.address ? 
-            `${data.address}, ${data.city || ''} ${data.state || ''}`.trim() : 
-            '';
+          entityName = data.title || '';
+          // We don't have location data in this table, so leave it empty
+          entityLocation = '';
         }
       } else if (entry.entity_type === 'project') {
         const { data } = await supabase
           .from('projects')
-          .select('projectname, address, city, state')
+          .select('projectname, sitelocationaddress, sitelocationcity, sitelocationstate')
           .eq('projectid', entry.entity_id)
           .single();
         
         if (data) {
           entityName = data.projectname || entry.entity_id;
-          entityLocation = data.address ? 
-            `${data.address}, ${data.city || ''} ${data.state || ''}`.trim() : 
-            '';
+          entityLocation = [
+            data.sitelocationaddress,
+            data.sitelocationcity,
+            data.sitelocationstate
+          ].filter(Boolean).join(', ');
         }
       }
       
       // Fetch documents/receipts if any
       let documents = [];
       if (entry.has_receipts) {
-        const { data: receipts } = await supabase
-          .from('time_entry_receipts')
-          .select('*')
+        // Use document links instead of nonexistent receipts table
+        const { data: documentLinks } = await supabase
+          .from('time_entry_document_links')
+          .select('document_id')
           .eq('time_entry_id', entry.id);
         
-        if (receipts && receipts.length > 0) {
-          // Add URLs for receipts
-          documents = await Promise.all(receipts.map(async (receipt) => {
-            const { data } = await supabase
-              .storage
-              .from('receipts')
-              .createSignedUrl(receipt.storage_path, 60 * 60); // 1 hour expiry
+        if (documentLinks && documentLinks.length > 0) {
+          const documentIds = documentLinks.map(link => link.document_id);
+          const { data: docs } = await supabase
+            .from('documents')
+            .select('*')
+            .in('document_id', documentIds);
             
-            return {
-              ...receipt,
-              url: data?.signedUrl
-            };
-          }));
+          if (docs) {
+            // Add URLs for documents
+            documents = await Promise.all(docs.map(async (doc) => {
+              const { data } = await supabase
+                .storage
+                .from('construction_documents')
+                .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
+              
+              return {
+                ...doc,
+                url: data?.signedUrl
+              };
+            }));
+          }
         }
       }
       
