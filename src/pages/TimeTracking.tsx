@@ -59,20 +59,6 @@ const TimeTracking = () => {
         onAddSuccess={handleAddSuccess}
         totalHours={totalHours}
       />
-      
-      {/* Mobile Add Form Dialog - keep for compatibility with existing code */}
-      {isMobile && showAddForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-auto">
-            <div className="p-4 border-b">
-              <h2 className="text-xl font-semibold">Log Time</h2>
-            </div>
-            <div className="p-4">
-              {/* This is handled by MobileTimeEntryView now, but keeping for backward compatibility */}
-            </div>
-          </div>
-        </div>
-      )}
     </PageTransition>
   );
 };
