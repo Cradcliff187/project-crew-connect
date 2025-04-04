@@ -2,7 +2,7 @@
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
-  entity_type: 'work_order' | 'project';
+  entity_type: 'work_order' | 'project';  // Using string literal types to fix type issues
   entity_id: string;
   entity_name?: string;
   entity_location?: string;
@@ -20,6 +20,7 @@ export interface TimeEntry {
   location_data?: any;
   created_at: string;
   updated_at: string;
+  documents?: any[];
 }
 
 // Form data for creating/updating time entries
@@ -44,6 +45,8 @@ export interface TimeEntryReceipt {
   file_size?: number;
   storage_path: string;
   uploaded_at: string;
+  document_id?: string;
+  url?: string;
 }
 
 // Time grouping for better UX

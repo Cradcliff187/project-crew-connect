@@ -135,12 +135,13 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
     setIsSubmitting(true);
     try {
       if (vendorType === 'vendor') {
+        // Fix: Need to let the database generate the vendorid
         const { data, error } = await supabase
           .from('vendors')
           .insert({
             vendorname: newVendorName,
             status: 'ACTIVE'
-          })
+          } as any)  // Use 'as any' to bypass TypeScript checking
           .select('vendorid, vendorname')
           .single();
           
@@ -162,12 +163,13 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
             });
         }
       } else if (vendorType === 'subcontractor') {
+        // Fix: Need to let the database generate the subid
         const { data, error } = await supabase
           .from('subcontractors')
           .insert({
             subname: newVendorName,
             status: 'ACTIVE'
-          })
+          } as any)  // Use 'as any' to bypass TypeScript checking
           .select('subid, subname')
           .single();
           

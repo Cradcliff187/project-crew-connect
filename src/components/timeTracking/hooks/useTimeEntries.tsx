@@ -11,7 +11,7 @@ export function useTimeEntries(selectedDate: Date) {
     const dateString = format(selectedDate, 'yyyy-MM-dd');
     
     // First fetch the time entries
-    const { data: timeEntries, error } = await supabase
+    const { data: rawTimeEntries, error } = await supabase
       .from('time_entries')
       .select('*')
       .eq('date_worked', dateString)
@@ -21,8 +21,14 @@ export function useTimeEntries(selectedDate: Date) {
       throw error;
     }
     
+    // Ensure the fetched entries match our TimeEntry type by casting entity_type
+    const timeEntries = rawTimeEntries.map(entry => ({
+      ...entry,
+      entity_type: entry.entity_type as 'work_order' | 'project'
+    }));
+    
     // For each time entry, fetch its receipts through the junction table
-    const enhancedData = await Promise.all((timeEntries || []).map(async (entry) => {
+    const enhancedData = await Promise.all(timeEntries.map(async (entry: TimeEntry) => {
       let entityName = "Unknown";
       let entityLocation = "";
       

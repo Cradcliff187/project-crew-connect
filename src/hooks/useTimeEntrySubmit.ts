@@ -102,7 +102,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             amount: receiptMetadata.amount || null
           };
           
-          const { data: insertedDocument, error: documentError } = await supabase
+          const { data: insertedDoc, error: documentError } = await supabase
             .from('documents')
             .insert(documentMetadataObj)
             .select('document_id')
@@ -114,7 +114,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           const { data: linkResult, error: linkError } = await supabase
             .rpc('attach_document_to_time_entry', {
               p_time_entry_id: insertedEntry.id,
-              p_document_id: insertedDocument.document_id
+              p_document_id: insertedDoc.document_id
             });
             
           if (linkError) {
@@ -132,7 +132,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 description: `Time entry receipt: ${file.name}`,
                 expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
                 amount: receiptMetadata.amount || 0,
-                document_id: insertedDocument.document_id,
+                document_id: insertedDoc.document_id,
                 time_entry_id: insertedEntry.id,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
@@ -156,7 +156,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                   description: `Associated via time entry receipt`,
                   amount: receiptMetadata.amount || null,
                   expense_type: receiptMetadata.expenseType || null,
-                  document_id: insertedDocument.document_id,
+                  document_id: insertedDoc.document_id,
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
                 });
@@ -169,17 +169,20 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           
           // For project entities, similar handling with project-specific logic
           if (data.entityType === 'project') {
-            // Create project expense records if needed
+            // Create project expense records using expenses table instead of project_expenses
             const { error: expenseError } = await supabase
-              .from('project_expenses')
+              .from('expenses')
               .insert({
-                project_id: data.entityId,
+                entity_type: 'PROJECT',
+                entity_id: data.entityId,
                 description: `Time entry receipt: ${file.name}`,
                 expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
                 amount: receiptMetadata.amount || 0,
-                document_id: insertedDocument.document_id,
+                document_id: insertedDoc.document_id,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                quantity: 1,
+                unit_price: receiptMetadata.amount || 0
               });
               
             if (expenseError) {
@@ -197,7 +200,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                   description: `Associated via time entry receipt`,
                   amount: receiptMetadata.amount || null,
                   expense_type: receiptMetadata.expenseType || null,
-                  document_id: insertedDocument.document_id,
+                  document_id: insertedDoc.document_id,
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
                 });
