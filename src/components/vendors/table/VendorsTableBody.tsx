@@ -1,5 +1,4 @@
 
-import { TableRow } from '@/components/ui/table';
 import VendorTableRow from './VendorTableRow';
 import { Vendor } from '../types/vendorTypes';
 

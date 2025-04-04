@@ -1,18 +1,12 @@
 
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Tag } from 'lucide-react';
-import { getStatusColor } from '../utils/statusUtils';
+import { Tag } from 'lucide-react';
 import { Subcontractor } from '../utils/types';
 import { Link } from 'react-router-dom';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import useSpecialties from '../hooks/useSpecialties';
+import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
+import { Edit, Trash2, Eye, Phone, History, Calendar } from 'lucide-react';
 
 interface SubcontractorTableRowProps {
   subcontractor: Subcontractor;
@@ -27,14 +21,29 @@ const SubcontractorTableRow = ({
 }: SubcontractorTableRowProps) => {
   const { specialties, loading } = useSpecialties();
   
-  const handleView = () => {
+  // Handle view click
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onViewDetails(subcontractor);
   };
-  
-  const handleEdit = () => {
+
+  // Handle edit click
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (onEditSubcontractor) {
       onEditSubcontractor(subcontractor);
     }
+  };
+
+  // Handle delete click
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Delete subcontractor', subcontractor.subid);
+  };
+
+  // Handle row click
+  const handleRowClick = () => {
+    onViewDetails(subcontractor);
   };
   
   // Function to render specialties as badges
@@ -78,9 +87,70 @@ const SubcontractorTableRow = ({
       </div>
     );
   };
+
+  // Get action menu groups
+  const getSubcontractorActions = (): ActionGroup[] => {
+    return [
+      {
+        // Primary actions
+        items: [
+          {
+            label: 'View details',
+            icon: <Eye className="h-4 w-4" />,
+            onClick: handleViewClick
+          },
+          {
+            label: 'Edit subcontractor',
+            icon: <Edit className="h-4 w-4" />,
+            onClick: handleEditClick
+          }
+        ]
+      },
+      {
+        // Subcontractor specific actions
+        items: [
+          {
+            label: 'Assign to project',
+            icon: <Calendar className="h-4 w-4" />,
+            onClick: (e) => {
+              e.stopPropagation();
+              console.log('Assign to project');
+            }
+          },
+          {
+            label: 'Call subcontractor',
+            icon: <Phone className="h-4 w-4" />,
+            onClick: (e) => {
+              e.stopPropagation();
+              console.log('Call subcontractor');
+            }
+          },
+          {
+            label: 'Payment history',
+            icon: <History className="h-4 w-4" />,
+            onClick: (e) => {
+              e.stopPropagation();
+              console.log('Payment history');
+            }
+          }
+        ]
+      },
+      {
+        // Destructive actions
+        items: [
+          {
+            label: 'Delete subcontractor',
+            icon: <Trash2 className="h-4 w-4" />,
+            onClick: handleDeleteClick,
+            className: 'text-red-600'
+          }
+        ]
+      }
+    ];
+  };
   
   return (
-    <TableRow key={subcontractor.subid} className="hover:bg-[#0485ea]/5 transition-colors">
+    <TableRow onClick={handleRowClick} className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors">
       <TableCell className="font-medium">
         <Link to={`/subcontractors/${subcontractor.subid}`} className="text-[#0485ea] hover:underline">
           {subcontractor.subname}
@@ -103,39 +173,19 @@ const SubcontractorTableRow = ({
           : subcontractor.city || subcontractor.state || '-'}
       </TableCell>
       <TableCell>
-        {subcontractor.rating !== undefined && subcontractor.rating !== null ? (
-          <span className="text-sm">{subcontractor.rating}/5 rating</span>
-        ) : (
-          <span className="text-gray-400 italic">No rating</span>
-        )}
-      </TableCell>
-      <TableCell>
-        <div
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(
-            subcontractor.status || "PENDING"
-          )}`}
-        >
+        <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-${
+            subcontractor.status === "ACTIVE" ? "green" : "gray"
+          }-100 text-${
+            subcontractor.status === "ACTIVE" ? "green" : "gray"
+          }-800 border-${
+            subcontractor.status === "ACTIVE" ? "green" : "gray"
+          }-200`}>
           {subcontractor.status || "Pending"}
         </div>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white shadow-md">
-              <DropdownMenuItem onClick={handleView}>
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleEdit}>
-                Edit Subcontractor
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ActionMenu groups={getSubcontractorActions()} />
         </div>
       </TableCell>
     </TableRow>

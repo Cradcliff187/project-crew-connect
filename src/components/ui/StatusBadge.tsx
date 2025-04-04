@@ -2,60 +2,67 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { StatusType } from '@/types/common';
+import { CheckCircle2, AlertCircle, CircleDashed, Clock } from 'lucide-react';
 
 interface StatusBadgeProps {
-  status: StatusType | string;
-  className?: string;
+  status: StatusType;
+  label: string;
   size?: 'sm' | 'default';
+  className?: string;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = '', size = 'default' }) => {
-  const getStatusClass = () => {
-    const lowerStatus = status.toLowerCase();
-    
-    switch (lowerStatus) {
-      case 'draft':
-        return 'bg-slate-100 text-slate-800 border-slate-200';
-      case 'sent':
-      case 'pending':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'approved':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'converted':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+const StatusBadge: React.FC<StatusBadgeProps> = ({ 
+  status, 
+  label, 
+  size = 'default',
+  className = '' 
+}) => {
+  // Get status icon
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'success':
       case 'active':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'on_hold':
-      case 'on-hold':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />;
+      case 'warning':
+      case 'pending':
+        return <Clock className="mr-1.5 h-3.5 w-3.5" />;
+      case 'error':
+        return <AlertCircle className="mr-1.5 h-3.5 w-3.5" />;
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
     }
   };
-
-  const formatStatus = (status: string): string => {
-    // Replace underscores with spaces and capitalize each word
-    return status
-      .replace(/_/g, ' ')
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+  
+  // Get status class based on status type
+  const getStatusClass = () => {
+    switch (status) {
+      case 'success':
+      case 'active':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'info':
+        return 'bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]';
+      case 'warning':
+      case 'pending':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'error':
+        return 'bg-red-50 text-red-700 border-red-200';
+      case 'neutral':
+      case 'inactive':
+        return 'bg-gray-50 text-gray-700 border-gray-200';
+      default:
+        return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
   };
-
-  const sizeClass = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2.5 py-0.5 text-xs';
-
+  
+  const sizeClasses = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2.5 py-0.5 text-xs';
+  
   return (
-    <Badge
-      variant="outline"
-      className={`${getStatusClass()} font-medium border ${sizeClass} ${className}`}
+    <Badge 
+      variant="outline" 
+      className={`font-medium flex items-center ${getStatusClass()} ${sizeClasses} ${className}`}
     >
-      {formatStatus(status)}
+      {getStatusIcon()}
+      {label}
     </Badge>
   );
 };
