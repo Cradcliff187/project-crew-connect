@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -75,7 +76,7 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
       if (newRevisionData) {
         setNewRevision({
           version: newRevisionData.version,
-          revision_date: newRevisionData.revision_date || newRevisionData.date,
+          revision_date: newRevisionData.revision_date,
           status: newRevisionData.status,
           notes: newRevisionData.notes,
           amount: newRevisionData.amount
@@ -111,7 +112,7 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
         if (oldRevisionData) {
           setOldRevision({
             version: oldRevisionData.version,
-            revision_date: oldRevisionData.revision_date || oldRevisionData.date,
+            revision_date: oldRevisionData.revision_date,
             status: oldRevisionData.status,
             notes: oldRevisionData.notes,
             amount: oldRevisionData.amount
@@ -148,7 +149,7 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
           if (!prevRevError && prevRevision) {
             setOldRevision({
               version: prevRevision.version,
-              revision_date: prevRevision.revision_date || prevRevision.date,
+              revision_date: prevRevision.revision_date,
               status: prevRevision.status,
               notes: prevRevision.notes,
               amount: prevRevision.amount
