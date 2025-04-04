@@ -42,7 +42,8 @@ BEGIN
                     estimate_id, description, quantity, unit_price, total_price,
                     cost, markup_percentage, markup_amount, gross_margin, 
                     gross_margin_percentage, vendor_id, subcontractor_id, 
-                    item_type, document_id, notes, revision_id, created_at, updated_at
+                    item_type, document_id, notes, revision_id, created_at, updated_at,
+                    original_item_id
                 ) VALUES (
                     NEW.estimate_id, 
                     item_record.description, 
@@ -61,7 +62,8 @@ BEGIN
                     item_record.notes, 
                     NEW.id,
                     now(),
-                    now()
+                    now(),
+                    item_record.id
                 );
             END LOOP;
             

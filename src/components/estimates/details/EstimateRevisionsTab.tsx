@@ -4,8 +4,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { EstimateRevision } from '../types/estimateTypes';
-import { ChevronDown, ChevronUp, ArrowLeftRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowLeftRight, Clock, Check, X, Send } from 'lucide-react';
 import EstimateRevisionCompareDialog from '../detail/dialogs/EstimateRevisionCompareDialog';
+import { Badge } from "@/components/ui/badge";
 
 type EstimateRevisionsTabProps = {
   revisions: EstimateRevision[];
@@ -35,6 +36,40 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
       newRevisionId: revisionId
     });
     setCompareDialogOpen(true);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'draft':
+        return <Clock className="h-3.5 w-3.5 text-gray-500" />;
+      case 'ready':
+        return <Clock className="h-3.5 w-3.5 text-blue-500" />;
+      case 'sent':
+        return <Send className="h-3.5 w-3.5 text-blue-500" />;
+      case 'approved':
+        return <Check className="h-3.5 w-3.5 text-green-500" />;
+      case 'rejected':
+        return <X className="h-3.5 w-3.5 text-red-500" />;
+      default:
+        return <Clock className="h-3.5 w-3.5 text-gray-500" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const color = {
+      draft: "bg-gray-100 text-gray-800",
+      ready: "bg-blue-100 text-blue-800",
+      sent: "bg-blue-100 text-blue-800",
+      approved: "bg-green-100 text-green-800",
+      rejected: "bg-red-100 text-red-800"
+    }[status.toLowerCase()] || "bg-gray-100 text-gray-800";
+    
+    return (
+      <div className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${color}`}>
+        {getStatusIcon(status)}
+        <span className="ml-1 capitalize">{status}</span>
+      </div>
+    );
   };
 
   // Safe date formatting helper
@@ -67,8 +102,9 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium">Version {revision.version}</h4>
                         {revision.is_current && (
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded">Current</span>
+                          <Badge variant="outline" className="bg-blue-100 border-blue-200">Current</Badge>
                         )}
+                        {getStatusBadge(revision.status)}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">{safeFormatDate(revision.revision_date)}</span>

@@ -14,6 +14,7 @@ export interface EstimateItem {
   document_id?: string;
   notes?: string;
   revision_id?: string;
+  original_item_id?: string;
   
   // For backward compatibility with older data
   total?: number;
@@ -34,4 +35,19 @@ export interface EstimateRevision {
   
   // For backward compatibility with older data
   date?: string;
+}
+
+export type RevisionStatus = 
+  | 'draft' 
+  | 'ready'
+  | 'sent' 
+  | 'approved' 
+  | 'rejected';
+
+export interface RevisionChange {
+  item_id: string;
+  type: 'added' | 'modified' | 'removed';
+  previous_value?: any;
+  new_value?: any;
+  field_name?: string;
 }

@@ -216,6 +216,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
               return {
                 ...itemWithoutId,
                 revision_id: newRevision.id,
+                original_item_id: id, // Set reference to the original item
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               };

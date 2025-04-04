@@ -1,30 +1,34 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
+  DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2, ArrowLeftRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { EstimateRevision } from '../../types/estimateTypes';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
-interface ComparisonItem {
+interface CompareItem {
+  id: string;
   description: string;
-  oldQuantity?: number;
-  newQuantity?: number;
-  oldUnitPrice?: number;
-  newUnitPrice?: number;
-  oldTotal?: number;
-  newTotal?: number;
-  status: 'added' | 'removed' | 'changed' | 'unchanged';
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  item_type?: string;
+  changeType?: 'added' | 'removed' | 'modified' | 'unchanged';
+  original_item_id?: string;
+}
+
+interface RevisionInfo {
+  version: number;
+  revision_date: string;
+  status: string;
+  notes?: string;
+  amount?: number;
 }
 
 interface EstimateRevisionCompareDialogProps {
@@ -43,286 +47,337 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
   newRevisionId
 }) => {
   const [loading, setLoading] = useState(true);
-  const [comparisonItems, setComparisonItems] = useState<ComparisonItem[]>([]);
-  const [oldRevision, setOldRevision] = useState<EstimateRevision | null>(null);
-  const [newRevision, setNewRevision] = useState<EstimateRevision | null>(null);
-  const { toast } = useToast();
+  const [oldItems, setOldItems] = useState<CompareItem[]>([]);
+  const [newItems, setNewItems] = useState<CompareItem[]>([]);
+  const [oldRevision, setOldRevision] = useState<RevisionInfo | null>(null);
+  const [newRevision, setNewRevision] = useState<RevisionInfo | null>(null);
+  const [comparedItems, setComparedItems] = useState<CompareItem[]>([]);
+  const [oldTotal, setOldTotal] = useState(0);
+  const [newTotal, setNewTotal] = useState(0);
 
   useEffect(() => {
-    if (open) {
-      loadRevisionData();
+    if (open && newRevisionId) {
+      fetchRevisionData();
     }
-  }, [open, oldRevisionId, newRevisionId]);
+  }, [open, newRevisionId, oldRevisionId]);
 
-  const loadRevisionData = async () => {
+  const fetchRevisionData = async () => {
     setLoading(true);
     try {
-      // If no oldRevisionId is provided, get the previous version of the current revision
-      if (!oldRevisionId) {
-        if (!newRevisionId) {
-          throw new Error("At least one revision ID must be provided");
-        }
+      const { data: newRevisionData, error: newRevError } = await supabase
+        .from('estimate_revisions')
+        .select('*')
+        .eq('id', newRevisionId)
+        .single();
 
-        // Get the new revision first to find its version
-        const { data: newRevData, error: newRevError } = await supabase
-          .from('estimate_revisions')
+      if (newRevError) throw newRevError;
+      
+      if (newRevisionData) {
+        setNewRevision({
+          version: newRevisionData.version,
+          revision_date: newRevisionData.revision_date || newRevisionData.date,
+          status: newRevisionData.status,
+          notes: newRevisionData.notes,
+          amount: newRevisionData.amount
+        });
+
+        const { data: newItemsData, error: newItemsError } = await supabase
+          .from('estimate_items')
           .select('*')
-          .eq('id', newRevisionId)
-          .single();
+          .eq('revision_id', newRevisionId)
+          .order('id');
 
-        if (newRevError) throw newRevError;
-        setNewRevision(newRevData);
-
-        // Find the previous version
-        const { data: prevRevData, error: prevRevError } = await supabase
-          .from('estimate_revisions')
-          .select('*')
-          .eq('estimate_id', estimateId)
-          .eq('version', newRevData.version - 1)
-          .single();
-
-        if (!prevRevError && prevRevData) {
-          setOldRevision(prevRevData);
-          oldRevisionId = prevRevData.id;
-        } else {
-          // If there's no previous version, we'll just show the new items as "added"
-          setOldRevision(null);
+        if (newItemsError) throw newItemsError;
+        
+        if (newItemsData) {
+          setNewItems(newItemsData);
+          const newItemsTotal = newItemsData.reduce(
+            (sum, item) => sum + (item.total_price || 0), 
+            0
+          );
+          setNewTotal(newItemsTotal);
         }
-      } else {
-        // Get old revision data
-        const { data: oldRevData, error: oldRevError } = await supabase
+      }
+
+      if (oldRevisionId) {
+        const { data: oldRevisionData, error: oldRevError } = await supabase
           .from('estimate_revisions')
           .select('*')
           .eq('id', oldRevisionId)
           .single();
-
+  
         if (oldRevError) throw oldRevError;
-        setOldRevision(oldRevData);
-
-        // Get new revision data
-        const { data: newRevData, error: newRevError } = await supabase
-          .from('estimate_revisions')
-          .select('*')
-          .eq('id', newRevisionId)
-          .single();
-
-        if (newRevError) throw newRevError;
-        setNewRevision(newRevData);
-      }
-
-      // Get items from both revisions
-      const oldItemsPromise = oldRevisionId 
-        ? supabase
+        
+        if (oldRevisionData) {
+          setOldRevision({
+            version: oldRevisionData.version,
+            revision_date: oldRevisionData.revision_date || oldRevisionData.date,
+            status: oldRevisionData.status,
+            notes: oldRevisionData.notes,
+            amount: oldRevisionData.amount
+          });
+  
+          const { data: oldItemsData, error: oldItemsError } = await supabase
             .from('estimate_items')
             .select('*')
             .eq('revision_id', oldRevisionId)
-        : Promise.resolve({ data: [], error: null });
-
-      const newItemsPromise = supabase
-        .from('estimate_items')
-        .select('*')
-        .eq('revision_id', newRevisionId);
-
-      const [oldItemsResult, newItemsResult] = await Promise.all([oldItemsPromise, newItemsPromise]);
-
-      if (oldItemsResult.error) throw oldItemsResult.error;
-      if (newItemsResult.error) throw newItemsResult.error;
-
-      const oldItems = oldItemsResult.data || [];
-      const newItems = newItemsResult.data || [];
-
-      // Compare items and build the comparison data
-      const comparison: ComparisonItem[] = [];
-      
-      // First, handle items that are in both revisions or only in the old revision
-      oldItems.forEach(oldItem => {
-        const newItem = newItems.find(item => item.description === oldItem.description);
-        
-        if (newItem) {
-          // Item exists in both revisions
-          const hasChanged = 
-            oldItem.quantity !== newItem.quantity || 
-            oldItem.unit_price !== newItem.unit_price || 
-            oldItem.total_price !== newItem.total_price;
+            .order('id');
+  
+          if (oldItemsError) throw oldItemsError;
           
-          comparison.push({
-            description: oldItem.description,
-            oldQuantity: oldItem.quantity,
-            newQuantity: newItem.quantity,
-            oldUnitPrice: oldItem.unit_price,
-            newUnitPrice: newItem.unit_price,
-            oldTotal: oldItem.total_price,
-            newTotal: newItem.total_price,
-            status: hasChanged ? 'changed' : 'unchanged'
-          });
-        } else {
-          // Item only in old revision (removed)
-          comparison.push({
-            description: oldItem.description,
-            oldQuantity: oldItem.quantity,
-            oldUnitPrice: oldItem.unit_price,
-            oldTotal: oldItem.total_price,
-            status: 'removed'
-          });
+          if (oldItemsData) {
+            setOldItems(oldItemsData);
+            const oldItemsTotal = oldItemsData.reduce(
+              (sum, item) => sum + (item.total_price || 0), 
+              0
+            );
+            setOldTotal(oldItemsTotal);
+          }
         }
-      });
+      }
       
-      // Handle items that are only in the new revision (added)
-      newItems.forEach(newItem => {
-        const existsInOld = oldItems.some(item => item.description === newItem.description);
-        if (!existsInOld) {
-          comparison.push({
-            description: newItem.description,
-            newQuantity: newItem.quantity,
-            newUnitPrice: newItem.unit_price,
-            newTotal: newItem.total_price,
-            status: 'added'
-          });
+      else {
+        if (newRevisionData && newRevisionData.version > 1) {
+          const { data: prevRevision, error: prevRevError } = await supabase
+            .from('estimate_revisions')
+            .select('*')
+            .eq('estimate_id', estimateId)
+            .eq('version', newRevisionData.version - 1)
+            .single();
+
+          if (!prevRevError && prevRevision) {
+            setOldRevision({
+              version: prevRevision.version,
+              revision_date: prevRevision.revision_date || prevRevision.date,
+              status: prevRevision.status,
+              notes: prevRevision.notes,
+              amount: prevRevision.amount
+            });
+
+            const { data: oldItemsData, error: oldItemsError } = await supabase
+              .from('estimate_items')
+              .select('*')
+              .eq('revision_id', prevRevision.id)
+              .order('id');
+
+            if (!oldItemsError && oldItemsData) {
+              setOldItems(oldItemsData);
+              const oldItemsTotal = oldItemsData.reduce(
+                (sum, item) => sum + (item.total_price || 0), 
+                0
+              );
+              setOldTotal(oldItemsTotal);
+            }
+          }
         }
-      });
-      
-      setComparisonItems(comparison);
-    } catch (error: any) {
-      console.error("Error comparing revisions:", error);
-      toast({
-        title: "Error loading comparison",
-        description: error.message || "Could not load revision comparison data.",
-        variant: "destructive",
-      });
+      }
+    } catch (error) {
+      console.error("Error fetching revision data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'added': return 'bg-green-50 border-l-4 border-l-green-500';
-      case 'removed': return 'bg-red-50 border-l-4 border-l-red-500';
-      case 'changed': return 'bg-amber-50 border-l-4 border-l-amber-500';
-      default: return '';
+  useEffect(() => {
+    if (newItems.length > 0) {
+      const compared: CompareItem[] = [];
+      
+      newItems.forEach(newItem => {
+        let changeType: 'added' | 'modified' | 'unchanged' = 'added';
+        let oldItemMatch: CompareItem | undefined;
+        
+        if (newItem.original_item_id) {
+          oldItemMatch = oldItems.find(old => old.id === newItem.original_item_id);
+          if (oldItemMatch) {
+            changeType = itemsEqual(newItem, oldItemMatch) ? 'unchanged' : 'modified';
+          }
+        } else {
+          oldItemMatch = oldItems.find(old => old.description === newItem.description);
+          if (oldItemMatch) {
+            changeType = itemsEqual(newItem, oldItemMatch) ? 'unchanged' : 'modified';
+          }
+        }
+
+        compared.push({
+          ...newItem,
+          changeType
+        });
+      });
+      
+      oldItems.forEach(oldItem => {
+        const exists = newItems.some(
+          newItem => newItem.original_item_id === oldItem.id || 
+                    (newItem.description === oldItem.description && 
+                    !newItem.original_item_id)
+        );
+        
+        if (!exists) {
+          compared.push({
+            ...oldItem,
+            changeType: 'removed'
+          });
+        }
+      });
+      
+      compared.sort((a, b) => {
+        const order = { 'unchanged': 0, 'modified': 1, 'added': 2, 'removed': 3 };
+        return (order[a.changeType!] || 0) - (order[b.changeType!] || 0);
+      });
+      
+      setComparedItems(compared);
+    }
+  }, [newItems, oldItems]);
+
+  const itemsEqual = (item1: CompareItem, item2: CompareItem) => {
+    return (
+      item1.description === item2.description &&
+      item1.quantity === item2.quantity &&
+      item1.unit_price === item2.unit_price &&
+      item1.total_price === item2.total_price &&
+      item1.item_type === item2.item_type
+    );
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "—";
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }).format(date);
+    } catch (error) {
+      return "Invalid date";
     }
   };
 
-  const getValueChangeClass = (oldValue?: number, newValue?: number) => {
-    if (oldValue === undefined || newValue === undefined) return '';
-    if (oldValue < newValue) return 'text-green-600';
-    if (oldValue > newValue) return 'text-red-600';
-    return '';
+  const renderChangeTypeBadge = (changeType?: string) => {
+    switch (changeType) {
+      case 'added':
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Added</Badge>;
+      case 'removed':
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Removed</Badge>;
+      case 'modified':
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Modified</Badge>;
+      case 'unchanged':
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Unchanged</Badge>;
+      default:
+        return null;
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Revision Comparison</DialogTitle>
+          <DialogTitle>Compare Revisions</DialogTitle>
           <DialogDescription>
             {oldRevision && newRevision ? (
               <>
-                Compare changes between Version {oldRevision.version} and Version {newRevision.version}
-              </>
-            ) : newRevision ? (
-              <>
-                New items in Version {newRevision.version}
+                Comparing Version {oldRevision.version} ({formatDate(oldRevision.revision_date)}) 
+                <ArrowLeftRight className="inline mx-2 h-4 w-4" /> 
+                Version {newRevision.version} ({formatDate(newRevision.revision_date)})
               </>
             ) : (
-              'Loading revision data...'
+              newRevision && (
+                <>Viewing changes in Version {newRevision.version} ({formatDate(newRevision.revision_date)})</>
+              )
             )}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto p-4">
           {loading ? (
-            <div className="flex justify-center items-center h-[300px]">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : comparisonItems.length === 0 ? (
-            <div className="py-10 text-center text-muted-foreground">
-              No differences found between these revisions.
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <span className="ml-2">Loading revision data...</span>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[30%]">Description</TableHead>
-                  <TableHead className="text-right">Quantity</TableHead>
-                  <TableHead className="text-right">Unit Price</TableHead>
-                  <TableHead className="text-right">Total Price</TableHead>
-                  <TableHead className="w-[15%]">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {comparisonItems.map((item, index) => (
-                  <TableRow key={index} className={getStatusColor(item.status)}>
-                    <TableCell className="font-medium">{item.description}</TableCell>
-                    <TableCell className="text-right">
-                      {item.status === 'changed' ? (
-                        <div>
-                          <span className="line-through text-muted-foreground mr-2">
-                            {item.oldQuantity}
-                          </span>
-                          <span className={getValueChangeClass(item.oldQuantity, item.newQuantity)}>
-                            {item.newQuantity}
-                          </span>
-                        </div>
-                      ) : item.status === 'removed' ? (
-                        item.oldQuantity
-                      ) : (
-                        item.newQuantity
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.status === 'changed' ? (
-                        <div>
-                          <span className="line-through text-muted-foreground mr-2">
-                            {formatCurrency(item.oldUnitPrice || 0)}
-                          </span>
-                          <span className={getValueChangeClass(item.oldUnitPrice, item.newUnitPrice)}>
-                            {formatCurrency(item.newUnitPrice || 0)}
-                          </span>
-                        </div>
-                      ) : item.status === 'removed' ? (
-                        formatCurrency(item.oldUnitPrice || 0)
-                      ) : (
-                        formatCurrency(item.newUnitPrice || 0)
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {item.status === 'changed' ? (
-                        <div>
-                          <span className="line-through text-muted-foreground mr-2">
-                            {formatCurrency(item.oldTotal || 0)}
-                          </span>
-                          <span className={getValueChangeClass(item.oldTotal, item.newTotal)}>
-                            {formatCurrency(item.newTotal || 0)}
-                          </span>
-                        </div>
-                      ) : item.status === 'removed' ? (
-                        formatCurrency(item.oldTotal || 0)
-                      ) : (
-                        formatCurrency(item.newTotal || 0)
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.status === 'added' && <span className="text-green-600">Added</span>}
-                      {item.status === 'removed' && <span className="text-red-600">Removed</span>}
-                      {item.status === 'changed' && <span className="text-amber-600">Changed</span>}
-                      {item.status === 'unchanged' && <span className="text-muted-foreground">Unchanged</span>}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <>
+              {oldRevision && (
+                <div className="grid grid-cols-2 gap-6 mb-6">
+                  <div className="bg-gray-50 rounded-md p-4">
+                    <h3 className="text-sm font-medium mb-2">Version {oldRevision.version}</h3>
+                    <div className="text-xs space-y-1">
+                      <p>Date: {formatDate(oldRevision.revision_date)}</p>
+                      <p>Status: <span className="capitalize">{oldRevision.status}</span></p>
+                      <p>Total: {formatCurrency(oldTotal)}</p>
+                      {oldRevision.notes && <p className="text-xs text-muted-foreground mt-2">{oldRevision.notes}</p>}
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 rounded-md p-4">
+                    <h3 className="text-sm font-medium mb-2">Version {newRevision?.version}</h3>
+                    <div className="text-xs space-y-1">
+                      <p>Date: {formatDate(newRevision?.revision_date)}</p>
+                      <p>Status: <span className="capitalize">{newRevision?.status}</span></p>
+                      <p>Total: {formatCurrency(newTotal)}</p>
+                      {newRevision?.notes && <p className="text-xs text-muted-foreground mt-2">{newRevision.notes}</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {comparedItems.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-sm mb-2">
+                    <span className="font-medium">
+                      Changes Summary: 
+                    </span> {" "}
+                    <span className="text-green-600">
+                      {comparedItems.filter(i => i.changeType === 'added').length} added
+                    </span>, {" "}
+                    <span className="text-amber-600">
+                      {comparedItems.filter(i => i.changeType === 'modified').length} modified
+                    </span>, {" "}
+                    <span className="text-red-600">
+                      {comparedItems.filter(i => i.changeType === 'removed').length} removed
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="w-[80px] text-right">Quantity</TableHead>
+                      <TableHead className="w-[100px] text-right">Unit Price</TableHead>
+                      <TableHead className="w-[100px] text-right">Total</TableHead>
+                      <TableHead className="w-[100px]">Change</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {comparedItems.length > 0 ? (
+                      comparedItems.map((item, index) => (
+                        <TableRow key={index} className={
+                          item.changeType === 'added' ? 'bg-green-50' : 
+                          item.changeType === 'removed' ? 'bg-red-50' : 
+                          item.changeType === 'modified' ? 'bg-amber-50' : ''
+                        }>
+                          <TableCell className="font-medium">{item.description}</TableCell>
+                          <TableCell className="text-right">{item.quantity}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.total_price)}</TableCell>
+                          <TableCell>
+                            {renderChangeTypeBadge(item.changeType)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4">
+                          No changes found between revisions
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
