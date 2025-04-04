@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
+import { toast } from '@/hooks/use-toast';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -32,8 +33,6 @@ const defaultFormValues: TimeEntryFormValues = {
 
 export function useTimeEntryForm(onSuccess: () => void) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [confirmationData, setConfirmationData] = useState<TimeEntryFormValues | null>(null);
   
   // Use our submission hook
   const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
@@ -76,36 +75,26 @@ export function useTimeEntryForm(onSuccess: () => void) {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
   
-  const handleSubmit = (data: TimeEntryFormValues) => {
-    setConfirmationData(data);
-    setShowConfirmDialog(true);
-  };
-  
-  const confirmSubmit = async () => {
-    if (!confirmationData) return;
-    
-    try {
-      await submitTimeEntry(confirmationData, selectedFiles);
-      
-      form.reset(defaultFormValues);
-      setSelectedFiles([]);
-      setShowConfirmDialog(false);
-    } catch (error) {
-      // Error handling is already done in submitTimeEntry
-      console.error("Error in confirmSubmit:", error);
+  const handleSubmit = (data: TimeEntryFormValues, files: File[], hasReceipts: boolean) => {
+    // If hasReceipts is true but no files were selected
+    if (hasReceipts && files.length === 0) {
+      toast({
+        title: 'Receipt required',
+        description: 'You indicated you have receipts but none were uploaded. Please upload at least one receipt or turn off the receipt option.',
+        variant: 'destructive',
+      });
+      return;
     }
+    
+    submitTimeEntry(data, files);
   };
   
   return {
     form,
     isLoading: isSubmitting,
-    showConfirmDialog,
-    setShowConfirmDialog,
     selectedFiles,
     handleFilesSelected,
     handleFileClear,
-    confirmationData,
     handleSubmit,
-    confirmSubmit,
   };
 }

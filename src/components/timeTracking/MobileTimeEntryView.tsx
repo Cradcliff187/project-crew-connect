@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TimeEntry } from '@/types/timeTracking';
 import { Plus, Map, ChevronRight, Camera } from 'lucide-react';
 import TimeEntryList from './TimeEntryList';
-import TimeEntryForm from './TimeEntryForm';
+import TimeEntryFormWizard from './TimeEntryFormWizard';
 import QuickLogButton from './QuickLogButton';
 import PageTransition from '@/components/layout/PageTransition';
 import DateNavigation from './DateNavigation';
@@ -53,7 +53,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           isMobile={true}
         />
         
-        {/* Quick Log Button - New addition */}
+        {/* Quick Log Button */}
         <div className="mb-4">
           <QuickLogButton onQuickLog={() => setShowQuickLog(true)} />
         </div>
@@ -105,7 +105,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
               <SheetTitle>Log Time</SheetTitle>
             </SheetHeader>
             <div className="py-4">
-              <TimeEntryForm onSuccess={onAddSuccess} />
+              <TimeEntryFormWizard onSuccess={onAddSuccess} />
             </div>
           </SheetContent>
         </Sheet>
