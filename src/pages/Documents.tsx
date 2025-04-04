@@ -26,7 +26,7 @@ const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
   const [selectedEntityType, setSelectedEntityType] = useState<EntityType>('PROJECT');
   
-  // Use the custom hook for document state management
+  // Use the custom hook for document state management with initial filters
   const { 
     documents,
     loading,
@@ -35,7 +35,14 @@ const DocumentsPage: React.FC = () => {
     handleFilterChange,
     handleResetFilters,
     fetchDocuments
-  } = useDocuments();
+  } = useDocuments({
+    search: '',
+    category: undefined,
+    entityType: undefined,
+    isExpense: undefined,
+    dateRange: undefined,
+    sortBy: 'newest'
+  });
   
   // Use the custom hook for document actions
   const {
