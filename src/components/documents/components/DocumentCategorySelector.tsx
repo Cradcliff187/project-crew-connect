@@ -8,7 +8,7 @@ import {
   EntityType,
   DocumentCategory
 } from '../schemas/documentSchema';
-import { getEntityCategories } from '../utils/DocumentCategoryHelper';
+import { getEntityCategories, toDocumentCategory } from '../utils/DocumentCategoryHelper';
 
 interface DocumentCategorySelectorProps {
   control: Control<DocumentUploadFormValues>;
@@ -56,11 +56,12 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
   }
 
   // Create a list of categories to display based on entity type
+  // Filter for only valid DocumentCategory types
   const categoriesToShow: DocumentCategory[] = [
     'receipt', 
     'invoice',
     ...(availableCategories.length > 0 
-      ? availableCategories.filter(c => !['receipt', 'invoice'].includes(c)) 
+      ? availableCategories.filter(c => !['receipt', 'invoice'].includes(c) && toDocumentCategory(c) !== 'other')
       : ['3rd_party_estimate', 'contract', 'insurance', 'certification', 'photo', 'other'])
   ];
 
