@@ -1,29 +1,35 @@
 
 import React from 'react';
-import { Briefcase, Building } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
-interface EntityTypeSelectorProps {
+export interface EntityTypeSelectorProps {
   value: 'work_order' | 'project';
   onChange: (value: 'work_order' | 'project') => void;
 }
 
-const EntityTypeSelector: React.FC<EntityTypeSelectorProps> = ({ value, onChange }) => {
+const EntityTypeSelector: React.FC<EntityTypeSelectorProps> = ({
+  value,
+  onChange
+}) => {
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">Type of Work</label>
-      <ToggleGroup type="single" value={value} onValueChange={(val) => {
-        if (val) onChange(val as 'work_order' | 'project');
-      }} className="justify-start">
-        <ToggleGroupItem value="work_order" className="flex items-center gap-1.5">
-          <Briefcase className="h-4 w-4" />
-          <span>Work Order</span>
-        </ToggleGroupItem>
-        <ToggleGroupItem value="project" className="flex items-center gap-1.5">
-          <Building className="h-4 w-4" />
-          <span>Project</span>
-        </ToggleGroupItem>
-      </ToggleGroup>
+    <div className="space-y-3">
+      <Label>Type</Label>
+      <RadioGroup
+        value={value}
+        onValueChange={onChange}
+        className="flex gap-6"
+      >
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="work_order" id="work_order" />
+          <Label htmlFor="work_order" className="cursor-pointer">Work Order</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="project" id="project" />
+          <Label htmlFor="project" className="cursor-pointer">Project</Label>
+        </div>
+      </RadioGroup>
     </div>
   );
 };

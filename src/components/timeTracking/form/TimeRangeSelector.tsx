@@ -3,7 +3,7 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import TimePickerMobile from './TimePickerMobile';
 
-interface TimeRangeSelectorProps {
+export interface TimeRangeSelectorProps {
   startTime: string;
   endTime: string;
   onStartTimeChange: (value: string) => void;
@@ -11,6 +11,7 @@ interface TimeRangeSelectorProps {
   error?: string;
   startTimeError?: string;
   endTimeError?: string;
+  hoursWorked?: number;
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -20,7 +21,8 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   onEndTimeChange,
   error,
   startTimeError,
-  endTimeError
+  endTimeError,
+  hoursWorked
 }) => {
   return (
     <div className="space-y-4">
@@ -47,6 +49,12 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
       </div>
       
       {error && <p className="text-sm text-red-500">{error}</p>}
+      
+      {hoursWorked !== undefined && (
+        <div className="text-sm text-muted-foreground">
+          Total: <span className="font-medium">{hoursWorked.toFixed(1)} hours</span>
+        </div>
+      )}
     </div>
   );
 };

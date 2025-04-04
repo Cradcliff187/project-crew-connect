@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TimeEntry } from '@/types/timeTracking';
 import { Plus, Map, ChevronRight, Camera, Clock } from 'lucide-react';
-import TimeEntryList from './TimeEntryList';
+import { TimeEntryList } from './TimeEntryList';
 import TimeEntryFormWizard from './TimeEntryFormWizard';
 import QuickLogButton from './QuickLogButton';
 import PageTransition from '@/components/layout/PageTransition';

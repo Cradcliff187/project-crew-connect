@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Clock } from 'lucide-react';
 import { TimeEntry } from '@/types/timeTracking';
 
-import TimeEntryList from './TimeEntryList';
+import { TimeEntryList } from './TimeEntryList';
 import TimeEntryFormWizard from './TimeEntryFormWizard';
 import DateNavigation from './DateNavigation';
 

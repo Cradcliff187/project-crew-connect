@@ -2,7 +2,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 
-interface TimePickerMobileProps {
+export interface TimePickerMobileProps {
   value: string;
   onChange: (value: string) => void;
   label?: string;
