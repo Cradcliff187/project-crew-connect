@@ -1,11 +1,14 @@
 
-import React, { useState } from 'react';
-import { format, subDays, addDays } from 'date-fns';
+import React from 'react';
+import { format, addDays, subDays, isSameDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarDays, ChevronDown, ChevronUp, Clock } from 'lucide-react';
-import { CardTitle, CardDescription } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface DateNavigationProps {
   selectedDate: Date;
@@ -20,100 +23,75 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
   totalHours,
   isMobile = false
 }) => {
-  const [showCalendar, setShowCalendar] = useState(false);
-  
-  // Format for display
-  const formattedDate = format(selectedDate, 'EEEE, MMMM d, yyyy');
-  
-  const handlePreviousDay = () => {
-    onDateChange(subDays(selectedDate, 1));
-  };
-  
-  const handleNextDay = () => {
-    onDateChange(addDays(selectedDate, 1));
-  };
-  
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      onDateChange(date);
-      setShowCalendar(false);
-    }
-  };
-  
-  if (isMobile) {
-    return (
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={handlePreviousDay}>
-            <ChevronUp className="h-5 w-5 rotate-90" />
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 font-medium text-md"
-            onClick={() => setShowCalendar(!showCalendar)}
-          >
-            <CalendarDays className="h-4 w-4 text-[#0485ea]" />
-            {format(selectedDate, 'EEE, MMM d')}
-            {showCalendar ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-          
-          <Button variant="ghost" size="icon" onClick={handleNextDay}>
-            <ChevronUp className="h-5 w-5 -rotate-90" />
-          </Button>
-        </div>
-        
-        {showCalendar && (
-          <div className="mt-2 border rounded-md p-2 bg-background">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateChange}
-              className="rounded-md"
-            />
-          </div>
-        )}
-        
-        <div className="flex items-center mt-2">
-          <Clock className="h-4 w-4 mr-2 text-[#0485ea]" />
-          <span className="font-semibold">Total Hours: {totalHours.toFixed(1)}</span>
-        </div>
-      </div>
-    );
-  }
+  const isToday = isSameDay(selectedDate, new Date());
   
   return (
-    <div className="flex justify-between items-center">
-      <div className="flex-1">
-        <Collapsible open={showCalendar} onOpenChange={setShowCalendar}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="p-0 font-normal flex items-center text-left">
-              <CalendarDays className="h-4 w-4 mr-2 text-[#0485ea]" />
-              <CardTitle className="text-xl">{formattedDate}</CardTitle>
-              {showCalendar ? (
-                <ChevronUp className="h-4 w-4 ml-2" />
-              ) : (
-                <ChevronDown className="h-4 w-4 ml-2" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateChange}
-              className="rounded-md border"
-            />
-          </CollapsibleContent>
-        </Collapsible>
+    <div className="flex flex-col space-y-2 mb-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onDateChange(subDays(selectedDate, 1))}
+            className="h-8 w-8"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Previous day</span>
+          </Button>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={isToday ? "default" : "outline"}
+                className={`mx-1 px-3 h-8 ${isToday ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}`}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                {format(selectedDate, isMobile ? 'MMM d' : 'MMMM d, yyyy')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="center" className="p-0 w-auto">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && onDateChange(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onDateChange(addDays(selectedDate, 1))}
+            className="h-8 w-8"
+          >
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Next day</span>
+          </Button>
+        </div>
+        
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDateChange(new Date())}
+            className={isToday ? 'invisible' : ''}
+          >
+            Today
+          </Button>
+        )}
       </div>
-      <div className="flex space-x-2">
-        <Button variant="outline" size="sm" onClick={handlePreviousDay}>
-          Previous
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleNextDay}>
-          Next
-        </Button>
+      
+      <div className={`flex items-center ${isMobile ? 'justify-between' : 'justify-start'}`}>
+        <div className="text-sm font-medium">
+          {isToday ? 'Today' : format(selectedDate, 'EEEE')}
+        </div>
+        
+        <div className="flex items-center">
+          <span className="text-sm font-semibold ml-3">
+            {totalHours.toFixed(2)} hours logged
+          </span>
+        </div>
       </div>
     </div>
   );

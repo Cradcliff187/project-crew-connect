@@ -4,11 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TimeEntry } from '@/types/timeTracking';
-import { Plus } from 'lucide-react';
+import { Plus, Map, ChevronRight, Camera } from 'lucide-react';
 import TimeEntryList from './TimeEntryList';
 import TimeEntryForm from './TimeEntryForm';
+import QuickLogButton from './QuickLogButton';
 import PageTransition from '@/components/layout/PageTransition';
 import DateNavigation from './DateNavigation';
+import { useDeviceCapabilities } from '@/hooks/use-mobile';
+import MobileQuickLogSheet from './MobileQuickLogSheet';
 
 interface MobileTimeEntryViewProps {
   selectedDate: Date;
@@ -31,6 +34,14 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   setShowAddForm,
   totalHours
 }) => {
+  const [showQuickLog, setShowQuickLog] = useState(false);
+  const { hasCamera } = useDeviceCapabilities();
+  
+  const handleQuickLogSuccess = () => {
+    setShowQuickLog(false);
+    onAddSuccess();
+  };
+  
   return (
     <PageTransition>
       <div className="container px-4 py-4">
@@ -42,22 +53,40 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           isMobile={true}
         />
         
-        {/* Log Time Button */}
-        <div className="flex justify-end mb-4">
+        {/* Quick Log Button - New addition */}
+        <div className="mb-4">
+          <QuickLogButton onQuickLog={() => setShowQuickLog(true)} />
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <Button 
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
+            variant="outline"
             size="sm"
+            className="justify-start"
             onClick={() => setShowAddForm(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
-            Log Time
+            Detailed Log
           </Button>
+          
+          {hasCamera && (
+            <Button 
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => setShowAddForm(true)}
+            >
+              <Camera className="h-4 w-4 mr-1" />
+              Add Receipt
+            </Button>
+          )}
         </div>
         
         {/* Time entries list */}
         <Card className="mb-6 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Time Entries</CardTitle>
+            <CardTitle className="text-lg">Today's Entries</CardTitle>
           </CardHeader>
           <CardContent>
             <TimeEntryList 
@@ -80,6 +109,14 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
             </div>
           </SheetContent>
         </Sheet>
+        
+        {/* Quick Log Sheet - New addition */}
+        <MobileQuickLogSheet 
+          open={showQuickLog}
+          onOpenChange={setShowQuickLog}
+          onSuccess={handleQuickLogSuccess}
+          selectedDate={selectedDate}
+        />
       </div>
     </PageTransition>
   );

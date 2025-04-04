@@ -4,6 +4,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import MobileTimeEntryView from '@/components/timeTracking/MobileTimeEntryView';
 import DesktopTimeEntryView from '@/components/timeTracking/DesktopTimeEntryView';
 import { useTimeEntries } from '@/components/timeTracking/hooks/useTimeEntries';
+import { Helmet } from 'react-helmet';
 
 const TimeTracking = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -27,6 +28,9 @@ const TimeTracking = () => {
   if (isMobile) {
     return (
       <PageTransition>
+        <Helmet>
+          <title>Time Tracking | AKC LLC</title>
+        </Helmet>
         <MobileTimeEntryView 
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
@@ -44,6 +48,9 @@ const TimeTracking = () => {
   // Otherwise show the desktop view
   return (
     <PageTransition>
+      <Helmet>
+        <title>Time Tracking | AKC LLC</title>
+      </Helmet>
       <DesktopTimeEntryView
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
