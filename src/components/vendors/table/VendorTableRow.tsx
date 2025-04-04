@@ -3,7 +3,7 @@ import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { useNavigate } from 'react-router-dom';
 import { Vendor } from '../types/vendorTypes';
-import { Mail, MapPin, Phone, FileText, Edit, Trash2, Eye } from 'lucide-react';
+import { Mail, MapPin, Phone, Edit, Trash2, Eye } from 'lucide-react';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { StatusType } from '@/types/common';
@@ -31,6 +31,28 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
   const handleEditVendor = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEditVendor(vendor);
+  };
+
+  // Handle call vendor
+  const handleCallVendor = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (vendor.phone) {
+      window.location.href = `tel:${vendor.phone}`;
+    }
+  };
+
+  // Handle email vendor
+  const handleEmailVendor = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (vendor.email) {
+      window.location.href = `mailto:${vendor.email}`;
+    }
+  };
+
+  // Handle delete vendor
+  const handleDeleteVendor = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Delete vendor action');
   };
 
   // Handle row click
@@ -67,7 +89,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
     }
   };
 
-  // Get action menu groups
+  // Get standardized action menu groups
   const getVendorActions = (): ActionGroup[] => {
     return [
       {
@@ -86,15 +108,19 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
         ]
       },
       {
-        // Document actions
+        // Contact actions
         items: [
           {
-            label: 'View documents',
-            icon: <FileText className="h-4 w-4" />,
-            onClick: (e) => {
-              e.stopPropagation();
-              console.log('View documents action');
-            }
+            label: 'Call vendor',
+            icon: <Phone className="h-4 w-4" />,
+            onClick: handleCallVendor,
+            disabled: !vendor.phone
+          },
+          {
+            label: 'Email vendor',
+            icon: <Mail className="h-4 w-4" />,
+            onClick: handleEmailVendor,
+            disabled: !vendor.email
           }
         ]
       },
@@ -104,10 +130,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
           {
             label: 'Delete vendor',
             icon: <Trash2 className="h-4 w-4" />,
-            onClick: (e) => {
-              e.stopPropagation();
-              console.log('Delete vendor action');
-            },
+            onClick: handleDeleteVendor,
             className: 'text-red-600'
           }
         ]
@@ -124,18 +147,21 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-1">
           {vendor.email && (
-            <span className="flex items-center gap-1 text-sm">
-              <Mail className="h-3 w-3" />
-              {vendor.email}
-            </span>
+            <div className="flex items-center gap-1">
+              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-sm">{vendor.email}</span>
+            </div>
           )}
           {vendor.phone && (
-            <span className="flex items-center gap-1 text-sm">
-              <Phone className="h-3 w-3" />
-              {vendor.phone}
-            </span>
+            <div className="flex items-center gap-1">
+              <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-sm">{vendor.phone}</span>
+            </div>
+          )}
+          {!vendor.email && !vendor.phone && (
+            <div className="text-xs text-muted-foreground">No contact information</div>
           )}
         </div>
       </TableCell>
