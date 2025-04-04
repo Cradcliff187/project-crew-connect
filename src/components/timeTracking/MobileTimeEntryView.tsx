@@ -35,7 +35,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   totalHours
 }) => {
   const [showQuickLog, setShowQuickLog] = useState(false);
-  const { hasCamera } = useDeviceCapabilities();
+  const { hasCamera, isMobile } = useDeviceCapabilities();
   
   const handleQuickLogSuccess = () => {
     setShowQuickLog(false);
@@ -110,7 +110,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           </SheetContent>
         </Sheet>
         
-        {/* Quick Log Sheet - New addition */}
+        {/* Quick Log Sheet */}
         <MobileQuickLogSheet 
           open={showQuickLog}
           onOpenChange={setShowQuickLog}

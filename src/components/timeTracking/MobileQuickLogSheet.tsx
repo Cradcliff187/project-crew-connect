@@ -8,6 +8,7 @@ import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
 import { useEntityData } from './hooks/useEntityData';
 import { useForm } from 'react-hook-form';
+import { TimeEntryFormValues } from './hooks/useTimeEntryForm';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -22,7 +23,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   onSuccess,
   selectedDate
 }) => {
-  const form = useForm({
+  const form = useForm<TimeEntryFormValues>({
     defaultValues: {
       entityType: 'work_order' as 'work_order' | 'project',
       entityId: '',
