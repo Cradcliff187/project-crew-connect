@@ -71,18 +71,36 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     
     // Calculate reasonable start and end times based on the number of hours
     const now = new Date();
-    const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const endTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     
-    const startDate = new Date(now);
-    startDate.setHours(startDate.getHours() - hoursWorked);
-    const startTime = `${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')}`;
+    // Create a new date object for start time to avoid mutation issues
+    const startDate = new Date();
+    // Properly set hours by subtracting from current hours
+    const startHours = startDate.getHours() - Math.floor(hoursWorked);
+    // Calculate remaining minutes from decimal part of hours
+    const startMinutes = startDate.getMinutes() - Math.round((hoursWorked % 1) * 60);
+    
+    // Correctly adjust hours/minutes for negative values
+    let adjustedStartHours = startHours;
+    let adjustedStartMinutes = startMinutes;
+    
+    if (adjustedStartMinutes < 0) {
+      adjustedStartHours -= 1;
+      adjustedStartMinutes += 60;
+    }
+    
+    if (adjustedStartHours < 0) {
+      adjustedStartHours += 24;
+    }
+    
+    const startTimeStr = `${String(adjustedStartHours).padStart(2, '0')}:${String(adjustedStartMinutes).padStart(2, '0')}`;
 
     const formData: TimeEntryFormValues = {
       entityType,
       entityId,
       workDate,
-      startTime,
-      endTime,
+      startTime: startTimeStr,
+      endTime: endTimeStr,
       hoursWorked,
       notes: 'Quick log entry',
       hasReceipts: hasReceipt && selectedFiles.length > 0

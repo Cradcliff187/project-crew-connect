@@ -76,7 +76,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           const mimeType = file.type || `application/${fileExt}`;
           
           // Enhanced document metadata for better categorization
-          const documentData = {
+          const documentMetadata = {
             file_name: file.name,
             file_type: file.type,
             mime_type: mimeType,
@@ -94,9 +94,9 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             expense_type: receiptMetadata.expenseType || 'other'
           };
           
-          const { data: documentData, error: documentError } = await supabase
+          const { data: documentResult, error: documentError } = await supabase
             .from('documents')
-            .insert(documentData)
+            .insert(documentMetadata)
             .select('document_id')
             .single();
             
@@ -106,7 +106,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           const { data: linkResult, error: linkError } = await supabase
             .rpc('attach_document_to_time_entry', {
               p_time_entry_id: insertedEntry.id,
-              p_document_id: documentData.document_id
+              p_document_id: documentResult.document_id
             });
             
           if (linkError) {
@@ -124,7 +124,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 description: `Time entry receipt: ${file.name}`,
                 expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
                 amount: 0,
-                document_id: documentData.document_id,
+                document_id: documentResult.document_id,
                 time_entry_id: insertedEntry.id,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
