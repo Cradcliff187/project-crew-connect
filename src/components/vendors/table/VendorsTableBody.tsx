@@ -16,7 +16,7 @@ const VendorsTableBody: React.FC<VendorsTableBodyProps> = ({
   onEditVendor 
 }) => {
   return (
-    <>
+    <TableBody>
       {vendors.map((vendor) => (
         <VendorTableRow 
           key={vendor.vendorid}
@@ -25,7 +25,7 @@ const VendorsTableBody: React.FC<VendorsTableBodyProps> = ({
           onEditVendor={onEditVendor}
         />
       ))}
-    </>
+    </TableBody>
   );
 };
 

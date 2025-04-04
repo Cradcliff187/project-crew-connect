@@ -30,38 +30,41 @@ const SubcontractorTableRow = ({
   
   return (
     <TableRow onClick={handleRowClick} className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors">
-      <TableCell>
+      <TableCell className="py-3">
         <SubcontractorInfo 
           name={subcontractor.subname}
           id={subcontractor.subid}
         />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <SpecialtiesBadges 
           specialtyIds={subcontractor.specialty_ids || []}
           specialties={specialties}
           loading={loading}
         />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <SubcontractorContact
           email={subcontractor.contactemail}
           phone={subcontractor.phone}
         />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
         <SubcontractorLocation
           city={subcontractor.city}
           state={subcontractor.state}
         />
       </TableCell>
-      <TableCell>
-        <StatusBadge 
-          status={getStatusType(subcontractor.status)}
-          label={subcontractor.status || 'Unknown'}
-        />
+      <TableCell className="py-3">
+        <div className="flex justify-center">
+          <StatusBadge 
+            status={getStatusType(subcontractor.status)}
+            label={subcontractor.status || 'Unknown'}
+            size="default"
+          />
+        </div>
       </TableCell>
-      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+      <TableCell className="py-3 text-right" onClick={(e) => e.stopPropagation()}>
         <SubcontractorActionsMenu
           subcontractor={subcontractor}
           onViewDetails={onViewDetails}

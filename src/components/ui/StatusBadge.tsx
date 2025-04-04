@@ -28,6 +28,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
       case 'warning':
       case 'pending':
       case 'in_progress':
+      case 'potential':
         return <Clock className="mr-1.5 h-3.5 w-3.5" />;
       case 'error':
       case 'cancelled':
@@ -74,6 +75,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
       case 'pending':
       case 'on_hold':
       case 'on-hold':
+      case 'potential':
         return 'bg-yellow-50 text-yellow-700 border-yellow-200';
       case 'error':
       case 'cancelled':

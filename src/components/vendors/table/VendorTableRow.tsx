@@ -29,7 +29,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
   };
 
   // Get vendor status color
-  const getStatusColor = (status: string | undefined): StatusType => {
+  const getStatusType = (status: string | undefined): StatusType => {
     if (!status) return 'neutral';
     
     switch (status.toLowerCase()) {
@@ -57,11 +57,12 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
       <TableCell className="py-3">
         <VendorLocation vendor={vendor} />
       </TableCell>
-      <TableCell className="py-3 text-center">
+      <TableCell className="py-3">
         <div className="flex justify-center">
           <StatusBadge 
-            status={getStatusColor(vendor.status)} 
+            status={getStatusType(vendor.status)} 
             label={vendor.status || 'Unknown'} 
+            size="default"
           />
         </div>
       </TableCell>
