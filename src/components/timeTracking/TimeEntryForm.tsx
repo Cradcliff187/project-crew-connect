@@ -17,7 +17,6 @@ import { toast } from '@/hooks/use-toast';
 import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
 import TimeRangeSelector from './form/TimeRangeSelector';
-import ConfirmationDialog from './form/ConfirmationDialog';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import { useEntityData } from './hooks/useEntityData';
 import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
@@ -34,14 +33,10 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const {
     form,
     isLoading,
-    showConfirmDialog,
-    setShowConfirmDialog,
     selectedFiles,
     handleFilesSelected,
     handleFileClear,
-    confirmationData,
     handleSubmit,
-    confirmSubmit,
   } = useTimeEntryForm(onSuccess);
 
   const {
@@ -238,25 +233,11 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isLoading}
             >
-              {isLoading ? 'Processing...' : 'Review & Submit'}
+              {isLoading ? 'Processing...' : 'Submit Time Entry'}
             </Button>
           </CardFooter>
         </form>
       </Card>
-      
-      {/* Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-        confirmationData={confirmationData}
-        employees={employees}
-        entityType={entityType}
-        workOrders={workOrders}
-        projects={projects}
-        selectedFiles={selectedFiles}
-        isLoading={isLoading}
-        onConfirm={confirmSubmit}
-      />
 
       {/* Receipt Upload Dialog */}
       <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
