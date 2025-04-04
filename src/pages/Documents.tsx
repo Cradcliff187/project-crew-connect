@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,11 @@ import RecentDocumentsSection from '@/components/documents/RecentDocumentsSectio
 import { useDocuments } from '@/components/documents/hooks/useDocuments';
 import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
 import { useRecentDocuments } from '@/components/documents/hooks/useRecentDocuments';
-import { Document } from '@/components/documents/schemas/documentSchema';
+import { Document, EntityType } from '@/components/documents/schemas/documentSchema';
 
 const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
+  const [selectedEntityType, setSelectedEntityType] = useState<EntityType>('PROJECT');
   
   // Use the custom hook for document state management
   const { 
@@ -85,6 +86,11 @@ const DocumentsPage: React.FC = () => {
     setTimeout(() => {
       handleDocumentSelect(document);
     }, 100);
+  };
+
+  // Handle entity type change for document uploads
+  const handleEntityTypeChange = (type: EntityType) => {
+    setSelectedEntityType(type);
   };
 
   return (
@@ -169,9 +175,11 @@ const DocumentsPage: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             <EnhancedDocumentUpload 
-              entityType="PROJECT" 
               onSuccess={handleDocumentUploadSuccess}
               onCancel={() => setIsUploadOpen(false)}
+              allowEntityTypeSelection={true}
+              entityType={selectedEntityType}
+              onEntityTypeChange={handleEntityTypeChange}
             />
           </DialogContent>
         </Dialog>

@@ -14,7 +14,7 @@ import MobileCaptureWrapper from './components/MobileCaptureWrapper';
 import { useDocumentUploadForm } from './hooks/useDocumentUploadForm';
 
 interface EnhancedDocumentUploadProps {
-  entityType: EntityType;
+  entityType?: EntityType;
   entityId?: string;
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
@@ -26,6 +26,8 @@ interface EnhancedDocumentUploadProps {
     expenseName?: string;
   };
   preventFormPropagation?: boolean;
+  allowEntityTypeSelection?: boolean;
+  onEntityTypeChange?: (entityType: EntityType) => void;
 }
 
 const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
@@ -35,7 +37,9 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   onCancel,
   isReceiptUpload = false,
   prefillData,
-  preventFormPropagation = false
+  preventFormPropagation = false,
+  allowEntityTypeSelection = false,
+  onEntityTypeChange
 }) => {
   const [showMobileCapture, setShowMobileCapture] = useState(false);
   const { isMobile, hasCamera } = useDeviceCapabilities();
@@ -55,14 +59,16 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     watchVendorType,
     watchFiles,
     watchCategory,
-    watchExpenseType
+    watchExpenseType,
+    watchEntityType
   } = useDocumentUploadForm({
     entityType,
     entityId,
     onSuccess,
     onCancel,
     isReceiptUpload,
-    prefillData
+    prefillData,
+    allowEntityTypeSelection
   });
 
   // Initialize form with prefill data if available
@@ -76,6 +82,13 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       setShowVendorSelector(true);
     }
   }, [watchCategory, setShowVendorSelector]);
+
+  // Notify parent about entity type changes if callback provided
+  useEffect(() => {
+    if (onEntityTypeChange && watchEntityType) {
+      onEntityTypeChange(watchEntityType);
+    }
+  }, [watchEntityType, onEntityTypeChange]);
 
   // Handle capture from mobile device
   const handleMobileCapture = useCallback((file: File) => {
@@ -157,6 +170,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                   isReceiptUpload={isReceiptUpload}
                   showVendorSelector={showVendorSelector}
                   prefillData={prefillData}
+                  allowEntityTypeSelection={allowEntityTypeSelection}
                 />
               </div>
             </ScrollArea>

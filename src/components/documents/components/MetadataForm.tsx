@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { UseFormReturn, Control } from 'react-hook-form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
+import { DocumentUploadFormValues, EntityType, entityTypes } from '../schemas/documentSchema';
 import EntitySelector from './EntitySelector';
 import ExpenseTypeSelector from './ExpenseTypeSelector';
 import DocumentCategorySelector from './DocumentCategorySelector';
@@ -11,7 +11,8 @@ import ExpenseDatePicker from './ExpenseDatePicker';
 import VendorTypeSelector from './VendorTypeSelector';
 import VendorSelector from './VendorSelector';
 import NotesField from './NotesField';
-import { FormDescription } from '@/components/ui/form';
+import { FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface MetadataFormProps {
   form: UseFormReturn<DocumentUploadFormValues>;
@@ -26,6 +27,7 @@ interface MetadataFormProps {
     materialName?: string;
     expenseName?: string;
   };
+  allowEntityTypeSelection?: boolean;
 }
 
 const MetadataForm: React.FC<MetadataFormProps> = ({
@@ -35,7 +37,8 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   watchVendorType,
   isReceiptUpload = false,
   showVendorSelector,
-  prefillData
+  prefillData,
+  allowEntityTypeSelection = false
 }) => {
   // Set initial values from prefillData
   useEffect(() => {
@@ -55,7 +58,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
     }
   }, [prefillData, form]);
   
-  // Get the watchCategory value
+  // Get the watchCategory and watchEntityType values
   const watchCategory = form.watch('metadata.category');
   const watchEntityType = form.watch('metadata.entityType');
   
@@ -65,6 +68,36 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   
   return (
     <div className="space-y-4">
+      {allowEntityTypeSelection && (
+        <FormField
+          control={control}
+          name="metadata.entityType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Document Type</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select document type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {entityTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.replace(/_/g, ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Select the type of entity this document relates to
+              </FormDescription>
+            </FormItem>
+          )}
+        />
+      )}
+
       {!isReceiptUpload && (
         <DocumentCategorySelector 
           control={control} 
@@ -75,6 +108,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
       <EntitySelector 
         control={control} 
         isReceiptUpload={isReceiptUpload} 
+        entityType={watchEntityType}
       />
       
       {!isReceiptUpload && showExpenseFields && (

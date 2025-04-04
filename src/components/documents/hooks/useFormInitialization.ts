@@ -5,9 +5,9 @@ import { DocumentUploadFormValues, EntityType } from '../schemas/documentSchema'
 
 interface UseFormInitializationProps {
   form: UseFormReturn<DocumentUploadFormValues>;
-  entityType: EntityType;
+  entityType?: EntityType;
   entityId?: string;
-  isReceiptUpload: boolean;
+  isReceiptUpload?: boolean;
   prefillData?: {
     amount?: number;
     vendorId?: string;
@@ -15,9 +15,10 @@ interface UseFormInitializationProps {
     expenseName?: string;
   };
   isFormInitialized: boolean;
-  setIsFormInitialized: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsFormInitialized: (initialized: boolean) => void;
   previewURL: string | null;
   onCancel?: () => void;
+  allowEntityTypeSelection?: boolean;
 }
 
 export const useFormInitialization = ({
@@ -29,58 +30,63 @@ export const useFormInitialization = ({
   isFormInitialized,
   setIsFormInitialized,
   previewURL,
-  onCancel
+  onCancel,
+  allowEntityTypeSelection
 }: UseFormInitializationProps) => {
-  // Initialize form values only once - memoized to prevent unnecessary re-renders
+  // Initialize the form
   const initializeForm = useCallback(() => {
-    if (isFormInitialized) return;
-
-    // Only update these fields once to avoid re-rendering loops
-    form.setValue('metadata.entityType', entityType);
-    form.setValue('metadata.entityId', entityId || '');
-    
-    if (isReceiptUpload) {
-      form.setValue('metadata.category', 'receipt');
-      form.setValue('metadata.isExpense', true);
-      form.setValue('metadata.expenseType', 'materials');
-    }
-    
-    // Apply prefill data if available - optimized to only run once
-    if (prefillData) {
-      if (prefillData.amount) {
-        form.setValue('metadata.amount', prefillData.amount);
+    if (!isFormInitialized) {
+      // Only set entityType if not allowing selection or if it's provided
+      if (entityType && (!allowEntityTypeSelection || isReceiptUpload)) {
+        form.setValue('metadata.entityType', entityType);
       }
       
-      if (prefillData.vendorId) {
-        form.setValue('metadata.vendorId', prefillData.vendorId);
+      if (entityId) {
+        form.setValue('metadata.entityId', entityId);
       }
       
-      const itemName = prefillData.expenseName || prefillData.materialName;
-      if (itemName) {
-        form.setValue('metadata.tags', [itemName]);
-        form.setValue('metadata.notes', `Receipt for: ${itemName}`);
+      if (isReceiptUpload) {
+        form.setValue('metadata.category', 'receipt');
+        form.setValue('metadata.isExpense', true);
+        form.setValue('metadata.expenseType', 'materials');
+        if (prefillData?.vendorId) {
+          form.setValue('metadata.vendorId', prefillData.vendorId);
+        }
+        if (prefillData?.amount) {
+          form.setValue('metadata.amount', prefillData.amount);
+        }
+        form.setValue('metadata.tags', ['receipt']);
       }
+      
+      setIsFormInitialized(true);
     }
-    
-    setIsFormInitialized(true);
-  }, [entityId, entityType, form, isFormInitialized, isReceiptUpload, prefillData, setIsFormInitialized]);
-
-  // Create stable cancel handler
+  }, [
+    form,
+    entityType,
+    entityId,
+    isReceiptUpload,
+    prefillData,
+    isFormInitialized,
+    setIsFormInitialized,
+    allowEntityTypeSelection
+  ]);
+  
+  // Handle form cancellation
   const handleCancel = useCallback(() => {
-    // Clean up before cancelling
+    // Clean up the preview URL
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
     }
     
-    // Reset form
+    // Reset the form
     form.reset();
     
-    // Call parent cancel handler
+    // Call the onCancel callback if it exists
     if (onCancel) {
       onCancel();
     }
   }, [form, onCancel, previewURL]);
-
+  
   return {
     initializeForm,
     handleCancel

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
@@ -13,7 +13,7 @@ import { useFormValueWatchers } from './useFormValueWatchers';
 import { useFormInitialization } from './useFormInitialization';
 
 interface UseDocumentUploadFormProps {
-  entityType: EntityType;
+  entityType?: EntityType;
   entityId?: string;
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
@@ -24,6 +24,7 @@ interface UseDocumentUploadFormProps {
     materialName?: string;
     expenseName?: string;
   };
+  allowEntityTypeSelection?: boolean;
 }
 
 export const useDocumentUploadForm = ({
@@ -32,21 +33,22 @@ export const useDocumentUploadForm = ({
   onSuccess,
   onCancel,
   isReceiptUpload = false,
-  prefillData
+  prefillData,
+  allowEntityTypeSelection = false
 }: UseDocumentUploadFormProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   
-  // Create form with default values
+  // Create form with default values, using PROJECT as default if not provided
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
       files: [] as File[],
       metadata: {
         category: (isReceiptUpload ? 'receipt' : 'other'),
-        entityType: entityType,
+        entityType: entityType || 'PROJECT',
         entityId: entityId || '',
         version: 1,
         tags: [] as string[],
@@ -62,8 +64,14 @@ export const useDocumentUploadForm = ({
   // Use our custom hooks to handle different aspects of the form
   const { handleFileSelect } = useFileSelectionHandling(form, setPreviewURL);
   const { onSubmit } = useFormSubmitHandler(form, isUploading, setIsUploading, onSuccess, previewURL);
-  const { watchIsExpense, watchVendorType, watchFiles, watchCategory, watchExpenseType } = 
-    useFormValueWatchers(form);
+  const { 
+    watchIsExpense, 
+    watchVendorType, 
+    watchFiles, 
+    watchCategory, 
+    watchExpenseType,
+    watchEntityType 
+  } = useFormValueWatchers(form);
   
   const { initializeForm, handleCancel } = useFormInitialization({
     form,
@@ -74,7 +82,8 @@ export const useDocumentUploadForm = ({
     isFormInitialized,
     setIsFormInitialized,
     previewURL,
-    onCancel
+    onCancel,
+    allowEntityTypeSelection
   });
   
   // Run initialization once on mount
@@ -103,6 +112,7 @@ export const useDocumentUploadForm = ({
     watchVendorType,
     watchFiles,
     watchCategory,
-    watchExpenseType
+    watchExpenseType,
+    watchEntityType
   };
 };
