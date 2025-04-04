@@ -15,7 +15,7 @@ export interface TimeEntry {
   employee_name?: string;
   employee_rate?: number;
   cost?: number;
-  total_cost?: number; // Added to match database
+  total_cost?: number;
   has_receipts?: boolean;
   location_data?: any;
   created_at: string;
@@ -47,6 +47,9 @@ export interface TimeEntryReceipt {
   uploaded_at: string;
   document_id?: string;
   url?: string;
+  expense_type?: string;
+  vendor_id?: string;
+  amount?: number;
 }
 
 // Time grouping for better UX
@@ -56,4 +59,14 @@ export interface TimeOption {
   value: string;      // 24h format value (e.g. "14:30")
   display: string;    // 12h format display (e.g. "2:30 PM")
   timeOfDay: TimeOfDay;
+}
+
+// Receipt metadata for better integration with expense tracking
+export interface ReceiptMetadata {
+  category: string;
+  expenseType: string | null;
+  tags: string[];
+  vendorId?: string;
+  vendorType?: 'vendor' | 'subcontractor' | 'other';
+  amount?: number;
 }

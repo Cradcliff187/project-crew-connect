@@ -1,311 +1,363 @@
 
-import React, { useEffect, useState } from 'react';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Loader2, Plus, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-interface Vendor {
-  id: string;
-  name: string;
-}
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from '@/components/ui/sheet';
 
 interface VendorSelectorProps {
   vendorType: 'vendor' | 'subcontractor' | 'other';
-  value?: string;
+  value: string;
   onChange: (value: string) => void;
   entityType?: string;
   entityId?: string;
   showAddNew?: boolean;
+  disabled?: boolean;
+  className?: string;
+  label?: string;
 }
 
-const VendorSelector: React.FC<VendorSelectorProps> = ({ 
-  vendorType, 
+const VendorSelector: React.FC<VendorSelectorProps> = ({
+  vendorType,
   value,
   onChange,
   entityType,
   entityId,
-  showAddNew = false
+  showAddNew = false,
+  disabled = false,
+  className = '',
+  label
 }) => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showAddVendor, setShowAddVendor] = useState(false);
+  const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAddNew, setShowAddNew] = useState(false);
   const [newVendorName, setNewVendorName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Fetch vendors on initial load or when vendorType changes
+  const [isAddingVendor, setIsAddingVendor] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  // Fetch vendors
   useEffect(() => {
-    fetchVendors();
-  }, [vendorType, entityType, entityId]);
-  
-  const fetchVendors = async () => {
-    setLoading(true);
-    try {
-      let data: Vendor[] = [];
-      
-      // If we have entity information, try to fetch associated vendors first
-      if (entityType && entityId) {
-        const { data: associatedVendors } = await supabase
-          .from('vendor_associations')
-          .select('vendor_id')
-          .eq('entity_type', entityType)
-          .eq('entity_id', entityId);
-          
-        if (associatedVendors && associatedVendors.length > 0) {
-          // We have associated vendors, fetch their details
-          const vendorIds = associatedVendors.map(v => v.vendor_id);
-          
-          if (vendorType === 'vendor') {
-            const { data: vendorsData } = await supabase
-              .from('vendors')
-              .select('vendorid, vendorname')
-              .in('vendorid', vendorIds)
-              .order('vendorname', { ascending: true });
-            
-            if (vendorsData && vendorsData.length > 0) {
-              data = vendorsData.map(v => ({
-                id: v.vendorid,
-                name: v.vendorname || v.vendorid
-              }));
-            }
-          } else if (vendorType === 'subcontractor') {
-            const { data: subcontractorsData } = await supabase
-              .from('subcontractors')
-              .select('subid, subname')
-              .in('subid', vendorIds)
-              .order('subname', { ascending: true });
-            
-            if (subcontractorsData && subcontractorsData.length > 0) {
-              data = subcontractorsData.map(s => ({
-                id: s.subid,
-                name: s.subname || s.subid
-              }));
-            }
-          }
-        }
-      }
-      
-      // If we didn't get associated vendors or don't have entity info, fetch all
-      if (data.length === 0) {
+    const fetchVendors = async () => {
+      setIsLoading(true);
+      try {
         if (vendorType === 'vendor') {
-          const { data: vendorsData } = await supabase
+          const { data } = await supabase
             .from('vendors')
             .select('vendorid, vendorname')
-            .order('vendorname', { ascending: true })
-            .limit(50);
+            .order('vendorname');
           
-          data = (vendorsData || []).map(v => ({
+          setVendors((data || []).map(v => ({
             id: v.vendorid,
             name: v.vendorname || v.vendorid
-          }));
+          })));
         } else if (vendorType === 'subcontractor') {
-          const { data: subcontractorsData } = await supabase
+          const { data } = await supabase
             .from('subcontractors')
             .select('subid, subname')
-            .order('subname', { ascending: true })
-            .limit(50);
+            .order('subname');
           
-          data = (subcontractorsData || []).map(s => ({
+          setVendors((data || []).map(s => ({
             id: s.subid,
             name: s.subname || s.subid
-          }));
+          })));
         }
+      } catch (error) {
+        console.error('Error fetching vendors:', error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setVendors(data);
-    } catch (error) {
-      console.error(`Error fetching ${vendorType}s:`, error);
-    } finally {
-      setLoading(false);
+    };
+
+    if (vendorType !== 'other') {
+      fetchVendors();
     }
-  };
-  
+  }, [vendorType]);
+
+  // Filter vendors based on search
+  const filteredVendors = vendors.filter(
+    vendor => vendor.name.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  // Add new vendor function
   const handleAddVendor = async () => {
     if (!newVendorName.trim()) return;
     
-    setIsSubmitting(true);
+    setIsAddingVendor(true);
     try {
+      let newId;
+      
       if (vendorType === 'vendor') {
-        // Fix: Need to let the database generate the vendorid
+        // Generate a random vendor ID with VEND- prefix
+        const vendorId = `VEND-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+        
         const { data, error } = await supabase
           .from('vendors')
-          .insert({
-            vendorname: newVendorName,
-            status: 'ACTIVE'
-          } as any)  // Use 'as any' to bypass TypeScript checking
-          .select('vendorid, vendorname')
+          .insert({ 
+            vendorname: newVendorName, 
+            status: 'ACTIVE',
+            vendorid: vendorId 
+          } as any)
+          .select('vendorid')
           .single();
           
         if (error) throw error;
-        
-        // Add to list and select it
-        setVendors(prev => [...prev, { id: data.vendorid, name: data.vendorname }]);
-        onChange(data.vendorid);
-        
-        // If we have entity info, create association
-        if (entityType && entityId) {
-          await supabase
-            .from('vendor_associations')
-            .insert({
-              entity_type: entityType,
-              entity_id: entityId,
-              vendor_id: data.vendorid,
-              description: `Associated via time entry receipt`
-            });
-        }
+        newId = data.vendorid;
       } else if (vendorType === 'subcontractor') {
-        // Fix: Need to let the database generate the subid
+        // Generate a random subcontractor ID with SUB- prefix
+        const subId = `SUB-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+        
         const { data, error } = await supabase
           .from('subcontractors')
-          .insert({
-            subname: newVendorName,
-            status: 'ACTIVE'
-          } as any)  // Use 'as any' to bypass TypeScript checking
-          .select('subid, subname')
+          .insert({ 
+            subname: newVendorName, 
+            status: 'ACTIVE',
+            subid: subId 
+          } as any)
+          .select('subid')
           .single();
           
         if (error) throw error;
-        
-        // Add to list and select it
-        setVendors(prev => [...prev, { id: data.subid, name: data.subname }]);
-        onChange(data.subid);
-        
-        // If we have entity info, create association
-        if (entityType && entityId) {
-          await supabase
-            .from('subcontractor_associations')
-            .insert({
-              entity_type: entityType,
-              entity_id: entityId,
-              subcontractor_id: data.subid,
-              description: `Associated via time entry receipt`
-            });
-        }
+        newId = data.subid;
       }
       
-      setShowAddVendor(false);
+      if (newId && entityType && entityId) {
+        // Create association if entity info is provided
+        await supabase.from('vendor_associations').insert({
+          vendor_id: newId,
+          entity_type: entityType,
+          entity_id: entityId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
+      
+      // Add to local list and select it
+      setVendors([...vendors, { id: newId, name: newVendorName }]);
+      onChange(newId);
       setNewVendorName('');
+      setShowAddNew(false);
     } catch (error) {
-      console.error(`Error adding ${vendorType}:`, error);
+      console.error('Error adding vendor:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsAddingVendor(false);
     }
   };
-  
-  const entityLabel = vendorType === 'vendor' ? 'Vendor' : 
-                     vendorType === 'subcontractor' ? 'Subcontractor' : 
-                     'Supplier';
-  
-  return (
-    <>
-      {loading ? (
-        <div className="flex items-center space-x-2 h-10 px-3 border rounded-md">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Loading {entityLabel.toLowerCase()}s...</span>
-        </div>
-      ) : vendors.length > 0 ? (
-        <div className="relative">
+
+  // For simple mobile view
+  if (isMobile) {
+    return (
+      <div className={`space-y-2 ${className}`}>
+        {label && <Label>{label}</Label>}
+        <div className="space-y-2">
           <Select
             value={value}
             onValueChange={onChange}
+            disabled={disabled}
           >
-            <SelectTrigger>
-              <SelectValue placeholder={`Select ${entityLabel.toLowerCase()}`} />
+            <SelectTrigger className={value ? '' : 'text-muted-foreground'}>
+              <SelectValue placeholder={`Select ${vendorType}`} />
             </SelectTrigger>
             <SelectContent>
-              {vendors.map((vendor) => (
-                <SelectItem key={vendor.id} value={vendor.id}>
-                  {vendor.name}
-                </SelectItem>
-              ))}
+              <div className="py-2 px-3 border-b">
+                <Input
+                  placeholder="Search..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="mb-2"
+                />
+              </div>
+              {filteredVendors.length > 0 ? (
+                filteredVendors.map(vendor => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="p-2 text-center text-sm text-muted-foreground">
+                  {isLoading ? 'Loading...' : 'No vendors found'}
+                </div>
+              )}
+              {showAddNew && (
+                <div className="p-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setShowAddNew(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add New {vendorType}
+                  </Button>
+                </div>
+              )}
             </SelectContent>
           </Select>
-          
-          {showAddNew && (
-            <Button 
-              type="button"
-              variant="ghost" 
-              size="sm" 
-              className="absolute right-0 top-0 h-10 px-3"
-              onClick={() => setShowAddVendor(true)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          )}
         </div>
-      ) : (
-        <div className="flex items-center justify-between h-10 px-4 border rounded-md bg-muted/20">
-          <span className="text-sm text-muted-foreground">No {entityLabel.toLowerCase()}s found</span>
-          {showAddNew && (
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 text-xs text-[#0485ea]"
-              onClick={() => setShowAddVendor(true)}
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              Add
-            </Button>
-          )}
-        </div>
-      )}
-      
-      {/* Add Vendor Dialog */}
-      <Dialog open={showAddVendor} onOpenChange={setShowAddVendor}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New {entityLabel}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">{entityLabel} Name</Label>
+        
+        {/* Add New Sheet for Mobile */}
+        <Sheet open={showAddNew} onOpenChange={setShowAddNew}>
+          <SheetContent side="bottom">
+            <SheetHeader>
+              <SheetTitle>Add New {vendorType === 'vendor' ? 'Vendor' : 'Subcontractor'}</SheetTitle>
+            </SheetHeader>
+            <div className="py-4 space-y-4">
               <Input
-                id="name"
-                placeholder={`Enter ${entityLabel.toLowerCase()} name`}
+                placeholder="Name"
                 value={newVendorName}
                 onChange={(e) => setNewVendorName(e.target.value)}
               />
+              <div className="flex justify-end space-x-2">
+                <SheetClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </SheetClose>
+                <Button 
+                  onClick={handleAddVendor} 
+                  disabled={!newVendorName.trim() || isAddingVendor}
+                  className="bg-[#0485ea] hover:bg-[#0375d1]"
+                >
+                  {isAddingVendor && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Add
+                </Button>
+              </div>
             </div>
-            
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowAddVendor(false);
-                  setNewVendorName('');
-                }}
+          </SheetContent>
+        </Sheet>
+        
+        {showAddNew && !isMobile && (
+          <div className="mt-2 space-y-2">
+            <Input
+              placeholder="New vendor name"
+              value={newVendorName}
+              onChange={(e) => setNewVendorName(e.target.value)}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowAddNew(false)}
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleAddVendor}
-                disabled={isSubmitting || !newVendorName.trim()}
+              <Button 
+                size="sm" 
+                onClick={handleAddVendor} 
+                disabled={!newVendorName.trim() || isAddingVendor}
                 className="bg-[#0485ea] hover:bg-[#0375d1]"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save'
-                )}
+                {isAddingVendor && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Add
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop view
+  return (
+    <div className={`space-y-2 ${className}`}>
+      {label && <Label>{label}</Label>}
+      <div className="relative">
+        {isLoading ? (
+          <div className="flex items-center border rounded-md p-2 text-muted-foreground h-10">
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Loading...
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Select
+                value={value}
+                onValueChange={onChange}
+                disabled={disabled}
+              >
+                <SelectTrigger className={`flex-1 ${value ? '' : 'text-muted-foreground'}`}>
+                  <SelectValue placeholder={`Select ${vendorType}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="py-2 px-3 border-b">
+                    <Input
+                      placeholder="Search..."
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      className="mb-2"
+                    />
+                  </div>
+                  {filteredVendors.length > 0 ? (
+                    filteredVendors.map(vendor => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="py-2 px-3 text-center text-sm text-muted-foreground">
+                      No vendors found
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              
+              {showAddNew && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowAddNew(true)}
+                  className="shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            
+            {showAddNew && (
+              <div className="space-y-2">
+                <Input
+                  placeholder="New vendor name"
+                  value={newVendorName}
+                  onChange={(e) => setNewVendorName(e.target.value)}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowAddNew(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleAddVendor} 
+                    disabled={!newVendorName.trim() || isAddingVendor}
+                    className="bg-[#0485ea] hover:bg-[#0375d1]"
+                  >
+                    {isAddingVendor && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Add
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Clock, Receipt } from 'lucide-react';
+import { CalendarIcon, Clock, Receipt, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { TimeEntryFormValues } from './hooks/useTimeEntryForm';
@@ -17,6 +17,9 @@ import { toast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { FileUpload } from '@/components/ui/file-upload';
 import ReceiptMetadataForm from './form/ReceiptMetadataForm';
+import TimePickerMobile from './form/TimePickerMobile';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -34,48 +37,41 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [workDate, setWorkDate] = useState<Date>(selectedDate);
   const [hours, setHours] = useState('1');
   const [entityType, setEntityType] = useState<'work_order' | 'project'>('work_order');
-  const [entityId, setEntityId] = useState('');
-  const [hasReceipt, setHasReceipt] = useState(false);
+  const [entityId, setEntityId] = useState<string>('');
+  const [entityOptions, setEntityOptions] = useState<{id: string, name: string}[]>([]);
+  const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingEntities, setLoadingEntities] = useState(false);
+  const [attachReceipt, setAttachReceipt] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('10:00');
+  const { submitTimeEntry } = useTimeEntrySubmit(onSuccess);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  
   const [receiptMetadata, setReceiptMetadata] = useState<{
-    category: string;
-    expenseType: string | null;
-    tags: string[];
-    vendorId?: string;
-    vendorType?: 'vendor' | 'subcontractor' | 'other';
-    amount?: number;
+    category: string,
+    expenseType: string | null,
+    tags: string[],
+    vendorId?: string,
+    vendorType?: 'vendor' | 'subcontractor' | 'other',
+    amount?: number
   }>({
     category: 'receipt',
     expenseType: null,
-    tags: ['time-entry', 'quick-log'],
+    tags: ['time-entry'],
     vendorType: 'vendor'
   });
-
-  const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
-
-  const resetForm = () => {
-    setWorkDate(selectedDate);
-    setHours('1');
-    setEntityType('work_order');
-    setEntityId('');
-    setHasReceipt(false);
-    setSelectedFiles([]);
-    setReceiptMetadata({
-      category: 'receipt',
-      expenseType: null,
-      tags: ['time-entry', 'quick-log'],
-      vendorType: 'vendor'
-    });
-  };
-
+  
+  // Update receipt metadata
   const updateReceiptMetadata = (
     data: Partial<{
-      category: string;
-      expenseType: string | null;
-      tags: string[];
-      vendorId?: string;
-      vendorType?: 'vendor' | 'subcontractor' | 'other';
-      amount?: number;
+      category: string, 
+      expenseType: string | null, 
+      tags: string[],
+      vendorId?: string,
+      vendorType?: 'vendor' | 'subcontractor' | 'other',
+      amount?: number
     }>
   ) => {
     setReceiptMetadata(prev => ({
@@ -83,188 +79,186 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       ...data
     }));
   };
-
-  const validateForm = () => {
+  
+  // Load entities based on type
+  React.useEffect(() => {
+    const fetchEntities = async () => {
+      setLoadingEntities(true);
+      try {
+        if (entityType === 'work_order') {
+          const { data } = await supabase
+            .from('maintenance_work_orders')
+            .select('work_order_id, title')
+            .order('created_at', { ascending: false });
+          
+          setEntityOptions((data || []).map(wo => ({
+            id: wo.work_order_id,
+            name: wo.title
+          })));
+        } else {
+          const { data } = await supabase
+            .from('projects')
+            .select('projectid, projectname')
+            .order('createdon', { ascending: false });
+          
+          setEntityOptions((data || []).map(p => ({
+            id: p.projectid,
+            name: p.projectname
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching entities:', error);
+      } finally {
+        setLoadingEntities(false);
+      }
+    };
+    
+    fetchEntities();
+  }, [entityType]);
+  
+  // Calculate hours based on start and end time
+  React.useEffect(() => {
+    if (startTime && endTime) {
+      const [startHour, startMinute] = startTime.split(':').map(Number);
+      const [endHour, endMinute] = endTime.split(':').map(Number);
+      
+      let hours = endHour - startHour;
+      let minutes = endMinute - startMinute;
+      
+      if (minutes < 0) {
+        hours -= 1;
+        minutes += 60;
+      }
+      
+      if (hours < 0) {
+        hours += 24; // Handle overnight shifts
+      }
+      
+      const totalHours = hours + (minutes / 60);
+      setHours(totalHours.toFixed(2));
+    }
+  }, [startTime, endTime]);
+  
+  const handleSubmit = async () => {
     if (!entityId) {
       toast({
-        title: "Missing information",
-        description: `Please enter a ${entityType.replace('_', ' ')} ID.`,
-        variant: "destructive",
+        title: 'Missing information',
+        description: `Please select a ${entityType === 'work_order' ? 'work order' : 'project'}.`,
+        variant: 'destructive',
       });
-      return false;
+      return;
     }
-
-    if (!hours || isNaN(Number(hours)) || Number(hours) <= 0) {
+    
+    if (!hours || isNaN(parseFloat(hours)) || parseFloat(hours) <= 0) {
       toast({
-        title: "Invalid hours",
-        description: "Please enter a valid number of hours.",
-        variant: "destructive",
+        title: 'Invalid hours',
+        description: 'Please enter a valid number of hours worked.',
+        variant: 'destructive',
       });
-      return false;
-    }
-
-    if (hasReceipt && selectedFiles.length === 0) {
-      toast({
-        title: "Receipt required",
-        description: "You indicated you have receipts but none were uploaded.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (hasReceipt && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
-      toast({
-        title: "Expense type required",
-        description: "Please select an expense type for your receipt.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (hasReceipt && selectedFiles.length > 0 && 
-        receiptMetadata.vendorType !== 'other' && 
-        !receiptMetadata.vendorId) {
-      toast({
-        title: "Vendor required",
-        description: `Please select a ${receiptMetadata.vendorType} for this receipt.`,
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleQuickSubmit = async () => {
-    if (!validateForm()) return;
-
-    const hoursWorked = Number(hours);
-    
-    // Calculate reasonable start and end times based on the number of hours
-    const now = new Date();
-    
-    // For end time, use current time
-    let endHour = now.getHours();
-    let endMinute = now.getMinutes();
-    const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
-    
-    // For start time, subtract the hours worked
-    let startHour = endHour - Math.floor(hoursWorked);
-    let startMinute = endMinute - Math.round((hoursWorked % 1) * 60);
-    
-    // Adjust for minutes overflow
-    if (startMinute < 0) {
-      startHour -= 1;
-      startMinute += 60;
+      return;
     }
     
-    // Adjust for hours overflow (handle 24-hour wrap)
-    if (startHour < 0) {
-      startHour += 24;
-    }
-    
-    const startTimeStr = `${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}`;
-
-    const formData: TimeEntryFormValues = {
-      entityType,
-      entityId,
-      workDate,
-      startTime: startTimeStr,
-      endTime: endTimeStr,
-      hoursWorked,
-      notes: 'Quick log entry',
-      hasReceipts: hasReceipt && selectedFiles.length > 0
+    const validateReceiptData = () => {
+      // If attachment is enabled but no files were selected
+      if (attachReceipt && selectedFiles.length === 0) {
+        toast({
+          title: 'Receipt required',
+          description: 'You indicated you have receipts but none were uploaded. Please upload at least one receipt or turn off the receipt option.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      // If we have receipts but no expense type
+      if (attachReceipt && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
+        toast({
+          title: 'Expense type required',
+          description: 'Please select an expense type for your receipt.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      // If we have receipts but no vendor selected (unless it's 'other')
+      if (attachReceipt && selectedFiles.length > 0 && 
+          receiptMetadata.vendorType !== 'other' && 
+          !receiptMetadata.vendorId) {
+        toast({
+          title: 'Vendor required',
+          description: `Please select a ${receiptMetadata.vendorType} for this receipt.`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      return true;
     };
-
-    // Submit the time entry with receipt metadata
-    await submitTimeEntry(formData, selectedFiles, receiptMetadata);
     
-    // Reset form and close sheet
-    resetForm();
-    onOpenChange(false);
+    if (!validateReceiptData()) {
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const formData: TimeEntryFormValues = {
+        entityType,
+        entityId,
+        workDate,
+        startTime,
+        endTime,
+        hoursWorked: parseFloat(hours),
+        notes,
+        hasReceipts: attachReceipt && selectedFiles.length > 0
+      };
+      
+      await submitTimeEntry(formData, selectedFiles, receiptMetadata);
+      
+      toast({
+        title: 'Time logged successfully',
+        description: `You've logged ${hours} hours.`,
+      });
+      
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error logging time:', error);
+      toast({
+        title: 'Error logging time',
+        description: error.message || 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
-
+  
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files);
-    if (files.length > 0) {
-      setHasReceipt(true);
-    }
   };
-
-  const handleFileClear = (index: number) => {
-    setSelectedFiles(prev => {
-      const newFiles = prev.filter((_, i) => i !== index);
-      if (newFiles.length === 0) {
-        setHasReceipt(false);
-      }
-      return newFiles;
-    });
-  };
-
+  
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
+      <SheetContent side="bottom" className="h-[90vh] pt-6">
         <SheetHeader>
-          <SheetTitle>Quick Log Entry</SheetTitle>
+          <SheetTitle>Quick Log Time</SheetTitle>
         </SheetHeader>
-
-        <div className="py-4 space-y-4">
-          <Tabs defaultValue="work_order">
+        
+        <div className="mt-6 space-y-4 overflow-y-auto pb-20">
+          <Tabs defaultValue="hours" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger 
-                value="work_order"
-                onClick={() => setEntityType('work_order')}
-              >
-                Work Order
+              <TabsTrigger value="hours">
+                <Clock className="h-4 w-4 mr-2" />
+                Hours
               </TabsTrigger>
-              <TabsTrigger 
-                value="project"
-                onClick={() => setEntityType('project')}
-              >
-                Project
+              <TabsTrigger value="range">
+                <Clock className="h-4 w-4 mr-2" />
+                Time Range
               </TabsTrigger>
             </TabsList>
-          </Tabs>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="entityId">{entityType === 'work_order' ? 'Work Order' : 'Project'} ID</Label>
-              <Input
-                id="entityId"
-                value={entityId}
-                onChange={(e) => setEntityId(e.target.value)}
-                placeholder={`Enter ${entityType === 'work_order' ? 'work order' : 'project'} ID`}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(workDate, "MMMM d, yyyy")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={workDate}
-                    onSelect={(date) => date && setWorkDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="hours">Hours Worked</Label>
-              <div className="flex items-center space-x-2">
+            
+            <TabsContent value="hours" className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="hours">Hours Worked</Label>
                 <Input
                   id="hours"
                   type="number"
@@ -272,71 +266,174 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
                   min="0.25"
                   value={hours}
                   onChange={(e) => setHours(e.target.value)}
+                  placeholder="Enter hours"
                 />
-                <Clock className="h-5 w-5 text-muted-foreground" />
               </div>
-            </div>
-
-            <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <Receipt className="h-4 w-4 mr-2 text-[#0485ea]" />
-                    <Label htmlFor="has-receipt" className="cursor-pointer">
-                      I have receipt(s)
-                    </Label>
-                  </div>
-                  <Switch
-                    id="has-receipt"
-                    checked={hasReceipt}
-                    onCheckedChange={setHasReceipt}
-                    className="data-[state=checked]:bg-[#0485ea]"
-                  />
-                </div>
-
-                {hasReceipt && (
-                  <div className="space-y-4">
-                    <FileUpload
-                      onFilesSelected={handleFileSelect}
-                      onFileClear={handleFileClear}
-                      selectedFiles={selectedFiles}
-                      allowMultiple={true}
-                      acceptedFileTypes="image/*,application/pdf"
-                      dropzoneText="Tap to upload receipt"
-                    />
-                    
-                    {selectedFiles.length > 0 && (
-                      <ReceiptMetadataForm
-                        metadata={receiptMetadata}
-                        updateMetadata={updateReceiptMetadata}
-                        entityType={entityType}
-                        entityId={entityId}
-                      />
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-end space-x-2 pt-2">
+            </TabsContent>
+            
+            <TabsContent value="range" className="mt-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <TimePickerMobile
+                  label="Start Time"
+                  value={startTime}
+                  onChange={setStartTime}
+                />
+                
+                <TimePickerMobile
+                  label="End Time"
+                  value={endTime}
+                  onChange={setEndTime}
+                />
+              </div>
+              
+              <div className="text-sm font-medium text-center">
+                Total: {hours} hours
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !workDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {workDate ? format(workDate, 'PPP') : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={workDate}
+                  onSelect={(date) => date && setWorkDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="entityType">Type</Label>
+            <div className="grid grid-cols-2 gap-2">
               <Button
-                variant="outline"
+                type="button"
+                variant={entityType === 'work_order' ? 'default' : 'outline'}
+                className={entityType === 'work_order' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
                 onClick={() => {
-                  resetForm();
-                  onOpenChange(false);
+                  setEntityType('work_order');
+                  setEntityId('');
                 }}
               >
-                Cancel
+                Work Order
               </Button>
               <Button
-                onClick={handleQuickSubmit}
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-                disabled={isSubmitting}
+                type="button"
+                variant={entityType === 'project' ? 'default' : 'outline'}
+                className={entityType === 'project' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
+                onClick={() => {
+                  setEntityType('project');
+                  setEntityId('');
+                }}
               >
-                {isSubmitting ? "Submitting..." : "Save Quick Log"}
+                Project
               </Button>
             </div>
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="entityId">{entityType === 'work_order' ? 'Work Order' : 'Project'}</Label>
+            <select
+              id="entityId"
+              className="w-full border border-input bg-background px-3 py-2 rounded-md"
+              value={entityId}
+              onChange={(e) => setEntityId(e.target.value)}
+              disabled={loadingEntities}
+            >
+              <option value="">Select {entityType === 'work_order' ? 'Work Order' : 'Project'}</option>
+              {entityOptions.map(option => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+            {loadingEntities && (
+              <div className="flex items-center text-xs text-muted-foreground">
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                Loading...
+              </div>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes (Optional)</Label>
+            <textarea
+              id="notes"
+              className="w-full border border-input bg-background px-3 py-2 rounded-md"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add notes about the work performed..."
+            />
+          </div>
+          
+          <div className="pt-2">
+            <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
+              <div>
+                <h4 className="font-medium">Attach Receipt</h4>
+                <p className="text-sm text-muted-foreground">
+                  Do you have a receipt for this time entry?
+                </p>
+              </div>
+              <Switch
+                checked={attachReceipt}
+                onCheckedChange={setAttachReceipt}
+                className="data-[state=checked]:bg-[#0485ea]"
+              />
+            </div>
+          </div>
+          
+          {attachReceipt && (
+            <div className="space-y-4 pt-2">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <Label>Upload Receipt</Label>
+                    <FileUpload
+                      onChange={handleFileSelect}
+                      maxFiles={1}
+                      accept="image/*,application/pdf"
+                      maxSize={5 * 1024 * 1024} // 5MB
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {selectedFiles.length > 0 && (
+                <ReceiptMetadataForm
+                  metadata={receiptMetadata}
+                  updateMetadata={updateReceiptMetadata}
+                  entityType={entityType}
+                  entityId={entityId}
+                />
+              )}
+            </div>
+          )}
+          
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !entityId || parseFloat(hours) <= 0}
+            className="w-full bg-[#0485ea] hover:bg-[#0375d1] mt-4"
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Log Time
+          </Button>
         </div>
       </SheetContent>
     </Sheet>
