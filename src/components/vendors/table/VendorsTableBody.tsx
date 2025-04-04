@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TableBody, TableRow } from '@/components/ui/table';
+import { TableBody } from '@/components/ui/table';
 import VendorTableRow from './VendorTableRow';
 import { Vendor } from '../types/vendorTypes';
 
@@ -16,7 +16,7 @@ const VendorsTableBody: React.FC<VendorsTableBodyProps> = ({
   onEditVendor 
 }) => {
   return (
-    <TableBody>
+    <>
       {vendors.map((vendor) => (
         <VendorTableRow 
           key={vendor.vendorid}
@@ -25,7 +25,7 @@ const VendorsTableBody: React.FC<VendorsTableBodyProps> = ({
           onEditVendor={onEditVendor}
         />
       ))}
-    </TableBody>
+    </>
   );
 };
 
