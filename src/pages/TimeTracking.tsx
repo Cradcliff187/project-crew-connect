@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import MobileTimeEntryView from '@/components/timeTracking/MobileTimeEntryView';
@@ -25,6 +25,11 @@ const TimeTracking = () => {
   
   // Detect if we're on a mobile device
   const isMobile = useMediaQuery("(max-width: 768px)");
+  
+  // Trigger initial data loading when component mounts
+  useEffect(() => {
+    refreshEntries();
+  }, [refreshEntries]);
   
   // Calculate total hours for the selected week
   const totalHours = entries?.reduce((sum, entry) => sum + entry.hours_worked, 0) || 0;

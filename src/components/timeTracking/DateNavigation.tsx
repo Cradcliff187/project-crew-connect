@@ -69,7 +69,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
   };
   
   return (
-    <div className="flex flex-col space-y-2 mb-4">
+    <div className="flex flex-col space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <Button
@@ -130,8 +130,8 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
           {isCurrentWeek ? 'Current Week' : `Week of ${format(startDate, 'MMMM d')}`}
         </div>
         
-        <div className="flex items-center">
-          <span className="text-sm font-semibold ml-3">
+        <div className="flex items-center ml-3">
+          <span className="text-sm font-semibold">
             {totalHours.toFixed(2)} hours logged
           </span>
         </div>

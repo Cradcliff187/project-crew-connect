@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { TimeEntry } from '@/types/timeTracking';
@@ -35,6 +35,8 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
       const startDateStr = format(dateRange.startDate, 'yyyy-MM-dd');
       const endDateStr = format(dateRange.endDate, 'yyyy-MM-dd');
       
+      console.log(`Fetching time entries from ${startDateStr} to ${endDateStr}`);
+      
       // Fetch time entries within date range
       const { data: timeEntries, error: fetchError } = await supabase
         .from('time_entries')
@@ -45,8 +47,16 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
       
       if (fetchError) throw fetchError;
       
+      console.log(`Found ${timeEntries?.length || 0} time entries`);
+      
+      if (!timeEntries || timeEntries.length === 0) {
+        setEntries([]);
+        setLoading(false);
+        return;
+      }
+      
       // Convert raw entries to TimeEntry type with additional data
-      const enhancedEntriesPromises = (timeEntries || []).map(async (entry) => {
+      const enhancedEntriesPromises = timeEntries.map(async (entry) => {
         // Type assertion to handle string vs enum type mismatch
         const typedEntry = {
           ...entry,
@@ -66,26 +76,31 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
     }
   }, [dateRange]);
   
+  // Effect to fetch data when date range changes
+  useEffect(() => {
+    fetchTimeEntries();
+  }, [fetchTimeEntries, dateRange]);
+  
   // Navigate to next week
-  const goToNextWeek = () => {
+  const goToNextWeek = useCallback(() => {
     setDateRange(current => ({
       startDate: addWeeks(current.startDate, 1),
       endDate: addWeeks(current.endDate, 1)
     }));
-  };
+  }, []);
 
   // Navigate to previous week
-  const goToPrevWeek = () => {
+  const goToPrevWeek = useCallback(() => {
     setDateRange(current => ({
       startDate: subWeeks(current.startDate, 1),
       endDate: subWeeks(current.endDate, 1)
     }));
-  };
+  }, []);
 
   // Go to current week
-  const goToCurrentWeek = () => {
+  const goToCurrentWeek = useCallback(() => {
     setDateRange(getDefaultDateRange());
-  };
+  }, []);
 
   // Helper to enhance time entry with entity and receipt data
   const enhanceTimeEntry = async (entry: TimeEntry): Promise<TimeEntry> => {
@@ -140,18 +155,7 @@ export const useTimeEntries = (initialDateRange?: DateRange) => {
             .in('document_id', documentIds);
             
           if (docs) {
-            // Add URLs for documents
-            documents = await Promise.all(docs.map(async (doc) => {
-              const { data } = await supabase
-                .storage
-                .from('construction_documents')
-                .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
-              
-              return {
-                ...doc,
-                url: data?.signedUrl
-              };
-            }));
+            documents = docs;
           }
         }
       }
