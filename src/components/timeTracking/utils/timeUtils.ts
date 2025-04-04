@@ -7,6 +7,14 @@ export const parseTime = (timeStr: string): Date => {
   return parse(timeStr, 'HH:mm', new Date());
 };
 
+// Determine the time of day category
+export const getTimeOfDay = (hour: number): TimeOfDay => {
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 21) return 'evening';
+  return 'night';
+};
+
 // Generate time options for the 24-hour day in 15-minute increments
 export const generateTimeOptions = () => {
   const options = [];
@@ -25,14 +33,6 @@ export const generateTimeOptions = () => {
 };
 
 export const timeOptions = generateTimeOptions();
-
-// Determine the time of day category
-export const getTimeOfDay = (hour: number): TimeOfDay => {
-  if (hour >= 5 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 17) return 'afternoon';
-  if (hour >= 17 && hour < 21) return 'evening';
-  return 'night';
-};
 
 // Format the time from 24h to 12h
 export const formatTime = (time: string): string => {
