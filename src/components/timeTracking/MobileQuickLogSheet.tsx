@@ -16,6 +16,7 @@ import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { FileUpload } from '@/components/ui/file-upload';
+import ReceiptMetadataForm from './form/ReceiptMetadataForm';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -36,6 +37,19 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [entityId, setEntityId] = useState('');
   const [hasReceipt, setHasReceipt] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [receiptMetadata, setReceiptMetadata] = useState<{
+    category: string;
+    expenseType: string | null;
+    tags: string[];
+    vendorId?: string;
+    vendorType?: 'vendor' | 'subcontractor' | 'other';
+    amount?: number;
+  }>({
+    category: 'receipt',
+    expenseType: null,
+    tags: ['time-entry', 'quick-log'],
+    vendorType: 'vendor'
+  });
 
   const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
 
@@ -46,16 +60,38 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setEntityId('');
     setHasReceipt(false);
     setSelectedFiles([]);
+    setReceiptMetadata({
+      category: 'receipt',
+      expenseType: null,
+      tags: ['time-entry', 'quick-log'],
+      vendorType: 'vendor'
+    });
   };
 
-  const handleQuickSubmit = async () => {
+  const updateReceiptMetadata = (
+    data: Partial<{
+      category: string;
+      expenseType: string | null;
+      tags: string[];
+      vendorId?: string;
+      vendorType?: 'vendor' | 'subcontractor' | 'other';
+      amount?: number;
+    }>
+  ) => {
+    setReceiptMetadata(prev => ({
+      ...prev,
+      ...data
+    }));
+  };
+
+  const validateForm = () => {
     if (!entityId) {
       toast({
         title: "Missing information",
         description: `Please enter a ${entityType.replace('_', ' ')} ID.`,
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (!hours || isNaN(Number(hours)) || Number(hours) <= 0) {
@@ -64,36 +100,70 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         description: "Please enter a valid number of hours.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+
+    if (hasReceipt && selectedFiles.length === 0) {
+      toast({
+        title: "Receipt required",
+        description: "You indicated you have receipts but none were uploaded.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (hasReceipt && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
+      toast({
+        title: "Expense type required",
+        description: "Please select an expense type for your receipt.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (hasReceipt && selectedFiles.length > 0 && 
+        receiptMetadata.vendorType !== 'other' && 
+        !receiptMetadata.vendorId) {
+      toast({
+        title: "Vendor required",
+        description: `Please select a ${receiptMetadata.vendorType} for this receipt.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleQuickSubmit = async () => {
+    if (!validateForm()) return;
 
     const hoursWorked = Number(hours);
     
     // Calculate reasonable start and end times based on the number of hours
     const now = new Date();
-    const endTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     
-    // Create a new date object for start time to avoid mutation issues
-    const startDate = new Date();
-    // Properly set hours by subtracting from current hours
-    const startHours = startDate.getHours() - Math.floor(hoursWorked);
-    // Calculate remaining minutes from decimal part of hours
-    const startMinutes = startDate.getMinutes() - Math.round((hoursWorked % 1) * 60);
+    // For end time, use current time
+    let endHour = now.getHours();
+    let endMinute = now.getMinutes();
+    const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
     
-    // Correctly adjust hours/minutes for negative values
-    let adjustedStartHours = startHours;
-    let adjustedStartMinutes = startMinutes;
+    // For start time, subtract the hours worked
+    let startHour = endHour - Math.floor(hoursWorked);
+    let startMinute = endMinute - Math.round((hoursWorked % 1) * 60);
     
-    if (adjustedStartMinutes < 0) {
-      adjustedStartHours -= 1;
-      adjustedStartMinutes += 60;
+    // Adjust for minutes overflow
+    if (startMinute < 0) {
+      startHour -= 1;
+      startMinute += 60;
     }
     
-    if (adjustedStartHours < 0) {
-      adjustedStartHours += 24;
+    // Adjust for hours overflow (handle 24-hour wrap)
+    if (startHour < 0) {
+      startHour += 24;
     }
     
-    const startTimeStr = `${String(adjustedStartHours).padStart(2, '0')}:${String(adjustedStartMinutes).padStart(2, '0')}`;
+    const startTimeStr = `${String(startHour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}`;
 
     const formData: TimeEntryFormValues = {
       entityType,
@@ -106,14 +176,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       hasReceipts: hasReceipt && selectedFiles.length > 0
     };
 
-    // Prepare receipt metadata
-    const receiptMetadata = {
-      category: 'receipt',
-      expenseType: 'other',
-      tags: ['time-entry', 'quick-log', entityType]
-    };
-
-    // Submit the time entry
+    // Submit the time entry with receipt metadata
     await submitTimeEntry(formData, selectedFiles, receiptMetadata);
     
     // Reset form and close sheet
@@ -140,7 +203,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh]">
+      <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Quick Log Entry</SheetTitle>
         </SheetHeader>
@@ -232,14 +295,25 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
                 </div>
 
                 {hasReceipt && (
-                  <FileUpload
-                    onFilesSelected={handleFileSelect}
-                    onFileClear={handleFileClear}
-                    selectedFiles={selectedFiles}
-                    allowMultiple={true}
-                    acceptedFileTypes="image/*,application/pdf"
-                    dropzoneText="Tap to upload receipt"
-                  />
+                  <div className="space-y-4">
+                    <FileUpload
+                      onFilesSelected={handleFileSelect}
+                      onFileClear={handleFileClear}
+                      selectedFiles={selectedFiles}
+                      allowMultiple={true}
+                      acceptedFileTypes="image/*,application/pdf"
+                      dropzoneText="Tap to upload receipt"
+                    />
+                    
+                    {selectedFiles.length > 0 && (
+                      <ReceiptMetadataForm
+                        metadata={receiptMetadata}
+                        updateMetadata={updateReceiptMetadata}
+                        entityType={entityType}
+                        entityId={entityId}
+                      />
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

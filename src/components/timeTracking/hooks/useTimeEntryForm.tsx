@@ -38,11 +38,15 @@ export function useTimeEntryForm(onSuccess: () => void) {
   const [receiptMetadata, setReceiptMetadata] = useState<{
     category: string,
     expenseType: string | null,
-    tags: string[]
+    tags: string[],
+    vendorId?: string,
+    vendorType?: 'vendor' | 'subcontractor' | 'other',
+    amount?: number
   }>({
     category: 'receipt',
     expenseType: null,
-    tags: ['time-entry']
+    tags: ['time-entry'],
+    vendorType: 'vendor'
   });
   
   // Use our submission hook
@@ -56,6 +60,8 @@ export function useTimeEntryForm(onSuccess: () => void) {
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   const hasReceipts = form.watch('hasReceipts');
+  const entityType = form.watch('entityType');
+  const entityId = form.watch('entityId');
   
   useEffect(() => {
     if (startTime && endTime) {
@@ -99,9 +105,16 @@ export function useTimeEntryForm(onSuccess: () => void) {
     });
   };
   
-  // Update receipt metadata (category, expense type, tags)
+  // Update receipt metadata
   const updateReceiptMetadata = (
-    data: Partial<{category: string, expenseType: string | null, tags: string[]}>
+    data: Partial<{
+      category: string, 
+      expenseType: string | null, 
+      tags: string[],
+      vendorId?: string,
+      vendorType?: 'vendor' | 'subcontractor' | 'other',
+      amount?: number
+    }>
   ) => {
     setReceiptMetadata(prev => ({
       ...prev,
@@ -109,14 +122,45 @@ export function useTimeEntryForm(onSuccess: () => void) {
     }));
   };
   
-  const handleSubmit = (data: TimeEntryFormValues) => {
+  // Validate form before submission
+  const validateReceiptData = () => {
     // If hasReceipts is true but no files were selected
-    if (data.hasReceipts && selectedFiles.length === 0) {
+    if (hasReceipts && selectedFiles.length === 0) {
       toast({
         title: 'Receipt required',
         description: 'You indicated you have receipts but none were uploaded. Please upload at least one receipt or turn off the receipt option.',
         variant: 'destructive',
       });
+      return false;
+    }
+    
+    // If we have receipts but no expense type
+    if (hasReceipts && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
+      toast({
+        title: 'Expense type required',
+        description: 'Please select an expense type for your receipt.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    // If we have receipts but no vendor selected (unless it's 'other')
+    if (hasReceipts && selectedFiles.length > 0 && 
+        receiptMetadata.vendorType !== 'other' && 
+        !receiptMetadata.vendorId) {
+      toast({
+        title: 'Vendor required',
+        description: `Please select a ${receiptMetadata.vendorType} for this receipt.`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const handleSubmit = (data: TimeEntryFormValues) => {
+    if (!validateReceiptData()) {
       return;
     }
     

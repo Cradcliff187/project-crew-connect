@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   CardContent,
@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, XCircle } from 'lucide-react';
+import VendorSelector from '@/components/documents/vendor-selector/VendorSelector';
+import { supabase } from '@/integrations/supabase/client';
 
 // Expense types for categorization
 const expenseTypes = [
@@ -25,6 +27,10 @@ const expenseTypes = [
   { value: 'supplies', label: 'Supplies' },
   { value: 'fuel', label: 'Fuel/Gas' },
   { value: 'transportation', label: 'Transportation' },
+  { value: 'meals', label: 'Meals & Entertainment' },
+  { value: 'accommodations', label: 'Accommodations' },
+  { value: 'permits', label: 'Permits & Fees' },
+  { value: 'subcontractor', label: 'Subcontractor' },
   { value: 'other', label: 'Other' }
 ];
 
@@ -45,21 +51,57 @@ interface ReceiptMetadataFormProps {
     category: string;
     expenseType: string | null;
     tags: string[];
+    vendorId?: string;
+    vendorType?: 'vendor' | 'subcontractor' | 'other';
+    amount?: number;
   };
   updateMetadata: (data: Partial<{
     category: string;
     expenseType: string | null;
     tags: string[];
+    vendorId?: string;
+    vendorType?: 'vendor' | 'subcontractor' | 'other';
+    amount?: number;
   }>) => void;
   entityType: 'work_order' | 'project';
+  entityId?: string;
 }
 
 const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
   metadata,
   updateMetadata,
-  entityType
+  entityType,
+  entityId
 }) => {
-  const [newTag, setNewTag] = React.useState('');
+  const [newTag, setNewTag] = useState('');
+  const [knownVendors, setKnownVendors] = useState<boolean>(false);
+  const [isLoadingVendors, setIsLoadingVendors] = useState<boolean>(false);
+  const [amount, setAmount] = useState<string>(metadata.amount?.toString() || '');
+
+  // Check if entity has known vendors
+  useEffect(() => {
+    if (entityId) {
+      const checkVendors = async () => {
+        setIsLoadingVendors(true);
+        try {
+          const { data: vendorAssociations, error } = await supabase
+            .from('vendor_associations')
+            .select('vendor_id')
+            .eq('entity_type', entityType.toUpperCase())
+            .eq('entity_id', entityId)
+            .limit(1);
+            
+          setKnownVendors(vendorAssociations && vendorAssociations.length > 0);
+        } catch (error) {
+          console.error('Error checking vendors:', error);
+        } finally {
+          setIsLoadingVendors(false);
+        }
+      };
+      
+      checkVendors();
+    }
+  }, [entityId, entityType]);
 
   const handleExpenseTypeChange = (value: string) => {
     updateMetadata({ expenseType: value });
@@ -70,6 +112,28 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
         tags: [...metadata.tags, value] 
       });
     }
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAmount(value);
+    
+    // Only update if it's a valid number
+    if (!isNaN(parseFloat(value))) {
+      updateMetadata({ amount: parseFloat(value) });
+    }
+  };
+
+  const handleVendorTypeChange = (value: 'vendor' | 'subcontractor' | 'other') => {
+    updateMetadata({ 
+      vendorType: value,
+      // Clear vendorId when changing type
+      vendorId: undefined 
+    });
+  };
+
+  const handleVendorSelect = (vendorId: string) => {
+    updateMetadata({ vendorId });
   };
 
   const addTag = (tag: string) => {
@@ -122,6 +186,59 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
           </p>
         </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="vendor-type">Vendor Type</Label>
+          <Select
+            value={metadata.vendorType || 'vendor'}
+            onValueChange={handleVendorTypeChange}
+          >
+            <SelectTrigger id="vendor-type">
+              <SelectValue placeholder="Select vendor type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="vendor">Vendor</SelectItem>
+              <SelectItem value="subcontractor">Subcontractor</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {metadata.vendorType && (
+          <div className="space-y-2">
+            <Label htmlFor="vendor">Vendor</Label>
+            <VendorSelector
+              vendorType={metadata.vendorType}
+              value={metadata.vendorId || ''}
+              onChange={handleVendorSelect}
+              entityType={entityType.toUpperCase()}
+              entityId={entityId}
+              showAddNew
+            />
+            {knownVendors && (
+              <p className="text-xs text-muted-foreground">
+                This {entityType} has existing vendors associated with it
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="amount">Amount</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5">$</span>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={amount}
+              onChange={handleAmountChange}
+              className="pl-7"
+            />
+          </div>
+        </div>
+        
         <div className="space-y-2">
           <Label htmlFor="tags">Tags</Label>
           <div className="flex flex-wrap gap-1 mb-2">

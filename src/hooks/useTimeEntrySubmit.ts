@@ -9,6 +9,9 @@ interface ReceiptMetadata {
   category: string;
   expenseType: string | null;
   tags: string[];
+  vendorId?: string;
+  vendorType?: 'vendor' | 'subcontractor' | 'other';
+  amount?: number;
 }
 
 export function useTimeEntrySubmit(onSuccess: () => void) {
@@ -76,7 +79,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           const mimeType = file.type || `application/${fileExt}`;
           
           // Enhanced document metadata for better categorization
-          const documentMetadata = {
+          const documentMetadataObj = {
             file_name: file.name,
             file_type: file.type,
             mime_type: mimeType,
@@ -91,12 +94,17 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             updated_at: new Date().toISOString(),
             tags: receiptMetadata.tags || ['receipt', 'time-entry'],
             // Additional expense metadata
-            expense_type: receiptMetadata.expenseType || 'other'
+            expense_type: receiptMetadata.expenseType || 'other',
+            // Add vendor information if available
+            vendor_id: receiptMetadata.vendorId || null,
+            vendor_type: receiptMetadata.vendorType || null,
+            // Add amount if available
+            amount: receiptMetadata.amount || null
           };
           
-          const { data: documentResult, error: documentError } = await supabase
+          const { data: insertedDocument, error: documentError } = await supabase
             .from('documents')
-            .insert(documentMetadata)
+            .insert(documentMetadataObj)
             .select('document_id')
             .single();
             
@@ -106,7 +114,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           const { data: linkResult, error: linkError } = await supabase
             .rpc('attach_document_to_time_entry', {
               p_time_entry_id: insertedEntry.id,
-              p_document_id: documentResult.document_id
+              p_document_id: insertedDocument.document_id
             });
             
           if (linkError) {
@@ -123,25 +131,81 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 entity_id: data.entityId,
                 description: `Time entry receipt: ${file.name}`,
                 expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
-                amount: 0,
-                document_id: documentResult.document_id,
+                amount: receiptMetadata.amount || 0,
+                document_id: insertedDocument.document_id,
                 time_entry_id: insertedEntry.id,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 quantity: 1,
-                unit_price: 0,
-                vendor_id: null
+                unit_price: receiptMetadata.amount || 0,
+                vendor_id: receiptMetadata.vendorId || null
               });
               
             if (expenseError) {
               console.error('Error creating expense for receipt:', expenseError);
             }
+            
+            // If there's a vendor, create or update vendor association
+            if (receiptMetadata.vendorId) {
+              const { error: vendorAssocError } = await supabase
+                .from('vendor_associations')
+                .upsert({
+                  vendor_id: receiptMetadata.vendorId,
+                  entity_type: 'WORK_ORDER',
+                  entity_id: data.entityId,
+                  description: `Associated via time entry receipt`,
+                  amount: receiptMetadata.amount || null,
+                  expense_type: receiptMetadata.expenseType || null,
+                  document_id: insertedDocument.document_id,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (vendorAssocError) {
+                console.error('Error creating vendor association:', vendorAssocError);
+              }
+            }
           }
           
-          // For project entities, we would add similar handling here
+          // For project entities, similar handling with project-specific logic
           if (data.entityType === 'project') {
-            // Create project expense records as needed
-            // This would be implemented when project expenses are designed
+            // Create project expense records if needed
+            const { error: expenseError } = await supabase
+              .from('project_expenses')
+              .insert({
+                project_id: data.entityId,
+                description: `Time entry receipt: ${file.name}`,
+                expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
+                amount: receiptMetadata.amount || 0,
+                document_id: insertedDocument.document_id,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+              
+            if (expenseError) {
+              console.error('Error creating project expense for receipt:', expenseError);
+            }
+            
+            // If there's a vendor, create or update vendor association
+            if (receiptMetadata.vendorId) {
+              const { error: vendorAssocError } = await supabase
+                .from('vendor_associations')
+                .upsert({
+                  vendor_id: receiptMetadata.vendorId,
+                  entity_type: 'PROJECT',
+                  entity_id: data.entityId,
+                  description: `Associated via time entry receipt`,
+                  amount: receiptMetadata.amount || null,
+                  expense_type: receiptMetadata.expenseType || null,
+                  document_id: insertedDocument.document_id,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (vendorAssocError) {
+                console.error('Error creating vendor association:', vendorAssocError);
+              }
+            }
           }
         }
       }

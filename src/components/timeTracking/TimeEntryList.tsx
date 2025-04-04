@@ -1,226 +1,287 @@
 
 import React, { useState } from 'react';
-import { TimeEntry } from '@/types/timeTracking';
-import { formatTimeRange } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Clock, MapPin, User, FileText, MoreVertical, Trash2, ExternalLink } from 'lucide-react';
+import { format } from 'date-fns';
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+  Clock, 
+  ChevronDown, 
+  ChevronRight, 
+  Trash2, 
+  Edit, 
+  Receipt,
+  Loader2
+} from 'lucide-react';
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { TimeEntry } from '@/types/timeTracking';
 import TimeEntryReceipts from './TimeEntryReceipts';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TimeEntryListProps {
   timeEntries: TimeEntry[];
   isLoading: boolean;
-  onEntryChange: () => void;
+  onEntryChange?: () => void;
   isMobile?: boolean;
 }
 
 const TimeEntryList: React.FC<TimeEntryListProps> = ({ 
   timeEntries, 
-  isLoading, 
+  isLoading,
   onEntryChange,
-  isMobile = false
+  isMobile = false 
 }) => {
-  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
-  const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
-  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
-  const { toast } = useToast();
-  
-  const handleDelete = async (entryId: string) => {
-    if (!confirm('Are you sure you want to delete this time entry?')) {
-      return;
-    }
+  const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<TimeEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteClick = (entry: TimeEntry, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEntryToDelete(entry);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDelete = async () => {
+    if (!entryToDelete) return;
     
-    setDeletingEntryId(entryId);
-    
+    setDeleting(true);
     try {
-      // First delete any document links
-      const { error: linkError } = await supabase
+      // First check if there are any receipts attached
+      const { data: documentLinks } = await supabase
         .from('time_entry_document_links')
-        .delete()
-        .eq('time_entry_id', entryId);
+        .select('document_id')
+        .eq('time_entry_id', entryToDelete.id);
         
-      if (linkError) {
-        console.error('Error deleting document links:', linkError);
+      // If there are documents, delete them first
+      if (documentLinks && documentLinks.length > 0) {
+        // Get the document details to get storage paths
+        const documentIds = documentLinks.map(link => link.document_id);
+        const { data: documents } = await supabase
+          .from('documents')
+          .select('storage_path, document_id')
+          .in('document_id', documentIds);
+          
+        // Delete the files from storage
+        if (documents && documents.length > 0) {
+          for (const doc of documents) {
+            await supabase.storage
+              .from('construction_documents')
+              .remove([doc.storage_path]);
+          }
+        }
+        
+        // Delete the document links
+        await supabase
+          .from('time_entry_document_links')
+          .delete()
+          .eq('time_entry_id', entryToDelete.id);
+          
+        // Delete the documents
+        for (const docId of documentIds) {
+          await supabase
+            .from('documents')
+            .delete()
+            .eq('document_id', docId);
+        }
       }
       
-      // Then delete the time entry
+      // Now delete any expenses linked to this time entry
+      await supabase
+        .from('expenses')
+        .delete()
+        .eq('time_entry_id', entryToDelete.id);
+        
+      // Finally, delete the time entry itself
       const { error } = await supabase
         .from('time_entries')
         .delete()
-        .eq('id', entryId);
+        .eq('id', entryToDelete.id);
         
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
       toast({
-        title: 'Time entry deleted',
-        description: 'The time entry has been removed successfully.'
+        title: 'Entry deleted',
+        description: 'The time entry has been removed',
       });
       
-      onEntryChange();
+      if (onEntryChange) {
+        onEntryChange();
+      }
     } catch (error) {
       console.error('Error deleting time entry:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete the time entry. Please try again.',
-        variant: 'destructive'
+        description: 'Could not delete the time entry',
+        variant: 'destructive',
       });
     } finally {
-      setDeletingEntryId(null);
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setEntryToDelete(null);
     }
   };
-  
-  const openReceiptsDialog = (entry: TimeEntry) => {
-    setSelectedEntry(entry);
-    setShowReceiptsDialog(true);
+
+  const formatTime = (time?: string) => {
+    if (!time) return '';
+    
+    const [hours, minutes] = time.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const formattedHours = hours % 12 || 12;
+    return `${formattedHours}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
-  
+
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+      <div className="flex justify-center items-center p-6">
+        <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
+        <span className="ml-2">Loading time entries...</span>
       </div>
     );
   }
-  
+
   if (timeEntries.length === 0) {
     return (
-      <div className="text-center py-8 bg-muted/30 rounded-lg border border-dashed">
-        <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-        <h3 className="text-lg font-medium text-muted-foreground">No time entries</h3>
-        <p className="text-sm text-muted-foreground">
-          You haven't logged any time for this day yet.
-        </p>
+      <div className="text-center p-6 border border-dashed rounded-md">
+        <Clock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+        <p>No time entries for this date.</p>
+        <p className="text-sm text-muted-foreground mt-1">Add a time entry to track your hours.</p>
       </div>
     );
   }
-  
+
   return (
-    <div className="space-y-4">
-      {timeEntries.map((entry) => (
-        <Card key={entry.id} className="overflow-hidden shadow-sm border-l-4 border-l-[#0485ea]">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <h3 className="font-medium text-base">
-                  {entry.entity_name || "Unknown"} 
-                  <span className="ml-1 text-xs capitalize px-2 py-0.5 bg-gray-100 rounded-full">
-                    {entry.entity_type.replace('_', ' ')}
-                  </span>
-                </h3>
-                
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5 mr-1" />
-                  <span>
-                    {formatTimeRange(entry.start_time, entry.end_time)} • {entry.hours_worked.toFixed(1)} hrs
-                  </span>
+    <div className="space-y-2">
+      <Accordion type="single" collapsible value={expandedEntry || undefined} onValueChange={setExpandedEntry}>
+        {timeEntries.map((entry) => (
+          <AccordionItem key={entry.id} value={entry.id} className="border rounded-md mb-2">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex flex-col sm:flex-row sm:items-center w-full">
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <div className="font-medium">{entry.entity_name || `${entry.entity_type}: ${entry.entity_id}`}</div>
+                    {entry.has_receipts && (
+                      <Badge variant="outline" className="ml-2 flex items-center gap-1">
+                        <Receipt className="h-3 w-3" />
+                        Receipt
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
+                  </div>
+                </div>
+                <div className="flex items-center mt-2 sm:mt-0">
+                  <div className="mr-4">
+                    <span className="text-[#0485ea] font-semibold">{entry.hours_worked.toFixed(1)}</span>
+                    <span className="text-sm text-muted-foreground ml-1">hrs</span>
+                  </div>
+                  <div className="flex">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => handleDeleteClick(entry, e)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="font-medium">Date</p>
+                    <p>{format(new Date(entry.date_worked), 'MMMM d, yyyy')}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Hours</p>
+                    <p>{entry.hours_worked.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Entity</p>
+                    <p>{entry.entity_type.charAt(0).toUpperCase() + entry.entity_type.slice(1)}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">ID</p>
+                    <p className="truncate">{entry.entity_id}</p>
+                  </div>
+                  {entry.employee_name && (
+                    <div>
+                      <p className="font-medium">Employee</p>
+                      <p>{entry.employee_name}</p>
+                    </div>
+                  )}
+                  {entry.employee_rate && (
+                    <div>
+                      <p className="font-medium">Rate</p>
+                      <p>${entry.employee_rate.toFixed(2)}/hr</p>
+                    </div>
+                  )}
                 </div>
                 
-                {entry.entity_location && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5 mr-1" />
-                    <span>{entry.entity_location}</span>
-                  </div>
-                )}
-                
-                {entry.employee_name && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <User className="h-3.5 w-3.5 mr-1" />
-                    <span>{entry.employee_name}</span>
-                  </div>
-                )}
-                
                 {entry.notes && (
-                  <p className="text-sm mt-2 bg-muted/30 p-2 rounded">
-                    {entry.notes}
-                  </p>
-                )}
-              </div>
-              
-              <div className="flex items-center">
-                {entry.has_receipts && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-[#0485ea]"
-                    onClick={() => openReceiptsDialog(entry)}
-                  >
-                    <FileText className="h-5 w-5" />
-                  </Button>
+                  <div className="text-sm">
+                    <p className="font-medium">Notes</p>
+                    <p className="whitespace-pre-wrap">{entry.notes}</p>
+                  </div>
                 )}
                 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {entry.entity_type === 'work_order' && (
-                      <DropdownMenuItem asChild>
-                        <a href={`/work-orders/${entry.entity_id}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          <span>View Work Order</span>
-                        </a>
-                      </DropdownMenuItem>
-                    )}
-                    {entry.entity_type === 'project' && (
-                      <DropdownMenuItem asChild>
-                        <a href={`/projects/${entry.entity_id}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          <span>View Project</span>
-                        </a>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      onClick={() => openReceiptsDialog(entry)}
-                      className="text-blue-600"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      <span>{entry.has_receipts ? 'View Receipts' : 'Add Receipt'}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleDelete(entry.id)}
-                      className="text-red-600"
-                      disabled={deletingEntryId === entry.id}
-                    >
-                      {deletingEntryId === entry.id ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4 mr-2" />
-                      )}
-                      <span>Delete Entry</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {entry.has_receipts && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">Receipts</h4>
+                    <TimeEntryReceipts 
+                      timeEntryId={entry.id} 
+                      onReceiptChange={onEntryChange}
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
       
-      {/* Receipts Dialog */}
-      <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
-        <DialogContent className={isMobile ? "w-[95vw] max-w-lg" : "max-w-2xl"}>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Time Entry Receipts</DialogTitle>
+            <DialogTitle>Delete Time Entry</DialogTitle>
           </DialogHeader>
-          {selectedEntry && (
-            <TimeEntryReceipts 
-              timeEntryId={selectedEntry.id} 
-              onReceiptChange={onEntryChange}
-            />
-          )}
+          <div className="py-4">
+            <p>Are you sure you want to delete this time entry? This will also delete any attached receipts. This action cannot be undone.</p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
