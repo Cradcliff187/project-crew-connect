@@ -76,7 +76,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
           <CardContent className="space-y-6">
             {/* Entity Type Selection */}
             <EntityTypeSelector 
-              entityType={entityType} 
+              value={entityType} 
               onChange={(value) => form.setValue('entityType', value, { shouldValidate: true })}
             />
             
@@ -174,8 +174,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                   }
                 }}
                 onEndTimeChange={(value) => form.setValue('endTime', value, { shouldValidate: true })}
-                startTimeError={form.formState.errors.startTime?.message}
-                endTimeError={form.formState.errors.endTime?.message}
+                error={form.formState.errors.startTime?.message || form.formState.errors.endTime?.message}
               />
             </div>
             
@@ -237,8 +236,12 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                   
                   {selectedFiles.length > 0 && (
                     <ReceiptMetadataForm
-                      metadata={receiptMetadata}
-                      updateMetadata={updateReceiptMetadata}
+                      vendor={receiptMetadata.vendorId || ''}
+                      expenseType={receiptMetadata.expenseType || ''}
+                      amount={receiptMetadata.amount}
+                      onVendorChange={(value) => updateReceiptMetadata({ vendorId: value })}
+                      onExpenseTypeChange={(value) => updateReceiptMetadata({ expenseType: value })}
+                      onAmountChange={(value) => updateReceiptMetadata({ amount: value })}
                       entityType={entityType}
                       entityId={entityId}
                     />

@@ -13,6 +13,8 @@ interface ReceiptMetadataFormProps {
   onVendorChange: (value: string) => void;
   onExpenseTypeChange: (value: string) => void;
   onAmountChange: (value: number | undefined) => void;
+  entityType?: string;
+  entityId?: string;
 }
 
 const EXPENSE_TYPES = [
@@ -29,7 +31,9 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
   amount,
   onVendorChange,
   onExpenseTypeChange,
-  onAmountChange
+  onAmountChange,
+  entityType,
+  entityId
 }) => {
   return (
     <div className="space-y-4">
@@ -37,8 +41,9 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
         vendorType="vendor"
         value={vendor}
         onChange={onVendorChange}
-        showAddNewOption={true}
         label="Vendor"
+        entityType={entityType}
+        entityId={entityId}
       />
       
       <div className="space-y-2">

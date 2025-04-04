@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Calendar, Clock } from 'lucide-react';
 import TimePickerMobile from './TimePickerMobile';
 
 interface TimeRangeSelectorProps {
@@ -10,6 +9,8 @@ interface TimeRangeSelectorProps {
   onStartTimeChange: (value: string) => void;
   onEndTimeChange: (value: string) => void;
   error?: string;
+  startTimeError?: string;
+  endTimeError?: string;
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -17,7 +18,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   endTime,
   onStartTimeChange,
   onEndTimeChange,
-  error
+  error,
+  startTimeError,
+  endTimeError
 }) => {
   return (
     <div className="space-y-4">
@@ -29,6 +32,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             onChange={onStartTimeChange}
             label="Start Time"
           />
+          {startTimeError && <p className="text-sm text-red-500">{startTimeError}</p>}
         </div>
         
         <div className="space-y-2">
@@ -38,6 +42,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             onChange={onEndTimeChange}
             label="End Time"
           />
+          {endTimeError && <p className="text-sm text-red-500">{endTimeError}</p>}
         </div>
       </div>
       
