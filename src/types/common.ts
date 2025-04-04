@@ -21,5 +21,13 @@ export type StatusType =
   | 'on-hold'
   | 'verified'
   | 'qualified'
-  | 'purple';
+  | 'purple'
+  | 'unknown'
+  | 'critical'
+  | 'NEW'
+  | 'IN_PROGRESS'
+  | 'ON_HOLD'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'POTENTIAL';
 
