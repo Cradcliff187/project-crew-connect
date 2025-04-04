@@ -11,7 +11,6 @@ const VendorsLoadingState = () => {
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Vendor</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Payment Terms</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
             <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
           </TableRow>
@@ -33,9 +32,6 @@ const VendorsLoadingState = () => {
               </TableCell>
               <TableCell>
                 <Skeleton className="h-4 w-32" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-4 w-24" />
               </TableCell>
               <TableCell>
                 <Skeleton className="h-5 w-16 rounded-full" />

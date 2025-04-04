@@ -3,10 +3,10 @@ import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { useNavigate } from 'react-router-dom';
 import { Vendor } from '../types/vendorTypes';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin, Phone, FileText, Edit, Trash2, Eye } from 'lucide-react';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
-import { Badge } from '@/components/ui/badge';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { StatusType } from '@/types/common';
 
 interface VendorTableRowProps {
   vendor: Vendor;
@@ -50,7 +50,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
   };
 
   // Get vendor status color
-  const getStatusColor = (status: string | undefined) => {
+  const getStatusColor = (status: string | undefined): StatusType => {
     if (!status) return 'neutral';
     
     switch (status.toLowerCase()) {
@@ -75,13 +75,26 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
         items: [
           {
             label: 'View details',
-            icon: <Mail className="h-4 w-4" />,
+            icon: <Eye className="h-4 w-4" />,
             onClick: handleViewVendor
           },
           {
             label: 'Edit vendor',
-            icon: <Phone className="h-4 w-4" />,
+            icon: <Edit className="h-4 w-4" />,
             onClick: handleEditVendor
+          }
+        ]
+      },
+      {
+        // Document actions
+        items: [
+          {
+            label: 'View documents',
+            icon: <FileText className="h-4 w-4" />,
+            onClick: (e) => {
+              e.stopPropagation();
+              console.log('View documents action');
+            }
           }
         ]
       },
@@ -90,7 +103,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
         items: [
           {
             label: 'Delete vendor',
-            icon: <MapPin className="h-4 w-4" />,
+            icon: <Trash2 className="h-4 w-4" />,
             onClick: (e) => {
               e.stopPropagation();
               console.log('Delete vendor action');
@@ -131,9 +144,6 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
           <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <span className="text-sm">{formatAddress()}</span>
         </div>
-      </TableCell>
-      <TableCell>
-        <span className="text-sm">{vendor.payment_terms || 'Not specified'}</span>
       </TableCell>
       <TableCell>
         <StatusBadge 

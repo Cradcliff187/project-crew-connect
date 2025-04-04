@@ -1,52 +1,25 @@
 
-export type StatusType = 
-  | 'active' 
-  | 'inactive' 
-  | 'pending' 
-  | 'draft'
-  | 'approved'
-  | 'completed'
-  | 'on_track'
-  | 'in_progress'
-  | 'warning'
-  | 'critical'
-  | 'not_set'
-  | 'converted'
-  | 'cancelled'
-  | 'on-hold'
-  | 'on_hold'
-  | 'qualified'
-  | 'unknown'
-  | 'potential'
-  | 'prospect'
-  | 'sent'
-  | 'rejected'
-  | 'verified'
-  | 'new'
-  | 'not_started'
-  | 'not-started'
-  | 'in-progress'
-  // Work order status types (uppercase for consistency with the database)
-  | 'NEW'
-  | 'IN_PROGRESS'
-  | 'ON_HOLD'
-  | 'COMPLETED'
-  | 'CANCELLED'
-  // Vendor status types
-  | 'POTENTIAL'
-  | 'APPROVED'
-  | 'ACTIVE'
-  | 'INACTIVE'
-  // UI status types for badges
+// Common type definitions for reuse across the application
+
+// Status types used throughout the app
+export type StatusType =
   | 'success'
-  | 'info'
   | 'error'
+  | 'warning'
+  | 'info'
   | 'neutral'
+  | 'active'
+  | 'inactive'
+  | 'completed'
+  | 'in_progress'
+  | 'pending'
+  | 'cancelled'
+  | 'rejected'
+  | 'approved'
+  | 'draft'
+  | 'on_hold'
+  | 'on-hold'
+  | 'verified'
+  | 'qualified'
   | 'purple';
 
-export interface Option {
-  label: string;
-  value: string;
-}
-
-export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR' | 'ESTIMATE';

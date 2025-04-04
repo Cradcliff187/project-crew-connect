@@ -13,7 +13,6 @@ const VendorsTableHeader = () => {
       </TableHead>
       <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
       <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
-      <TableHead className="font-montserrat font-semibold text-[#0485ea]">Payment Terms</TableHead>
       <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
       <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
     </>
