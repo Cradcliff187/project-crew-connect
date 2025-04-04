@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
 import { toast } from '@/hooks/use-toast';
+import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -65,23 +66,13 @@ export function useTimeEntryForm(onSuccess: () => void) {
   
   useEffect(() => {
     if (startTime && endTime) {
-      const [startHour, startMinute] = startTime.split(':').map(Number);
-      const [endHour, endMinute] = endTime.split(':').map(Number);
-      
-      let hours = endHour - startHour;
-      let minutes = endMinute - startMinute;
-      
-      if (minutes < 0) {
-        hours -= 1;
-        minutes += 60;
+      try {
+        const totalHours = calculateHours(startTime, endTime);
+        form.setValue('hoursWorked', parseFloat(totalHours.toFixed(2)));
+      } catch (error) {
+        console.error('Error calculating hours:', error);
+        form.setValue('hoursWorked', 0);
       }
-      
-      if (hours < 0) {
-        hours += 24; // Handle overnight shifts
-      }
-      
-      const totalHours = hours + (minutes / 60);
-      form.setValue('hoursWorked', parseFloat(totalHours.toFixed(2)));
     }
   }, [startTime, endTime, form]);
   

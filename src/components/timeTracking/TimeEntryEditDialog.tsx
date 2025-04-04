@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { TimeEntry } from '@/types/timeTracking';
 import { format } from 'date-fns';
-import { parseTime, timeOptions } from '@/components/timeTracking/utils/timeUtils';
+import { parseTime, timeOptions, calculateHours } from '@/components/timeTracking/utils/timeUtils';
 
 interface TimeEntryEditDialogProps {
   timeEntry: TimeEntry | null;
@@ -16,28 +16,6 @@ interface TimeEntryEditDialogProps {
   onSave: (updatedEntry: TimeEntry) => void;
   isSaving: boolean;
 }
-
-// Calculate hours between start and end time
-const calculateHours = (startTime: string, endTime: string): number => {
-  const [startHours, startMinutes] = startTime.split(':').map(Number);
-  const [endHours, endMinutes] = endTime.split(':').map(Number);
-  
-  let hours = endHours - startHours;
-  let minutes = endMinutes - startMinutes;
-  
-  // Handle negative minutes
-  if (minutes < 0) {
-    minutes += 60;
-    hours -= 1;
-  }
-  
-  // Handle overnight shifts
-  if (hours < 0) {
-    hours += 24;
-  }
-  
-  return hours + (minutes / 60);
-};
 
 const TimeEntryEditDialog: React.FC<TimeEntryEditDialogProps> = ({
   timeEntry,
@@ -65,7 +43,7 @@ const TimeEntryEditDialog: React.FC<TimeEntryEditDialogProps> = ({
         [field]: value 
       };
       
-      // Recalculate hours worked
+      // Recalculate hours worked using the utility function
       const hoursWorked = calculateHours(
         field === 'start_time' ? value : prev.start_time,
         field === 'end_time' ? value : prev.end_time

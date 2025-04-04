@@ -25,13 +25,6 @@ import TimeEntryEditDialog from './TimeEntryEditDialog';
 import { useTimeEntryOperations } from './hooks/useTimeEntryOperations';
 import { formatTime, getTimeOfDay } from './utils/timeUtils';
 
-export interface TimeEntryListProps {
-  entries: TimeEntry[];
-  isLoading?: boolean;
-  onEntryChange: () => void;
-  isMobile?: boolean;
-}
-
 const formatDuration = (hours: number): string => {
   const wholeHours = Math.floor(hours);
   const minutes = Math.round((hours - wholeHours) * 60);
@@ -94,6 +87,13 @@ const formatDayHeader = (dateStr: string): string => {
 const calculateDailyTotal = (entries: TimeEntry[]): number => {
   return entries.reduce((sum, entry) => sum + entry.hours_worked, 0);
 };
+
+export interface TimeEntryListProps {
+  entries: TimeEntry[];
+  isLoading?: boolean;
+  onEntryChange: () => void;
+  isMobile?: boolean;
+}
 
 export const TimeEntryList: React.FC<TimeEntryListProps> = ({ 
   entries, 
