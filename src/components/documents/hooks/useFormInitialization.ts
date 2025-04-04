@@ -1,7 +1,8 @@
 
 import { useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { DocumentUploadFormValues, EntityType, DocumentCategory } from '../schemas/documentSchema';
+import { DocumentUploadFormValues, EntityType } from '../schemas/documentSchema';
+import { toDocumentCategory, isValidDocumentCategory } from '../utils/DocumentCategoryHelper';
 
 interface UseFormInitializationProps {
   form: UseFormReturn<DocumentUploadFormValues>;
@@ -36,12 +37,6 @@ export const useFormInitialization = ({
   onCancel,
   allowEntityTypeSelection
 }: UseFormInitializationProps) => {
-  // Helper function to validate if a string is a valid DocumentCategory
-  const isValidDocumentCategory = (category: string): boolean => {
-    return ['invoice', 'receipt', '3rd_party_estimate', 'contract', 'insurance', 
-            'certification', 'photo', 'other'].includes(category);
-  };
-
   // Initialize the form
   const initializeForm = useCallback(() => {
     if (!isFormInitialized) {
@@ -63,10 +58,11 @@ export const useFormInitialization = ({
       }
       
       // Set default category based on context or prefill data
-      if (prefillData?.category && isValidDocumentCategory(prefillData.category)) {
-        form.setValue('metadata.category', prefillData.category as DocumentCategory);
+      if (prefillData?.category) {
+        // Safely set category with type validation
+        form.setValue('metadata.category', toDocumentCategory(prefillData.category));
       } else if (isReceiptUpload) {
-        form.setValue('metadata.category', 'receipt' as DocumentCategory);
+        form.setValue('metadata.category', 'receipt');
       }
       
       // Set expense-related fields if this is a receipt upload

@@ -7,8 +7,8 @@ import {
   documentUploadSchema, 
   EntityType,
   DocumentCategory,
-  getEntityCategories
 } from '../schemas/documentSchema';
+import { isValidDocumentCategory, toDocumentCategory, getEntityCategories } from '../utils/DocumentCategoryHelper';
 import { useFileSelectionHandling } from './useFileSelectionHandling';
 import { useFormSubmitHandler } from './useFormSubmitHandler';
 import { useFormValueWatchers } from './useFormValueWatchers';
@@ -50,10 +50,10 @@ export const useDocumentUploadForm = ({
   const [showVendorSelector, setShowVendorSelector] = useState(isReceiptUpload || !!prefillData?.vendorId);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   
-  // Get default category with proper type casting
+  // Get default category with proper type checking
   const getDefaultCategory = (): DocumentCategory => {
     if (prefillData?.category && isValidDocumentCategory(prefillData.category)) {
-      return prefillData.category as DocumentCategory;
+      return prefillData.category;
     }
     return isReceiptUpload ? 'receipt' : 'other';
   };
@@ -78,12 +78,6 @@ export const useDocumentUploadForm = ({
     },
     mode: 'onChange'
   });
-
-  // Helper function to validate if a string is a valid DocumentCategory
-  function isValidDocumentCategory(category: string): boolean {
-    return ['invoice', 'receipt', '3rd_party_estimate', 'contract', 'insurance', 
-            'certification', 'photo', 'other'].includes(category);
-  }
 
   // Use our custom hooks to handle different aspects of the form
   const { handleFileSelect } = useFileSelectionHandling(form, setPreviewURL);
