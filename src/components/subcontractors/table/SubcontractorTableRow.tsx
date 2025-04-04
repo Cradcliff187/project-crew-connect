@@ -1,10 +1,12 @@
 import { TableRow, TableCell } from '@/components/ui/table';
-import { Mail, Phone, Edit, Trash2, Eye, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Subcontractor } from '../utils/types';
-import { Link } from 'react-router-dom';
-import useSpecialties from '../hooks/useSpecialties';
+import { Mail, MapPin, Phone, Edit, Trash2, Eye, Tag } from 'lucide-react';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { StatusType } from '@/types/common';
+import { Badge } from '@/components/ui/badge';
+import useSpecialties from '../hooks/useSpecialties';
 
 interface SubcontractorTableRowProps {
   subcontractor: Subcontractor;
@@ -19,13 +21,11 @@ const SubcontractorTableRow = ({
 }: SubcontractorTableRowProps) => {
   const { specialties, loading } = useSpecialties();
   
-  // Handle view click
   const handleViewClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onViewDetails(subcontractor);
   };
 
-  // Handle edit click
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onEditSubcontractor) {
@@ -33,7 +33,6 @@ const SubcontractorTableRow = ({
     }
   };
 
-  // Handle call click
   const handleCallClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (subcontractor.phone) {
@@ -41,7 +40,6 @@ const SubcontractorTableRow = ({
     }
   };
 
-  // Handle email click
   const handleEmailClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (subcontractor.contactemail) {
@@ -49,18 +47,15 @@ const SubcontractorTableRow = ({
     }
   };
 
-  // Handle delete click
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('Delete subcontractor', subcontractor.subid);
   };
 
-  // Handle row click
   const handleRowClick = () => {
     onViewDetails(subcontractor);
   };
   
-  // Function to render specialties as badges
   const renderSpecialties = () => {
     if (loading) {
       return <span className="text-xs text-muted-foreground">Loading...</span>;
@@ -70,7 +65,6 @@ const SubcontractorTableRow = ({
       return <span className="text-gray-400 italic">No specialties</span>;
     }
     
-    // Show up to 2 specialties, with a count badge if more exist
     const specialtiesToShow = subcontractor.specialty_ids.slice(0, 2);
     const remainingCount = subcontractor.specialty_ids.length - 2;
     
@@ -102,7 +96,6 @@ const SubcontractorTableRow = ({
     );
   };
 
-  // Get appropriate status type for the badge
   const getStatusType = (status: string | null) => {
     if (!status) return 'neutral';
     
@@ -120,11 +113,9 @@ const SubcontractorTableRow = ({
     }
   };
 
-  // Get simplified action menu groups with standardized actions
   const getSubcontractorActions = (): ActionGroup[] => {
     return [
       {
-        // Primary actions
         items: [
           {
             label: 'View details',
@@ -139,7 +130,6 @@ const SubcontractorTableRow = ({
         ]
       },
       {
-        // Contact actions
         items: [
           {
             label: 'Call subcontractor',
@@ -156,7 +146,6 @@ const SubcontractorTableRow = ({
         ]
       },
       {
-        // Destructive actions
         items: [
           {
             label: 'Delete subcontractor',
