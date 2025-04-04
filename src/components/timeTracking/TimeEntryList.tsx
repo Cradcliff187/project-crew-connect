@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,7 +21,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-// Define the props interface
 export interface TimeEntryListProps {
   entries: TimeEntry[];
   isLoading?: boolean;
@@ -88,14 +86,12 @@ const formatTime = (time: string): string => {
   return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
 
-// Format the date for the day header
 const formatDayHeader = (dateStr: string): string => {
   const date = parseISO(dateStr);
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   
-  // Check if it's today or yesterday for special formatting
   if (format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
     return `Today, ${format(date, 'EEEE, MMMM d')}`;
   } else if (format(date, 'yyyy-MM-dd') === format(yesterday, 'yyyy-MM-dd')) {
@@ -105,19 +101,16 @@ const formatDayHeader = (dateStr: string): string => {
   }
 };
 
-// Calculate daily total hours
 const calculateDailyTotal = (entries: TimeEntry[]): number => {
   return entries.reduce((sum, entry) => sum + entry.hours_worked, 0);
 };
 
-// Main component export
 export const TimeEntryList: React.FC<TimeEntryListProps> = ({ 
   entries, 
   isLoading = false, 
   onEntryChange,
   isMobile = false
 }) => {
-  // Show loading state if data is still loading
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -141,7 +134,6 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     );
   }
 
-  // Show empty state if no entries
   if (entries.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground">
@@ -150,9 +142,19 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     );
   }
 
-  // Group entries by date for better organization
   const groupedEntries = groupEntriesByDate(entries);
-  
+
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+
+  const handleEdit = (entry: TimeEntry) => {
+    console.log('Editing entry:', entry);
+    setEditingEntry(entry);
+  };
+
+  const handleDelete = (entry: TimeEntry) => {
+    console.log('Deleting entry:', entry);
+  };
+
   return (
     <div className="space-y-6">
       {Array.from(groupedEntries.entries()).map(([date, dayEntries]) => {
@@ -160,7 +162,6 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
         
         return (
           <div key={date} className="space-y-2">
-            {/* Day header with total hours */}
             <div className="flex items-center justify-between border-b pb-2">
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-[#0485ea]" />
@@ -171,10 +172,8 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
               </span>
             </div>
             
-            {/* Time entries for this day */}
             <div className="space-y-2 pl-0 lg:pl-6">
               {dayEntries.map((entry) => {
-                // Get time of day for visual indication
                 const startHour = parseInt(entry.start_time.split(':')[0]);
                 const timeOfDay = getTimeOfDay(startHour);
                 const timeOfDayColor = getTimeOfDayColor(timeOfDay);
@@ -214,7 +213,10 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onSelect={() => handleEdit(entry)}
+                                  className="cursor-pointer"
+                                >
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit
                                 </DropdownMenuItem>
@@ -224,7 +226,10 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                                     View Receipts
                                   </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem className="text-destructive">
+                                <DropdownMenuItem 
+                                  onSelect={() => handleDelete(entry)}
+                                  className="text-destructive cursor-pointer"
+                                >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Delete
                                 </DropdownMenuItem>
