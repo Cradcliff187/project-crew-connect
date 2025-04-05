@@ -43,13 +43,14 @@ const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
     e.preventDefault();
     
     if (document.url) {
-      const a = document.createElement('a');
+      // Use window.document instead of document to avoid confusion with the Document type
+      const a = window.document.createElement('a');
       a.href = document.url;
       a.download = document.file_name || 'download';
       a.target = '_blank';
-      document.body.appendChild(a);
+      window.document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      window.document.body.removeChild(a);
     }
   };
 
