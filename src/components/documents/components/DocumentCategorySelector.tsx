@@ -34,7 +34,7 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
             <FormLabel>Receipt Type</FormLabel>
             <FormControl>
               <RadioGroup
-                onValueChange={field.onChange}
+                onValueChange={(value) => field.onChange(value as DocumentCategory)}
                 defaultValue={field.value}
                 className="flex flex-col space-y-1"
               >
@@ -79,7 +79,7 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
           <FormLabel>Document Type</FormLabel>
           <FormControl>
             <RadioGroup
-              onValueChange={field.onChange}
+              onValueChange={(value) => field.onChange(value as DocumentCategory)}
               defaultValue={field.value}
               className="flex flex-wrap gap-4"
             >

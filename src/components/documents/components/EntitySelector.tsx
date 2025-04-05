@@ -10,8 +10,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DocumentUploadFormValues, EntityType } from '../schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 interface EntitySelectorProps {
   control: Control<DocumentUploadFormValues>;
@@ -31,6 +33,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
 }) => {
   const [entities, setEntities] = useState<EntityOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Use this component with the form controller to get the entity type from the form if not provided as prop
   return (
@@ -53,7 +56,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                 case 'PROJECT':
                   const { data: projects } = await supabase
                     .from('projects')
-                    .select('projectid, projectname');
+                    .select('projectid, projectname')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                   data = (projects || []).map(p => ({ 
                     id: p.projectid, 
                     name: p.projectname || p.projectid 
@@ -63,7 +68,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                 case 'CUSTOMER':
                   const { data: customers } = await supabase
                     .from('customers')
-                    .select('customerid, customername');
+                    .select('customerid, customername')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                   data = (customers || []).map(c => ({ 
                     id: c.customerid, 
                     name: c.customername || c.customerid 
@@ -73,7 +80,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                 case 'ESTIMATE':
                   const { data: estimates } = await supabase
                     .from('estimates')
-                    .select('estimateid, projectname');
+                    .select('estimateid, projectname')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                   data = (estimates || []).map(e => ({ 
                     id: e.estimateid, 
                     name: e.projectname || e.estimateid 
@@ -81,10 +90,11 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   break;
                   
                 case 'WORK_ORDER':
-                  // Here we use proper filtering method instead of relying on URL parameters
                   const { data: workOrders } = await supabase
                     .from('maintenance_work_orders')
-                    .select('work_order_id, title');
+                    .select('work_order_id, title')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                   data = (workOrders || []).map(w => ({ 
                     id: w.work_order_id, 
                     name: w.title || w.work_order_id 
@@ -94,7 +104,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                 case 'VENDOR':
                   const { data: vendors } = await supabase
                     .from('vendors')
-                    .select('vendorid, vendorname');
+                    .select('vendorid, vendorname')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                   data = (vendors || []).map(v => ({ 
                     id: v.vendorid, 
                     name: v.vendorname || v.vendorid 
@@ -104,7 +116,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                 case 'SUBCONTRACTOR':
                   const { data: subcontractors } = await supabase
                     .from('subcontractors')
-                    .select('subid, subname');
+                    .select('subid, subname')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                   data = (subcontractors || []).map(s => ({ 
                     id: s.subid, 
                     name: s.subname || s.subid 
@@ -114,7 +128,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                 case 'EMPLOYEE':
                   const { data: employees } = await supabase
                     .from('employees')
-                    .select('employee_id, first_name, last_name');
+                    .select('employee_id, first_name, last_name')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                   data = (employees || []).map(e => ({ 
                     id: e.employee_id, 
                     name: `${e.first_name} ${e.last_name}` 
@@ -122,10 +138,11 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                   break;
                   
                 case 'TIME_ENTRY':
-                  // Here we use proper filtering method instead of relying on URL parameters
                   const { data: timeEntries } = await supabase
                     .from('time_entries')
-                    .select('id, entity_id, date_worked');
+                    .select('id, entity_id, date_worked')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                   data = (timeEntries || []).map(t => ({ 
                     id: t.id, 
                     name: `Time Entry: ${new Date(t.date_worked).toLocaleDateString()} (${t.entity_id})` 
@@ -149,6 +166,14 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           }
         }, [entityType]);
         
+        // Filter entities based on search term
+        const filteredEntities = searchTerm 
+          ? entities.filter(entity => 
+              entity.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+              entity.id.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+          : entities;
+        
         // Now render the entity ID selector
         return (
           <FormField
@@ -159,25 +184,55 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                 <FormLabel>
                   {entityType ? `${entityType.replace(/_/g, ' ')} ID` : 'Entity ID'}
                 </FormLabel>
-                {entities.length > 0 ? (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={isReceiptUpload && !!field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={`Select ${entityType?.toLowerCase() || 'entity'}`} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {entities.map((entity) => (
-                        <SelectItem key={entity.id} value={entity.id || "_placeholder"}>
-                          {entity.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {loading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <div className="text-xs text-muted-foreground flex items-center">
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Loading entities...
+                    </div>
+                  </div>
+                ) : entities.length > 0 ? (
+                  <div className="space-y-2">
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isReceiptUpload && !!field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Select ${entityType?.toLowerCase() || 'entity'}`} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <div className="mb-2">
+                          <Input 
+                            placeholder="Search..." 
+                            className="border-dashed"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </div>
+                        {filteredEntities.length > 0 ? (
+                          filteredEntities.map((entity) => (
+                            <SelectItem key={entity.id} value={entity.id}>
+                              <div className="truncate max-w-[280px]">
+                                <span className="font-medium">{entity.name}</span>
+                                <span className="ml-1 text-xs text-muted-foreground">({entity.id})</span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                            No matches found
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-xs text-muted-foreground">
+                      {entities.length} {entityType?.toLowerCase() || 'entities'} available
+                    </div>
+                  </div>
                 ) : (
                   <Input 
                     placeholder={`Enter ${entityType?.toLowerCase() || 'entity'} ID`}

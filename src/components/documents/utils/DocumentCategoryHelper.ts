@@ -1,84 +1,117 @@
 
-import { EntityType, DocumentCategory } from '../schemas/documentSchema';
+import { DocumentCategory, EntityType, entityCategoryMap } from '../schemas/documentSchema';
 
 /**
- * Maps entity types to their appropriate default document categories
- */
-export const getDefaultCategoryForEntity = (entityType: EntityType): DocumentCategory => {
-  switch (entityType) {
-    case 'PROJECT':
-      return 'photo';
-    case 'WORK_ORDER':
-      return 'receipt';
-    case 'VENDOR':
-    case 'SUBCONTRACTOR':
-      return 'certification';
-    case 'CUSTOMER':
-      return 'contract';
-    case 'ESTIMATE':
-      return 'contract';
-    default:
-      return 'other';
-  }
-};
-
-/**
- * Gets appropriate document categories for a given entity type
- */
-export const getEntityCategories = (entityType: EntityType): DocumentCategory[] => {
-  // Base categories available for all entity types
-  const baseCategories: DocumentCategory[] = ['receipt', 'invoice', 'other'];
-  
-  // Entity-specific categories
-  switch (entityType) {
-    case 'PROJECT':
-      return [...baseCategories, 'photo', 'contract', '3rd_party_estimate'];
-      
-    case 'WORK_ORDER':
-      return [...baseCategories, 'photo'];
-      
-    case 'VENDOR':
-    case 'SUBCONTRACTOR':
-      return [...baseCategories, 'certification', 'insurance', 'contract'];
-      
-    case 'CUSTOMER':
-      return [...baseCategories, 'contract', '3rd_party_estimate'];
-      
-    case 'ESTIMATE':
-      return [...baseCategories, 'contract', '3rd_party_estimate'];
-      
-    case 'EMPLOYEE':
-      return [...baseCategories, 'certification'];
-      
-    default:
-      return baseCategories;
-  }
-};
-
-/**
- * Validates if a string is a valid DocumentCategory
- */
-export const isValidDocumentCategory = (category: string): category is DocumentCategory => {
-  const validCategories: DocumentCategory[] = [
-    'invoice', 
-    'receipt', 
-    '3rd_party_estimate', 
-    'contract', 
-    'insurance', 
-    'certification', 
-    'photo', 
-    'other'
-  ];
-  
-  return validCategories.includes(category as DocumentCategory);
-};
-
-/**
- * Safely converts a string to a DocumentCategory with fallback to 'other'
+ * Helper function to convert a string to a valid DocumentCategory type
+ * @param category The string to convert
+ * @returns The string as a DocumentCategory if valid, otherwise 'other'
  */
 export const toDocumentCategory = (category: string): DocumentCategory => {
+  // Check if the category is a valid DocumentCategory
   if (isValidDocumentCategory(category)) {
     return category;
   }
+  
+  // Return 'other' as a fallback
   return 'other';
+};
+
+/**
+ * Type guard to check if a string is a valid DocumentCategory
+ * @param category The string to check
+ * @returns True if the string is a valid DocumentCategory, false otherwise
+ */
+export const isValidDocumentCategory = (
+  category: string
+): category is DocumentCategory => {
+  return [
+    'invoice',
+    'receipt',
+    '3rd_party_estimate',
+    'contract',
+    'insurance',
+    'certification',
+    'photo',
+    'other'
+  ].includes(category as DocumentCategory);
+};
+
+/**
+ * Helper function to get available document categories for a specific entity type
+ * @param entityType The entity type to get categories for
+ * @returns Array of DocumentCategory objects
+ */
+export const getEntityCategories = (entityType: EntityType): DocumentCategory[] => {
+  if (entityType in entityCategoryMap) {
+    // Filter out any categories that aren't valid
+    return (entityCategoryMap[entityType] || [])
+      .filter(isValidDocumentCategory) as DocumentCategory[];
+  }
+  
+  // Return default categories if entity type is not in map
+  return ['receipt', 'invoice', 'photo', 'other'] as DocumentCategory[];
+};
+
+/**
+ * Helper function to get suggested categories based on entity type and file type
+ * @param entityType The entity type
+ * @param fileType The MIME type of the file
+ * @returns The recommended document category
+ */
+export const suggestCategory = (
+  entityType: EntityType,
+  fileType: string
+): DocumentCategory => {
+  // Image files are typically photos
+  if (fileType.startsWith('image/')) {
+    return 'photo';
+  }
+  
+  // PDF files could be any type of document, suggest based on entity
+  if (fileType === 'application/pdf') {
+    switch (entityType) {
+      case 'VENDOR':
+        return 'certification';
+      case 'SUBCONTRACTOR':
+        return 'insurance';
+      case 'ESTIMATE':
+        return '3rd_party_estimate';
+      case 'PROJECT':
+      case 'WORK_ORDER':
+        return 'contract';
+      default:
+        return 'other';
+    }
+  }
+  
+  // Default to 'other'
+  return 'other';
+};
+
+/**
+ * Helper function to get display name for a document category
+ * @param category The document category
+ * @returns User-friendly display name
+ */
+export const getCategoryDisplayName = (category: DocumentCategory): string => {
+  switch (category) {
+    case '3rd_party_estimate':
+      return 'Estimate';
+    case 'receipt':
+      return 'Receipt';
+    case 'invoice':
+      return 'Invoice';
+    case 'contract':
+      return 'Contract';
+    case 'insurance':
+      return 'Insurance';
+    case 'certification':
+      return 'Certification';
+    case 'photo':
+      return 'Photo';
+    case 'other':
+      return 'Other';
+    default:
+      return category.charAt(0).toUpperCase() + category.slice(1);
+  }
 };
