@@ -111,35 +111,26 @@ export const useRevisionPdf = (options?: UseRevisionPdfOptions) => {
   // Check if a revision already has a PDF document
   const checkRevisionPdf = async (revisionId: string) => {
     try {
-      // First check if pdf_document_id column exists using a direct query
-      // instead of the RPC function to avoid type issues
-      const { data: columnInfo, error: columnError } = await supabase
-        .from('information_schema.columns')
-        .select('column_name')
-        .eq('table_schema', 'public')
-        .eq('table_name', 'estimate_revisions')
-        .eq('column_name', 'pdf_document_id')
-        .single();
-      
-      // If the column doesn't exist or there's an error, return null
-      if (columnError || !columnInfo) {
-        console.error('Error checking for pdf_document_id column:', columnError);
+      // Check if the pdf_document_id column exists in the table
+      try {
+        // Try to query the revision with pdf_document_id directly
+        const { data, error } = await supabase
+          .from('estimate_revisions')
+          .select('pdf_document_id')
+          .eq('id', revisionId)
+          .single();
+        
+        if (error) {
+          // If there's an error about the column not existing, return null
+          console.error('Error checking revision PDF:', error);
+          return null;
+        }
+        
+        return data?.pdf_document_id || null;
+      } catch (err) {
+        console.error('Error checking for pdf_document_id:', err);
         return null;
       }
-      
-      // If the column exists, proceed with the query
-      const { data, error } = await supabase
-        .from('estimate_revisions')
-        .select('pdf_document_id')
-        .eq('id', revisionId)
-        .single();
-      
-      if (error) {
-        console.error('Error checking revision PDF:', error);
-        return null;
-      }
-      
-      return data?.pdf_document_id || null;
     } catch (error) {
       console.error('Error checking revision PDF:', error);
       return null;

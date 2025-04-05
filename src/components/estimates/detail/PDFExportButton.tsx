@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileDown, Loader2, Upload } from 'lucide-react';
 import { generateEstimatePDF, uploadRevisionPDF } from '@/utils/pdfGenerator';
@@ -110,7 +110,7 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
           toast({
             title: "PDF Generated",
             description: "PDF was downloaded but couldn't be saved to storage",
-            variant: "destructive"  // Changed from "warning" to "destructive" to match allowed variants
+            variant: "destructive"  // Changed from "warning" to "destructive"
           });
         }
       } else {
