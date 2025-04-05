@@ -33,6 +33,11 @@ export interface EstimateRevision {
   revision_by?: string;
   document_id?: string;
   
+  // Add the missing properties
+  updated_at?: string;
+  created_at?: string;
+  sent_to?: string;
+  
   // For backward compatibility with older data
   date?: string;
 }
