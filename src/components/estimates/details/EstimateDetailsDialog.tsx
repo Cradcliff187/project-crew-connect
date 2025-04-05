@@ -196,9 +196,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
             <div className="flex gap-2 ml-4">
               <PDFExportButton 
                 estimateId={estimate.id}
-                clientName={estimate.client}
-                projectName={estimate.project || ''}
-                date={estimate.date}
+                revisionId={revisions.find(rev => rev.is_current)?.id || ''}
                 contentRef={contentRef}
               />
               

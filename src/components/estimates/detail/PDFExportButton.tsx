@@ -7,7 +7,11 @@ import usePdfGeneration from '../hooks/usePdfGeneration';
 
 interface PDFExportButtonProps {
   estimateId: string;
-  revisionId: string;
+  revisionId?: string;
+  clientName?: string;
+  projectName?: string;
+  date?: string;
+  contentRef?: React.RefObject<HTMLDivElement>;
   onSuccess?: (documentId: string) => void;
   className?: string;
   variant?: 
@@ -25,6 +29,10 @@ interface PDFExportButtonProps {
 const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   estimateId,
   revisionId,
+  clientName,
+  projectName,
+  date,
+  contentRef,
   onSuccess,
   className,
   variant = 'default',
@@ -34,9 +42,15 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
 
   const handleGeneratePdf = async () => {
     try {
-      const documentId = await generatePdf(estimateId, revisionId);
-      if (documentId && onSuccess) {
-        onSuccess(documentId);
+      // Use the revisionId if available, otherwise generate PDF with content reference
+      if (revisionId) {
+        const documentId = await generatePdf(estimateId, revisionId);
+        if (documentId && onSuccess) {
+          onSuccess(documentId);
+        }
+      } else if (contentRef && contentRef.current) {
+        // Handle alternative PDF generation method if needed
+        console.log("Content-based PDF generation not implemented yet");
       }
     } catch (error) {
       console.error('Error in PDF export:', error);

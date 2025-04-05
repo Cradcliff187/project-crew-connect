@@ -7,10 +7,11 @@ export const usePdfGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   
-  const generatePdf = async (estimateId: string, revisionId: string) => {
+  const generatePdf = async (estimateId: string, revisionId?: string) => {
     setIsGenerating(true);
     try {
-      const documentId = await generateAndSavePdf(estimateId, revisionId);
+      // If revisionId is provided, use it; otherwise, just use the estimateId
+      const documentId = await generateAndSavePdf(estimateId, revisionId || '');
       
       if (documentId) {
         toast({
