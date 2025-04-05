@@ -67,8 +67,8 @@ const DocumentsPage: React.FC = () => {
     refreshRecentDocuments 
   } = useRecentDocuments();
 
-  const handleDocumentUploadSuccess = (documentId?: string) => {
-    handleUploadSuccess(documentId);
+  const handleDocumentUploadSuccess = () => {
+    handleUploadSuccess();
     refreshRecentDocuments();
   };
   
