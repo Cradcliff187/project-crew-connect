@@ -44,6 +44,7 @@ export interface Estimate {
   customername?: string;
   customer?: string;
   client?: string;
+  customerId?: string; // Added to match other interfaces
   projectid?: string;
   projectname?: string;
   project?: string;
@@ -66,4 +67,5 @@ export interface Estimate {
   versions?: number;
   current_revision?: EstimateRevision;
   revisions?: EstimateRevision[];
+  date?: string; // Added to ensure consistency with UI expectations
 }

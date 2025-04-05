@@ -5,6 +5,9 @@ import { StatusType } from '@/types/common';
 import EstimateDetailsDialog from './details/EstimateDetailsDialog';
 import { EstimateItem, EstimateRevision } from './types/estimateTypes';
 
+/**
+ * Props for the EstimateDetails component
+ */
 export interface EstimateDetailsProps {
   estimate: {
     id: string;

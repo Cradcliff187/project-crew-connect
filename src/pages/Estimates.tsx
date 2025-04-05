@@ -6,6 +6,7 @@ import EstimatesTable, { EstimateType } from '@/components/estimates/EstimatesTa
 import EstimatesHeader from '@/components/estimates/EstimatesHeader';
 import { useEstimates } from '@/components/estimates/hooks/useEstimates';
 import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
+import { StatusType } from '@/types/common';
 
 /**
  * Estimates page component for listing and managing estimates
@@ -78,8 +79,15 @@ const Estimates = () => {
       {selectedEstimate && (
         <EstimateDetails 
           estimate={{
-            ...selectedEstimate,
-            customerId: selectedEstimate.customerId // Ensure customerId is passed
+            id: selectedEstimate.id,
+            customerId: selectedEstimate.customerId,
+            client: selectedEstimate.client,
+            project: selectedEstimate.project,
+            date: selectedEstimate.date,
+            status: selectedEstimate.status as StatusType, // Cast to StatusType
+            total: selectedEstimate.amount,
+            description: selectedEstimate.description,
+            versions: selectedEstimate.versions
           }}
           items={estimateItems}
           revisions={estimateRevisions}

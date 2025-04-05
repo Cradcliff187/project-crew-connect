@@ -154,15 +154,17 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     setShareDialogOpen(true);
   };
 
+  // Fix for 'total' property not existing on EstimateItem type
   const mappedItems: EstimateItem[] = items.map(item => ({
     ...item,
-    total_price: item.total_price || item.total || 0,
+    total_price: item.total_price || 0, // Removed reference to item.total
   }));
 
+  // Fix for 'date' property not existing on EstimateRevision type
   const mappedRevisions: EstimateRevision[] = revisions.map(rev => ({
     ...rev,
     estimate_id: estimate.id,
-    revision_date: rev.revision_date || rev.date || new Date().toISOString(),
+    revision_date: rev.revision_date || new Date().toISOString(), // Removed reference to rev.date
   }));
 
   const detailsEstimate = {
