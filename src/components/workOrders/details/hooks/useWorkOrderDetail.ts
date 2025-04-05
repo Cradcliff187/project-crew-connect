@@ -1,63 +1,54 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { WorkOrder } from '@/types/workOrder';
 
-export function useWorkOrderDetail(workOrderId: string | undefined) {
-  const navigate = useNavigate();
+export const useWorkOrderDetail = (workOrderId?: string) => {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
-  const [customer, setCustomer] = useState<{ name: string; email: string; phone: string } | null>(null);
-  const [location, setLocation] = useState<{ name: string; address: string } | null>(null);
-  const [assignee, setAssignee] = useState<{ name: string } | null>(null);
+  const [customer, setCustomer] = useState<any>(null);
+  const [location, setLocation] = useState<any>(null);
+  const [assignee, setAssignee] = useState<any>(null);
+  
+  const navigate = useNavigate();
   
   const fetchWorkOrder = async () => {
-    if (!workOrderId) return;
+    if (!workOrderId) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
-      console.log('Fetching work order with ID:', workOrderId);
-      
-      // Use maybeSingle() instead of single() to handle empty results
+      // Fetch work order data
       const { data, error } = await supabase
         .from('maintenance_work_orders')
         .select('*')
         .eq('work_order_id', workOrderId)
-        .maybeSingle();
-      
+        .single();
+        
       if (error) {
-        console.error('Error details:', error);
         throw error;
       }
       
       if (!data) {
-        console.log('No work order found with ID:', workOrderId);
-        setWorkOrder(null);
-        return;
+        throw new Error('Work order not found');
       }
       
-      console.log('Work order found:', data);
-      setWorkOrder(data as WorkOrder);
+      // Cast the data properly to WorkOrder type
+      const typedWorkOrder = data as WorkOrder;
+      setWorkOrder(typedWorkOrder);
       
       // Fetch related data
-      if (data.customer_id) {
-        await fetchCustomer(data.customer_id);
-      }
+      await fetchRelatedData(typedWorkOrder);
       
-      if (data.location_id) {
-        await fetchLocation(data.location_id);
-      }
-      
-      if (data.assigned_to) {
-        await fetchAssignee(data.assigned_to);
-      }
     } catch (error: any) {
       console.error('Error fetching work order:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to load work order details.',
+        description: `Could not load work order details: ${error.message}`,
         variant: 'destructive'
       });
     } finally {
@@ -65,88 +56,67 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
     }
   };
   
-  const fetchCustomer = async (customerId: string) => {
+  const fetchRelatedData = async (workOrder: WorkOrder) => {
     try {
-      console.log('Fetching customer with ID:', customerId);
-      const { data, error } = await supabase
-        .from('customers')
-        .select('customername, contactemail, phone')
-        .eq('customerid', customerId)
-        .maybeSingle();
+      // Fetch customer if available
+      if (workOrder.customer_id) {
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('customername, contactemail, phone')
+          .eq('customerid', workOrder.customer_id)
+          .single();
+          
+        if (customerData) {
+          setCustomer({
+            name: customerData.customername,
+            email: customerData.contactemail,
+            phone: customerData.phone
+          });
+        }
+      }
       
-      if (error) throw error;
+      // Fetch location if available
+      if (workOrder.location_id) {
+        const { data: locationData } = await supabase
+          .from('site_locations')
+          .select('location_name, address, city, state, zip')
+          .eq('location_id', workOrder.location_id)
+          .single();
+          
+        if (locationData) {
+          setLocation({
+            name: locationData.location_name,
+            address: `${locationData.address}, ${locationData.city}, ${locationData.state} ${locationData.zip}`
+          });
+        }
+      }
       
-      if (data) {
-        setCustomer({
-          name: data.customername || 'Unknown Customer',
-          email: data.contactemail || '',
-          phone: data.phone || '',
-        });
+      // Fetch assignee if available
+      if (workOrder.assigned_to) {
+        const { data: employeeData } = await supabase
+          .from('employees')
+          .select('first_name, last_name')
+          .eq('employee_id', workOrder.assigned_to)
+          .single();
+          
+        if (employeeData) {
+          setAssignee({
+            name: `${employeeData.first_name} ${employeeData.last_name}`
+          });
+        }
       }
     } catch (error) {
-      console.error('Error fetching customer:', error);
+      console.error('Error fetching related data:', error);
     }
-  };
-  
-  const fetchLocation = async (locationId: string) => {
-    try {
-      console.log('Fetching location with ID:', locationId);
-      // Properly handle UUID filtering for location
-      const { data, error } = await supabase
-        .from('site_locations')
-        .select('location_name, address, city, state, zip')
-        .eq('location_id', locationId)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      if (data) {
-        const fullAddress = [
-          data.address,
-          data.city,
-          data.state,
-          data.zip
-        ].filter(Boolean).join(', ');
-        
-        setLocation({
-          name: data.location_name || 'Unknown Location',
-          address: fullAddress,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching location:', error);
-    }
-  };
-  
-  const fetchAssignee = async (employeeId: string) => {
-    try {
-      console.log('Fetching assignee with ID:', employeeId);
-      // Properly handle UUID filtering for employee
-      const { data, error } = await supabase
-        .from('employees')
-        .select('first_name, last_name')
-        .eq('employee_id', employeeId)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      if (data) {
-        setAssignee({
-          name: `${data.first_name} ${data.last_name}`,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching assignee:', error);
-    }
-  };
-  
-  const handleBackClick = () => {
-    navigate('/work-orders');
   };
   
   useEffect(() => {
     fetchWorkOrder();
   }, [workOrderId]);
+  
+  const handleBackClick = () => {
+    navigate('/work-orders');
+  };
   
   return {
     workOrder,
@@ -157,4 +127,4 @@ export function useWorkOrderDetail(workOrderId: string | undefined) {
     fetchWorkOrder,
     handleBackClick
   };
-}
+};

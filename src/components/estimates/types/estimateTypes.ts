@@ -39,7 +39,8 @@ export interface EstimateRevision {
 }
 
 export interface Estimate {
-  id: string;
+  id?: string; // ID might be named estimateid in some contexts
+  estimateid: string; // Primary ID field in the database
   customerid?: string;
   customername?: string;
   customer?: string;

@@ -1,29 +1,53 @@
 
-import { BaseDocument } from '@/components/workOrders/details/DocumentsList/types';
-import { StatusType } from '@/types/common';
-
-export interface VendorDocument extends BaseDocument {
-  // Additional fields for vendor document management
-  description?: string;
-  size?: number;
-  amount?: number;
-  expense_date?: string;
-  is_expense?: boolean;
+export interface VendorDetail {
+  vendorid: string;
+  vendorname: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  status?: string;
+  payment_terms?: string;
+  tax_id?: string;
+  notes?: string;
+  created_at?: string;
+  qbvendortype?: string;
 }
 
-// Define VendorProject type based on the return structure of get_vendor_projects function
-export interface VendorProject {
-  project_id: string;
-  project_name: string;
-  status: string;
+export interface VendorDocument {
+  document_id: string;
+  file_name: string;
+  file_type?: string;
+  category?: string;
   created_at: string;
+  url: string;
 }
 
-// Define VendorWorkOrder type based on the return structure of get_vendor_work_orders function
+export interface VendorProject {
+  projectid: string;
+  projectname: string;
+  status: string;
+  created_at?: string;
+  total_amount?: number;
+}
+
 export interface VendorWorkOrder {
   work_order_id: string;
   title: string;
   status: string;
-  materials_cost?: number;
   created_at: string;
+  progress?: number;
+  materials_cost?: number;
+}
+
+export interface VendorExpense {
+  id: string;
+  description: string;
+  amount: number;
+  expense_date: string;
+  expense_type: string;
+  entity_type: string;
+  entity_id: string;
 }
