@@ -137,15 +137,8 @@ const EstimateItemCard = memo(({
   }, [form, index]);
 
   const getEntityTypeForDocument = useCallback(() => {
-    switch (itemType) {
-      case 'vendor':
-        return 'VENDOR';
-      case 'subcontractor':
-        return 'SUBCONTRACTOR';
-      default:
-        return 'ESTIMATE';
-    }
-  }, [itemType]);
+    return 'ESTIMATE_ITEM';
+  }, []);
 
   const getEntityIdForDocument = useCallback(() => {
     const tempId = form.getValues('temp_id') || 'pending';
