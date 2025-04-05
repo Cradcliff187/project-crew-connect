@@ -9,6 +9,7 @@ import SubcontractorLocation from './components/SubcontractorLocation';
 import SpecialtiesBadges from './components/SpecialtiesBadges';
 import SubcontractorActionsMenu from './components/SubcontractorActionsMenu';
 import { useStatusMapping } from './hooks/useStatusMapping';
+import { useNavigate } from 'react-router-dom';
 
 interface SubcontractorTableRowProps {
   subcontractor: Subcontractor;
@@ -23,9 +24,12 @@ const SubcontractorTableRow = ({
 }: SubcontractorTableRowProps) => {
   const { specialties, loading } = useSpecialties();
   const { getStatusType } = useStatusMapping();
+  const navigate = useNavigate();
   
   const handleRowClick = () => {
+    // Both call the callback and navigate programmatically
     onViewDetails(subcontractor);
+    navigate(`/subcontractors/${subcontractor.subid}`);
   };
   
   return (

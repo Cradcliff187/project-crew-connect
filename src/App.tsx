@@ -24,6 +24,7 @@ import Documents from './pages/Documents';
 import Vendors from './pages/Vendors';
 import VendorDetail from './components/vendors/detail/VendorDetail';
 import Subcontractors from './pages/Subcontractors';
+import SubcontractorDetail from './components/subcontractors/SubcontractorDetail';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import RouteGuard from './components/auth/RouteGuard';
@@ -59,6 +60,7 @@ function App() {
               <Route path="vendors" element={<Vendors />} />
               <Route path="vendors/:vendorId" element={<VendorDetail />} />
               <Route path="subcontractors" element={<Subcontractors />} />
+              <Route path="subcontractors/:subcontractorId" element={<SubcontractorDetail />} />
               <Route path="settings" element={<Settings />} />
               <Route path="time-tracking" element={<TimeTracking />} />
               <Route path="active-work" element={<ActiveWork />} />

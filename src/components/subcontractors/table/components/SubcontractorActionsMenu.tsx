@@ -3,6 +3,7 @@ import React from 'react';
 import { Mail, MapPin, Phone, Edit, Trash2, Eye } from 'lucide-react';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { Subcontractor } from '../../utils/types';
+import { useNavigate } from 'react-router-dom';
 
 interface SubcontractorActionsMenuProps {
   subcontractor: Subcontractor;
@@ -15,10 +16,12 @@ const SubcontractorActionsMenu = ({
   onViewDetails,
   onEditSubcontractor
 }: SubcontractorActionsMenuProps) => {
+  const navigate = useNavigate();
   
   const handleViewClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onViewDetails(subcontractor);
+    navigate(`/subcontractors/${subcontractor.subid}`);
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
