@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableCell } from '@/components/ui/table';
@@ -14,6 +15,12 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
 
   const handleViewProject = (project: VendorProject) => {
     navigate(`/projects/${project.projectid}`);
+  };
+
+  // Format date function to handle both created_at and createdon
+  const formatDate = (date?: string) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString();
   };
 
   return (
@@ -42,7 +49,7 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
                     </Link>
                   </TableCell>
                   <TableCell>{project.status}</TableCell>
-                  <TableCell>{project.created_at}</TableCell>
+                  <TableCell>{formatDate(project.createdon)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

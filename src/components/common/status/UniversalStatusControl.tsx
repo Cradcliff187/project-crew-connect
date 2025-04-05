@@ -39,7 +39,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   entityId,
   entityType,
   currentStatus,
-  statusOptions,
+  statusOptions = [], // Provide default empty array to prevent undefined issues
   tableName,
   idField,
   onStatusChange,
@@ -57,7 +57,11 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   const [showTransitionPrompt, setShowTransitionPrompt] = useState(false);
   const [transitionNotes, setTransitionNotes] = useState('');
   
-  const filteredStatusOptions = statusOptions.filter(option => option.value !== currentStatus);
+  // Ensure statusOptions is never undefined to prevent Array.from errors
+  const safeStatusOptions = statusOptions || [];
+  
+  // Safeguard against undefined statusOptions
+  const filteredStatusOptions = safeStatusOptions.filter(option => option?.value !== currentStatus);
   
   const handleStatusChange = async (newStatus: string) => {
     setPendingStatus(newStatus);
@@ -147,12 +151,12 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   };
   
   const getStatusLabel = (status: string): string => {
-    const option = statusOptions.find(opt => opt.value === status);
+    const option = safeStatusOptions.find(opt => opt?.value === status);
     return option?.label || status;
   };
   
   const getStatusColor = (status: string): string => {
-    const option = statusOptions.find(opt => opt.value === status);
+    const option = safeStatusOptions.find(opt => opt?.value === status);
     return option?.color || 'neutral';
   };
   
@@ -228,7 +232,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
         tableName={tableName}
         idField={idField}
         currentStatus={currentStatus}
-        statusOptions={statusOptions}
+        statusOptions={safeStatusOptions}
       />
       
       <StatusTransitionPrompt
@@ -238,7 +242,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
         onCancel={cancelStatusChange}
         notes={transitionNotes}
         onNotesChange={handleNotesChange}
-        statusOptions={statusOptions}
+        statusOptions={safeStatusOptions}
         pendingStatus={pendingStatus || ''}
       />
     </div>
