@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import EmailTemplateDialog from '../detail/dialogs/EmailTemplateDialog';
 import { Badge } from "@/components/ui/badge";
 import RevisionChangeBadge from "../detail/RevisionChangeBadge";
 import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
+import RevisionPDFViewer from '../detail/RevisionPDFViewer';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +52,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   }>({ newRevisionId: '' });
   const [hasRecentChanges, setHasRecentChanges] = useState<Record<string, boolean>>({});
 
-  // Check for recent changes in revisions
   useEffect(() => {
     const checkRecentChanges = async () => {
       const changes: Record<string, boolean> = {};
@@ -108,7 +107,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
     }
     
     try {
-      // Fetch the document details
       const { data: document, error } = await supabase
         .from('documents_with_urls')
         .select('*')
@@ -160,7 +158,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
     );
   };
 
-  // Safe date formatting helper
   const safeFormatDate = (dateString?: string) => {
     if (!dateString) return "—";
     try {
@@ -306,20 +303,16 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                           )}
                           <p>Created: {safeFormatDate(revision.created_at)}</p>
                           <p>Last updated: {safeFormatDate(revision.updated_at)}</p>
-                          {hasPdf && (
-                            <div className="pt-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-7 text-xs"
-                                onClick={() => handleViewPdf(revision)}
-                              >
-                                <Eye className="h-3.5 w-3.5 mr-1.5" />
-                                View PDF
-                              </Button>
-                            </div>
-                          )}
                         </div>
+                        
+                        {hasPdf && (
+                          <div className="mt-3">
+                            <RevisionPDFViewer 
+                              revision={revision} 
+                              showCard={false}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

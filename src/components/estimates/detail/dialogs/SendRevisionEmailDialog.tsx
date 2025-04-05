@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
@@ -14,12 +13,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, Eye } from 'lucide-react';
 import { EstimateRevision } from '@/components/estimates/types/estimateTypes';
 import EstimatePrintTemplate from '../EstimatePrintTemplate';
 import useRevisionPdf from '../../hooks/useRevisionPdf';
+import RevisionPDFViewer from '../RevisionPDFViewer';
 
 interface SendRevisionEmailDialogProps {
   open: boolean;
@@ -48,6 +49,7 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   clientEmail = "",
   onSuccess
 }) => {
+  const [activeTab, setActiveTab] = useState<string>("email");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [toEmail, setToEmail] = useState(clientEmail);
@@ -61,15 +63,19 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   const [items, setItems] = useState<any[]>([]);
   const pdfContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { generateRevisionPdf, checkRevisionPdf } = useRevisionPdf({
+  
+  const { generateRevisionPdf, checkRevisionPdf, isGenerating } = useRevisionPdf({
     onSuccess: (documentId) => {
       console.log('PDF generated with document ID:', documentId);
+      if (onSuccess) {
+        onSuccess();
+      }
     }
   });
 
   useEffect(() => {
-    // Reset form when dialog opens/closes
     if (open) {
+      setActiveTab("email");
       setToEmail(clientEmail);
       setCcEmail('');
       fetchEstimateData();
@@ -90,7 +96,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       if (data && data.length > 0) {
         setTemplates(data);
         
-        // Find default template
         const defaultTemplate = data.find(t => t.is_default);
         if (defaultTemplate) {
           setSelectedTemplateId(defaultTemplate.id);
@@ -114,7 +119,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
 
   const fetchEstimateData = async () => {
     try {
-      // Fetch the estimate data
       const { data: estimateData, error: estimateError } = await supabase
         .from('estimates')
         .select('*')
@@ -124,7 +128,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       if (estimateError) throw estimateError;
       setEstimate(estimateData);
       
-      // Fetch the items for the current revision
       const { data: itemsData, error: itemsError } = await supabase
         .from('estimate_items')
         .select('*')
@@ -134,10 +137,8 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       if (itemsError) throw itemsError;
       setItems(itemsData || []);
       
-      // Check if we already have a PDF for this revision
       const pdfDocumentId = await checkRevisionPdf(revision.id);
       if (!pdfDocumentId) {
-        // We'll generate the PDF when sending the email
         setAttachPdf(true);
       }
     } catch (error) {
@@ -146,7 +147,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   };
 
   const applyTemplate = (template: EmailTemplate) => {
-    // Replace template variables
     let processedSubject = template.subject_template;
     let processedBody = template.body_template;
     
@@ -156,7 +156,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       estimateId: estimateId
     };
     
-    // Replace all variables in both subject and body
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`{{${key}}}`, 'g');
       processedSubject = processedSubject.replace(regex, value);
@@ -175,6 +174,31 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
     }
   };
 
+  const handleGeneratePdf = async () => {
+    if (!pdfContentRef.current) return;
+    
+    try {
+      const documentId = await generateRevisionPdf(
+        pdfContentRef.current,
+        estimateId,
+        revision.id,
+        revision.version,
+        clientName
+      );
+      
+      if (documentId && onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Error generating PDF",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSendEmail = async () => {
     if (!toEmail) {
       toast({
@@ -187,7 +211,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
 
     setIsSubmitting(true);
     try {
-      // If attachPdf is true and we don't already have a PDF, generate one now
       let pdfDocumentId = revision.pdf_document_id;
       
       if (attachPdf && !pdfDocumentId && pdfContentRef.current) {
@@ -200,10 +223,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         );
       }
       
-      // In a real application, we would send the email with the PDF attachment here
-      // For now, we'll simulate sending the email and just update the status
-      
-      // Update the revision to mark it as sent
       const { error: updateError } = await supabase
         .from('estimate_revisions')
         .update({
@@ -216,7 +235,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         
       if (updateError) throw updateError;
       
-      // For now, also update the estimate status
       const { error: estimateError } = await supabase
         .from('estimates')
         .update({
@@ -253,7 +271,7 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Send Revision Email</DialogTitle>
           <DialogDescription>
@@ -261,93 +279,155 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4">
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <>
-                <div>
-                  <Label htmlFor="emailTemplate">Email Template</Label>
-                  <Select
-                    value={selectedTemplateId || ''}
-                    onValueChange={handleTemplateChange}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
+          <TabsList className="mb-4 grid grid-cols-2">
+            <TabsTrigger value="email">Email Details</TabsTrigger>
+            <TabsTrigger value="preview">PDF Preview</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="email" className="flex-1 overflow-y-auto">
+            <div className="space-y-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <Label htmlFor="emailTemplate">Email Template</Label>
+                    <Select
+                      value={selectedTemplateId || ''}
+                      onValueChange={handleTemplateChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.template_name} {template.is_default && "(Default)"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="toEmail">To</Label>
+                    <Input
+                      id="toEmail"
+                      value={toEmail}
+                      onChange={e => setToEmail(e.target.value)}
+                      placeholder="client@example.com"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ccEmail">Cc (Optional)</Label>
+                    <Input
+                      id="ccEmail"
+                      value={ccEmail}
+                      onChange={e => setCcEmail(e.target.value)}
+                      placeholder="colleague@example.com"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input
+                      id="subject"
+                      value={subject}
+                      onChange={e => setSubject(e.target.value)}
+                      placeholder="Estimate Revision"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message</Label>
+                    <Textarea
+                      id="message"
+                      value={message}
+                      onChange={e => setMessage(e.target.value)}
+                      placeholder="Enter your message here"
+                      className="min-h-[150px]"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="attachPdf"
+                      checked={attachPdf}
+                      onCheckedChange={(checked) => setAttachPdf(!!checked)}
+                    />
+                    <Label htmlFor="attachPdf">
+                      {revision.pdf_document_id 
+                        ? "Attach PDF to email" 
+                        : "Generate and attach PDF to email"}
+                    </Label>
+                  </div>
+                  
+                  {revision.pdf_document_id && (
+                    <div className="mt-2 border-t pt-4">
+                      <div className="text-sm font-medium mb-2">Revision PDF</div>
+                      <RevisionPDFViewer revision={revision} showCard={false} />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="preview" className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-md">
+            {!revision.pdf_document_id && !isGenerating ? (
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <div className="text-center max-w-md">
+                  <h3 className="text-lg font-medium mb-2">No PDF Generated Yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Generate a PDF preview of this revision to see how it will look when attached to the email.
+                  </p>
+                  <Button 
+                    onClick={handleGeneratePdf} 
+                    className="bg-[#0485ea] hover:bg-[#0373ce]"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a template" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {templates.map(template => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.template_name} {template.is_default && "(Default)"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Generate PDF Preview
+                  </Button>
                 </div>
+              </div>
+            ) : isGenerating ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                  <p>Generating PDF preview...</p>
+                </div>
+              </div>
+            ) : revision.pdf_document_id ? (
+              <div className="flex flex-col h-full">
+                <div className="bg-white p-4 rounded-md shadow-sm mb-4">
+                  <h3 className="text-sm font-medium flex items-center gap-1.5 mb-3">
+                    <Eye className="h-4 w-4" />
+                    PDF Preview
+                  </h3>
+                  <RevisionPDFViewer revision={revision} showCard={false} />
+                </div>
+                <div className="flex-1 bg-white p-4 rounded-md shadow-sm overflow-y-auto">
+                  {estimate && items && (
+                    <EstimatePrintTemplate 
+                      estimate={estimate} 
+                      items={items}
+                      revision={revision}
+                    />
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </TabsContent>
+        </Tabs>
 
-                <div className="space-y-2">
-                  <Label htmlFor="toEmail">To</Label>
-                  <Input
-                    id="toEmail"
-                    value={toEmail}
-                    onChange={e => setToEmail(e.target.value)}
-                    placeholder="client@example.com"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ccEmail">Cc (Optional)</Label>
-                  <Input
-                    id="ccEmail"
-                    value={ccEmail}
-                    onChange={e => setCcEmail(e.target.value)}
-                    placeholder="colleague@example.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    value={subject}
-                    onChange={e => setSubject(e.target.value)}
-                    placeholder="Estimate Revision"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
-                  <Textarea
-                    id="message"
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    placeholder="Enter your message here"
-                    className="min-h-[200px]"
-                    required
-                  />
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="attachPdf"
-                    checked={attachPdf}
-                    onCheckedChange={(checked) => setAttachPdf(!!checked)}
-                  />
-                  <Label htmlFor="attachPdf">
-                    Attach PDF of this revision
-                  </Label>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <DialogFooter>
+        <DialogFooter className="pt-2 border-t">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -374,7 +454,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
           </Button>
         </DialogFooter>
         
-        {/* Hidden print template for PDF generation */}
         {estimate && items && (
           <div className="hidden">
             <div ref={pdfContentRef}>

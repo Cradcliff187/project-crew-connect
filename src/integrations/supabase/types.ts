@@ -975,6 +975,7 @@ export type Database = {
           id: string
           is_current: boolean | null
           notes: string | null
+          pdf_document_id: string | null
           revision_by: string | null
           revision_date: string
           sent_date: string | null
@@ -992,6 +993,7 @@ export type Database = {
           id?: string
           is_current?: boolean | null
           notes?: string | null
+          pdf_document_id?: string | null
           revision_by?: string | null
           revision_date?: string
           sent_date?: string | null
@@ -1009,6 +1011,7 @@ export type Database = {
           id?: string
           is_current?: boolean | null
           notes?: string | null
+          pdf_document_id?: string | null
           revision_by?: string | null
           revision_date?: string
           sent_date?: string | null
@@ -1018,6 +1021,20 @@ export type Database = {
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "estimate_revisions_pdf_document_id_fkey"
+            columns: ["pdf_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "estimate_revisions_pdf_document_id_fkey"
+            columns: ["pdf_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents_with_urls"
+            referencedColumns: ["document_id"]
+          },
           {
             foreignKeyName: "fk_estimate_revisions_estimateid"
             columns: ["estimate_id"]

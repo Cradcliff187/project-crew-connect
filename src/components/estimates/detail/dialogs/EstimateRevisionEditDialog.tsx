@@ -1,21 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2, FileDown } from 'lucide-react';
+import useRevisionPdf from '../../hooks/useRevisionPdf';
+import EstimatePrintTemplate from '../EstimatePrintTemplate';
 
 interface EstimateRevisionEditDialogProps {
   open: boolean;
@@ -25,240 +21,264 @@ interface EstimateRevisionEditDialogProps {
   onSuccess?: () => void;
 }
 
-interface RevisionFormData {
-  notes: string;
-  revisionDate: Date;
-  sentDate?: Date | null;
-  sentTo?: string;
-}
+const statusOptions = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'ready', label: 'Ready To Send' },
+  { value: 'sent', label: 'Sent' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+];
 
 const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
   open,
   onOpenChange,
   estimateId,
   revisionId,
-  onSuccess
+  onSuccess,
 }) => {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<RevisionFormData>({
-    notes: '',
-    revisionDate: new Date(),
-    sentDate: null,
-    sentTo: ''
-  });
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [revision, setRevision] = useState<any>(null);
+  const [status, setStatus] = useState<string>('draft');
+  const [notes, setNotes] = useState<string>('');
+  const [generatePdf, setGeneratePdf] = useState(false);
+  const [estimate, setEstimate] = useState<any>(null);
+  const [items, setItems] = useState<any[]>([]);
+  const [clientName, setClientName] = useState<string>('');
+  const pdfContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
+  const { generateRevisionPdf, isGenerating } = useRevisionPdf({
+    onSuccess: (documentId) => {
+      console.log('PDF generated with document ID:', documentId);
+    }
+  });
+  
   useEffect(() => {
     if (open && revisionId) {
-      fetchRevisionDetails();
+      loadRevisionData();
     }
   }, [open, revisionId]);
-
-  const fetchRevisionDetails = async () => {
-    setLoading(true);
+  
+  const loadRevisionData = async () => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch revision
+      const { data: revisionData, error: revisionError } = await supabase
         .from('estimate_revisions')
         .select('*')
         .eq('id', revisionId)
         .single();
-
-      if (error) throw error;
-
-      if (data) {
-        setFormData({
-          notes: data.notes || '',
-          revisionDate: data.revision_date ? new Date(data.revision_date) : new Date(),
-          sentDate: data.sent_date ? new Date(data.sent_date) : null,
-          sentTo: data.sent_to || ''
-        });
-      }
+      
+      if (revisionError) throw revisionError;
+      
+      setRevision(revisionData);
+      setStatus(revisionData.status || 'draft');
+      setNotes(revisionData.notes || '');
+      
+      // Fetch estimate info
+      const { data: estimateData, error: estimateError } = await supabase
+        .from('estimates')
+        .select('*, customername')
+        .eq('estimateid', estimateId)
+        .single();
+      
+      if (estimateError) throw estimateError;
+      setEstimate(estimateData);
+      setClientName(estimateData.customername || 'Client');
+      
+      // Fetch revision items
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('revision_id', revisionId)
+        .order('id');
+      
+      if (itemsError) throw itemsError;
+      setItems(itemsData || []);
+      
     } catch (error) {
-      console.error('Error fetching revision details:', error);
+      console.error('Error loading revision data:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load revision details',
-        variant: 'destructive'
+        description: 'Failed to load revision data',
+        variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleDateChange = (field: 'revisionDate' | 'sentDate', date?: Date | null) => {
-    if (date) {
-      setFormData(prev => ({ ...prev, [field]: date }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-
+  
+  const handleSaveRevision = async () => {
+    if (!revision) return;
+    
+    setIsSaving(true);
     try {
-      const updateData = {
-        notes: formData.notes,
-        revision_date: formData.revisionDate.toISOString(),
-        sent_date: formData.sentDate ? formData.sentDate.toISOString() : null,
-        sent_to: formData.sentTo || null,
-        updated_at: new Date().toISOString()
-      };
-
+      // Update revision record
       const { error } = await supabase
         .from('estimate_revisions')
-        .update(updateData)
+        .update({
+          status,
+          notes,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', revisionId);
-
+      
       if (error) throw error;
-
+      
+      // If current revision is marked as sent, update the estimate status too
+      if (status === 'sent') {
+        const { error: estimateError } = await supabase
+          .from('estimates')
+          .update({
+            status: 'sent',
+            sentdate: new Date().toISOString(),
+          })
+          .eq('estimateid', estimateId);
+        
+        if (estimateError) throw estimateError;
+      }
+      
+      // Generate PDF if requested
+      if (generatePdf && pdfContentRef.current) {
+        await generateRevisionPdf(
+          pdfContentRef.current,
+          estimateId,
+          revisionId,
+          revision.version,
+          clientName
+        );
+      }
+      
       toast({
-        title: 'Success',
-        description: 'Revision details updated successfully',
-        className: 'bg-[#0485ea] text-white'
+        title: 'Revision Updated',
+        description: 'The revision has been successfully updated',
+        className: 'bg-[#0485ea] text-white',
       });
-
+      
       if (onSuccess) {
         onSuccess();
       }
-
+      
       onOpenChange(false);
     } catch (error) {
-      console.error('Error updating revision:', error);
+      console.error('Error saving revision:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update revision details',
-        variant: 'destructive'
+        description: 'Failed to save revision',
+        variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
-
-  const onCancel = () => {
-    onOpenChange(false);
-  };
-
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Edit Revision Details</DialogTitle>
-          <DialogDescription>
-            Update the information for this estimate revision.
-          </DialogDescription>
+          <DialogTitle>
+            Edit Revision {revision?.version || ''}
+          </DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="revision-date">Revision Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="revision-date"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.revisionDate && "text-muted-foreground"
-                    )}
+        
+        <div className="flex-1 overflow-y-auto py-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Add notes about this revision"
+                  className="min-h-[120px]"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2 pt-4 border-t">
+                <Checkbox 
+                  id="generatePdf"
+                  checked={generatePdf}
+                  onCheckedChange={(checked) => setGeneratePdf(!!checked)}
+                />
+                <div>
+                  <Label 
+                    htmlFor="generatePdf"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.revisionDate ? format(formData.revisionDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.revisionDate}
-                    onSelect={(date) => handleDateChange('revisionDate', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+                    Generate PDF for this revision
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {revision?.pdf_document_id 
+                      ? "This will replace the existing PDF for this revision." 
+                      : "This will create a downloadable PDF version of this revision."}
+                  </p>
+                </div>
+              </div>
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="sent-date">Sent Date (optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="sent-date"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.sentDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.sentDate ? format(formData.sentDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.sentDate || undefined}
-                    onSelect={(date) => handleDateChange('sentDate', date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="sent-to">Sent To (optional)</Label>
-              <Input
-                id="sent-to"
-                name="sentTo"
-                placeholder="Enter recipient email"
-                value={formData.sentTo || ''}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                name="notes"
-                placeholder="Add any additional notes about this revision"
-                value={formData.notes}
-                onChange={handleInputChange}
-                rows={4}
+          )}
+        </div>
+        
+        <div className="pt-4 border-t flex items-center justify-between">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving || isGenerating}
+          >
+            Cancel
+          </Button>
+          
+          <Button
+            onClick={handleSaveRevision}
+            disabled={isSaving || isGenerating || isLoading}
+            className="bg-[#0485ea] hover:bg-[#0373ce]"
+          >
+            {isSaving || isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isGenerating ? 'Generating PDF...' : 'Saving...'}
+              </>
+            ) : (
+              <>
+                {generatePdf && <FileDown className="mr-2 h-4 w-4" />}
+                Save Changes
+              </>
+            )}
+          </Button>
+        </div>
+        
+        {/* Hidden print template for PDF generation */}
+        {generatePdf && estimate && items && (
+          <div className="hidden">
+            <div ref={pdfContentRef}>
+              <EstimatePrintTemplate 
+                estimate={estimate} 
+                items={items}
+                revision={revision}
               />
             </div>
           </div>
-
-          <DialogFooter className="mt-6">
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={onCancel}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+        )}
       </DialogContent>
     </Dialog>
   );
