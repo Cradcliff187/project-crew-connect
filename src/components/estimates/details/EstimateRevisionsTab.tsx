@@ -4,19 +4,28 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { EstimateRevision } from '../types/estimateTypes';
-import { ChevronDown, ChevronUp, ArrowLeftRight, Clock, Check, X, Send } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowLeftRight, Clock, Check, X, Send, FileEdit } from 'lucide-react';
 import EstimateRevisionCompareDialog from '../detail/dialogs/EstimateRevisionCompareDialog';
+import EstimateRevisionEditDialog from '../detail/dialogs/EstimateRevisionEditDialog';
 import { Badge } from "@/components/ui/badge";
 
 type EstimateRevisionsTabProps = {
   revisions: EstimateRevision[];
   formatDate: (dateString: string) => string;
   estimateId: string;
+  onRefresh?: () => void;
 };
 
-const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, formatDate, estimateId }) => {
+const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ 
+  revisions, 
+  formatDate, 
+  estimateId,
+  onRefresh
+}) => {
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
   const [compareDialogOpen, setCompareDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedRevision, setSelectedRevision] = useState<string>('');
   const [selectedRevisions, setSelectedRevisions] = useState<{
     oldRevisionId?: string;
     newRevisionId: string;
@@ -36,6 +45,11 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
       newRevisionId: revisionId
     });
     setCompareDialogOpen(true);
+  };
+
+  const handleEdit = (revisionId: string) => {
+    setSelectedRevision(revisionId);
+    setEditDialogOpen(true);
   };
 
   const getStatusIcon = (status: string) => {
@@ -83,6 +97,12 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
     }
   };
 
+  const handleEditSuccess = () => {
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
   return (
     <>
       <Card>
@@ -95,6 +115,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
             <div className="space-y-6">
               {revisions.map((revision, index) => {
                 const previousRevision = revisions[index + 1]; // Next in array is previous in time (sorted desc)
+                const canEdit = revision.is_current && ['draft', 'ready'].includes(revision.status?.toLowerCase());
                 
                 return (
                   <div key={revision.id} className="border rounded-lg p-4">
@@ -108,6 +129,19 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">{safeFormatDate(revision.revision_date)}</span>
+                        
+                        {canEdit && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleEdit(revision.id)} 
+                            className="h-8 px-2"
+                          >
+                            <FileEdit className="h-3.5 w-3.5 mr-1" />
+                            <span className="text-xs">Edit</span>
+                          </Button>
+                        )}
+                        
                         {previousRevision && (
                           <Button 
                             variant="outline" 
@@ -172,6 +206,14 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, 
         estimateId={estimateId}
         oldRevisionId={selectedRevisions.oldRevisionId}
         newRevisionId={selectedRevisions.newRevisionId}
+      />
+      
+      <EstimateRevisionEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        estimateId={estimateId}
+        revisionId={selectedRevision}
+        onSuccess={handleEditSuccess}
       />
     </>
   );

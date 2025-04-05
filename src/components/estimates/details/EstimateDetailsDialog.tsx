@@ -242,6 +242,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
                   revisions={mappedRevisions} 
                   formatDate={formatDate} 
                   estimateId={estimate.id}
+                  onRefresh={onStatusChange}
                 />
               </TabsContent>
               
