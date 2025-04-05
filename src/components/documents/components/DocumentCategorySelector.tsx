@@ -58,10 +58,11 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
   // Create a list of categories to display based on entity type
   // Filter for only valid DocumentCategory types
   const baseCategories: DocumentCategory[] = ['receipt', 'invoice'];
+  
+  // Ensure we only include valid DocumentCategory values by explicitly checking with our type guard
   const additionalCategories: DocumentCategory[] = availableCategories.length > 0 
     ? availableCategories
-        .filter(c => !baseCategories.includes(c as DocumentCategory))
-        .filter(isValidDocumentCategory)
+        .filter(isValidDocumentCategory) // This ensures only valid DocumentCategory types are included
     : ['3rd_party_estimate', 'contract', 'insurance', 'certification', 'photo', 'other'];
 
   const categoriesToShow: DocumentCategory[] = [...baseCategories, ...additionalCategories];

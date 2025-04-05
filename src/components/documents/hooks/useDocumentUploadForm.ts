@@ -47,43 +47,28 @@ export const useDocumentUploadForm = ({
 }: UseDocumentUploadFormProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
-  const [showVendorSelector, setShowVendorSelector] = useState(isReceiptUpload || !!prefillData?.vendorId);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
+  const [showVendorSelector, setShowVendorSelector] = useState(false);
   
-  // Get default category with proper type checking
-  const getDefaultCategory = (): DocumentCategory => {
-    if (prefillData?.category && isValidDocumentCategory(prefillData.category)) {
-      return prefillData.category;
-    }
-    return isReceiptUpload ? 'receipt' : 'other';
-  };
-  
-  // Create form with default values
+  // Set up form with initial values and validation
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
-      files: [] as File[],
+      files: [],
       metadata: {
-        category: getDefaultCategory(),
         entityType: entityType || 'PROJECT',
         entityId: entityId || '',
+        category: 'other',
+        tags: [],
+        isExpense: false,
         version: 1,
-        tags: prefillData?.tags || [],
-        isExpense: isReceiptUpload ? true : false,
-        vendorId: prefillData?.vendorId || '',
-        vendorType: 'vendor',
-        expenseType: 'materials',
-        notes: prefillData?.notes || ''
       }
-    },
-    mode: 'onChange'
+    }
   });
-
-  // Use our custom hooks to handle different aspects of the form
+  
+  // Use helper hooks for form functionality
   const { handleFileSelect } = useFileSelectionHandling(form, setPreviewURL);
   const { onSubmit } = useFormSubmitHandler(form, isUploading, setIsUploading, onSuccess, previewURL);
-  const formValueWatchers = useFormValueWatchers(form);
-  
   const { initializeForm, handleCancel } = useFormInitialization({
     form,
     entityType,
@@ -97,68 +82,44 @@ export const useDocumentUploadForm = ({
     allowEntityTypeSelection
   });
   
-  // Run initialization once on mount
+  // Get form values to watch
+  const {
+    watchIsExpense,
+    watchVendorType,
+    watchFiles,
+    watchCategory,
+    watchExpenseType,
+    watchEntityType,
+    needsVendorSelection
+  } = useFormValueWatchers(form);
+  
+  // Initialize form with proper values
   useEffect(() => {
     initializeForm();
-    
-    // Cleanup function for preview URL
-    return () => {
-      if (previewURL) {
-        URL.revokeObjectURL(previewURL);
-      }
-    };
-  }, [initializeForm, previewURL]);
-
-  // Auto-show vendor selector when receipt category is selected
+  }, [initializeForm]);
+  
+  // Watch for changes that would require showing the vendor selector
   useEffect(() => {
-    const category = form.watch('metadata.category');
-    const isExpense = form.watch('metadata.isExpense');
-    const currentEntityType = form.watch('metadata.entityType');
-    
-    if (
-      category === 'receipt' || 
-      category === 'invoice' || 
-      isExpense || 
-      currentEntityType === 'VENDOR' || 
-      currentEntityType === 'SUBCONTRACTOR'
-    ) {
-      setShowVendorSelector(true);
-    }
-  }, [form]);
-
-  // Notify parent about entity type changes if callback provided
+    setShowVendorSelector(needsVendorSelection());
+  }, [watchIsExpense, watchCategory, watchEntityType, needsVendorSelection]);
+  
+  // Watch for entity type changes
   useEffect(() => {
-    const currentEntityType = form.watch('metadata.entityType');
-    if (onEntityTypeChange && currentEntityType) {
-      onEntityTypeChange(currentEntityType);
+    if (onEntityTypeChange && watchEntityType !== entityType) {
+      onEntityTypeChange(watchEntityType);
     }
-  }, [form, onEntityTypeChange]);
-
-  // Handle form submission with explicit event prevention
+  }, [watchEntityType, onEntityTypeChange, entityType]);
+  
+  // Create an available categories array based on entity type
+  const availableCategories = watchEntityType ? getEntityCategories(watchEntityType) : [];
+  
+  // Handler for form submission
   const handleFormSubmit = useCallback((e: React.FormEvent) => {
-    // Always prevent default to handle submission manually
-    e.preventDefault(); 
-    
-    // Stop propagation if requested (prevents bubbling to parent forms)
-    if (preventFormPropagation) {
-      e.stopPropagation();
-    }
-    
-    // Use the form submission handler from the custom hook
-    form.handleSubmit((data) => {
-      onSubmit(data);
-    })(e);
-  }, [form, onSubmit, preventFormPropagation]);
-
-  // Get the available categories based on entity type
-  const availableCategories = useCallback(() => {
-    const currentEntityType = form.watch('metadata.entityType');
-    if (currentEntityType) {
-      return getEntityCategories(currentEntityType);
-    }
-    return [];
-  }, [form]);
-
+    e.preventDefault();
+    e.stopPropagation();
+    form.handleSubmit(onSubmit)(e);
+  }, [form, onSubmit]);
+  
   return {
     form,
     isUploading,
@@ -171,6 +132,11 @@ export const useDocumentUploadForm = ({
     handleCancel,
     handleFormSubmit,
     availableCategories,
-    ...formValueWatchers
+    watchIsExpense,
+    watchVendorType,
+    watchFiles,
+    watchCategory,
+    watchExpenseType,
+    watchEntityType
   };
 };
