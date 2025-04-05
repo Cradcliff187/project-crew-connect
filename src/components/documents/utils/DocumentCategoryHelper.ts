@@ -15,33 +15,33 @@ export const documentCategoryMap: {
     { value: 'contract', label: 'Contract' },
     { value: 'invoice', label: 'Invoice' },
     { value: 'receipt', label: 'Receipt' },
-    { value: 'estimate', label: 'Estimate' },
+    { value: '3rd_party_estimate', label: 'Estimate' },
     { value: 'insurance', label: 'Insurance' },
-    { value: 'warranty', label: 'Warranty' },
-    { value: 'permit', label: 'Permit' },
+    { value: 'certification', label: 'Warranty' },
+    { value: 'certification', label: 'Permit' },
     { value: '3rd_party_estimate', label: '3rd Party Estimate' },
     { value: 'photo', label: 'Photo' },
-    { value: 'sketch', label: 'Sketch/Drawing' },
+    { value: 'other', label: 'Sketch/Drawing' },
     { value: 'other', label: 'Other' },
   ],
   WORK_ORDER: [
     { value: 'receipt', label: 'Receipt' },
     { value: 'invoice', label: 'Invoice' },
     { value: 'photo', label: 'Photo' },
-    { value: 'estimate', label: 'Estimate' },
+    { value: '3rd_party_estimate', label: 'Estimate' },
     { value: 'other', label: 'Other' },
   ],
   ESTIMATE: [
     { value: 'contract', label: 'Contract' },
     { value: '3rd_party_estimate', label: '3rd Party Estimate' },
     { value: 'photo', label: 'Photo' },
-    { value: 'sketch', label: 'Sketch/Drawing' },
+    { value: 'other', label: 'Sketch/Drawing' },
     { value: 'other', label: 'Other' },
   ],
   CUSTOMER: [
     { value: 'contract', label: 'Contract' },
     { value: 'invoice', label: 'Invoice' },
-    { value: 'communication', label: 'Communication' },
+    { value: 'other', label: 'Communication' },
     { value: 'photo', label: 'Photo' },
     { value: 'other', label: 'Other' },
   ],
@@ -50,7 +50,7 @@ export const documentCategoryMap: {
     { value: 'invoice', label: 'Invoice' },
     { value: 'certification', label: 'Certification' },
     { value: 'insurance', label: 'Insurance' },
-    { value: 'communication', label: 'Communication' },
+    { value: 'other', label: 'Communication' },
     { value: 'other', label: 'Other' },
   ],
   SUBCONTRACTOR: [
@@ -58,7 +58,7 @@ export const documentCategoryMap: {
     { value: 'invoice', label: 'Invoice' },
     { value: 'certification', label: 'Certification' },
     { value: 'insurance', label: 'Insurance' },
-    { value: 'communication', label: 'Communication' },
+    { value: 'other', label: 'Communication' },
     { value: 'other', label: 'Other' },
   ],
   EXPENSE: [
@@ -74,28 +74,75 @@ export const documentCategoryMap: {
   EMPLOYEE: [
     { value: 'certification', label: 'Certification' },
     { value: 'contract', label: 'Contract/Agreement' },
-    { value: 'identification', label: 'Identification' },
+    { value: 'certification', label: 'Identification' },
     { value: 'other', label: 'Other' },
   ],
   ESTIMATE_ITEM: [
     { value: 'photo', label: 'Photo' },
     { value: 'other', label: 'Other' },
   ],
+  CONTACT: [
+    { value: 'contract', label: 'Contract' },
+    { value: 'certification', label: 'Certification' },
+    { value: 'other', label: 'Other' },
+  ],
+};
+
+/**
+ * Check if a string is a valid DocumentCategory
+ */
+export const isValidDocumentCategory = (category: string): category is DocumentCategory => {
+  const validCategories = ['invoice', 'receipt', '3rd_party_estimate', 'contract', 'insurance', 'certification', 'photo', 'other'];
+  return validCategories.includes(category as DocumentCategory);
+};
+
+/**
+ * Convert a string to a valid DocumentCategory
+ */
+export const toDocumentCategory = (category: string): DocumentCategory => {
+  if (isValidDocumentCategory(category)) {
+    return category;
+  }
+  
+  // Map similar categories to valid ones
+  switch (category.toLowerCase()) {
+    case 'estimate':
+      return '3rd_party_estimate';
+    case 'warranty':
+    case 'permit':
+    case 'identification':
+      return 'certification';
+    case 'sketch':
+    case 'drawing':
+    case 'communication':
+      return 'other';
+    default:
+      return 'other';
+  }
 };
 
 /**
  * Get categories for a specific entity type
  */
-export const getCategoriesForEntityType = (entityType: EntityType): { value: DocumentCategory; label: string }[] => {
-  return documentCategoryMap[entityType] || documentCategoryMap.PROJECT || [];
+export const getEntityCategories = (entityType: EntityType): DocumentCategory[] => {
+  const categories = documentCategoryMap[entityType] || documentCategoryMap.PROJECT || [];
+  return categories.map(category => category.value);
+};
+
+/**
+ * Get display name for a category
+ */
+export const getCategoryDisplayName = (category: DocumentCategory): string => {
+  if (category === '3rd_party_estimate') return 'Estimate';
+  return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ');
 };
 
 /**
  * Get default category for a specific entity type
  */
 export const getDefaultCategoryForEntityType = (entityType: EntityType): DocumentCategory => {
-  const categories = getCategoriesForEntityType(entityType);
-  return categories.length > 0 ? categories[0].value : 'other';
+  const categories = getEntityCategories(entityType);
+  return categories.length > 0 ? categories[0] : 'other';
 };
 
 /**

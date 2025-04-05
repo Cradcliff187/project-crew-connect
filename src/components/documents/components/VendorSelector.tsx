@@ -23,8 +23,8 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
   const [showAddVendor, setShowAddVendor] = useState(false);
   
   // Handle vendor type to set the right field and label
-  const getFieldName = (): "metadata.vendorId" | "metadata.subcontractorId" => {
-    return vendorType === 'subcontractor' ? "metadata.subcontractorId" : "metadata.vendorId";
+  const getFieldName = () => {
+    return vendorType === 'subcontractor' ? "metadata.vendorId" : "metadata.vendorId";
   };
   
   const getLabel = () => {

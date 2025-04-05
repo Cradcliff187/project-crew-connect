@@ -8,7 +8,11 @@ import {
   EntityType,
   DocumentCategory
 } from '../schemas/documentSchema';
-import { getEntityCategories, getCategoryDisplayName, isValidDocumentCategory } from '../utils/DocumentCategoryHelper';
+import { 
+  getEntityCategories, 
+  getCategoryDisplayName, 
+  isValidDocumentCategory 
+} from '../utils/DocumentCategoryHelper';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DocumentCategorySelectorProps {

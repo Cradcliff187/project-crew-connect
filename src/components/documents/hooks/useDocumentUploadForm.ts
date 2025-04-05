@@ -8,7 +8,11 @@ import {
   EntityType,
   DocumentCategory,
 } from '../schemas/documentSchema';
-import { isValidDocumentCategory, toDocumentCategory, getEntityCategories } from '../utils/DocumentCategoryHelper';
+import { 
+  isValidDocumentCategory, 
+  toDocumentCategory, 
+  getEntityCategories 
+} from '../utils/DocumentCategoryHelper';
 import { useFileSelectionHandling } from './useFileSelectionHandling';
 import { useFormSubmitHandler } from './useFormSubmitHandler';
 import { useFormValueWatchers } from './useFormValueWatchers';
