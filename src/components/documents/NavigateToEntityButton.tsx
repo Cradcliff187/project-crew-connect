@@ -1,55 +1,52 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
-import { Link } from 'react-router-dom';
+import { useDocumentNavigation } from './hooks/useDocumentNavigation';
 
 interface NavigateToEntityButtonProps {
   document: Document;
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
-const NavigateToEntityButton: React.FC<NavigateToEntityButtonProps> = ({ document }) => {
-  if (!document.entity_id || !document.entity_type || document.entity_id === 'detached') {
+const NavigateToEntityButton: React.FC<NavigateToEntityButtonProps> = ({
+  document,
+  variant = 'outline',
+  size = 'sm'
+}) => {
+  const { navigateToEntity, isNavigating } = useDocumentNavigation();
+
+  if (!document.entity_type || !document.entity_id) {
     return null;
   }
-  
-  let entityPath = '';
-  let entityName = '';
-  
-  switch (document.entity_type) {
-    case 'PROJECT':
-      entityPath = `/projects/${document.entity_id}`;
-      entityName = 'Project';
-      break;
-    case 'CUSTOMER':
-      entityPath = `/contacts/${document.entity_id}`;
-      entityName = 'Customer';
-      break;
-    case 'VENDOR':
-      entityPath = `/contacts/${document.entity_id}`;
-      entityName = 'Vendor';
-      break;
-    case 'SUBCONTRACTOR':
-      entityPath = `/contacts/${document.entity_id}`;
-      entityName = 'Subcontractor';
-      break;
-    case 'ESTIMATE':
-      entityPath = `/estimates/${document.entity_id}`;
-      entityName = 'Estimate';
-      break;
-    case 'WORK_ORDER':
-      entityPath = `/work-orders/${document.entity_id}`;
-      entityName = 'Work Order';
-      break;
-    default:
-      return null;
-  }
-  
+
+  const getEntityName = () => {
+    switch (document.entity_type.toUpperCase()) {
+      case 'PROJECT':
+        return 'Project';
+      case 'WORK_ORDER':
+        return 'Work Order';
+      case 'ESTIMATE':
+        return 'Estimate';
+      case 'CUSTOMER':
+        return 'Customer';
+      default:
+        return document.entity_type;
+    }
+  };
+
   return (
-    <Button variant="outline" asChild>
-      <Link to={entityPath}>
-        View {entityName}
-      </Link>
+    <Button
+      variant={variant}
+      size={size}
+      className="text-[#0485ea]"
+      onClick={() => navigateToEntity(document)}
+      disabled={isNavigating}
+    >
+      <ExternalLink className="h-4 w-4 mr-1" />
+      View {getEntityName()}
     </Button>
   );
 };

@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Document } from './schemas/documentSchema';
 import { FileText, Loader2, Upload, Download, Trash2, FilterIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -58,7 +57,6 @@ const DocumentList = ({
   const [batchMode, setBatchMode] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  // Group documents by category if showCategories is true
   const documentsByCategory = useMemo(() => {
     if (!showCategories) return null;
     
@@ -75,7 +73,6 @@ const DocumentList = ({
     return groupedDocs;
   }, [documents, showCategories]);
   
-  // Initialize expanded state for all groups
   useEffect(() => {
     if (documentsByCategory) {
       const initialState: Record<string, boolean> = {};
@@ -250,7 +247,6 @@ const DocumentList = ({
     );
   };
 
-  // Render documents grouped by category
   if (showCategories && documentsByCategory && Object.keys(documentsByCategory).length > 0) {
     return (
       <div className={`space-y-6 ${documentListAnimations.container}`}>
@@ -297,7 +293,6 @@ const DocumentList = ({
     );
   }
 
-  // Regular document grid
   return (
     <div className={`space-y-6 ${documentListAnimations.container}`}>
       <div className="flex justify-end mb-2">
