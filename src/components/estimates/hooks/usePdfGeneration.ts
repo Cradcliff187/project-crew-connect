@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 export const usePdfGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -54,69 +56,191 @@ export const usePdfGeneration = () => {
 
       if (itemsError) throw itemsError;
 
-      // Format data for PDF generation
-      const estimateData = {
-        estimateId: estimate.estimateid,
-        revisionId: revision.id,
-        customerName: estimate.customername || 'Unknown Customer',
-        projectName: estimate.projectname || 'Unnamed Project',
-        revisionNumber: revision.version,
-        estimateDate: new Date(revision.revision_date || new Date()).toLocaleDateString(),
-        items: items?.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          totalPrice: item.total_price
-        })) || [],
-        totalAmount: estimate.estimateamount || 0,
-        contingencyAmount: estimate.contingencyamount,
-        siteLocation: {
-          address: estimate.sitelocationaddress,
-          city: estimate.sitelocationcity,
-          state: estimate.sitelocationstate,
-          zip: estimate.sitelocationzip
-        },
-        notes: estimate["job description"] || '',
-        contingencyPercentage: estimate.contingency_percentage
-      };
-
-      // Call the API endpoint to generate and save the PDF
-      const response = await fetch('/api/generate-estimate-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(estimateData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate PDF');
+      // Create a PDF document
+      const doc = new jsPDF();
+      
+      // Add document title and header
+      doc.setFontSize(20);
+      doc.setTextColor(4, 133, 234); // #0485ea - brand color
+      doc.text('AKC LLC', 20, 20);
+      
+      doc.setFontSize(16);
+      doc.text(`ESTIMATE #${estimateId}`, 20, 30);
+      
+      if (revision.version > 1) {
+        doc.setFontSize(12);
+        doc.text(`Revision ${revision.version}`, 100, 30);
       }
-
-      const result = await response.json();
-      const documentId = result.documentId;
-
-      if (documentId) {
-        // Update the revision with the new PDF document ID
-        await supabase
-          .from('estimate_revisions')
-          .update({
-            pdf_document_id: documentId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', revisionId);
-
-        toast({
-          title: 'PDF Generated',
-          description: 'The PDF has been generated and saved successfully',
-          className: 'bg-[#0485ea] text-white',
+      
+      // Add estimate details
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Date: ${new Date(revision.revision_date || new Date()).toLocaleDateString()}`, 20, 40);
+      
+      // Add client info
+      doc.text('Client:', 20, 50);
+      doc.setFontSize(11);
+      doc.text(estimate.customername || 'Unknown Customer', 20, 56);
+      
+      // Add project info
+      doc.setFontSize(12);
+      doc.text('Project:', 20, 66);
+      doc.setFontSize(11);
+      doc.text(estimate.projectname || 'Unnamed Project', 20, 72);
+      
+      // Add site location if available
+      let yPosition = 82;
+      if (estimate.sitelocationaddress || estimate.sitelocationcity) {
+        doc.setFontSize(12);
+        doc.text('Location:', 20, yPosition);
+        doc.setFontSize(11);
+        
+        if (estimate.sitelocationaddress) {
+          doc.text(estimate.sitelocationaddress, 20, yPosition + 6);
+          yPosition += 6;
+        }
+        
+        const cityState = [];
+        if (estimate.sitelocationcity) cityState.push(estimate.sitelocationcity);
+        if (estimate.sitelocationstate) cityState.push(estimate.sitelocationstate);
+        if (cityState.length > 0) {
+          doc.text(cityState.join(', ') + (estimate.sitelocationzip ? ' ' + estimate.sitelocationzip : ''), 
+            20, yPosition + 6);
+          yPosition += 6;
+        }
+        
+        yPosition += 10;
+      }
+      
+      // Add description if available
+      if (estimate["job description"]) {
+        doc.setFontSize(12);
+        doc.text('Description:', 20, yPosition);
+        doc.setFontSize(11);
+        
+        const descText = doc.splitTextToSize(estimate["job description"], 170);
+        doc.text(descText, 20, yPosition + 6);
+        
+        yPosition += 6 + (descText.length * 5);
+      }
+      
+      yPosition += 10;
+      
+      // Add items table
+      const tableColumn = ["Description", "Quantity", "Unit Price", "Total"];
+      const tableRows: any[] = [];
+      
+      if (items && items.length > 0) {
+        items.forEach(item => {
+          const itemData = [
+            item.description,
+            item.quantity.toString(),
+            formatCurrency(item.unit_price),
+            formatCurrency(item.total_price)
+          ];
+          tableRows.push(itemData);
+        });
+      }
+      
+      // Add table to document
+      (doc as any).autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: yPosition,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [4, 133, 234],
+          textColor: [255, 255, 255]
+        },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 30, halign: 'right' },
+          2: { cellWidth: 40, halign: 'right' },
+          3: { cellWidth: 40, halign: 'right' }
+        }
+      });
+      
+      // Calculate table end position
+      const finalY = (doc as any).lastAutoTable.finalY + 10;
+      
+      // Add subtotal and total
+      const subtotalAmount = items?.reduce((sum, item) => sum + item.total_price, 0) || 0;
+      doc.text('Subtotal:', 140, finalY);
+      doc.text(formatCurrency(subtotalAmount), 180, finalY, { align: 'right' });
+      
+      // Add contingency if applicable
+      if (estimate.contingency_percentage && estimate.contingencyamount) {
+        doc.text(`Contingency (${estimate.contingency_percentage}%):`, 140, finalY + 7);
+        doc.text(formatCurrency(estimate.contingencyamount), 180, finalY + 7, { align: 'right' });
+      }
+      
+      // Add total
+      doc.setFontSize(12);
+      doc.setTextColor(4, 133, 234);
+      doc.text('TOTAL:', 140, finalY + 14);
+      doc.text(formatCurrency(estimate.estimateamount), 180, finalY + 14, { align: 'right' });
+      
+      // Add footer
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Thank you for your business!', 105, 280, { align: 'center' });
+      doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 285, { align: 'center' });
+      
+      // Generate the PDF blob
+      const pdfBlob = doc.output('blob');
+      
+      // Save the PDF to Supabase storage
+      const timestamp = Date.now();
+      const fileName = `${estimateId}_rev${revision.version}_${timestamp}.pdf`;
+      const filePath = `estimates/${estimateId}/${fileName}`;
+      
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('construction_documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          cacheControl: '3600'
         });
         
-        return documentId;
-      } else {
-        throw new Error('Failed to generate PDF');
-      }
+      if (uploadError) throw uploadError;
+      
+      // Create a document record
+      const { data: docData, error: docError } = await supabase
+        .from('documents')
+        .insert({
+          file_name: fileName,
+          file_type: 'application/pdf',
+          file_size: pdfBlob.size,
+          storage_path: uploadData.path,
+          entity_type: 'ESTIMATE',
+          entity_id: estimateId,
+          category: 'estimate_pdf',
+          version: revision.version,
+          is_latest_version: true,
+          notes: `PDF for estimate ${estimateId}, revision ${revision.version}`
+        })
+        .select('document_id')
+        .single();
+        
+      if (docError) throw docError;
+      
+      // Update the revision with the PDF document ID
+      await supabase
+        .from('estimate_revisions')
+        .update({
+          pdf_document_id: docData.document_id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', revisionId);
+
+      toast({
+        title: 'PDF Generated',
+        description: 'The PDF has been generated and saved successfully',
+        className: 'bg-[#0485ea] text-white',
+      });
+      
+      return docData.document_id;
     } catch (error: any) {
       console.error('PDF generation error:', error);
       toast({
@@ -149,6 +273,16 @@ export const usePdfGeneration = () => {
       console.error('Error checking revision PDF:', error);
       return null;
     }
+  };
+  
+  // Helper function to format currency
+  const formatCurrency = (value?: number): string => {
+    if (value === undefined || value === null) return '$0.00';
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'USD',
+      minimumFractionDigits: 2 
+    }).format(value);
   };
   
   return {

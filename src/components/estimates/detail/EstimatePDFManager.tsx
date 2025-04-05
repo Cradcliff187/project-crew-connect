@@ -54,6 +54,11 @@ const EstimatePDFManager: React.FC<EstimatePDFManagerProps> = ({
       }
     } catch (error) {
       console.error('Error fetching PDF document:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not load the PDF document',
+        variant: 'destructive',
+      });
       setPdfDocument(null);
     } finally {
       setIsLoading(false);
@@ -144,10 +149,7 @@ const EstimatePDFManager: React.FC<EstimatePDFManagerProps> = ({
                 revisionId={revisionId}
                 variant="outline"
                 onSuccess={handlePdfGenerated}
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Regenerate
-              </PDFExportButton>
+              />
             </>
           ) : (
             <PDFExportButton

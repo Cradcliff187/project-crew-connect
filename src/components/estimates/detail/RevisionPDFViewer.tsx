@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Download } from 'lucide-react';
+import { Eye, Download, Loader2 } from 'lucide-react';
 import { EstimateRevision } from '../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -100,26 +100,40 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
         <p className="text-xs text-muted-foreground">Version {revision.version} PDF Document</p>
       </div>
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleViewPdf}
-          disabled={isLoading || !pdfUrl}
-          className="text-xs"
-        >
-          <Eye className="h-3.5 w-3.5 mr-1" />
-          View
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownloadPdf}
-          disabled={isLoading || !pdfUrl}
-          className="text-xs bg-[#0485ea] text-white hover:bg-[#0373d1]"
-        >
-          <Download className="h-3.5 w-3.5 mr-1" />
-          Download
-        </Button>
+        {isLoading ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="text-xs"
+          >
+            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+            Loading
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewPdf}
+              disabled={!pdfUrl}
+              className="text-xs"
+            >
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              View
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPdf}
+              disabled={!pdfUrl}
+              className="text-xs bg-[#0485ea] text-white hover:bg-[#0373d1]"
+            >
+              <Download className="h-3.5 w-3.5 mr-1" />
+              Download
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
