@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 import StatusHistoryView from '@/components/common/status/StatusHistoryView';
 import ChangeOrderStatusControl from './ChangeOrderStatusControl';
 import { toast } from '@/hooks/use-toast';
+import { EntityType } from '@/hooks/useStatusHistory';
 
 interface ChangeOrderApprovalProps {
   form: UseFormReturn<ChangeOrder>;
@@ -66,7 +66,7 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
       const { data: statusDefs, error: statusError } = await supabase
         .from('status_definitions')
         .select('*')
-        .eq('entity_type', 'CHANGE_ORDER');
+        .eq('entity_type', 'CHANGE_ORDER' as EntityType);
         
       if (!statusError && statusDefs) {
         setStatusOptions(statusDefs.map(def => ({

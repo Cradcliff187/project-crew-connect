@@ -1,6 +1,6 @@
 
 import React, { useCallback } from 'react';
-import { ChangeOrderStatus } from '@/types/changeOrders';
+import { ChangeOrderStatus, ChangeOrderEntityType } from '@/types/changeOrders';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
 import UniversalStatusControl, { StatusOption } from '@/components/common/status/UniversalStatusControl';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,13 +26,19 @@ const ChangeOrderStatusControl: React.FC<ChangeOrderStatusControlProps> = ({
   const handleAfterStatusChange = useCallback(async (newStatus: string) => {
     try {
       // Get the full change order details
-      const { data: changeOrder, error } = await supabase
+      const { data: changeOrderData, error } = await supabase
         .from('change_orders')
         .select('*, items:change_order_items(*)')
         .eq('id', changeOrderId)
         .single();
       
       if (error) throw error;
+      
+      // Convert string entity_type to ChangeOrderEntityType for type safety
+      const changeOrder = {
+        ...changeOrderData,
+        entity_type: changeOrderData.entity_type as ChangeOrderEntityType
+      };
       
       // Apply impacts when status changes to APPROVED or IMPLEMENTED
       if (newStatus === 'APPROVED' || newStatus === 'IMPLEMENTED') {

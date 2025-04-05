@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { ChangeOrder, ChangeOrderStatus } from '@/types/changeOrders';
+import { ChangeOrder, ChangeOrderStatus, ChangeOrderEntityType } from '@/types/changeOrders';
 import { toast } from '@/hooks/use-toast';
 
 /**

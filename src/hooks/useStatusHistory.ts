@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR' | 'ESTIMATE';
+export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR' | 'ESTIMATE' | 'CUSTOMER' | 'TIME_ENTRY' | 'EMPLOYEE';
 
 interface StatusHistoryOptions {
   entityId: string;
@@ -48,6 +47,21 @@ const getEntityTableInfo = (entityType: EntityType) => {
       return {
         historyTable: 'estimate_status_history',
         entityIdField: 'estimateid'
+      };
+    case 'CUSTOMER':
+      return {
+        historyTable: 'customer_status_history',
+        entityIdField: 'customerid'
+      };
+    case 'TIME_ENTRY':
+      return {
+        historyTable: 'time_entry_status_history',
+        entityIdField: 'time_entry_id'
+      };
+    case 'EMPLOYEE':
+      return {
+        historyTable: 'employee_status_history',
+        entityIdField: 'employeeid'
       };
     default:
       return {
