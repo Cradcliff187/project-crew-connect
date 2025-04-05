@@ -24,7 +24,8 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
   
   // Handle vendor type to set the right field and label
   const getFieldName = () => {
-    return vendorType === 'subcontractor' ? "metadata.vendorId" : "metadata.vendorId";
+    // Always return "metadata.vendorId" as the field name since that's the expected field in the schema
+    return "metadata.vendorId" as const;
   };
   
   const getLabel = () => {

@@ -25,7 +25,6 @@ const DocumentsPage: React.FC = () => {
   const isMobile = useIsMobile();
   const [selectedEntityType, setSelectedEntityType] = useState<EntityType>('PROJECT');
   
-  // Use the custom hook for document state management with initial filters
   const { 
     documents,
     loading,
@@ -43,7 +42,6 @@ const DocumentsPage: React.FC = () => {
     sortBy: 'newest'
   });
   
-  // Use the custom hook for document actions
   const {
     selectedDocument,
     isDetailOpen,
@@ -63,37 +61,28 @@ const DocumentsPage: React.FC = () => {
     handleBatchDelete
   } = useDocumentActions(fetchDocuments);
 
-  // Use the recent documents hook
   const { 
     recentDocuments, 
     recentDocumentsLoading, 
     refreshRecentDocuments 
   } = useRecentDocuments();
 
-  // Handler for successful upload that refreshes both document lists
   const handleDocumentUploadSuccess = (documentId?: string) => {
     handleUploadSuccess(documentId);
-    // Fix: Call refreshRecentDocuments without arguments
     refreshRecentDocuments();
   };
   
-  // Handle viewing a related document
   const handleViewRelatedDocument = (document: Document) => {
-    // Close the current detail view first
     setIsDetailOpen(false);
-    
-    // Small timeout to ensure the dialog properly closes before opening new one
     setTimeout(() => {
       handleDocumentSelect(document);
     }, 100);
   };
 
-  // Handle entity type change for document uploads
   const handleEntityTypeChange = (type: EntityType) => {
     setSelectedEntityType(type);
   };
 
-  // Get the total count of documents
   const totalDocuments = documents?.length || 0;
 
   return (
@@ -117,7 +106,6 @@ const DocumentsPage: React.FC = () => {
 
         <Separator className="my-6" />
         
-        {/* Recent Documents Section */}
         <RecentDocumentsSection 
           documents={recentDocuments}
           loading={recentDocumentsLoading}
@@ -125,7 +113,6 @@ const DocumentsPage: React.FC = () => {
           showNavigationButtons
         />
         
-        {/* Unified Filter Area */}
         <DocumentFilters
           filters={filters}
           onFilterChange={handleFilterChange}
@@ -133,7 +120,6 @@ const DocumentsPage: React.FC = () => {
           activeFiltersCount={activeFiltersCount}
         />
 
-        {/* Documents Content Area */}
         <div className="space-y-4 mt-6">
           <DocumentViews 
             documents={documents}
@@ -147,7 +133,6 @@ const DocumentsPage: React.FC = () => {
           />
         </div>
 
-        {/* Document Detail Dialog */}
         <DocumentDetailView 
           document={selectedDocument}
           open={isDetailOpen}
@@ -159,7 +144,6 @@ const DocumentsPage: React.FC = () => {
           onViewRelatedDocument={handleViewRelatedDocument}
         />
 
-        {/* Delete Confirmation Dialog */}
         <DeleteConfirmation 
           open={isDeleteOpen}
           onClose={() => setIsDeleteOpen(false)}
@@ -169,7 +153,6 @@ const DocumentsPage: React.FC = () => {
           hasReferences={hasReferences}
         />
 
-        {/* Upload Dialog */}
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogContent className={isMobile ? "w-[95vw] max-w-[600px]" : "sm:max-w-[600px]"}>
             <DialogHeader>
