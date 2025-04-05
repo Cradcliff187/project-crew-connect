@@ -11,6 +11,7 @@ import ExpenseDatePicker from './ExpenseDatePicker';
 import VendorTypeSelector from './VendorTypeSelector';
 import VendorSelector from './VendorSelector';
 import NotesField from './NotesField';
+import BudgetItemSelector from './BudgetItemSelector';
 import { FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -31,6 +32,9 @@ interface MetadataFormProps {
     notes?: string;
     tags?: string[];
     category?: string;
+    budgetItemId?: string;
+    parentEntityType?: string;
+    parentEntityId?: string;
   };
   allowEntityTypeSelection?: boolean;
 }
@@ -50,6 +54,10 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   // Helper to determine if we should show expense fields
   const showExpenseFields = isReceiptUpload || watchIsExpense || 
                           watchCategory === 'receipt' || watchCategory === 'invoice';
+                          
+  // Helper to determine if we should show budget selector
+  const showBudgetSelector = (watchEntityType === 'PROJECT' || watchEntityType === 'WORK_ORDER') && 
+                           showExpenseFields;
   
   // Handle entity type changes
   const handleEntityTypeChange = (value: string) => {
@@ -88,6 +96,21 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
       form.setValue('metadata.isExpense', true);
     }
   }, [watchCategory, form]);
+
+  // Set parent entity if provided and we're uploading an expense receipt
+  useEffect(() => {
+    if (prefillData?.parentEntityType && prefillData?.parentEntityId && showExpenseFields) {
+      form.setValue('metadata.parentEntityType', prefillData.parentEntityType as EntityType);
+      form.setValue('metadata.parentEntityId', prefillData.parentEntityId);
+    }
+  }, [prefillData, form, showExpenseFields]);
+  
+  // Set budget item ID if provided
+  useEffect(() => {
+    if (prefillData?.budgetItemId && showExpenseFields) {
+      form.setValue('metadata.budgetItemId', prefillData.budgetItemId);
+    }
+  }, [prefillData, form, showExpenseFields]);
   
   return (
     <div className="space-y-4">
@@ -159,12 +182,22 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
           </div>
           
           <ExpenseTypeSelector control={control} />
+          
+          {showBudgetSelector && (
+            <BudgetItemSelector 
+              control={control} 
+              entityType={watchEntityType} 
+              entityId={form.watch('metadata.entityId')}
+              prefillBudgetItemId={prefillData?.budgetItemId}
+            />
+          )}
         </>
       )}
       
       <TagsInput
         control={control}
         name="metadata.tags"
+        prefillTags={prefillData?.tags}
       />
       
       <NotesField 

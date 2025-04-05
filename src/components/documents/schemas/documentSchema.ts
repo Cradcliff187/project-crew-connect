@@ -74,6 +74,10 @@ export const documentMetadataSchema = z.object({
   vendorId: z.string().optional(),
   vendorType: z.enum(vendorTypes).optional(),
   expenseType: z.enum(expenseTypes).optional(),
+  // Add parent entity fields for better tracking of relationships
+  parentEntityType: z.enum(entityTypes).optional(),
+  parentEntityId: z.string().optional(),
+  budgetItemId: z.string().optional(),
 });
 
 // Define the form schema with validation for document upload
@@ -120,6 +124,13 @@ export const documentSchema = z.object({
   
   // Add revision ID for tracking which revision a document belongs to
   revision_id: z.string().optional(),
+  
+  // Add budget item ID for expense tracking
+  budget_item_id: z.string().optional(),
+
+  // Add parent entity fields for better navigation
+  parent_entity_type: z.string().optional(),
+  parent_entity_id: z.string().optional(),
   
   // Add the missing fields required for the type
   is_latest_version: z.boolean().default(true),
@@ -187,4 +198,19 @@ export const getSuggestedTags = (entityType: string, category: string): string[]
   }
   
   return tags;
+};
+
+// Helper to determine if a document is related to a budget item
+export const isBudgetExpense = (document: Document): boolean => {
+  return Boolean(document.budget_item_id);
+};
+
+// Helper to determine if expense is from a work order
+export const isWorkOrderExpense = (document: Document): boolean => {
+  return document.is_expense && document.entity_type === 'WORK_ORDER';
+};
+
+// Helper to determine if expense is from a project
+export const isProjectExpense = (document: Document): boolean => {
+  return document.is_expense && document.entity_type === 'PROJECT';
 };

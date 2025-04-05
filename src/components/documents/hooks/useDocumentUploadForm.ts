@@ -1,11 +1,15 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { EntityType, DocumentCategory, documentUploadSchema, DocumentUploadFormValues } from '../schemas/documentSchema';
-import { useToast } from '@/hooks/use-toast';
-import { uploadDocument } from '@/utils/documentUploader';
-import { isValidDocumentCategory, toDocumentCategory, getEntityCategories } from '../utils/DocumentCategoryHelper';
+import { 
+  DocumentUploadFormValues, 
+  EntityType, 
+  documentUploadSchema, 
+  getEntityCategories,
+  documentCategories
+} from '../schemas/documentSchema';
+import { useFormSubmitHandler } from './useFormSubmitHandler';
 
 interface UseDocumentUploadFormProps {
   entityType?: EntityType;
@@ -19,166 +23,189 @@ interface UseDocumentUploadFormProps {
     materialName?: string;
     expenseName?: string;
     notes?: string;
-    category?: string;
     tags?: string[];
+    category?: string;
+    budgetItemId?: string;
+    parentEntityType?: string;
+    parentEntityId?: string;
   };
-  preventFormPropagation?: boolean;
   allowEntityTypeSelection?: boolean;
+  preventFormPropagation?: boolean;
   onEntityTypeChange?: (entityType: EntityType) => void;
 }
 
 export const useDocumentUploadForm = ({
-  entityType = 'PROJECT',
+  entityType,
   entityId,
   onSuccess,
   onCancel,
   isReceiptUpload = false,
   prefillData,
   allowEntityTypeSelection = false,
-  onEntityTypeChange,
+  preventFormPropagation = false,
+  onEntityTypeChange
 }: UseDocumentUploadFormProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
-  const { toast } = useToast();
+  const [availableCategories, setAvailableCategories] = useState<string[]>(
+    entityType ? getEntityCategories(entityType) : []
+  );
 
-  // Initialize the form
+  // Initialize form
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
       files: [],
       metadata: {
-        category: isReceiptUpload ? 'receipt' : 'other',
-        entityType: entityType,
+        category: isReceiptUpload ? 'receipt' : (prefillData?.category || documentCategories[0]),
+        entityType: entityType || 'PROJECT',
         entityId: entityId || '',
-        amount: prefillData?.amount,
-        expenseDate: new Date(),
-        version: 1,
-        tags: prefillData?.tags || [],
-        notes: prefillData?.notes || '',
         isExpense: isReceiptUpload,
-        vendorId: prefillData?.vendorId,
+        tags: prefillData?.tags || [],
+        version: 1
       }
     }
   });
-  
-  // Watch form values
-  const watchFiles = form.watch('files');
-  const watchCategory = form.watch('metadata.category');
+
+  // Watch form values for conditional display
   const watchIsExpense = form.watch('metadata.isExpense');
   const watchVendorType = form.watch('metadata.vendorType');
+  const watchFiles = form.watch('files');
+  const watchCategory = form.watch('metadata.category');
   const watchExpenseType = form.watch('metadata.expenseType');
   const watchEntityType = form.watch('metadata.entityType');
-  
-  // Get available categories for current entity type
-  const availableCategories = getEntityCategories(watchEntityType);
-
-  // Initialize form with prefill data or defaults
-  const initializeForm = useCallback(() => {
-    const defaultCategory = isReceiptUpload ? 'receipt' : (prefillData?.category && isValidDocumentCategory(prefillData.category) ? 
-      toDocumentCategory(prefillData.category) : 'other');
-      
-    form.reset({
-      files: [],
-      metadata: {
-        category: defaultCategory,
-        entityType: entityType,
-        entityId: entityId || '',
-        amount: prefillData?.amount,
-        expenseDate: new Date(),
-        version: 1,
-        tags: prefillData?.tags || [],
-        notes: prefillData?.notes || '',
-        isExpense: isReceiptUpload || defaultCategory === 'receipt' || defaultCategory === 'invoice',
-        vendorId: prefillData?.vendorId,
-      }
-    });
-  }, [form, entityType, entityId, isReceiptUpload, prefillData]);
-
-  // Initialize form on component mount and when dependencies change
-  useEffect(() => {
-    initializeForm();
-  }, [initializeForm]);
 
   // Handle file selection
   const handleFileSelect = useCallback((files: File[]) => {
-    if (files.length > 0) {
-      // Set preview URL for the first file if it's an image
-      if (files[0].type.startsWith('image/')) {
-        const url = URL.createObjectURL(files[0]);
-        setPreviewURL(url);
-        
-        // Cleanup the URL when component unmounts
-        return () => URL.revokeObjectURL(url);
-      } else {
-        setPreviewURL(null);
-      }
-      
-      // Update form with selected files
-      form.setValue('files', files);
+    form.setValue('files', files);
+    
+    // Create preview URL for the first file if it's an image
+    if (files.length > 0 && files[0].type.startsWith('image/')) {
+      const url = URL.createObjectURL(files[0]);
+      setPreviewURL(url);
+    } else {
+      setPreviewURL(null);
     }
   }, [form]);
 
   // Handle form submission
-  const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
-    setIsUploading(true);
-    
-    try {
-      // Upload document
-      const result = await uploadDocument(data.files[0], data.metadata);
-      
-      if (result.success) {
-        toast({
-          title: 'Document uploaded successfully',
-          description: `${data.files[0].name} has been uploaded.`,
-        });
-        
-        // Reset form and call onSuccess callback
-        form.reset();
-        setPreviewURL(null);
-        
-        if (onSuccess) {
-          onSuccess(result.documentId);
-        }
-      } else {
-        throw new Error(result.error || 'Failed to upload document');
-      }
-    } catch (error: any) {
-      console.error('Error uploading document:', error);
-      toast({
-        title: 'Upload failed',
-        description: error.message || 'Something went wrong while uploading your document.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  }, [form, toast, onSuccess]);
+  const { onSubmit } = useFormSubmitHandler(form, isUploading, setIsUploading, onSuccess, previewURL);
 
-  // Handle cancellation
-  const handleCancel = useCallback(() => {
-    // Reset form state
-    form.reset();
-    setPreviewURL(null);
+  // Initialize form with default values
+  const initializeForm = useCallback(() => {
+    if (entityType && entityId) {
+      form.setValue('metadata.entityType', entityType);
+      form.setValue('metadata.entityId', entityId);
+      
+      // Update available categories based on entity type
+      setAvailableCategories(getEntityCategories(entityType));
+
+      // Set default category for entity type
+      if (isReceiptUpload) {
+        form.setValue('metadata.category', 'receipt');
+        form.setValue('metadata.isExpense', true);
+      } else if (entityType === 'WORK_ORDER') {
+        form.setValue('metadata.category', 'receipt');
+      } else if (entityType === 'PROJECT') {
+        form.setValue('metadata.category', 'photo');
+      } else if (entityType === 'VENDOR' || entityType === 'SUBCONTRACTOR') {
+        form.setValue('metadata.category', 'certification');
+      }
+    }
     
-    // Call onCancel callback
+    // Initialize with prefill data if available
+    if (prefillData) {
+      if (prefillData.amount !== undefined) {
+        form.setValue('metadata.amount', prefillData.amount);
+      }
+      
+      if (prefillData.vendorId) {
+        form.setValue('metadata.vendorId', prefillData.vendorId);
+        setShowVendorSelector(true);
+        form.setValue('metadata.vendorType', 'vendor');
+      }
+      
+      if (prefillData.notes) {
+        form.setValue('metadata.notes', prefillData.notes);
+      }
+      
+      if (prefillData.tags && prefillData.tags.length > 0) {
+        form.setValue('metadata.tags', prefillData.tags);
+      }
+      
+      if (prefillData.category) {
+        form.setValue('metadata.category', prefillData.category);
+      }
+      
+      if (prefillData.budgetItemId) {
+        form.setValue('metadata.budgetItemId', prefillData.budgetItemId);
+      }
+      
+      if (prefillData.parentEntityType && prefillData.parentEntityId) {
+        form.setValue('metadata.parentEntityType', prefillData.parentEntityType as EntityType);
+        form.setValue('metadata.parentEntityId', prefillData.parentEntityId);
+      }
+    }
+  }, [entityType, entityId, form, isReceiptUpload, prefillData]);
+  
+  // Handle cancel button
+  const handleCancel = useCallback(() => {
+    // Cleanup any previews
+    if (previewURL) {
+      URL.revokeObjectURL(previewURL);
+    }
+    
+    // Reset form
+    form.reset();
+    
+    // Call onCancel callback if provided
     if (onCancel) {
       onCancel();
     }
-  }, [form, onCancel]);
-
-  // Handle form submission with event prevention
+  }, [form, onCancel, previewURL]);
+  
+  // Handle form submission
   const handleFormSubmit = useCallback((e: React.FormEvent) => {
-    if (e) e.preventDefault();
-    return form.handleSubmit(onSubmit)(e);
-  }, [form, onSubmit]);
-
-  // Watch for entity type changes
+    if (preventFormPropagation) {
+      e.stopPropagation();
+    }
+    
+    form.handleSubmit(onSubmit)(e);
+  }, [form, onSubmit, preventFormPropagation]);
+  
+  // Initialize the form on mount
   useEffect(() => {
-    if (onEntityTypeChange && watchEntityType && watchEntityType !== entityType) {
+    initializeForm();
+  }, [initializeForm]);
+  
+  // Notify parent component when entity type changes
+  useEffect(() => {
+    if (onEntityTypeChange && watchEntityType) {
       onEntityTypeChange(watchEntityType);
     }
-  }, [watchEntityType, entityType, onEntityTypeChange]);
+  }, [watchEntityType, onEntityTypeChange]);
+
+  // Update categories when entity type changes
+  useEffect(() => {
+    setAvailableCategories(getEntityCategories(watchEntityType));
+  }, [watchEntityType]);
+
+  // Cleanup preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewURL) {
+        URL.revokeObjectURL(previewURL);
+      }
+    };
+  }, [previewURL]);
+  
+  // Show vendor selector when watching vendor type changes
+  useEffect(() => {
+    if (watchVendorType) {
+      setShowVendorSelector(true);
+    }
+  }, [watchVendorType]);
 
   return {
     form,
@@ -200,5 +227,3 @@ export const useDocumentUploadForm = ({
     watchEntityType
   };
 };
-
-export default useDocumentUploadForm;

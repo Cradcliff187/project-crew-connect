@@ -46,18 +46,28 @@ export const useDocumentNavigation = () => {
           navigate(`/subcontractors/${document.entity_id}`);
           break;
         case 'EXPENSE':
-          // This requires special handling as expenses are typically viewed within their parent entity
-          toast({
-            title: "Navigation limited",
-            description: "Expenses are viewed within their parent entities. Navigate to the associated project or work order.",
-          });
+          // Check if the expense has a parent entity
+          if (document.parent_entity_type && document.parent_entity_id) {
+            // Navigate to the parent entity with a query parameter to highlight this expense
+            navigate(`/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=expense&expenseId=${document.entity_id}`);
+          } else {
+            toast({
+              title: "Navigation limited",
+              description: "This expense is not linked to a parent entity. Navigate to the associated project or work order.",
+            });
+          }
           break;
         case 'TIME_ENTRY':
-          // Time entries are also typically viewed within parent entities
-          toast({
-            title: "Navigation limited",
-            description: "Time entries are viewed within their parent entities.",
-          });
+          // Check if the time entry has a parent entity
+          if (document.parent_entity_type && document.parent_entity_id) {
+            // Navigate to the parent entity with a query parameter to highlight this time entry
+            navigate(`/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=timeEntry&timeEntryId=${document.entity_id}`);
+          } else {
+            toast({
+              title: "Navigation limited",
+              description: "Time entries are viewed within their parent entities.",
+            });
+          }
           break;
         default:
           toast({

@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/utils';
 import { documentCardAnimations, getDocumentCategoryColor } from '@/lib/animations';
 import { cn } from '@/lib/utils';
 import EntityInformation from './EntityInformation';
+import DocumentEntityLink from './DocumentEntityLink';
 import { useDocumentNavigation } from './hooks/useDocumentNavigation';
 
 interface DocumentPreviewCardProps {
@@ -116,6 +117,12 @@ const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
           </Badge>
         )}
         
+        {document.budget_item_id && (
+          <Badge variant="outline" className="ml-1 bg-green-50 text-green-700 border-green-200">
+            Budget Item
+          </Badge>
+        )}
+        
         {showEntityInfo && document.entity_type && document.entity_id && !document.entity_id.includes('general') && (
           <div className="mt-2 border-t pt-2">
             <EntityInformation document={document} />
@@ -160,17 +167,12 @@ const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
             )}
 
             {showNavigationButton && document.entity_type && document.entity_id && (
-              <Button
-                variant="ghost"
+              <DocumentEntityLink 
+                document={document} 
+                variant="ghost" 
                 size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigateToEntity(document);
-                }}
-                className="h-8"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
+                showEntityType={false}
+              />
             )}
           </div>
         </div>

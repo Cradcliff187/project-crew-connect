@@ -1,4 +1,3 @@
-
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { format, isToday, isYesterday, differenceInDays } from "date-fns";
@@ -73,4 +72,28 @@ export function calculateDaysUntilDue(dueDate: string | null): number | null {
   if (isNaN(due.getTime())) return null;
   
   return differenceInDays(due, today);
+}
+
+// Add this new function for entity colors
+export function getEntityColor(entityType?: string): string {
+  if (!entityType) return 'gray';
+  
+  switch (entityType.toUpperCase()) {
+    case 'PROJECT':
+      return 'blue';
+    case 'WORK_ORDER':
+      return 'green';
+    case 'ESTIMATE':
+      return 'purple';
+    case 'CUSTOMER':
+      return 'orange';
+    case 'VENDOR':
+      return 'amber';
+    case 'SUBCONTRACTOR':
+      return 'emerald';
+    case 'EXPENSE':
+      return 'red';
+    default:
+      return 'gray';
+  }
 }

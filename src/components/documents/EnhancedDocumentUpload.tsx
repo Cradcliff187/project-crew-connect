@@ -27,6 +27,9 @@ interface EnhancedDocumentUploadProps {
     notes?: string;
     category?: string;
     tags?: string[];
+    budgetItemId?: string;
+    parentEntityType?: string;
+    parentEntityId?: string;
   };
   preventFormPropagation?: boolean;
   allowEntityTypeSelection?: boolean;
