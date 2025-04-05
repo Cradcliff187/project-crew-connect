@@ -27,7 +27,14 @@ interface EstimateProps {
       quantity: number;
       unit_price: number;
       total_price: number;
+      revision_id?: string;
     }[];
+    current_revision?: {
+      id: string;
+      version: number;
+      revision_date: string;
+      pdf_document_id?: string;
+    };
   };
   onEdit?: () => void;
   onDelete?: () => void;

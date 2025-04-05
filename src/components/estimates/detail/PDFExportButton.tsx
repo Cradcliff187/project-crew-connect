@@ -39,6 +39,7 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   size = 'default'
 }) => {
   const { generatePdf, isGenerating } = usePdfGeneration();
+  const { toast } = useToast();
 
   const handleGeneratePdf = async () => {
     try {
@@ -47,13 +48,27 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
         const documentId = await generatePdf(estimateId, revisionId);
         if (documentId && onSuccess) {
           onSuccess(documentId);
+        } else if (!documentId) {
+          toast({
+            title: "Error",
+            description: "Failed to generate PDF. Please try again.",
+            variant: "destructive"
+          });
         }
       } else if (contentRef && contentRef.current) {
-        // Handle alternative PDF generation method if needed
-        console.log("Content-based PDF generation not implemented yet");
+        toast({
+          title: "Info",
+          description: "Content-based PDF generation is in development",
+          variant: "default"
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in PDF export:', error);
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred while generating the PDF",
+        variant: "destructive"
+      });
     }
   };
 

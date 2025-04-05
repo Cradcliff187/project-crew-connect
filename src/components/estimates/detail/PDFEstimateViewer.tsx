@@ -45,29 +45,41 @@ const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
         return;
       }
 
-      // Get the document details
+      // Get the document details with URL from the view
       const { data: document, error: documentError } = await supabase
-        .from('documents')
-        .select('storage_path')
+        .from('documents_with_urls')
+        .select('*')
         .eq('document_id', revision.pdf_document_id)
         .single();
 
       if (documentError) throw documentError;
 
-      if (!document || !document.storage_path) {
-        setPdfUrl(null);
-        return;
+      if (!document || !document.url) {
+        // Fallback to getting the storage path and creating a signed URL
+        const { data: docData, error: docError } = await supabase
+          .from('documents')
+          .select('storage_path')
+          .eq('document_id', revision.pdf_document_id)
+          .single();
+        
+        if (docError) throw docError;
+        
+        if (!docData.storage_path) {
+          throw new Error('Document storage path not found');
+        }
+        
+        // Get a signed URL for the document
+        const { data: signedUrlData, error: signedUrlError } = await supabase
+          .storage
+          .from('construction_documents')
+          .createSignedUrl(docData.storage_path, 3600); // 1 hour expiry
+        
+        if (signedUrlError) throw signedUrlError;
+        
+        setPdfUrl(signedUrlData.signedUrl);
+      } else {
+        setPdfUrl(document.url);
       }
-
-      // Get a signed URL for the PDF
-      const { data: signedUrlData, error: signedUrlError } = await supabase
-        .storage
-        .from('estimates')
-        .createSignedUrl(document.storage_path, 3600); // 1 hour expiry
-
-      if (signedUrlError) throw signedUrlError;
-      
-      setPdfUrl(signedUrlData.signedUrl);
     } catch (error) {
       console.error('Error fetching PDF:', error);
       toast({
@@ -98,7 +110,7 @@ const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
     }
   };
 
-  const handleDownload = () => {
+  const handleDownloadClick = () => {
     if (pdfUrl) {
       const link = document.createElement('a');
       link.href = pdfUrl;
@@ -114,8 +126,8 @@ const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
   };
 
   return (
-    <Card className="overflow-hidden">
-      <div className="bg-slate-100 p-2 flex justify-between items-center">
+    <Card className="overflow-hidden border-0 shadow-none">
+      <div className="bg-slate-100 p-2 flex justify-between items-center rounded-t-md">
         <div>
           <h3 className="text-sm font-medium">Estimate Preview</h3>
         </div>
@@ -132,7 +144,7 @@ const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
           <Button variant="ghost" size="sm" onClick={handlePrint} disabled={!pdfUrl}>
             <Printer className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleDownload} disabled={!pdfUrl}>
+          <Button variant="ghost" size="sm" onClick={handleDownloadClick} disabled={!pdfUrl}>
             <Download className="h-4 w-4" />
           </Button>
           {pdfUrl && (
