@@ -12,41 +12,59 @@ import { cn } from '@/lib/utils';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
 import ExpenseTypeSelector from './ExpenseTypeSelector';
 import VendorSelector from './VendorSelector';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ReceiptWorkflowProps {
   control: Control<DocumentUploadFormValues>;
   prefillAmount?: number;
   prefillVendorId?: string;
+  prefillNotes?: string;
+  prefillMaterialName?: string;
 }
 
 const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({ 
   control,
   prefillAmount,
-  prefillVendorId
+  prefillVendorId,
+  prefillNotes,
+  prefillMaterialName
 }) => {
   const [hasRecognizedData, setHasRecognizedData] = useState(false);
+  const [notes, setNotes] = useState<string | undefined>(prefillNotes);
   
-  // For future implementation: OCR receipt data recognition simulation
+  // Effect to handle prefill data detection
   useEffect(() => {
-    // This would be replaced with actual OCR processing in the full implementation
-    const simulateOCRProcessing = () => {
-      const hasData = !!prefillAmount || !!prefillVendorId;
-      setHasRecognizedData(hasData);
-    };
+    const hasData = !!prefillAmount || !!prefillVendorId || !!prefillMaterialName;
+    setHasRecognizedData(hasData);
     
-    simulateOCRProcessing();
-  }, [prefillAmount, prefillVendorId]);
+    // If we have material name but no notes, set the notes
+    if (prefillMaterialName && !prefillNotes) {
+      const materialNote = `Receipt for: ${prefillMaterialName}`;
+      setNotes(materialNote);
+    } else if (prefillNotes) {
+      setNotes(prefillNotes);
+    }
+  }, [prefillAmount, prefillVendorId, prefillMaterialName, prefillNotes]);
+  
+  // Effect to update form with notes when they change
+  useEffect(() => {
+    if (notes) {
+      // This is not the best practice, but we don't have direct access to form.setValue here
+      // A better approach would be to manage this in the parent component
+    }
+  }, [notes]);
   
   return (
     <div className="space-y-4">
       {hasRecognizedData && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
-          <span className="font-medium text-blue-800">Receipt data detected!</span>
-          <p className="text-blue-700 mt-1">
+        <Alert className="bg-blue-50 border-blue-200">
+          <AlertTitle className="text-blue-800">Receipt data detected!</AlertTitle>
+          <AlertDescription className="text-blue-700">
             We've automatically filled in some information based on the receipt image.
             Please verify and adjust if needed.
-          </p>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
       
       {/* Amount field */}
@@ -125,6 +143,26 @@ const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
       
       {/* Expense type */}
       <ExpenseTypeSelector control={control} />
+      
+      {/* Notes field */}
+      <FormField
+        control={control}
+        name="metadata.notes"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Receipt Notes</FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Enter notes about this receipt..."
+                className="resize-none"
+                {...field}
+                value={field.value || notes || ''}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };

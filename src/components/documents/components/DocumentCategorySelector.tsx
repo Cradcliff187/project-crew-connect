@@ -8,7 +8,8 @@ import {
   EntityType,
   DocumentCategory
 } from '../schemas/documentSchema';
-import { getEntityCategories, toDocumentCategory, isValidDocumentCategory } from '../utils/DocumentCategoryHelper';
+import { getEntityCategories, getCategoryDisplayName, isValidDocumentCategory } from '../utils/DocumentCategoryHelper';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DocumentCategorySelectorProps {
   control: Control<DocumentUploadFormValues>;
@@ -21,6 +22,8 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
   isReceiptUpload = false,
   entityType
 }) => {
+  const isMobile = useIsMobile();
+  
   // Get available categories based on entity type
   const availableCategories = entityType ? getEntityCategories(entityType) : [];
 
@@ -62,7 +65,7 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
   // Ensure we only include valid DocumentCategory values by explicitly checking with our type guard
   const additionalCategories: DocumentCategory[] = availableCategories.length > 0 
     ? availableCategories
-        .filter(isValidDocumentCategory) // This ensures only valid DocumentCategory types are included
+        .filter(isValidDocumentCategory) 
     : ['3rd_party_estimate', 'contract', 'insurance', 'certification', 'photo', 'other'];
 
   const categoriesToShow: DocumentCategory[] = [...baseCategories, ...additionalCategories];
@@ -81,13 +84,13 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
             <RadioGroup
               onValueChange={(value) => field.onChange(value as DocumentCategory)}
               defaultValue={field.value}
-              className="flex flex-wrap gap-4"
+              className={isMobile ? "grid grid-cols-2 gap-2" : "flex flex-wrap gap-4"}
             >
               {uniqueCategories.map((category) => (
                 <div key={category} className="flex items-center space-x-2">
                   <RadioGroupItem value={category} id={`${category}-doc`} />
                   <label htmlFor={`${category}-doc`} className="text-sm font-normal cursor-pointer">
-                    {category === '3rd_party_estimate' ? 'Estimate' : category.charAt(0).toUpperCase() + category.slice(1)}
+                    {getCategoryDisplayName(category)}
                   </label>
                 </div>
               ))}

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Vendor {
@@ -33,25 +33,38 @@ export const useVendorOptions = (): VendorOptionsHookResult => {
         .from('vendors')
         .select('vendorid, vendorname')
         .order('vendorname');
-        
-      if (vendorError) throw vendorError;
-      setVendorOptions(vendors || []);
-      
+
+      if (vendorError) {
+        console.error('Error fetching vendors:', vendorError);
+        throw vendorError;
+      }
+
       // Fetch subcontractors
       const { data: subcontractors, error: subError } = await supabase
         .from('subcontractors')
         .select('subid, subname')
         .order('subname');
-        
-      if (subError) throw subError;
+
+      if (subError) {
+        console.error('Error fetching subcontractors:', subError);
+        throw subError;
+      }
+
+      setVendorOptions(vendors || []);
       setSubcontractorOptions(subcontractors || []);
     } catch (error) {
-      console.error('Error fetching vendor data:', error);
+      console.error('Error fetching vendors/subcontractors:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Memoize the function to prevent unnecessary re-renders
+  const refreshVendors = useCallback(async () => {
+    await fetchData();
+  }, []);
+
+  // Fetch data on initial render
   useEffect(() => {
     fetchData();
   }, []);
@@ -60,6 +73,6 @@ export const useVendorOptions = (): VendorOptionsHookResult => {
     vendorOptions,
     subcontractorOptions,
     isLoading,
-    refreshVendors: fetchData
+    refreshVendors
   };
 };

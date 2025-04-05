@@ -112,6 +112,9 @@ export const getCategoryDisplayName = (category: DocumentCategory): string => {
     case 'other':
       return 'Other';
     default:
-      return category.charAt(0).toUpperCase() + category.slice(1);
+      // Fixed the type error by checking if category is a string before using charAt/slice
+      return typeof category === 'string' 
+        ? category.charAt(0).toUpperCase() + category.slice(1)
+        : String(category);
   }
 };
