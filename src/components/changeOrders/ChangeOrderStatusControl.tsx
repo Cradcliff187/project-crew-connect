@@ -35,9 +35,11 @@ const ChangeOrderStatusControl: React.FC<ChangeOrderStatusControlProps> = ({
       if (error) throw error;
       
       // Convert string entity_type to ChangeOrderEntityType for type safety
+      // Also convert status to ChangeOrderStatus
       const changeOrder = {
         ...changeOrderData,
-        entity_type: changeOrderData.entity_type as ChangeOrderEntityType
+        entity_type: changeOrderData.entity_type as ChangeOrderEntityType,
+        status: changeOrderData.status as ChangeOrderStatus
       };
       
       // Apply impacts when status changes to APPROVED or IMPLEMENTED

@@ -66,7 +66,7 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
       const { data: statusDefs, error: statusError } = await supabase
         .from('status_definitions')
         .select('*')
-        .eq('entity_type', 'CHANGE_ORDER' as EntityType);
+        .eq('entity_type', 'CHANGE_ORDER' as any);
         
       if (!statusError && statusDefs) {
         setStatusOptions(statusDefs.map(def => ({
