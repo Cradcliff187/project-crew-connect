@@ -106,6 +106,7 @@ const updateExpenseRelationships = async (documentId: string, metadata: any) => 
   try {
     // If we have a budget item ID, update it with this document
     if (metadata.budgetItemId) {
+      // Create expense data object with all required fields
       const expenseData = {
         entity_type: metadata.entityType,
         entity_id: metadata.entityId,
@@ -116,7 +117,11 @@ const updateExpenseRelationships = async (documentId: string, metadata: any) => 
         description: metadata.notes || `${metadata.category} document`,
         amount: metadata.amount || 0,
         budget_item_id: metadata.budgetItemId,
-        is_receipt: metadata.category === 'receipt'
+        is_receipt: metadata.category === 'receipt',
+        // Add required unit_price field
+        unit_price: metadata.amount || 0,
+        // Default quantity to 1 if not provided
+        quantity: 1
       };
         
       const { error } = await supabase
