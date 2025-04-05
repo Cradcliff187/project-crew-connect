@@ -41,15 +41,15 @@ const EstimateEmailSettings = () => {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="border rounded-md p-3">
-                    <code className="font-mono text-sm bg-slate-100 px-1 py-0.5">{{clientName}}</code>
+                    <code className="font-mono text-sm bg-slate-100 px-1 py-0.5">{'{{clientName}}'}</code>
                     <p className="text-sm mt-1">The client's name</p>
                   </div>
                   <div className="border rounded-md p-3">
-                    <code className="font-mono text-sm bg-slate-100 px-1 py-0.5">{{revisionNumber}}</code>
+                    <code className="font-mono text-sm bg-slate-100 px-1 py-0.5">{'{{revisionNumber}}'}</code>
                     <p className="text-sm mt-1">The estimate revision number</p>
                   </div>
                   <div className="border rounded-md p-3">
-                    <code className="font-mono text-sm bg-slate-100 px-1 py-0.5">{{estimateId}}</code>
+                    <code className="font-mono text-sm bg-slate-100 px-1 py-0.5">{'{{estimateId}}'}</code>
                     <p className="text-sm mt-1">The estimate ID</p>
                   </div>
                 </div>

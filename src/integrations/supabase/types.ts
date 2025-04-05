@@ -834,6 +834,42 @@ export type Database = {
           },
         ]
       }
+      estimate_email_config: {
+        Row: {
+          auto_bcc: boolean | null
+          bcc_email: string | null
+          created_at: string
+          from_email: string
+          from_name: string
+          id: string
+          reply_to: string | null
+          signature: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_bcc?: boolean | null
+          bcc_email?: string | null
+          created_at?: string
+          from_email?: string
+          from_name?: string
+          id?: string
+          reply_to?: string | null
+          signature?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_bcc?: boolean | null
+          bcc_email?: string | null
+          created_at?: string
+          from_email?: string
+          from_name?: string
+          id?: string
+          reply_to?: string | null
+          signature?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       estimate_email_settings: {
         Row: {
           body_template: string

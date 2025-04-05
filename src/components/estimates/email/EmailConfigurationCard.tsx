@@ -43,12 +43,19 @@ const EmailConfigurationCard: React.FC = () => {
         .select('*')
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error;
       }
 
       if (data) {
-        setConfig(data);
+        setConfig({
+          from_email: data.from_email,
+          from_name: data.from_name,
+          bcc_email: data.bcc_email || '',
+          auto_bcc: data.auto_bcc || false,
+          reply_to: data.reply_to || '',
+          signature: data.signature || ''
+        });
       }
     } catch (error) {
       console.error('Error loading email configuration:', error);
@@ -76,13 +83,27 @@ const EmailConfigurationCard: React.FC = () => {
         // Update
         result = await supabase
           .from('estimate_email_config')
-          .update(config)
+          .update({
+            from_email: config.from_email,
+            from_name: config.from_name,
+            bcc_email: config.bcc_email,
+            auto_bcc: config.auto_bcc,
+            reply_to: config.reply_to,
+            signature: config.signature
+          })
           .eq('id', existingConfig.id);
       } else {
         // Insert
         result = await supabase
           .from('estimate_email_config')
-          .insert(config);
+          .insert({
+            from_email: config.from_email,
+            from_name: config.from_name,
+            bcc_email: config.bcc_email,
+            auto_bcc: config.auto_bcc,
+            reply_to: config.reply_to,
+            signature: config.signature
+          });
       }
 
       if (result.error) throw result.error;

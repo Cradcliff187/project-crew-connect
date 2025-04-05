@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   BrowserRouter,
@@ -5,7 +6,7 @@ import {
   Route,
   Navigate
 } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
