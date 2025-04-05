@@ -111,13 +111,30 @@ export const useRevisionPdf = (options?: UseRevisionPdfOptions) => {
   // Check if a revision already has a PDF document
   const checkRevisionPdf = async (revisionId: string) => {
     try {
+      // First check if pdf_document_id column exists
+      const { data: columnInfo, error: columnError } = await supabase
+        .rpc('check_column_exists', { 
+          table_name: 'estimate_revisions', 
+          column_name: 'pdf_document_id' 
+        });
+      
+      // If the column doesn't exist or there's an error, return null
+      if (columnError || !columnInfo) {
+        console.error('Error checking for pdf_document_id column:', columnError);
+        return null;
+      }
+      
+      // If the column exists, proceed with the query
       const { data, error } = await supabase
         .from('estimate_revisions')
         .select('pdf_document_id')
         .eq('id', revisionId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error checking revision PDF:', error);
+        return null;
+      }
       
       return data?.pdf_document_id || null;
     } catch (error) {

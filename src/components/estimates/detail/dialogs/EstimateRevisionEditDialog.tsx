@@ -228,7 +228,7 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
                       revisionNumber={revision.version}
                       autoUpload={true}
                       onPdfGenerated={handlePdfGenerated}
-                      variant="secondary"
+                      variant="outline"  // Changed from "secondary" to "outline" as per allowed variants
                     />
                   )}
                 </div>

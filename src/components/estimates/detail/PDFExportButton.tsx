@@ -110,7 +110,7 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
           toast({
             title: "PDF Generated",
             description: "PDF was downloaded but couldn't be saved to storage",
-            variant: "warning"
+            variant: "destructive"  // Changed from "warning" to "destructive" to match allowed variants
           });
         }
       } else {
