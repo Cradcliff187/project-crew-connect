@@ -9,6 +9,9 @@ import {
 } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from './EnhancedDocumentUpload';
 import { EntityType } from './schemas/documentSchema';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { cn } from '@/lib/utils';
+import { viewerAnimations } from '@/lib/animations';
 
 interface EnhancedDocumentUploadDialogProps {
   open: boolean;
@@ -47,6 +50,8 @@ const EnhancedDocumentUploadDialog: React.FC<EnhancedDocumentUploadDialogProps> 
   preventFormPropagation = false,
   allowEntityTypeSelection = false
 }) => {
+  const isMobile = useMediaQuery('(max-width: 640px)');
+  
   const handleSuccess = (documentId?: string) => {
     if (onSuccess) {
       onSuccess(documentId);
@@ -63,7 +68,11 @@ const EnhancedDocumentUploadDialog: React.FC<EnhancedDocumentUploadDialogProps> 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className={cn(
+        isMobile ? "sm:max-w-[100%] w-full p-4" : "sm:max-w-[600px] p-6", 
+        "max-h-[90vh] overflow-auto",
+        viewerAnimations.content
+      )}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
