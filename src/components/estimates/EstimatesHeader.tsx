@@ -1,9 +1,10 @@
 
-import { useState } from 'react';
+import { Plus, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusIcon, SearchIcon } from 'lucide-react';
-import EstimateMultiStepForm from './EstimateMultiStepForm';
+import EstimateForm from './EstimateForm';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface EstimatesHeaderProps {
   searchQuery: string;
@@ -11,53 +12,47 @@ interface EstimatesHeaderProps {
   onEstimateAdded: () => void;
 }
 
-const EstimatesHeader = ({ 
-  searchQuery, 
-  setSearchQuery, 
-  onEstimateAdded 
-}: EstimatesHeaderProps) => {
-  const [openAddDialog, setOpenAddDialog] = useState(false);
-  
-  const handleClose = () => {
-    setOpenAddDialog(false);
-    onEstimateAdded(); // Refresh the estimates list
+const EstimatesHeader = ({ searchQuery, setSearchQuery, onEstimateAdded }: EstimatesHeaderProps) => {
+  const [estimateFormOpen, setEstimateFormOpen] = useState(false);
+
+  const openEstimateForm = () => {
+    setEstimateFormOpen(true);
   };
-  
+
+  const closeEstimateForm = () => {
+    setEstimateFormOpen(false);
+    onEstimateAdded();
+  };
+
   return (
-    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-      <div>
-        <h1 className="text-2xl font-bold">Estimates</h1>
-        <p className="text-muted-foreground mt-1">
-          Create and manage customer estimates
-        </p>
-      </div>
-      
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative max-w-xs">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+    <div className="flex items-center justify-between mb-6">
+      <h1 className="text-2xl font-bold tracking-tight">Estimates</h1>
+      <div className="flex items-center space-x-4">
+        <div className="relative w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
+            type="search"
             placeholder="Search estimates..."
-            className="pl-8 w-full"
+            className="pl-8"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => setOpenAddDialog(true)}
-            className="bg-[#0485ea] hover:bg-[#0373ce]"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            New Estimate
+        <Link to="/estimates/settings">
+          <Button variant="outline" size="sm">
+            <Settings className="h-4 w-4 mr-1" />
+            Email Settings
           </Button>
-        </div>
+        </Link>
+        
+        <Button onClick={openEstimateForm} className="bg-[#0485ea] hover:bg-[#0373ce]">
+          <Plus className="h-4 w-4 mr-1" />
+          New Estimate
+        </Button>
       </div>
-      
-      <EstimateMultiStepForm 
-        open={openAddDialog} 
-        onClose={handleClose} 
-      />
+
+      <EstimateForm open={estimateFormOpen} onClose={closeEstimateForm} />
     </div>
   );
 };

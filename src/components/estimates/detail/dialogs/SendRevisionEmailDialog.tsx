@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
@@ -56,6 +55,7 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   const [items, setItems] = useState<any[]>([]);
   const [templateFormOpen, setTemplateFormOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const pdfContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -74,6 +74,7 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       setToEmail(clientEmail);
       setCcEmail('');
       fetchEstimateData();
+      setEmailSent(false);
     }
   }, [open, clientEmail]);
 
@@ -164,7 +165,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         );
       }
       
-      // Record email communication in database
       const { error: communicationError } = await supabase
         .from('contact_interactions')
         .insert({
@@ -202,8 +202,10 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         
       if (estimateError) throw estimateError;
       
+      setEmailSent(true);
+      
       toast({
-        title: "Email sent successfully",
+        title: "Email Sent Successfully",
         description: `Revision ${revision.version} has been sent to ${toEmail}`,
         className: "bg-[#0485ea] text-white",
       });
@@ -212,11 +214,13 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         onSuccess();
       }
       
-      onOpenChange(false);
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 2000);
     } catch (error: any) {
       console.error("Error sending email:", error);
       toast({
-        title: "Error sending email",
+        title: "Error Sending Email",
         description: error.message || "Failed to send email. Please try again.",
         variant: "destructive",
       });
@@ -241,178 +245,198 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="mb-4 grid grid-cols-2">
-            <TabsTrigger value="email">Email Details</TabsTrigger>
-            <TabsTrigger value="preview">PDF Preview</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="email" className="flex-1 overflow-y-auto">
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <>
-                  <EmailTemplateSelector
-                    onTemplateSelect={handleTemplateSelect}
-                    onCreateClick={() => setTemplateFormOpen(true)}
-                    revision={revision}
-                    clientName={clientName}
-                  />
+        {emailSent ? (
+          <div className="py-12 text-center">
+            <div className="bg-[#0485ea]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Send className="h-10 w-10 text-[#0485ea]" />
+            </div>
+            <h3 className="text-xl font-medium mb-2">Email Sent Successfully!</h3>
+            <p className="text-muted-foreground">
+              Revision {revision.version} has been sent to {toEmail}
+            </p>
+            <Button 
+              className="mt-6"
+              onClick={() => onOpenChange(false)}
+            >
+              Close
+            </Button>
+          </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
+            <TabsList className="mb-4 grid grid-cols-2">
+              <TabsTrigger value="email">Email Details</TabsTrigger>
+              <TabsTrigger value="preview">PDF Preview</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="email" className="flex-1 overflow-y-auto">
+              <div className="space-y-4">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <>
+                    <EmailTemplateSelector
+                      onTemplateSelect={handleTemplateSelect}
+                      onCreateClick={() => setTemplateFormOpen(true)}
+                      revision={revision}
+                      clientName={clientName}
+                    />
 
-                  <div className="space-y-2">
-                    <Label htmlFor="toEmail">To</Label>
-                    <Input
-                      id="toEmail"
-                      value={toEmail}
-                      onChange={e => setToEmail(e.target.value)}
-                      placeholder="client@example.com"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="ccEmail">Cc (Optional)</Label>
-                    <Input
-                      id="ccEmail"
-                      value={ccEmail}
-                      onChange={e => setCcEmail(e.target.value)}
-                      placeholder="colleague@example.com"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input
-                      id="subject"
-                      value={subject}
-                      onChange={e => setSubject(e.target.value)}
-                      placeholder="Estimate Revision"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      value={message}
-                      onChange={e => setMessage(e.target.value)}
-                      placeholder="Enter your message here"
-                      className="min-h-[150px]"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="attachPdf"
-                      checked={attachPdf}
-                      onCheckedChange={(checked) => setAttachPdf(!!checked)}
-                    />
-                    <Label htmlFor="attachPdf">
-                      {revision.pdf_document_id 
-                        ? "Attach PDF to email" 
-                        : "Generate and attach PDF to email"}
-                    </Label>
-                  </div>
-                  
-                  {subject && message && (
-                    <div className="pt-4 border-t mt-6">
-                      <EmailTemplatePreviewCard
-                        subject={subject}
-                        body={message}
-                        recipientEmail={toEmail}
+                    <div className="space-y-2">
+                      <Label htmlFor="toEmail">To</Label>
+                      <Input
+                        id="toEmail"
+                        value={toEmail}
+                        onChange={e => setToEmail(e.target.value)}
+                        placeholder="client@example.com"
+                        required
                       />
                     </div>
-                  )}
-                  
-                  {revision.pdf_document_id && (
-                    <div className="mt-2 border-t pt-4">
-                      <div className="text-sm font-medium mb-2">Revision PDF</div>
-                      <RevisionPDFViewer revision={revision} showCard={false} />
+
+                    <div className="space-y-2">
+                      <Label htmlFor="ccEmail">Cc (Optional)</Label>
+                      <Input
+                        id="ccEmail"
+                        value={ccEmail}
+                        onChange={e => setCcEmail(e.target.value)}
+                        placeholder="colleague@example.com"
+                      />
                     </div>
-                  )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject</Label>
+                      <Input
+                        id="subject"
+                        value={subject}
+                        onChange={e => setSubject(e.target.value)}
+                        placeholder="Estimate Revision"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Message</Label>
+                      <Textarea
+                        id="message"
+                        value={message}
+                        onChange={e => setMessage(e.target.value)}
+                        placeholder="Enter your message here"
+                        className="min-h-[150px]"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="attachPdf"
+                        checked={attachPdf}
+                        onCheckedChange={(checked) => setAttachPdf(!!checked)}
+                      />
+                      <Label htmlFor="attachPdf">
+                        {revision.pdf_document_id 
+                          ? "Attach PDF to email" 
+                          : "Generate and attach PDF to email"}
+                      </Label>
+                    </div>
+                    
+                    {subject && message && (
+                      <div className="pt-4 border-t mt-6">
+                        <EmailTemplatePreviewCard
+                          subject={subject}
+                          body={message}
+                          recipientEmail={toEmail}
+                        />
+                      </div>
+                    )}
+                    
+                    {revision.pdf_document_id && (
+                      <div className="mt-2 border-t pt-4">
+                        <div className="text-sm font-medium mb-2">Revision PDF</div>
+                        <RevisionPDFViewer revision={revision} showCard={false} />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="preview" className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-md">
+              {!revision.pdf_document_id && !isGenerating ? (
+                <div className="flex flex-col items-center justify-center h-full space-y-4">
+                  <div className="text-center max-w-md">
+                    <h3 className="text-lg font-medium mb-2">No PDF Generated Yet</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Generate a PDF preview of this revision to see how it will look when attached to the email.
+                    </p>
+                    <Button 
+                      onClick={handleGeneratePdf} 
+                      className="bg-[#0485ea] hover:bg-[#0373ce]"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Generate PDF Preview
+                    </Button>
+                  </div>
+                </div>
+              ) : isGenerating ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                    <p>Generating PDF preview...</p>
+                  </div>
+                </div>
+              ) : revision.pdf_document_id ? (
+                <div className="flex flex-col h-full">
+                  <div className="bg-white p-4 rounded-md shadow-sm mb-4">
+                    <h3 className="text-sm font-medium flex items-center gap-1.5 mb-3">
+                      <Eye className="h-4 w-4" />
+                      PDF Preview
+                    </h3>
+                    <RevisionPDFViewer revision={revision} showCard={false} />
+                  </div>
+                  <div className="flex-1 bg-white p-4 rounded-md shadow-sm overflow-y-auto">
+                    {estimate && items && (
+                      <EstimatePrintTemplate 
+                        estimate={estimate} 
+                        items={items}
+                        revision={revision}
+                      />
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {!emailSent && (
+          <DialogFooter className="pt-2 border-t">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendEmail}
+              disabled={isSubmitting || isLoading || !toEmail}
+              className="bg-[#0485ea] hover:bg-[#0373ce]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Email
                 </>
               )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="preview" className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-md">
-            {!revision.pdf_document_id && !isGenerating ? (
-              <div className="flex flex-col items-center justify-center h-full space-y-4">
-                <div className="text-center max-w-md">
-                  <h3 className="text-lg font-medium mb-2">No PDF Generated Yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Generate a PDF preview of this revision to see how it will look when attached to the email.
-                  </p>
-                  <Button 
-                    onClick={handleGeneratePdf} 
-                    className="bg-[#0485ea] hover:bg-[#0373ce]"
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Generate PDF Preview
-                  </Button>
-                </div>
-              </div>
-            ) : isGenerating ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                  <p>Generating PDF preview...</p>
-                </div>
-              </div>
-            ) : revision.pdf_document_id ? (
-              <div className="flex flex-col h-full">
-                <div className="bg-white p-4 rounded-md shadow-sm mb-4">
-                  <h3 className="text-sm font-medium flex items-center gap-1.5 mb-3">
-                    <Eye className="h-4 w-4" />
-                    PDF Preview
-                  </h3>
-                  <RevisionPDFViewer revision={revision} showCard={false} />
-                </div>
-                <div className="flex-1 bg-white p-4 rounded-md shadow-sm overflow-y-auto">
-                  {estimate && items && (
-                    <EstimatePrintTemplate 
-                      estimate={estimate} 
-                      items={items}
-                      revision={revision}
-                    />
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </TabsContent>
-        </Tabs>
-
-        <DialogFooter className="pt-2 border-t">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSendEmail}
-            disabled={isSubmitting || isLoading || !toEmail}
-            className="bg-[#0485ea] hover:bg-[#0373ce]"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Send Email
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+            </Button>
+          </DialogFooter>
+        )}
         
         {estimate && items && (
           <div className="hidden">
