@@ -10,7 +10,6 @@ interface CreateLocationToggleProps {
 }
 
 const CreateLocationToggle = ({ form }: CreateLocationToggleProps) => {
-  // Use proper field name from schema
   return (
     <FormField
       control={form.control}
@@ -22,7 +21,7 @@ const CreateLocationToggle = ({ form }: CreateLocationToggleProps) => {
           </div>
           <FormControl>
             <Switch
-              checked={field.value === true}
+              checked={field.value}
               onCheckedChange={field.onChange}
             />
           </FormControl>

@@ -1,3 +1,4 @@
+
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderFormValues } from './WorkOrderFormSchema';
 import { format } from 'date-fns';
@@ -11,19 +12,16 @@ const WorkOrderSummary = ({ form }: WorkOrderSummaryProps) => {
   const values = form.getValues();
   
   const formatDate = (date: Date | undefined) => {
-    return date ? format(date, 'MMMM d, yyyy') : 'Not specified';
+    if (!date) return 'Not specified';
+    return format(new Date(date), 'MMMM d, yyyy');
   };
 
-  const formattedScheduledDate = values.scheduled_date
-    ? formatDate(values.scheduled_date instanceof Date 
-      ? values.scheduled_date.toISOString() 
-      : values.scheduled_date.toString())
+  const formattedScheduledDate = values.scheduled_date 
+    ? formatDate(values.scheduled_date) 
     : 'Not set';
 
-  const formattedDueDate = values.due_by_date
-    ? formatDate(values.due_by_date instanceof Date 
-      ? values.due_by_date.toISOString() 
-      : values.due_by_date.toString())
+  const formattedDueDate = values.due_by_date 
+    ? formatDate(values.due_by_date) 
     : 'Not set';
 
   const locationDetails = values.useCustomAddress

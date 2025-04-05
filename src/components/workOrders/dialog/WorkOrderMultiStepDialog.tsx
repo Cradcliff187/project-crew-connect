@@ -1,7 +1,10 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form';
-import useWorkOrderForm from './useWorkOrderForm';
+import { useWorkOrderForm } from './hooks/useWorkOrderForm';
+import { useWorkOrderData } from './hooks/useWorkOrderData';
+import { useWorkOrderSubmit } from './hooks/useWorkOrderSubmit';
 import { 
   WorkOrderStepTabs, 
   WorkOrderDialogFooter, 
@@ -23,17 +26,13 @@ const WorkOrderMultiStepDialog = ({
 }: WorkOrderDialogProps) => {
   const [currentStep, setCurrentStep] = useState(WORK_ORDER_STEPS[0].id);
   
-  const { 
-    form, 
-    resetForm,
-    useCustomAddress,
-    dataLoaded,
-    isLoading,
-    onSubmit
-  } = useWorkOrderForm({ 
-    onOpenChange, 
+  // Use separate hooks for form, data, and submission
+  const { form, resetForm, useCustomAddress } = useWorkOrderForm();
+  const { formData, dataLoaded, isLoading } = useWorkOrderData(open);
+  const { isSubmitting, onSubmit } = useWorkOrderSubmit({
     onWorkOrderAdded,
-    isOpen: open
+    onOpenChange,
+    resetForm
   });
 
   const handleFormSubmit = form.handleSubmit(async (values) => {

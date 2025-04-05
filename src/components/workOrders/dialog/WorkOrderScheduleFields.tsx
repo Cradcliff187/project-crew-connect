@@ -1,13 +1,14 @@
+
 import { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { CalendarClock, CaretSortIcon } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { UseFormReturn } from 'react-hook-form';
-import { WorkOrderFormValues } from '../WorkOrderFormSchema';
+import { WorkOrderFormValues } from './WorkOrderFormSchema';
 
 interface WorkOrderScheduleFieldsProps {
   form: UseFormReturn<WorkOrderFormValues>;
@@ -16,9 +17,9 @@ interface WorkOrderScheduleFieldsProps {
 const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
   const [date, setDate] = useState<Date>();
   
-  // Replace string with array of dates for matcher
-  const disablePastDates = {
-    before: new Date()
+  // Define a disable dates function to prevent past dates
+  const isDateDisabled = (date: Date) => {
+    return date < new Date(new Date().setHours(0, 0, 0, 0));
   };
   
   return (
@@ -53,7 +54,7 @@ const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    disabled={disablePastDates}
+                    disabled={isDateDisabled}
                     initialFocus
                   />
                 </PopoverContent>
@@ -93,7 +94,7 @@ const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    disabled={disablePastDates}
+                    disabled={isDateDisabled}
                     initialFocus
                   />
                 </PopoverContent>

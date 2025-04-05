@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -18,26 +19,18 @@ const useVendorAssociatedData = () => {
     console.log('Fetching associated data for vendor:', vendorId);
     
     try {
-      // Fetch associated projects using the get_vendor_projects database function
+      // Fetch associated projects using a direct query rather than the vendor_projects view
       const { data: projectsData, error: projectsError } = await supabase
-        .from('vendor_projects')
-        .select('*')
+        .from('projects')
+        .select('projectid, projectname, status, createdon, total_budget')
         .eq('vendor_id', vendorId);
       
       if (projectsError) {
         console.error('Error fetching vendor projects:', projectsError);
         setProjects([]);
       } else {
-        // Map the project_id and project_name to projectid and projectname
-        const mappedProjects = projectsData?.map(p => ({
-          projectid: p.project_id,
-          projectname: p.project_name,
-          status: p.status,
-          created_at: p.created_at,
-          total_amount: p.total_amount
-        })) || [];
-        
-        setProjects(mappedProjects);
+        console.log('Successfully fetched projects:', projectsData);
+        setProjects(projectsData || []);
       }
       
       // Fetch associated work orders using the get_vendor_work_orders database function
