@@ -23,8 +23,8 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
   const [showAddVendor, setShowAddVendor] = useState(false);
   
   // Handle vendor type to set the right field and label
-  const getFieldName = () => {
-    return vendorType === 'subcontractor' ? 'metadata.subcontractorId' : 'metadata.vendorId';
+  const getFieldName = (): "metadata.vendorId" | "metadata.subcontractorId" => {
+    return vendorType === 'subcontractor' ? "metadata.subcontractorId" : "metadata.vendorId";
   };
   
   const getLabel = () => {
@@ -55,9 +55,9 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
             <div className="flex-1">
               <FormControl>
                 <VendorSearchCombobox
-                  value={field.value}
-                  onChange={field.onChange}
-                  vendorType={vendorType as 'vendor' | 'subcontractor'}
+                  value={field.value as string}
+                  onChange={(value: string) => field.onChange(value)}
+                  vendorType={vendorType}
                   onAddNewClick={onAddVendorClick}
                 />
               </FormControl>

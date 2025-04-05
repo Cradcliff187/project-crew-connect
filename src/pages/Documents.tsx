@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import PageTransition from "@/components/layout/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -74,7 +73,7 @@ const DocumentsPage: React.FC = () => {
   // Handler for successful upload that refreshes both document lists
   const handleDocumentUploadSuccess = (documentId?: string) => {
     handleUploadSuccess(documentId);
-    // Fixed: Call refreshRecentDocuments without arguments
+    // Fix: Call refreshRecentDocuments without arguments
     refreshRecentDocuments();
   };
   
@@ -98,6 +97,7 @@ const DocumentsPage: React.FC = () => {
   const totalDocuments = documents?.length || 0;
 
   return (
+    
     <PageTransition>
       <div className="flex flex-col min-h-full">
         <PageHeader

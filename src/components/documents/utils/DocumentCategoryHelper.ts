@@ -1,120 +1,137 @@
 
-import { DocumentCategory, EntityType, entityCategoryMap } from '../schemas/documentSchema';
+import { DocumentCategory, EntityType } from "../schemas/documentSchema";
 
 /**
- * Helper function to convert a string to a valid DocumentCategory type
- * @param category The string to convert
- * @returns The string as a DocumentCategory if valid, otherwise 'other'
+ * Map of document categories by entity type with display names
  */
-export const toDocumentCategory = (category: string): DocumentCategory => {
-  // Check if the category is a valid DocumentCategory
-  if (isValidDocumentCategory(category)) {
-    return category;
-  }
-  
-  // Return 'other' as a fallback
-  return 'other';
+export const documentCategoryMap: {
+  [key in EntityType]?: { 
+    value: DocumentCategory; 
+    label: string;
+    description?: string;
+  }[]
+} = {
+  PROJECT: [
+    { value: 'contract', label: 'Contract' },
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'receipt', label: 'Receipt' },
+    { value: 'estimate', label: 'Estimate' },
+    { value: 'insurance', label: 'Insurance' },
+    { value: 'warranty', label: 'Warranty' },
+    { value: 'permit', label: 'Permit' },
+    { value: '3rd_party_estimate', label: '3rd Party Estimate' },
+    { value: 'photo', label: 'Photo' },
+    { value: 'sketch', label: 'Sketch/Drawing' },
+    { value: 'other', label: 'Other' },
+  ],
+  WORK_ORDER: [
+    { value: 'receipt', label: 'Receipt' },
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'photo', label: 'Photo' },
+    { value: 'estimate', label: 'Estimate' },
+    { value: 'other', label: 'Other' },
+  ],
+  ESTIMATE: [
+    { value: 'contract', label: 'Contract' },
+    { value: '3rd_party_estimate', label: '3rd Party Estimate' },
+    { value: 'photo', label: 'Photo' },
+    { value: 'sketch', label: 'Sketch/Drawing' },
+    { value: 'other', label: 'Other' },
+  ],
+  CUSTOMER: [
+    { value: 'contract', label: 'Contract' },
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'communication', label: 'Communication' },
+    { value: 'photo', label: 'Photo' },
+    { value: 'other', label: 'Other' },
+  ],
+  VENDOR: [
+    { value: 'contract', label: 'Contract' },
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'certification', label: 'Certification' },
+    { value: 'insurance', label: 'Insurance' },
+    { value: 'communication', label: 'Communication' },
+    { value: 'other', label: 'Other' },
+  ],
+  SUBCONTRACTOR: [
+    { value: 'contract', label: 'Contract' },
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'certification', label: 'Certification' },
+    { value: 'insurance', label: 'Insurance' },
+    { value: 'communication', label: 'Communication' },
+    { value: 'other', label: 'Other' },
+  ],
+  EXPENSE: [
+    { value: 'receipt', label: 'Receipt' },
+    { value: 'invoice', label: 'Invoice' },
+    { value: 'other', label: 'Other' },
+  ],
+  TIME_ENTRY: [
+    { value: 'receipt', label: 'Receipt' },
+    { value: 'photo', label: 'Photo' },
+    { value: 'other', label: 'Other' },
+  ],
+  EMPLOYEE: [
+    { value: 'certification', label: 'Certification' },
+    { value: 'contract', label: 'Contract/Agreement' },
+    { value: 'identification', label: 'Identification' },
+    { value: 'other', label: 'Other' },
+  ],
+  ESTIMATE_ITEM: [
+    { value: 'photo', label: 'Photo' },
+    { value: 'other', label: 'Other' },
+  ],
 };
 
 /**
- * Type guard to check if a string is a valid DocumentCategory
- * @param category The string to check
- * @returns True if the string is a valid DocumentCategory, false otherwise
+ * Get categories for a specific entity type
  */
-export const isValidDocumentCategory = (
-  category: string
-): category is DocumentCategory => {
-  return [
-    'invoice',
-    'receipt',
-    '3rd_party_estimate',
-    'contract',
-    'insurance',
-    'certification',
-    'photo',
-    'other'
-  ].includes(category as DocumentCategory);
+export const getCategoriesForEntityType = (entityType: EntityType): { value: DocumentCategory; label: string }[] => {
+  return documentCategoryMap[entityType] || documentCategoryMap.PROJECT || [];
 };
 
 /**
- * Helper function to get available document categories for a specific entity type
- * @param entityType The entity type to get categories for
- * @returns Array of DocumentCategory objects
+ * Get default category for a specific entity type
  */
-export const getEntityCategories = (entityType: EntityType): DocumentCategory[] => {
-  if (entityType in entityCategoryMap) {
-    // Filter out any categories that aren't valid
-    return (entityCategoryMap[entityType] || [])
-      .filter(isValidDocumentCategory) as DocumentCategory[];
-  }
-  
-  // Return default categories if entity type is not in map
-  return ['receipt', 'invoice', 'photo', 'other'] as DocumentCategory[];
+export const getDefaultCategoryForEntityType = (entityType: EntityType): DocumentCategory => {
+  const categories = getCategoriesForEntityType(entityType);
+  return categories.length > 0 ? categories[0].value : 'other';
 };
 
 /**
- * Helper function to get suggested categories based on entity type and file type
- * @param entityType The entity type
- * @param fileType The MIME type of the file
- * @returns The recommended document category
+ * Format the entity type for display
  */
-export const suggestCategory = (
-  entityType: EntityType,
-  fileType: string
-): DocumentCategory => {
-  // Image files are typically photos
-  if (fileType.startsWith('image/')) {
-    return 'photo';
-  }
+export const formatEntityTypeForDisplay = (entityType: EntityType | string): string => {
+  if (!entityType) return '';
   
-  // PDF files could be any type of document, suggest based on entity
-  if (fileType === 'application/pdf') {
-    switch (entityType) {
-      case 'VENDOR':
-        return 'certification';
-      case 'SUBCONTRACTOR':
-        return 'insurance';
-      case 'ESTIMATE':
-        return '3rd_party_estimate';
-      case 'PROJECT':
-      case 'WORK_ORDER':
-        return 'contract';
-      default:
-        return 'other';
-    }
-  }
-  
-  // Default to 'other'
-  return 'other';
-};
-
-/**
- * Helper function to get display name for a document category
- * @param category The document category
- * @returns User-friendly display name
- */
-export const getCategoryDisplayName = (category: DocumentCategory): string => {
-  switch (category) {
-    case '3rd_party_estimate':
-      return 'Estimate';
-    case 'receipt':
-      return 'Receipt';
-    case 'invoice':
-      return 'Invoice';
-    case 'contract':
-      return 'Contract';
-    case 'insurance':
-      return 'Insurance';
-    case 'certification':
-      return 'Certification';
-    case 'photo':
-      return 'Photo';
-    case 'other':
-      return 'Other';
+  // Handle special cases
+  switch (entityType) {
+    case 'WORK_ORDER':
+      return 'Work Order';
+    case 'TIME_ENTRY':
+      return 'Time Entry';
+    case 'ESTIMATE_ITEM':
+      return 'Estimate Item';
     default:
-      // Fixed the type error by checking if category is a string before using charAt/slice
-      return typeof category === 'string' 
-        ? category.charAt(0).toUpperCase() + category.slice(1)
-        : String(category);
+      // Convert SNAKE_CASE to Title Case
+      return entityType
+        .toString()
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
   }
+};
+
+/**
+ * Check if entity type requires a vendor selection
+ */
+export const entityNeedsVendor = (entityType: EntityType): boolean => {
+  return ['EXPENSE', 'WORK_ORDER'].includes(entityType);
+};
+
+/**
+ * Check if entity type can support expense documents
+ */
+export const entitySupportsExpenses = (entityType: EntityType): boolean => {
+  return ['PROJECT', 'WORK_ORDER', 'EXPENSE'].includes(entityType);
 };
