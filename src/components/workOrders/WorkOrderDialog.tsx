@@ -1,2 +1,3 @@
 
-export { default } from './dialog/WorkOrderDialog';
+import WorkOrderDialog from './dialog/WorkOrderDialog';
+export default WorkOrderDialog;

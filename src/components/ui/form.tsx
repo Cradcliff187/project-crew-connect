@@ -45,18 +45,26 @@ const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
   
-  // Try to get the form context, but use fallback if not available
+  // Use a try-catch block to safely get form context
   let formContext;
   try {
     formContext = useFormContext();
   } catch (error) {
+    // If useFormContext throws, use our fallback implementation
+    console.warn("Form context not available, using fallback implementation");
+    formContext = useFormFallback();
+  }
+  
+  // Safety check for formContext
+  if (!formContext) {
+    console.warn("Form context is null or undefined, using fallback");
     formContext = useFormFallback();
   }
   
   const { getFieldState, formState } = formContext;
   
-  // Only proceed with getFieldState if we have a valid fieldContext
-  const fieldState = fieldContext?.name ? 
+  // Only proceed with getFieldState if we have a valid fieldContext and getFieldState is a function
+  const fieldState = fieldContext?.name && typeof getFieldState === 'function' ? 
     getFieldState(fieldContext.name, formState) : 
     { invalid: false, isDirty: false, isTouched: false, error: undefined };
 

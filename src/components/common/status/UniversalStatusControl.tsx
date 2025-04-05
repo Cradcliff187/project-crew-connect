@@ -57,12 +57,12 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   const [showTransitionPrompt, setShowTransitionPrompt] = useState(false);
   const [transitionNotes, setTransitionNotes] = useState('');
   
-  // Ensure statusOptions is never undefined to prevent Array.from errors
+  // Ensure statusOptions is never undefined and is always an array
   const safeStatusOptions = Array.isArray(statusOptions) ? statusOptions : [];
   
   // Filter out any undefined options and the current status
   const filteredStatusOptions = safeStatusOptions
-    .filter(option => option && option.value !== currentStatus);
+    .filter(option => option && typeof option === 'object' && option.value !== currentStatus);
   
   const handleStatusChange = async (newStatus: string) => {
     setPendingStatus(newStatus);
@@ -71,6 +71,14 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   
   const confirmStatusChange = async () => {
     if (!pendingStatus) return;
+    if (!entityId) {
+      toast({
+        title: 'Error',
+        description: 'Entity ID is required to update status',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setLoading(true);
     try {
@@ -124,7 +132,9 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
         description: `Status changed to ${pendingStatus}`,
       });
       
-      onStatusChange();
+      if (typeof onStatusChange === 'function') {
+        onStatusChange();
+      }
     } catch (error: any) {
       console.error('Error updating status:', error);
       toast({
@@ -152,14 +162,21 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   };
   
   const getStatusLabel = (status: string): string => {
+    if (!status) return 'Unknown';
     const option = safeStatusOptions.find(opt => opt?.value === status);
     return option?.label || status;
   };
   
   const getStatusColor = (status: string): string => {
+    if (!status) return 'neutral';
     const option = safeStatusOptions.find(opt => opt?.value === status);
     return option?.color || 'neutral';
   };
+  
+  // If no entity ID is provided, don't render the control
+  if (!entityId) {
+    return null;
+  }
   
   return (
     <div className={`flex items-center ${className}`}>
@@ -178,7 +195,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
             role="combobox"
             aria-expanded={open}
             className="w-[150px] justify-between ml-2"
-            disabled={loading}
+            disabled={loading || filteredStatusOptions.length === 0}
           >
             {getStatusLabel(currentStatus)}
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

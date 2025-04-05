@@ -22,33 +22,61 @@ export interface StatusHistoryViewProps {
 
 const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
   history,
-  statusOptions,
+  statusOptions = [], // Default to empty array if undefined
   currentStatus,
   showEmpty = true
 }) => {
-  if (history.length === 0 && !showEmpty) {
+  // Safeguard against undefined or null history
+  const safeHistory = Array.isArray(history) ? history : [];
+  
+  if (safeHistory.length === 0 && !showEmpty) {
     return null;
   }
 
   const getStatusLabel = (status: string): string => {
+    if (!status) return 'Unknown';
+    // Safely check statusOptions is an array and has elements
+    if (!Array.isArray(statusOptions) || statusOptions.length === 0) {
+      return status;
+    }
+    
     const option = statusOptions.find(opt => 
-      opt.value?.toLowerCase() === status?.toLowerCase()
+      opt?.value?.toLowerCase() === status?.toLowerCase()
     );
     return option?.label || status;
   };
 
   // Helper function to get the time period in readable format
   const getTimePeriod = (dateString: string): string => {
+    if (!dateString) return 'Unknown time';
+    
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
     } catch (error) {
+      console.error('Error formatting date:', error);
       return 'Unknown time';
     }
   };
 
+  // Helper to safely parse JSON notes
+  const getNotesText = (notesData: any): string | undefined => {
+    if (!notesData) return undefined;
+    
+    if (typeof notesData === 'string') {
+      try {
+        const parsed = JSON.parse(notesData);
+        return parsed.notes || notesData;
+      } catch (e) {
+        return notesData;
+      }
+    }
+    
+    return notesData.notes || JSON.stringify(notesData);
+  };
+
   return (
     <div className="space-y-4">
-      {history.length === 0 ? (
+      {safeHistory.length === 0 ? (
         <Card>
           <CardContent className="p-4 text-center text-muted-foreground">
             No status history available.
@@ -56,7 +84,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
         </Card>
       ) : (
         <div className="space-y-2">
-          {history.map((entry, index) => (
+          {safeHistory.map((entry, index) => (
             <div key={index} className="flex items-start gap-2 p-3 rounded-md border bg-card">
               <div className="mt-0.5">
                 <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -85,7 +113,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
                 {entry.notes && (
                   <div className="mt-1 text-sm">
                     <p className="text-muted-foreground font-medium">Notes:</p>
-                    <p className="mt-1 text-foreground">{entry.notes}</p>
+                    <p className="mt-1 text-foreground">{getNotesText(entry.notes)}</p>
                   </div>
                 )}
               </div>

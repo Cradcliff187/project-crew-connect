@@ -8,9 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ChangeOrder, ChangeOrderStatus } from '@/types/changeOrders';
 import { Loader2 } from 'lucide-react';
-import UniversalStatusControl, { StatusOption } from '@/components/common/status/UniversalStatusControl';
-import { useStatusOptions } from '@/hooks/useStatusOptions';
 import StatusHistoryView from '@/components/common/status/StatusHistoryView';
+import ChangeOrderStatusControl from './ChangeOrderStatusControl';
+import { toast } from '@/hooks/use-toast';
 
 interface ChangeOrderApprovalProps {
   form: UseFormReturn<ChangeOrder>;
@@ -18,18 +18,43 @@ interface ChangeOrderApprovalProps {
   onUpdated: () => void;
 }
 
-const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderApprovalProps) => {
+const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({ 
+  form, 
+  changeOrderId, 
+  onUpdated 
+}) => {
   const [notes, setNotes] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const currentStatus = form.watch('status') as ChangeOrderStatus;
-  const { statusOptions } = useStatusOptions('CHANGE_ORDER', currentStatus);
+  const { statusOptions } = form.getValues ? { statusOptions: [] } : { statusOptions: [] };
   
   useEffect(() => {
     if (changeOrderId) {
       fetchHistory();
+      fetchApprovalNotes();
     }
   }, [changeOrderId]);
+
+  const fetchApprovalNotes = async () => {
+    if (!changeOrderId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('change_orders')
+        .select('approval_notes')
+        .eq('id', changeOrderId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data && data.approval_notes) {
+        setNotes(data.approval_notes);
+      }
+    } catch (error) {
+      console.error('Error fetching approval notes:', error);
+    }
+  };
 
   const fetchHistory = async () => {
     if (!changeOrderId) return;
@@ -50,7 +75,7 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
         previous_status: item.previousstatus,
         changed_date: item.timestamp,
         changed_by: item.useremail,
-        notes: item.detailsjson
+        notes: item.detailsjson ? JSON.parse(item.detailsjson).notes : undefined
       })) || [];
       
       setHistory(formattedHistory);
@@ -65,7 +90,14 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
   };
 
   const handleSaveNotes = async () => {
-    if (!changeOrderId) return;
+    if (!changeOrderId) {
+      toast({
+        title: "Error",
+        description: "Change order ID not found",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsSavingNotes(true);
     try {
@@ -76,10 +108,17 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
       
       if (error) throw error;
       
-      // Optionally, show a success message
-      console.log('Notes saved successfully');
+      toast({
+        title: "Notes saved",
+        description: "Approval notes updated successfully"
+      });
     } catch (error: any) {
       console.error('Error saving notes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save notes: " + error.message,
+        variant: "destructive"
+      });
     } finally {
       setIsSavingNotes(false);
     }
@@ -131,27 +170,21 @@ const ChangeOrderApproval = ({ form, changeOrderId, onUpdated }: ChangeOrderAppr
         <CardContent>
           <StatusHistoryView 
             history={history} 
-            statusOptions={statusOptions}
+            statusOptions={statusOptions || []}
             currentStatus={currentStatus}
           />
         </CardContent>
       </Card>
       
-      <div className="flex justify-end mt-4">
-        <UniversalStatusControl
-          entityId={changeOrderId || ''}
-          entityType="CHANGE_ORDER"
-          currentStatus={currentStatus}
-          statusOptions={statusOptions}
-          tableName="change_orders"
-          idField="id"
-          onStatusChange={handleStatusChange}
-          recordHistory={true}
-          size="md"
-          showStatusBadge={true}
-          className=""
-        />
-      </div>
+      {changeOrderId && (
+        <div className="flex justify-end mt-4">
+          <ChangeOrderStatusControl
+            changeOrderId={changeOrderId}
+            currentStatus={currentStatus}
+            onStatusChange={handleStatusChange}
+          />
+        </div>
+      )}
     </div>
   );
 };
