@@ -19,13 +19,17 @@ import EstimateDetailPage from './pages/EstimateDetailPage';
 import WorkOrders from './pages/WorkOrders';
 import WorkOrderDetail from './components/workOrders/details/WorkOrderDetail';
 import Contacts from './pages/Contacts';
+import ContactDetailPage from './components/contacts/ContactDetailPage';
 import Documents from './pages/Documents';
 import Vendors from './pages/Vendors';
+import VendorDetail from './components/vendors/detail/VendorDetail';
 import Subcontractors from './pages/Subcontractors';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import RouteGuard from './components/auth/RouteGuard';
 import EstimateEmailSettings from './pages/EstimateEmailSettings';
+import TimeTracking from './pages/TimeTracking';
+import ActiveWork from './pages/ActiveWork';
 
 const queryClient = new QueryClient();
 
@@ -50,10 +54,14 @@ function App() {
               <Route path="work-orders" element={<WorkOrders />} />
               <Route path="work-orders/:workOrderId" element={<WorkOrderDetail />} />
               <Route path="contacts" element={<Contacts />} />
+              <Route path="contacts/:id" element={<ContactDetailPage />} />
               <Route path="documents" element={<Documents />} />
               <Route path="vendors" element={<Vendors />} />
+              <Route path="vendors/:vendorId" element={<VendorDetail />} />
               <Route path="subcontractors" element={<Subcontractors />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="time-tracking" element={<TimeTracking />} />
+              <Route path="active-work" element={<ActiveWork />} />
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -12,6 +12,7 @@ interface ShareDocumentParams {
   includeBranding?: boolean;
   entityId?: string;
   entityType?: string;
+  estimateId?: string;
 }
 
 export function useDocumentSharing() {
@@ -25,7 +26,8 @@ export function useDocumentSharing() {
     includeEntityLink = false,
     includeBranding = true,
     entityId,
-    entityType
+    entityType,
+    estimateId
   }: ShareDocumentParams): Promise<boolean> => {
     setIsSending(true);
     
