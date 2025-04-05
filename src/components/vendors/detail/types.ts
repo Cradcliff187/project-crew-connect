@@ -34,8 +34,8 @@ export interface VendorProject {
   projectid: string;
   projectname: string;
   status: string;
-  created_at?: string;
-  total_amount?: number;
+  createdon?: string;
+  total_budget?: number;
 }
 
 export interface VendorWorkOrder {
