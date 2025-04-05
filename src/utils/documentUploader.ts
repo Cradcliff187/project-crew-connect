@@ -28,7 +28,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     }
     
     // Prepare document data for database
-    const documentData = {
+    const docData = {
       file_name: file.name,
       file_type: file.type,
       file_size: file.size,
@@ -48,9 +48,9 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     };
     
     // Insert document record into database
-    const { data: documentData, error: documentError } = await supabase
+    const { data: insertedDoc, error: documentError } = await supabase
       .from('documents')
-      .insert(documentData)
+      .insert(docData)
       .select()
       .single();
     
@@ -73,8 +73,8 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     
     return { 
       success: true, 
-      documentId: documentData.document_id,
-      document: documentData
+      documentId: insertedDoc.document_id,
+      document: insertedDoc
     };
   } catch (error: any) {
     console.error('Upload document error:', error);
@@ -107,7 +107,7 @@ export const uploadMultipleDocuments = async (
       toast({
         title: "Some uploads failed",
         description: `${successCount} of ${files.length} documents uploaded successfully.`,
-        variant: "warning",
+        variant: "default",
       });
     } else {
       toast({

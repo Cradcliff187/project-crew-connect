@@ -50,37 +50,44 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = ({
     setLoading(true);
     
     try {
-      let searchBuilder = supabase
-        .from('contacts')
-        .select('contact_id, name, status');
+      let vendors: VendorOption[] = [];
       
-      // Filter by contact type (vendor or subcontractor)
+      // Fetch vendors from the vendors table
       if (vendorType === 'vendor') {
-        searchBuilder = searchBuilder.eq('is_vendor', true);
-      } else if (vendorType === 'subcontractor') {
-        searchBuilder = searchBuilder.eq('is_subcontractor', true);
+        const { data: vendorData, error: vendorError } = await supabase
+          .from('vendors')
+          .select('vendorid, vendorname, status')
+          .ilike('vendorname', `%${query}%`)
+          .order('vendorname', { ascending: true })
+          .limit(10);
+          
+        if (vendorError) throw vendorError;
+        
+        vendors = (vendorData || []).map(item => ({
+          id: item.vendorid,
+          name: item.vendorname,
+          status: item.status
+        }));
+      } 
+      // Fetch subcontractors from subcontractors table
+      else if (vendorType === 'subcontractor') {
+        const { data: subData, error: subError } = await supabase
+          .from('subcontractors')
+          .select('subid, subname, status')
+          .ilike('subname', `%${query}%`)
+          .order('subname', { ascending: true })
+          .limit(10);
+          
+        if (subError) throw subError;
+        
+        vendors = (subData || []).map(item => ({
+          id: item.subid,
+          name: item.subname,
+          status: item.status
+        }));
       }
       
-      // Add search term if provided
-      if (query) {
-        searchBuilder = searchBuilder.ilike('name', `%${query}%`);
-      }
-      
-      // Limit and order results
-      const { data, error } = await searchBuilder
-        .order('name', { ascending: true })
-        .limit(10);
-      
-      if (error) throw error;
-      
-      // Format results for the combobox
-      const formattedOptions = (data || []).map(item => ({
-        id: item.contact_id,
-        name: item.name,
-        status: item.status
-      }));
-      
-      setOptions(formattedOptions);
+      setOptions(vendors);
     } catch (error) {
       console.error('Error fetching vendors:', error);
       setOptions([]);
@@ -105,15 +112,29 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = ({
       }
       
       try {
-        const { data, error } = await supabase
-          .from('contacts')
-          .select('name')
-          .eq('contact_id', value)
-          .single();
+        let vendorName = '';
         
-        if (error) throw error;
+        if (vendorType === 'vendor') {
+          const { data, error } = await supabase
+            .from('vendors')
+            .select('vendorname')
+            .eq('vendorid', value)
+            .single();
+          
+          if (error) throw error;
+          vendorName = data?.vendorname || '';
+        } else if (vendorType === 'subcontractor') {
+          const { data, error } = await supabase
+            .from('subcontractors')
+            .select('subname')
+            .eq('subid', value)
+            .single();
+          
+          if (error) throw error;
+          vendorName = data?.subname || '';
+        }
         
-        setSelectedVendorName(data?.name || '');
+        setSelectedVendorName(vendorName);
       } catch (error) {
         console.error('Error fetching vendor name:', error);
         setSelectedVendorName('Unknown Vendor');
@@ -121,7 +142,7 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = ({
     };
     
     getVendorName();
-  }, [value]);
+  }, [value, vendorType]);
 
   // Handle search input change
   const handleSearchChange = useCallback((value: string) => {
@@ -217,7 +238,7 @@ const VendorSearchCombobox: React.FC<VendorSearchComboboxProps> = ({
                           </span>
                         )}
                       </CommandItem>
-                    ))}
+                    )}
                     
                     {onAddNewClick && (
                       <CommandItem 

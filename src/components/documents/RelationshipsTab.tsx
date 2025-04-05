@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DocumentRelationshipsTab from './DocumentRelationshipsTab';
+import DocumentRelationshipsView from './DocumentRelationshipsView';
 import { Document } from './schemas/documentSchema';
 
 interface RelationshipsTabProps {
@@ -19,7 +19,7 @@ const RelationshipsTab: React.FC<RelationshipsTabProps> = ({
         <TabsTrigger value="relationships">Related Documents</TabsTrigger>
       </TabsList>
       <TabsContent value="relationships">
-        <DocumentRelationshipsTab
+        <DocumentRelationshipsView
           document={document}
           onViewDocument={onViewDocument}
         />
