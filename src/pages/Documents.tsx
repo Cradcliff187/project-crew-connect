@@ -1,3 +1,4 @@
+
 // src/pages/Documents.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,18 +11,20 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import EnhancedDocumentUploadDialog from '@/components/documents/EnhancedDocumentUploadDialog';
 import DocumentCard from '@/components/workOrders/details/DocumentsList/DocumentCard';
 import DocumentViewer from '@/components/workOrders/details/DocumentsList/DocumentViewer';
 import { formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import DocumentVersionHistoryCard from '@/components/documents/DocumentVersionHistoryCard';
 import DocumentRelationshipsView from '@/components/documents/DocumentRelationshipsView';
+import { convertToWorkOrderDocument } from '@/components/documents/utils/documentTypeUtils';
+import { WorkOrderDocument } from '@/components/workOrders/details/DocumentsList/types';
 
 const DocumentsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [viewDocument, setViewDocument] = useState<Document | null>(null);
+  const [viewDocument, setViewDocument] = useState<WorkOrderDocument | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -69,7 +72,9 @@ const DocumentsPage: React.FC = () => {
   };
   
   const handleViewDocument = (doc: Document) => {
-    setViewDocument(doc);
+    // Convert Document to WorkOrderDocument for viewer
+    const workOrderDoc = convertToWorkOrderDocument(doc);
+    setViewDocument(workOrderDoc);
   };
   
   const handleCloseViewer = () => {
@@ -125,8 +130,8 @@ const DocumentsPage: React.FC = () => {
                     recentDocuments.map((doc) => (
                       <DocumentCard 
                         key={doc.document_id} 
-                        document={doc} 
-                        onViewDocument={handleViewDocument} 
+                        document={convertToWorkOrderDocument(doc)} 
+                        onViewDocument={() => handleViewDocument(doc)} 
                       />
                     ))
                   ) : (
@@ -145,31 +150,40 @@ const DocumentsPage: React.FC = () => {
             <DocumentVersionHistoryCard 
               documentId={viewDocument.document_id}
               onVersionChange={(document) => {
-                handleViewDocument(document);
+                // Convert Document to WorkOrderDocument
+                const workOrderDoc = convertToWorkOrderDocument(document);
+                setViewDocument(workOrderDoc);
               }}
             />
             
             <DocumentRelationshipsView 
               document={viewDocument}
-              onViewDocument={handleViewDocument}
+              onViewDocument={(doc) => {
+                setViewDocument(convertToWorkOrderDocument(doc));
+              }}
               showManagementButton={false}
             />
           </div>
         )}
       </div>
       
-      <EnhancedDocumentUpload
+      <EnhancedDocumentUploadDialog
         open={isUploadModalOpen}
         onOpenChange={setIsUploadModalOpen}
         onSuccess={handleDocumentUploadSuccess}
         onCancel={() => setIsUploadModalOpen(false)}
+        title="Upload New Document"
+        description="Upload and categorize your document for easy access later"
+        allowEntityTypeSelection={true}
       />
       
-      <DocumentViewer 
-        document={viewDocument}
-        open={!!viewDocument}
-        onOpenChange={(open) => !open && handleCloseViewer()}
-      />
+      {viewDocument && (
+        <DocumentViewer 
+          document={viewDocument}
+          open={!!viewDocument}
+          onOpenChange={(open) => !open && handleCloseViewer()}
+        />
+      )}
     </div>
   );
 };

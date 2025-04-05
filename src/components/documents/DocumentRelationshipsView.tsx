@@ -1,16 +1,16 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Link2, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, FileText, Link as LinkIcon, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Document } from './schemas/documentSchema';
-import { RelatedDocument, useDocumentRelationships } from './hooks/useDocumentRelationships';
-import DocumentRelationshipManager from './DocumentRelationshipManager';
+import { Button } from '@/components/ui/button';
+import { WorkOrderDocument } from '../workOrders/details/DocumentsList/types';
+import { convertToDocument, convertToWorkOrderDocument } from './utils/documentTypeUtils';
 
 interface DocumentRelationshipsViewProps {
-  document: Document;
-  onViewDocument?: (document: Document) => void;
+  document: Document | WorkOrderDocument;
+  onViewDocument: (document: Document | WorkOrderDocument) => void;
   showManagementButton?: boolean;
 }
 
@@ -19,128 +19,134 @@ const DocumentRelationshipsView: React.FC<DocumentRelationshipsViewProps> = ({
   onViewDocument,
   showManagementButton = true
 }) => {
-  const [showAddRelationship, setShowAddRelationship] = React.useState(false);
+  const [relatedDocuments, setRelatedDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Normalize document to Document type
+  const normalizedDocument = 'document_id' in document ? 
+    document as Document : 
+    convertToDocument(document as WorkOrderDocument);
   
-  const {
-    relatedDocuments,
-    loading,
-    fetchRelationships,
-    removeRelationship
-  } = useDocumentRelationships(document?.document_id);
+  // Load related documents
+  useEffect(() => {
+    const fetchRelatedDocuments = async () => {
+      if (!normalizedDocument.document_id) return;
+      
+      setLoading(true);
+      
+      try {
+        // Fetch source relationships
+        const { data: sourceData, error: sourceError } = await supabase
+          .from('document_relationships')
+          .select('target_document_id')
+          .eq('source_document_id', normalizedDocument.document_id);
+        
+        if (sourceError) throw sourceError;
+        
+        // Fetch target relationships
+        const { data: targetData, error: targetError } = await supabase
+          .from('document_relationships')
+          .select('source_document_id')
+          .eq('target_document_id', normalizedDocument.document_id);
+        
+        if (targetError) throw targetError;
+        
+        // Combine unique document IDs
+        const relatedDocIds = [
+          ...sourceData.map(item => item.target_document_id),
+          ...targetData.map(item => item.source_document_id)
+        ];
+        
+        // Filter out duplicates
+        const uniqueDocIds = [...new Set(relatedDocIds)];
+        
+        if (uniqueDocIds.length === 0) {
+          setRelatedDocuments([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch document details
+        const { data: docsData, error: docsError } = await supabase
+          .from('documents_with_urls')
+          .select('*')
+          .in('document_id', uniqueDocIds);
+        
+        if (docsError) throw docsError;
+        
+        setRelatedDocuments(docsData as Document[]);
+      } catch (error) {
+        console.error('Error fetching related documents:', error);
+        setRelatedDocuments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRelatedDocuments();
+  }, [normalizedDocument.document_id]);
   
-  const handleViewDocument = (doc: RelatedDocument) => {
+  const handleViewRelatedDocument = (doc: Document) => {
     if (onViewDocument) {
-      onViewDocument(doc);
-    }
-  };
-  
-  const getRelationshipLabel = (type: string): string => {
-    switch (type) {
-      case 'related_to': return 'Related to';
-      case 'previous_version': return 'Previous version';
-      case 'revision_of': return 'Revision of';
-      case 'attachment_for': return 'Attachment for';
-      case 'source_document': return 'Source document';
-      case 'supporting_document': return 'Supporting document';
-      default: return type.replace('_', ' ');
+      // Convert to appropriate type based on what the parent expects
+      if ('is_receipt' in document) {
+        // Parent expects WorkOrderDocument
+        onViewDocument(convertToWorkOrderDocument(doc));
+      } else {
+        // Parent expects Document
+        onViewDocument(doc);
+      }
     }
   };
   
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <h3 className="text-base font-medium">Related Documents</h3>
-        
-        {showManagementButton && (
-          <Button
-            onClick={() => setShowAddRelationship(true)}
-            variant="outline"
-            size="sm"
-            className="text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Link Document
-          </Button>
-        )}
-      </div>
-      
-      {loading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      ) : relatedDocuments.length > 0 ? (
-        <div className="space-y-2">
-          {relatedDocuments.map(doc => (
-            <Card key={doc.document_id} className="overflow-hidden">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 flex-1 min-w-0">
-                    <Link2 className="h-4 w-4 text-[#0485ea] shrink-0" />
-                    <div className="truncate">
-                      <p className="font-medium text-sm truncate">{doc.file_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {doc.relationship_type && getRelationshipLabel(doc.relationship_type)} • {new Date(doc.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 ml-2">
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-8 w-8 p-0" 
-                      onClick={() => handleViewDocument(doc)}
-                    >
-                      <span className="sr-only">View</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    </Button>
-                    {doc.relationship_id && showManagementButton && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        onClick={() => removeRelationship(doc.relationship_id!)}
-                      >
-                        <span className="sr-only">Remove</span>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-6 border rounded-md">
-          <Link2 className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-          <p className="text-muted-foreground">No related documents</p>
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Document Relationships</CardTitle>
           {showManagementButton && (
             <Button 
-              variant="outline" 
-              size="sm" 
-              className="mt-4 text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50"
-              onClick={() => setShowAddRelationship(true)}
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Link Document
+              <Plus className="h-3 w-3 mr-1" />
+              Add Relationship
             </Button>
           )}
         </div>
-      )}
-      
-      {document && showAddRelationship && (
-        <DocumentRelationshipManager
-          document={document}
-          open={showAddRelationship}
-          onOpenChange={setShowAddRelationship}
-          onRelationshipCreated={fetchRelationships}
-        />
-      )}
-    </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : relatedDocuments.length > 0 ? (
+          <div className="space-y-2 mt-2">
+            {relatedDocuments.map(doc => (
+              <div 
+                key={doc.document_id} 
+                className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer"
+                onClick={() => handleViewRelatedDocument(doc)}
+              >
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 overflow-hidden">
+                  <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {doc.entity_type.toLowerCase()} • {doc.category || 'document'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <LinkIcon className="h-8 w-8 mx-auto text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground mt-2">No related documents found</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
