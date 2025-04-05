@@ -10,7 +10,7 @@ interface ReviewStepProps {
   formData: EstimateFormValues;
   selectedCustomerName: string | null;
   selectedCustomerAddress: string | null;
-  selectedCustomerId?: string | null; // Added customer ID
+  selectedCustomerId?: string | null; // Ensure this prop is properly typed
 }
 
 const ReviewStep = ({ 
@@ -69,7 +69,7 @@ const ReviewStep = ({
           formData={formData} 
           selectedCustomerName={selectedCustomerName}
           selectedCustomerAddress={selectedCustomerAddress}
-          selectedCustomerId={selectedCustomerId} // Pass customer ID
+          selectedCustomerId={selectedCustomerId} // Pass the customer ID
         />
       </div>
       

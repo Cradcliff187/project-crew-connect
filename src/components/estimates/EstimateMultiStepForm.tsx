@@ -39,6 +39,9 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     isLastStep
   } = useEstimateForm({ open, onClose });
 
+  // Determine the selected customer ID from the form values
+  const selectedCustomerId = form.watch('customer') || null;
+
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
@@ -127,6 +130,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
                 onExistingCustomer={handleExistingCustomer}
                 selectedCustomerAddress={selectedCustomerAddress}
                 selectedCustomerName={selectedCustomerName}
+                selectedCustomerId={selectedCustomerId} // Pass the selected customer ID
                 customers={customers}
                 loading={dataLoading}
               />

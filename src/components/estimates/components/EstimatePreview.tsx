@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -10,16 +9,17 @@ interface EstimatePreviewProps {
   formData: EstimateFormValues;
   selectedCustomerName: string | null;
   selectedCustomerAddress: string | null;
+  selectedCustomerId?: string | null;
 }
 
 const EstimatePreview: React.FC<EstimatePreviewProps> = ({
   formData,
   selectedCustomerName,
-  selectedCustomerAddress
+  selectedCustomerAddress,
+  selectedCustomerId
 }) => {
   const [activeTab, setActiveTab] = useState('summary');
   
-  // Transform the form data items to match the expected EstimateItem type
   const transformedItems = Array.isArray(formData.items) 
     ? formData.items.map(item => ({
         cost: item.cost || '0',
@@ -35,13 +35,11 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
       }))
     : [];
   
-  // Calculate totals using the transformed items
   const { totalPrice, contingencyAmount, grandTotal } = calculateEstimateTotals(
     transformedItems,
     formData.contingency_percentage || '0'
   );
 
-  // Format date
   const formattedDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
