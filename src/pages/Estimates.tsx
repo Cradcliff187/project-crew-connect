@@ -73,7 +73,10 @@ const Estimates = () => {
       
       {selectedEstimate && (
         <EstimateDetails 
-          estimate={selectedEstimate}
+          estimate={{
+            ...selectedEstimate,
+            customerId: selectedEstimate.customerId // Ensure customerId is passed
+          }}
           items={estimateItems}
           revisions={estimateRevisions}
           open={!!selectedEstimate}

@@ -5,6 +5,7 @@ import EstimateDetailsDialog from './details/EstimateDetailsDialog';
 export interface EstimateDetailsProps {
   estimate: {
     id: string;
+    customerId: string; // Added separate customer ID
     client: string;
     project?: string;
     date: string;

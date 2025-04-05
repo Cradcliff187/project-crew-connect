@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +38,6 @@ const SummaryStep = () => {
     refetchDocuments 
   } = useEstimateDocuments(tempEstimateId);
 
-  // Fetch document info for each item that has a document_id
   useEffect(() => {
     const items = form.getValues('items') || [];
     const itemsWithDocs = items.filter(item => item.document_id);
@@ -80,7 +78,6 @@ const SummaryStep = () => {
     setIsDocumentUploadOpen(false);
     
     if (documentId) {
-      // Add the document ID to the form values
       const currentDocuments = form.getValues('estimate_documents') || [];
       form.setValue('estimate_documents', [...currentDocuments, documentId]);
       
@@ -89,7 +86,6 @@ const SummaryStep = () => {
         description: 'Document has been attached to the estimate',
       });
       
-      // Refresh the document list
       refetchDocuments();
     }
   };
@@ -225,13 +221,11 @@ const SummaryStep = () => {
         </CardHeader>
         
         <CardContent>
-          {/* Main estimate documents */}
           <DocumentList
             documents={documents}
             loading={loading}
             onUploadClick={() => setIsDocumentUploadOpen(true)}
             onDocumentDelete={(document) => {
-              // Remove the document ID from the form values
               const currentDocuments = form.getValues('estimate_documents') || [];
               form.setValue(
                 'estimate_documents', 
@@ -243,7 +237,6 @@ const SummaryStep = () => {
                 description: 'Document has been removed from the estimate',
               });
               
-              // Refresh the document list
               refetchDocuments();
             }}
             emptyMessage="No documents attached yet. Add supporting documents like contracts, specifications, or reference materials."
@@ -251,7 +244,6 @@ const SummaryStep = () => {
             showCategories={true}
           />
           
-          {/* Line item document attachments section */}
           {items.filter(item => item.document_id).length > 0 && (
             <div className="mt-4">
               <h4 className="text-sm font-medium mb-2">Line Item Attachments:</h4>
@@ -289,4 +281,3 @@ const SummaryStep = () => {
 };
 
 export default SummaryStep;
-

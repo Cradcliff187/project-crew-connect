@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
@@ -71,28 +70,80 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     }
   }, [revisions]);
   
-  // Fetch client email when the estimate dialog opens
+  // Fetch client email when the estimate dialog opens, using customer ID when available
   useEffect(() => {
     const fetchClientEmail = async () => {
-      if (estimate?.client && open) {
+      if (open) {
         try {
-          const { data, error } = await supabase
-            .from('contacts')
-            .select('email')
-            .eq('id', estimate.client)
-            .single();
+          // Try to use customerId first (preferred)
+          if (estimate.customerId) {
+            console.log('Using customer ID for lookup:', estimate.customerId);
+            const { data: customerData, error: customerError } = await supabase
+              .from('customers')
+              .select('contactemail')
+              .eq('customerid', estimate.customerId)
+              .maybeSingle();
+              
+            if (customerData && !customerError) {
+              if (customerData.contactemail) {
+                setClientEmail(customerData.contactemail);
+                return;
+              }
+            }
             
-          if (data && !error) {
-            setClientEmail(data.email);
+            // If no email found in customers, try contacts table
+            const { data: contactData, error: contactError } = await supabase
+              .from('contacts')
+              .select('email')
+              .eq('id', estimate.customerId)
+              .maybeSingle();
+              
+            if (contactData && !contactError && contactData.email) {
+              setClientEmail(contactData.email);
+              return;
+            }
           }
+          
+          // Fallback to trying by client name if needed and customerId didn't work
+          if (!estimate.customerId && estimate.client) {
+            console.log('Falling back to client name lookup:', estimate.client);
+            // Try to find by name in contacts
+            const { data: nameContactData, error: nameContactError } = await supabase
+              .from('contacts')
+              .select('email')
+              .eq('name', estimate.client)
+              .maybeSingle();
+            
+            if (nameContactData && !nameContactError && nameContactData.email) {
+              setClientEmail(nameContactData.email);
+              return;
+            }
+            
+            // Try to find by name in customers
+            const { data: nameCustomerData, error: nameCustomerError } = await supabase
+              .from('customers')
+              .select('contactemail')
+              .eq('customername', estimate.client)
+              .maybeSingle();
+            
+            if (nameCustomerData && !nameCustomerError && nameCustomerData.contactemail) {
+              setClientEmail(nameCustomerData.contactemail);
+              return;
+            }
+          }
+          
+          // If we reach here, we didn't find an email
+          console.log('No client email found for:', estimate.customerId || estimate.client);
+          setClientEmail(undefined);
         } catch (err) {
           console.error("Error fetching client email:", err);
+          setClientEmail(undefined);
         }
       }
     };
     
     fetchClientEmail();
-  }, [estimate?.client, open]);
+  }, [estimate.customerId, estimate.client, open]);
 
   const handleCreateRevision = () => {
     setRevisionDialogOpen(true);

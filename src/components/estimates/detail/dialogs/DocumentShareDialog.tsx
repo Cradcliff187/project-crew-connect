@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ interface DocumentShareDialogProps {
   document: Document | null;
   estimateId: string;
   clientEmail?: string;
+  customerId?: string;
 }
 
 const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
@@ -24,7 +24,8 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
   onOpenChange,
   document,
   estimateId,
-  clientEmail = ''
+  clientEmail = '',
+  customerId
 }) => {
   const [email, setEmail] = useState(clientEmail);
   const [subject, setSubject] = useState('');
@@ -32,7 +33,6 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
   const [includeEstimateLink, setIncludeEstimateLink] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
-  // Reset form when dialog opens
   React.useEffect(() => {
     if (open && document) {
       setEmail(clientEmail);
@@ -56,19 +56,18 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
     setIsSending(true);
     
     try {
-      // Format details as JSON string
       const detailsJson = JSON.stringify({
         document_id: document.document_id,
         entity_id: estimateId,
         entity_type: 'ESTIMATE',
         recipient_email: email,
+        customer_id: customerId,
         subject: subject,
         message: message,
         include_estimate_link: includeEstimateLink,
         sent_at: new Date().toISOString()
       });
       
-      // Log to activitylog
       const { error } = await supabase
         .from('activitylog')
         .insert({

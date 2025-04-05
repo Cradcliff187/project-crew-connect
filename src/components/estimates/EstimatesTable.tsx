@@ -1,3 +1,4 @@
+
 import { FileText, Plus, Eye, Edit, Copy, ArrowRight, Download, Trash2, FileUp } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type EstimateType = {
   id: string;
+  customerId: string; // Added separate customer ID field
   client: string;
   project: string;
   date: string;

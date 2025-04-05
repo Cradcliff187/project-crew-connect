@@ -56,10 +56,11 @@ export const useEstimates = () => {
       
       const revisionCounts = await Promise.all(revisionsPromises);
       
-      // Format the data for the UI
+      // Format the data for the UI, preserving both ID and name separately
       const formattedEstimates: EstimateType[] = data.map((estimate, index) => ({
         id: estimate.estimateid,
-        client: estimate.customername || estimate.customerid || 'Unknown Client',
+        customerId: estimate.customerid || '', // Store customer ID separately
+        client: estimate.customername || 'Unknown Client', // Use name for display
         project: estimate.projectname || `Estimate ${estimate.estimateid}`,
         date: estimate.datecreated || new Date().toISOString(),
         amount: estimate.estimateamount || 0,

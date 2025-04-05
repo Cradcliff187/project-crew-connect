@@ -10,12 +10,14 @@ interface ReviewStepProps {
   formData: EstimateFormValues;
   selectedCustomerName: string | null;
   selectedCustomerAddress: string | null;
+  selectedCustomerId?: string | null; // Added customer ID
 }
 
 const ReviewStep = ({ 
   formData, 
   selectedCustomerName, 
-  selectedCustomerAddress 
+  selectedCustomerAddress,
+  selectedCustomerId 
 }: ReviewStepProps) => {
   const [attachedDocuments, setAttachedDocuments] = useState<Record<string, any>>({});
   
@@ -67,6 +69,7 @@ const ReviewStep = ({
           formData={formData} 
           selectedCustomerName={selectedCustomerName}
           selectedCustomerAddress={selectedCustomerAddress}
+          selectedCustomerId={selectedCustomerId} // Pass customer ID
         />
       </div>
       
