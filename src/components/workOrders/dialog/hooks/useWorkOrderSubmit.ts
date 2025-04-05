@@ -26,14 +26,18 @@ export const useWorkOrderSubmit = ({
       // Use our new hook to handle location creation
       const locationId = await createLocationIfNeeded(values);
 
-      // Handle date values properly
-      const scheduledDate = values.scheduled_date instanceof Date 
-        ? values.scheduled_date.toISOString() 
-        : values.scheduled_date;
+      // Handle date values properly - ensure they are actual Date objects before calling toISOString
+      const scheduledDate = values.scheduled_date 
+        ? (values.scheduled_date instanceof Date 
+            ? values.scheduled_date.toISOString() 
+            : values.scheduled_date)
+        : null;
       
-      const dueByDate = values.due_by_date instanceof Date 
-        ? values.due_by_date.toISOString() 
-        : values.due_by_date;
+      const dueByDate = values.due_by_date
+        ? (values.due_by_date instanceof Date 
+            ? values.due_by_date.toISOString() 
+            : values.due_by_date)
+        : null;
 
       // Create the work order with either the selected or newly created location
       const { error } = await supabase

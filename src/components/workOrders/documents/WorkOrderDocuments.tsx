@@ -5,19 +5,12 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import DocumentUploadDialog from '@/components/documents/DocumentUploadDialog';
-import { DocumentsGrid } from '@/components/documents';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
 import { useWorkOrderDocumentsEmbed } from './useWorkOrderDocumentsEmbed';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;
   entityType: string;
-}
-
-interface CustomDocumentsGridProps {
-  documents: any[];
-  loading: boolean;
-  onViewDocument?: (doc: any) => void;
 }
 
 const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps) => {
@@ -94,11 +87,43 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
                   </Button>
                 </div>
               ) : (
-                <DocumentsGrid 
-                  documents={documents} 
-                  loading={loading}
-                  onViewDocument={handleViewDocument}
-                />
+                <div className="p-4">
+                  {loading ? (
+                    <div className="space-y-2">
+                      <div className="h-6 w-full bg-gray-100 animate-pulse rounded"></div>
+                      <div className="h-24 w-full bg-gray-100 animate-pulse rounded"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {documents.map((doc) => (
+                        <div 
+                          key={doc.document_id} 
+                          className="border p-3 rounded-md shadow-sm hover:shadow-md cursor-pointer"
+                          onClick={() => handleViewDocument(doc)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">{doc.file_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(doc.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewDocument(doc);
+                              }}
+                            >
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </Card>

@@ -19,7 +19,7 @@ const useVendorAssociatedData = () => {
     console.log('Fetching associated data for vendor:', vendorId);
     
     try {
-      // Fetch associated projects using a direct query rather than the vendor_projects view
+      // Fetch associated projects using a direct query to projects table
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('projectid, projectname, status, createdon, total_budget')
