@@ -14,7 +14,7 @@ interface EstimateStepContentProps {
   onExistingCustomer: () => void;
   selectedCustomerAddress: string | null;
   selectedCustomerName: string | null;
-  selectedCustomerId?: string | null; // Add this prop
+  selectedCustomerId?: string | null;
   customers: {
     id: string;
     name: string;
@@ -26,6 +26,10 @@ interface EstimateStepContentProps {
   loading: boolean;
 }
 
+/**
+ * EstimateStepContent handles rendering the appropriate form step component
+ * based on the current step in the estimate form workflow
+ */
 const EstimateStepContent: React.FC<EstimateStepContentProps> = ({
   currentStep,
   customerTab,
@@ -33,7 +37,7 @@ const EstimateStepContent: React.FC<EstimateStepContentProps> = ({
   onExistingCustomer,
   selectedCustomerAddress,
   selectedCustomerName,
-  selectedCustomerId, // Add this prop
+  selectedCustomerId, 
   customers,
   loading,
 }) => {
@@ -64,7 +68,7 @@ const EstimateStepContent: React.FC<EstimateStepContentProps> = ({
           formData={formData}
           selectedCustomerName={selectedCustomerName}
           selectedCustomerAddress={selectedCustomerAddress}
-          selectedCustomerId={selectedCustomerId} // Pass the customer ID
+          selectedCustomerId={selectedCustomerId}
         />
       );
     default:

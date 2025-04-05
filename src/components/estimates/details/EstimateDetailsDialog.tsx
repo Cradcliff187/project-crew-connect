@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
@@ -20,8 +21,11 @@ import PDFExportButton from '../detail/PDFExportButton';
 import DocumentShareDialog from '../detail/dialogs/DocumentShareDialog';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
-import { formatDate as formatDateUtil } from '@/lib/utils';
 
+/**
+ * EstimateDetailsDialog displays a dialog with tabs for viewing estimate details
+ * This is used within the estimates listing page when clicking on an estimate
+ */
 const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({ 
   estimate, 
   items = [], 

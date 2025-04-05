@@ -4,7 +4,6 @@ import { useFormContext } from 'react-hook-form';
 import BasicInfoStep from './BasicInfoStep';
 import LineItemsStep from './LineItemsStep';
 import DocumentsStep from './DocumentsStep';
-import ReviewStep from './ReviewStep';
 import SummaryStep from './SummaryStep';
 import EstimateFormButtons from '../EstimateFormButtons';
 
@@ -12,7 +11,7 @@ interface EditFormContentProps {
   customers: { id: string; name: string; address?: string; city?: string; state?: string; zip?: string; }[];
   selectedCustomerAddress: string | null;
   selectedCustomerName: string | null;
-  selectedCustomerId?: string | null; // Add this prop
+  selectedCustomerId?: string | null;
   customerTab: 'existing' | 'new';
   onNewCustomer: () => void;
   onExistingCustomer: () => void;
@@ -20,11 +19,15 @@ interface EditFormContentProps {
   onCancel: () => void;
 }
 
+/**
+ * EditFormContent handles rendering the content of the estimate form in edit mode
+ * This component is used within EstimateMultiStepForm
+ */
 const EditFormContent: React.FC<EditFormContentProps> = ({
   customers,
   selectedCustomerAddress,
   selectedCustomerName,
-  selectedCustomerId, // Add this prop
+  selectedCustomerId,
   customerTab,
   onNewCustomer,
   onExistingCustomer,

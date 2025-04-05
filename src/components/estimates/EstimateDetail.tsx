@@ -42,6 +42,10 @@ interface EstimateProps {
   onRefresh?: () => void;
 }
 
+/**
+ * EstimateDetail component is used on the dedicated estimate detail page
+ * It renders a full page view of an estimate using EstimateDetailView
+ */
 const EstimateDetail: React.FC<EstimateProps> = ({ 
   data, 
   onEdit, 

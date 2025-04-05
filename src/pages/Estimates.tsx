@@ -7,6 +7,10 @@ import EstimatesHeader from '@/components/estimates/EstimatesHeader';
 import { useEstimates } from '@/components/estimates/hooks/useEstimates';
 import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
 
+/**
+ * Estimates page component for listing and managing estimates
+ * Includes the estimates table and detail dialog for viewing estimate details
+ */
 const Estimates = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEstimate, setSelectedEstimate] = useState<EstimateType | null>(null);
