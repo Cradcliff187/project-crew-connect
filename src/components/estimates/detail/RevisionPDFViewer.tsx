@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Download, Loader2 } from 'lucide-react';
+import { Eye, Download, Loader2, FileText } from 'lucide-react';
 import { EstimateRevision } from '../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -10,13 +10,16 @@ import { useToast } from '@/hooks/use-toast';
 interface RevisionPDFViewerProps {
   revision: EstimateRevision;
   showCard?: boolean;
+  className?: string;
 }
 
 const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({ 
   revision,
-  showCard = true 
+  showCard = true,
+  className = ""
 }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -36,6 +39,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
         
         if (data?.url) {
           setPdfUrl(data.url);
+          setFileName(data.file_name || `Estimate-V${revision.version}.pdf`);
         }
       } catch (err) {
         console.error('Error loading PDF:', err);
@@ -47,8 +51,21 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
     loadPdfUrl();
   }, [revision]);
 
-  const handleViewPdf = () => {
+  const handleViewPdf = async () => {
     if (pdfUrl) {
+      // Log the view action
+      try {
+        await supabase
+          .from('document_access_logs')
+          .insert({
+            document_id: revision.pdf_document_id,
+            action: 'VIEW'
+          });
+      } catch (error) {
+        console.error('Error logging document view:', error);
+      }
+      
+      // Open the PDF in a new window
       window.open(pdfUrl, '_blank');
     } else {
       toast({
@@ -76,10 +93,22 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
       // Create a download link
       const downloadLink = document.createElement('a');
       downloadLink.href = URL.createObjectURL(blob);
-      downloadLink.download = `Estimate-V${revision.version}-${new Date().toISOString().split('T')[0]}.pdf`;
+      downloadLink.download = fileName || `Estimate-V${revision.version}-${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
+      
+      // Log the download action
+      try {
+        await supabase
+          .from('document_access_logs')
+          .insert({
+            document_id: revision.pdf_document_id,
+            action: 'DOWNLOAD'
+          });
+      } catch (error) {
+        console.error('Error logging document download:', error);
+      }
     } catch (err) {
       console.error('Error downloading PDF:', err);
       toast({
@@ -96,9 +125,12 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
 
   const content = (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-      <div>
-        <h4 className="text-sm font-medium mb-1">PDF Document</h4>
-        <p className="text-xs text-muted-foreground">Version {revision.version} PDF Document</p>
+      <div className="flex items-center space-x-2">
+        <FileText className="h-4 w-4 text-[#0485ea]" />
+        <div>
+          <h4 className="text-sm font-medium">PDF Document</h4>
+          <p className="text-xs text-muted-foreground">Version {revision.version} PDF Document</p>
+        </div>
       </div>
       <div className="flex gap-2">
         {isLoading ? (
@@ -141,7 +173,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
 
   if (showCard) {
     return (
-      <Card className="mt-2">
+      <Card className={`mt-2 ${className}`}>
         <CardContent className="p-4">
           {content}
         </CardContent>
@@ -149,7 +181,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
     );
   }
 
-  return <div className="mt-4 p-3 border rounded-md bg-slate-50">{content}</div>;
+  return <div className={`mt-4 p-3 border rounded-md bg-slate-50 ${className}`}>{content}</div>;
 };
 
 export default RevisionPDFViewer;

@@ -21,6 +21,7 @@ interface PDFExportButtonProps {
     | null
     | undefined;
   size?: 'default' | 'sm' | 'lg' | 'icon' | null | undefined;
+  children?: React.ReactNode;
 }
 
 const PDFExportButton: React.FC<PDFExportButtonProps> = ({
@@ -28,12 +29,13 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   revisionId,
   contentRef,
   onSuccess,
-  className,
+  className = "",
   variant = 'default',
-  size = 'default'
+  size = 'default',
+  children
 }) => {
   const { toast } = useToast();
-  const { generatePdf, isGenerating } = usePdfGeneration({
+  const { generatePdf, checkRevisionPdf, isGenerating } = usePdfGeneration({
     onSuccess,
     onError: (error) => {
       toast({
@@ -46,8 +48,19 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
 
   const handleGeneratePdf = async () => {
     try {
-      // Use the revisionId if available, otherwise generate PDF with content reference
+      // Check if we're using a revision ID
       if (revisionId) {
+        // Check if PDF already exists
+        const existingPdfId = await checkRevisionPdf(revisionId);
+        
+        if (existingPdfId) {
+          // If PDF exists and we're regenerating, inform the user
+          toast({
+            title: "Regenerating PDF",
+            description: "Creating a new PDF version for this revision",
+          });
+        }
+        
         await generatePdf(estimateId, revisionId);
       } else if (contentRef && contentRef.current) {
         toast({
@@ -55,11 +68,24 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
           description: "Content-based PDF generation is in development",
           variant: "default"
         });
+      } else {
+        toast({
+          title: "Missing Parameters",
+          description: "Either a revision ID or content reference is required",
+          variant: "destructive"
+        });
       }
     } catch (error: any) {
       console.error('Error in PDF export:', error);
     }
   };
+
+  const buttonText = children || (
+    <>
+      <FileText className="mr-2 h-4 w-4" />
+      {isGenerating ? "Generating PDF..." : "Export PDF"}
+    </>
+  );
 
   return (
     <Button
@@ -67,19 +93,14 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       disabled={isGenerating}
       variant={variant}
       size={size}
-      className={className}
+      className={`${className} ${variant === 'default' ? 'bg-[#0485ea] hover:bg-[#0373d1] text-white' : ''}`}
     >
-      {isGenerating ? (
+      {isGenerating && !children ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Generating PDF...
         </>
-      ) : (
-        <>
-          <FileText className="mr-2 h-4 w-4" />
-          Export PDF
-        </>
-      )}
+      ) : buttonText}
     </Button>
   );
 };

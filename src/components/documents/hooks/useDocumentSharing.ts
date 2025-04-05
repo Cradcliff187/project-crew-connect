@@ -2,91 +2,89 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Document } from '../schemas/documentSchema';
 
-export interface DocumentShareOptions {
+interface ShareDocumentParams {
   documentId: string;
-  estimateId?: string;
-  projectId?: string;
   recipientEmail: string;
   subject: string;
   message: string;
   includeEntityLink?: boolean;
+  includeBranding?: boolean;
+  entityId?: string;
+  entityType?: string;
 }
 
-export const useDocumentSharing = () => {
+export function useDocumentSharing() {
   const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const shareDocument = async (options: DocumentShareOptions): Promise<boolean> => {
-    if (!options.documentId || !options.recipientEmail) {
-      setError('Missing required document or recipient information');
-      return false;
-    }
-
+  
+  const shareDocument = async ({
+    documentId,
+    recipientEmail,
+    subject,
+    message,
+    includeEntityLink = false,
+    includeBranding = true,
+    entityId,
+    entityType
+  }: ShareDocumentParams): Promise<boolean> => {
     setIsSending(true);
-    setError(null);
-
+    
     try {
-      console.log(`Sharing document ${options.documentId} with ${options.recipientEmail}`);
+      // First get the document information
+      const { data: docData, error: docError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('document_id', documentId)
+        .single();
       
-      // In a production environment, this would call a serverless function
-      // to handle the actual email sending process
-      const detailsJson = JSON.stringify({
-        document_id: options.documentId,
-        entity_id: options.estimateId || options.projectId,
-        entity_type: options.estimateId ? 'ESTIMATE' : 'PROJECT',
-        recipient_email: options.recipientEmail,
-        subject: options.subject,
-        message: options.message,
-        include_entity_link: options.includeEntityLink || false,
-        sent_at: new Date().toISOString(),
-      });
+      if (docError) throw new Error(`Error fetching document: ${docError.message}`);
+      if (!docData) throw new Error('Document not found');
       
-      const { error: shareError } = await supabase
-        .from('activitylog')
+      // Get the document URL
+      const { data: urlData } = await supabase
+        .storage
+        .from('construction_documents')
+        .getPublicUrl(docData.storage_path);
+      
+      if (!urlData.publicUrl) throw new Error('Could not generate document URL');
+      
+      // Send the email with document attachment
+      // Note: In a real implementation, we would call a Supabase Edge Function to send the email
+      // For this example, we'll simulate the email sending
+      
+      // Simulate email sending delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Log the sharing action
+      const { error: logError } = await supabase
+        .from('document_access_logs')
         .insert({
-          logid: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          action: 'DOCUMENT_SHARE',
-          moduletype: 'DOCUMENTS',
-          referenceid: options.documentId,
-          detailsjson: detailsJson,
-          status: 'SENT',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          document_id: documentId,
+          action: 'SHARE',
+          accessed_by: recipientEmail
         });
       
-      if (shareError) {
-        throw shareError;
-      }
+      if (logError) console.error('Error logging share action:', logError);
       
-      // For demonstration purposes - In real implementation, we'd verify email was actually sent
       toast({
-        title: 'Document shared',
-        description: `Document has been shared with ${options.recipientEmail}`,
+        title: 'Document Shared',
+        description: `Document has been sent to ${recipientEmail}`,
+        className: 'bg-[#0485ea] text-white',
       });
       
       return true;
-    } catch (err: any) {
-      console.error('Error sharing document:', err);
-      setError(err.message || 'Failed to share document');
-      
+    } catch (error: any) {
+      console.error('Error sharing document:', error);
       toast({
-        title: 'Error',
-        description: err.message || 'Failed to share document',
+        title: 'Sharing Failed',
+        description: error.message || 'There was an error sharing the document',
         variant: 'destructive',
       });
-      
       return false;
     } finally {
       setIsSending(false);
     }
   };
-
-  return {
-    shareDocument,
-    isSending,
-    error
-  };
-};
+  
+  return { shareDocument, isSending };
+}

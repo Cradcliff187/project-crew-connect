@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Info } from 'lucide-react';
+import { Loader2, Info, Paperclip, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useDocumentSharing } from '@/components/documents/hooks/useDocumentSharing';
+import { Badge } from '@/components/ui/badge';
 
 interface DocumentShareDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
   const [subject, setSubject] = useState<string>('Document Shared: Estimate PDF');
   const [message, setMessage] = useState<string>(`Please find the attached PDF document for your estimate.\n\nThank you for your business.`);
   const [includeEntityLink, setIncludeEntityLink] = useState<boolean>(false);
+  const [includeBranding, setIncludeBranding] = useState<boolean>(true);
   const { shareDocument, isSending } = useDocumentSharing();
   
   useEffect(() => {
@@ -39,6 +41,7 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
       setSubject('Document Shared: Estimate PDF');
       setMessage(`Please find the attached PDF document for your estimate.\n\nThank you for your business.`);
       setIncludeEntityLink(false);
+      setIncludeBranding(true);
     }
   }, [open, clientEmail]);
   
@@ -68,9 +71,23 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
       subject,
       message,
       includeEntityLink,
+      includeBranding,
     });
     
     if (success) {
+      // Log the document sharing action for activity tracking
+      try {
+        await supabase
+          .from('document_access_logs')
+          .insert({
+            document_id: document.document_id,
+            action: 'SHARE_EMAIL',
+            accessed_by: recipientEmail
+          });
+      } catch (error) {
+        console.error('Error logging document share:', error);
+      }
+      
       onOpenChange(false);
     }
   };
@@ -86,11 +103,19 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
           {document ? (
             <>
               <div className="bg-muted p-3 rounded-md mb-4">
-                <h4 className="font-medium text-sm mb-1">Document Details</h4>
-                <p className="text-sm">{document.file_name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {document.file_type} • {(document.file_size / 1024).toFixed(1)} KB
-                </p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm mb-1">Document Details</h4>
+                    <p className="text-sm">{document.file_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {document.file_type} • {(document.file_size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-[#0485ea] border-[#0485ea] bg-[#0485ea]/10">
+                    <Paperclip className="h-3 w-3 mr-1" />
+                    Attachment
+                  </Badge>
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -128,16 +153,30 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
                 />
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="includeLink"
-                  checked={includeEntityLink}
-                  onCheckedChange={(checked) => setIncludeEntityLink(checked as boolean)}
-                  disabled={isSending}
-                />
-                <Label htmlFor="includeLink">
-                  Include a link to view online (if available)
-                </Label>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="includeLink"
+                    checked={includeEntityLink}
+                    onCheckedChange={(checked) => setIncludeEntityLink(checked as boolean)}
+                    disabled={isSending}
+                  />
+                  <Label htmlFor="includeLink">
+                    Include a link to view online (if available)
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="includeBranding"
+                    checked={includeBranding}
+                    onCheckedChange={(checked) => setIncludeBranding(checked as boolean)}
+                    disabled={isSending}
+                  />
+                  <Label htmlFor="includeBranding">
+                    Include AKC LLC branding in email
+                  </Label>
+                </div>
               </div>
               
               <div className="flex items-center text-xs text-muted-foreground">
