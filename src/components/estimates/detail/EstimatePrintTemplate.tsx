@@ -2,16 +2,18 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { EstimateType } from '../EstimatesTable';
-import { EstimateItem } from '../types/estimateTypes';
+import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
 
 interface EstimatePrintTemplateProps {
   estimate: EstimateType;
   items: EstimateItem[];
+  revision?: EstimateRevision;
 }
 
 const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({ 
   estimate, 
-  items 
+  items,
+  revision
 }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -40,9 +42,14 @@ const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
       {/* Header */}
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#0485ea]">ESTIMATE</h1>
+          <h1 className="text-2xl font-bold text-[#0485ea]">
+            ESTIMATE {revision && <span className="text-lg">Revision {revision.version}</span>}
+          </h1>
           <p className="text-gray-600">#{estimate.id}</p>
-          <p className="text-gray-600">Date: {formatDate(estimate.date)}</p>
+          <p className="text-gray-600">Date: {formatDate(revision?.revision_date || estimate.date)}</p>
+          {revision && revision.version > 1 && (
+            <p className="text-gray-600">Original Estimate Date: {formatDate(estimate.date)}</p>
+          )}
         </div>
         <div className="text-right">
           <h2 className="text-xl font-bold">AKC LLC</h2>
@@ -88,6 +95,14 @@ const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
           )}
         </div>
       </div>
+
+      {/* Revision Notes */}
+      {revision && revision.notes && (
+        <div className="mb-8 p-4 border-l-4 border-[#0485ea] bg-blue-50">
+          <h3 className="font-semibold text-gray-700 mb-2">Revision Notes:</h3>
+          <p className="text-gray-600 whitespace-pre-wrap">{revision.notes}</p>
+        </div>
+      )}
 
       {/* Description */}
       {estimate.description && (

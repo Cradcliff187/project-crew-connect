@@ -38,6 +38,9 @@ export interface EstimateRevision {
   created_at?: string;
   sent_to?: string;
   
+  // PDF document reference
+  pdf_document_id?: string;
+  
   // For backward compatibility with older data
   date?: string;
 }

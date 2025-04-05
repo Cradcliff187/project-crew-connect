@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -14,8 +14,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
-import { EstimateItem } from '@/components/estimates/types/estimateTypes';
+import { EstimateItem, EstimateRevision } from '@/components/estimates/types/estimateTypes';
 import EstimateLineItemsEditor from '../editors/EstimateLineItemsEditor';
+import PDFExportButton from '../PDFExportButton';
+import EstimatePrintTemplate from '../EstimatePrintTemplate';
 
 interface EstimateRevisionEditDialogProps {
   open: boolean;
@@ -38,6 +40,9 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [estimate, setEstimate] = useState<any>(null);
+  const [revision, setRevision] = useState<EstimateRevision | null>(null);
+  const pdfContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
   const form = useForm<RevisionFormData>({
@@ -53,6 +58,26 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
       
       setIsLoading(true);
       try {
+        // Fetch estimate data first
+        const { data: estimateData, error: estimateError } = await supabase
+          .from('estimates')
+          .select('*')
+          .eq('estimateid', estimateId)
+          .single();
+        
+        if (estimateError) throw estimateError;
+        setEstimate(estimateData);
+        
+        // Fetch revision data
+        const { data: revisionData, error: revisionError } = await supabase
+          .from('estimate_revisions')
+          .select('*')
+          .eq('id', revisionId)
+          .single();
+        
+        if (revisionError) throw revisionError;
+        setRevision(revisionData);
+        
         // Fetch items for this revision
         const { data: items, error } = await supabase
           .from('estimate_items')
@@ -76,7 +101,7 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
     };
     
     fetchRevisionData();
-  }, [open, revisionId, form]);
+  }, [open, revisionId, form, estimateId]);
   
   const handleSubmit = async (data: RevisionFormData) => {
     if (isSubmitting) return;
@@ -159,6 +184,11 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
     }
   };
 
+  const handlePdfGenerated = (documentId: string) => {
+    // You can add additional handling here if needed
+    console.log('PDF generated and saved with document ID:', documentId);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">
@@ -185,35 +215,66 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
                 />
               </div>
               
-              <DialogFooter className="border-t pt-4 mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-[#0485ea] hover:bg-[#0373ce]"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </>
+              <DialogFooter className="border-t pt-4 mt-4 flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-1 justify-start">
+                  {estimate && revision && (
+                    <PDFExportButton
+                      estimateId={estimateId}
+                      clientName={estimate.customername || "Client"}
+                      projectName={estimate.projectname || "Project"}
+                      date={estimate.datecreated || new Date().toISOString()}
+                      contentRef={pdfContentRef}
+                      revisionId={revision.id}
+                      revisionNumber={revision.version}
+                      autoUpload={true}
+                      onPdfGenerated={handlePdfGenerated}
+                      variant="secondary"
+                    />
                   )}
-                </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-[#0485ea] hover:bg-[#0373ce]"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
               </DialogFooter>
             </form>
           </Form>
+        )}
+        
+        {/* Hidden print template for PDF generation */}
+        {!isLoading && estimate && revision && (
+          <div className="hidden">
+            <div ref={pdfContentRef}>
+              <EstimatePrintTemplate 
+                estimate={estimate} 
+                items={form.getValues().items}
+                revision={revision}
+              />
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>

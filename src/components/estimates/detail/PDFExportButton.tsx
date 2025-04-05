@@ -1,9 +1,9 @@
 
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileDown, Loader2 } from 'lucide-react';
-import { generateEstimatePDF } from '@/utils/pdfGenerator';
-import { toast } from '@/hooks/use-toast';
+import { FileDown, Loader2, Upload } from 'lucide-react';
+import { generateEstimatePDF, uploadRevisionPDF } from '@/utils/pdfGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 interface PDFExportButtonProps {
   estimateId: string;
@@ -11,6 +11,12 @@ interface PDFExportButtonProps {
   projectName: string;
   date: string;
   contentRef: React.RefObject<HTMLDivElement>;
+  revisionId?: string;
+  revisionNumber?: number;
+  autoUpload?: boolean;
+  onPdfGenerated?: (documentId: string) => void;
+  variant?: 'default' | 'outline';
+  size?: 'default' | 'sm';
 }
 
 const PDFExportButton: React.FC<PDFExportButtonProps> = ({
@@ -18,9 +24,16 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   clientName,
   projectName,
   date,
-  contentRef
+  contentRef,
+  revisionId,
+  revisionNumber,
+  autoUpload = false,
+  onPdfGenerated,
+  variant = 'outline',
+  size = 'sm'
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
 
   const handleExportPDF = async () => {
     if (!contentRef.current) {
@@ -46,24 +59,75 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       document.body.appendChild(elementToExport);
       
       // Generate the PDF
-      await generateEstimatePDF(
+      const { blob } = await generateEstimatePDF(
         elementToExport,
         {
           id: estimateId,
           client: clientName,
           project: projectName,
-          date: date
+          date: date,
+          revision: revisionNumber
         }
       );
       
       // Remove the cloned element
       document.body.removeChild(elementToExport);
       
-      toast({
-        title: "PDF Generated",
-        description: "Your estimate has been exported to PDF",
-        className: "bg-[#0485ea] text-white"
-      });
+      if (!blob) {
+        throw new Error('Failed to generate PDF blob');
+      }
+      
+      // If autoUpload and we have a revisionId, upload the PDF to storage
+      // and link it to the revision
+      if (autoUpload && revisionId && revisionNumber !== undefined) {
+        const documentId = await uploadRevisionPDF(
+          blob,
+          estimateId,
+          revisionId,
+          revisionNumber,
+          clientName
+        );
+        
+        if (documentId) {
+          if (onPdfGenerated) {
+            onPdfGenerated(documentId);
+          }
+          
+          toast({
+            title: "PDF Generated and Saved",
+            description: "Your estimate has been exported to PDF and saved",
+            className: "bg-[#0485ea] text-white"
+          });
+        } else {
+          // Create object URL and trigger download if upload failed
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `Estimate_${estimateId}${revisionNumber ? `_Rev${revisionNumber}` : ''}.pdf`;
+          link.click();
+          URL.revokeObjectURL(blobUrl);
+          
+          toast({
+            title: "PDF Generated",
+            description: "PDF was downloaded but couldn't be saved to storage",
+            variant: "warning"
+          });
+        }
+      } else {
+        // Create object URL and trigger download
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `Estimate_${estimateId}${revisionNumber ? `_Rev${revisionNumber}` : ''}.pdf`;
+        link.click();
+        URL.revokeObjectURL(blobUrl);
+        
+        toast({
+          title: "PDF Generated",
+          description: "Your estimate has been exported to PDF",
+          className: "bg-[#0485ea] text-white"
+        });
+      }
     } catch (err) {
       console.error('PDF generation error:', err);
       toast({
@@ -79,8 +143,8 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   return (
     <Button 
       onClick={handleExportPDF}
-      variant="outline"
-      size="sm"
+      variant={variant}
+      size={size}
       disabled={isGenerating}
       className="flex items-center gap-1"
     >
@@ -88,6 +152,11 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
           Generating...
+        </>
+      ) : autoUpload ? (
+        <>
+          <Upload className="h-4 w-4" />
+          Generate & Save PDF
         </>
       ) : (
         <>

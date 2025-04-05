@@ -1,12 +1,14 @@
 
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Generate a PDF from an HTML element
  * @param element The HTML element to convert to PDF
  * @param filename The name of the PDF file
  * @param options Additional options for PDF generation
+ * @returns Promise resolving to the PDF document and generated blob
  */
 export const generatePDF = async (
   element: HTMLElement, 
@@ -26,7 +28,7 @@ export const generatePDF = async (
 ) => {
   if (!element) {
     console.error('No element provided for PDF generation');
-    return null;
+    return { pdf: null, blob: null };
   }
 
   // Set default options
@@ -151,13 +153,13 @@ export const generatePDF = async (
       }
     }
 
-    // Save the PDF
-    pdf.save(`${filename}.pdf`);
+    // Create a blob from the PDF
+    const blob = pdf.output('blob');
     
-    return pdf;
+    return { pdf, blob };
   } catch (error) {
     console.error('Error generating PDF:', error);
-    return null;
+    return { pdf: null, blob: null };
   }
 };
 
@@ -171,13 +173,82 @@ export const generateEstimatePDF = async (
     client: string;
     project: string;
     date: string;
+    revision?: number;
   }
 ) => {
-  const filename = `Estimate_${estimateData.id}_${estimateData.client.replace(/\s+/g, '_')}`;
+  const revisionSuffix = estimateData.revision ? `_Rev${estimateData.revision}` : '';
+  const filename = `Estimate_${estimateData.id}${revisionSuffix}_${estimateData.client.replace(/\s+/g, '_')}`;
   
   return generatePDF(estimateElement, filename, {
     addHeader: true,
     addFooter: true,
-    companyName: 'AKC LLC - Estimate'
+    companyName: `AKC LLC - Estimate${estimateData.revision ? ` Revision ${estimateData.revision}` : ''}`
   });
+};
+
+/**
+ * Upload a PDF blob to Supabase Storage and create document record
+ */
+export const uploadRevisionPDF = async (
+  blob: Blob,
+  estimateId: string,
+  revisionId: string,
+  revisionNumber: number,
+  clientName: string
+): Promise<string | null> => {
+  try {
+    // Generate a filename for the PDF
+    const timestamp = Date.now();
+    const sanitizedClientName = clientName.replace(/\s+/g, '_');
+    const filename = `Estimate_${estimateId}_Rev${revisionNumber}_${sanitizedClientName}_${timestamp}.pdf`;
+    
+    // Upload the PDF to Supabase Storage
+    const { data: fileData, error: uploadError } = await supabase
+      .storage
+      .from('construction_documents')
+      .upload(`estimates/${estimateId}/${filename}`, blob, {
+        contentType: 'application/pdf',
+        cacheControl: '3600'
+      });
+    
+    if (uploadError) throw uploadError;
+    
+    if (!fileData?.path) throw new Error('No file path returned from upload');
+    
+    // Create a document record
+    const { data: documentData, error: documentError } = await supabase
+      .from('documents')
+      .insert({
+        file_name: filename,
+        file_type: 'application/pdf',
+        file_size: blob.size,
+        storage_path: fileData.path,
+        entity_type: 'ESTIMATE',
+        entity_id: estimateId,
+        category: 'revision_pdf',
+        version: 1,
+        is_latest_version: true,
+        notes: `PDF for estimate ${estimateId}, revision ${revisionNumber}`
+      })
+      .select('document_id')
+      .single();
+    
+    if (documentError) throw documentError;
+    
+    // Update the revision record with the PDF document ID
+    const { error: revisionError } = await supabase
+      .from('estimate_revisions')
+      .update({
+        pdf_document_id: documentData.document_id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', revisionId);
+    
+    if (revisionError) throw revisionError;
+    
+    return documentData.document_id;
+  } catch (error) {
+    console.error('Error uploading revision PDF:', error);
+    return null;
+  }
 };

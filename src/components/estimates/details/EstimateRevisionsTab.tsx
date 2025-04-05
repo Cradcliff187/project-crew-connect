@@ -4,13 +4,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { EstimateRevision } from '../types/estimateTypes';
-import { ChevronDown, ChevronUp, ArrowLeftRight, Clock, Check, X, Send, FileEdit, Settings, Mail } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowLeftRight, Clock, Check, X, Send, FileEdit, Settings, Mail, FileDown, Eye } from 'lucide-react';
 import EstimateRevisionCompareDialog from '../detail/dialogs/EstimateRevisionCompareDialog';
 import EstimateRevisionEditDialog from '../detail/dialogs/EstimateRevisionEditDialog';
 import SendRevisionEmailDialog from '../detail/dialogs/SendRevisionEmailDialog';
 import EmailTemplateDialog from '../detail/dialogs/EmailTemplateDialog';
 import { Badge } from "@/components/ui/badge";
 import RevisionChangeBadge from "../detail/RevisionChangeBadge";
+import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +43,9 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [viewerDialogOpen, setViewerDialogOpen] = useState(false);
   const [selectedRevision, setSelectedRevision] = useState<EstimateRevision | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [selectedRevisions, setSelectedRevisions] = useState<{
     oldRevisionId?: string;
     newRevisionId: string;
@@ -97,6 +100,30 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
 
   const handleEmailTemplates = () => {
     setTemplateDialogOpen(true);
+  };
+  
+  const handleViewPdf = async (revision: EstimateRevision) => {
+    if (!revision.pdf_document_id) {
+      return; // No PDF available
+    }
+    
+    try {
+      // Fetch the document details
+      const { data: document, error } = await supabase
+        .from('documents_with_urls')
+        .select('*')
+        .eq('document_id', revision.pdf_document_id)
+        .single();
+      
+      if (error) throw error;
+      
+      if (document) {
+        setSelectedDocument(document);
+        setViewerDialogOpen(true);
+      }
+    } catch (err) {
+      console.error('Error fetching document:', err);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -176,6 +203,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                 const canEdit = revision.is_current && ['draft', 'ready'].includes(revision.status?.toLowerCase());
                 const canSendEmail = revision.is_current && 
                   ['draft', 'ready', 'rejected'].includes(revision.status?.toLowerCase());
+                const hasPdf = !!revision.pdf_document_id;
                 
                 return (
                   <div 
@@ -192,6 +220,12 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                           <RevisionChangeBadge changeType="modified" size="sm" />
                         )}
                         {getStatusBadge(revision.status)}
+                        {hasPdf && (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <FileDown className="h-3 w-3 mr-1" />
+                            PDF
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">{safeFormatDate(revision.revision_date)}</span>
@@ -217,9 +251,16 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                               </DropdownMenuItem>
                             )}
                             
+                            {hasPdf && (
+                              <DropdownMenuItem onClick={() => handleViewPdf(revision)}>
+                                <Eye className="h-3.5 w-3.5 mr-2" />
+                                <span>View PDF</span>
+                              </DropdownMenuItem>
+                            )}
+                            
                             {previousRevision && (
                               <>
-                                {(canEdit || canSendEmail) && <DropdownMenuSeparator />}
+                                {(canEdit || canSendEmail || hasPdf) && <DropdownMenuSeparator />}
                                 <DropdownMenuItem
                                   onClick={() => handleCompare(revision.id, previousRevision.id)}
                                 >
@@ -265,6 +306,19 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                           )}
                           <p>Created: {safeFormatDate(revision.created_at)}</p>
                           <p>Last updated: {safeFormatDate(revision.updated_at)}</p>
+                          {hasPdf && (
+                            <div className="pt-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 text-xs"
+                                onClick={() => handleViewPdf(revision)}
+                              >
+                                <Eye className="h-3.5 w-3.5 mr-1.5" />
+                                View PDF
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -312,6 +366,16 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
         open={templateDialogOpen}
         onOpenChange={setTemplateDialogOpen}
       />
+      
+      {selectedDocument && (
+        <DocumentViewerDialog
+          document={selectedDocument}
+          open={viewerDialogOpen}
+          onOpenChange={setViewerDialogOpen}
+          title={`Estimate Revision ${selectedDocument.notes ? selectedDocument.notes.match(/revision (\d+)/i)?.[1] : ''}`}
+          description="PDF generated for this estimate revision"
+        />
+      )}
     </>
   );
 };
