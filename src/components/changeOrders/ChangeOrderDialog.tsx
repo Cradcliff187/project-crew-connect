@@ -140,6 +140,11 @@ const ChangeOrderDialog = ({
     }
   };
 
+  // Preserve form context when switching tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
@@ -150,11 +155,14 @@ const ChangeOrderDialog = ({
         </DialogHeader>
         
         <FormProvider {...form}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="basic-info">
+          <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="basic-info">
             <TabsList className="grid grid-cols-4">
               <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
               <TabsTrigger value="items">Items</TabsTrigger>
-              <TabsTrigger value="financial-analysis" disabled={!isEditing && !form.getValues().items?.length}>Financial Impact</TabsTrigger>
+              <TabsTrigger value="financial-analysis" 
+                disabled={!isEditing && !form.getValues().items?.length}>
+                Financial Impact
+              </TabsTrigger>
               <TabsTrigger value="approval" disabled={!isEditing}>Approval</TabsTrigger>
             </TabsList>
             

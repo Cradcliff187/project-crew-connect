@@ -26,8 +26,10 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
   const [notes, setNotes] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
-  const currentStatus = form.watch('status') as ChangeOrderStatus;
-  const { statusOptions } = form.getValues ? { statusOptions: [] } : { statusOptions: [] };
+  const [statusOptions, setStatusOptions] = useState<any[]>([]);
+
+  // Safely access form fields
+  const currentStatus = form?.watch ? form.watch('status') as ChangeOrderStatus : 'DRAFT';
   
   useEffect(() => {
     if (changeOrderId) {
@@ -60,6 +62,21 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
     if (!changeOrderId) return;
     
     try {
+      // First fetch status definitions for change orders
+      const { data: statusDefs, error: statusError } = await supabase
+        .from('status_definitions')
+        .select('*')
+        .eq('entity_type', 'CHANGE_ORDER');
+        
+      if (!statusError && statusDefs) {
+        setStatusOptions(statusDefs.map(def => ({
+          value: def.status_code,
+          label: def.label,
+          color: def.color
+        })));
+      }
+    
+      // Then fetch the history
       const { data, error } = await supabase
         .from('activitylog')
         .select('*')
@@ -107,6 +124,11 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
         .eq('id', changeOrderId);
       
       if (error) throw error;
+      
+      // Update the form value if form is available
+      if (form && form.setValue) {
+        form.setValue('approval_notes', notes);
+      }
       
       toast({
         title: "Notes saved",
@@ -170,7 +192,7 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
         <CardContent>
           <StatusHistoryView 
             history={history} 
-            statusOptions={statusOptions || []}
+            statusOptions={statusOptions}
             currentStatus={currentStatus}
           />
         </CardContent>

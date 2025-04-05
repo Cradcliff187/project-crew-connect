@@ -27,6 +27,7 @@ export interface StatusControlProps {
   tableName: string;
   idField: string;
   onStatusChange: () => void;
+  onAfterStatusChange?: (newStatus: string) => Promise<void>;
   recordHistory?: boolean;
   size?: 'sm' | 'md' | 'lg';
   showStatusBadge?: boolean;
@@ -43,6 +44,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   tableName,
   idField,
   onStatusChange,
+  onAfterStatusChange,
   recordHistory = false,
   size = 'md',
   showStatusBadge = true,
@@ -132,8 +134,14 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
         description: `Status changed to ${pendingStatus}`,
       });
       
+      // Call the standard onStatusChange callback
       if (typeof onStatusChange === 'function') {
         onStatusChange();
+      }
+      
+      // Call the additional after-status-change handler if provided
+      if (typeof onAfterStatusChange === 'function') {
+        await onAfterStatusChange(pendingStatus);
       }
     } catch (error: any) {
       console.error('Error updating status:', error);
