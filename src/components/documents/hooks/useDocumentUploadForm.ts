@@ -7,7 +7,7 @@ import {
   EntityType, 
   documentUploadSchema, 
   getEntityCategories,
-  documentCategories
+  DocumentCategory
 } from '../schemas/documentSchema';
 import { useFormSubmitHandler } from './useFormSubmitHandler';
 
@@ -48,7 +48,7 @@ export const useDocumentUploadForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
-  const [availableCategories, setAvailableCategories] = useState<string[]>(
+  const [availableCategories, setAvailableCategories] = useState<DocumentCategory[]>(
     entityType ? getEntityCategories(entityType) : []
   );
 
@@ -58,7 +58,7 @@ export const useDocumentUploadForm = ({
     defaultValues: {
       files: [],
       metadata: {
-        category: isReceiptUpload ? 'receipt' : (prefillData?.category || documentCategories[0]),
+        category: isReceiptUpload ? 'receipt' as DocumentCategory : (prefillData?.category as DocumentCategory || 'other' as DocumentCategory),
         entityType: entityType || 'PROJECT',
         entityId: entityId || '',
         isExpense: isReceiptUpload,
@@ -103,14 +103,14 @@ export const useDocumentUploadForm = ({
 
       // Set default category for entity type
       if (isReceiptUpload) {
-        form.setValue('metadata.category', 'receipt');
+        form.setValue('metadata.category', 'receipt' as DocumentCategory);
         form.setValue('metadata.isExpense', true);
       } else if (entityType === 'WORK_ORDER') {
-        form.setValue('metadata.category', 'receipt');
+        form.setValue('metadata.category', 'receipt' as DocumentCategory);
       } else if (entityType === 'PROJECT') {
-        form.setValue('metadata.category', 'photo');
+        form.setValue('metadata.category', 'photo' as DocumentCategory);
       } else if (entityType === 'VENDOR' || entityType === 'SUBCONTRACTOR') {
-        form.setValue('metadata.category', 'certification');
+        form.setValue('metadata.category', 'certification' as DocumentCategory);
       }
     }
     
@@ -135,7 +135,8 @@ export const useDocumentUploadForm = ({
       }
       
       if (prefillData.category) {
-        form.setValue('metadata.category', prefillData.category);
+        // Ensure we cast the category to DocumentCategory type
+        form.setValue('metadata.category', prefillData.category as DocumentCategory);
       }
       
       if (prefillData.budgetItemId) {

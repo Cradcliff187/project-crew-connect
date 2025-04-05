@@ -65,8 +65,6 @@ export const uploadDocument = async (data: DocumentUploadFormValues): Promise<Up
         vendor_id: metadata.vendorId,
         vendor_type: metadata.vendorType,
         expense_type: metadata.expenseType,
-        parent_entity_type: metadata.parentEntityType,
-        parent_entity_id: metadata.parentEntityId,
         budget_item_id: metadata.budgetItemId,
         version: 1,
         is_latest_version: true
@@ -108,22 +106,22 @@ const updateExpenseRelationships = async (documentId: string, metadata: any) => 
   try {
     // If we have a budget item ID, update it with this document
     if (metadata.budgetItemId) {
+      const expenseData = {
+        entity_type: metadata.entityType,
+        entity_id: metadata.entityId,
+        expense_type: metadata.expenseType || 'other',
+        document_id: documentId,
+        vendor_id: metadata.vendorId,
+        expense_date: metadata.expenseDate,
+        description: metadata.notes || `${metadata.category} document`,
+        amount: metadata.amount || 0,
+        budget_item_id: metadata.budgetItemId,
+        is_receipt: metadata.category === 'receipt'
+      };
+        
       const { error } = await supabase
         .from('expenses')
-        .insert({
-          entity_type: metadata.entityType,
-          entity_id: metadata.entityId,
-          expense_type: metadata.expenseType || 'other',
-          document_id: documentId,
-          vendor_id: metadata.vendorId,
-          expense_date: metadata.expenseDate,
-          description: metadata.notes || `${metadata.category} document`,
-          amount: metadata.amount || 0,
-          budget_item_id: metadata.budgetItemId,
-          is_receipt: metadata.category === 'receipt',
-          parent_entity_type: metadata.parentEntityType,
-          parent_entity_id: metadata.parentEntityId
-        });
+        .insert(expenseData);
         
       if (error) {
         console.error('Error creating expense relationship:', error);
