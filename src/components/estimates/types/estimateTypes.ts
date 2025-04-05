@@ -1,6 +1,7 @@
 
 export interface EstimateItem {
   id: string;
+  estimate_id?: string;
   description: string;
   quantity: number;
   unit_price: number;
@@ -8,16 +9,15 @@ export interface EstimateItem {
   cost?: number;
   markup_percentage?: number;
   markup_amount?: number;
-  item_type?: string;
+  gross_margin?: number;
+  gross_margin_percentage?: number;
   vendor_id?: string;
   subcontractor_id?: string;
+  item_type?: string;
   document_id?: string;
   notes?: string;
   revision_id?: string;
   original_item_id?: string;
-  
-  // For backward compatibility with older data
-  total?: number;
 }
 
 export interface EstimateRevision {
@@ -32,30 +32,38 @@ export interface EstimateRevision {
   amount?: number;
   revision_by?: string;
   document_id?: string;
-  
-  // Add the missing properties
-  updated_at?: string;
-  created_at?: string;
-  sent_to?: string;
-  
-  // PDF document reference
   pdf_document_id?: string;
-  
-  // For backward compatibility with older data
-  date?: string;
+  created_at?: string;
+  updated_at?: string;
+  sent_to?: string;
 }
 
-export type RevisionStatus = 
-  | 'draft' 
-  | 'ready'
-  | 'sent' 
-  | 'approved' 
-  | 'rejected';
-
-export interface RevisionChange {
-  item_id: string;
-  type: 'added' | 'modified' | 'removed';
-  previous_value?: any;
-  new_value?: any;
-  field_name?: string;
+export interface Estimate {
+  id: string;
+  customerid?: string;
+  customername?: string;
+  customer?: string;
+  client?: string;
+  projectid?: string;
+  projectname?: string;
+  project?: string;
+  description?: string;
+  job_description?: string;
+  estimateamount: number;
+  total?: number;
+  amount?: number;
+  contingencyamount?: number;
+  contingency_percentage?: number;
+  datecreated?: string;
+  sentdate?: string;
+  approveddate?: string;
+  status: string;
+  sitelocationaddress?: string;
+  sitelocationcity?: string;
+  sitelocationstate?: string;
+  sitelocationzip?: string;
+  items?: EstimateItem[];
+  versions?: number;
+  current_revision?: EstimateRevision;
+  revisions?: EstimateRevision[];
 }

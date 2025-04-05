@@ -1,460 +1,363 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog';
+
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, AlertCircle, Info } from 'lucide-react';
+import { EstimateRevision } from '../../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, Eye, PlusCircle, Settings } from 'lucide-react';
-import { EstimateRevision } from '@/components/estimates/types/estimateTypes';
-import EstimatePrintTemplate from '../EstimatePrintTemplate';
-import useRevisionPdf from '../../hooks/useRevisionPdf';
-import RevisionPDFViewer from '../RevisionPDFViewer';
-import EmailTemplateSelector, { EmailTemplate } from '../EmailTemplateSelector';
-import EmailTemplatePreviewCard from '../EmailTemplatePreviewCard';
-import EmailTemplateFormDialog from './EmailTemplateFormDialog';
+import { toast } from '@/hooks/use-toast';
+import usePdfGeneration from '../../hooks/usePdfGeneration';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SendRevisionEmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  estimateId: string;
-  revision: EstimateRevision;
+  revision: EstimateRevision | null;
   clientName?: string;
   clientEmail?: string;
-  onSuccess?: () => void;
+  estimateId: string;
+}
+
+interface EmailTemplate {
+  id: string;
+  template_name: string;
+  subject_template: string;
+  body_template: string;
 }
 
 const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   open,
   onOpenChange,
-  estimateId,
   revision,
-  clientName = "Client",
-  clientEmail = "",
-  onSuccess
+  clientName = 'Client',
+  clientEmail,
+  estimateId
 }) => {
-  const [activeTab, setActiveTab] = useState<string>("email");
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [subject, setSubject] = useState<string>('');
+  const [emailBody, setEmailBody] = useState<string>('');
+  const [to, setTo] = useState<string>(clientEmail || '');
+  const [cc, setCc] = useState<string>('');
+  const [bcc, setBcc] = useState<string>('');
+  const [attachPdf, setAttachPdf] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [toEmail, setToEmail] = useState(clientEmail);
-  const [ccEmail, setCcEmail] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [attachPdf, setAttachPdf] = useState(true);
-  const [estimate, setEstimate] = useState<any>(null);
-  const [items, setItems] = useState<any[]>([]);
-  const [templateFormOpen, setTemplateFormOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
-  const pdfContentRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  const [hasPdf, setHasPdf] = useState(false);
+  const { generatePdf, isGenerating, checkRevisionPdf } = usePdfGeneration();
   
-  const { generateRevisionPdf, checkRevisionPdf, isGenerating } = useRevisionPdf({
-    onSuccess: (documentId) => {
-      console.log('PDF generated with document ID:', documentId);
-      if (onSuccess) {
-        onSuccess();
-      }
-    }
-  });
-
   useEffect(() => {
-    if (open) {
-      setActiveTab("email");
-      setToEmail(clientEmail);
-      setCcEmail('');
-      fetchEstimateData();
-      setEmailSent(false);
+    if (open && revision) {
+      fetchTemplates();
+      checkForExistingPdf();
     }
-  }, [open, clientEmail]);
-
-  const fetchEstimateData = async () => {
+  }, [open, revision]);
+  
+  const checkForExistingPdf = async () => {
+    if (revision?.id) {
+      const pdfDocId = await checkRevisionPdf(revision.id);
+      setHasPdf(!!pdfDocId);
+    }
+  };
+  
+  const fetchTemplates = async () => {
     setIsLoading(true);
     try {
-      const { data: estimateData, error: estimateError } = await supabase
-        .from('estimates')
-        .select('*')
-        .eq('estimateid', estimateId)
-        .single();
+      const { data, error } = await supabase
+        .from('estimate_email_settings')
+        .select('*');
+        
+      if (error) throw error;
       
-      if (estimateError) throw estimateError;
-      setEstimate(estimateData);
+      setTemplates(data || []);
       
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('estimate_items')
-        .select('*')
-        .eq('revision_id', revision.id)
-        .order('id');
-      
-      if (itemsError) throw itemsError;
-      setItems(itemsData || []);
-      
-      const pdfDocumentId = await checkRevisionPdf(revision.id);
-      if (!pdfDocumentId) {
-        setAttachPdf(true);
+      // Set default template if available
+      const defaultTemplate = data?.find(t => t.is_default);
+      if (defaultTemplate) {
+        setSelectedTemplateId(defaultTemplate.id);
+        applyTemplate(defaultTemplate);
       }
     } catch (error) {
-      console.error('Error fetching estimate data:', error);
+      console.error('Error fetching email templates:', error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleTemplateSelect = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    setSubject(template.subject_template);
-    setMessage(template.body_template);
-  };
-
-  const handleGeneratePdf = async () => {
-    if (!pdfContentRef.current) return;
-    
-    try {
-      const documentId = await generateRevisionPdf(
-        pdfContentRef.current,
-        estimateId,
-        revision.id,
-        revision.version,
-        clientName
-      );
+  
+  const applyTemplate = (template: EmailTemplate) => {
+    // Replace placeholders in subject
+    let processedSubject = template.subject_template
+      .replace(/\{client_name\}/g, clientName)
+      .replace(/\{estimate_id\}/g, estimateId)
+      .replace(/\{revision_number\}/g, revision?.version?.toString() || '');
       
-      if (documentId && onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast({
-        title: "Error generating PDF",
-        description: "Failed to generate PDF. Please try again.",
-        variant: "destructive",
-      });
+    // Replace placeholders in body
+    let processedBody = template.body_template
+      .replace(/\{client_name\}/g, clientName)
+      .replace(/\{estimate_id\}/g, estimateId)
+      .replace(/\{revision_number\}/g, revision?.version?.toString() || '');
+      
+    setSubject(processedSubject);
+    setEmailBody(processedBody);
+  };
+  
+  const handleTemplateChange = (value: string) => {
+    setSelectedTemplateId(value);
+    const selectedTemplate = templates.find(t => t.id === value);
+    if (selectedTemplate) {
+      applyTemplate(selectedTemplate);
     }
   };
-
+  
   const handleSendEmail = async () => {
-    if (!toEmail) {
+    if (!to) {
       toast({
-        title: "Missing recipient",
-        description: "Please enter a recipient email address",
-        variant: "destructive",
+        title: 'Required Field Missing',
+        description: 'Please enter a recipient email address.',
+        variant: 'destructive',
       });
       return;
     }
-
+    
     setIsSubmitting(true);
+    let pdfDocumentId = revision?.pdf_document_id;
+    
     try {
-      let pdfDocumentId = revision.pdf_document_id;
-      
-      if (attachPdf && !pdfDocumentId && pdfContentRef.current) {
-        pdfDocumentId = await generateRevisionPdf(
-          pdfContentRef.current,
-          estimateId,
-          revision.id,
-          revision.version,
-          clientName
-        );
+      // Generate PDF if needed and requested
+      if (attachPdf && !hasPdf && revision) {
+        pdfDocumentId = await generatePdf(estimateId, revision.id);
+        if (!pdfDocumentId) {
+          toast({
+            title: 'PDF Generation Failed',
+            description: 'Could not generate PDF attachment for the email.',
+            variant: 'destructive',
+          });
+        }
       }
       
-      const { error: communicationError } = await supabase
-        .from('contact_interactions')
+      // Prepare email data
+      const emailData = {
+        to,
+        cc,
+        bcc,
+        subject,
+        body: emailBody,
+        estimate_id: estimateId,
+        revision_id: revision?.id,
+        sent_by: 'system', // This would be the current user in a real system
+        sent_at: new Date().toISOString(),
+        pdf_document_id: attachPdf ? pdfDocumentId : null,
+        status: 'SENT',
+      };
+      
+      // In a real application, we would call an API endpoint to send the email
+      // For now, we'll simulate it by logging to the activitylog table
+      
+      const { error } = await supabase
+        .from('activitylog')
         .insert({
-          contact_id: estimate.customerid,
-          interaction_type: 'EMAIL',
-          subject: `Estimate ${estimateId} Revision ${revision.version}`,
-          notes: message,
-          status: 'COMPLETED'
+          action: 'EMAIL_SENT',
+          moduletype: 'ESTIMATE',
+          referenceid: estimateId,
+          timestamp: new Date().toISOString(),
+          status: 'SENT',
+          detailsjson: JSON.stringify(emailData),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
         
-      if (communicationError) {
-        console.error("Error recording communication:", communicationError);
+      if (error) throw error;
+      
+      // Update the revision status to 'sent' if it was in 'draft' or 'ready'
+      if (revision && ['draft', 'ready'].includes(revision.status.toLowerCase())) {
+        const { error: revisionError } = await supabase
+          .from('estimate_revisions')
+          .update({
+            status: 'sent',
+            sent_date: new Date().toISOString(),
+            sent_to: to,
+            pdf_document_id: pdfDocumentId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', revision.id);
+          
+        if (revisionError) {
+          console.error('Error updating revision status:', revisionError);
+        }
       }
       
-      const { error: updateError } = await supabase
-        .from('estimate_revisions')
-        .update({
-          status: 'sent',
-          sent_date: new Date().toISOString(),
-          sent_to: toEmail,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', revision.id);
-        
-      if (updateError) throw updateError;
-      
-      const { error: estimateError } = await supabase
-        .from('estimates')
-        .update({
-          status: 'sent',
-          sentdate: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('estimateid', estimateId);
-        
-      if (estimateError) throw estimateError;
-      
-      setEmailSent(true);
-      
       toast({
-        title: "Email Sent Successfully",
-        description: `Revision ${revision.version} has been sent to ${toEmail}`,
-        className: "bg-[#0485ea] text-white",
+        title: 'Email Sent',
+        description: 'The estimate has been sent successfully.',
       });
       
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      setTimeout(() => {
-        onOpenChange(false);
-      }, 2000);
+      onOpenChange(false);
     } catch (error: any) {
-      console.error("Error sending email:", error);
+      console.error('Error sending email:', error);
       toast({
-        title: "Error Sending Email",
-        description: error.message || "Failed to send email. Please try again.",
-        variant: "destructive",
+        title: 'Send Failed',
+        description: error.message || 'There was an error sending the email.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleTemplateFormSuccess = () => {
-    setTemplateFormOpen(false);
-    // Refresh templates
-    fetchEstimateData();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Send Estimate Revision</DialogTitle>
-          <DialogDescription>
-            Send Revision {revision.version} of Estimate #{estimateId} to the client
-          </DialogDescription>
+          <DialogTitle>Send Estimate</DialogTitle>
         </DialogHeader>
-
-        {emailSent ? (
-          <div className="py-12 text-center">
-            <div className="bg-[#0485ea]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Send className="h-10 w-10 text-[#0485ea]" />
+        
+        <div className="overflow-y-auto flex-1">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
+              <span className="ml-2">Loading templates...</span>
             </div>
-            <h3 className="text-xl font-medium mb-2">Email Sent Successfully!</h3>
-            <p className="text-muted-foreground">
-              Revision {revision.version} has been sent to {toEmail}
-            </p>
-            <Button 
-              className="mt-6"
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
-          </div>
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
-            <TabsList className="mb-4 grid grid-cols-2">
-              <TabsTrigger value="email">Email Details</TabsTrigger>
-              <TabsTrigger value="preview">PDF Preview</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="email" className="flex-1 overflow-y-auto">
-              <div className="space-y-4">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <>
-                    <EmailTemplateSelector
-                      onTemplateSelect={handleTemplateSelect}
-                      onCreateClick={() => setTemplateFormOpen(true)}
-                      revision={revision}
-                      clientName={clientName}
-                    />
-
-                    <div className="space-y-2">
-                      <Label htmlFor="toEmail">To</Label>
-                      <Input
-                        id="toEmail"
-                        value={toEmail}
-                        onChange={e => setToEmail(e.target.value)}
-                        placeholder="client@example.com"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="ccEmail">Cc (Optional)</Label>
-                      <Input
-                        id="ccEmail"
-                        value={ccEmail}
-                        onChange={e => setCcEmail(e.target.value)}
-                        placeholder="colleague@example.com"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="subject">Subject</Label>
-                      <Input
-                        id="subject"
-                        value={subject}
-                        onChange={e => setSubject(e.target.value)}
-                        placeholder="Estimate Revision"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Message</Label>
-                      <Textarea
-                        id="message"
-                        value={message}
-                        onChange={e => setMessage(e.target.value)}
-                        placeholder="Enter your message here"
-                        className="min-h-[150px]"
-                        required
-                      />
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="attachPdf"
-                        checked={attachPdf}
-                        onCheckedChange={(checked) => setAttachPdf(!!checked)}
-                      />
-                      <Label htmlFor="attachPdf">
-                        {revision.pdf_document_id 
-                          ? "Attach PDF to email" 
-                          : "Generate and attach PDF to email"}
-                      </Label>
-                    </div>
-                    
-                    {subject && message && (
-                      <div className="pt-4 border-t mt-6">
-                        <EmailTemplatePreviewCard
-                          subject={subject}
-                          body={message}
-                          recipientEmail={toEmail}
-                        />
-                      </div>
-                    )}
-                    
-                    {revision.pdf_document_id && (
-                      <div className="mt-2 border-t pt-4">
-                        <div className="text-sm font-medium mb-2">Revision PDF</div>
-                        <RevisionPDFViewer revision={revision} showCard={false} />
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="preview" className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-md">
-              {!revision.pdf_document_id && !isGenerating ? (
-                <div className="flex flex-col items-center justify-center h-full space-y-4">
-                  <div className="text-center max-w-md">
-                    <h3 className="text-lg font-medium mb-2">No PDF Generated Yet</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Generate a PDF preview of this revision to see how it will look when attached to the email.
-                    </p>
-                    <Button 
-                      onClick={handleGeneratePdf} 
-                      className="bg-[#0485ea] hover:bg-[#0373ce]"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Generate PDF Preview
-                    </Button>
-                  </div>
-                </div>
-              ) : isGenerating ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                    <p>Generating PDF preview...</p>
-                  </div>
-                </div>
-              ) : revision.pdf_document_id ? (
-                <div className="flex flex-col h-full">
-                  <div className="bg-white p-4 rounded-md shadow-sm mb-4">
-                    <h3 className="text-sm font-medium flex items-center gap-1.5 mb-3">
-                      <Eye className="h-4 w-4" />
-                      PDF Preview
-                    </h3>
-                    <RevisionPDFViewer revision={revision} showCard={false} />
-                  </div>
-                  <div className="flex-1 bg-white p-4 rounded-md shadow-sm overflow-y-auto">
-                    {estimate && items && (
-                      <EstimatePrintTemplate 
-                        estimate={estimate} 
-                        items={items}
-                        revision={revision}
-                      />
-                    )}
-                  </div>
-                </div>
-              ) : null}
-            </TabsContent>
-          </Tabs>
-        )}
-
-        {!emailSent && (
-          <DialogFooter className="pt-2 border-t">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSendEmail}
-              disabled={isSubmitting || isLoading || !toEmail}
-              className="bg-[#0485ea] hover:bg-[#0373ce]"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Email
-                </>
+          ) : (
+            <div className="space-y-4">
+              {!clientEmail && (
+                <Alert variant="warning" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No email address found for this client. Please enter a recipient email address manually.
+                  </AlertDescription>
+                </Alert>
               )}
-            </Button>
-          </DialogFooter>
-        )}
-        
-        {estimate && items && (
-          <div className="hidden">
-            <div ref={pdfContentRef}>
-              <EstimatePrintTemplate 
-                estimate={estimate} 
-                items={items}
-                revision={revision}
-              />
+              
+              <div className="space-y-2">
+                <Label htmlFor="template">Email Template</Label>
+                <Select 
+                  value={selectedTemplateId} 
+                  onValueChange={handleTemplateChange}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger id="template">
+                    <SelectValue placeholder="Select template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map(template => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.template_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="to">To</Label>
+                <Input
+                  id="to"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder="recipient@example.com"
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cc">CC</Label>
+                  <Input
+                    id="cc"
+                    value={cc}
+                    onChange={(e) => setCc(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="cc@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bcc">BCC</Label>
+                  <Input
+                    id="bcc"
+                    value={bcc}
+                    onChange={(e) => setBcc(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="bcc@example.com"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="subject">Subject</Label>
+                <Input
+                  id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder="Email subject"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="body">Message</Label>
+                <Textarea
+                  id="body"
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  disabled={isSubmitting}
+                  rows={10}
+                  placeholder="Email body"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="attachPdf"
+                  checked={attachPdf}
+                  onCheckedChange={(checked) => setAttachPdf(checked as boolean)}
+                  disabled={isSubmitting}
+                />
+                <Label htmlFor="attachPdf">
+                  Attach PDF of the estimate
+                </Label>
+              </div>
+              
+              {!hasPdf && attachPdf && (
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <Info className="h-3 w-3 mr-1" />
+                  A PDF will be generated automatically when sending
+                </div>
+              )}
             </div>
-          </div>
-        )}
-        
-        <EmailTemplateFormDialog
-          open={templateFormOpen}
-          onOpenChange={setTemplateFormOpen}
-          onSuccess={handleTemplateFormSuccess}
-        />
+          )}
+        </div>
+          
+        <DialogFooter className="pt-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => onOpenChange(false)} 
+            disabled={isSubmitting || isGenerating}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSendEmail} 
+            disabled={isSubmitting || isGenerating || isLoading} 
+            className="bg-[#0485ea] hover:bg-[#0375d1]"
+          >
+            {isSubmitting || isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isGenerating ? 'Generating PDF...' : 'Sending...'}
+              </>
+            ) : (
+              'Send Email'
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

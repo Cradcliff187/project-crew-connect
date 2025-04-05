@@ -1,184 +1,171 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, RefreshCw, Printer, Loader2, Eye } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { FileText, Download, Share2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import PDFExportButton from './PDFExportButton';
-import PDFEstimateViewer from './PDFEstimateViewer';
+import DocumentShareDialog from './dialogs/DocumentShareDialog';
 
 interface EstimatePDFManagerProps {
   estimateId: string;
   revisionId: string;
 }
 
-const EstimatePDFManager: React.FC<EstimatePDFManagerProps> = ({ estimateId, revisionId }) => {
-  const [hasPdf, setHasPdf] = useState(false);
+const EstimatePDFManager: React.FC<EstimatePDFManagerProps> = ({ 
+  estimateId,
+  revisionId
+}) => {
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [documentId, setDocumentId] = useState<string | null>(null);
-  const [estimateData, setEstimateData] = useState<any>(null);
   const { toast } = useToast();
-
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  
   useEffect(() => {
     if (revisionId) {
-      checkForPdf();
-      fetchEstimateData();
+      fetchPdfDocument();
     }
   }, [revisionId]);
-
-  const checkForPdf = async () => {
+  
+  const fetchPdfDocument = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: revision, error: revisionError } = await supabase
         .from('estimate_revisions')
         .select('pdf_document_id')
         .eq('id', revisionId)
         .single();
-
-      if (error) throw error;
-
-      if (data && data.pdf_document_id) {
-        setHasPdf(true);
-        setDocumentId(data.pdf_document_id);
+        
+      if (revisionError) throw revisionError;
+      
+      if (revision?.pdf_document_id) {
+        const { data: document, error: docError } = await supabase
+          .from('documents_with_urls')
+          .select('*')
+          .eq('document_id', revision.pdf_document_id)
+          .single();
+          
+        if (docError) throw docError;
+        
+        setPdfDocument(document || null);
       } else {
-        setHasPdf(false);
-        setDocumentId(null);
+        setPdfDocument(null);
       }
     } catch (error) {
-      console.error('Error checking for PDF:', error);
-      setHasPdf(false);
-      setDocumentId(null);
+      console.error('Error fetching PDF document:', error);
+      setPdfDocument(null);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const fetchEstimateData = async () => {
-    try {
-      // Fetch estimate data
-      const { data: estimate, error: estimateError } = await supabase
-        .from('estimates')
-        .select('*')
-        .eq('estimateid', estimateId)
-        .single();
-      
-      if (estimateError) throw estimateError;
-      
-      // Fetch revision data
-      const { data: revision, error: revisionError } = await supabase
-        .from('estimate_revisions')
-        .select('*')
-        .eq('id', revisionId)
-        .single();
-      
-      if (revisionError) throw revisionError;
-      
-      setEstimateData({
-        ...estimate,
-        revision: revision
+  
+  const handlePdfGenerated = (documentId: string) => {
+    toast({
+      title: 'PDF Generated',
+      description: 'PDF has been generated successfully.',
+    });
+    fetchPdfDocument();
+  };
+  
+  const handleDownload = async () => {
+    if (!pdfDocument?.url) {
+      toast({
+        title: 'Error',
+        description: 'PDF URL not available for download.',
+        variant: 'destructive'
       });
+      return;
+    }
+    
+    try {
+      const response = await fetch(pdfDocument.url);
+      const blob = await response.blob();
+      
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.download = pdfDocument.file_name || `estimate-${estimateId}.pdf`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Log the download action
+      await supabase
+        .from('document_access_logs')
+        .insert({
+          document_id: pdfDocument.document_id,
+          action: 'DOWNLOAD'
+        });
     } catch (error) {
-      console.error('Error fetching estimate data:', error);
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: 'Download Error',
+        description: 'Failed to download the PDF.',
+        variant: 'destructive'
+      });
     }
   };
-
-  const handlePdfGenerated = (newDocumentId: string) => {
-    setDocumentId(newDocumentId);
-    setHasPdf(true);
-    toast({
-      title: "PDF Generated",
-      description: "The PDF has been generated successfully",
-      className: "bg-[#0485ea] text-white",
-    });
-    checkForPdf(); // Refresh to ensure consistency
-  };
-
-  const handleDownload = () => {
-    toast({
-      title: "Downloading PDF",
-      description: "Your PDF is being downloaded",
-      className: "bg-[#0485ea] text-white",
-    });
+  
+  const handleShare = () => {
+    setShareDialogOpen(true);
   };
 
   return (
-    <Card className="mb-4 shadow-sm border-muted/60">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[#0485ea]" />
-            Estimate Document
-          </span>
-          <div>
-            {isLoading ? (
-              <Button variant="outline" disabled>
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                Loading...
+    <Card>
+      <CardContent className="p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-1">Estimate PDF Document</h3>
+          <p className="text-sm text-muted-foreground">
+            {pdfDocument ? 
+              'PDF document is available for download and sharing' : 
+              'Generate a PDF document of this estimate'
+            }
+          </p>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          {isLoading ? (
+            <Button disabled className="bg-[#0485ea] text-white">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading...
+            </Button>
+          ) : pdfDocument ? (
+            <>
+              <Button onClick={handleDownload} className="bg-[#0485ea] text-white hover:bg-[#0373d1]">
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
               </Button>
-            ) : hasPdf ? (
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={checkForPdf}
-                >
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Refresh
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownload}
-                >
-                  <Download className="h-4 w-4 mr-1" />
-                  Download PDF
-                </Button>
-              </div>
-            ) : (
+              <Button variant="outline" onClick={handleShare}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </Button>
               <PDFExportButton
                 estimateId={estimateId}
                 revisionId={revisionId}
+                variant="outline"
                 onSuccess={handlePdfGenerated}
-                variant="default"
-                size="sm"
-                className="bg-[#0485ea] hover:bg-[#0373ce]"
-                clientName={estimateData?.customername || "Client"}
-                projectName={estimateData?.projectname || "Project"}
-              />
-            )}
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-2">
-        {isLoading ? (
-          <div className="flex items-center justify-center p-16 bg-slate-50 border rounded-md">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : hasPdf ? (
-          <PDFEstimateViewer 
-            estimateId={estimateId} 
-            revisionId={revisionId} 
-            onDownload={handleDownload}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center p-16 bg-slate-50 border rounded-md">
-            <FileText className="h-16 w-16 text-muted-foreground opacity-20 mb-4" />
-            <p className="text-muted-foreground text-center mb-4">
-              No PDF has been generated for this estimate revision yet
-            </p>
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Regenerate
+              </PDFExportButton>
+            </>
+          ) : (
             <PDFExportButton
               estimateId={estimateId}
               revisionId={revisionId}
               onSuccess={handlePdfGenerated}
-              variant="default"
-              className="bg-[#0485ea] hover:bg-[#0373ce]"
-              clientName={estimateData?.customername || "Client"}
-              projectName={estimateData?.projectname || "Project"}
+              className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
             />
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
+      
+      <DocumentShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        document={pdfDocument}
+        estimateId={estimateId}
+      />
     </Card>
   );
 };

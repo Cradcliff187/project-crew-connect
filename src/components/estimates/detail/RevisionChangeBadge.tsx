@@ -1,58 +1,44 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUp, ArrowDown, Minus, PenLine } from 'lucide-react';
-
-type ChangeType = 'added' | 'removed' | 'modified' | 'unchanged';
+import { Clock, Plus, Pencil } from 'lucide-react';
 
 interface RevisionChangeBadgeProps {
-  changeType: ChangeType;
-  size?: 'sm' | 'md';
-  showLabel?: boolean;
+  changeType: 'new' | 'modified' | 'sent';
+  size?: 'sm' | 'default';
 }
 
 const RevisionChangeBadge: React.FC<RevisionChangeBadgeProps> = ({ 
-  changeType, 
-  size = 'md',
-  showLabel = true
+  changeType,
+  size = 'default'
 }) => {
-  const getIconAndStyles = () => {
-    switch (changeType) {
-      case 'added':
-        return {
-          icon: <ArrowUp className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />,
-          classes: 'bg-green-100 text-green-800 border-green-200',
-          label: 'Added'
-        };
-      case 'removed':
-        return {
-          icon: <ArrowDown className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />,
-          classes: 'bg-red-100 text-red-800 border-red-200',
-          label: 'Removed'
-        };
-      case 'modified':
-        return {
-          icon: <PenLine className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />,
-          classes: 'bg-amber-100 text-amber-800 border-amber-200',
-          label: 'Modified'
-        };
-      default:
-        return {
-          icon: <Minus className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />,
-          classes: 'bg-gray-100 text-gray-700 border-gray-200',
-          label: 'Unchanged'
-        };
-    }
-  };
+  const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
   
-  const { icon, classes, label } = getIconAndStyles();
-  
-  return (
-    <Badge className={`${classes} ${size === 'sm' ? 'text-xs py-0 px-1.5' : 'text-xs py-0.5 px-2'} font-medium`} variant="outline">
-      {icon}
-      {showLabel && <span className="ml-1">{label}</span>}
-    </Badge>
-  );
+  switch (changeType) {
+    case 'new':
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <Plus className={`${iconSize} mr-1`} />
+          New
+        </Badge>
+      );
+    case 'modified':
+      return (
+        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+          <Pencil className={`${iconSize} mr-1`} />
+          Modified
+        </Badge>
+      );
+    case 'sent':
+      return (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          <Clock className={`${iconSize} mr-1`} />
+          Recent
+        </Badge>
+      );
+    default:
+      return null;
+  }
 };
 
 export default RevisionChangeBadge;

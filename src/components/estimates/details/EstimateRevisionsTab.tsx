@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -338,37 +339,29 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
       <EstimateRevisionEditDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        estimateId={estimateId}
-        revisionId={selectedRevision?.id || ''}
+        revision={selectedRevision}
         onSuccess={handleEditSuccess}
       />
-
-      {selectedRevision && (
-        <SendRevisionEmailDialog
-          open={emailDialogOpen}
-          onOpenChange={setEmailDialogOpen}
-          estimateId={estimateId}
-          revision={selectedRevision}
-          clientName={clientName}
-          clientEmail={clientEmail}
-          onSuccess={handleEditSuccess}
-        />
-      )}
-
+      
+      <SendRevisionEmailDialog
+        open={emailDialogOpen}
+        onOpenChange={setEmailDialogOpen}
+        revision={selectedRevision}
+        clientName={clientName}
+        clientEmail={clientEmail}
+        estimateId={estimateId}
+      />
+      
       <EmailTemplateDialog
         open={templateDialogOpen}
         onOpenChange={setTemplateDialogOpen}
       />
       
-      {selectedDocument && (
-        <DocumentViewerDialog
-          document={selectedDocument}
-          open={viewerDialogOpen}
-          onOpenChange={setViewerDialogOpen}
-          title={`Estimate Revision ${selectedDocument.notes ? selectedDocument.notes.match(/revision (\d+)/i)?.[1] : ''}`}
-          description="PDF generated for this estimate revision"
-        />
-      )}
+      <DocumentViewerDialog
+        open={viewerDialogOpen}
+        onOpenChange={setViewerDialogOpen}
+        document={selectedDocument}
+      />
     </>
   );
 };

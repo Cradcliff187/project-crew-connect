@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, FileDown, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Eye, Download } from 'lucide-react';
 import { EstimateRevision } from '../types/estimateTypes';
-import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface RevisionPDFViewerProps {
   revision: EstimateRevision;
@@ -14,128 +14,127 @@ interface RevisionPDFViewerProps {
 
 const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({ 
   revision,
-  showCard = true
+  showCard = true 
 }) => {
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [document, setDocument] = useState<any>(null);
-  
-  const hasPdf = !!revision.pdf_document_id;
 
-  const handleViewPdf = async () => {
-    if (!revision.pdf_document_id) return;
-    
-    setIsLoading(true);
-    
-    try {
-      // Fetch the document details with URL
-      const { data, error } = await supabase
-        .from('documents_with_urls')
-        .select('*')
-        .eq('document_id', revision.pdf_document_id)
-        .single();
+  useEffect(() => {
+    const loadPdfUrl = async () => {
+      if (!revision?.pdf_document_id) return;
       
-      if (error) throw error;
-      
-      if (data) {
-        setDocument(data);
-        setViewerOpen(true);
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('documents_with_urls')
+          .select('url, file_name')
+          .eq('document_id', revision.pdf_document_id)
+          .single();
+          
+        if (error) throw error;
+        
+        if (data?.url) {
+          setPdfUrl(data.url);
+        }
+      } catch (err) {
+        console.error('Error loading PDF:', err);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching document:', err);
-    } finally {
-      setIsLoading(false);
+    };
+    
+    loadPdfUrl();
+  }, [revision]);
+
+  const handleViewPdf = () => {
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
+    } else {
+      toast({
+        title: 'PDF Not Available',
+        description: 'The PDF document could not be loaded.',
+        variant: 'destructive',
+      });
     }
   };
 
   const handleDownloadPdf = async () => {
-    if (!revision.pdf_document_id) return;
-    
-    setIsLoading(true);
+    if (!pdfUrl) {
+      toast({
+        title: 'PDF Not Available',
+        description: 'The PDF document could not be loaded for download.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     try {
-      // Fetch the document details with URL
-      const { data, error } = await supabase
-        .from('documents_with_urls')
-        .select('url, file_name')
-        .eq('document_id', revision.pdf_document_id)
-        .single();
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
       
-      if (error) throw error;
-      
-      if (data?.url) {
-        // Create a temporary anchor and click it
-        const link = document.createElement('a');
-        link.href = data.url;
-        link.download = data.file_name || `Estimate_Revision_${revision.version}.pdf`;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      // Create a download link
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.download = `Estimate-V${revision.version}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
     } catch (err) {
-      console.error('Error downloading document:', err);
-    } finally {
-      setIsLoading(false);
+      console.error('Error downloading PDF:', err);
+      toast({
+        title: 'Download Failed',
+        description: 'There was an error downloading the PDF.',
+        variant: 'destructive',
+      });
     }
   };
 
-  if (!hasPdf) return null;
+  if (!revision?.pdf_document_id) {
+    return null;
+  }
 
   const content = (
-    <div className="flex flex-col space-y-2">
-      <div className="flex space-x-2">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+      <div>
+        <h4 className="text-sm font-medium mb-1">PDF Document</h4>
+        <p className="text-xs text-muted-foreground">Version {revision.version} PDF Document</p>
+      </div>
+      <div className="flex gap-2">
         <Button
           variant="outline"
           size="sm"
-          className="flex items-center gap-1.5"
           onClick={handleViewPdf}
-          disabled={isLoading || !hasPdf}
+          disabled={isLoading || !pdfUrl}
+          className="text-xs"
         >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
-          View PDF
+          <Eye className="h-3.5 w-3.5 mr-1" />
+          View
         </Button>
-        
         <Button
           variant="outline"
           size="sm"
-          className="flex items-center gap-1.5"
           onClick={handleDownloadPdf}
-          disabled={isLoading || !hasPdf}
+          disabled={isLoading || !pdfUrl}
+          className="text-xs bg-[#0485ea] text-white hover:bg-[#0373d1]"
         >
-          <FileDown className="h-4 w-4" />
+          <Download className="h-3.5 w-3.5 mr-1" />
           Download
         </Button>
       </div>
-      {document && (
-        <DocumentViewerDialog
-          document={document}
-          open={viewerOpen}
-          onOpenChange={setViewerOpen}
-          title={`Estimate Revision ${revision.version}`}
-          description="PDF for this estimate revision"
-        />
-      )}
     </div>
   );
 
-  if (!showCard) return content;
+  if (showCard) {
+    return (
+      <Card className="mt-2">
+        <CardContent className="p-4">
+          {content}
+        </CardContent>
+      </Card>
+    );
+  }
 
-  return (
-    <Card>
-      <CardHeader className="py-4">
-        <CardTitle className="text-sm font-medium flex items-center">
-          <FileDown className="h-4 w-4 mr-1.5" />
-          Revision PDF
-        </CardTitle>
-      </CardHeader>
-      <CardContent>{content}</CardContent>
-    </Card>
-  );
+  return <div className="mt-4 p-3 border rounded-md bg-slate-50">{content}</div>;
 };
 
 export default RevisionPDFViewer;
