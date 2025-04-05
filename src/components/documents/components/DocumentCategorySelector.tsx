@@ -8,7 +8,7 @@ import {
   EntityType,
   DocumentCategory
 } from '../schemas/documentSchema';
-import { getEntityCategories, toDocumentCategory } from '../utils/DocumentCategoryHelper';
+import { getEntityCategories, toDocumentCategory, isValidDocumentCategory } from '../utils/DocumentCategoryHelper';
 
 interface DocumentCategorySelectorProps {
   control: Control<DocumentUploadFormValues>;
@@ -57,14 +57,15 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
 
   // Create a list of categories to display based on entity type
   // Filter for only valid DocumentCategory types
-  const categoriesToShow: DocumentCategory[] = [
-    'receipt', 
-    'invoice',
-    ...(availableCategories.length > 0 
-      ? availableCategories.filter(c => !['receipt', 'invoice'].includes(c) && toDocumentCategory(c) !== 'other')
-      : ['3rd_party_estimate', 'contract', 'insurance', 'certification', 'photo', 'other'])
-  ];
+  const baseCategories: DocumentCategory[] = ['receipt', 'invoice'];
+  const additionalCategories: DocumentCategory[] = availableCategories.length > 0 
+    ? availableCategories
+        .filter(c => !baseCategories.includes(c as DocumentCategory))
+        .filter(isValidDocumentCategory)
+    : ['3rd_party_estimate', 'contract', 'insurance', 'certification', 'photo', 'other'];
 
+  const categoriesToShow: DocumentCategory[] = [...baseCategories, ...additionalCategories];
+  
   // Remove duplicates
   const uniqueCategories = Array.from(new Set(categoriesToShow));
 

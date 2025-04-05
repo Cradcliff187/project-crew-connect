@@ -74,6 +74,7 @@ const DocumentsPage: React.FC = () => {
   // Handler for successful upload that refreshes both document lists
   const handleDocumentUploadSuccess = (documentId?: string) => {
     handleUploadSuccess(documentId);
+    // Call refreshRecentDocuments without arguments
     refreshRecentDocuments();
   };
   
