@@ -107,7 +107,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
                     />
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(field.total_price || 0)}
+                    {formatCurrency((field as EstimateItem).total_price || 0)}
                   </TableCell>
                   <TableCell>
                     <Button
