@@ -1,7 +1,12 @@
 
-export { default as WorkOrderDialog } from './WorkOrderDialog';
-export { default as WorkOrderFormSchema } from './WorkOrderFormSchema';
-export { default as useWorkOrderForm } from './useWorkOrderForm';
-export { default as WorkOrderBasicInfoFields } from './WorkOrderBasicInfoFields';
-export { default as WorkOrderScheduleFields } from './WorkOrderScheduleFields';
-export { default as WorkOrderLocationFields } from './WorkOrderLocationFields';
+import WorkOrderDialog from './WorkOrderDialog';
+import WorkOrderMultiStepDialog from './WorkOrderMultiStepDialog';
+import { workOrderFormSchema } from './WorkOrderFormSchema'; // Import non-default export
+
+export {
+  WorkOrderDialog,
+  WorkOrderMultiStepDialog,
+  workOrderFormSchema
+};
+
+export default WorkOrderDialog;

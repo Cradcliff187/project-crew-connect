@@ -36,8 +36,9 @@ export const useWorkOrderSubmit = ({
           priority: values.priority,
           po_number: values.po_number,
           time_estimate: values.time_estimate,
-          scheduled_date: values.scheduled_date ? values.scheduled_date.toISOString() : null,
-          due_by_date: values.due_by_date ? values.due_by_date.toISOString() : null,
+          // Properly handle date values
+          scheduled_date: values.scheduled_date instanceof Date ? values.scheduled_date.toISOString() : values.scheduled_date,
+          due_by_date: values.due_by_date instanceof Date ? values.due_by_date.toISOString() : values.due_by_date,
           customer_id: values.customer_id || null,
           location_id: locationId || null,
           assigned_to: values.assigned_to || null,

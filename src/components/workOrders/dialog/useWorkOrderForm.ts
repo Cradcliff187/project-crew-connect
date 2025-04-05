@@ -1,66 +1,60 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import workOrderSchema, { WorkOrderFormValues } from './WorkOrderFormSchema';
-import { useWorkOrderData } from './hooks/useWorkOrderData';
-import { useWorkOrderSubmit } from './hooks/useWorkOrderSubmit';
-import { useEffect } from 'react';
+import { z } from 'zod';
+import { workOrderFormSchema, WorkOrderFormValues } from './WorkOrderFormSchema';
 
-interface UseWorkOrderFormProps {
-  onOpenChange: (open: boolean) => void;
-  onWorkOrderAdded: () => void;
-  isOpen: boolean;
-}
-
-const DEFAULT_VALUES: WorkOrderFormValues = {
-  title: '',
-  description: '',
-  priority: 'MEDIUM',
-  po_number: '',
-  time_estimate: 0,
-  use_custom_address: false,
-  address: '',
-  city: '',
-  state: '',
-  zip: '',
-};
-
-const useWorkOrderForm = ({ onOpenChange, onWorkOrderAdded, isOpen }: UseWorkOrderFormProps) => {
+export const useWorkOrderForm = () => {
   const form = useForm<WorkOrderFormValues>({
-    resolver: zodResolver(workOrderSchema),
-    defaultValues: DEFAULT_VALUES,
-    mode: 'onChange',
-  });
-
-  const {
-    formData,
-    dataLoaded,
-    isLoading,
-  } = useWorkOrderData(isOpen);
-
-  const { isSubmitting, onSubmit } = useWorkOrderSubmit({
-    onWorkOrderAdded,
-    onOpenChange,
-    resetForm: form.reset
-  });
-
-  const useCustomAddress = form.watch('use_custom_address');
-  
-  // Reset form when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      form.reset(DEFAULT_VALUES);
+    resolver: zodResolver(workOrderFormSchema),
+    defaultValues: {
+      title: '',
+      work_order_number: '',
+      description: '',
+      priority: 'MEDIUM',
+      po_number: '',
+      scheduled_date: undefined,
+      due_by_date: undefined,
+      time_estimate: undefined,
+      customer_id: '',
+      location_id: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      assigned_to: '',
+      useCustomAddress: false // Use the correct property name from schema
     }
-  }, [isOpen, form]);
-
+  });
+  
+  const resetForm = () => {
+    form.reset({
+      title: '',
+      work_order_number: '',
+      description: '',
+      priority: 'MEDIUM',
+      po_number: '',
+      scheduled_date: undefined,
+      due_by_date: undefined,
+      time_estimate: undefined,
+      customer_id: '',
+      location_id: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      assigned_to: '',
+      useCustomAddress: false // Use the correct property name from schema
+    });
+  };
+  
+  // Use correct field name when watching form changes
+  const useCustomAddress = form.watch('useCustomAddress');
+  
   return {
     form,
-    isSubmitting,
-    formData,
-    useCustomAddress,
-    dataLoaded,
-    isLoading,
-    onSubmit
+    resetForm,
+    useCustomAddress
   };
 };
 

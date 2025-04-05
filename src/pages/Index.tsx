@@ -1,4 +1,3 @@
-
 import { BarChart3, Briefcase, FileText, Users, DollarSign, Clock, ArrowRight, TrendingUp, CheckCircle, Wrench, Calendar, AlertTriangle, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DashboardCard from '@/components/dashboard/DashboardCard';
@@ -203,7 +202,7 @@ const Dashboard = () => {
                         <p className="text-xs text-muted-foreground">Budget: {formatCurrency(alert.budget)}</p>
                       </div>
                       <StatusBadge 
-                        status={alert.status === 'warning' ? 'warning' : 'critical'} 
+                        status={alertCount > 0 ? 'warning' as StatusType : 'critical' as StatusType}
                         size="sm"
                       />
                     </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -10,6 +9,14 @@ import DocumentGrid from '@/components/projects/detail/DocumentsList/DocumentsGr
 interface WorkOrderDocumentsProps {
   workOrderId: string;
   entityType: string;
+}
+
+interface DocumentsGridProps {
+  documents: any[];
+  loading: boolean;
+  onViewDocument?: (doc: any) => void;
+  onToggleUploadForm?: () => void;
+  onDocumentsRefresh?: () => Promise<void>;
 }
 
 const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps) => {
@@ -77,6 +84,7 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
           documents={documents} 
           loading={loading} 
           onDocumentsRefresh={fetchDocuments}
+          onViewDocument={() => {}}
         />
       )}
 
@@ -85,7 +93,7 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
           open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}
           entityId={workOrderId}
-          entityType={entityType}
+          entityType={"WORK_ORDER"}
           onDocumentUploaded={handleDocumentUploaded}
         />
       )}

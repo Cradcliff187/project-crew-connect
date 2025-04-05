@@ -9,8 +9,8 @@ export const workOrderFormSchema = z.object({
   po_number: z.string().optional(),
   
   // Schedule Fields
-  scheduled_date: z.string().optional(),
-  due_by_date: z.string().optional(),
+  scheduled_date: z.date().optional(),
+  due_by_date: z.date().optional(),
   time_estimate: z.number().positive().optional(),
   
   // Location Fields
@@ -31,3 +31,5 @@ export const workOrderFormSchema = z.object({
 });
 
 export type WorkOrderFormValues = z.infer<typeof workOrderFormSchema>;
+
+export default workOrderFormSchema;

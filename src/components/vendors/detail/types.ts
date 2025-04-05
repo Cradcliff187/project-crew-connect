@@ -23,6 +23,11 @@ export interface VendorDocument {
   category?: string;
   created_at: string;
   url: string;
+  file_size?: number;
+  entity_id?: string;
+  entity_type?: string;
+  storage_path?: string;
+  updated_at?: string;
 }
 
 export interface VendorProject {

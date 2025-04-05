@@ -3,7 +3,12 @@
  * Common types used throughout the application
  */
 
-export type StatusType = 'NEW' | 'DRAFT' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'APPROVED' | 'REJECTED' | 'SENT' | 'READY' | 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'draft' | 'sent' | 'approved' | 'rejected' | 'converted';
+export type StatusType = 
+  | 'NEW' | 'DRAFT' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'APPROVED' | 'REJECTED' 
+  | 'SENT' | 'READY' | 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'QUALIFIED' | 'VERIFIED'
+  | 'draft' | 'sent' | 'approved' | 'rejected' | 'converted' | 'active' | 'inactive' | 'completed'
+  | 'cancelled' | 'pending' | 'on_hold' | 'on-hold' | 'in_progress' | 'qualified' | 'verified'
+  | 'success' | 'error' | 'warning' | 'info' | 'neutral' | 'purple' | 'unknown' | 'critical';
 
 export interface StatusOption {
   value: string;

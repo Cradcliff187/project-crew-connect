@@ -1,25 +1,28 @@
 
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { useState } from 'react';
+import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderFormValues } from '../WorkOrderFormSchema';
 
 interface CreateLocationToggleProps {
   form: UseFormReturn<WorkOrderFormValues>;
-  useCustomAddress?: boolean; // Add this prop to the interface
 }
 
 const CreateLocationToggle = ({ form }: CreateLocationToggleProps) => {
+  // Use proper field name from schema
   return (
     <FormField
       control={form.control}
-      name="use_custom_address"
+      name="useCustomAddress"
       render={({ field }) => (
-        <FormItem className="flex flex-row items-center justify-between space-y-0 pt-7">
-          <FormLabel>Create New Location</FormLabel>
+        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+          <div className="space-y-0.5">
+            <FormLabel>Create new location</FormLabel>
+          </div>
           <FormControl>
             <Switch
-              checked={field.value}
+              checked={field.value === true}
               onCheckedChange={field.onChange}
             />
           </FormControl>
