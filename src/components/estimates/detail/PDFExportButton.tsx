@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -8,9 +8,6 @@ import usePdfGeneration from '../hooks/usePdfGeneration';
 interface PDFExportButtonProps {
   estimateId: string;
   revisionId?: string;
-  clientName?: string;
-  projectName?: string;
-  date?: string;
   contentRef?: React.RefObject<HTMLDivElement>;
   onSuccess?: (documentId: string) => void;
   className?: string;
@@ -29,32 +26,29 @@ interface PDFExportButtonProps {
 const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   estimateId,
   revisionId,
-  clientName,
-  projectName,
-  date,
   contentRef,
   onSuccess,
   className,
   variant = 'default',
   size = 'default'
 }) => {
-  const { generatePdf, isGenerating } = usePdfGeneration();
   const { toast } = useToast();
+  const { generatePdf, isGenerating } = usePdfGeneration({
+    onSuccess,
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred while generating the PDF",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleGeneratePdf = async () => {
     try {
       // Use the revisionId if available, otherwise generate PDF with content reference
       if (revisionId) {
-        const documentId = await generatePdf(estimateId, revisionId);
-        if (documentId && onSuccess) {
-          onSuccess(documentId);
-        } else if (!documentId) {
-          toast({
-            title: "Error",
-            description: "Failed to generate PDF. Please try again.",
-            variant: "destructive"
-          });
-        }
+        await generatePdf(estimateId, revisionId);
       } else if (contentRef && contentRef.current) {
         toast({
           title: "Info",
@@ -64,11 +58,6 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       }
     } catch (error: any) {
       console.error('Error in PDF export:', error);
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred while generating the PDF",
-        variant: "destructive"
-      });
     }
   };
 

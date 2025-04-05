@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Download, Loader2 } from 'lucide-react';
 import { EstimateRevision } from '../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface RevisionPDFViewerProps {
   revision: EstimateRevision;
@@ -18,6 +18,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
 }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadPdfUrl = async () => {

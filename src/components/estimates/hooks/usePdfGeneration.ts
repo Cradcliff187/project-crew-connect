@@ -5,7 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
-export const usePdfGeneration = () => {
+export interface PdfGenerationOptions {
+  onSuccess?: (documentId: string) => void;
+  onError?: (error: Error) => void;
+}
+
+export const usePdfGeneration = (options?: PdfGenerationOptions) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   
@@ -240,6 +245,10 @@ export const usePdfGeneration = () => {
         className: 'bg-[#0485ea] text-white',
       });
       
+      if (options?.onSuccess) {
+        options.onSuccess(docData.document_id);
+      }
+      
       return docData.document_id;
     } catch (error: any) {
       console.error('PDF generation error:', error);
@@ -248,6 +257,11 @@ export const usePdfGeneration = () => {
         description: error.message || 'There was an error generating the PDF',
         variant: 'destructive',
       });
+      
+      if (options?.onError) {
+        options.onError(error);
+      }
+      
       return null;
     } finally {
       setIsGenerating(false);

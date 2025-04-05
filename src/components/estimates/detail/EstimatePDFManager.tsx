@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Share2, Loader2 } from 'lucide-react';
+import { Download, Share2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import PDFExportButton from './PDFExportButton';
@@ -19,8 +19,8 @@ const EstimatePDFManager: React.FC<EstimatePDFManagerProps> = ({
 }) => {
   const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   useEffect(() => {
     if (revisionId) {
