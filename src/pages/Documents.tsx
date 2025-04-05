@@ -86,7 +86,6 @@ const DocumentsPage: React.FC = () => {
   const totalDocuments = documents?.length || 0;
 
   return (
-    
     <PageTransition>
       <div className="flex flex-col min-h-full">
         <PageHeader
