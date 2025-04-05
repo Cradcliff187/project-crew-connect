@@ -37,7 +37,6 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   
-  // Ref for PDF export
   const contentRef = useRef<HTMLDivElement>(null);
 
   const formatDate = (dateString: string) => {
@@ -46,7 +45,6 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     try {
       const date = new Date(dateString);
       
-      // Check if date is valid
       if (isNaN(date.getTime())) {
         return "Invalid date";
       }
@@ -62,7 +60,6 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     }
   };
 
-  // Find the current version from revisions
   useEffect(() => {
     const currentRevision = revisions.find(rev => rev.is_current);
     if (currentRevision) {
@@ -70,12 +67,10 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     }
   }, [revisions]);
   
-  // Fetch client email when the estimate dialog opens, using customer ID when available
   useEffect(() => {
     const fetchClientEmail = async () => {
       if (open) {
         try {
-          // Try to use customerId first (preferred)
           if (estimate.customerId) {
             console.log('Using customer ID for lookup:', estimate.customerId);
             const { data: customerData, error: customerError } = await supabase
@@ -91,7 +86,6 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               }
             }
             
-            // If no email found in customers, try contacts table
             const { data: contactData, error: contactError } = await supabase
               .from('contacts')
               .select('email')
@@ -104,10 +98,8 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
             }
           }
           
-          // Fallback to trying by client name if needed and customerId didn't work
           if (!estimate.customerId && estimate.client) {
             console.log('Falling back to client name lookup:', estimate.client);
-            // Try to find by name in contacts
             const { data: nameContactData, error: nameContactError } = await supabase
               .from('contacts')
               .select('email')
@@ -119,7 +111,6 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               return;
             }
             
-            // Try to find by name in customers
             const { data: nameCustomerData, error: nameCustomerError } = await supabase
               .from('customers')
               .select('contactemail')
@@ -132,7 +123,6 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
             }
           }
           
-          // If we reach here, we didn't find an email
           console.log('No client email found for:', estimate.customerId || estimate.client);
           setClientEmail(undefined);
         } catch (err) {
@@ -160,22 +150,17 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     setShareDialogOpen(true);
   };
 
-  // Map the items to the expected format for EstimateItemsTab
   const mappedItems: EstimateItem[] = items.map(item => ({
     ...item,
-    total_price: item.total_price || item.total || 0, // Handle both field names for backward compatibility
-    // Include any other required properties from EstimateItem type
+    total_price: item.total_price || item.total || 0,
   }));
 
-  // Map the revisions to the expected format for EstimateRevisionsTab
   const mappedRevisions: EstimateRevision[] = revisions.map(rev => ({
     ...rev,
     estimate_id: estimate.id,
     revision_date: rev.revision_date || rev.date || new Date().toISOString(),
-    // Include any other required properties from EstimateRevision type
   }));
 
-  // Prepare estimate for EstimateDetailsTab
   const detailsEstimate = {
     ...estimate,
     project: estimate.project || '',
@@ -243,6 +228,8 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
                   formatDate={formatDate} 
                   estimateId={estimate.id}
                   onRefresh={onStatusChange}
+                  clientName={estimate.client}
+                  clientEmail={clientEmail}
                 />
               </TabsContent>
               
