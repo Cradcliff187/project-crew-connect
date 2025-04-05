@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
@@ -11,16 +12,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Send, Eye } from 'lucide-react';
+import { Loader2, Send, Eye, PlusCircle, Settings } from 'lucide-react';
 import { EstimateRevision } from '@/components/estimates/types/estimateTypes';
 import EstimatePrintTemplate from '../EstimatePrintTemplate';
 import useRevisionPdf from '../../hooks/useRevisionPdf';
 import RevisionPDFViewer from '../RevisionPDFViewer';
+import EmailTemplateSelector, { EmailTemplate } from '../EmailTemplateSelector';
+import EmailTemplatePreviewCard from '../EmailTemplatePreviewCard';
+import EmailTemplateFormDialog from './EmailTemplateFormDialog';
 
 interface SendRevisionEmailDialogProps {
   open: boolean;
@@ -30,14 +33,6 @@ interface SendRevisionEmailDialogProps {
   clientName?: string;
   clientEmail?: string;
   onSuccess?: () => void;
-}
-
-interface EmailTemplate {
-  id: string;
-  template_name: string;
-  subject_template: string;
-  body_template: string;
-  is_default: boolean;
 }
 
 const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
@@ -56,11 +51,11 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   const [ccEmail, setCcEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [attachPdf, setAttachPdf] = useState(true);
   const [estimate, setEstimate] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
+  const [templateFormOpen, setTemplateFormOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const pdfContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -79,45 +74,11 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       setToEmail(clientEmail);
       setCcEmail('');
       fetchEstimateData();
-      fetchEmailTemplates();
     }
   }, [open, clientEmail]);
 
-  const fetchEmailTemplates = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('estimate_email_settings')
-        .select('*')
-        .order('is_default', { ascending: false });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setTemplates(data);
-        
-        const defaultTemplate = data.find(t => t.is_default);
-        if (defaultTemplate) {
-          setSelectedTemplateId(defaultTemplate.id);
-          applyTemplate(defaultTemplate);
-        } else {
-          setSelectedTemplateId(data[0].id);
-          applyTemplate(data[0]);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching email templates:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load email templates",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const fetchEstimateData = async () => {
+    setIsLoading(true);
     try {
       const { data: estimateData, error: estimateError } = await supabase
         .from('estimates')
@@ -143,35 +104,15 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       }
     } catch (error) {
       console.error('Error fetching estimate data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const applyTemplate = (template: EmailTemplate) => {
-    let processedSubject = template.subject_template;
-    let processedBody = template.body_template;
-    
-    const variables: Record<string, string> = {
-      clientName: clientName,
-      revisionNumber: revision.version.toString(),
-      estimateId: estimateId
-    };
-    
-    Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      processedSubject = processedSubject.replace(regex, value);
-      processedBody = processedBody.replace(regex, value);
-    });
-    
-    setSubject(processedSubject);
-    setMessage(processedBody);
-  };
-
-  const handleTemplateChange = (templateId: string) => {
-    setSelectedTemplateId(templateId);
-    const selectedTemplate = templates.find(t => t.id === templateId);
-    if (selectedTemplate) {
-      applyTemplate(selectedTemplate);
-    }
+  const handleTemplateSelect = (template: EmailTemplate) => {
+    setSelectedTemplate(template);
+    setSubject(template.subject_template);
+    setMessage(template.body_template);
   };
 
   const handleGeneratePdf = async () => {
@@ -223,6 +164,21 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         );
       }
       
+      // Record email communication in database
+      const { error: communicationError } = await supabase
+        .from('contact_interactions')
+        .insert({
+          contact_id: estimate.customerid,
+          interaction_type: 'EMAIL',
+          subject: `Estimate ${estimateId} Revision ${revision.version}`,
+          notes: message,
+          status: 'COMPLETED'
+        });
+        
+      if (communicationError) {
+        console.error("Error recording communication:", communicationError);
+      }
+      
       const { error: updateError } = await supabase
         .from('estimate_revisions')
         .update({
@@ -269,11 +225,17 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
     }
   };
 
+  const handleTemplateFormSuccess = () => {
+    setTemplateFormOpen(false);
+    // Refresh templates
+    fetchEstimateData();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Send Revision Email</DialogTitle>
+          <DialogTitle>Send Estimate Revision</DialogTitle>
           <DialogDescription>
             Send Revision {revision.version} of Estimate #{estimateId} to the client
           </DialogDescription>
@@ -293,24 +255,12 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
                 </div>
               ) : (
                 <>
-                  <div>
-                    <Label htmlFor="emailTemplate">Email Template</Label>
-                    <Select
-                      value={selectedTemplateId || ''}
-                      onValueChange={handleTemplateChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a template" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {templates.map(template => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.template_name} {template.is_default && "(Default)"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <EmailTemplateSelector
+                    onTemplateSelect={handleTemplateSelect}
+                    onCreateClick={() => setTemplateFormOpen(true)}
+                    revision={revision}
+                    clientName={clientName}
+                  />
 
                   <div className="space-y-2">
                     <Label htmlFor="toEmail">To</Label>
@@ -368,6 +318,16 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
                         : "Generate and attach PDF to email"}
                     </Label>
                   </div>
+                  
+                  {subject && message && (
+                    <div className="pt-4 border-t mt-6">
+                      <EmailTemplatePreviewCard
+                        subject={subject}
+                        body={message}
+                        recipientEmail={toEmail}
+                      />
+                    </div>
+                  )}
                   
                   {revision.pdf_document_id && (
                     <div className="mt-2 border-t pt-4">
@@ -465,6 +425,12 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
             </div>
           </div>
         )}
+        
+        <EmailTemplateFormDialog
+          open={templateFormOpen}
+          onOpenChange={setTemplateFormOpen}
+          onSuccess={handleTemplateFormSuccess}
+        />
       </DialogContent>
     </Dialog>
   );

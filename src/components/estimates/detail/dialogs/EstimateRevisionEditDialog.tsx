@@ -7,11 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FileDown } from 'lucide-react';
+import { Loader2, FileDown, Eye } from 'lucide-react';
 import useRevisionPdf from '../../hooks/useRevisionPdf';
 import EstimatePrintTemplate from '../EstimatePrintTemplate';
+import RevisionPDFViewer from '../RevisionPDFViewer';
 
 interface EstimateRevisionEditDialogProps {
   open: boolean;
@@ -36,6 +38,7 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
   revisionId,
   onSuccess,
 }) => {
+  const [activeTab, setActiveTab] = useState<string>("edit");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [revision, setRevision] = useState<any>(null);
@@ -47,15 +50,19 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
   const [clientName, setClientName] = useState<string>('');
   const pdfContentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { generateRevisionPdf, isGenerating } = useRevisionPdf({
+  const { generateRevisionPdf, isGenerating, checkRevisionPdf } = useRevisionPdf({
     onSuccess: (documentId) => {
       console.log('PDF generated with document ID:', documentId);
+      if (onSuccess) {
+        onSuccess();
+      }
     }
   });
   
   useEffect(() => {
     if (open && revisionId) {
       loadRevisionData();
+      setActiveTab("edit");
     }
   }, [open, revisionId]);
   
@@ -74,6 +81,7 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
       setRevision(revisionData);
       setStatus(revisionData.status || 'draft');
       setNotes(revisionData.notes || '');
+      setGeneratePdf(!revisionData.pdf_document_id);
       
       // Fetch estimate info
       const { data: estimateData, error: estimateError } = await supabase
@@ -171,6 +179,15 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
       setIsSaving(false);
     }
   };
+
+  const handleViewPreview = () => {
+    if (revision.pdf_document_id) {
+      setActiveTab("preview");
+    } else if (pdfContentRef.current) {
+      setGeneratePdf(true);
+      setActiveTab("preview");
+    }
+  };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -180,64 +197,134 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
             Edit Revision {revision?.version || ''}
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="flex-1 overflow-y-auto py-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden flex flex-col">
+          <TabsList className="mb-4 grid grid-cols-2">
+            <TabsTrigger value="edit">Edit Revision</TabsTrigger>
+            <TabsTrigger value="preview" disabled={isLoading || (!revision?.pdf_document_id && !pdfContentRef.current)}>
+              PDF Preview
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="edit" className="flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Add notes about this revision"
-                  className="min-h-[120px]"
-                />
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Add notes about this revision"
+                    className="min-h-[120px]"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2 pt-4 border-t">
+                  <Checkbox 
+                    id="generatePdf"
+                    checked={generatePdf}
+                    onCheckedChange={(checked) => setGeneratePdf(!!checked)}
+                  />
+                  <div>
+                    <Label 
+                      htmlFor="generatePdf"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {revision?.pdf_document_id 
+                        ? "Replace existing PDF for this revision" 
+                        : "Generate PDF for this revision"}
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {revision?.pdf_document_id 
+                        ? "This will replace the existing PDF for this revision." 
+                        : "This will create a downloadable PDF version of this revision."}
+                    </p>
+                  </div>
+                </div>
+
+                {revision?.pdf_document_id && (
+                  <div className="pt-4 border-t">
+                    <div className="text-sm font-medium mb-2">Current Revision PDF</div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleViewPreview}
+                        className="flex items-center gap-1.5"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View PDF
+                      </Button>
+                      
+                      <RevisionPDFViewer revision={revision} showCard={false} />
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              <div className="flex items-center gap-2 pt-4 border-t">
-                <Checkbox 
-                  id="generatePdf"
-                  checked={generatePdf}
-                  onCheckedChange={(checked) => setGeneratePdf(!!checked)}
-                />
-                <div>
-                  <Label 
-                    htmlFor="generatePdf"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    Generate PDF for this revision
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {revision?.pdf_document_id 
-                      ? "This will replace the existing PDF for this revision." 
-                      : "This will create a downloadable PDF version of this revision."}
+            )}
+          </TabsContent>
+
+          <TabsContent value="preview" className="flex-1 overflow-y-auto bg-gray-50 p-4 rounded-md">
+            {isGenerating ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                  <p>Generating PDF preview...</p>
+                </div>
+              </div>
+            ) : revision?.pdf_document_id ? (
+              <div className="flex flex-col h-full">
+                <div className="bg-white p-4 rounded-md shadow-sm mb-4">
+                  <h3 className="text-sm font-medium flex items-center gap-1.5 mb-3">
+                    <FileDown className="h-4 w-4" />
+                    PDF Preview
+                  </h3>
+                  <RevisionPDFViewer revision={revision} showCard={false} />
+                </div>
+                
+                <div className="flex-1 bg-white p-4 rounded-md shadow-sm overflow-y-auto">
+                  {estimate && items && (
+                    <EstimatePrintTemplate 
+                      estimate={estimate} 
+                      items={items}
+                      revision={revision}
+                    />
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <div className="text-center max-w-md">
+                  <h3 className="text-lg font-medium mb-2">No PDF Generated Yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Save the revision with "Generate PDF" option checked to create a PDF.
                   </p>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </TabsContent>
+        </Tabs>
         
         <div className="pt-4 border-t flex items-center justify-between">
           <Button
@@ -268,7 +355,7 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
         </div>
         
         {/* Hidden print template for PDF generation */}
-        {generatePdf && estimate && items && (
+        {(generatePdf || activeTab === 'preview') && estimate && items && (
           <div className="hidden">
             <div ref={pdfContentRef}>
               <EstimatePrintTemplate 

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileDown, Loader2, Upload } from 'lucide-react';
+import { FileDown, Loader2, Upload, Save } from 'lucide-react';
 import { generateEstimatePDF, uploadRevisionPDF } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,8 +15,12 @@ interface PDFExportButtonProps {
   revisionNumber?: number;
   autoUpload?: boolean;
   onPdfGenerated?: (documentId: string) => void;
-  variant?: 'default' | 'outline';
-  size?: 'default' | 'sm';
+  variant?: 'default' | 'outline' | 'ghost' | 'link' | 'secondary' | 'destructive';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+  className?: string;
+  showIcon?: boolean;
+  showText?: boolean;
+  text?: string;
 }
 
 const PDFExportButton: React.FC<PDFExportButtonProps> = ({
@@ -30,7 +34,11 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   autoUpload = false,
   onPdfGenerated,
   variant = 'outline',
-  size = 'sm'
+  size = 'sm',
+  className = '',
+  showIcon = true,
+  showText = true,
+  text
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -110,7 +118,7 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
           toast({
             title: "PDF Generated",
             description: "PDF was downloaded but couldn't be saved to storage",
-            variant: "destructive"  // Changed from "warning" to "destructive"
+            variant: "destructive"
           });
         }
       } else {
@@ -140,30 +148,34 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
     }
   };
 
+  // Determine which icon to show
+  const IconComponent = isGenerating ? 
+    Loader2 : 
+    autoUpload ? 
+      Save : 
+      FileDown;
+
+  // Determine display text
+  const displayText = isGenerating ? 
+    'Generating...' : 
+    text ? 
+      text : 
+      autoUpload ? 
+        'Save PDF' : 
+        'Export PDF';
+
   return (
     <Button 
       onClick={handleExportPDF}
       variant={variant}
       size={size}
       disabled={isGenerating}
-      className="flex items-center gap-1"
+      className={`${className}`}
     >
-      {isGenerating ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Generating...
-        </>
-      ) : autoUpload ? (
-        <>
-          <Upload className="h-4 w-4" />
-          Generate & Save PDF
-        </>
-      ) : (
-        <>
-          <FileDown className="h-4 w-4" />
-          Export PDF
-        </>
+      {showIcon && (
+        <IconComponent className={`h-4 w-4 ${showText ? 'mr-2' : ''} ${isGenerating ? 'animate-spin' : ''}`} />
       )}
+      {showText && displayText}
     </Button>
   );
 };

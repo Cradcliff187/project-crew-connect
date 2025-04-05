@@ -111,6 +111,7 @@ export const useRevisionPdf = (options?: UseRevisionPdfOptions) => {
   // Check if a revision already has a PDF document
   const checkRevisionPdf = async (revisionId: string) => {
     try {
+      // Use proper error handling with type checking
       const { data, error } = await supabase
         .from('estimate_revisions')
         .select('pdf_document_id')
@@ -122,6 +123,7 @@ export const useRevisionPdf = (options?: UseRevisionPdfOptions) => {
         return null;
       }
       
+      // Safe access with optional chaining
       return data?.pdf_document_id || null;
     } catch (error) {
       console.error('Error checking revision PDF:', error);
