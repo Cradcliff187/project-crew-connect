@@ -58,10 +58,11 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   const [transitionNotes, setTransitionNotes] = useState('');
   
   // Ensure statusOptions is never undefined to prevent Array.from errors
-  const safeStatusOptions = statusOptions || [];
+  const safeStatusOptions = Array.isArray(statusOptions) ? statusOptions : [];
   
-  // Safeguard against undefined statusOptions
-  const filteredStatusOptions = safeStatusOptions.filter(option => option?.value !== currentStatus);
+  // Filter out any undefined options and the current status
+  const filteredStatusOptions = safeStatusOptions
+    .filter(option => option && option.value !== currentStatus);
   
   const handleStatusChange = async (newStatus: string) => {
     setPendingStatus(newStatus);

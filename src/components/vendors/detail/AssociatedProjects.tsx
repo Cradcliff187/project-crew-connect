@@ -17,10 +17,15 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
     navigate(`/projects/${project.projectid}`);
   };
 
-  // Format date function to handle both created_at and createdon
-  const formatDate = (date?: string) => {
+  // Format date function to safely handle null/undefined dates
+  const formatDate = (date?: string | null) => {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString();
+    try {
+      return new Date(date).toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
   };
 
   return (
@@ -45,10 +50,10 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
                 <TableRow key={project.projectid} className="cursor-pointer hover:bg-gray-100" onClick={() => handleViewProject(project)}>
                   <TableCell>
                     <Link to={`/projects/${project.projectid}`} className="text-[#0485ea] hover:underline">
-                      {project.projectname}
+                      {project.projectname || 'Unnamed Project'}
                     </Link>
                   </TableCell>
-                  <TableCell>{project.status}</TableCell>
+                  <TableCell>{project.status || 'Unknown'}</TableCell>
                   <TableCell>{formatDate(project.createdon)}</TableCell>
                 </TableRow>
               ))}

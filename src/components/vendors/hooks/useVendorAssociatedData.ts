@@ -27,64 +27,88 @@ const useVendorAssociatedData = (): UseVendorAssociatedDataResult => {
     setLoadingAssociations(true);
     
     try {
-      // Fetch associated projects
-      const { data: projectsData, error: projectsError } = await supabase
+      // Step 1: Get project associations
+      const { data: projectAssociations, error: projectAssociationsError } = await supabase
         .from('vendor_associations')
-        .select(`
-          amount, 
-          entity_id,
-          projects:entity_id(projectid, projectname, status, createdon, total_budget)
-        `)
+        .select('entity_id')
         .eq('vendor_id', vendorId)
         .eq('entity_type', 'PROJECT');
       
-      if (projectsError) {
-        console.error('Error fetching associated projects:', projectsError);
-      } else if (projectsData) {
-        // Transform data to get the projects
-        const vendorProjects: VendorProject[] = projectsData
-          .filter(item => item.projects) // Filter out any null projects
-          .map(item => ({
-            projectid: item.projects.projectid,
-            projectname: item.projects.projectname,
-            status: item.projects.status,
-            createdon: item.projects.createdon,
-            total_budget: item.projects.total_budget
-          }));
+      if (projectAssociationsError) {
+        console.error('Error fetching project associations:', projectAssociationsError);
+        setProjects([]);
+      } else if (projectAssociations && projectAssociations.length > 0) {
+        // Extract project IDs from associations
+        const projectIds = projectAssociations.map(association => association.entity_id);
         
-        setProjects(vendorProjects);
+        // Step 2: Fetch the actual projects using the IDs we collected
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('projectid, projectname, status, createdon, total_budget')
+          .in('projectid', projectIds);
+        
+        if (projectsError) {
+          console.error('Error fetching projects:', projectsError);
+          setProjects([]);
+        } else if (projectsData) {
+          // Transform projects data to match our interface
+          const vendorProjects: VendorProject[] = projectsData.map(project => ({
+            projectid: project.projectid,
+            projectname: project.projectname,
+            status: project.status || 'Unknown',
+            createdon: project.createdon,
+            total_budget: project.total_budget
+          }));
+          
+          setProjects(vendorProjects);
+        }
+      } else {
+        setProjects([]);
       }
       
-      // Fetch associated work orders
-      const { data: workOrdersData, error: workOrdersError } = await supabase
+      // Step 1: Get work order associations
+      const { data: workOrderAssociations, error: workOrderAssociationsError } = await supabase
         .from('vendor_associations')
-        .select(`
-          amount, 
-          entity_id,
-          work_orders:entity_id(work_order_id, title, status, created_at, progress, materials_cost)
-        `)
+        .select('entity_id')
         .eq('vendor_id', vendorId)
         .eq('entity_type', 'WORK_ORDER');
       
-      if (workOrdersError) {
-        console.error('Error fetching associated work orders:', workOrdersError);
-      } else if (workOrdersData) {
-        // Transform data to get the work orders
-        const vendorWorkOrders: VendorWorkOrder[] = workOrdersData
-          .filter(item => item.work_orders) // Filter out any null work orders
-          .map(item => ({
-            work_order_id: item.work_orders.work_order_id,
-            title: item.work_orders.title,
-            status: item.work_orders.status,
-            created_at: item.work_orders.created_at,
-            progress: item.work_orders.progress,
-            materials_cost: item.work_orders.materials_cost
-          }));
+      if (workOrderAssociationsError) {
+        console.error('Error fetching work order associations:', workOrderAssociationsError);
+        setWorkOrders([]);
+      } else if (workOrderAssociations && workOrderAssociations.length > 0) {
+        // Extract work order IDs from associations
+        const workOrderIds = workOrderAssociations.map(association => association.entity_id);
         
-        setWorkOrders(vendorWorkOrders);
+        // Step 2: Fetch the actual work orders using the IDs we collected
+        const { data: workOrdersData, error: workOrdersError } = await supabase
+          .from('maintenance_work_orders')
+          .select('work_order_id, title, status, created_at, progress, materials_cost')
+          .in('work_order_id', workOrderIds.map(id => id)); // Convert UUIDs to strings if needed
+        
+        if (workOrdersError) {
+          console.error('Error fetching work orders:', workOrdersError);
+          setWorkOrders([]);
+        } else if (workOrdersData) {
+          // Transform work orders data to match our interface
+          const vendorWorkOrders: VendorWorkOrder[] = workOrdersData.map(workOrder => ({
+            work_order_id: workOrder.work_order_id,
+            title: workOrder.title,
+            status: workOrder.status || 'Unknown',
+            created_at: workOrder.created_at,
+            progress: workOrder.progress,
+            materials_cost: workOrder.materials_cost
+          }));
+          
+          setWorkOrders(vendorWorkOrders);
+        }
+      } else {
+        setWorkOrders([]);
       }
     } catch (error) {
       console.error('Error in fetchAssociatedData:', error);
+      setProjects([]);
+      setWorkOrders([]);
     } finally {
       setLoadingAssociations(false);
     }
