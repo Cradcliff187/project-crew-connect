@@ -80,13 +80,14 @@ export const useVendorDocuments = (vendorId: string) => {
           // Make sure we return a document with all required fields
           return {
             ...doc,
-            url,
+            url, // Ensure url is provided (now required by BaseDocument)
             // Ensure all required fields from BaseDocument are present
             entity_id: doc.entity_id || vendorId,
             entity_type: doc.entity_type || 'VENDOR',
             updated_at: doc.updated_at || doc.created_at,
-            file_type: doc.file_type || null,
-            storage_path: doc.storage_path
+            file_type: doc.file_type || '',
+            storage_path: doc.storage_path,
+            file_size: 0 // Default value for file_size
           } as VendorDocument;
         })
       );
