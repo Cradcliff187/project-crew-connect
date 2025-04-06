@@ -12,6 +12,7 @@ import { useState } from 'react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { toast } from '@/hooks/use-toast';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
+import ContingencyInput from '../summary/ContingencyInput';
 
 const LineItemsStep = () => {
   const form = useFormContext<EstimateFormValues>();
@@ -43,8 +44,18 @@ const LineItemsStep = () => {
   
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2 space-y-6">
         <EstimateItemFields />
+        
+        {/* Add the contingency input in a card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">Contingency</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContingencyInput />
+          </CardContent>
+        </Card>
       </div>
       
       <div className="space-y-6">

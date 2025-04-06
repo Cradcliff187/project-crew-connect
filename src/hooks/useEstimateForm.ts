@@ -75,10 +75,12 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
         fieldsToValidate = ['project', customerTab === 'existing' ? 'customer' : 'newCustomer.name'];
         break;
       case 'line-items':
-        fieldsToValidate = ['items'];
+        // Add the contingency_percentage to the validation for line-items step
+        fieldsToValidate = ['items', 'contingency_percentage'];
         break;
       case 'summary':
-        fieldsToValidate = ['contingency_percentage'];
+        // Remove contingency_percentage from summary validation since it's now in line-items step
+        fieldsToValidate = [];
         break;
       case 'review':
         fieldsToValidate = [];
