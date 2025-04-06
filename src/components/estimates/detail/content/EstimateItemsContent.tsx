@@ -9,11 +9,17 @@ interface EstimateItemsContentProps {
     quantity: number;
     unit_price: number;
     total_price: number;
+    cost?: number;
+    markup_percentage?: number;
+    markup_amount?: number;
+    gross_margin?: number;
+    gross_margin_percentage?: number;
   }[];
   subtotal: number;
   contingencyAmount?: number;
   contingencyPercentage?: number;
   total: number;
+  showFinancialDetails?: boolean;
 }
 
 const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({ 
@@ -21,11 +27,12 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
   subtotal,
   contingencyAmount,
   contingencyPercentage,
-  total
+  total,
+  showFinancialDetails = false
 }) => {
   return (
     <>
-      <EstimateItems items={items} />
+      <EstimateItems items={items} showFinancialDetails={showFinancialDetails} />
       
       <div className="flex justify-end mt-4">
         <div className="w-64">
@@ -36,7 +43,7 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
             </span>
           </div>
           
-          {contingencyAmount && contingencyPercentage && (
+          {contingencyAmount !== undefined && contingencyPercentage !== undefined && (
             <div className="flex justify-between py-2 text-sm">
               <span>Contingency ({contingencyPercentage}%):</span>
               <span className="font-medium">

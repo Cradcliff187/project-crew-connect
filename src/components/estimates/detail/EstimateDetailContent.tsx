@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import EstimateInfoCard from './cards/EstimateInfoCard';
 import EstimateItemsContent from './content/EstimateItemsContent';
 import EstimateDescriptionContent from './content/EstimateDescriptionContent';
@@ -38,6 +40,8 @@ interface EstimateDetailContentProps {
 }
 
 const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onRefresh }) => {
+  const [showFinancialDetails, setShowFinancialDetails] = useState(false);
+  
   return (
     <div className="grid md:grid-cols-3 gap-6">
       <div className="md:col-span-1 space-y-6">
@@ -54,10 +58,24 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
       
       <div className="md:col-span-2">
         <Tabs defaultValue="items">
-          <TabsList>
-            <TabsTrigger value="items">Line Items</TabsTrigger>
-            <TabsTrigger value="description">Description</TabsTrigger>
-          </TabsList>
+          <div className="flex justify-between items-center">
+            <TabsList>
+              <TabsTrigger value="items">Line Items</TabsTrigger>
+              <TabsTrigger value="description">Description</TabsTrigger>
+            </TabsList>
+            
+            <div className="flex items-center gap-2">
+              <Label htmlFor="show-financials" className="text-sm">
+                Show Financial Details
+              </Label>
+              <Switch
+                id="show-financials"
+                checked={showFinancialDetails}
+                onCheckedChange={setShowFinancialDetails}
+              />
+            </div>
+          </div>
+          
           <TabsContent value="items" className="mt-6">
             <EstimateItemsContent 
               items={data.items} 
@@ -65,6 +83,7 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
               contingencyAmount={data.contingencyamount}
               contingencyPercentage={data.contingency_percentage}
               total={data.estimateamount}
+              showFinancialDetails={showFinancialDetails}
             />
           </TabsContent>
           <TabsContent value="description" className="mt-6">
