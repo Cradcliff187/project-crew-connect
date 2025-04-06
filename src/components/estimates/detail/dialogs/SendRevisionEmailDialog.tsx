@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import usePdfGeneration from '../../hooks/usePdfGeneration';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { EmailTemplate } from '../EmailTemplateSelector';
 
 interface SendRevisionEmailDialogProps {
   open: boolean;
@@ -21,13 +21,6 @@ interface SendRevisionEmailDialogProps {
   clientName?: string;
   clientEmail?: string;
   estimateId: string;
-}
-
-interface EmailTemplate {
-  id: string;
-  template_name: string;
-  subject_template: string;
-  body_template: string;
 }
 
 const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
@@ -71,7 +64,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       
       setTemplates(data || []);
       
-      // If there's a default template, select it
       const defaultTemplate = data?.find(t => t.is_default);
       if (defaultTemplate) {
         setSelectedTemplateId(defaultTemplate.id);
@@ -96,11 +88,9 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   };
 
   const applyTemplate = (template: EmailTemplate) => {
-    // Replace variables in the template
     let processedSubject = template.subject_template;
     let processedBody = template.body_template;
     
-    // Replace the variables with actual values
     const revisionNumber = revision?.version?.toString() || '1';
     
     processedSubject = processedSubject
@@ -139,12 +129,10 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
     try {
       let pdfId = pdfDocumentId;
       
-      // If we need to attach PDF but don't have one yet, generate it
       if (attachPdf && !pdfId && revision?.id) {
         pdfId = await generatePdf(estimateId, revision.id);
       }
       
-      // Now send the email
       const { error } = await supabase.functions.invoke('send-estimate-email', {
         body: {
           to,
@@ -160,7 +148,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       
       if (error) throw error;
       
-      // Log the email activity
       await supabase
         .from('activitylog')
         .insert({
