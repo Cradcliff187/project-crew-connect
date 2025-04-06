@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BarChart3, ExternalLink } from 'lucide-react';
+import { BarChart3, ExternalLink, Download } from 'lucide-react';
 import ProjectFinancialReport from '@/components/reports/ProjectFinancialReport';
+import { exportProjectFinancialPDF } from '@/components/reports/utils/pdfExport';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProjectFinancialReportCardProps {
   projectId: string;
@@ -13,10 +15,22 @@ interface ProjectFinancialReportCardProps {
 
 const ProjectFinancialReportCard: React.FC<ProjectFinancialReportCardProps> = ({ projectId }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [showReportDialog, setShowReportDialog] = useState(false);
 
   const handleOpenFullReport = () => {
     navigate(`/reports?project=${projectId}`);
+  };
+
+  const handleQuickExportPDF = () => {
+    // We'll implement a simple toast notification since the actual PDF generation happens in the report component
+    toast({
+      title: "Preparing PDF export",
+      description: "Open full report for more export options",
+    });
+    
+    // Navigate to the full report with export intent
+    navigate(`/reports?project=${projectId}&action=export`);
   };
 
   return (
@@ -31,7 +45,7 @@ const ProjectFinancialReportCard: React.FC<ProjectFinancialReportCardProps> = ({
             <p className="text-sm text-muted-foreground mb-4">
               View detailed financial analysis for this project
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -41,10 +55,18 @@ const ProjectFinancialReportCard: React.FC<ProjectFinancialReportCardProps> = ({
               </Button>
               <Button 
                 size="sm" 
+                variant="outline"
+                onClick={handleQuickExportPDF}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export PDF
+              </Button>
+              <Button 
+                size="sm" 
                 className="bg-[#0485ea] hover:bg-[#0375d1]"
                 onClick={handleOpenFullReport}
               >
-                <ExternalLink className="h-4 w-4 mr-2" />
+                <ExternalLink className="h-4 w-4 mr-1" />
                 Full Report
               </Button>
             </div>

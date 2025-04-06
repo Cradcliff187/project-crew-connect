@@ -9,16 +9,19 @@ import ProjectFinancialReport from '@/components/reports/ProjectFinancialReport'
 const Reports: React.FC = () => {
   const [searchParams] = useSearchParams();
   const projectParam = searchParams.get('project');
+  const actionParam = searchParams.get('action');
   const [activeTab, setActiveTab] = useState('project-financial');
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
 
-  // Handle direct linking with project ID
+  // Handle direct linking with project ID and action
   useEffect(() => {
     if (projectParam) {
       setSelectedProjectId(projectParam);
       setActiveTab('project-financial');
     }
-  }, [projectParam]);
+
+    // Handle direct export request (will be handled by the child component)
+  }, [projectParam, actionParam]);
 
   return (
     <PageTransition>

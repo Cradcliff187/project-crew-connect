@@ -2,16 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { format, subMonths } from 'date-fns';
-import { Download, CalendarIcon, Filter } from 'lucide-react';
+import { format, subMonths, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { Download, Filter } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import FinancialSummaryCard from './components/FinancialSummaryCard';
 import ReportFilters from './components/ReportFilters';
 import ProjectFinancialChart from './components/ProjectFinancialChart';
+import MonthlyExpenditureChart from './components/MonthlyExpenditureChart';
+import { exportProjectFinancialPDF } from './utils/pdfExport';
+import { exportProjectFinancialCSV } from './utils/csvExport';
 
 // Financial report types & interfaces
 interface FinancialReportProps {
@@ -34,6 +35,11 @@ interface FinancialMetrics {
   variancePercent: number;
 }
 
+interface MonthlyData {
+  month: string;
+  expenses: number;
+}
+
 const defaultMetrics: FinancialMetrics = {
   totalBudget: 0,
   expensesTotal: 0,
@@ -46,10 +52,13 @@ const defaultMetrics: FinancialMetrics = {
 };
 
 const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: initialProjectId }) => {
+  const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(initialProjectId);
+  const [selectedProject, setSelectedProject] = useState<ProjectOption | null>(null);
   const [projectsList, setProjectsList] = useState<ProjectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<FinancialMetrics>(defaultMetrics);
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [dateRange, setDateRange] = useState({
     from: subMonths(new Date(), 3),
     to: new Date()
@@ -79,6 +88,16 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
 
     fetchProjects();
   }, []);
+
+  // Update selectedProject when projectId or projectsList changes
+  useEffect(() => {
+    if (selectedProjectId && projectsList.length > 0) {
+      const project = projectsList.find(p => p.projectid === selectedProjectId);
+      if (project) {
+        setSelectedProject(project);
+      }
+    }
+  }, [selectedProjectId, projectsList]);
 
   // Fetch financial metrics when project changes
   useEffect(() => {
@@ -157,8 +176,16 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
           variance,
           variancePercent
         });
+
+        // Generate monthly data
+        await fetchMonthlyExpenses(selectedProjectId, dateRange.from, dateRange.to);
       } catch (error) {
         console.error('Error fetching financial data:', error);
+        toast({
+          title: "Error loading financial data",
+          description: "Could not retrieve project financial information",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -167,20 +194,118 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
     fetchFinancialData();
   }, [selectedProjectId, dateRange]);
 
+  // Fetch monthly expense data
+  const fetchMonthlyExpenses = async (projectId: string, fromDate: Date, toDate: Date) => {
+    try {
+      // Create an array of months in the date range
+      const months = eachMonthOfInterval({ start: fromDate, end: toDate });
+      
+      // Create a placeholder for each month
+      const monthlyExpensesData: MonthlyData[] = months.map(date => ({
+        month: format(date, 'MMM yyyy'),
+        expenses: 0
+      }));
+
+      // Fetch expense data grouped by month
+      const { data: expensesData, error: expensesError } = await supabase
+        .from('expenses')
+        .select('amount, created_at')
+        .eq('entity_id', projectId)
+        .eq('entity_type', 'PROJECT')
+        .gte('created_at', fromDate.toISOString())
+        .lte('created_at', toDate.toISOString());
+
+      if (expensesError) throw expensesError;
+      
+      // Aggregate expenses by month
+      if (expensesData && expensesData.length > 0) {
+        expensesData.forEach(expense => {
+          const expenseDate = new Date(expense.created_at);
+          const monthIndex = months.findIndex(month => 
+            expenseDate >= startOfMonth(month) && 
+            expenseDate <= endOfMonth(month)
+          );
+          
+          if (monthIndex >= 0) {
+            monthlyExpensesData[monthIndex].expenses += expense.amount;
+          }
+        });
+      }
+      
+      setMonthlyData(monthlyExpensesData);
+    } catch (error) {
+      console.error('Error fetching monthly expenses:', error);
+    }
+  };
+
   const handleProjectChange = (projectId: string) => {
     setSelectedProjectId(projectId);
   };
 
   const handleExportPDF = () => {
-    // This would be implemented later with jsPDF
-    console.log('Exporting PDF for project:', selectedProjectId);
-    // Implementation details coming in future PR
+    if (!selectedProject) {
+      toast({
+        title: "Export failed",
+        description: "No project selected",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      exportProjectFinancialPDF({
+        projectName: selectedProject.projectname,
+        dateRange: dateRange,
+        financialMetrics: metrics,
+        monthlyData: monthlyData
+      });
+      
+      toast({
+        title: "Export successful",
+        description: "PDF report has been downloaded",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast({
+        title: "Export failed",
+        description: "Could not generate PDF report",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleExportCSV = () => {
-    // This would be implemented later
-    console.log('Exporting CSV for project:', selectedProjectId);
-    // Implementation details coming in future PR
+    if (!selectedProject) {
+      toast({
+        title: "Export failed",
+        description: "No project selected",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      exportProjectFinancialCSV({
+        projectName: selectedProject.projectname,
+        dateRange: dateRange,
+        financialMetrics: metrics,
+        monthlyData: monthlyData
+      });
+      
+      toast({
+        title: "Export successful",
+        description: "CSV report has been downloaded",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      toast({
+        title: "Export failed",
+        description: "Could not generate CSV report",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -219,6 +344,7 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
             variant="outline" 
             size="sm"
             onClick={handleExportCSV}
+            disabled={loading || !selectedProject}
           >
             <Download className="h-4 w-4 mr-1" />
             Export CSV
@@ -228,6 +354,7 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
             size="sm" 
             className="bg-[#0485ea] hover:bg-[#0375d1]"
             onClick={handleExportPDF}
+            disabled={loading || !selectedProject}
           >
             <Download className="h-4 w-4 mr-1" />
             Export PDF
@@ -333,16 +460,11 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
 
       <Card>
         <CardContent className="pt-6">
-          <h3 className="text-base font-medium mb-4">Monthly Expenditure (Coming Soon)</h3>
-          {loading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-[200px]" />
-            </div>
-          ) : (
-            <div className="h-[300px] flex items-center justify-center">
-              <p className="text-muted-foreground">Monthly expenditure chart is under development.</p>
-            </div>
-          )}
+          <h3 className="text-base font-medium mb-4">Monthly Expenditure</h3>
+          <MonthlyExpenditureChart 
+            data={monthlyData} 
+            loading={loading} 
+          />
         </CardContent>
       </Card>
     </div>
