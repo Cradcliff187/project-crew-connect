@@ -7,6 +7,7 @@ import EstimatesHeader from '@/components/estimates/EstimatesHeader';
 import { useEstimates } from '@/components/estimates/hooks/useEstimates';
 import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
 import { StatusType } from '@/types/common';
+import { formatDate } from '@/lib/utils';
 
 /**
  * Estimates page component for listing and managing estimates
@@ -48,15 +49,6 @@ const Estimates = () => {
     }
   };
   
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    }).format(date);
-  };
-  
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
@@ -66,14 +58,16 @@ const Estimates = () => {
           onEstimateAdded={fetchEstimates}
         />
         
-        <EstimatesTable 
-          estimates={estimates}
-          loading={loading}
-          searchQuery={searchQuery}
-          onViewEstimate={handleViewEstimate}
-          formatDate={formatDate}
-          onRefreshEstimates={fetchEstimates}
-        />
+        <div className="mt-6">
+          <EstimatesTable 
+            estimates={estimates}
+            loading={loading}
+            searchQuery={searchQuery}
+            onViewEstimate={handleViewEstimate}
+            formatDate={formatDate}
+            onRefreshEstimates={fetchEstimates}
+          />
+        </div>
       </div>
       
       {selectedEstimate && (
@@ -84,7 +78,7 @@ const Estimates = () => {
             client: selectedEstimate.client,
             project: selectedEstimate.project,
             date: selectedEstimate.date,
-            status: selectedEstimate.status as StatusType, // Cast to StatusType
+            status: selectedEstimate.status as StatusType,
             total: selectedEstimate.amount,
             description: selectedEstimate.description,
             versions: selectedEstimate.versions
