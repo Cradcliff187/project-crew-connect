@@ -176,12 +176,12 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col" aria-describedby="estimate-details-description">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-xl font-semibold text-[#0485ea]">
             {estimate.project || `Estimate for ${estimate.client}`}
           </DialogTitle>
-          <DialogDescription id="estimate-details-description" className="mt-1">
+          <DialogDescription className="mt-1">
             {estimate.description || `View and manage estimate details`}
           </DialogDescription>
         </DialogHeader>

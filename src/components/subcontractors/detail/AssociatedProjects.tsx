@@ -1,81 +1,62 @@
 
 import React from 'react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Briefcase } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { ExternalLink, Loader2 } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNavigate } from 'react-router-dom';
 
 interface Project {
   projectid: string;
-  projectname: string;
-  status: string;
-  createdon: string;
+  projectname?: string;
 }
 
 interface AssociatedProjectsProps {
   projects: Project[];
   loading: boolean;
-  showFullTable?: boolean;
 }
 
-const AssociatedProjects = ({ projects, loading, showFullTable = false }: AssociatedProjectsProps) => {
-  if (loading) {
+const AssociatedProjects = ({ projects, loading }: AssociatedProjectsProps) => {
+  const navigate = useNavigate();
+  
+  if (projects.length === 0 && !loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-6">
-        <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
-        <p className="mt-2 text-sm text-muted-foreground">Loading associated projects...</p>
+      <div className="space-y-4">
+        <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Associated Projects</h3>
+        <div className="text-muted-foreground italic">No associated projects</div>
       </div>
     );
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-4">Associated Projects</h3>
-      
-      {projects.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No projects associated with this subcontractor.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Project Name</TableHead>
-                <TableHead>Status</TableHead>
-                {showFullTable && <TableHead>Created On</TableHead>}
-                <TableHead className="text-right"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {projects.slice(0, showFullTable ? undefined : 5).map((project) => (
-                <TableRow key={project.projectid}>
-                  <TableCell>{project.projectname}</TableCell>
-                  <TableCell>
-                    <span className="capitalize">{project.status?.toLowerCase() || 'Unknown'}</span>
-                  </TableCell>
-                  {showFullTable && <TableCell>{formatDate(project.createdon)}</TableCell>}
-                  <TableCell className="text-right">
-                    <Button asChild variant="ghost" size="sm">
-                      <Link to={`/projects/${project.projectid}`}>
-                        <ExternalLink className="h-4 w-4 mr-1" />
-                        View
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          
-          {!showFullTable && projects.length > 5 && (
-            <div className="mt-2 text-right">
-              <Button variant="link" size="sm" className="text-[#0485ea]">
-                View all {projects.length} projects
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
+    <div className="space-y-4">
+      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Associated Projects</h3>
+      <div className="grid gap-2">
+        {loading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : (
+          projects.map((project) => (
+            <Card key={project.projectid} className="p-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-2">
+                  <Briefcase className="h-4 w-4 text-[#0485ea] mt-0.5" />
+                  <div>
+                    <div className="font-medium">{project.projectname || 'Unnamed Project'}</div>
+                    <div className="text-xs text-muted-foreground">{project.projectid}</div>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate(`/projects/${project.projectid}`)}
+                >
+                  View Project
+                </Button>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

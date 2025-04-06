@@ -1,22 +1,25 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils';
-import { CalendarIcon, DollarSignIcon, ClipboardIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
 
-interface EstimateDetailsTabProps {
+type EstimateDetailsTabProps = {
   estimate: {
     id: string;
     client: string;
-    project?: string;
-    description?: string;
+    project: string;
     date: string;
-    status: string;
     amount: number;
-    versions?: number;
+    status: string;
+    versions: number;
+    location?: {
+      address?: string;
+      city?: string;
+      state?: string;
+      zip?: string;
+    };
+    description?: string;
   };
-}
+};
 
 const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => {
   const formatDate = (dateString: string) => {
@@ -27,81 +30,92 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
         day: 'numeric', 
         year: 'numeric' 
       }).format(date);
-    } catch (error) {
-      return dateString || 'Not set';
+    } catch (e) {
+      return dateString;
     }
   };
 
-  const getStatusColor = (status: string): string => {
-    const statusMap: Record<string, string> = {
-      'draft': 'bg-gray-500',
-      'pending': 'bg-yellow-500',
-      'sent': 'bg-blue-500',
-      'approved': 'bg-green-500',
-      'rejected': 'bg-red-500',
-      'converted': 'bg-purple-500',
-      'archived': 'bg-gray-400',
-    };
-    
-    return statusMap[status.toLowerCase()] || 'bg-gray-500';
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   };
 
+  // Check if we have valid location data to display
+  const hasLocationData = estimate.location && 
+    (estimate.location.address || estimate.location.city || 
+     estimate.location.state || estimate.location.zip);
+
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 md:grid-cols-2">
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1 flex items-center">
-                  <ClipboardIcon className="h-4 w-4 mr-1" /> Client
-                </h3>
-                <p className="text-base">{estimate.client}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1 flex items-center">
-                  <CalendarIcon className="h-4 w-4 mr-1" /> Date Created
-                </h3>
-                <p className="text-base">{formatDate(estimate.date)}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1 flex items-center">
-                  <DollarSignIcon className="h-4 w-4 mr-1" /> Amount
-                </h3>
-                <p className="text-base font-semibold">{formatCurrency(estimate.amount)}</p>
-              </div>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-4">Estimate Information</h3>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Estimate ID:</span>
+              <span className="font-medium">{estimate.id}</span>
             </div>
-            
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Project</h3>
-                <p className="text-base">{estimate.project || 'No project assigned'}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
-                <Badge className={`${getStatusColor(estimate.status)} text-white`}>
-                  {estimate.status.charAt(0).toUpperCase() + estimate.status.slice(1)}
-                </Badge>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Versions</h3>
-                <p className="text-base">{estimate.versions || 1}</p>
-              </div>
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Date Created:</span>
+              <span className="font-medium">{formatDate(estimate.date)}</span>
+            </div>
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Amount:</span>
+              <span className="font-medium">{formatCurrency(estimate.amount)}</span>
+            </div>
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Status:</span>
+              <span className="font-medium capitalize">{estimate.status}</span>
+            </div>
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Total Revisions:</span>
+              <span className="font-medium">{estimate.versions}</span>
             </div>
           </div>
-          
-          {estimate.description && (
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
-              <p className="text-base whitespace-pre-line">{estimate.description}</p>
-            </div>
-          )}
         </CardContent>
       </Card>
+      
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-4">Client & Project Details</h3>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Client:</span>
+              <span className="font-medium">{estimate.client}</span>
+            </div>
+            <div className="grid grid-cols-2">
+              <span className="text-muted-foreground">Project:</span>
+              <span className="font-medium">{estimate.project}</span>
+            </div>
+            {hasLocationData && (
+              <div className="grid grid-cols-2">
+                <span className="text-muted-foreground">Location:</span>
+                <div className="font-medium">
+                  {estimate.location?.address && <div>{estimate.location.address}</div>}
+                  {(estimate.location?.city || estimate.location?.state || estimate.location?.zip) && (
+                    <div>
+                      {estimate.location?.city && `${estimate.location.city}, `}
+                      {estimate.location?.state && `${estimate.location.state} `}
+                      {estimate.location?.zip && estimate.location.zip}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
+      {estimate.description && (
+        <Card className="md:col-span-2">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-medium mb-4">Description</h3>
+            <p className="whitespace-pre-wrap text-gray-700">{estimate.description}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

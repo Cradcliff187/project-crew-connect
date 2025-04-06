@@ -40,8 +40,10 @@ interface ProjectDetailsProps {
 }
 
 const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDetailsProps) => {
+  // State to manage active tab
   const [activeTab, setActiveTab] = useState("overview");
   
+  // Function to handle refreshing the project data
   const handleRefresh = () => {
     onStatusChange();
   };
