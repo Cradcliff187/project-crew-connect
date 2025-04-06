@@ -8,7 +8,6 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Send,
   Share2
 } from 'lucide-react';
 import {
