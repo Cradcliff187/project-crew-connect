@@ -1,4 +1,3 @@
-
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useMemo, useCallback } from 'react';
 import { 
@@ -10,8 +9,14 @@ import {
   calculateTotalGrossMargin,
   calculateOverallGrossMarginPercentage
 } from '../utils/estimateCalculations';
-import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
+import { EstimateItem } from '../types/estimateTypes';
 import { useDebounce } from '@/hooks/useDebounce';
+
+interface EstimateFormValues {
+  items: any[];
+  contingency_percentage: string;
+  // ... other form fields
+}
 
 export const useSummaryCalculations = () => {
   const form = useFormContext<EstimateFormValues>();
@@ -34,13 +39,14 @@ export const useSummaryCalculations = () => {
   const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 600);
 
   // Memoized function to normalize items for calculation
-  const normalizeCalculationItems = useCallback((formItems: any[]): EstimateItem[] => {
+  const normalizeCalculationItems = useCallback((formItems: any[]): any[] => {
     if (!Array.isArray(formItems)) return [];
     
     return formItems.map((item) => ({
       cost: item?.cost || '0',
       markup_percentage: item?.markup_percentage || '0',
       quantity: item?.quantity || '1',
+      unit_price: item?.unit_price || '0',
       item_type: item?.item_type,
       vendor_id: item?.vendor_id,
       subcontractor_id: item?.subcontractor_id,
@@ -71,7 +77,7 @@ export const useSummaryCalculations = () => {
     const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
     const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
     const contingencyAmount = calculateContingencyAmount(calculationItems, debouncedContingencyPercentage);
-    const grandTotal = calculateGrandTotal(calculationItems, debouncedContingencyPercentage);
+    const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
 
     // Log performance in development only
     if (process.env.NODE_ENV === 'development') {

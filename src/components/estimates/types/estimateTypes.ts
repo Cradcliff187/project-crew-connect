@@ -18,6 +18,11 @@ export interface EstimateItem {
   trade_type?: string;
   expense_type?: string;
   custom_type?: string;
+  original_item_id?: string;
+  estimate_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  item_category?: string;
 }
 
 export interface EstimateRevision {
@@ -56,4 +61,27 @@ export interface Estimate {
   sitelocationzip?: string;
   items: EstimateItem[];
   currentRevision?: EstimateRevision;
+}
+
+export interface RevisionComparisonField {
+  label: string;
+  field: keyof EstimateItem;
+  formatter?: (value: any) => string;
+  showDifference?: boolean;
+}
+
+export interface EstimateRevisionComparison {
+  currentRevision: EstimateRevision;
+  compareRevision: EstimateRevision;
+  addedItems: EstimateItem[];
+  removedItems: EstimateItem[];
+  changedItems: any[];
+  totalDifference: number;
+  percentageChange: number;
+  summary: {
+    totalItemsChanged: number;
+    newItemsCost: number;
+    removedItemsCost: number;
+    modifiedItemsDifference: number;
+  }
 }

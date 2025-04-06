@@ -83,7 +83,12 @@ const RevisionDetailedComparison: React.FC<RevisionDetailedComparisonProps> = ({
         .eq('revision_id', currentRevisionId);
         
       if (currentItemsError) throw currentItemsError;
-      setCurrentItems(currentItemsData || []);
+      // Type safe conversion of database items to EstimateItem[]
+      const typeSafeCurrentItems: EstimateItem[] = (currentItemsData || []).map(item => ({
+        ...item,
+        item_type: (item.item_type || 'other') as 'labor' | 'material' | 'subcontractor' | 'vendor' | 'other'
+      }));
+      setCurrentItems(typeSafeCurrentItems);
       
       const { data: compareItemsData, error: compareItemsError } = await supabase
         .from('estimate_items')
@@ -91,10 +96,15 @@ const RevisionDetailedComparison: React.FC<RevisionDetailedComparisonProps> = ({
         .eq('revision_id', compareRevisionId);
         
       if (compareItemsError) throw compareItemsError;
-      setCompareItems(compareItemsData || []);
+      // Type safe conversion of database items to EstimateItem[]
+      const typeSafeCompareItems: EstimateItem[] = (compareItemsData || []).map(item => ({
+        ...item,
+        item_type: (item.item_type || 'other') as 'labor' | 'material' | 'subcontractor' | 'vendor' | 'other'
+      }));
+      setCompareItems(typeSafeCompareItems);
       
       // Process comparison data
-      processComparisonData(currentItemsData || [], compareItemsData || []);
+      processComparisonData(typeSafeCurrentItems, typeSafeCompareItems);
     } catch (error) {
       console.error('Error fetching revision data:', error);
     } finally {

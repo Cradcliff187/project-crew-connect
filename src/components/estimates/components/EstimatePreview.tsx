@@ -2,8 +2,29 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FileTextIcon, FileIcon } from 'lucide-react';
-import { EstimateFormValues } from '../schemas/estimateFormSchema';
 import { calculateEstimateTotals } from '../utils/estimateCalculations';
+
+interface EstimateFormValues {
+  items: any[];
+  contingency_percentage?: string;
+  project?: string;
+  description?: string;
+  isNewCustomer?: boolean;
+  newCustomer?: {
+    name?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  };
+  showSiteLocation?: boolean;
+  location?: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  };
+}
 
 interface EstimatePreviewProps {
   formData: EstimateFormValues;
@@ -25,18 +46,13 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
         cost: item.cost || '0',
         markup_percentage: item.markup_percentage || '0',
         quantity: item.quantity || '1',
-        item_type: item.item_type,
-        vendor_id: item.vendor_id,
-        subcontractor_id: item.subcontractor_id,
-        document_id: item.document_id,
-        trade_type: item.trade_type,
-        expense_type: item.expense_type,
-        custom_type: item.custom_type
+        unit_price: item.unit_price || '0',
+        total_price: parseFloat(item.quantity || '1') * parseFloat(item.unit_price || '0')
       }))
     : [];
   
-  const { totalPrice, contingencyAmount, grandTotal } = calculateEstimateTotals(
-    transformedItems,
+  const { subtotal, contingencyAmount, grandTotal } = calculateEstimateTotals(
+    transformedItems, 
     formData.contingency_percentage || '0'
   );
 
@@ -146,7 +162,7 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
                     <tfoot>
                       <tr className="bg-gray-50">
                         <td colSpan={3} className="px-4 py-3 text-sm font-medium text-gray-900 text-right">Subtotal:</td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">${totalPrice.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">${subtotal.toFixed(2)}</td>
                       </tr>
                       {parseFloat(formData.contingency_percentage || '0') > 0 && (
                         <tr className="bg-gray-50">
@@ -255,7 +271,7 @@ const EstimatePreview: React.FC<EstimatePreviewProps> = ({
                     })}
                     <tr>
                       <td colSpan={3} className="p-3 text-right font-medium">Subtotal:</td>
-                      <td className="p-3 text-right font-medium">${totalPrice.toFixed(2)}</td>
+                      <td className="p-3 text-right font-medium">${subtotal.toFixed(2)}</td>
                     </tr>
                     {parseFloat(formData.contingency_percentage || '0') > 0 && (
                       <tr>

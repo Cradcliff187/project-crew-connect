@@ -34,7 +34,7 @@ export const calculateItemGrossMarginPercentage = (item: any): number => {
 /**
  * Calculate line item totals for an estimate
  */
-export const calculateEstimateTotals = (items: any[]) => {
+export const calculateEstimateTotals = (items: any[], contingencyPercentage = '0') => {
   const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
   const totalCost = items.reduce((sum, item) => {
     const quantity = parseFloat(item.quantity) || 1;
@@ -45,11 +45,16 @@ export const calculateEstimateTotals = (items: any[]) => {
   const grossMargin = subtotal - totalCost;
   const grossMarginPercentage = subtotal > 0 ? (grossMargin / subtotal) * 100 : 0;
   
+  const contingencyAmount = calculateContingency(subtotal, parseFloat(contingencyPercentage));
+  const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
+  
   return {
     subtotal,
     totalCost,
     grossMargin,
-    grossMarginPercentage
+    grossMarginPercentage,
+    contingencyAmount,
+    grandTotal
   };
 };
 
@@ -65,4 +70,70 @@ export const calculateContingency = (subtotal: number, percentage: number): numb
  */
 export const calculateGrandTotal = (subtotal: number, contingencyAmount: number): number => {
   return subtotal + contingencyAmount;
+};
+
+/**
+ * Calculate subtotal for all items
+ */
+export const calculateSubtotal = (items: any[]): number => {
+  return items.reduce((sum, item) => {
+    const quantity = parseFloat(item.quantity) || 1;
+    const unitPrice = parseFloat(item.unit_price) || 0;
+    return sum + (quantity * unitPrice);
+  }, 0);
+};
+
+/**
+ * Calculate total cost for all items
+ */
+export const calculateTotalCost = (items: any[]): number => {
+  return items.reduce((sum, item) => {
+    const quantity = parseFloat(item.quantity) || 1;
+    const cost = parseFloat(item.cost) || 0;
+    return sum + (quantity * cost);
+  }, 0);
+};
+
+/**
+ * Calculate total markup for all items
+ */
+export const calculateTotalMarkup = (items: any[]): number => {
+  return items.reduce((sum, item) => {
+    const cost = parseFloat(item.cost) || 0;
+    const quantity = parseFloat(item.quantity) || 1;
+    const markupPercentage = parseFloat(item.markup_percentage) || 0;
+    const totalCost = cost * quantity;
+    const markup = totalCost * (markupPercentage / 100);
+    return sum + markup;
+  }, 0);
+};
+
+/**
+ * Calculate total gross margin for all items
+ */
+export const calculateTotalGrossMargin = (items: any[]): number => {
+  return items.reduce((sum, item) => {
+    const grossMargin = calculateItemGrossMargin(item);
+    return sum + grossMargin;
+  }, 0);
+};
+
+/**
+ * Calculate overall gross margin percentage
+ */
+export const calculateOverallGrossMarginPercentage = (items: any[]): number => {
+  const subtotal = calculateSubtotal(items);
+  const totalGrossMargin = calculateTotalGrossMargin(items);
+  
+  if (subtotal <= 0) return 0;
+  return (totalGrossMargin / subtotal) * 100;
+};
+
+/**
+ * Calculate contingency amount from items and percentage
+ */
+export const calculateContingencyAmount = (items: any[], contingencyPercentage: any): number => {
+  const subtotal = calculateSubtotal(items);
+  const percentage = parseFloat(contingencyPercentage) || 0;
+  return calculateContingency(subtotal, percentage);
 };
