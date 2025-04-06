@@ -1,9 +1,12 @@
 
 import React from 'react';
-import SubcontractorDetailPage from './detail/SubcontractorDetailPage';
+import { Navigate, useParams } from 'react-router-dom';
 
 const SubcontractorDetail = () => {
-  return <SubcontractorDetailPage />;
+  const { subcontractorId } = useParams();
+  
+  // Redirect to the new location
+  return <Navigate to={`/subcontractors/${subcontractorId}`} replace />;
 };
 
 export default SubcontractorDetail;

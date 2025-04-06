@@ -16,6 +16,7 @@ import Reports from './pages/Reports';
 import ActiveWork from './pages/ActiveWork';
 import VendorDetail from './components/vendors/detail/VendorDetail';
 import Subcontractors from './pages/Subcontractors';
+import SubcontractorDetail from './pages/SubcontractorDetail';
 import TimeTracking from './pages/TimeTracking';
 import Documents from './pages/Documents';
 
@@ -37,6 +38,7 @@ const routes = createBrowserRouter([
       { path: 'vendors', element: <Vendors /> },
       { path: 'vendors/:vendorId', element: <VendorDetail /> },
       { path: 'subcontractors', element: <Subcontractors /> },
+      { path: 'subcontractors/:subcontractorId', element: <SubcontractorDetail /> },
       { path: 'time-tracking', element: <TimeTracking /> },
       { path: 'documents', element: <Documents /> },
       { path: 'reports', element: <Reports /> },

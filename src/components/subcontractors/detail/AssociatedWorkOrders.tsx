@@ -1,70 +1,81 @@
 
 import React from 'react';
-import { LayoutList } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { ExternalLink, Loader2 } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface WorkOrder {
   work_order_id: string;
   title: string;
   status: string;
-  created_at?: string;
-  materials_cost?: number;
+  created_at: string;
 }
 
 interface AssociatedWorkOrdersProps {
   workOrders: WorkOrder[];
   loading: boolean;
+  showFullTable?: boolean;
 }
 
-const AssociatedWorkOrders = ({ workOrders, loading }: AssociatedWorkOrdersProps) => {
-  const navigate = useNavigate();
-  
-  if (workOrders.length === 0 && !loading) {
+const AssociatedWorkOrders = ({ workOrders, loading, showFullTable = false }: AssociatedWorkOrdersProps) => {
+  if (loading) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Work Orders</h3>
-        <div className="text-muted-foreground italic">No associated work orders</div>
+      <div className="flex flex-col items-center justify-center py-6">
+        <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
+        <p className="mt-2 text-sm text-muted-foreground">Loading work orders...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Work Orders</h3>
-      <div className="grid gap-2">
-        {loading ? (
-          <Skeleton className="h-16 w-full" />
-        ) : (
-          workOrders.map((workOrder) => (
-            <Card key={workOrder.work_order_id} className="p-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-2">
-                  <LayoutList className="h-4 w-4 text-[#0485ea] mt-0.5" />
-                  <div>
-                    <div className="font-medium">{workOrder.title}</div>
-                    <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="text-xs bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]">
-                        {workOrder.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate(`/work-orders/${workOrder.work_order_id}`)}
-                >
-                  View Work Order
-                </Button>
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
+    <div>
+      <h3 className="text-base font-medium mb-4">Associated Work Orders</h3>
+      
+      {workOrders.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No work orders associated with this subcontractor.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Status</TableHead>
+                {showFullTable && <TableHead>Created On</TableHead>}
+                <TableHead className="text-right"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {workOrders.slice(0, showFullTable ? undefined : 5).map((workOrder) => (
+                <TableRow key={workOrder.work_order_id}>
+                  <TableCell>{workOrder.title}</TableCell>
+                  <TableCell>
+                    <span className="capitalize">{workOrder.status?.toLowerCase() || 'Unknown'}</span>
+                  </TableCell>
+                  {showFullTable && <TableCell>{formatDate(workOrder.created_at)}</TableCell>}
+                  <TableCell className="text-right">
+                    <Button asChild variant="ghost" size="sm">
+                      <Link to={`/work-orders/${workOrder.work_order_id}`}>
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        View
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          
+          {!showFullTable && workOrders.length > 5 && (
+            <div className="mt-2 text-right">
+              <Button variant="link" size="sm" className="text-[#0485ea]">
+                View all {workOrders.length} work orders
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
