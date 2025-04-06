@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, X } from 'lucide-react';
+import { Upload, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
@@ -15,7 +15,7 @@ interface VendorDocumentsProps {
   vendorId: string;
 }
 
-const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
+const VendorDocuments = memo(({ vendorId }: VendorDocumentsProps) => {
   const { documents, loading, fetchDocuments } = useVendorDocuments(vendorId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [viewDocument, setViewDocument] = useState<VendorDocument | null>(null);
@@ -121,6 +121,8 @@ const VendorDocuments = ({ vendorId }: VendorDocumentsProps) => {
       </Dialog>
     </Card>
   );
-};
+});
+
+VendorDocuments.displayName = 'VendorDocuments';
 
 export default VendorDocuments;

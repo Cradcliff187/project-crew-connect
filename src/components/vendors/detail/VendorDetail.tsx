@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -29,60 +28,48 @@ const VendorDetail = () => {
     fetchAssociatedData 
   } = useVendorAssociatedData();
 
+  // Create a stable fetch vendor function that doesn't recreate itself on every render
+  const fetchVendor = useCallback(async () => {
+    if (!vendorId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('*')
+        .eq('vendorid', vendorId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      setVendor(data);
+      // Only fetch associated data if we have vendor data
+      if (data) {
+        fetchAssociatedData(vendorId);
+      }
+    } catch (error) {
+      console.error('Error fetching vendor:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load vendor details.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [vendorId, fetchAssociatedData]);
+
   // Use a more stable approach for fetching data
   useEffect(() => {
-    let isMounted = true;
-    
-    const fetchVendor = async () => {
-      if (!vendorId) {
-        if (isMounted) {
-          setLoading(false);
-        }
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('vendors')
-          .select('*')
-          .eq('vendorid', vendorId)
-          .maybeSingle(); // Use maybeSingle instead of single to prevent errors
-
-        if (error) {
-          throw error;
-        }
-
-        if (isMounted) {
-          setVendor(data);
-          // Only fetch associated data if we have vendor data
-          if (data) {
-            fetchAssociatedData(vendorId);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching vendor:', error);
-        if (isMounted) {
-          toast({
-            title: 'Error',
-            description: 'Failed to load vendor details.',
-            variant: 'destructive',
-          });
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchVendor();
     
-    // Clean up function to prevent state updates on unmounted component
-    return () => {
-      isMounted = false;
-    };
-  }, [vendorId, fetchAssociatedData]);
+    // No clean up function needed for this effect
+  }, [fetchVendor]); // fetchVendor is now stable with useCallback
 
   const handleEdit = () => {
     setEditSheetOpen(true);
@@ -90,31 +77,11 @@ const VendorDetail = () => {
 
   const handleVendorUpdated = () => {
     // Refetch vendor data after update
-    const fetchUpdatedVendor = async () => {
-      if (!vendorId) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('vendors')
-          .select('*')
-          .eq('vendorid', vendorId)
-          .maybeSingle();
-
-        if (error) {
-          throw error;
-        }
-
-        setVendor(data);
-        toast({
-          title: 'Success',
-          description: 'Vendor information updated successfully.',
-        });
-      } catch (error) {
-        console.error('Error fetching updated vendor:', error);
-      }
-    };
-
-    fetchUpdatedVendor();
+    fetchVendor();
+    toast({
+      title: 'Success',
+      description: 'Vendor information updated successfully.',
+    });
   };
 
   // Loading state with skeleton UI to reduce flicker
@@ -179,7 +146,9 @@ const VendorDetail = () => {
           </Button>
         </div>
 
+        {/* Basic Info Cards */}
         <div className="grid gap-6 md:grid-cols-2">
+          {/* Vendor Information Card */}
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#0485ea]">
@@ -219,6 +188,7 @@ const VendorDetail = () => {
             </CardContent>
           </Card>
 
+          {/* Contact Information Card */}
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#0485ea]">

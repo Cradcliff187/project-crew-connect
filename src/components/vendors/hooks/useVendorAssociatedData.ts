@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { VendorProject, VendorWorkOrder } from '../detail/types';
 
@@ -21,7 +21,7 @@ const useVendorAssociatedData = (): UseVendorAssociatedDataResult => {
   /**
    * Fetch all data associated with a vendor
    */
-  const fetchAssociatedData = async (vendorId: string) => {
+  const fetchAssociatedData = useCallback(async (vendorId: string) => {
     if (!vendorId) return;
     
     setLoadingAssociations(true);
@@ -84,7 +84,7 @@ const useVendorAssociatedData = (): UseVendorAssociatedDataResult => {
         const { data: workOrdersData, error: workOrdersError } = await supabase
           .from('maintenance_work_orders')
           .select('work_order_id, title, status, created_at, progress, materials_cost')
-          .in('work_order_id', workOrderIds.map(id => id)); // Convert UUIDs to strings if needed
+          .in('work_order_id', workOrderIds);
         
         if (workOrdersError) {
           console.error('Error fetching work orders:', workOrdersError);
@@ -112,7 +112,7 @@ const useVendorAssociatedData = (): UseVendorAssociatedDataResult => {
     } finally {
       setLoadingAssociations(false);
     }
-  };
+  }, []);
   
   return { projects, workOrders, loadingAssociations, fetchAssociatedData };
 };
