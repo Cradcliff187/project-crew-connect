@@ -35,7 +35,7 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
       <EstimateItems items={items} showFinancialDetails={showFinancialDetails} />
       
       <div className="flex justify-end mt-4">
-        <div className="w-64">
+        <div className="w-64 border rounded-md p-3 bg-gray-50">
           <div className="flex justify-between py-2 text-sm">
             <span>Subtotal:</span>
             <span className="font-medium">
@@ -52,7 +52,7 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
             </div>
           )}
           
-          <div className="flex justify-between py-2 text-lg font-bold border-t">
+          <div className="flex justify-between py-2 text-lg font-bold border-t mt-1 pt-2">
             <span>Total:</span>
             <span>${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
