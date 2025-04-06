@@ -21,8 +21,8 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 // Define the types of entities we can report on
 type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses';
 
-// Define a mapping from EntityType to actual database table names
-const entityTableMap: Record<EntityType, string> = {
+// Define table names in Supabase
+const entityTableMap = {
   'projects': 'projects',
   'customers': 'customers',
   'vendors': 'vendors',
@@ -30,7 +30,10 @@ const entityTableMap: Record<EntityType, string> = {
   'work_orders': 'maintenance_work_orders',
   'estimates': 'estimates',
   'expenses': 'expenses'
-};
+} as const;
+
+// Create a type from the values of entityTableMap
+type TableName = typeof entityTableMap[EntityType];
 
 // Define fields for each entity type
 const entityFields: Record<EntityType, { label: string; field: string; type: 'text' | 'date' | 'number' | 'currency' | 'status' }[]> = {
@@ -125,10 +128,11 @@ const entityFields: Record<EntityType, { label: string; field: string; type: 'te
 // Define a function to fetch data based on entity type
 const fetchData = async (entityType: EntityType, searchTerm = '') => {
   // Get the actual table name from our mapping
-  const table = entityTableMap[entityType];
+  const tableName = entityTableMap[entityType];
   
-  // Build a simple query based on entity type
-  let query = supabase.from(table).select('*');
+  // Build a query based on entity type
+  // Use type assertion to tell TypeScript this is a valid table name
+  let query = supabase.from(tableName as TableName).select('*');
   
   // Add basic filtering if search term is provided
   if (searchTerm) {
@@ -150,14 +154,19 @@ const fetchData = async (entityType: EntityType, searchTerm = '') => {
     }
   }
   
-  const { data, error } = await query;
-  
-  if (error) {
-    console.error(`Error fetching ${entityType}:`, error);
+  try {
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error(`Error fetching ${entityType}:`, error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error in fetchData for ${entityType}:`, error);
     throw error;
   }
-  
-  return data;
 };
 
 // Helper function to format hours
