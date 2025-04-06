@@ -1,36 +1,28 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { EstimateRevision } from '../types/estimateTypes';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
 
 interface EstimateRevisionSummaryProps {
-  revision: EstimateRevision | null;
+  revision: EstimateRevision;
   previousRevision?: EstimateRevision | null;
-  showComparison?: boolean;
 }
 
-const EstimateRevisionSummary: React.FC<EstimateRevisionSummaryProps> = ({
-  revision,
-  previousRevision = null,
-  showComparison = true
+const EstimateRevisionSummary: React.FC<EstimateRevisionSummaryProps> = ({ 
+  revision, 
+  previousRevision 
 }) => {
-  if (!revision) {
-    return <div className="text-muted-foreground text-sm">No revision available</div>;
-  }
-  
   // Helper function to get status icon
   const getStatusIcon = (status: string | undefined) => {
     switch(status?.toLowerCase()) {
       case 'approved':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'sent':
-        return <Clock className="h-4 w-4 text-blue-500" />;
+        return <Clock className="h-4 w-4 text-[#0485ea]" />;
       case 'rejected':
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'draft':
       default:
         return <AlertCircle className="h-4 w-4 text-gray-500" />;
     }
@@ -48,74 +40,70 @@ const EstimateRevisionSummary: React.FC<EstimateRevisionSummaryProps> = ({
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
-  
-  const calculateDifference = () => {
-    if (!previousRevision || previousRevision.amount === undefined || revision.amount === undefined) {
+
+  // Calculate change percentage
+  const calculateChange = () => {
+    if (!previousRevision || !previousRevision.amount || !revision.amount) {
       return null;
     }
     
-    const diff = revision.amount - previousRevision.amount;
-    if (diff === 0) return null;
+    const difference = revision.amount - previousRevision.amount;
+    const percentage = ((difference / previousRevision.amount) * 100).toFixed(1);
     
-    const percentage = previousRevision.amount !== 0 
-      ? ((diff / previousRevision.amount) * 100)
-      : 0;
-      
     return {
-      amount: diff,
-      percentage: Math.round(percentage * 10) / 10,
-      isPositive: diff > 0
+      amount: difference,
+      percentage: parseFloat(percentage),
+      isIncrease: difference > 0
     };
   };
   
-  const difference = calculateDifference();
+  const change = calculateChange();
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-      <div className="flex items-center">
-        <Badge variant="outline" className="bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20">
-          Version {revision.version}
-        </Badge>
-        
-        {revision.is_current && (
-          <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-800 border-blue-200">
-            Current
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Badge variant="outline" className="bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20">
+            Version {revision.version}
           </Badge>
-        )}
-      </div>
-      
-      <Badge variant="outline" className={`${getStatusColor(revision.status)}`}>
-        <span className="flex items-center">
-          {getStatusIcon(revision.status)}
-          <span className="ml-1 uppercase text-xs">{revision.status || 'Draft'}</span>
-        </span>
-      </Badge>
-      
-      <div className="text-sm text-muted-foreground">
-        {formatDate(revision.revision_date)}
-      </div>
-      
-      <div className="flex items-center ml-auto">
-        <span className="font-medium">{formatCurrency(revision.amount || 0)}</span>
+          
+          <Badge variant="outline" className={`${getStatusColor(revision.status)}`}>
+            <span className="flex items-center">
+              {getStatusIcon(revision.status)}
+              <span className="ml-1 uppercase text-xs">{revision.status || 'Draft'}</span>
+            </span>
+          </Badge>
+        </div>
         
-        {showComparison && difference && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span 
-                  className={`ml-2 text-xs ${difference.isPositive ? 'text-green-600' : 'text-red-600'}`}
-                >
-                  {difference.isPositive ? '+' : ''}{formatCurrency(difference.amount)} 
-                  ({difference.percentage > 0 ? '+' : ''}{difference.percentage}%)
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p className="text-xs">Compared to version {previousRevision?.version}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="font-medium">
+          {formatCurrency(revision.amount || 0)}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <div className="text-xs text-muted-foreground">Date</div>
+          <div>{formatDate(revision.revision_date)}</div>
+        </div>
+        
+        {change && (
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground">Change from v{previousRevision?.version}</div>
+            <div className={change.isIncrease ? 'text-green-600' : 'text-red-600'}>
+              {change.isIncrease ? '+' : ''}{formatCurrency(change.amount)} ({change.isIncrease ? '+' : ''}{change.percentage}%)
+            </div>
+          </div>
         )}
       </div>
+      
+      {revision.notes && (
+        <div className="mt-2 text-xs">
+          <div className="text-muted-foreground mb-0.5">Notes</div>
+          <div className="bg-slate-50 p-2 rounded-sm border border-slate-100">
+            {revision.notes}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { EstimateItem, EstimateRevision, EstimateRevisionComparison } from '../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface UseRevisionComparisonOptions {
   estimateId: string;
@@ -14,6 +15,7 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
   const [compareRevisionId, setCompareRevisionId] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<EstimateRevision[]>([]);
   const [comparisonData, setComparisonData] = useState<EstimateRevisionComparison | null>(null);
+  const { toast } = useToast();
 
   // Fetch all revisions for the estimate
   const fetchRevisions = async () => {
@@ -45,6 +47,11 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
     } catch (error: any) {
       console.error('Error fetching revisions:', error);
       if (onError) onError(error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load estimate revisions',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -163,6 +170,11 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
     } catch (error: any) {
       console.error('Error comparing revisions:', error);
       if (onError) onError(error);
+      toast({
+        title: 'Error',
+        description: 'Failed to compare revisions',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -206,9 +218,19 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
           is_current: rev.id === revisionId
         }))
       );
+
+      toast({
+        title: 'Success',
+        description: 'Current revision updated',
+      });
     } catch (error: any) {
       console.error('Error setting current revision:', error);
       if (onError) onError(error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update current revision',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }

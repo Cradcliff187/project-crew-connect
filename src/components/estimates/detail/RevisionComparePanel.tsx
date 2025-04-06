@@ -2,16 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { EstimateRevision } from '../types/estimateTypes';
+import { ArrowLeftRight, PlusCircle, MinusCircle, Edit } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, ChevronRight, ChevronsRight, LineChart, BarChart, List } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import RevisionDetailedComparison from './RevisionDetailedComparison';
-import RevisionFinancialComparison from './RevisionFinancialComparison';
+import { EstimateRevision } from '../types/estimateTypes';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import useRevisionComparison from '../hooks/useRevisionComparison';
 
 interface RevisionComparePanelProps {
   estimateId: string;
@@ -20,254 +17,255 @@ interface RevisionComparePanelProps {
   onRevisionSelect: (id: string) => void;
 }
 
-const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({
-  estimateId,
+const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ 
+  estimateId, 
   currentRevisionId,
   revisions,
   onRevisionSelect
 }) => {
   const [compareRevisionId, setCompareRevisionId] = useState<string | undefined>();
-  const [currentItems, setCurrentItems] = useState<any[]>([]);
-  const [compareItems, setCompareItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('summary');
-  const { toast } = useToast();
+  
+  const { 
+    isLoading, 
+    comparisonData, 
+    setCurrentRevisionId, 
+    setCompareRevisionId: setCompareId
+  } = useRevisionComparison({ estimateId });
 
+  // When component mounts or revisions change, set default compare revision
+  useEffect(() => {
+    if (revisions.length > 1 && currentRevisionId) {
+      const currentVersionIndex = revisions.findIndex(rev => rev.id === currentRevisionId);
+      if (currentVersionIndex !== -1 && currentVersionIndex + 1 < revisions.length) {
+        const compareRev = revisions[currentVersionIndex + 1];
+        setCompareRevisionId(compareRev.id);
+        setCompareId(compareRev.id);
+      } else if (currentVersionIndex > 0) {
+        const compareRev = revisions[0];
+        setCompareRevisionId(compareRev.id);
+        setCompareId(compareRev.id);
+      }
+    }
+  }, [revisions, currentRevisionId]);
+
+  useEffect(() => {
+    if (currentRevisionId) {
+      setCurrentRevisionId(currentRevisionId);
+    }
+  }, [currentRevisionId]);
+
+  const handleCompareRevisionChange = (value: string) => {
+    setCompareRevisionId(value);
+    setCompareId(value);
+  };
+
+  // Get available revisions for comparison (all except current)
+  const availableRevisions = revisions.filter(rev => rev.id !== currentRevisionId);
+  
   const currentRevision = revisions.find(rev => rev.id === currentRevisionId);
   const compareRevision = revisions.find(rev => rev.id === compareRevisionId);
 
-  // Filter available revisions for comparison (exclude current revision)
-  const availableRevisions = revisions
-    .filter(rev => rev.id !== currentRevisionId)
-    .sort((a, b) => b.version - a.version);
-
-  // Set default compare revision to the most recent one that isn't current
-  useEffect(() => {
-    if (availableRevisions.length > 0 && !compareRevisionId) {
-      setCompareRevisionId(availableRevisions[0].id);
-    }
-  }, [availableRevisions, compareRevisionId]);
-
-  // Fetch items when revisions are selected
-  useEffect(() => {
-    if (currentRevisionId && compareRevisionId) {
-      fetchItems();
-    }
-  }, [currentRevisionId, compareRevisionId]);
-
-  const fetchItems = async () => {
-    setLoading(true);
-    try {
-      // Fetch current revision items
-      const { data: currentData, error: currentError } = await supabase
-        .from('estimate_items')
-        .select('*')
-        .eq('revision_id', currentRevisionId);
-
-      if (currentError) throw currentError;
-      setCurrentItems(currentData || []);
-
-      // Fetch compare revision items
-      const { data: compareData, error: compareError } = await supabase
-        .from('estimate_items')
-        .select('*')
-        .eq('revision_id', compareRevisionId);
-
-      if (compareError) throw compareError;
-      setCompareItems(compareData || []);
-
-    } catch (error) {
-      console.error('Error fetching items:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load revision items for comparison',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Calculate differences
-  const calculateDifferences = () => {
-    if (!currentRevision || !compareRevision) return null;
-
-    const currentTotal = currentRevision.amount || 0;
-    const compareTotal = compareRevision.amount || 0;
-    const difference = currentTotal - compareTotal;
-    const percentChange = compareTotal !== 0 
-      ? (difference / compareTotal) * 100 
-      : 0;
-
-    // Count items added/removed/changed
-    const addedItems = currentItems.filter(item => 
-      !compareItems.some(ci => ci.description === item.description)).length;
-    
-    const removedItems = compareItems.filter(item => 
-      !currentItems.some(ci => ci.description === item.description)).length;
-    
-    return {
-      difference,
-      percentChange,
-      addedItems,
-      removedItems,
-      isIncrease: difference > 0
-    };
-  };
-
-  const differences = calculateDifferences();
-
-  // If no revisions to compare with, show a simpler panel
-  if (availableRevisions.length === 0) {
-    return (
-      <Card className="mt-4">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-center h-24">
-            <p className="text-sm text-muted-foreground">No other revisions available for comparison</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  if (revisions.length <= 1) {
+    return null; // Don't show comparison if only one revision exists
   }
 
   return (
-    <Card className="mt-4">
+    <Card className="mt-6">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center">
             <ArrowLeftRight className="h-4 w-4 mr-2 text-[#0485ea]" />
-            Compare Revisions
+            Revision Comparison
           </CardTitle>
-          
-          <Select value={compareRevisionId} onValueChange={setCompareRevisionId}>
-            <SelectTrigger className="w-[200px] h-8">
-              <SelectValue placeholder="Select revision to compare" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableRevisions.map(rev => (
-                <SelectItem key={rev.id} value={rev.id}>
-                  Version {rev.version} ({formatDate(rev.revision_date)})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+          {availableRevisions.length > 0 && (
+            <Select
+              value={compareRevisionId}
+              onValueChange={handleCompareRevisionChange}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select version to compare" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableRevisions.map(rev => (
+                  <SelectItem key={rev.id} value={rev.id}>
+                    {`Version ${rev.version} (${formatDate(rev.revision_date)})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
-      
-      <CardContent className="p-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <p className="text-sm text-muted-foreground">Loading comparison data...</p>
+
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-24 w-full" />
           </div>
-        ) : compareRevision && differences ? (
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="p-3 bg-slate-50 rounded-md">
-                <div className="text-xs text-muted-foreground mb-1">Current (v{currentRevision?.version})</div>
-                <div className="text-lg font-semibold">{formatCurrency(currentRevision?.amount || 0)}</div>
-                <div className="text-xs mt-1">Created {formatDate(currentRevision?.revision_date || '')}</div>
-              </div>
-              
-              <div className="p-3 rounded-md border border-dashed flex items-center justify-center">
-                <div className="text-center">
-                  <div className={`text-lg font-medium ${differences.isIncrease ? 'text-green-600' : 'text-red-600'}`}>
-                    {differences.isIncrease ? '+' : ''}{formatCurrency(differences.difference)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {differences.percentChange > 0 ? '+' : ''}{differences.percentChange.toFixed(1)}%
-                  </div>
+        ) : !comparisonData ? (
+          <div className="text-center p-4 text-muted-foreground">
+            {compareRevisionId 
+              ? "Select versions to compare" 
+              : "No revisions available for comparison"}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="text-sm font-medium">
+                  Comparing Version {comparisonData.currentRevision.version} with Version {comparisonData.compareRevision.version}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {formatDate(comparisonData.currentRevision.revision_date)} vs. {formatDate(comparisonData.compareRevision.revision_date)}
                 </div>
               </div>
               
-              <div className="p-3 bg-slate-50 rounded-md">
-                <div className="text-xs text-muted-foreground mb-1">Version {compareRevision.version}</div>
-                <div className="text-lg font-semibold">{formatCurrency(compareRevision.amount || 0)}</div>
-                <div className="text-xs mt-1">Created {formatDate(compareRevision.revision_date || '')}</div>
-              </div>
+              <Badge className={`${comparisonData.totalDifference >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {comparisonData.totalDifference >= 0 ? '+' : ''}{formatCurrency(comparisonData.totalDifference)} 
+                ({comparisonData.percentageChange >= 0 ? '+' : ''}{comparisonData.percentageChange.toFixed(1)}%)
+              </Badge>
             </div>
             
-            <div className="mb-4">
-              <Tabs defaultValue="summary" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full mb-4 grid grid-cols-3">
-                  <TabsTrigger value="summary" className="flex items-center">
-                    <List className="w-4 h-4 mr-2" />
-                    Summary
-                  </TabsTrigger>
-                  <TabsTrigger value="details" className="flex items-center">
-                    <ChevronsRight className="w-4 h-4 mr-2" />
-                    Line Item Details
-                  </TabsTrigger>
-                  <TabsTrigger value="financial" className="flex items-center">
-                    <BarChart className="w-4 h-4 mr-2" />
-                    Financial
-                  </TabsTrigger>
-                </TabsList>
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium">Summary</h4>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="border rounded-md p-2 bg-slate-50">
+                  <div className="flex items-center">
+                    <PlusCircle className="h-3 w-3 text-green-500 mr-1" />
+                    <span className="text-xs text-muted-foreground">New Items</span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <div className="text-sm font-medium">{comparisonData.addedItems.length} items</div>
+                    <div className="text-sm text-green-600">{formatCurrency(comparisonData.summary.newItemsCost)}</div>
+                  </div>
+                </div>
                 
-                <TabsContent value="summary" className="mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="flex items-center p-3 bg-slate-50/50 rounded-md border">
-                      <div className="text-center w-full">
-                        <div className="flex justify-center space-x-6">
-                          <div className="text-center">
-                            <div className="text-sm font-medium text-green-600">{differences.addedItems}</div>
-                            <div className="text-xs text-muted-foreground">Items Added</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-sm font-medium text-red-600">{differences.removedItems}</div>
-                            <div className="text-xs text-muted-foreground">Items Removed</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end items-center">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs flex items-center"
-                        onClick={() => onRevisionSelect(compareRevision.id)}
-                      >
-                        Switch to Version {compareRevision.version}
-                        <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                      </Button>
+                <div className="border rounded-md p-2 bg-slate-50">
+                  <div className="flex items-center">
+                    <MinusCircle className="h-3 w-3 text-red-500 mr-1" />
+                    <span className="text-xs text-muted-foreground">Removed Items</span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <div className="text-sm font-medium">{comparisonData.removedItems.length} items</div>
+                    <div className="text-sm text-red-600">{formatCurrency(comparisonData.summary.removedItemsCost)}</div>
+                  </div>
+                </div>
+                
+                <div className="border rounded-md p-2 bg-slate-50">
+                  <div className="flex items-center">
+                    <Edit className="h-3 w-3 text-blue-500 mr-1" />
+                    <span className="text-xs text-muted-foreground">Modified Items</span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <div className="text-sm font-medium">{comparisonData.changedItems.length} items</div>
+                    <div className={`text-sm ${comparisonData.summary.modifiedItemsDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {comparisonData.summary.modifiedItemsDifference >= 0 ? '+' : ''}
+                      {formatCurrency(comparisonData.summary.modifiedItemsDifference)}
                     </div>
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="details" className="mt-0">
-                  <RevisionDetailedComparison 
-                    estimateId={estimateId}
-                    currentRevisionId={currentRevisionId}
-                    compareRevisionId={compareRevisionId}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="financial" className="mt-0">
-                  <RevisionFinancialComparison
-                    estimateId={estimateId}
-                    currentRevisionId={currentRevisionId}
-                    compareRevisionId={compareRevisionId}
-                  />
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
             </div>
             
-            {activeTab === "summary" && (
-              <div className="mt-3 text-center">
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="text-xs text-[#0485ea]"
-                  onClick={() => setActiveTab('details')}
-                >
-                  View detailed comparison
-                </Button>
+            {(comparisonData.addedItems.length > 0 || comparisonData.removedItems.length > 0 || comparisonData.changedItems.length > 0) && (
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Change</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Added Items */}
+                    {comparisonData.addedItems.slice(0, 3).map(item => (
+                      <TableRow key={`added-${item.id}`}>
+                        <TableCell>
+                          <PlusCircle className="h-4 w-4 text-green-500" />
+                        </TableCell>
+                        <TableCell className="font-medium">{item.description}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                        <TableCell className="text-right text-green-600">
+                          +{formatCurrency(item.total_price)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    
+                    {/* Removed Items */}
+                    {comparisonData.removedItems.slice(0, 3).map(item => (
+                      <TableRow key={`removed-${item.id}`}>
+                        <TableCell>
+                          <MinusCircle className="h-4 w-4 text-red-500" />
+                        </TableCell>
+                        <TableCell className="font-medium line-through text-muted-foreground">{item.description}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{item.quantity}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{formatCurrency(item.unit_price)}</TableCell>
+                        <TableCell className="text-right text-red-600">
+                          -{formatCurrency(item.total_price)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    
+                    {/* Changed Items */}
+                    {comparisonData.changedItems.slice(0, 3).map(item => (
+                      <TableRow key={`changed-${item.current.id}`}>
+                        <TableCell>
+                          <Edit className="h-4 w-4 text-blue-500" />
+                        </TableCell>
+                        <TableCell className="font-medium">{item.current.description}</TableCell>
+                        <TableCell className="text-right">
+                          {item.current.quantity}
+                          {item.current.quantity !== item.previous.quantity && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              (was {item.previous.quantity})
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.current.unit_price)}
+                          {item.current.unit_price !== item.previous.unit_price && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              (was {formatCurrency(item.previous.unit_price)})
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className={`text-right ${item.priceDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {item.priceDifference >= 0 ? '+' : ''}
+                          {formatCurrency(item.priceDifference)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    
+                    {/* Show more indicator if needed */}
+                    {(comparisonData.addedItems.length + comparisonData.removedItems.length + comparisonData.changedItems.length) > 9 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-2">
+                          <span className="text-xs text-muted-foreground">
+                            +{(comparisonData.addedItems.length + comparisonData.removedItems.length + comparisonData.changedItems.length) - 9} more changes
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    
+                    {/* Totals row */}
+                    <TableRow>
+                      <TableCell colSpan={3}></TableCell>
+                      <TableCell className="font-medium text-right">Total Change</TableCell>
+                      <TableCell className={`font-medium text-right ${comparisonData.totalDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {comparisonData.totalDifference >= 0 ? '+' : ''}
+                        {formatCurrency(comparisonData.totalDifference)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </div>
             )}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-32">
-            <p className="text-sm text-muted-foreground">Select a revision to compare</p>
           </div>
         )}
       </CardContent>
