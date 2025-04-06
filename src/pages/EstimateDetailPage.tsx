@@ -3,11 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
-import EstimateDetail from '@/components/estimates/EstimateDetail';
-import { Loader2 } from 'lucide-react';
-import EstimatePDFManager from '@/components/estimates/detail/EstimatePDFManager';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+
+import EstimateDetailHeader from '@/components/estimates/detail/EstimateDetailHeader';
+import EstimateDetailContent from '@/components/estimates/detail/EstimateDetailContent';
+import EstimatePDFManager from '@/components/estimates/detail/EstimatePDFManager';
+import EstimateRevisionsList from '@/components/estimates/detail/EstimateRevisionsList';
+import EstimateDocumentsTab from '@/components/estimates/details/EstimateDocumentsTab';
+import EstimateEmailTab from '@/components/estimates/detail/EstimateEmailTab';
 
 const EstimateDetailPage = () => {
   const { estimateId } = useParams();
@@ -17,6 +24,7 @@ const EstimateDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentRevision, setCurrentRevision] = useState<any>(null);
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (estimateId) {
@@ -122,7 +130,8 @@ const EstimateDetailPage = () => {
       // Set the data
       setEstimate({
         ...estimateData,
-        items: itemsData || []
+        items: itemsData || [],
+        currentRevision: currentRevision || revisionData
       });
     } catch (error: any) {
       console.error('Error fetching estimate data:', error);
@@ -136,6 +145,26 @@ const EstimateDetailPage = () => {
     if (estimateId) {
       fetchEstimateData(estimateId);
     }
+  };
+
+  const handleBackClick = () => {
+    navigate('/estimates');
+  };
+
+  const handleStatusChange = () => {
+    handleRefresh();
+  };
+
+  const handleDelete = async () => {
+    // Implementation for deleting the estimate would go here
+    // After successful delete, navigate back to the list
+    handleBackClick();
+  };
+
+  const handleConvert = async () => {
+    // Implementation for converting the estimate to a project would go here
+    // After successful conversion, refresh the data
+    handleRefresh();
   };
 
   if (loading) {
@@ -152,14 +181,29 @@ const EstimateDetailPage = () => {
     return (
       <PageTransition>
         <div className="space-y-4">
-          <h1 className="text-2xl font-bold">Error Loading Estimate</h1>
-          <p className="text-red-500">{error || 'Estimate not found'}</p>
-          <button 
-            onClick={() => navigate('/estimates')} 
-            className="px-4 py-2 bg-[#0485ea] text-white rounded-md hover:bg-[#0373ce]"
+          <Button 
+            variant="outline" 
+            onClick={handleBackClick} 
+            className="mb-4"
           >
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Estimates
-          </button>
+          </Button>
+          
+          <Card>
+            <CardContent className="py-8">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-red-500">Error Loading Estimate</h1>
+                <p className="mt-2 text-gray-600">{error || 'Estimate not found'}</p>
+                <Button 
+                  onClick={handleBackClick} 
+                  className="mt-4 bg-[#0485ea] hover:bg-[#0373ce]"
+                >
+                  Return to Estimates
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </PageTransition>
     );
@@ -168,27 +212,84 @@ const EstimateDetailPage = () => {
   return (
     <PageTransition>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Estimate Details</h1>
+        <Button 
+          variant="outline" 
+          onClick={handleBackClick} 
+          className="mb-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Estimates
+        </Button>
         
-        {currentRevision ? (
+        <EstimateDetailHeader 
+          data={{
+            estimateid: estimate.estimateid,
+            customername: estimate.customername,
+            datecreated: estimate.datecreated,
+            status: estimate.status
+          }}
+          currentVersion={currentRevision?.version || 1}
+          onDelete={handleDelete}
+          onConvert={handleConvert}
+          onStatusChange={handleStatusChange}
+        />
+        
+        {currentRevision && (
           <EstimatePDFManager 
             estimateId={estimate.estimateid} 
             revisionId={currentRevision.id} 
           />
-        ) : (
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center justify-center">
-                <p className="text-muted-foreground">No revisions found for this estimate</p>
-              </div>
-            </CardContent>
-          </Card>
         )}
         
-        <EstimateDetail 
-          data={estimate}
-          onRefresh={handleRefresh}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-5 w-full mb-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="revisions">Revisions</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="email">Email</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="mt-0">
+            <EstimateDetailContent 
+              data={estimate}
+              onRefresh={handleRefresh}
+            />
+          </TabsContent>
+          
+          <TabsContent value="revisions" className="mt-0">
+            <EstimateRevisionsList
+              estimateId={estimate.estimateid}
+              revisions={[]}  // This will be populated by the component
+              onRefresh={handleRefresh}
+              clientName={estimate.customername}
+            />
+          </TabsContent>
+          
+          <TabsContent value="documents" className="mt-0">
+            <EstimateDocumentsTab 
+              estimateId={estimate.estimateid} 
+              onShareDocument={() => {}} // This will be implemented in the component
+            />
+          </TabsContent>
+          
+          <TabsContent value="email" className="mt-0">
+            <EstimateEmailTab 
+              estimate={estimate}
+              onEmailSent={handleRefresh}
+            />
+          </TabsContent>
+          
+          <TabsContent value="history" className="mt-0">
+            <Card>
+              <CardContent className="pt-6">
+                <h2 className="text-lg font-semibold mb-4">Estimate History</h2>
+                <p className="text-muted-foreground">Activity history for this estimate will be displayed here.</p>
+                {/* Implement history log component here */}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </PageTransition>
   );

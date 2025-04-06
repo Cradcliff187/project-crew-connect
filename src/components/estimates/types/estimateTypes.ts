@@ -1,7 +1,8 @@
 
 export interface EstimateItem {
   id: string;
-  estimate_id?: string;
+  estimate_id: string;
+  revision_id?: string;
   description: string;
   quantity: number;
   unit_price: number;
@@ -9,15 +10,14 @@ export interface EstimateItem {
   cost?: number;
   markup_percentage?: number;
   markup_amount?: number;
-  gross_margin?: number;
-  gross_margin_percentage?: number;
   vendor_id?: string;
   subcontractor_id?: string;
   item_type?: string;
   document_id?: string;
-  notes?: string;
-  revision_id?: string;
-  original_item_id?: string;
+  gross_margin?: number;
+  gross_margin_percentage?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface EstimateRevision {
@@ -32,28 +32,18 @@ export interface EstimateRevision {
   amount?: number;
   revision_by?: string;
   document_id?: string;
-  pdf_document_id?: string;
   created_at?: string;
   updated_at?: string;
-  sent_to?: string;
 }
 
 export interface Estimate {
-  id?: string; // ID might be named estimateid in some contexts
-  estimateid: string; // Primary ID field in the database
+  estimateid: string;
   customerid?: string;
   customername?: string;
-  customer?: string;
-  client?: string;
-  customerId?: string; // Added to match other interfaces
   projectid?: string;
   projectname?: string;
-  project?: string;
-  description?: string;
   job_description?: string;
   estimateamount: number;
-  total?: number;
-  amount?: number;
   contingencyamount?: number;
   contingency_percentage?: number;
   datecreated?: string;
@@ -65,8 +55,22 @@ export interface Estimate {
   sitelocationstate?: string;
   sitelocationzip?: string;
   items?: EstimateItem[];
-  versions?: number;
-  current_revision?: EstimateRevision;
   revisions?: EstimateRevision[];
-  date?: string; // Added to ensure consistency with UI expectations
+  currentRevision?: EstimateRevision;
+}
+
+export interface EstimateFormData {
+  client: string;
+  clientId?: string;
+  project: string;
+  description?: string;
+  date: string;
+  status: string;
+  amount: number;
+  location?: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  };
 }

@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Eye, Edit, FileUp, Copy, ArrowRight, Download, Trash2 } from 'lucide-react';
 import { EstimateType } from '../EstimatesTable';
 import StatusBadge from '@/components/ui/StatusBadge';
