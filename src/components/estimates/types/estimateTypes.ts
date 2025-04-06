@@ -8,20 +8,16 @@ export interface EstimateItem {
   cost?: number;
   markup_percentage?: number;
   markup_amount?: number;
+  revision_id?: string;
   gross_margin?: number;
   gross_margin_percentage?: number;
-  estimate_id?: string;
-  revision_id?: string;
-  original_item_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  item_type?: string;
-  trade_type?: string;
-  expense_type?: string;
-  custom_type?: string;
   vendor_id?: string;
   subcontractor_id?: string;
   document_id?: string;
+  item_type?: 'labor' | 'material' | 'subcontractor' | 'vendor' | 'other';
+  trade_type?: string;
+  expense_type?: string;
+  custom_type?: string;
 }
 
 export interface EstimateRevision {
@@ -30,76 +26,34 @@ export interface EstimateRevision {
   version: number;
   revision_date: string;
   amount?: number;
-  status?: string;
-  is_current?: boolean;
   notes?: string;
+  is_current: boolean;
   pdf_document_id?: string;
+  status?: string;
   created_at?: string;
   updated_at?: string;
-  created_by?: string;
+  sent_date?: string;
+  sent_to?: string;
+}
+
+export interface Estimate {
+  estimateid: string;
+  customerid?: string;
+  customername?: string;
+  projectid?: string;
+  projectname?: string;
+  job_description?: string;
+  estimateamount: number;
+  contingencyamount?: number;
   contingency_percentage?: number;
-  contingency_amount?: number;
-  total_cost?: number;
-  total_markup?: number;
-  gross_margin?: number;
-  margin_percentage?: number;
-  reason_for_change?: string;
-  client_feedback?: string;
-  internal_notes?: string;
-  sent_date?: string;  // Added missing property
-  sent_to?: string;    // Added missing property
-}
-
-export interface EstimateRevisionComparison {
-  currentRevision: EstimateRevision;
-  compareRevision: EstimateRevision;
-  addedItems: EstimateItem[];
-  removedItems: EstimateItem[];
-  changedItems: {
-    current: EstimateItem;
-    previous: EstimateItem;
-    priceDifference: number;
-    percentageDifference: number;
-    changes: {
-      field: string;
-      previousValue: any;
-      currentValue: any;
-    }[];
-  }[];
-  totalDifference: number;
-  percentageChange: number;
-  summary: {
-    totalItemsChanged: number;
-    newItemsCost: number;
-    removedItemsCost: number;
-    modifiedItemsDifference: number;
-  };
-}
-
-export interface EstimateFinancialSummary {
-  subtotal: number;
-  totalCost?: number;
-  totalMarkup?: number;
-  grossMargin?: number;
-  grossMarginPercentage?: number;
-  contingencyPercentage?: number;
-  contingencyAmount?: number;
-  grandTotal: number;
-}
-
-export interface EstimateVersionMetrics {
-  revision: EstimateRevision;
-  itemCount: number;
-  financials: EstimateFinancialSummary;
-  changeFromPrevious?: {
-    amount: number;
-    percentage: number;
-  };
-}
-
-export interface RevisionComparisonField {
-  label: string;
-  field: keyof EstimateItem;
-  formatter?: (value: any) => string;
-  showDifference?: boolean;
+  datecreated?: string;
+  sentdate?: string;
+  approveddate?: string;
+  status: string;
+  sitelocationaddress?: string;
+  sitelocationcity?: string;
+  sitelocationstate?: string;
+  sitelocationzip?: string;
+  items: EstimateItem[];
+  currentRevision?: EstimateRevision;
 }

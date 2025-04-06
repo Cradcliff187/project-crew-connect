@@ -72,12 +72,13 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
       const response = await fetch(document.url);
       const blob = await response.blob();
       
-      const downloadLink = document.createElement('a');
+      // Create and trigger download link using the global window.document object
+      const downloadLink = window.document.createElement('a');
       downloadLink.href = URL.createObjectURL(blob);
       downloadLink.download = document.file_name || `Estimate-${estimateId}.pdf`;
-      document.body.appendChild(downloadLink);
+      window.document.body.appendChild(downloadLink);
       downloadLink.click();
-      document.body.removeChild(downloadLink);
+      window.document.body.removeChild(downloadLink);
       
       // Log the download action
       await supabase

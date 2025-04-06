@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useFieldArray, UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,17 +21,43 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
     name: name
   });
   
-  // Calculate item total when quantity or price changes
-  const calculateItemTotal = (index: number) => {
+  // Calculate item total and margin when values change
+  const calculateItemValues = (index: number) => {
     const item = fields[index];
     const quantity = parseFloat(form.getValues(`${name}.${index}.quantity`) as string) || 0;
     const unitPrice = parseFloat(form.getValues(`${name}.${index}.unit_price`) as string) || 0;
-    const total = quantity * unitPrice;
+    const cost = parseFloat(form.getValues(`${name}.${index}.cost`) as string) || 0;
+    const markupPercentage = parseFloat(form.getValues(`${name}.${index}.markup_percentage`) as string) || 0;
     
+    // Calculate totals
+    const totalPrice = quantity * unitPrice;
+    const totalCost = quantity * cost;
+    const grossMargin = totalPrice - totalCost;
+    const grossMarginPercentage = totalPrice > 0 ? (grossMargin / totalPrice) * 100 : 0;
+    
+    // Update the item
     update(index, {
       ...item,
-      total_price: total
+      total_price: totalPrice,
+      gross_margin: grossMargin,
+      gross_margin_percentage: grossMarginPercentage
     });
+  };
+
+  // Recalculate unit price when cost or markup changes
+  const updateUnitPriceFromMarkup = (index: number) => {
+    const cost = parseFloat(form.getValues(`${name}.${index}.cost`) as string) || 0;
+    const markupPercentage = parseFloat(form.getValues(`${name}.${index}.markup_percentage`) as string) || 0;
+    
+    // Calculate unit price from cost and markup
+    const markupAmount = cost * (markupPercentage / 100);
+    const unitPrice = cost + markupAmount;
+    
+    // Update the unit price field
+    form.setValue(`${name}.${index}.unit_price`, unitPrice);
+    
+    // Then recalculate all values
+    calculateItemValues(index);
   };
   
   // Add a new empty item
@@ -41,7 +67,11 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
       description: '',
       quantity: 1,
       unit_price: 0,
+      cost: 0,
+      markup_percentage: 20, // Default markup
       total_price: 0,
+      gross_margin: 0,
+      gross_margin_percentage: 0,
       estimate_id: estimateId
     });
   };
@@ -65,11 +95,13 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[40%]">Description</TableHead>
-              <TableHead className="w-[15%] text-right">Quantity</TableHead>
-              <TableHead className="w-[15%] text-right">Unit Price</TableHead>
-              <TableHead className="w-[15%] text-right">Total</TableHead>
-              <TableHead className="w-[15%]"></TableHead>
+              <TableHead className="w-[30%]">Description</TableHead>
+              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="text-right">Cost</TableHead>
+              <TableHead className="text-right">Markup %</TableHead>
+              <TableHead className="text-right">Unit Price</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -93,7 +125,27 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
                       min="1"
                       step="1"
                       className="text-right"
-                      onChange={() => calculateItemTotal(index)}
+                      onChange={() => calculateItemValues(index)}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Input
+                      {...form.register(`${name}.${index}.cost`)}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="text-right"
+                      onChange={() => updateUnitPriceFromMarkup(index)}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Input
+                      {...form.register(`${name}.${index}.markup_percentage`)}
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      className="text-right"
+                      onChange={() => updateUnitPriceFromMarkup(index)}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -103,7 +155,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
                       min="0"
                       step="0.01"
                       className="text-right"
-                      onChange={() => calculateItemTotal(index)}
+                      onChange={() => calculateItemValues(index)}
                     />
                   </TableCell>
                   <TableCell className="text-right font-medium">
@@ -125,7 +177,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No items
                   <div className="mt-2">
                     <Button
@@ -143,6 +195,41 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
           </TableBody>
         </Table>
       </div>
+      
+      {fields.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2 bg-slate-50 p-3 border rounded-md">
+            <h4 className="text-sm font-medium text-[#0485ea] mb-2">Financial Summary</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <div className="text-xs text-muted-foreground">Total Cost</div>
+                <div className="text-sm font-medium">
+                  {formatCurrency(
+                    fields.reduce((sum, item: any) => sum + ((parseFloat(form.getValues(`${name}.${fields.indexOf(item)}.cost`)) || 0) * (parseFloat(form.getValues(`${name}.${fields.indexOf(item)}.quantity`)) || 0)), 0)
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Total Revenue</div>
+                <div className="text-sm font-medium">
+                  {formatCurrency(
+                    fields.reduce((sum, item: any) => sum + (item.total_price || 0), 0)
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Gross Margin</div>
+                <div className="text-sm font-medium">
+                  {formatCurrency(
+                    fields.reduce((sum, item: any) => sum + (item.total_price || 0), 0) - 
+                    fields.reduce((sum, item: any) => sum + ((parseFloat(form.getValues(`${name}.${fields.indexOf(item)}.cost`)) || 0) * (parseFloat(form.getValues(`${name}.${fields.indexOf(item)}.quantity`)) || 0)), 0)
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

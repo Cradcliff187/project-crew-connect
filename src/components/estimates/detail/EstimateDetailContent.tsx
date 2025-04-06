@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
 import EstimateLineItems from './EstimateLineItems';
 import RevisionComparePanel from './RevisionComparePanel';
 import EstimateFinancialSummary from './EstimateFinancialSummary';
+import { calculateEstimateTotals, calculateContingency, calculateGrandTotal } from '../utils/estimateCalculations';
 
 interface EstimateDetailContentProps {
   data: {
@@ -52,15 +51,13 @@ interface EstimateDetailContentProps {
 
 const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onRefresh }) => {
   const [activeTab, setActiveTab] = useState('line-items');
-  const { toast } = useToast();
   
   // Calculate financial numbers
-  const subtotal = data.items.reduce((sum, item) => sum + (item.total_price || 0), 0);
-  const totalCost = data.items.reduce((sum, item) => sum + ((item.cost || 0) * (item.quantity || 1)), 0);
+  const { subtotal, totalCost } = calculateEstimateTotals(data.items);
   
   const contingencyPercentage = data.contingency_percentage || 0;
-  const contingencyAmount = data.contingencyamount || (subtotal * (contingencyPercentage / 100));
-  const grandTotal = subtotal + contingencyAmount;
+  const contingencyAmount = data.contingencyamount || calculateContingency(subtotal, contingencyPercentage);
+  const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
   
   return (
     <div className="space-y-6">
