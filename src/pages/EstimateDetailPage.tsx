@@ -3,24 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, FileUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { formatDate } from '@/lib/utils';
 
-import EstimateDetailHeader from '@/components/estimates/detail/EstimateDetailHeader';
 import EstimateDetailContent from '@/components/estimates/detail/EstimateDetailContent';
-import EstimatePDFManager from '@/components/estimates/detail/EstimatePDFManager';
-import EstimateRevisionsList from '@/components/estimates/detail/EstimateRevisionsList';
 import EstimateDocumentsTab from '@/components/estimates/details/EstimateDocumentsTab';
 import EstimateEmailTab from '@/components/estimates/detail/EstimateEmailTab';
 import EstimateRevisionsTab from '@/components/estimates/details/EstimateRevisionsTab';
 import EstimateDetailLayout from '@/components/estimates/detail/EstimateDetailLayout';
-import EstimateSidebar from '@/components/estimates/detail/EstimateSidebar';
 import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
 import DocumentShareDialog from '@/components/estimates/detail/dialogs/DocumentShareDialog';
+import EstimateStatusControl from '@/components/estimates/detail/EstimateStatusControl';
+import EstimateActions from '@/components/estimates/EstimateActions';
+import CompactEstimateSidebar from '@/components/estimates/detail/CompactEstimateSidebar';
+import EstimateRevisionDialog from '@/components/estimates/detail/dialogs/EstimateRevisionDialog';
+import CompactPDFManager from '@/components/estimates/detail/CompactPDFManager';
 
 const EstimateDetailPage = () => {
   const { estimateId } = useParams();
@@ -33,6 +33,7 @@ const EstimateDetailPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [revisions, setRevisions] = useState<any[]>([]);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
   
   // Use the custom hook for fetching estimate details
   const { 
@@ -286,49 +287,91 @@ const EstimateDetailPage = () => {
 
   // Use the more robust revisions data either from our direct query or from the hook
   const displayRevisions = estimateRevisions.length > 0 ? estimateRevisions : revisions;
+  
+  const canCreateRevision = ['draft', 'sent', 'pending', 'approved', 'rejected'].includes(estimate.status);
 
   return (
     <PageTransition>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Button 
-            variant="outline" 
-            onClick={handleBackClick}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Estimates
-          </Button>
+      <div className="space-y-4">
+        {/* Header Section with Back Button, Status Control and Actions */}
+        <div className="flex flex-col md:flex-row justify-between gap-3">
+          <div className="flex items-center">
+            <Button 
+              variant="outline" 
+              onClick={handleBackClick}
+              size="sm"
+              className="mr-3"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl font-bold">Estimate #{estimate.estimateid.substring(4, 10)}</h1>
+                <EstimateStatusControl 
+                  estimateId={estimate.estimateid}
+                  currentStatus={estimate.status}
+                  onStatusChange={handleStatusChange}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground hidden sm:block">
+                {estimate.customername || 'No customer'} • Created {new Date(estimate.datecreated).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
           
-          <EstimateDetailHeader 
-            data={{
-              estimateid: estimate.estimateid,
-              customername: estimate.customername,
-              datecreated: estimate.datecreated,
-              status: estimate.status
-            }}
-            currentVersion={currentRevision?.version || 1}
-            onDelete={handleDelete}
-            onConvert={handleConvert}
-            onStatusChange={handleStatusChange}
-          />
+          <div className="flex items-center gap-2 justify-end">
+            {canCreateRevision && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRevisionDialogOpen(true)}
+                className="flex items-center"
+              >
+                <FileUp className="h-4 w-4 mr-1" />
+                New Revision
+              </Button>
+            )}
+            
+            {estimate.status === 'draft' && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex items-center"
+              >
+                <Send className="h-4 w-4 mr-1" />
+                Send
+              </Button>
+            )}
+            
+            <EstimateActions 
+              status={estimate.status}
+              onEdit={() => {}}
+              onDelete={handleDelete}
+              onConvert={handleConvert}
+            />
+          </div>
         </div>
         
+        {/* PDF Manager (Compact Version) */}
         {currentRevision && (
-          <EstimatePDFManager 
+          <CompactPDFManager 
             estimateId={estimate.estimateid} 
             revisionId={currentRevision.id}
             clientEmail={estimate.contactemail}
+            onOpenShareDialog={() => setShareDialogOpen(true)}
           />
         )}
         
+        {/* Main Content */}
         <EstimateDetailLayout
           sidebar={
-            <EstimateSidebar
+            <CompactEstimateSidebar
               estimate={estimate}
               revisions={displayRevisions}
               currentRevisionId={currentRevision?.id}
               onRevisionSelect={handleRevisionSelect}
-              onShare={() => setShareDialogOpen(true)}
             />
           }
           main={
@@ -365,11 +408,12 @@ const EstimateDetailPage = () => {
                     </TabsContent>
                     
                     <TabsContent value="history" className="mt-0">
-                      <div>
-                        <h2 className="text-lg font-semibold mb-4">Estimate History</h2>
-                        <p className="text-muted-foreground">Activity history for this estimate will be displayed here.</p>
-                        {/* Implement history log component here */}
-                      </div>
+                      <EstimateRevisionsTab
+                        estimateId={estimate.estimateid}
+                        revisions={displayRevisions}
+                        currentRevisionId={currentRevision?.id}
+                        onRevisionSelect={handleRevisionSelect}
+                      />
                     </TabsContent>
                   </div>
                 </Tabs>
@@ -387,6 +431,15 @@ const EstimateDetailPage = () => {
           } : null}
           estimateId={estimate.estimateid}
           clientEmail={estimate.contactemail}
+        />
+        
+        {/* Revision creation dialog */}
+        <EstimateRevisionDialog
+          open={revisionDialogOpen}
+          onOpenChange={setRevisionDialogOpen}
+          estimateId={estimate.estimateid}
+          currentVersion={currentRevision?.version || 1}
+          onSuccess={handleRefresh}
         />
       </div>
     </PageTransition>
