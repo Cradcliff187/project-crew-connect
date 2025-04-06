@@ -39,7 +39,8 @@ const EstimateDetailPage = () => {
     estimateRevisions,
     fetchEstimateDetails,
     isLoading: revisionsLoading,
-    refetchRevisions
+    refetchRevisions,
+    setRevisionAsCurrent
   } = useEstimateDetails();
 
   useEffect(() => {
@@ -199,19 +200,25 @@ const EstimateDetailPage = () => {
     handleRefresh();
   };
 
-  const handleRevisionSelect = (revisionId: string) => {
+  const handleRevisionSelect = async (revisionId: string) => {
     const selectedRevision = (estimateRevisions.length > 0 ? estimateRevisions : revisions)
       .find(rev => rev.id === revisionId);
     
     if (selectedRevision) {
       setCurrentRevision(selectedRevision);
+      
+      if (!selectedRevision.is_current && estimateId) {
+        // First set this as the current revision in database
+        await setRevisionAsCurrent(revisionId, estimateId);
+      }
+      
       toast({
         title: `Viewing Revision ${selectedRevision.version}`,
-        description: selectedRevision.is_current ? "This is the current revision" : "This is a historical revision",
+        description: selectedRevision.is_current ? "This is the current revision" : "This revision is now set as current",
       });
       
-      // If we're viewing a revision that isn't current, maybe fetch its items?
-      if (!selectedRevision.is_current && estimateId) {
+      // Fetch items for this specific revision
+      if (estimateId) {
         // Fetch items for this specific revision
         supabase
           .from('estimate_items')
