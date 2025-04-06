@@ -15,6 +15,13 @@ export interface EstimateItem {
   original_item_id?: string;
   created_at?: string;
   updated_at?: string;
+  item_type?: string;
+  trade_type?: string;
+  expense_type?: string;
+  custom_type?: string;
+  vendor_id?: string;
+  subcontractor_id?: string;
+  document_id?: string;
 }
 
 export interface EstimateRevision {
@@ -30,4 +37,49 @@ export interface EstimateRevision {
   created_at?: string;
   updated_at?: string;
   created_by?: string;
+  contingency_percentage?: number;
+  contingency_amount?: number;
+  total_cost?: number;
+  total_markup?: number;
+  gross_margin?: number;
+  margin_percentage?: number;
+  reason_for_change?: string;
+  client_feedback?: string;
+  internal_notes?: string;
+}
+
+export interface EstimateRevisionComparison {
+  currentRevision: EstimateRevision;
+  compareRevision: EstimateRevision;
+  addedItems: EstimateItem[];
+  removedItems: EstimateItem[];
+  changedItems: {
+    current: EstimateItem;
+    previous: EstimateItem;
+    priceDifference: number;
+    percentageDifference: number;
+  }[];
+  totalDifference: number;
+  percentageChange: number;
+}
+
+export interface EstimateFinancialSummary {
+  subtotal: number;
+  totalCost?: number;
+  totalMarkup?: number;
+  grossMargin?: number;
+  grossMarginPercentage?: number;
+  contingencyPercentage?: number;
+  contingencyAmount?: number;
+  grandTotal: number;
+}
+
+export interface EstimateVersionMetrics {
+  revision: EstimateRevision;
+  itemCount: number;
+  financials: EstimateFinancialSummary;
+  changeFromPrevious?: {
+    amount: number;
+    percentage: number;
+  };
 }
