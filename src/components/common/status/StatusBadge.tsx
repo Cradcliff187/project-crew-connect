@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { CheckCircle2, AlertCircle, CircleDashed, Clock } from 'lucide-react';
 
 interface StatusBadgeProps {
   status?: string;
@@ -8,45 +9,76 @@ interface StatusBadgeProps {
   color?: string;
   size?: 'sm' | 'default';
   className?: string;
+  showIcon?: boolean;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ 
+/**
+ * Universal status badge component aligned with AKC LLC brand guidelines
+ */
+const StatusBadge: React.FC<StatusBadgeProps> = ({ 
   status,
   label, 
   color = 'neutral', 
   size = 'default',
-  className = '' 
+  className = '',
+  showIcon = true
 }) => {
-  const getColorClasses = () => {
+  // Get status icon
+  const getStatusIcon = () => {
+    if (!showIcon) return null;
+    
     switch (color) {
       case 'green':
       case 'success':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />;
       case 'blue':
       case 'info':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'primary':
+        return <Clock className="mr-1.5 h-3.5 w-3.5" />;
       case 'amber':
       case 'warning':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
+        return <AlertCircle className="mr-1.5 h-3.5 w-3.5" />;
       case 'red':
       case 'error':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'purple':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'neutral':
+        return <AlertCircle className="mr-1.5 h-3.5 w-3.5" />;
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
     }
   };
-
+  
+  // Get status class based on status type
+  const getStatusClass = () => {
+    switch (color) {
+      case 'green':
+      case 'success':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'blue':
+      case 'info':
+      case 'primary':
+        return 'bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]';
+      case 'amber':
+      case 'warning':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'red':
+      case 'error':
+        return 'bg-red-50 text-red-700 border-red-200';
+      case 'purple':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'neutral':
+      default:
+        return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
+  };
+  
   const sizeClasses = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2.5 py-0.5 text-xs';
-
+  
   return (
-    <Badge
-      variant="outline"
-      className={`${getColorClasses()} font-medium border ${sizeClasses} ${className}`}
+    <Badge 
+      variant="outline" 
+      className={`font-medium flex items-center ${getStatusClass()} ${sizeClasses} ${className}`}
     >
-      {label}
+      {getStatusIcon()}
+      <span>{label}</span>
     </Badge>
   );
 };

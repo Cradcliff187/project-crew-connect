@@ -3,8 +3,7 @@ import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { useNavigate } from 'react-router-dom';
 import { Vendor } from '../types/vendorTypes';
-import StatusBadge from '@/components/ui/StatusBadge';
-import { StatusType } from '@/types/common';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import VendorInfo from '../row/VendorInfo';
 import VendorContactInfo from '../row/VendorContactInfo';
 import VendorLocation from '../row/VendorLocation';
@@ -29,7 +28,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
   };
 
   // Get vendor status color
-  const getStatusColor = (status: string | undefined): StatusType => {
+  const getStatusColor = (status: string | undefined): string => {
     if (!status) return 'neutral';
     
     switch (status.toLowerCase()) {
@@ -48,7 +47,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
 
   return (
     <TableRow onClick={handleRowClick} className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors">
-      <TableCell className="py-3">
+      <TableCell className="font-medium py-3">
         <VendorInfo vendor={vendor} />
       </TableCell>
       <TableCell className="py-3">
@@ -60,8 +59,9 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
       <TableCell className="py-3 text-center">
         <div className="flex justify-center">
           <StatusBadge 
-            status={getStatusColor(vendor.status)} 
+            color={getStatusColor(vendor.status)} 
             label={vendor.status || 'Unknown'} 
+            showIcon={true}
           />
         </div>
       </TableCell>

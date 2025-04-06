@@ -280,7 +280,7 @@ const Reports = () => {
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
-            <Button onClick={exportToCsv}>
+            <Button onClick={exportToCsv} className="bg-[#0485ea] hover:bg-[#0370c9]">
               <FileDown className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
@@ -301,7 +301,7 @@ const Reports = () => {
           {/* All content areas share the same layout */}
           {(['projects', 'customers', 'vendors', 'subcontractors', 'work_orders', 'estimates', 'expenses'] as EntityType[]).map((entity) => (
             <TabsContent key={entity} value={entity}>
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center mb-6">
                     <div className="relative flex-1">
@@ -317,8 +317,8 @@ const Reports = () => {
                   
                   {showFilters && (
                     <div className="mb-6 p-4 border rounded-md bg-muted/50">
-                      <h3 className="text-sm font-medium mb-3">Filter Options</h3>
-                      <div className="grid grid-cols-3 gap-4">
+                      <h3 className="text-sm font-semibold mb-3">Filter Options</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Status filter */}
                         <div>
                           <label className="text-xs mb-1 block">Status</label>
@@ -379,7 +379,7 @@ const Reports = () => {
                   
                   {isLoading ? (
                     <div className="flex justify-center items-center h-40">
-                      <p>Loading data...</p>
+                      <div className="animate-spin h-8 w-8 border-4 border-[#0485ea] border-t-transparent rounded-full"></div>
                     </div>
                   ) : isError ? (
                     <div className="flex justify-center items-center h-40">
@@ -393,7 +393,7 @@ const Reports = () => {
                       searchPlaceholder={`Filter ${entity}...`}
                     />
                   ) : (
-                    <div className="flex justify-center items-center h-40">
+                    <div className="flex justify-center items-center h-40 text-muted-foreground">
                       <p>No data available.</p>
                     </div>
                   )}
@@ -405,10 +405,10 @@ const Reports = () => {
         
         {/* Summary Section */}
         {data && data.length > 0 && (
-          <Card>
+          <Card className="shadow-sm">
             <CardContent className="pt-6">
               <h3 className="text-lg font-semibold mb-2">Summary</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 border rounded-md">
                   <div className="text-2xl font-bold">{data.length}</div>
                   <div className="text-sm text-muted-foreground capitalize">Total {selectedEntity}</div>

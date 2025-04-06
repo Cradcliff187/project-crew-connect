@@ -37,7 +37,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onE
   }
 
   return (
-    <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
+    <div className="rounded-md border shadow-sm animate-fade-in">
       <div className="overflow-x-auto">
         <Table className="w-full table-fixed">
           <TableHeader className="bg-[#0485ea]/10">

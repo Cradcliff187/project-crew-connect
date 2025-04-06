@@ -1,8 +1,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { VendorDocument } from '../types';
+import { BaseDocument } from '@/components/common/documents/DocumentsSection';
 import { toast } from '@/hooks/use-toast';
+
+export interface VendorDocument extends BaseDocument {
+  vendor_id?: string;
+  vendor_type?: string;
+}
 
 export const useVendorDocuments = (vendorId: string) => {
   const [documents, setDocuments] = useState<VendorDocument[]>([]);
@@ -89,6 +94,11 @@ export const useVendorDocuments = (vendorId: string) => {
       setDocuments(enhancedDocuments);
     } catch (error) {
       console.error('Error processing vendor documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load vendor documents",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -96,7 +106,7 @@ export const useVendorDocuments = (vendorId: string) => {
   
   useEffect(() => {
     fetchDocuments();
-  }, [fetchDocuments]); // Using memoized function in dependency array
+  }, [fetchDocuments]);
   
   return { documents, loading, fetchDocuments };
 };
