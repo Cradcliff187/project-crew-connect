@@ -32,6 +32,8 @@ export interface EstimateRevision {
   amount?: number;
   revision_by?: string;
   document_id?: string;
+  pdf_document_id?: string; // Added this property
+  sent_to?: string; // Added this property
   created_at?: string;
   updated_at?: string;
 }
