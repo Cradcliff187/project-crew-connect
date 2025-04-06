@@ -14,7 +14,7 @@ export interface EstimateItem {
   vendor_id?: string;
   subcontractor_id?: string;
   document_id?: string;
-  item_type?: 'labor' | 'material' | 'subcontractor' | 'vendor' | 'other';
+  item_type?: string; // Changed from enum to string to match database values
   trade_type?: string;
   expense_type?: string;
   custom_type?: string;
@@ -39,6 +39,7 @@ export interface EstimateRevision {
   updated_at?: string;
   sent_date?: string;
   sent_to?: string;
+  revision_by?: string; // Added this field
 }
 
 export interface Estimate {

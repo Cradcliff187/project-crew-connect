@@ -78,8 +78,11 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
 
       const currentRevision = currentRevisionResult.data;
       const compareRevision = compareRevisionResult.data;
-      const currentItems = currentItemsResult.data || [];
-      const compareItems = compareItemsResult.data || [];
+      
+      // Convert database items to EstimateItem type safely by typing them as any first
+      // This avoids TypeScript errors from string vs enum type mismatches
+      const currentItems = (currentItemsResult.data || []) as any as EstimateItem[];
+      const compareItems = (compareItemsResult.data || []) as any as EstimateItem[];
 
       // Process comparison data
       const addedItems = currentItems.filter(item => 

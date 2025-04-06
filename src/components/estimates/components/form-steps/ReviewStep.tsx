@@ -58,6 +58,12 @@ const ReviewStep = ({
     fetchDocumentInfo();
   }, [formData.estimate_documents, formData.items]);
   
+  // Ensure formData has required items property
+  const safeFormData = {
+    ...formData,
+    items: formData.items || []
+  };
+  
   const documentCount = (formData.estimate_documents?.length || 0) + 
     (formData.items?.filter(i => i.document_id).length || 0);
 
@@ -66,10 +72,10 @@ const ReviewStep = ({
       <h3 className="text-lg font-medium">Review Your Estimate</h3>
       <div className="border rounded-md p-4">
         <EstimatePreview 
-          formData={formData} 
+          formData={safeFormData}
           selectedCustomerName={selectedCustomerName}
           selectedCustomerAddress={selectedCustomerAddress}
-          selectedCustomerId={selectedCustomerId} // Pass the customer ID
+          selectedCustomerId={selectedCustomerId}
         />
       </div>
       

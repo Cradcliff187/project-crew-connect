@@ -18,6 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PDFExportButton from '../detail/PDFExportButton';
+import RevisionPDFViewer from '../components/RevisionPDFViewer';
 
 interface EstimateRevisionsTabProps {
   estimateId: string;
@@ -38,7 +39,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Sort revisions with newest first
   const sortedRevisions = [...revisions].sort((a, b) => b.version - a.version);
   
   useEffect(() => {
@@ -77,7 +77,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
     }
   };
 
-  // Helper function to get status icon
   const getStatusIcon = (status: string | undefined) => {
     switch(status?.toLowerCase()) {
       case 'approved':
@@ -105,12 +104,10 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   };
   
   const handleRevisionClick = (revision: EstimateRevision) => {
-    // Toggle expansion
     if (expandedRevision === revision.id) {
       setExpandedRevision(null);
     } else {
       setExpandedRevision(revision.id);
-      // Fetch items if not already loaded
       fetchRevisionItems(revision.id);
     }
   };
@@ -205,7 +202,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                 
                 <CollapsibleContent>
                   <CardContent className="pt-0 pb-4">
-                    {/* Notes section if available */}
                     {revision.notes && (
                       <div className="mb-4 p-3 bg-slate-50 rounded-md text-sm">
                         <div className="text-xs text-muted-foreground mb-1">
@@ -217,7 +213,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                       </div>
                     )}
                     
-                    {/* Additional revision metadata */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <div className="text-xs text-muted-foreground mb-1">Created On</div>
@@ -225,7 +220,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground mb-1">Created By</div>
-                        <div className="text-sm">{revision.created_by || 'Not specified'}</div>
+                        <div className="text-sm">{revision.revision_by || 'Not specified'}</div>
                       </div>
                       {revision.sent_date && (
                         <>
@@ -241,7 +236,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                       )}
                     </div>
                     
-                    {/* PDF document access */}
                     {revision.pdf_document_id && (
                       <RevisionPDFViewer revision={revision} />
                     )}
@@ -260,7 +254,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                       </div>
                     )}
                     
-                    {/* Item summary */}
                     <div className="mb-4">
                       <h4 className="text-sm font-medium mb-2">Items Summary</h4>
                       {loading ? (
@@ -305,7 +298,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                       )}
                     </div>
                     
-                    {/* Actions */}
                     <div className="flex justify-end">
                       {!isCurrent ? (
                         <Button 
