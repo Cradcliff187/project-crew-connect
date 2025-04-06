@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +10,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EstimateRevision } from '../types/estimateTypes';
+import { Badge } from '@/components/ui/badge';
 
 interface RevisionComparisonProps {
   estimateId: string;
@@ -35,13 +35,11 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
   const currentRevision = revisions.find(rev => rev.id === currentRevisionId);
   const compareRevision = revisions.find(rev => rev.id === compareRevisionId);
 
-  // Sort revisions by version descending and filter out current revision
   const availableRevisions = revisions
     .filter(rev => rev.id !== currentRevisionId)
     .sort((a, b) => b.version - a.version);
 
   useEffect(() => {
-    // Set the initial comparison revision to the most recent one that isn't current
     if (availableRevisions.length > 0 && !compareRevisionId) {
       setCompareRevisionId(availableRevisions[0].id);
     }
@@ -56,7 +54,6 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
   const fetchRevisionItems = async () => {
     setLoading(true);
     try {
-      // Fetch current revision items
       const { data: currentItems, error: currentError } = await supabase
         .from('estimate_items')
         .select('*')
@@ -66,7 +63,6 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
       if (currentError) throw currentError;
       setCurrentRevisionItems(currentItems || []);
       
-      // Fetch comparison revision items
       const { data: compareItems, error: compareError } = await supabase
         .from('estimate_items')
         .select('*')
@@ -92,7 +88,6 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
     onRevisionSelect(id);
   };
 
-  // Calculate summary comparison data
   const calculateDifference = () => {
     if (!currentRevision || !compareRevision) return { amount: 0, percentage: 0 };
     
@@ -114,7 +109,6 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
     ? currentRevision.version > compareRevision.version 
     : false;
 
-  // Count added, removed and changed items
   const getItemChanges = () => {
     const current = currentRevisionItems.map(item => ({ id: item.description, total: item.total_price }));
     const compare = compareRevisionItems.map(item => ({ id: item.description, total: item.total_price }));
@@ -282,7 +276,6 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                   ) : (
                     <div>
                       {currentRevisionItems.map((item, index) => {
-                        // Find matching item in compared revision
                         const matchingItem = compareRevisionItems.find(ci => 
                           ci.description === item.description || 
                           (item.original_item_id && ci.id === item.original_item_id));
@@ -331,7 +324,6 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                         );
                       })}
                       
-                      {/* Show items that are in compared revision but not in current */}
                       {compareRevisionItems
                         .filter(item => !currentRevisionItems.some(ci => 
                           ci.description === item.description || 

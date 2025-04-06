@@ -15,6 +15,7 @@ interface EstimateRevisionsTabProps {
   revisions: EstimateRevision[];
   currentRevisionId?: string;
   onRevisionSelect: (revisionId: string) => void;
+  // Remove the formatDate prop since we import it from utils
 }
 
 const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ 

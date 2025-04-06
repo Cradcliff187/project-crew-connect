@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
@@ -154,17 +153,15 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     setShareDialogOpen(true);
   };
 
-  // Fix for 'total' property not existing on EstimateItem type
   const mappedItems: EstimateItem[] = items.map(item => ({
     ...item,
-    total_price: item.total_price || 0, // Removed reference to item.total
+    total_price: item.total_price || 0,
   }));
 
-  // Fix for 'date' property not existing on EstimateRevision type
   const mappedRevisions: EstimateRevision[] = revisions.map(rev => ({
     ...rev,
     estimate_id: estimate.id,
-    revision_date: rev.revision_date || new Date().toISOString(), // Removed reference to rev.date
+    revision_date: rev.revision_date || new Date().toISOString(),
   }));
 
   const detailsEstimate = {
@@ -229,11 +226,11 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               <TabsContent value="revisions" className="m-0 mt-2">
                 <EstimateRevisionsTab 
                   revisions={mappedRevisions} 
-                  formatDate={formatDate} 
                   estimateId={estimate.id}
-                  onRefresh={onStatusChange}
-                  clientName={estimate.client}
-                  clientEmail={clientEmail}
+                  currentRevisionId={revisions.find(rev => rev.is_current)?.id}
+                  onRevisionSelect={(revisionId) => {
+                    console.log('Selected revision:', revisionId);
+                  }}
                 />
               </TabsContent>
               
