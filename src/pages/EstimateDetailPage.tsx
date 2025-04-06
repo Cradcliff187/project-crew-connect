@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { formatDate } from '@/lib/utils';
 
 import EstimateDetailHeader from '@/components/estimates/detail/EstimateDetailHeader';
 import EstimateDetailContent from '@/components/estimates/detail/EstimateDetailContent';
@@ -15,6 +16,8 @@ import EstimatePDFManager from '@/components/estimates/detail/EstimatePDFManager
 import EstimateRevisionsList from '@/components/estimates/detail/EstimateRevisionsList';
 import EstimateDocumentsTab from '@/components/estimates/details/EstimateDocumentsTab';
 import EstimateEmailTab from '@/components/estimates/detail/EstimateEmailTab';
+import EstimateRevisionsTab from '@/components/estimates/details/EstimateRevisionsTab';
+import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
 
 const EstimateDetailPage = () => {
   const { estimateId } = useParams();
@@ -25,10 +28,21 @@ const EstimateDetailPage = () => {
   const [currentRevision, setCurrentRevision] = useState<any>(null);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
+  const [revisions, setRevisions] = useState<any[]>([]);
+  
+  // Use the custom hook for fetching estimate details
+  const { 
+    estimateRevisions,
+    fetchEstimateDetails,
+    isLoading: revisionsLoading,
+    refetchRevisions
+  } = useEstimateDetails();
 
   useEffect(() => {
     if (estimateId) {
       fetchEstimateData(estimateId);
+      // Also fetch revisions using the custom hook
+      fetchEstimateDetails(estimateId);
     }
   }, [estimateId]);
 
@@ -127,6 +141,19 @@ const EstimateDetailPage = () => {
         console.error('Error fetching estimate items:', itemsError);
       }
       
+      // Fetch all revisions for this estimate
+      const { data: allRevisions, error: revisionsError } = await supabase
+        .from('estimate_revisions')
+        .select('*')
+        .eq('estimate_id', id)
+        .order('version', { ascending: false });
+      
+      if (revisionsError) {
+        console.error('Error fetching estimate revisions:', revisionsError);
+      } else {
+        setRevisions(allRevisions || []);
+      }
+      
       // Set the data
       setEstimate({
         ...estimateData,
@@ -144,6 +171,7 @@ const EstimateDetailPage = () => {
   const handleRefresh = () => {
     if (estimateId) {
       fetchEstimateData(estimateId);
+      refetchRevisions();
     }
   };
 
@@ -209,6 +237,9 @@ const EstimateDetailPage = () => {
     );
   }
 
+  // Use the more robust revisions data either from our direct query or from the hook
+  const displayRevisions = estimateRevisions.length > 0 ? estimateRevisions : revisions;
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -258,11 +289,13 @@ const EstimateDetailPage = () => {
           </TabsContent>
           
           <TabsContent value="revisions" className="mt-0">
-            <EstimateRevisionsList
+            <EstimateRevisionsTab
+              revisions={displayRevisions}
+              formatDate={formatDate}
               estimateId={estimate.estimateid}
-              revisions={[]}  // This will be populated by the component
               onRefresh={handleRefresh}
               clientName={estimate.customername}
+              clientEmail={estimate.contactemail}
             />
           </TabsContent>
           
