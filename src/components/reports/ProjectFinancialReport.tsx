@@ -97,27 +97,31 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
           
         if (projectError) throw projectError;
 
-        // Fetch materials cost
+        // Fetch materials cost - using expenses table filtered by material type
         const { data: materialsData, error: materialsError } = await supabase
-          .from('work_order_materials')
-          .select('price, quantity')
-          .eq('project_id', selectedProjectId);
+          .from('expenses')
+          .select('amount')
+          .eq('entity_id', selectedProjectId)
+          .eq('entity_type', 'PROJECT')
+          .eq('expense_type', 'MATERIAL');
           
         if (materialsError) throw materialsError;
 
-        // Fetch labor cost
-        const { data: laborData, error: laborError } = await supabase
+        // Fetch labor cost from time_entries
+        const { data: timeEntriesData, error: timeEntriesError } = await supabase
           .from('time_entries')
-          .select('hours, hourly_rate')
-          .eq('project_id', selectedProjectId);
+          .select('hours_worked, employee_rate')
+          .eq('entity_id', selectedProjectId)
+          .eq('entity_type', 'PROJECT');
           
-        if (laborError) throw laborError;
+        if (timeEntriesError) throw timeEntriesError;
 
         // Fetch change orders
         const { data: changeOrdersData, error: changeOrdersError } = await supabase
           .from('change_orders')
-          .select('amount')
-          .eq('project_id', selectedProjectId);
+          .select('total_amount')
+          .eq('entity_id', selectedProjectId)
+          .eq('entity_type', 'PROJECT');
           
         if (changeOrdersError) throw changeOrdersError;
 
@@ -126,15 +130,15 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
         const expensesTotal = projectData?.current_expenses || 0;
         
         const materialsCost = materialsData?.reduce((total, item) => {
-          return total + (item.price * item.quantity);
+          return total + item.amount;
         }, 0) || 0;
         
-        const laborCost = laborData?.reduce((total, item) => {
-          return total + (item.hours * item.hourly_rate);
+        const laborCost = timeEntriesData?.reduce((total, item) => {
+          return total + (item.hours_worked * (item.employee_rate || 0));
         }, 0) || 0;
         
         const changeOrdersTotal = changeOrdersData?.reduce((total, item) => {
-          return total + item.amount;
+          return total + (item.total_amount || 0);
         }, 0) || 0;
         
         const remainingBudget = totalBudget - expensesTotal;
@@ -291,34 +295,34 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Labor</span>
-                  <span>{((metrics.laborCost / metrics.expensesTotal) * 100).toFixed(1)}%</span>
+                  <span>{metrics.expensesTotal > 0 ? ((metrics.laborCost / metrics.expensesTotal) * 100).toFixed(1) : "0"}%</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2.5">
                   <div 
                     className="bg-[#0485ea] h-2.5 rounded-full" 
-                    style={{ width: `${(metrics.laborCost / metrics.expensesTotal) * 100}%` }}
+                    style={{ width: metrics.expensesTotal > 0 ? `${(metrics.laborCost / metrics.expensesTotal) * 100}%` : '0%' }}
                   ></div>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Materials</span>
-                  <span>{((metrics.materialsCost / metrics.expensesTotal) * 100).toFixed(1)}%</span>
+                  <span>{metrics.expensesTotal > 0 ? ((metrics.materialsCost / metrics.expensesTotal) * 100).toFixed(1) : "0"}%</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2.5">
                   <div 
                     className="bg-green-600 h-2.5 rounded-full" 
-                    style={{ width: `${(metrics.materialsCost / metrics.expensesTotal) * 100}%` }}
+                    style={{ width: metrics.expensesTotal > 0 ? `${(metrics.materialsCost / metrics.expensesTotal) * 100}%` : '0%' }}
                   ></div>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Change Orders</span>
-                  <span>{((metrics.changeOrdersTotal / metrics.expensesTotal) * 100).toFixed(1)}%</span>
+                  <span>{metrics.expensesTotal > 0 ? ((metrics.changeOrdersTotal / metrics.expensesTotal) * 100).toFixed(1) : "0"}%</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2.5">
                   <div 
                     className="bg-orange-500 h-2.5 rounded-full" 
-                    style={{ width: `${(metrics.changeOrdersTotal / metrics.expensesTotal) * 100}%` }}
+                    style={{ width: metrics.expensesTotal > 0 ? `${(metrics.changeOrdersTotal / metrics.expensesTotal) * 100}%` : '0%' }}
                   ></div>
                 </div>
               </div>

@@ -8,7 +8,6 @@ import Customers from '@/pages/Customers';
 import CustomerDetail from '@/pages/CustomerDetail';
 import Settings from '@/pages/Settings';
 import Vendors from '@/pages/Vendors'; 
-import VendorDetail from '@/pages/VendorDetail';
 import Estimates from '@/pages/Estimates';
 import Contacts from './pages/Contacts';
 import WorkOrders from './pages/WorkOrders';
@@ -32,7 +31,7 @@ const routes = createBrowserRouter([
   { path: '/customers', element: <Customers /> },
   { path: '/customers/:customerId', element: <CustomerDetail /> },
   { path: '/vendors', element: <Vendors /> },
-  { path: '/vendors/:vendorId', element: <VendorDetail /> },
+  { path: '/vendors/:vendorId', element: <Vendors /> },
   { path: '/settings', element: <Settings /> },
   { path: '/estimates', element: <Estimates /> },
   { path: '/contacts', element: <Contacts /> },
