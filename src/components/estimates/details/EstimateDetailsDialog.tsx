@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, 
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileDown } from 'lucide-react';
+import { FileDown, FileUp } from 'lucide-react';
 import { EstimateDetailsProps } from '../EstimateDetails';
 import EstimateDetailsTab from './EstimateDetailsTab';
 import EstimateItemsTab from './EstimateItemsTab';
@@ -20,6 +21,7 @@ import PDFExportButton from '../detail/PDFExportButton';
 import DocumentShareDialog from '../detail/dialogs/DocumentShareDialog';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * EstimateDetailsDialog displays a dialog with tabs for viewing estimate details
@@ -33,12 +35,13 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   onClose,
   onStatusChange
 }) => {
-  const [activeTab, setActiveTab] = useState('details');
+  const [activeTab, setActiveTab] = useState('revisions'); // Default to revisions tab
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
   const [currentVersion, setCurrentVersion] = useState(1);
   const [clientEmail, setClientEmail] = useState<string | undefined>(undefined);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedRevisionId, setSelectedRevisionId] = useState<string | undefined>(undefined);
   
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +70,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     const currentRevision = revisions.find(rev => rev.is_current);
     if (currentRevision) {
       setCurrentVersion(currentRevision.version);
+      setSelectedRevisionId(currentRevision.id);
     }
   }, [revisions]);
   
@@ -152,6 +156,11 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     setSelectedDocument(document);
     setShareDialogOpen(true);
   };
+  
+  const handleRevisionSelect = (revisionId: string) => {
+    setSelectedRevisionId(revisionId);
+    console.log('Selected revision:', revisionId);
+  };
 
   const mappedItems: EstimateItem[] = items.map(item => ({
     ...item,
@@ -170,36 +179,36 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     amount: estimate.total || 0,
     versions: revisions.length,
   };
+  
+  // Get current revision
+  const currentRevision = revisions.find(rev => rev.is_current);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-xl font-semibold text-[#0485ea]">
-            {estimate.project || `Estimate for ${estimate.client}`}
-          </DialogTitle>
-          <DialogDescription className="mt-1">
-            {estimate.description || `View and manage estimate details`}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-6 py-2 border-b flex justify-between items-center">
-            <div className="flex-1">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList>
-                  <TabsTrigger value="details">Details</TabsTrigger>
-                  <TabsTrigger value="items">Items</TabsTrigger>
-                  <TabsTrigger value="revisions">Revisions</TabsTrigger>
-                  <TabsTrigger value="documents">Documents</TabsTrigger>
-                </TabsList>
-              </Tabs>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl font-semibold text-[#0485ea]">
+                {estimate.project || `Estimate for ${estimate.client}`}
+              </DialogTitle>
+              <DialogDescription className="mt-1 flex items-center">
+                <span className="mr-2">
+                  {estimate.description || `View and manage estimate details`}
+                </span>
+                {currentRevision && (
+                  <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-800 border-blue-200">
+                    Version {currentRevision.version}
+                  </Badge>
+                )}
+              </DialogDescription>
             </div>
             
-            <div className="flex gap-2 ml-4">
+            {/* Compact PDF management and actions */}
+            <div className="flex items-center gap-2">
               <PDFExportButton 
                 estimateId={estimate.id}
-                revisionId={revisions.find(rev => rev.is_current)?.id || ''}
+                revisionId={currentRevision?.id || ''}
                 contentRef={contentRef}
               />
               
@@ -207,9 +216,26 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={handleCreateRevision}
+                className="flex items-center"
               >
-                Create Revision
+                <FileUp className="h-4 w-4 mr-1" />
+                New Revision
               </Button>
+            </div>
+          </div>
+        </DialogHeader>
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="px-6 py-2 border-b">
+            <div className="flex-1">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList>
+                  <TabsTrigger value="revisions">Revisions</TabsTrigger>
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="items">Items</TabsTrigger>
+                  <TabsTrigger value="documents">Documents</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </div>
           
@@ -228,9 +254,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
                   revisions={mappedRevisions} 
                   estimateId={estimate.id}
                   currentRevisionId={revisions.find(rev => rev.is_current)?.id}
-                  onRevisionSelect={(revisionId) => {
-                    console.log('Selected revision:', revisionId);
-                  }}
+                  onRevisionSelect={handleRevisionSelect}
                 />
               </TabsContent>
               

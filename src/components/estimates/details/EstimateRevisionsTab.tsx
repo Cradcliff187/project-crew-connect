@@ -5,17 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Filter, ArrowDown, ArrowUp, FileText } from 'lucide-react';
+import { Filter, ArrowDown, ArrowUp, FileText, ArrowLeftRight } from 'lucide-react';
 import { EstimateRevision } from '../types/estimateTypes';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import RevisionComparison from '../detail/RevisionComparison';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EstimateRevisionsTabProps {
   estimateId: string;
   revisions: EstimateRevision[];
   currentRevisionId?: string;
   onRevisionSelect: (revisionId: string) => void;
-  // Remove the formatDate prop since we import it from utils
 }
 
 const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ 
@@ -26,7 +26,8 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
 }) => {
   const [sortField, setSortField] = useState<'version' | 'revision_date'>('version');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [viewMode, setViewMode] = useState<'list' | 'compare'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'compare'>('compare'); // Default to compare for better UX
+  const [selectedRevisionId, setSelectedRevisionId] = useState<string | undefined>(undefined);
   
   const toggleSort = (field: 'version' | 'revision_date') => {
     if (sortField === field) {
@@ -53,6 +54,20 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
     }
   });
   
+  // Get the current revision
+  const currentRevision = revisions.find(rev => rev.id === currentRevisionId);
+  
+  // Handle revision selection for comparison
+  const handleRevisionSelect = (revisionId: string) => {
+    setSelectedRevisionId(revisionId);
+  };
+  
+  // Select a revision to compare with the current one
+  const compareToRevision = selectedRevisionId || 
+    (sortedRevisions.length > 1 
+      ? sortedRevisions.find(r => r.id !== currentRevisionId)?.id 
+      : undefined);
+      
   const getStatusColor = (status: string | undefined) => {
     switch(status?.toLowerCase()) {
       case 'approved':
@@ -75,11 +90,14 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
         </p>
       </div>
       
-      <Tabs defaultValue="list" onValueChange={(value) => setViewMode(value as 'list' | 'compare')}>
+      <Tabs defaultValue={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'compare')}>
         <div className="flex justify-between items-center mb-4">
           <TabsList>
+            <TabsTrigger value="compare" className="flex items-center gap-1">
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+              Compare View
+            </TabsTrigger>
             <TabsTrigger value="list">List View</TabsTrigger>
-            <TabsTrigger value="compare">Comparison</TabsTrigger>
           </TabsList>
           
           <Button variant="outline" size="sm" className="text-xs">
@@ -87,6 +105,17 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
             Filter
           </Button>
         </div>
+        
+        <TabsContent value="compare" className="mt-0">
+          {currentRevisionId && (
+            <RevisionComparison
+              estimateId={estimateId}
+              currentRevisionId={currentRevisionId}
+              revisions={revisions}
+              onRevisionSelect={onRevisionSelect}
+            />
+          )}
+        </TabsContent>
         
         <TabsContent value="list" className="mt-0">
           <Card>
@@ -120,14 +149,16 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                       </TableRow>
                     ) : (
                       sortedRevisions.map((revision) => (
-                        <TableRow key={revision.id}>
+                        <TableRow key={revision.id} className={currentRevisionId === revision.id ? "bg-blue-50/40" : ""}>
                           <TableCell className="font-medium">
-                            {revision.version}
-                            {revision.is_current && (
-                              <Badge variant="outline" className="ml-2 bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20 text-[10px]">
-                                Current
-                              </Badge>
-                            )}
+                            <div className="flex items-center">
+                              {revision.version}
+                              {revision.is_current && (
+                                <Badge variant="outline" className="ml-2 bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20 text-[10px]">
+                                  Current
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>{formatDate(revision.revision_date)}</TableCell>
                           <TableCell>
@@ -136,21 +167,77 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(revision.amount || 0)}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>{formatCurrency(revision.amount || 0)}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <div className="text-xs">
+                                    {currentRevision && revision.id !== currentRevisionId && revision.amount !== undefined && currentRevision.amount !== undefined ? (
+                                      <div className="flex flex-col">
+                                        <span className={revision.amount > currentRevision.amount ? "text-green-600" : "text-red-600"}>
+                                          {revision.amount > currentRevision.amount ? "+" : ""}
+                                          {formatCurrency(revision.amount - currentRevision.amount)}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">compared to current</span>
+                                      </div>
+                                    ) : 'Total amount'}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </TableCell>
-                          <TableCell className="max-w-[180px] truncate">
-                            {revision.notes || '-'}
+                          <TableCell className="max-w-[180px]">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="truncate text-sm text-muted-foreground">
+                                    {revision.notes || '-'}
+                                  </div>
+                                </TooltipTrigger>
+                                {revision.notes && (
+                                  <TooltipContent side="top" className="max-w-sm">
+                                    <p className="text-xs">{revision.notes}</p>
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </TooltipProvider>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => onRevisionSelect(revision.id)}
-                              className="h-8 px-2"
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              {currentRevisionId !== revision.id && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => onRevisionSelect(revision.id)}
+                                  className="h-8 px-2 text-xs"
+                                >
+                                  Switch To
+                                </Button>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  setViewMode('compare');
+                                  handleRevisionSelect(revision.id);
+                                }}
+                                className="h-8 px-2 text-xs"
+                              >
+                                <ArrowLeftRight className="h-4 w-4 mr-1" />
+                                Compare
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => onRevisionSelect(revision.id)}
+                                className="h-8 px-2 text-xs"
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -160,17 +247,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="compare" className="mt-0">
-          {currentRevisionId && (
-            <RevisionComparison
-              estimateId={estimateId}
-              currentRevisionId={currentRevisionId}
-              revisions={revisions}
-              onRevisionSelect={onRevisionSelect}
-            />
-          )}
         </TabsContent>
       </Tabs>
     </div>

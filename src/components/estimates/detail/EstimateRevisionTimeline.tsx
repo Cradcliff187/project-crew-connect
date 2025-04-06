@@ -1,9 +1,12 @@
 
 import React from 'react';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, AlertCircle, XCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, XCircle, ArrowRight, ChevronRight } from 'lucide-react';
 import { EstimateRevision } from '../types/estimateTypes';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface EstimateRevisionTimelineProps {
   revisions: EstimateRevision[];
@@ -48,6 +51,33 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
     }
   };
   
+  // Calculate financial differences between revisions
+  const calculateDifferences = () => {
+    const differences: Record<string, { amount: number; percentage: number }> = {};
+    
+    // Go through revisions and calculate differences from previous revision
+    for (let i = 0; i < sortedRevisions.length - 1; i++) {
+      const currentRev = sortedRevisions[i];
+      const prevRev = sortedRevisions[i + 1];
+      
+      if (currentRev.amount !== undefined && prevRev.amount !== undefined) {
+        const diff = currentRev.amount - prevRev.amount;
+        const percentage = prevRev.amount !== 0 
+          ? ((diff / prevRev.amount) * 100)
+          : 0;
+        
+        differences[currentRev.id] = {
+          amount: diff,
+          percentage: Math.round(percentage * 10) / 10
+        };
+      }
+    }
+    
+    return differences;
+  };
+  
+  const differences = calculateDifferences();
+  
   // If no revisions, show placeholder
   if (revisions.length === 0) {
     return (
@@ -56,56 +86,139 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
       </div>
     );
   }
+
+  // Find current revision
+  const currentRevision = revisions.find(rev => rev.id === currentRevisionId);
   
   return (
     <div className="space-y-1">
-      <h3 className="text-sm font-medium mb-3">Revision Timeline</h3>
-      <div className="space-y-2">
-        {sortedRevisions.map((revision, index) => (
-          <div 
-            key={revision.id} 
-            className={`relative flex items-center p-3 rounded-md border cursor-pointer transition-all
-              ${currentRevisionId === revision.id ? 'border-[#0485ea] bg-blue-50/50 shadow-sm' : 'border-gray-200 hover:bg-slate-50'}
-            `}
-            onClick={() => onSelectRevision(revision.id)}
-          >
-            <div className="flex-shrink-0 mr-3">
-              {getStatusIcon(revision.status)}
-            </div>
-            <div className="flex-grow">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center">
-                    <span className="font-medium text-sm">Version {revision.version}</span>
-                    {revision.is_current && (
-                      <Badge variant="outline" className="ml-2 bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20 text-xs">
-                        Current
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {formatDate(revision.revision_date)}
-                  </div>
-                </div>
-                <Badge variant="outline" className={`${getStatusColor(revision.status)} text-xs uppercase font-medium`}>
-                  {revision.status || 'Draft'}
-                </Badge>
-              </div>
-              {revision.notes && (
-                <div className="text-xs text-gray-600 mt-1.5 line-clamp-2">{revision.notes}</div>
-              )}
-              <div className="text-xs font-medium mt-1.5">
-                ${revision.amount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
-              </div>
-            </div>
-            
-            {currentRevisionId === revision.id && (
-              <div className="absolute -left-[5px] top-1/2 -translate-y-1/2 h-full">
-                <div className="h-full w-[3px] bg-[#0485ea] rounded-full"></div>
-              </div>
-            )}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-medium">Revision Timeline</h3>
+        {currentRevision && (
+          <div className="text-xs text-muted-foreground">
+            Current: Version {currentRevision.version}
           </div>
-        ))}
+        )}
+      </div>
+      
+      <div className="relative">
+        {/* Vertical timeline line */}
+        <div className="absolute left-[12px] top-6 bottom-6 w-[2px] bg-gray-200"></div>
+        
+        <div className="space-y-2.5">
+          {sortedRevisions.map((revision, index) => {
+            const isCurrentRevision = currentRevisionId === revision.id;
+            const diff = differences[revision.id];
+            
+            return (
+              <div 
+                key={revision.id} 
+                className={cn(
+                  "relative flex p-3 pl-8 rounded-md border transition-all cursor-pointer",
+                  isCurrentRevision 
+                    ? "border-[#0485ea] bg-blue-50/50 shadow-sm" 
+                    : "border-gray-200 hover:bg-slate-50"
+                )}
+                onClick={() => onSelectRevision(revision.id)}
+              >
+                {/* Timeline dot */}
+                <div className={cn(
+                  "absolute left-[6px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full z-10",
+                  isCurrentRevision ? "bg-[#0485ea]" : "bg-gray-200"
+                )}>
+                  {isCurrentRevision && (
+                    <span className="absolute inset-0 animate-ping rounded-full bg-[#0485ea] opacity-75"></span>
+                  )}
+                </div>
+                
+                <div className="flex-grow">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center">
+                        <span className="font-medium text-sm">Version {revision.version}</span>
+                        {revision.is_current && (
+                          <Badge variant="outline" className="ml-2 bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20 text-xs">
+                            Current
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {formatDate(revision.revision_date)}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className={`${getStatusColor(revision.status)} text-xs uppercase font-medium`}>
+                      {revision.status || 'Draft'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-1.5">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-sm font-medium">
+                            {formatCurrency(revision.amount || 0)}
+                            {diff && (
+                              <span className={cn(
+                                "ml-1.5 text-xs font-normal",
+                                diff.amount > 0 ? "text-green-600" : diff.amount < 0 ? "text-red-600" : "text-gray-500"
+                              )}>
+                                {diff.amount > 0 ? "+" : ""}{formatCurrency(diff.amount)}
+                              </span>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        {diff && (
+                          <TooltipContent side="top">
+                            <div className="text-xs">
+                              <span className={diff.amount > 0 ? "text-green-600" : "text-red-600"}>
+                                {diff.percentage > 0 ? "+" : ""}{diff.percentage}% 
+                              </span>
+                              <span> from previous version</span>
+                            </div>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <div className="flex items-center">
+                      {getStatusIcon(revision.status)}
+                    </div>
+                  </div>
+                  
+                  {revision.notes && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-xs text-gray-600 mt-1.5 line-clamp-1">{revision.notes}</div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-sm">
+                          <p className="text-xs">{revision.notes}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                  
+                  {!isCurrentRevision && (
+                    <div className="mt-1.5">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 text-xs px-2 text-[#0485ea]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectRevision(revision.id);
+                        }}
+                      >
+                        Switch to this version
+                        <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
