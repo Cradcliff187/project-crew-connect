@@ -80,27 +80,25 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
     }
   };
 
-  const buttonText = children || (
-    <>
-      <FileText className="mr-2 h-4 w-4" />
-      {isGenerating ? "Generating PDF..." : "Export PDF"}
-    </>
-  );
-
   return (
     <Button
       onClick={handleGeneratePdf}
       disabled={isGenerating}
       variant={variant}
       size={size}
-      className={`${className} ${variant === 'default' ? 'bg-[#0485ea] hover:bg-[#0373d1] text-white' : ''}`}
+      className={className}
     >
-      {isGenerating && !children ? (
+      {isGenerating ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating PDF...
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          {children || "Generating..."}
         </>
-      ) : buttonText}
+      ) : (
+        <>
+          <FileText className="h-4 w-4 mr-2" />
+          {children || "Generate PDF"}
+        </>
+      )}
     </Button>
   );
 };

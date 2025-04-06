@@ -1,12 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import EstimateLineItems from './EstimateLineItems';
-import { supabase } from '@/integrations/supabase/client';
-import { EstimateRevision } from '../types/estimateTypes';
 import RevisionComparePanel from './RevisionComparePanel';
 
 interface EstimateDetailContentProps {
@@ -62,6 +60,7 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
               <TabsList>
                 <TabsTrigger value="line-items">Line Items</TabsTrigger>
                 <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="compare">Compare Revisions</TabsTrigger>
               </TabsList>
               
               <TabsContent value="line-items" className="mt-6">
@@ -111,6 +110,10 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
                     </div>
                   </div>
                 </div>
+              </TabsContent>
+              
+              <TabsContent value="compare" className="mt-6">
+                <RevisionComparePanel estimateId={data.estimateid} />
               </TabsContent>
             </Tabs>
           </CardContent>

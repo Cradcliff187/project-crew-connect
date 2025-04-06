@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileDown, FileUp } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { EstimateDetailsProps } from '../EstimateDetails';
 import EstimateDetailsTab from './EstimateDetailsTab';
 import EstimateItemsTab from './EstimateItemsTab';
@@ -22,6 +22,7 @@ import DocumentShareDialog from '../detail/dialogs/DocumentShareDialog';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateItem, EstimateRevision } from '../types/estimateTypes';
 import { Badge } from '@/components/ui/badge';
+import EstimateActions from '../EstimateActions';
 
 /**
  * EstimateDetailsDialog displays a dialog with tabs for viewing estimate details
@@ -204,23 +205,32 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               </DialogDescription>
             </div>
             
-            {/* Compact PDF management and actions */}
+            {/* Streamlined action buttons */}
             <div className="flex items-center gap-2">
-              <PDFExportButton 
-                estimateId={estimate.id}
-                revisionId={currentRevision?.id || ''}
-                contentRef={contentRef}
-              />
+              {currentRevision && (
+                <PDFExportButton 
+                  estimateId={estimate.id}
+                  revisionId={currentRevision?.id || ''}
+                  contentRef={contentRef}
+                  className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
+                />
+              )}
               
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleCreateRevision}
-                className="flex items-center"
               >
                 <FileUp className="h-4 w-4 mr-1" />
                 New Revision
               </Button>
+              
+              <EstimateActions 
+                status={estimate.status}
+                onShare={() => setShareDialogOpen(true)}
+                currentRevision={currentRevision}
+                estimateId={estimate.id}
+              />
             </div>
           </div>
         </DialogHeader>

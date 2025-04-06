@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ArrowLeft, Send, FileUp } from 'lucide-react';
+import { Loader2, ArrowLeft, FileUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,7 +19,7 @@ import EstimateStatusControl from '@/components/estimates/detail/EstimateStatusC
 import EstimateActions from '@/components/estimates/EstimateActions';
 import CompactEstimateSidebar from '@/components/estimates/detail/CompactEstimateSidebar';
 import EstimateRevisionDialog from '@/components/estimates/detail/dialogs/EstimateRevisionDialog';
-import CompactPDFManager from '@/components/estimates/detail/CompactPDFManager';
+import PDFExportButton from '@/components/estimates/detail/PDFExportButton';
 
 const EstimateDetailPage = () => {
   const { estimateId } = useParams();
@@ -322,6 +321,15 @@ const EstimateDetailPage = () => {
           </div>
           
           <div className="flex items-center gap-2 justify-end">
+            {/* PDF Export Button */}
+            {currentRevision && (
+              <PDFExportButton
+                estimateId={estimate.estimateid}
+                revisionId={currentRevision.id}
+                className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
+              />
+            )}
+            
             {canCreateRevision && (
               <Button
                 variant="outline"
@@ -334,35 +342,17 @@ const EstimateDetailPage = () => {
               </Button>
             )}
             
-            {estimate.status === 'draft' && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex items-center"
-              >
-                <Send className="h-4 w-4 mr-1" />
-                Send
-              </Button>
-            )}
-            
             <EstimateActions 
               status={estimate.status}
               onEdit={() => {}}
               onDelete={handleDelete}
               onConvert={handleConvert}
+              onShare={() => setShareDialogOpen(true)}
+              currentRevision={currentRevision}
+              estimateId={estimate.estimateid}
             />
           </div>
         </div>
-        
-        {/* PDF Manager (Compact Version) */}
-        {currentRevision && (
-          <CompactPDFManager 
-            estimateId={estimate.estimateid} 
-            revisionId={currentRevision.id}
-            clientEmail={estimate.contactemail}
-            onOpenShareDialog={() => setShareDialogOpen(true)}
-          />
-        )}
         
         {/* Main Content */}
         <EstimateDetailLayout
