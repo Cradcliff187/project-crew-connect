@@ -23,6 +23,12 @@ interface EstimateItemsProps {
 }
 
 const EstimateItems: React.FC<EstimateItemsProps> = ({ items, showFinancialDetails = false }) => {
+  // Calculate totals for the summary row
+  const totalCost = items.reduce((sum, item) => sum + (item.cost || 0) * item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.total_price, 0);
+  const totalMargin = totalPrice - totalCost;
+  const averageMarginPercentage = totalPrice > 0 ? (totalMargin / totalPrice) * 100 : 0;
+  
   return (
     <Card className="overflow-hidden border">
       <div className="overflow-x-auto">
@@ -52,12 +58,36 @@ const EstimateItems: React.FC<EstimateItemsProps> = ({ items, showFinancialDetai
                   <>
                     <TableCell className="text-right">{formatCurrency(item.cost || 0)}</TableCell>
                     <TableCell className="text-right">{item.markup_percentage?.toFixed(1) || 0}%</TableCell>
-                    <TableCell className="text-right">{item.gross_margin_percentage?.toFixed(1) || 0}%</TableCell>
+                    <TableCell className="text-right">
+                      <span className={`${(item.gross_margin_percentage || 0) < 20 ? 'text-red-600' : (item.gross_margin_percentage || 0) > 30 ? 'text-green-600' : ''}`}>
+                        {item.gross_margin_percentage?.toFixed(1) || 0}%
+                      </span>
+                    </TableCell>
                   </>
                 )}
                 <TableCell className="text-right font-medium">{formatCurrency(item.total_price)}</TableCell>
               </TableRow>
             ))}
+            
+            {items.length > 0 && (
+              <TableRow className="border-t-2 font-semibold bg-gray-50">
+                <TableCell colSpan={2}>TOTALS</TableCell>
+                <TableCell className="text-right">-</TableCell>
+                {showFinancialDetails && (
+                  <>
+                    <TableCell className="text-right">{formatCurrency(totalCost)}</TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell className="text-right">
+                      <span className={`${averageMarginPercentage < 20 ? 'text-red-600' : averageMarginPercentage > 30 ? 'text-green-600' : ''}`}>
+                        {averageMarginPercentage.toFixed(1)}%
+                      </span>
+                    </TableCell>
+                  </>
+                )}
+                <TableCell className="text-right">{formatCurrency(totalPrice)}</TableCell>
+              </TableRow>
+            )}
+            
             {items.length === 0 && (
               <TableRow>
                 <TableCell colSpan={showFinancialDetails ? 7 : 4} className="text-center py-8 text-gray-500">

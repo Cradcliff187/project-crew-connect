@@ -34,13 +34,19 @@ interface EstimateDetailContentProps {
       quantity: number;
       unit_price: number;
       total_price: number;
+      cost?: number;
+      markup_percentage?: number;
+      markup_amount?: number;
+      gross_margin?: number;
+      gross_margin_percentage?: number;
     }[];
   };
   onRefresh?: () => void;
 }
 
 const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onRefresh }) => {
-  const [showFinancialDetails, setShowFinancialDetails] = useState(false);
+  // Set showFinancialDetails to true by default for management view
+  const [showFinancialDetails, setShowFinancialDetails] = useState(true);
   
   return (
     <div className="grid md:grid-cols-3 gap-6">
