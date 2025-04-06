@@ -2,7 +2,7 @@
 import React from 'react';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, AlertCircle, XCircle, ArrowRight, ChevronRight } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, XCircle, ArrowRight, ChevronRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { EstimateRevision } from '../types/estimateTypes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
   currentRevisionId,
   onSelectRevision
 }) => {
-  // Sort revisions by version
+  // Sort revisions by version (descending)
   const sortedRevisions = [...revisions].sort((a, b) => b.version - a.version);
   
   // Helper function to get status icon
@@ -90,10 +90,18 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
   // Find current revision
   const currentRevision = revisions.find(rev => rev.id === currentRevisionId);
   
+  // Helper to get trend icon for financial changes
+  const getTrendIcon = (diff: number | undefined) => {
+    if (!diff) return <Minus className="h-3.5 w-3.5" />;
+    if (diff > 0) return <TrendingUp className="h-3.5 w-3.5 text-green-500" />;
+    if (diff < 0) return <TrendingDown className="h-3.5 w-3.5 text-red-500" />;
+    return <Minus className="h-3.5 w-3.5 text-gray-500" />;
+  };
+  
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium">Revision Timeline</h3>
+        <h3 className="text-sm font-medium">Revision History</h3>
         {currentRevision && (
           <div className="text-xs text-muted-foreground">
             Current: Version {currentRevision.version}
@@ -123,11 +131,17 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
               >
                 {/* Timeline dot */}
                 <div className={cn(
-                  "absolute left-[6px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full z-10",
+                  "absolute left-[6px] top-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center z-10",
                   isCurrentRevision ? "bg-[#0485ea]" : "bg-gray-200"
                 )}>
                   {isCurrentRevision && (
                     <span className="absolute inset-0 animate-ping rounded-full bg-[#0485ea] opacity-75"></span>
+                  )}
+                  {/* Financial trend icon (inside the dot) */}
+                  {diff && !isCurrentRevision && (
+                    <span className="text-white scale-75">
+                      {getTrendIcon(diff.amount)}
+                    </span>
                   )}
                 </div>
                 
@@ -155,14 +169,17 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="text-sm font-medium">
+                          <div className="text-sm font-medium flex items-center">
                             {formatCurrency(revision.amount || 0)}
                             {diff && (
                               <span className={cn(
-                                "ml-1.5 text-xs font-normal",
+                                "ml-1.5 text-xs font-normal flex items-center",
                                 diff.amount > 0 ? "text-green-600" : diff.amount < 0 ? "text-red-600" : "text-gray-500"
                               )}>
-                                {diff.amount > 0 ? "+" : ""}{formatCurrency(diff.amount)}
+                                {getTrendIcon(diff.amount)}
+                                <span className="ml-0.5">
+                                  {diff.amount > 0 ? "+" : ""}{formatCurrency(diff.amount)}
+                                </span>
                               </span>
                             )}
                           </div>
@@ -170,10 +187,12 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
                         {diff && (
                           <TooltipContent side="top">
                             <div className="text-xs">
-                              <span className={diff.amount > 0 ? "text-green-600" : "text-red-600"}>
+                              <div className={diff.amount > 0 ? "text-green-600" : "text-red-600"}>
                                 {diff.percentage > 0 ? "+" : ""}{diff.percentage}% 
-                              </span>
-                              <span> from previous version</span>
+                              </div>
+                              <div className="text-muted-foreground">
+                                from version {sortedRevisions[index + 1]?.version || 'unknown'}
+                              </div>
                             </div>
                           </TooltipContent>
                         )}
