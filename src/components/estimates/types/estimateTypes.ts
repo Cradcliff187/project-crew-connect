@@ -58,9 +58,20 @@ export interface EstimateRevisionComparison {
     previous: EstimateItem;
     priceDifference: number;
     percentageDifference: number;
+    changes: {
+      field: string;
+      previousValue: any;
+      currentValue: any;
+    }[];
   }[];
   totalDifference: number;
   percentageChange: number;
+  summary: {
+    totalItemsChanged: number;
+    newItemsCost: number;
+    removedItemsCost: number;
+    modifiedItemsDifference: number;
+  };
 }
 
 export interface EstimateFinancialSummary {
@@ -83,3 +94,11 @@ export interface EstimateVersionMetrics {
     percentage: number;
   };
 }
+
+export interface RevisionComparisonField {
+  label: string;
+  field: keyof EstimateItem;
+  formatter?: (value: any) => string;
+  showDifference?: boolean;
+}
+

@@ -5,10 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { EstimateRevision } from '../types/estimateTypes';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeftRight, ChevronRight } from 'lucide-react';
+import { ArrowLeftRight, ChevronRight, ChevronsRight, LineChart, BarChart, List } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import RevisionDetailedComparison from './RevisionDetailedComparison';
+import RevisionFinancialComparison from './RevisionFinancialComparison';
 
 interface RevisionComparePanelProps {
   estimateId: string;
@@ -27,6 +30,7 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({
   const [currentItems, setCurrentItems] = useState<any[]>([]);
   const [compareItems, setCompareItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('summary');
   const { toast } = useToast();
 
   const currentRevision = revisions.find(rev => rev.id === currentRevisionId);
@@ -127,7 +131,7 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({
   }
 
   return (
-    <Card>
+    <Card className="mt-4">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center">
@@ -182,45 +186,84 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="flex items-center p-3 bg-slate-50/50 rounded-md border">
-                <div className="text-center w-full">
-                  <div className="flex justify-center space-x-6">
-                    <div className="text-center">
-                      <div className="text-sm font-medium text-green-600">{differences.addedItems}</div>
-                      <div className="text-xs text-muted-foreground">Items Added</div>
+            <div className="mb-4">
+              <Tabs defaultValue="summary" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="w-full mb-4 grid grid-cols-3">
+                  <TabsTrigger value="summary" className="flex items-center">
+                    <List className="w-4 h-4 mr-2" />
+                    Summary
+                  </TabsTrigger>
+                  <TabsTrigger value="details" className="flex items-center">
+                    <ChevronsRight className="w-4 h-4 mr-2" />
+                    Line Item Details
+                  </TabsTrigger>
+                  <TabsTrigger value="financial" className="flex items-center">
+                    <BarChart className="w-4 h-4 mr-2" />
+                    Financial
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="summary" className="mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div className="flex items-center p-3 bg-slate-50/50 rounded-md border">
+                      <div className="text-center w-full">
+                        <div className="flex justify-center space-x-6">
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-green-600">{differences.addedItems}</div>
+                            <div className="text-xs text-muted-foreground">Items Added</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-red-600">{differences.removedItems}</div>
+                            <div className="text-xs text-muted-foreground">Items Removed</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-sm font-medium text-red-600">{differences.removedItems}</div>
-                      <div className="text-xs text-muted-foreground">Items Removed</div>
+                    
+                    <div className="flex justify-end items-center">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs flex items-center"
+                        onClick={() => onRevisionSelect(compareRevision.id)}
+                      >
+                        Switch to Version {compareRevision.version}
+                        <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                      </Button>
                     </div>
                   </div>
-                </div>
-              </div>
-              
-              <div className="flex justify-end items-center">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs flex items-center"
-                  onClick={() => onRevisionSelect(compareRevision.id)}
-                >
-                  Switch to Version {compareRevision.version}
-                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              </div>
+                </TabsContent>
+                
+                <TabsContent value="details" className="mt-0">
+                  <RevisionDetailedComparison 
+                    estimateId={estimateId}
+                    currentRevisionId={currentRevisionId}
+                    compareRevisionId={compareRevisionId}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="financial" className="mt-0">
+                  <RevisionFinancialComparison
+                    estimateId={estimateId}
+                    currentRevisionId={currentRevisionId}
+                    compareRevisionId={compareRevisionId}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
             
-            <div className="mt-3 text-center">
-              <Button
-                variant="link"
-                size="sm"
-                className="text-xs text-[#0485ea]"
-                onClick={() => window.location.hash = 'history'}
-              >
-                View detailed comparison
-              </Button>
-            </div>
+            {activeTab === "summary" && (
+              <div className="mt-3 text-center">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs text-[#0485ea]"
+                  onClick={() => setActiveTab('details')}
+                >
+                  View detailed comparison
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex items-center justify-center h-32">
