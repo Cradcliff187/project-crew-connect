@@ -130,7 +130,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
                 onExistingCustomer={handleExistingCustomer}
                 selectedCustomerAddress={selectedCustomerAddress}
                 selectedCustomerName={selectedCustomerName}
-                selectedCustomerId={selectedCustomerId} // Pass the selected customer ID
+                selectedCustomerId={selectedCustomerId}
                 customers={customers}
                 loading={dataLoading}
               />

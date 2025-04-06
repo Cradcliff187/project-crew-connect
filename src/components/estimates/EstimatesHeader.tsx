@@ -2,7 +2,7 @@
 import { Plus, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import EstimateForm from './EstimateForm';
+import EstimateMultiStepForm from './EstimateMultiStepForm';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -52,7 +52,7 @@ const EstimatesHeader = ({ searchQuery, setSearchQuery, onEstimateAdded }: Estim
         </Button>
       </div>
 
-      <EstimateForm open={estimateFormOpen} onClose={closeEstimateForm} />
+      <EstimateMultiStepForm open={estimateFormOpen} onClose={closeEstimateForm} />
     </div>
   );
 };
