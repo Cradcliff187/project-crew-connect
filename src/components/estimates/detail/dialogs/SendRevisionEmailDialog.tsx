@@ -46,309 +46,304 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   const [cc, setCc] = useState<string>('');
   const [bcc, setBcc] = useState<string>('');
   const [attachPdf, setAttachPdf] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasPdf, setHasPdf] = useState(false);
-  const { generatePdf, isGenerating, checkRevisionPdf } = usePdfGeneration();
-  
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState<boolean>(false);
+  const [isSending, setIsSending] = useState<boolean>(false);
+  const [pdfDocumentId, setPdfDocumentId] = useState<string | null>(null);
+  const { generatePdf, checkRevisionPdf, isGenerating } = usePdfGeneration();
+
   useEffect(() => {
-    if (open && revision) {
-      fetchTemplates();
-      checkForExistingPdf();
+    if (open) {
+      setTo(clientEmail || '');
+      loadEmailTemplates();
+      checkExistingPdf();
     }
-  }, [open, revision]);
-  
-  const checkForExistingPdf = async () => {
-    if (revision?.id) {
-      const pdfDocId = await checkRevisionPdf(revision.id);
-      setHasPdf(!!pdfDocId);
-    }
-  };
-  
-  const fetchTemplates = async () => {
-    setIsLoading(true);
+  }, [open, clientEmail, revision]);
+
+  const loadEmailTemplates = async () => {
+    setIsLoadingTemplates(true);
     try {
       const { data, error } = await supabase
         .from('estimate_email_settings')
-        .select('*');
+        .select('*')
+        .order('is_default', { ascending: false });
         
       if (error) throw error;
       
       setTemplates(data || []);
       
-      // Set default template if available
+      // If there's a default template, select it
       const defaultTemplate = data?.find(t => t.is_default);
       if (defaultTemplate) {
         setSelectedTemplateId(defaultTemplate.id);
         applyTemplate(defaultTemplate);
       }
     } catch (error) {
-      console.error('Error fetching email templates:', error);
+      console.error('Error loading email templates:', error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingTemplates(false);
     }
   };
   
+  const checkExistingPdf = async () => {
+    if (!revision?.id) return;
+    
+    try {
+      const documentId = await checkRevisionPdf(revision.id);
+      setPdfDocumentId(documentId);
+    } catch (error) {
+      console.error('Error checking for existing PDF:', error);
+    }
+  };
+
   const applyTemplate = (template: EmailTemplate) => {
-    // Replace placeholders in subject
-    let processedSubject = template.subject_template
-      .replace(/\{client_name\}/g, clientName)
-      .replace(/\{estimate_id\}/g, estimateId)
-      .replace(/\{revision_number\}/g, revision?.version?.toString() || '');
+    // Replace variables in the template
+    let processedSubject = template.subject_template;
+    let processedBody = template.body_template;
+    
+    // Replace the variables with actual values
+    const revisionNumber = revision?.version?.toString() || '1';
+    
+    processedSubject = processedSubject
+      .replace(/{{clientName}}/g, clientName)
+      .replace(/{{revisionNumber}}/g, revisionNumber)
+      .replace(/{{estimateId}}/g, estimateId.substring(0, 10));
       
-    // Replace placeholders in body
-    let processedBody = template.body_template
-      .replace(/\{client_name\}/g, clientName)
-      .replace(/\{estimate_id\}/g, estimateId)
-      .replace(/\{revision_number\}/g, revision?.version?.toString() || '');
-      
+    processedBody = processedBody
+      .replace(/{{clientName}}/g, clientName)
+      .replace(/{{revisionNumber}}/g, revisionNumber)
+      .replace(/{{estimateId}}/g, estimateId.substring(0, 10));
+    
     setSubject(processedSubject);
     setEmailBody(processedBody);
   };
-  
-  const handleTemplateChange = (value: string) => {
-    setSelectedTemplateId(value);
-    const selectedTemplate = templates.find(t => t.id === value);
-    if (selectedTemplate) {
-      applyTemplate(selectedTemplate);
+
+  const handleTemplateChange = (id: string) => {
+    setSelectedTemplateId(id);
+    const selected = templates.find(t => t.id === id);
+    if (selected) {
+      applyTemplate(selected);
     }
   };
-  
+
   const handleSendEmail = async () => {
     if (!to) {
       toast({
-        title: 'Required Field Missing',
-        description: 'Please enter a recipient email address.',
-        variant: 'destructive',
+        title: "Recipient Required",
+        description: "Please enter at least one recipient email address.",
+        variant: "destructive",
       });
       return;
     }
     
-    setIsSubmitting(true);
-    let pdfDocumentId = revision?.pdf_document_id;
-    
+    setIsSending(true);
     try {
-      // Generate PDF if needed and requested
-      if (attachPdf && !hasPdf && revision) {
-        pdfDocumentId = await generatePdf(estimateId, revision.id);
-        if (!pdfDocumentId) {
-          toast({
-            title: 'PDF Generation Failed',
-            description: 'Could not generate PDF attachment for the email.',
-            variant: 'destructive',
-          });
-        }
+      let pdfId = pdfDocumentId;
+      
+      // If we need to attach PDF but don't have one yet, generate it
+      if (attachPdf && !pdfId && revision?.id) {
+        pdfId = await generatePdf(estimateId, revision.id);
       }
       
-      // Prepare email data
-      const emailData = {
-        to,
-        cc,
-        bcc,
-        subject,
-        body: emailBody,
-        estimate_id: estimateId,
-        revision_id: revision?.id,
-        sent_by: 'system', // This would be the current user in a real system
-        sent_at: new Date().toISOString(),
-        pdf_document_id: attachPdf ? pdfDocumentId : null,
-        status: 'SENT',
-      };
+      // Now send the email
+      const { error } = await supabase.functions.invoke('send-estimate-email', {
+        body: {
+          to,
+          cc: cc || undefined,
+          bcc: bcc || undefined,
+          subject,
+          message: emailBody,
+          estimateId,
+          revisionId: revision?.id,
+          pdfDocumentId: attachPdf ? pdfId : undefined
+        }
+      });
       
-      // In a real application, we would call an API endpoint to send the email
-      // For now, we'll simulate it by logging to the activitylog table
-      
-      const { error } = await supabase
-        .from('activitylog')
-        .insert({
-          action: 'EMAIL_SENT',
-          moduletype: 'ESTIMATE',
-          referenceid: estimateId,
-          timestamp: new Date().toISOString(),
-          status: 'SENT',
-          detailsjson: JSON.stringify(emailData),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        
       if (error) throw error;
       
-      // Update the revision status to 'sent' if it was in 'draft' or 'ready'
-      if (revision && ['draft', 'ready'].includes(revision.status.toLowerCase())) {
-        const { error: revisionError } = await supabase
-          .from('estimate_revisions')
-          .update({
-            status: 'sent',
-            sent_date: new Date().toISOString(),
-            sent_to: to,
-            pdf_document_id: pdfDocumentId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', revision.id);
-          
-        if (revisionError) {
-          console.error('Error updating revision status:', revisionError);
-        }
-      }
+      // Log the email activity
+      await supabase
+        .from('activitylog')
+        .insert({
+          action: 'Email sent',
+          moduletype: 'ESTIMATES',
+          referenceid: estimateId,
+          status: 'completed',
+          detailsjson: JSON.stringify({ 
+            to, 
+            subject, 
+            attachedPdf: attachPdf && !!pdfId 
+          }),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
       
       toast({
-        title: 'Email Sent',
-        description: 'The estimate has been sent successfully.',
+        title: "Email Sent",
+        description: "The estimate has been emailed successfully.",
+        className: "bg-[#0485ea] text-white",
       });
       
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error sending email:', error);
       toast({
-        title: 'Send Failed',
-        description: error.message || 'There was an error sending the email.',
-        variant: 'destructive',
+        title: "Failed to Send Email",
+        description: error.message || "There was an error sending the email. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsSending(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Send Estimate</DialogTitle>
+          <DialogTitle>Send Estimate by Email</DialogTitle>
         </DialogHeader>
         
-        <div className="overflow-y-auto flex-1">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
-              <span className="ml-2">Loading templates...</span>
-            </div>
+        <div className="space-y-4 py-4">
+          {!revision ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No revision selected. Please select a revision to send.
+              </AlertDescription>
+            </Alert>
           ) : (
-            <div className="space-y-4">
-              {!clientEmail && (
-                <Alert variant="warning" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No email address found for this client. Please enter a recipient email address manually.
-                  </AlertDescription>
-                </Alert>
+            <>
+              {isLoadingTemplates ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  {templates.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="template">Email Template</Label>
+                      <Select
+                        value={selectedTemplateId}
+                        onValueChange={handleTemplateChange}
+                      >
+                        <SelectTrigger id="template">
+                          <SelectValue placeholder="Select a template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((template) => (
+                            <SelectItem 
+                              key={template.id} 
+                              value={template.id}
+                            >
+                              {template.template_name} {template.is_default && "(Default)"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="to">To</Label>
+                    <Input
+                      id="to"
+                      type="email"
+                      placeholder="recipient@example.com"
+                      value={to}
+                      onChange={(e) => setTo(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cc">CC</Label>
+                      <Input
+                        id="cc"
+                        placeholder="cc@example.com"
+                        value={cc}
+                        onChange={(e) => setCc(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="bcc">BCC</Label>
+                      <Input
+                        id="bcc"
+                        placeholder="bcc@example.com"
+                        value={bcc}
+                        onChange={(e) => setBcc(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input
+                      id="subject"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message</Label>
+                    <Textarea
+                      id="message"
+                      rows={8}
+                      value={emailBody}
+                      onChange={(e) => setEmailBody(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="attachPdf"
+                      checked={attachPdf}
+                      onCheckedChange={(checked) => setAttachPdf(!!checked)}
+                    />
+                    <Label 
+                      htmlFor="attachPdf" 
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      Attach PDF document
+                    </Label>
+                  </div>
+                  
+                  {attachPdf && !pdfDocumentId && (
+                    <div className="text-sm flex items-center text-amber-500">
+                      <Info className="h-4 w-4 mr-1" />
+                      A PDF will be generated before sending
+                    </div>
+                  )}
+                  
+                  {attachPdf && pdfDocumentId && (
+                    <div className="text-sm flex items-center text-green-600">
+                      <Info className="h-4 w-4 mr-1" />
+                      PDF document is ready to attach
+                    </div>
+                  )}
+                </>
               )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="template">Email Template</Label>
-                <Select 
-                  value={selectedTemplateId} 
-                  onValueChange={handleTemplateChange}
-                  disabled={isSubmitting}
-                >
-                  <SelectTrigger id="template">
-                    <SelectValue placeholder="Select template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map(template => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.template_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="to">To</Label>
-                <Input
-                  id="to"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                  disabled={isSubmitting}
-                  placeholder="recipient@example.com"
-                  required
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cc">CC</Label>
-                  <Input
-                    id="cc"
-                    value={cc}
-                    onChange={(e) => setCc(e.target.value)}
-                    disabled={isSubmitting}
-                    placeholder="cc@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bcc">BCC</Label>
-                  <Input
-                    id="bcc"
-                    value={bcc}
-                    onChange={(e) => setBcc(e.target.value)}
-                    disabled={isSubmitting}
-                    placeholder="bcc@example.com"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
-                <Input
-                  id="subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  disabled={isSubmitting}
-                  placeholder="Email subject"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="body">Message</Label>
-                <Textarea
-                  id="body"
-                  value={emailBody}
-                  onChange={(e) => setEmailBody(e.target.value)}
-                  disabled={isSubmitting}
-                  rows={10}
-                  placeholder="Email body"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="attachPdf"
-                  checked={attachPdf}
-                  onCheckedChange={(checked) => setAttachPdf(checked as boolean)}
-                  disabled={isSubmitting}
-                />
-                <Label htmlFor="attachPdf">
-                  Attach PDF of the estimate
-                </Label>
-              </div>
-              
-              {!hasPdf && attachPdf && (
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Info className="h-3 w-3 mr-1" />
-                  A PDF will be generated automatically when sending
-                </div>
-              )}
-            </div>
+            </>
           )}
         </div>
-          
-        <DialogFooter className="pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => onOpenChange(false)} 
-            disabled={isSubmitting || isGenerating}
+        
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSending || isGenerating}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleSendEmail} 
-            disabled={isSubmitting || isGenerating || isLoading} 
+          <Button
+            type="button"
+            onClick={handleSendEmail}
+            disabled={!to || isSending || isGenerating || !revision}
             className="bg-[#0485ea] hover:bg-[#0375d1]"
           >
-            {isSubmitting || isGenerating ? (
+            {isSending || isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {isGenerating ? 'Generating PDF...' : 'Sending...'}

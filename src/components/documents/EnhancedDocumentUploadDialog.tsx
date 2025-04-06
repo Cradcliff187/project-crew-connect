@@ -66,16 +66,23 @@ const EnhancedDocumentUploadDialog: React.FC<EnhancedDocumentUploadDialogProps> 
     onOpenChange(false);
   };
 
+  const dialogId = "document-upload-dialog";
+  const dialogDescriptionId = `${dialogId}-description`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        isMobile ? "sm:max-w-[100%] w-full p-4" : "sm:max-w-[600px] p-6", 
-        "max-h-[90vh] overflow-auto",
-        viewerAnimations.content
-      )}>
+      <DialogContent 
+        className={cn(
+          isMobile ? "sm:max-w-[100%] w-full p-4" : "sm:max-w-[600px] p-6", 
+          "max-h-[90vh] overflow-auto",
+          viewerAnimations.content
+        )}
+        aria-labelledby={`${dialogId}-title`}
+        aria-describedby={dialogDescriptionId}
+      >
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle id={`${dialogId}-title`}>{title}</DialogTitle>
+          <DialogDescription id={dialogDescriptionId}>{description}</DialogDescription>
         </DialogHeader>
         
         <EnhancedDocumentUpload 

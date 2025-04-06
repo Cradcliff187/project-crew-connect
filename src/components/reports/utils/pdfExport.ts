@@ -22,6 +22,7 @@ interface ExportData {
   monthlyData?: {
     month: string;
     expenses: number;
+    budget?: number;
   }[];
 }
 
@@ -75,13 +76,18 @@ export const generateProjectFinancialPDF = (data: ExportData): jsPDF => {
     doc.setTextColor(4, 133, 234);
     doc.text('Monthly Expenses', 14, startY);
     
+    // Create monthly data table
+    const monthlyTableData = data.monthlyData.map(item => [
+      item.month,
+      formatCurrency(item.expenses),
+      item.budget ? formatCurrency(item.budget) : '-',
+      item.budget ? formatCurrency(item.budget - item.expenses) : '-'
+    ]);
+    
     autoTable(doc, {
       startY: startY + 5,
-      head: [['Month', 'Expenses']],
-      body: data.monthlyData.map(item => [
-        item.month,
-        formatCurrency(item.expenses)
-      ]),
+      head: [['Month', 'Expenses', 'Budget', 'Variance']],
+      body: monthlyTableData,
       headStyles: {
         fillColor: [4, 133, 234],
         textColor: [255, 255, 255],
@@ -90,6 +96,27 @@ export const generateProjectFinancialPDF = (data: ExportData): jsPDF => {
       alternateRowStyles: {
         fillColor: [240, 240, 240]
       },
+    });
+    
+    // Add a simple bar chart visualization (just text-based representation)
+    const chartY = (doc as any).lastAutoTable.finalY + 15;
+    doc.setFontSize(14);
+    doc.setTextColor(4, 133, 234);
+    doc.text('Expense Visualization', 14, chartY);
+    
+    // We'll create a very simple text-based bar chart using symbols
+    // This is just a placeholder - in a real application, you'd use a proper charting library
+    doc.setFontSize(10);
+    doc.setTextColor(51, 51, 51);
+    
+    const maxValue = Math.max(...data.monthlyData.map(d => d.expenses));
+    const scale = 50 / maxValue; // 50 characters is our max bar length
+    
+    data.monthlyData.forEach((item, index) => {
+      const barLength = Math.round(item.expenses * scale);
+      const bar = '█'.repeat(barLength);
+      doc.setTextColor(239, 68, 68); // Red for expenses bar
+      doc.text(`${item.month}: ${bar} ${formatCurrency(item.expenses)}`, 14, chartY + 10 + (index * 5));
     });
   }
   

@@ -20,6 +20,7 @@ interface ExportData {
   monthlyData?: {
     month: string;
     expenses: number;
+    budget?: number;
   }[];
 }
 
@@ -50,10 +51,14 @@ export const exportProjectFinancialCSV = (data: ExportData): void => {
   // Add monthly data if available
   if (data.monthlyData && data.monthlyData.length > 0) {
     csvContent += "Monthly Expenses\r\n";
-    csvContent += "Month,Expenses\r\n";
+    
+    // Add header row with additional columns for budget and variance
+    csvContent += "Month,Expenses,Budget,Variance\r\n";
     
     data.monthlyData.forEach(item => {
-      csvContent += `${item.month},${item.expenses}\r\n`;
+      const budget = item.budget || 0;
+      const variance = item.budget ? item.budget - item.expenses : 0;
+      csvContent += `${item.month},${item.expenses},${budget},${variance}\r\n`;
     });
   }
   
