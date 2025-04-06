@@ -17,7 +17,10 @@ import EstimateRevisionsList from '@/components/estimates/detail/EstimateRevisio
 import EstimateDocumentsTab from '@/components/estimates/details/EstimateDocumentsTab';
 import EstimateEmailTab from '@/components/estimates/detail/EstimateEmailTab';
 import EstimateRevisionsTab from '@/components/estimates/details/EstimateRevisionsTab';
+import EstimateDetailLayout from '@/components/estimates/detail/EstimateDetailLayout';
+import EstimateSidebar from '@/components/estimates/detail/EstimateSidebar';
 import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
+import DocumentShareDialog from '@/components/estimates/detail/dialogs/DocumentShareDialog';
 
 const EstimateDetailPage = () => {
   const { estimateId } = useParams();
@@ -29,6 +32,7 @@ const EstimateDetailPage = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [revisions, setRevisions] = useState<any[]>([]);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   
   // Use the custom hook for fetching estimate details
   const { 
@@ -195,6 +199,42 @@ const EstimateDetailPage = () => {
     handleRefresh();
   };
 
+  const handleRevisionSelect = (revisionId: string) => {
+    const selectedRevision = (estimateRevisions.length > 0 ? estimateRevisions : revisions)
+      .find(rev => rev.id === revisionId);
+    
+    if (selectedRevision) {
+      setCurrentRevision(selectedRevision);
+      toast({
+        title: `Viewing Revision ${selectedRevision.version}`,
+        description: selectedRevision.is_current ? "This is the current revision" : "This is a historical revision",
+      });
+      
+      // If we're viewing a revision that isn't current, maybe fetch its items?
+      if (!selectedRevision.is_current && estimateId) {
+        // Fetch items for this specific revision
+        supabase
+          .from('estimate_items')
+          .select('*')
+          .eq('estimate_id', estimateId)
+          .eq('revision_id', revisionId)
+          .order('created_at', { ascending: true })
+          .then(({ data, error }) => {
+            if (error) {
+              console.error('Error fetching revision items:', error);
+              return;
+            }
+            
+            setEstimate(prev => ({
+              ...prev,
+              items: data || [],
+              currentRevision: selectedRevision
+            }));
+          });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <PageTransition>
@@ -243,86 +283,104 @@ const EstimateDetailPage = () => {
   return (
     <PageTransition>
       <div className="space-y-6">
-        <Button 
-          variant="outline" 
-          onClick={handleBackClick} 
-          className="mb-2"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Estimates
-        </Button>
-        
-        <EstimateDetailHeader 
-          data={{
-            estimateid: estimate.estimateid,
-            customername: estimate.customername,
-            datecreated: estimate.datecreated,
-            status: estimate.status
-          }}
-          currentVersion={currentRevision?.version || 1}
-          onDelete={handleDelete}
-          onConvert={handleConvert}
-          onStatusChange={handleStatusChange}
-        />
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="outline" 
+            onClick={handleBackClick}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Estimates
+          </Button>
+          
+          <EstimateDetailHeader 
+            data={{
+              estimateid: estimate.estimateid,
+              customername: estimate.customername,
+              datecreated: estimate.datecreated,
+              status: estimate.status
+            }}
+            currentVersion={currentRevision?.version || 1}
+            onDelete={handleDelete}
+            onConvert={handleConvert}
+            onStatusChange={handleStatusChange}
+          />
+        </div>
         
         {currentRevision && (
           <EstimatePDFManager 
             estimateId={estimate.estimateid} 
-            revisionId={currentRevision.id} 
+            revisionId={currentRevision.id}
+            clientEmail={estimate.contactemail}
           />
         )}
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-5 w-full mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="revisions">Revisions</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="email">Email</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="overview" className="mt-0">
-            <EstimateDetailContent 
-              data={estimate}
-              onRefresh={handleRefresh}
-            />
-          </TabsContent>
-          
-          <TabsContent value="revisions" className="mt-0">
-            <EstimateRevisionsTab
-              revisions={displayRevisions}
-              formatDate={formatDate}
-              estimateId={estimate.estimateid}
-              onRefresh={handleRefresh}
-              clientName={estimate.customername}
-              clientEmail={estimate.contactemail}
-            />
-          </TabsContent>
-          
-          <TabsContent value="documents" className="mt-0">
-            <EstimateDocumentsTab 
-              estimateId={estimate.estimateid} 
-              onShareDocument={() => {}} // This will be implemented in the component
-            />
-          </TabsContent>
-          
-          <TabsContent value="email" className="mt-0">
-            <EstimateEmailTab 
+        <EstimateDetailLayout
+          sidebar={
+            <EstimateSidebar
               estimate={estimate}
-              onEmailSent={handleRefresh}
+              revisions={displayRevisions}
+              currentRevisionId={currentRevision?.id}
+              onRevisionSelect={handleRevisionSelect}
+              onShare={() => setShareDialogOpen(true)}
             />
-          </TabsContent>
-          
-          <TabsContent value="history" className="mt-0">
+          }
+          main={
             <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-lg font-semibold mb-4">Estimate History</h2>
-                <p className="text-muted-foreground">Activity history for this estimate will be displayed here.</p>
-                {/* Implement history log component here */}
+              <CardContent className="p-0">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid grid-cols-4 w-full rounded-none border-b">
+                    <TabsTrigger value="overview">Details</TabsTrigger>
+                    <TabsTrigger value="documents">Documents</TabsTrigger>
+                    <TabsTrigger value="email">Communication</TabsTrigger>
+                    <TabsTrigger value="history">History</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="p-6">
+                    <TabsContent value="overview" className="mt-0">
+                      <EstimateDetailContent 
+                        data={estimate}
+                        onRefresh={handleRefresh}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="documents" className="mt-0">
+                      <EstimateDocumentsTab 
+                        estimateId={estimate.estimateid} 
+                        onShareDocument={() => {}} // This will be implemented in the component
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="email" className="mt-0">
+                      <EstimateEmailTab 
+                        estimate={estimate}
+                        onEmailSent={handleRefresh}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="history" className="mt-0">
+                      <div>
+                        <h2 className="text-lg font-semibold mb-4">Estimate History</h2>
+                        <p className="text-muted-foreground">Activity history for this estimate will be displayed here.</p>
+                        {/* Implement history log component here */}
+                      </div>
+                    </TabsContent>
+                  </div>
+                </Tabs>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          }
+        />
+        
+        {/* Document share dialog */}
+        <DocumentShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          document={currentRevision?.pdf_document_id ? {
+            document_id: currentRevision.pdf_document_id
+          } : null}
+          estimateId={estimate.estimateid}
+          clientEmail={estimate.contactemail}
+        />
       </div>
     </PageTransition>
   );
