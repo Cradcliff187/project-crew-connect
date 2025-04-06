@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ProjectFinancialReportCard, ProjectProgressCard } from '@/components/projects/detail';
+import { ProjectProgressCard } from '@/components/projects/detail';
 
 const ProjectDetail = () => {
   const { projectId } = useParams();
@@ -131,9 +131,6 @@ const ProjectDetail = () => {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Project progress card */}
           {projectId && <ProjectProgressCard projectId={projectId} />}
-          
-          {/* Financial report card */}
-          {projectId && <ProjectFinancialReportCard projectId={projectId} />}
         </div>
       </div>
     </PageTransition>
