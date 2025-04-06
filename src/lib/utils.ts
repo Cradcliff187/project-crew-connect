@@ -38,9 +38,9 @@ export function formatCurrency(amount: number | undefined | null): string {
  * Format hours to display with proper precision
  */
 export function formatHours(hours: number | undefined | null): string {
-  if (hours === undefined || null) return '0h';
+  if (hours === undefined || hours === null) return '0h';
   
-  return `${hours.toFixed(1)}h`;
+  return `${Number(hours).toFixed(1)}h`;
 }
 
 /**

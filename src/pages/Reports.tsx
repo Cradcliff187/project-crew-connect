@@ -21,6 +21,17 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 // Define the types of entities we can report on
 type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses';
 
+// Define a mapping from EntityType to actual database table names
+const entityTableMap: Record<EntityType, string> = {
+  'projects': 'projects',
+  'customers': 'customers',
+  'vendors': 'vendors',
+  'subcontractors': 'subcontractors',
+  'work_orders': 'maintenance_work_orders',
+  'estimates': 'estimates',
+  'expenses': 'expenses'
+};
+
 // Define fields for each entity type
 const entityFields: Record<EntityType, { label: string; field: string; type: 'text' | 'date' | 'number' | 'currency' | 'status' }[]> = {
   projects: [
@@ -113,14 +124,9 @@ const entityFields: Record<EntityType, { label: string; field: string; type: 'te
 
 // Define a function to fetch data based on entity type
 const fetchData = async (entityType: EntityType, searchTerm = '') => {
-  // Convert the entity type to the table name in Supabase
-  let table = entityType;
+  // Get the actual table name from our mapping
+  const table = entityTableMap[entityType];
   
-  // Handle the maintenance_work_orders table name special case
-  if (entityType === 'work_orders') {
-    table = 'maintenance_work_orders';
-  }
-
   // Build a simple query based on entity type
   let query = supabase.from(table).select('*');
   
@@ -153,6 +159,13 @@ const fetchData = async (entityType: EntityType, searchTerm = '') => {
   
   return data;
 };
+
+// Helper function to format hours
+export function formatHours(hours: number | undefined | null): string {
+  if (hours === undefined || hours === null) return '0h';
+  
+  return `${Number(hours).toFixed(1)}h`;
+}
 
 const Reports = () => {
   const [selectedEntity, setSelectedEntity] = useState<EntityType>('projects');
