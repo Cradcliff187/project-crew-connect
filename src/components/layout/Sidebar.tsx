@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -11,7 +12,7 @@ import {
   Menu,
   CreditCard,
   Contact,
-  Tool,
+  Wrench,
   BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ const Sidebar = ({ isMobileMenuOpen, toggleMobileMenu }: SidebarProps) => {
     { icon: Users, text: 'Customers', to: '/customers' },
     { icon: CreditCard, text: 'Vendors', to: '/vendors' },
     { icon: Contact, text: 'Contacts', to: '/contacts' },
-    { icon: Tool, text: 'Work Orders', to: '/work-orders' },
+    { icon: Wrench, text: 'Work Orders', to: '/work-orders' },
     { icon: BarChart3, text: 'Reports', to: '/reports' },
     { icon: Settings, text: 'Settings', to: '/settings' },
   ];

@@ -1,385 +1,346 @@
 
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
-import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '@/components/ui/table';
-import { Download, FileText, RefreshCw } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format, subMonths } from 'date-fns';
+import { Download, CalendarIcon, Filter } from 'lucide-react';
 import FinancialSummaryCard from './components/FinancialSummaryCard';
 import ReportFilters from './components/ReportFilters';
+import ProjectFinancialChart from './components/ProjectFinancialChart';
 
-interface ProjectFinancialReportProps {
+// Financial report types & interfaces
+interface FinancialReportProps {
   projectId?: string;
 }
 
-const ProjectFinancialReport: React.FC<ProjectFinancialReportProps> = ({ projectId }) => {
-  // State for report filters
-  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(projectId);
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
-    start: null,
-    end: null
-  });
+interface ProjectOption {
+  projectid: string;
+  projectname: string;
+}
 
-  // Set initial project ID from props
+interface FinancialMetrics {
+  totalBudget: number;
+  expensesTotal: number;
+  laborCost: number;
+  materialsCost: number;
+  changeOrdersTotal: number;
+  remainingBudget: number;
+  variance: number;
+  variancePercent: number;
+}
+
+const defaultMetrics: FinancialMetrics = {
+  totalBudget: 0,
+  expensesTotal: 0,
+  laborCost: 0,
+  materialsCost: 0,
+  changeOrdersTotal: 0,
+  remainingBudget: 0,
+  variance: 0,
+  variancePercent: 0
+};
+
+const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: initialProjectId }) => {
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(initialProjectId);
+  const [projectsList, setProjectsList] = useState<ProjectOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState<FinancialMetrics>(defaultMetrics);
+  const [dateRange, setDateRange] = useState({
+    from: subMonths(new Date(), 3),
+    to: new Date()
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Fetch projects for dropdown
   useEffect(() => {
-    if (projectId) {
-      setSelectedProjectId(projectId);
-    }
-  }, [projectId]);
-
-  // Fetch project financial data
-  const { data: financialData, isLoading, error, refetch } = useQuery({
-    queryKey: ['project-financial-report', selectedProjectId, dateRange],
-    enabled: !!selectedProjectId,
-    queryFn: async () => {
-      // 1. Fetch project basic info
-      const { data: projectData, error: projectError } = await supabase
+    const fetchProjects = async () => {
+      const { data, error } = await supabase
         .from('projects')
-        .select('projectid, projectname, customername, total_budget, current_expenses, budget_status')
-        .eq('projectid', selectedProjectId)
-        .single();
+        .select('projectid, projectname')
+        .order('projectname');
 
-      if (projectError) throw projectError;
-
-      // 2. Fetch change orders for this project
-      const { data: changeOrdersData, error: changeOrdersError } = await supabase
-        .from('change_orders')
-        .select('id, title, status, total_amount, impact_days, requested_date, approved_date')
-        .eq('entity_type', 'PROJECT')
-        .eq('entity_id', selectedProjectId)
-        .order('created_at', { ascending: false });
-
-      if (changeOrdersError) throw changeOrdersError;
-
-      // 3. Fetch expenses for this project
-      const { data: expensesData, error: expensesError } = await supabase
-        .from('expenses')
-        .select('id, description, amount, expense_date, expense_type, vendor_id')
-        .eq('entity_type', 'PROJECT')
-        .eq('entity_id', selectedProjectId)
-        .order('expense_date', { ascending: false });
-
-      if (expensesError) throw expensesError;
-
-      // 4. Fetch budget items for this project
-      const { data: budgetItemsData, error: budgetItemsError } = await supabase
-        .from('project_budget_items')
-        .select('id, category, description, estimated_amount, actual_amount')
-        .eq('project_id', selectedProjectId)
-        .order('category', { ascending: true });
-
-      if (budgetItemsError) throw budgetItemsError;
-
-      // Calculate financial metrics
-      const totalChangeOrderAmount = changeOrdersData.reduce((sum, co) => 
-        co.status === 'APPROVED' || co.status === 'IMPLEMENTED' ? sum + (co.total_amount || 0) : sum, 0);
-      
-      const originalBudget = projectData.total_budget || 0;
-      const currentBudget = originalBudget + totalChangeOrderAmount;
-      const totalExpenses = projectData.current_expenses || 0;
-      const remainingBudget = currentBudget - totalExpenses;
-      const budgetUtilization = currentBudget > 0 ? (totalExpenses / currentBudget) * 100 : 0;
-
-      // Group expenses by type
-      const expensesByType = expensesData.reduce((acc, expense) => {
-        const type = expense.expense_type || 'Other';
-        if (!acc[type]) acc[type] = 0;
-        acc[type] += (expense.amount || 0);
-        return acc;
-      }, {} as Record<string, number>);
-
-      return {
-        project: projectData,
-        changeOrders: changeOrdersData,
-        expenses: expensesData,
-        budgetItems: budgetItemsData,
-        metrics: {
-          originalBudget,
-          currentBudget,
-          totalExpenses,
-          remainingBudget,
-          totalChangeOrderAmount,
-          budgetUtilization,
-          expensesByType
-        }
-      };
-    },
-    meta: {
-      onError: (error: any) => {
-        console.error('Error loading project financial report:', error);
-        toast({
-          title: 'Error loading financial data',
-          description: error.message,
-          variant: 'destructive'
-        });
+      if (error) {
+        console.error('Error fetching projects:', error);
+        return;
       }
-    }
-  });
 
-  // Handle filter changes
-  const handleProjectSelect = (projectId: string) => {
+      setProjectsList(data || []);
+      
+      // If no initial project and we have projects, select the first one
+      if (!selectedProjectId && data && data.length > 0) {
+        setSelectedProjectId(data[0].projectid);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Fetch financial metrics when project changes
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    
+    const fetchFinancialData = async () => {
+      setLoading(true);
+      
+      try {
+        // Fetch project budget
+        const { data: projectData, error: projectError } = await supabase
+          .from('projects')
+          .select('total_budget, current_expenses')
+          .eq('projectid', selectedProjectId)
+          .single();
+          
+        if (projectError) throw projectError;
+
+        // Fetch materials cost
+        const { data: materialsData, error: materialsError } = await supabase
+          .from('work_order_materials')
+          .select('price, quantity')
+          .eq('project_id', selectedProjectId);
+          
+        if (materialsError) throw materialsError;
+
+        // Fetch labor cost
+        const { data: laborData, error: laborError } = await supabase
+          .from('time_entries')
+          .select('hours, hourly_rate')
+          .eq('project_id', selectedProjectId);
+          
+        if (laborError) throw laborError;
+
+        // Fetch change orders
+        const { data: changeOrdersData, error: changeOrdersError } = await supabase
+          .from('change_orders')
+          .select('amount')
+          .eq('project_id', selectedProjectId);
+          
+        if (changeOrdersError) throw changeOrdersError;
+
+        // Calculate metrics
+        const totalBudget = projectData?.total_budget || 0;
+        const expensesTotal = projectData?.current_expenses || 0;
+        
+        const materialsCost = materialsData?.reduce((total, item) => {
+          return total + (item.price * item.quantity);
+        }, 0) || 0;
+        
+        const laborCost = laborData?.reduce((total, item) => {
+          return total + (item.hours * item.hourly_rate);
+        }, 0) || 0;
+        
+        const changeOrdersTotal = changeOrdersData?.reduce((total, item) => {
+          return total + item.amount;
+        }, 0) || 0;
+        
+        const remainingBudget = totalBudget - expensesTotal;
+        const variance = remainingBudget;
+        const variancePercent = totalBudget > 0 
+          ? (remainingBudget / totalBudget) * 100 
+          : 0;
+
+        setMetrics({
+          totalBudget,
+          expensesTotal,
+          laborCost,
+          materialsCost,
+          changeOrdersTotal,
+          remainingBudget,
+          variance,
+          variancePercent
+        });
+      } catch (error) {
+        console.error('Error fetching financial data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFinancialData();
+  }, [selectedProjectId, dateRange]);
+
+  const handleProjectChange = (projectId: string) => {
     setSelectedProjectId(projectId);
   };
 
-  const handleDateRangeChange = (range: { start: Date | null; end: Date | null }) => {
-    setDateRange(range);
+  const handleExportPDF = () => {
+    // This would be implemented later with jsPDF
+    console.log('Exporting PDF for project:', selectedProjectId);
+    // Implementation details coming in future PR
   };
 
-  // Handle export to CSV
-  const handleExport = () => {
-    if (!financialData) return;
-    
-    // Convert data to CSV format
-    const projectRow = `Project ID,${financialData.project.projectid}\nProject Name,${financialData.project.projectname}\nCustomer,${financialData.project.customername}\n\n`;
-    
-    const metricsRows = [
-      `Financial Metrics,,`,
-      `Original Budget,${formatCurrency(financialData.metrics.originalBudget)},`,
-      `Change Orders Impact,${formatCurrency(financialData.metrics.totalChangeOrderAmount)},`,
-      `Current Budget,${formatCurrency(financialData.metrics.currentBudget)},`,
-      `Total Expenses,${formatCurrency(financialData.metrics.totalExpenses)},`,
-      `Remaining Budget,${formatCurrency(financialData.metrics.remainingBudget)},`,
-      `Budget Utilization,${financialData.metrics.budgetUtilization.toFixed(2)}%,`,
-      `\n`
-    ].join('\n');
-    
-    const expensesHeader = 'Expense ID,Description,Amount,Date,Type\n';
-    const expensesRows = financialData.expenses.map(exp => 
-      `${exp.id},${exp.description},${exp.amount},${exp.expense_date},${exp.expense_type || 'Other'}`
-    ).join('\n');
-    
-    const changeOrdersHeader = '\nChange Order ID,Title,Status,Amount,Impact Days,Requested Date\n';
-    const changeOrdersRows = financialData.changeOrders.map(co => 
-      `${co.id},${co.title},${co.status},${co.total_amount},${co.impact_days},${co.requested_date}`
-    ).join('\n');
-    
-    const csvContent = `Project Financial Report\n\n${projectRow}${metricsRows}${expensesHeader}${expensesRows}${changeOrdersHeader}${changeOrdersRows}`;
-    
-    // Create a download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `project-report-${selectedProjectId}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportCSV = () => {
+    // This would be implemented later
+    console.log('Exporting CSV for project:', selectedProjectId);
+    // Implementation details coming in future PR
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Project Financial Report</h2>
-          <p className="text-muted-foreground">
-            Analysis of project financial performance and metrics.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isLoading}
+        <div className="w-full md:w-auto">
+          <Select 
+            value={selectedProjectId} 
+            onValueChange={handleProjectChange}
+            disabled={loading || projectsList.length === 0}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+            <SelectTrigger className="w-full md:w-[300px]">
+              <SelectValue placeholder="Select a project" />
+            </SelectTrigger>
+            <SelectContent>
+              {projectsList.map((project) => (
+                <SelectItem key={project.projectid} value={project.projectid}>
+                  {project.projectname}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="h-4 w-4 mr-1" />
+            Filters
           </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExportCSV}
+          >
+            <Download className="h-4 w-4 mr-1" />
+            Export CSV
+          </Button>
+          
           <Button 
             size="sm" 
             className="bg-[#0485ea] hover:bg-[#0375d1]"
-            onClick={handleExport}
-            disabled={isLoading || !financialData}
+            onClick={handleExportPDF}
           >
-            <Download className="h-4 w-4 mr-2" />
-            Export
+            <Download className="h-4 w-4 mr-1" />
+            Export PDF
           </Button>
         </div>
       </div>
 
-      <ReportFilters
-        onProjectSelect={handleProjectSelect}
-        onDateRangeChange={handleDateRangeChange}
-        selectedProjectId={selectedProjectId}
-        dateRange={dateRange}
-      />
+      {showFilters && (
+        <ReportFilters 
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+        />
+      )}
 
-      {isLoading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-[200px] w-full" />
-          <Skeleton className="h-[300px] w-full" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <FinancialSummaryCard
+          title="Total Budget"
+          value={metrics.totalBudget}
+          description="Total allocated budget"
+          icon="DollarSign"
+          neutral
+        />
+        <FinancialSummaryCard
+          title="Current Expenses"
+          value={metrics.expensesTotal}
+          description="Total expenses to date"
+          icon="CreditCard"
+        />
+        <FinancialSummaryCard
+          title="Remaining Budget"
+          value={metrics.remainingBudget}
+          description="Available budget"
+          icon="Wallet"
+          positive={metrics.remainingBudget >= 0}
+        />
+        <FinancialSummaryCard
+          title="Budget Variance"
+          value={metrics.variancePercent}
+          description={metrics.variance >= 0 ? "Under budget" : "Over budget"}
+          icon={metrics.variance >= 0 ? "TrendingUp" : "TrendingDown"}
+          percentage
+          positive={metrics.variance >= 0}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-base font-medium mb-4">Budget vs. Expenses</h3>
+              <div className="h-[300px]">
+                <ProjectFinancialChart 
+                  budget={metrics.totalBudget} 
+                  expenses={metrics.expensesTotal} 
+                  loading={loading} 
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      ) : error ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-10">
-            <FileText className="h-10 w-10 text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">
-              Error loading financial report. Please try again.
-            </p>
-            <Button onClick={() => refetch()} className="mt-4">
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      ) : !selectedProjectId ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-10">
-            <FileText className="h-10 w-10 text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">
-              Select a project to view the financial report.
-            </p>
-          </CardContent>
-        </Card>
-      ) : financialData ? (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FinancialSummaryCard 
-              title="Original Budget"
-              value={financialData.metrics.originalBudget}
-              description="Initial project budget"
-              icon="DollarSign"
-              positive
-            />
-            <FinancialSummaryCard 
-              title="Change Orders Impact"
-              value={financialData.metrics.totalChangeOrderAmount}
-              description="Financial impact from approved changes"
-              icon="FileText"
-              positive={financialData.metrics.totalChangeOrderAmount >= 0}
-            />
-            <FinancialSummaryCard 
-              title="Current Budget"
-              value={financialData.metrics.currentBudget}
-              description="Original budget + approved changes"
-              icon="Calculator"
-              positive
-            />
-            <FinancialSummaryCard 
-              title="Total Expenses"
-              value={financialData.metrics.totalExpenses}
-              description="Current expenditure"
-              icon="CreditCard"
-              neutral
-            />
-            <FinancialSummaryCard 
-              title="Remaining Budget"
-              value={financialData.metrics.remainingBudget}
-              description="Budget remaining"
-              icon="Wallet"
-              positive={financialData.metrics.remainingBudget >= 0}
-            />
-            <FinancialSummaryCard 
-              title="Budget Utilization"
-              value={financialData.metrics.budgetUtilization}
-              percentage
-              description="Percentage of budget used"
-              icon="PieChart"
-              neutral
-            />
-          </div>
-
+        <div>
           <Card>
-            <CardHeader>
-              <CardTitle>Budget Items</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Estimated</TableHead>
-                    <TableHead className="text-right">Actual</TableHead>
-                    <TableHead className="text-right">Variance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {financialData.budgetItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                        No budget items found for this project.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    financialData.budgetItems.map((item) => {
-                      const variance = (item.estimated_amount || 0) - (item.actual_amount || 0);
-                      return (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.category}</TableCell>
-                          <TableCell>{item.description || '-'}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(item.estimated_amount || 0)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(item.actual_amount || 0)}
-                          </TableCell>
-                          <TableCell className={`text-right ${variance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            {formatCurrency(variance)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
+            <CardContent className="pt-6">
+              <h3 className="text-base font-medium mb-4">Expense Breakdown</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Labor</span>
+                  <span>{((metrics.laborCost / metrics.expensesTotal) * 100).toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2.5">
+                  <div 
+                    className="bg-[#0485ea] h-2.5 rounded-full" 
+                    style={{ width: `${(metrics.laborCost / metrics.expensesTotal) * 100}%` }}
+                  ></div>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Materials</span>
+                  <span>{((metrics.materialsCost / metrics.expensesTotal) * 100).toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2.5">
+                  <div 
+                    className="bg-green-600 h-2.5 rounded-full" 
+                    style={{ width: `${(metrics.materialsCost / metrics.expensesTotal) * 100}%` }}
+                  ></div>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Change Orders</span>
+                  <span>{((metrics.changeOrdersTotal / metrics.expensesTotal) * 100).toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2.5">
+                  <div 
+                    className="bg-orange-500 h-2.5 rounded-full" 
+                    style={{ width: `${(metrics.changeOrdersTotal / metrics.expensesTotal) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Orders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Schedule Impact</TableHead>
-                    <TableHead>Requested Date</TableHead>
-                    <TableHead>Approved Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {financialData.changeOrders.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                        No change orders found for this project.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    financialData.changeOrders.map((co) => (
-                      <TableRow key={co.id}>
-                        <TableCell className="font-medium">{co.title}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            co.status === 'APPROVED' || co.status === 'IMPLEMENTED' 
-                              ? 'bg-green-100 text-green-800'
-                              : co.status === 'REJECTED' || co.status === 'CANCELLED'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>{co.status}</span>
-                        </TableCell>
-                        <TableCell className="text-right">{formatCurrency(co.total_amount || 0)}</TableCell>
-                        <TableCell className="text-right">{co.impact_days || 0} days</TableCell>
-                        <TableCell>{new Date(co.requested_date).toLocaleDateString()}</TableCell>
-                        <TableCell>{co.approved_date ? new Date(co.approved_date).toLocaleDateString() : '-'}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </>
-      ) : null}
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="text-base font-medium mb-4">Monthly Expenditure (Coming Soon)</h3>
+          {loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-[200px]" />
+            </div>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-muted-foreground">Monthly expenditure chart is under development.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

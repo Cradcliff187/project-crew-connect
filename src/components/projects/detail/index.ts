@@ -9,6 +9,7 @@ export { default as NoStatusOptions } from './NoStatusOptions';
 export { default as ProjectBudget } from './ProjectBudget';
 export { default as ProjectMilestones } from './ProjectMilestones';
 export { default as ProjectDocumentsList } from './DocumentsList';
+export { default as ProjectFinancialReportCard } from './ProjectFinancialReportCard';
 
 // Type exports
 export type { ProjectDocument } from './DocumentsList/types';
