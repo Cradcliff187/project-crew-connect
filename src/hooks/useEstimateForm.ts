@@ -60,10 +60,11 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
   const handleExistingCustomer = () => {
     setCustomerTab('existing');
     form.setValue('isNewCustomer', false);
-    form.setValue('customer_name', '');
-    form.setValue('customer_email', '');
-    form.setValue('customer_address', '');
-    form.setValue('customer_phone', '');
+    // Clear the nested newCustomer fields instead of using top-level fields
+    form.setValue('newCustomer.name', '');
+    form.setValue('newCustomer.email', '');
+    form.setValue('newCustomer.address', '');
+    form.setValue('newCustomer.phone', '');
   };
   
   const validateCurrentStep = async () => {
@@ -71,7 +72,7 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
     
     switch (currentStep) {
       case 'basic-info':
-        fieldsToValidate = ['project', customerTab === 'existing' ? 'customer' : 'customer_name'];
+        fieldsToValidate = ['project', customerTab === 'existing' ? 'customer' : 'newCustomer.name'];
         break;
       case 'line-items':
         fieldsToValidate = ['items'];
