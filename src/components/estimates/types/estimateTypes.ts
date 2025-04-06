@@ -46,6 +46,8 @@ export interface EstimateRevision {
   reason_for_change?: string;
   client_feedback?: string;
   internal_notes?: string;
+  sent_date?: string;  // Added missing property
+  sent_to?: string;    // Added missing property
 }
 
 export interface EstimateRevisionComparison {
@@ -101,4 +103,3 @@ export interface RevisionComparisonField {
   formatter?: (value: any) => string;
   showDifference?: boolean;
 }
-
