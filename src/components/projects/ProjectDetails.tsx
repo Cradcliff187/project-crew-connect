@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +14,7 @@ import ProjectMilestones from './detail/ProjectMilestones';
 import { ProjectDocumentsList } from './detail';
 import ProjectProgressCard from './progress/ProjectProgressCard';
 import ChangeOrdersList from './detail/ChangeOrdersList';
+import ProjectFinancialReportCard from './detail/ProjectFinancialReportCard';
 
 export interface ProjectDetails {
   projectid: string;
@@ -40,10 +40,8 @@ interface ProjectDetailsProps {
 }
 
 const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDetailsProps) => {
-  // State to manage active tab
   const [activeTab, setActiveTab] = useState("overview");
   
-  // Function to handle refreshing the project data
   const handleRefresh = () => {
     onStatusChange();
   };
@@ -97,6 +95,12 @@ const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDet
             </div>
             <div>
               <ProjectProgressCard projectId={project.projectid} />
+            </div>
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <ProjectFinancialReportCard projectId={project.projectid} />
             </div>
           </div>
         </TabsContent>
