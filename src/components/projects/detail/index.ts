@@ -10,7 +10,7 @@ export { default as ProjectBudget } from './ProjectBudget';
 export { default as ProjectMilestones } from './ProjectMilestones';
 export { default as ProjectDocumentsList } from './DocumentsList';
 export { default as ProjectFinancialReportCard } from './ProjectFinancialReportCard';
-export { default as ProjectProgressCard } from '../progress/ProjectProgressCard';
+export { default as ProjectProgressCard } from '@/components/projects/progress/ProjectProgressCard';
 
 // Type exports
 export type { ProjectDocument } from './DocumentsList/types';

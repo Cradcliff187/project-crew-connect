@@ -94,7 +94,7 @@ export const generateProjectFinancialPDF = (data: ExportData): jsPDF => {
   }
   
   // Add footer
-  const pageCount = doc.internal.getNumberOfPages();
+  const pageCount = (doc as any).internal.pages.length - 1;
   doc.setFontSize(10);
   doc.setTextColor(150, 150, 150);
   
@@ -115,4 +115,3 @@ export const exportProjectFinancialPDF = (data: ExportData): void => {
   const doc = generateProjectFinancialPDF(data);
   doc.save(`${data.projectName.replace(/\s+/g, '_')}_Financial_Report.pdf`);
 };
-

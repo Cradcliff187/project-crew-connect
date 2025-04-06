@@ -55,12 +55,27 @@ const MonthlyExpenditureChart: React.FC<MonthlyExpenditureChartProps> = ({ data,
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="month" />
         <YAxis tickFormatter={formatCurrency} />
-        <Tooltip formatter={(value) => formatCurrency(value as number)} />
+        <Tooltip 
+          formatter={(value) => formatCurrency(value as number)} 
+          content={({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+              return (
+                <div className="bg-background p-2 border rounded-md shadow-md">
+                  <p className="font-medium">{label}</p>
+                  {payload.map((entry, index) => (
+                    <p key={`item-${index}`} style={{ color: entry.color }}>
+                      {entry.name}: {formatCurrency(entry.value as number)}
+                    </p>
+                  ))}
+                </div>
+              );
+            }
+            return null;
+          }}
+        />
         <Legend />
         <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
-        {data[0]?.budget !== undefined && (
-          <Bar dataKey="budget" fill="#0485ea" name="Budget Allocation" />
-        )}
+        <Bar dataKey="budget" fill="#0485ea" name="Budget Allocation" />
       </BarChart>
     </ResponsiveContainer>
   );

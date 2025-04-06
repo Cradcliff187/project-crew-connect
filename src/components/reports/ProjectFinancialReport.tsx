@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -38,6 +37,7 @@ interface FinancialMetrics {
 interface MonthlyData {
   month: string;
   expenses: number;
+  budget: number;
 }
 
 const defaultMetrics: FinancialMetrics = {
@@ -200,10 +200,23 @@ const ProjectFinancialReport: React.FC<FinancialReportProps> = ({ projectId: ini
       // Create an array of months in the date range
       const months = eachMonthOfInterval({ start: fromDate, end: toDate });
       
-      // Create a placeholder for each month
+      // Get total budget
+      const { data: projectData } = await supabase
+        .from('projects')
+        .select('total_budget')
+        .eq('projectid', projectId)
+        .single();
+      
+      const totalBudget = projectData?.total_budget || 0;
+      
+      // Calculate monthly budget allocation (evenly distributed)
+      const monthlyBudget = months.length > 0 ? totalBudget / months.length : 0;
+      
+      // Create a placeholder for each month with budget allocation
       const monthlyExpensesData: MonthlyData[] = months.map(date => ({
         month: format(date, 'MMM yyyy'),
-        expenses: 0
+        expenses: 0,
+        budget: monthlyBudget
       }));
 
       // Fetch expense data grouped by month
