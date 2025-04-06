@@ -13,6 +13,11 @@ import Estimates from '@/pages/Estimates';
 import Contacts from './pages/Contacts';
 import WorkOrders from './pages/WorkOrders';
 import Reports from './pages/Reports';
+import ActiveWork from './pages/ActiveWork';
+import VendorDetail from './components/vendors/detail/VendorDetail';
+import Subcontractors from './pages/Subcontractors';
+import TimeTracking from './pages/TimeTracking';
+import Documents from './pages/Documents';
 
 // Routes configuration
 const routes = createBrowserRouter([
@@ -21,17 +26,21 @@ const routes = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <Dashboard /> },
-      { path: '/projects', element: <Projects /> },
-      { path: '/projects/:projectId', element: <ProjectDetail /> },
-      { path: '/customers', element: <Customers /> },
-      { path: '/customers/:customerId', element: <CustomerDetail /> },
-      { path: '/vendors', element: <Vendors /> },
-      { path: '/vendors/:vendorId', element: <Vendors /> },
-      { path: '/settings', element: <Settings /> },
-      { path: '/estimates', element: <Estimates /> },
-      { path: '/contacts', element: <Contacts /> },
-      { path: '/work-orders', element: <WorkOrders /> },
-      { path: '/reports', element: <Reports /> },
+      { path: 'active-work', element: <ActiveWork /> },
+      { path: 'projects', element: <Projects /> },
+      { path: 'projects/:projectId', element: <ProjectDetail /> },
+      { path: 'estimates', element: <Estimates /> },
+      { path: 'work-orders', element: <WorkOrders /> },
+      { path: 'customers', element: <Customers /> },
+      { path: 'customers/:customerId', element: <CustomerDetail /> },
+      { path: 'contacts', element: <Contacts /> },
+      { path: 'vendors', element: <Vendors /> },
+      { path: 'vendors/:vendorId', element: <VendorDetail /> },
+      { path: 'subcontractors', element: <Subcontractors /> },
+      { path: 'time-tracking', element: <TimeTracking /> },
+      { path: 'documents', element: <Documents /> },
+      { path: 'reports', element: <Reports /> },
+      { path: 'settings', element: <Settings /> },
     ],
     errorElement: <div>Error: Page not found</div>,
   }
