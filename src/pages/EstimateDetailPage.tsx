@@ -70,8 +70,8 @@ const EstimateDetailPage = () => {
         return;
       }
       
-      // Calculate total amount
-      const totalAmount = items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
+      // Calculate total amount - using Number() to ensure we're working with numbers
+      const totalAmount = items.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0);
       
       // Get current revision amount
       const { data: revision, error: revisionError } = await supabase

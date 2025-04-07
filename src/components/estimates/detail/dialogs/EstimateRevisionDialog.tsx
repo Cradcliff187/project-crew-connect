@@ -107,7 +107,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       setSaving(true);
       
       // Calculate total amount for the revision from items
-      const totalAmount = values.revisionItems.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
+      const totalAmount = values.revisionItems.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0);
       
       // 1. Create new revision record with the total amount included
       const newVersion = currentVersion + 1;
