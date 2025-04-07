@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -684,4 +685,81 @@ const Reports = () => {
                 {showFilters && (
                   <div className="mb-6 p-4 border rounded-md bg-muted/50">
                     <h3 className="text-sm font-semibold mb-3">Filter Options</h3>
-                    <div className="grid grid-cols-
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Date Range Filter */}
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Date Range</label>
+                        <DatePickerWithRange 
+                          date={filters.dateRange}
+                          onDateChange={(range) => handleFilterChange('dateRange', range)}
+                        />
+                      </div>
+                      
+                      {/* Status Filter */}
+                      <div>
+                        <label className="text-sm font-medium mb-1 block">Status</label>
+                        <Select
+                          value={filters.status}
+                          onValueChange={(value) => handleFilterChange('status', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getStatusOptions().map(option => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Entity-specific filters */}
+                      {selectedEntity === 'employees' && (
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Role</label>
+                          <Select
+                            value={filters.role || 'all'}
+                            onValueChange={(value) => handleFilterChange('role', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getRoleOptions().map(option => (
+                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Data Table */}
+                {isLoading ? (
+                  <div className="py-10 text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Loading data...</p>
+                  </div>
+                ) : isError ? (
+                  <div className="py-10 text-center text-destructive">
+                    <p>Error loading data. Please try again.</p>
+                  </div>
+                ) : data && data.length > 0 ? (
+                  <DataTable columns={columns} data={data} />
+                ) : (
+                  <div className="py-10 text-center">
+                    <p className="text-muted-foreground">No data found for the selected filters.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </PageTransition>
+  );
+};
+
+export default Reports;
