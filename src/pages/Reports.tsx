@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -686,12 +685,12 @@ const Reports = () => {
                   <div className="mb-6 p-4 border rounded-md bg-muted/50">
                     <h3 className="text-sm font-semibold mb-3">Filter Options</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* Date Range Filter */}
+                      {/* Date Range Filter - Fixed prop name here from "date" to "value" */}
                       <div>
                         <label className="text-sm font-medium mb-1 block">Date Range</label>
                         <DatePickerWithRange 
-                          date={filters.dateRange}
-                          onDateChange={(range) => handleFilterChange('dateRange', range)}
+                          value={filters.dateRange}
+                          onChange={(range) => handleFilterChange('dateRange', range)}
                         />
                       </div>
                       
