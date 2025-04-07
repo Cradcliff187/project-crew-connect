@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
@@ -268,7 +269,7 @@ const EstimateItemCard = memo(({
 
             <CostInput index={index} />
             <MarkupInput index={index} />
-            <PriceDisplay price={itemPrice} />
+            <PriceDisplay index={index} price={itemPrice} />
             <MarginDisplay grossMargin={grossMargin} grossMarginPercentage={grossMarginPercentage} />
           </div>
           
