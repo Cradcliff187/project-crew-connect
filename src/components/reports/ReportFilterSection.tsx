@@ -8,6 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface ReportFilterSectionProps {
   filters: ReportFilters;
@@ -29,10 +31,31 @@ const ReportFilterSection = ({
     from: filters.dateRange?.from || undefined,
     to: filters.dateRange?.to || undefined
   };
+
+  // Function to clear all filters
+  const clearAllFilters = () => {
+    onFilterChange('search', '');
+    onFilterChange('dateRange', undefined);
+    onFilterChange('status', 'all');
+    if (showEmployeeFilters) {
+      onFilterChange('role', 'all');
+    }
+  };
   
   return (
-    <div className="mb-4 p-3 border rounded-md bg-muted/50">
-      <h3 className="text-sm font-semibold mb-2">Filter Options</h3>
+    <div className="mb-4 p-3 border rounded-md bg-white shadow-sm">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-semibold text-[#0485ea]">Filter Options</h3>
+        <Button 
+          variant="ghost" 
+          size="xs"
+          className="h-6 text-xs"
+          onClick={clearAllFilters}
+        >
+          <X className="h-3 w-3 mr-1" />
+          Clear All
+        </Button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Date Range Filter */}
         <div>
@@ -50,12 +73,12 @@ const ReportFilterSection = ({
             value={filters.status}
             onValueChange={(value) => onFilterChange('status', value)}
           >
-            <SelectTrigger className="h-8">
+            <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder="Select Status" />
             </SelectTrigger>
             <SelectContent>
               {getStatusOptions().map(option => (
-                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                <SelectItem key={option.value} value={option.value} className="text-xs">{option.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -69,12 +92,12 @@ const ReportFilterSection = ({
               value={filters.role || 'all'}
               onValueChange={(value) => onFilterChange('role', value)}
             >
-              <SelectTrigger className="h-8">
+              <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Select Role" />
               </SelectTrigger>
               <SelectContent>
                 {getRoleOptions().map(option => (
-                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  <SelectItem key={option.value} value={option.value} className="text-xs">{option.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

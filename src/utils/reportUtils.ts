@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { EntityType, FieldDefinition, ReportFilters } from '@/types/reports';
 import { entityTableMap } from '@/data/reportEntities';
@@ -125,8 +126,8 @@ export const fetchReportData = async (entityType: EntityType, filters: ReportFil
   // Get the actual table name from our mapping
   const tableName = entityTableMap[entityType];
   
-  // Build a query based on entity type
-  let query = supabase.from(tableName).select('*');
+  // Build a query - use type assertion to work around the TypeScript type checking
+  let query = supabase.from(tableName as any).select('*');
   
   // Apply filters
   if (filters.search) {
