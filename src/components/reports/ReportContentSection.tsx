@@ -29,21 +29,21 @@ const ReportContentSection = ({
 
   return (
     <Card className="shadow-sm">
-      <CardContent className="pt-6">
-        <div className="flex items-center mb-6">
-          <h2 className="text-xl font-medium">{title}</h2>
-          <div className="relative flex-1 ml-4">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+      <CardContent className="p-3">
+        <div className="flex items-center mb-3">
+          <h2 className="text-lg font-medium">{title}</h2>
+          <div className="relative flex-1 ml-3">
+            <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder={`Search ${title}...`}
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-8"
+              className="pl-7 h-8 text-sm"
             />
           </div>
         </div>
         
-        {/* Data Table */}
+        {/* Data Table - Excel-style with compact rows */}
         {loading ? (
           <div className="py-10 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -54,7 +54,14 @@ const ReportContentSection = ({
             <p>Error loading data. Please try again.</p>
           </div>
         ) : data && data.length > 0 ? (
-          <DataTable columns={columns} data={data} />
+          <div className="border rounded-sm">
+            <DataTable 
+              columns={columns} 
+              data={data}
+              compact={true}
+              defaultSorting={{ columnId: Object.keys(data[0])[0], direction: 'asc' }}
+            />
+          </div>
         ) : (
           <div className="py-10 text-center">
             <p className="text-muted-foreground">No data found for the selected filters.</p>

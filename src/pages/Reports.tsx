@@ -4,14 +4,14 @@ import { useReportData } from '@/hooks/useReportData';
 import { useReportOptions } from '@/hooks/useReportOptions';
 import PageTransition from '@/components/layout/PageTransition';
 import ReportPageHeader from '@/components/reports/ReportPageHeader';
-import ReportSidebar from '@/components/reports/ReportSidebar';
 import ReportContentSection from '@/components/reports/ReportContentSection';
 import ReportFilterSection from '@/components/reports/ReportFilterSection';
-import { entityFields } from '@/data/reportEntities';
+import { entityFields, entityNames, entityIcons } from '@/data/reportEntities';
+import { EntityType } from '@/types/reports';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Reports = () => {
   const [showFilters, setShowFilters] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   const { 
     data,
@@ -33,11 +33,6 @@ const Reports = () => {
   const handleExportCsv = () => {
     exportToCsv(data || [], entityFields[selectedEntity]);
   };
-
-  // Toggle sidebar collapsed state
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
   
   return (
     <PageTransition>
@@ -50,37 +45,49 @@ const Reports = () => {
           showFilters={showFilters}
         />
         
-        <div className="flex">
-          {/* Sidebar Navigation */}
-          <ReportSidebar 
-            selectedEntity={selectedEntity}
-            onSelectEntity={handleEntityChange}
-            sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={toggleSidebar}
-          />
-          
-          {/* Main Content */}
-          <div className="flex-1 ml-4">
-            {showFilters && (
-              <ReportFilterSection 
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                getStatusOptions={() => getStatusOptions(selectedEntity)}
-                getRoleOptions={getRoleOptions}
-                showEmployeeFilters={selectedEntity === 'employees'}
-              />
-            )}
-            
-            <ReportContentSection
-              title={`${selectedEntity.charAt(0).toUpperCase() + selectedEntity.slice(1).replace('_', ' ')} Report`}
-              searchValue={filters.search}
-              onSearchChange={(value) => handleFilterChange('search', value)}
-              data={data || []}
-              loading={loading}
-              error={error}
-              fields={entityFields[selectedEntity]}
+        {/* Entity Type Tabs - Replacing the sidebar with a horizontal tab list */}
+        <div className="bg-white p-2 rounded-md border">
+          <Tabs 
+            value={selectedEntity}
+            onValueChange={(value) => handleEntityChange(value as EntityType)}
+            className="w-full"
+          >
+            <TabsList className="w-full grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 h-auto">
+              {(Object.keys(entityNames) as EntityType[]).map((entity) => (
+                <TabsTrigger 
+                  key={entity} 
+                  value={entity}
+                  className="flex items-center gap-1 py-1.5 px-2 text-xs"
+                >
+                  {entityIcons[entity]}
+                  <span className="ml-1">{entityNames[entity]}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+        
+        {/* Main Content */}
+        <div className="space-y-4">
+          {showFilters && (
+            <ReportFilterSection 
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              getStatusOptions={() => getStatusOptions(selectedEntity)}
+              getRoleOptions={getRoleOptions}
+              showEmployeeFilters={selectedEntity === 'employees'}
             />
-          </div>
+          )}
+          
+          <ReportContentSection
+            title={`${entityNames[selectedEntity]} Report`}
+            searchValue={filters.search}
+            onSearchChange={(value) => handleFilterChange('search', value)}
+            data={data || []}
+            loading={loading}
+            error={error}
+            fields={entityFields[selectedEntity]}
+          />
         </div>
       </div>
     </PageTransition>

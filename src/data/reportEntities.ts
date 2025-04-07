@@ -1,5 +1,10 @@
 
 import { EntityType, FieldDefinition } from '@/types/reports';
+import { 
+  BarChart3, Building, ClipboardList, CreditCard, FileText, 
+  FolderClosed, HandCoins, PersonStanding, ShoppingBag, Timer, Users 
+} from 'lucide-react';
+import React from 'react';
 
 // Define entity display names
 export const entityNames: Record<EntityType, string> = {
@@ -15,10 +20,24 @@ export const entityNames: Record<EntityType, string> = {
   'employees': 'Employees'
 };
 
-// Map entity types to their actual database table names
+// Map entity types to their respective icons
+export const entityIcons: Record<EntityType, React.ReactNode> = {
+  'projects': <FolderClosed className="h-4 w-4" />,
+  'customers': <Users className="h-4 w-4" />,
+  'vendors': <Building className="h-4 w-4" />,
+  'subcontractors': <PersonStanding className="h-4 w-4" />,
+  'work_orders': <ClipboardList className="h-4 w-4" />,
+  'estimates': <FileText className="h-4 w-4" />,
+  'expenses': <CreditCard className="h-4 w-4" />,
+  'time_entries': <Timer className="h-4 w-4" />,
+  'change_orders': <HandCoins className="h-4 w-4" />,
+  'employees': <Users className="h-4 w-4" />
+};
+
+// Map entity types to their actual database table names (matching Supabase exactly)
 export const entityTableMap: Record<EntityType, string> = {
   'projects': 'projects',
-  'customers': 'customers',
+  'customers': 'customers', 
   'vendors': 'vendors',
   'subcontractors': 'subcontractors',
   'work_orders': 'maintenance_work_orders',

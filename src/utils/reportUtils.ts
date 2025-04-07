@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { EntityType, FieldDefinition, ReportFilters } from '@/types/reports';
 import { entityTableMap } from '@/data/reportEntities';
@@ -126,8 +125,8 @@ export const fetchReportData = async (entityType: EntityType, filters: ReportFil
   // Get the actual table name from our mapping
   const tableName = entityTableMap[entityType];
   
-  // Build a query based on entity type
-  let query = supabase.from(tableName).select('*');
+  // Build a query based on entity type - cast the tableName to any to avoid the TypeScript error
+  let query = supabase.from(tableName as any).select('*');
   
   // Apply filters
   if (filters.search) {
@@ -199,50 +198,38 @@ export const fetchReportData = async (entityType: EntityType, filters: ReportFil
   }
 };
 
-// Function to generate SQL query from report config
+// Function to generate SQL query from report config - simplify to avoid deep type instantiation
 export const generateSqlQuery = (config: any) => {
   const { primaryEntity, selectedFields, filters, groupByField, sortByField, sortDirection } = config;
   
   let query = `SELECT `;
   
-  if (selectedFields.length === 0) {
+  if (!selectedFields || selectedFields.length === 0) {
     query += '*';
   } else {
-    query += selectedFields.map((field: any) => field.name).join(', ');
+    query += selectedFields.map((field: any) => field.name || field.field).join(', ');
   }
   
   query += ` FROM ${primaryEntity}`;
   
-  if (filters.length > 0) {
+  if (filters && filters.length > 0) {
     query += ` WHERE `;
     query += filters.map((filter: any, index: number) => {
       let clause = '';
       if (index > 0) clause += ' AND ';
       
-      clause += `${filter.field.name} `;
+      const fieldName = filter.field.name || filter.field.field;
+      clause += `${fieldName} `;
       
+      // Simple operator mapping to avoid deep type instantiation
       switch (filter.operator) {
-        case 'equals':
-          clause += `= '${filter.value}'`;
-          break;
-        case 'notEquals':
-          clause += `<> '${filter.value}'`;
-          break;
-        case 'contains':
-          clause += `LIKE '%${filter.value}%'`;
-          break;
-        case 'startsWith':
-          clause += `LIKE '${filter.value}%'`;
-          break;
-        case 'greaterThan':
-          clause += `> '${filter.value}'`;
-          break;
-        case 'lessThan':
-          clause += `< '${filter.value}'`;
-          break;
-        default:
-          clause += `= '${filter.value}'`;
-          break;
+        case 'equals': clause += `= '${filter.value}'`; break;
+        case 'notEquals': clause += `<> '${filter.value}'`; break;
+        case 'contains': clause += `LIKE '%${filter.value}%'`; break;
+        case 'startsWith': clause += `LIKE '${filter.value}%'`; break;
+        case 'greaterThan': clause += `> '${filter.value}'`; break;
+        case 'lessThan': clause += `< '${filter.value}'`; break;
+        default: clause += `= '${filter.value}'`; break;
       }
       
       return clause;
@@ -250,11 +237,11 @@ export const generateSqlQuery = (config: any) => {
   }
   
   if (groupByField) {
-    query += ` GROUP BY ${groupByField.name}`;
+    query += ` GROUP BY ${groupByField.name || groupByField.field}`;
   }
   
   if (sortByField) {
-    query += ` ORDER BY ${sortByField.name} ${sortDirection}`;
+    query += ` ORDER BY ${sortByField.name || sortByField.field} ${sortDirection}`;
   }
   
   return query;
