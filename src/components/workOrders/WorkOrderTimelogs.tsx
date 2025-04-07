@@ -31,6 +31,8 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
       workOrderId={workOrderId}
       onDelete={handleDeleteTimelog}
       onTimeLogAdded={handleSuccessfulAdd}
+      totalHours={totalHours}
+      totalLaborCost={totalLaborCost}
     />
   );
 };

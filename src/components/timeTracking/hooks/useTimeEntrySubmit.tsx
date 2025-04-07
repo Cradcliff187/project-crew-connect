@@ -101,34 +101,10 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           if (linkError) {
             console.error('Error linking document to time entry:', linkError);
           }
-          
-          if (data.entityType === 'work_order') {
-            // Create an expense entry for the time entry receipt
-            const { error: expenseError } = await supabase
-              .from('expenses')
-              .insert({
-                entity_type: 'WORK_ORDER',
-                entity_id: data.entityId,
-                description: `Time entry receipt: ${file.name}`,
-                expense_type: 'TIME_RECEIPT',
-                amount: 0,
-                document_id: documentData.document_id,
-                time_entry_id: insertedEntry.id,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                quantity: 1,
-                unit_price: 0,
-                vendor_id: null
-              });
-              
-            if (expenseError) {
-              console.error('Error creating expense for receipt:', expenseError);
-            }
-          }
         }
       }
       
-      // Create expense entry for the labor time
+      // Create expense entry for the labor time for work orders
       if (data.entityType === 'work_order' && data.hoursWorked > 0) {
         const { error: laborExpenseError } = await supabase
           .from('expenses')
@@ -148,6 +124,29 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           
         if (laborExpenseError) {
           console.error('Error creating labor expense:', laborExpenseError);
+        }
+      }
+      
+      // Create expense entry for projects as well
+      if (data.entityType === 'project' && data.hoursWorked > 0) {
+        const { error: laborExpenseError } = await supabase
+          .from('expenses')
+          .insert({
+            entity_type: 'PROJECT',
+            entity_id: data.entityId,
+            description: `Labor: ${data.hoursWorked} hours`,
+            expense_type: 'LABOR',
+            amount: totalCost,
+            time_entry_id: insertedEntry.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            quantity: data.hoursWorked,
+            unit_price: hourlyRate,
+            vendor_id: null
+          });
+          
+        if (laborExpenseError) {
+          console.error('Error creating project labor expense:', laborExpenseError);
         }
       }
       

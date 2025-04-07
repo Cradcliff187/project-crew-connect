@@ -54,7 +54,7 @@ export function useWorkOrderTimelogs(workOrderId: string) {
             'Unassigned',
           // Ensure cost is properly set
           employee_rate: employeeRate,
-          total_cost: entryCost
+          total_cost: entry.total_cost || entryCost
         };
       });
       
@@ -67,18 +67,32 @@ export function useWorkOrderTimelogs(workOrderId: string) {
       const cost = typedTimelogs.reduce((sum, log) => sum + (log.total_cost || 0), 0);
       setTotalLaborCost(cost);
       
-      // Update the work order with the total hours and cost
+      // Update the work order with the total hours and cost if necessary
       if (typedTimelogs.length > 0) {
-        const { error: updateError } = await supabase
+        // Check if we need to update the work order
+        const { data: workOrderData, error: fetchError } = await supabase
           .from('maintenance_work_orders')
-          .update({ 
-            actual_hours: hours, 
-            updated_at: new Date().toISOString()
-          })
-          .eq('work_order_id', workOrderId);
+          .select('actual_hours, total_cost')
+          .eq('work_order_id', workOrderId)
+          .single();
+        
+        if (fetchError) {
+          console.error('Error fetching work order data:', fetchError);
+        } else if (workOrderData && 
+                 (workOrderData.actual_hours !== hours || 
+                  workOrderData.total_cost !== cost)) {
           
-        if (updateError) {
-          console.error('Error updating work order hours:', updateError);
+          const { error: updateError } = await supabase
+            .from('maintenance_work_orders')
+            .update({ 
+              actual_hours: hours, 
+              updated_at: new Date().toISOString()
+            })
+            .eq('work_order_id', workOrderId);
+            
+          if (updateError) {
+            console.error('Error updating work order hours:', updateError);
+          }
         }
       }
     } catch (error: any) {
@@ -97,7 +111,7 @@ export function useWorkOrderTimelogs(workOrderId: string) {
     try {
       const { data, error } = await supabase
         .from('employees')
-        .select('employee_id, first_name, last_name')
+        .select('employee_id, first_name, last_name, hourly_rate')
         .eq('status', 'ACTIVE');
       
       if (error) {
@@ -106,7 +120,8 @@ export function useWorkOrderTimelogs(workOrderId: string) {
       
       const formattedEmployees = (data || []).map(emp => ({
         employee_id: emp.employee_id,
-        name: `${emp.first_name} ${emp.last_name}`
+        name: `${emp.first_name} ${emp.last_name}`,
+        hourly_rate: emp.hourly_rate
       }));
       
       setEmployees(formattedEmployees);
@@ -128,6 +143,16 @@ export function useWorkOrderTimelogs(workOrderId: string) {
       
       if (error) {
         throw error;
+      }
+      
+      // Also delete associated expense record
+      const { error: expenseError } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('time_entry_id', id);
+        
+      if (expenseError) {
+        console.error('Error deleting related expense:', expenseError);
       }
       
       toast({

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { timelogColumns } from '../data/columns';
@@ -27,6 +28,8 @@ interface TimelogsInfoSectionProps {
   workOrderId: string;
   onDelete: (id: string) => void;
   onTimeLogAdded: () => void;
+  totalHours: number;
+  totalLaborCost: number;
 }
 
 const TimelogsInfoSection = ({
@@ -35,21 +38,10 @@ const TimelogsInfoSection = ({
   employees,
   workOrderId,
   onDelete,
-  onTimeLogAdded
+  onTimeLogAdded,
+  totalHours,
+  totalLaborCost
 }: TimelogsInfoSectionProps) => {
-  // Total hours spent on this work order
-  const totalHours = timelogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
-  
-  // Calculate total labor cost
-  const totalLaborCost = timelogs.reduce((sum, log) => {
-    // If total_cost is available, use it
-    if (log.total_cost) return sum + log.total_cost;
-    
-    // Otherwise calculate from hours and rate
-    const rate = log.employee_rate || 75; // Default to $75/hr if no rate
-    return sum + (log.hours_worked * rate);
-  }, 0);
-  
   // Find employee name by ID
   const getEmployeeName = (employeeId: string | null | undefined) => {
     if (!employeeId) return "Unassigned";
