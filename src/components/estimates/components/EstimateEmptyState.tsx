@@ -6,10 +6,14 @@ import { FileText } from 'lucide-react';
 const EstimateEmptyState = () => {
   return (
     <TableRow>
-      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-        <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-        <p className="text-lg font-montserrat">No estimates found</p>
-        <p className="text-sm mt-1">Create your first estimate to get started.</p>
+      <TableCell colSpan={7} className="h-[200px] text-center">
+        <div className="flex flex-col items-center justify-center">
+          <FileText className="h-12 w-12 text-muted-foreground/50 mb-2" />
+          <h3 className="text-lg font-medium text-gray-600">No estimates found</h3>
+          <p className="text-sm text-gray-500 mt-2">
+            Create a new estimate or adjust your search query.
+          </p>
+        </div>
       </TableCell>
     </TableRow>
   );

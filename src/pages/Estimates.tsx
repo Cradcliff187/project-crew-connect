@@ -7,6 +7,7 @@ import EstimatesHeader from '@/components/estimates/EstimatesHeader';
 import { useEstimates } from '@/components/estimates/hooks/useEstimates';
 import { StatusType } from '@/types/common';
 import { formatDate } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
 /**
  * Estimates page component for listing and managing estimates
@@ -16,7 +17,7 @@ const Estimates = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   
-  const { estimates, loading, fetchEstimates } = useEstimates();
+  const { estimates, loading, error, fetchEstimates } = useEstimates();
   
   const handleViewEstimate = (estimate: EstimateType) => {
     navigate(`/estimates/${estimate.id}`);
@@ -35,6 +36,7 @@ const Estimates = () => {
           <EstimatesTable 
             estimates={estimates}
             loading={loading}
+            error={error}
             searchQuery={searchQuery}
             onViewEstimate={handleViewEstimate}
             formatDate={formatDate}

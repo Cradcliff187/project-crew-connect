@@ -11,8 +11,7 @@ const EstimateTableHeader = () => {
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Date</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Amount</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Versions</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]"></TableHead>
+        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

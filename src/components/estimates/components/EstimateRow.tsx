@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatDate, formatCurrency } from '@/lib/utils';
@@ -9,6 +8,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 interface EstimateRowProps {
   estimate: EstimateType;
@@ -271,32 +271,31 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
     {
       items: [
         {
-          label: 'View details',
-          icon: <Eye className="w-4 h-4" />,
-          onClick: () => handleViewDetails(),
+          label: "View Details",
+          icon: <Eye className="h-4 w-4" />,
+          onClick: handleViewDetails,
           className: "text-[#0485ea] hover:text-[#0375d1]"
         },
         {
-          label: 'Edit estimate',
-          icon: <Edit className="w-4 h-4" />,
-          onClick: () => console.log('Edit estimate', estimate.id),
+          label: "Edit",
+          icon: <Edit className="h-4 w-4" />,
+          onClick: handleViewDetails,
           className: "text-gray-600 hover:text-gray-800"
         }
       ]
     },
     {
-      label: 'Versioning',
       items: [
         {
-          label: 'Create new revision',
-          icon: <FileUp className="w-4 h-4" />,
+          label: "Create New Version",
+          icon: <FileUp className="h-4 w-4" />,
           onClick: () => handleCreateNewVersion(),
           className: "text-gray-600 hover:text-gray-800"
         },
         {
-          label: 'Duplicate estimate',
-          icon: <Copy className="w-4 h-4" />,
-          onClick: () => handleDuplicateEstimate(),
+          label: "Convert to Project",
+          icon: <ArrowRight className="h-4 w-4" />,
+          onClick: () => console.log('Convert to project', estimate.id),
           className: "text-gray-600 hover:text-gray-800"
         }
       ]
@@ -304,14 +303,14 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
     {
       items: [
         {
-          label: 'Convert to project',
-          icon: <ArrowRight className="w-4 h-4" />,
-          onClick: () => console.log('Convert to project', estimate.id),
+          label: "Duplicate",
+          icon: <Copy className="h-4 w-4" />,
+          onClick: () => handleDuplicateEstimate(),
           className: "text-gray-600 hover:text-gray-800"
         },
         {
-          label: 'Download PDF',
-          icon: <Download className="w-4 h-4" />,
+          label: "Download PDF",
+          icon: <Download className="h-4 w-4" />,
           onClick: () => console.log('Download PDF', estimate.id),
           className: "text-gray-600 hover:text-gray-800"
         }
@@ -320,8 +319,8 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
     {
       items: [
         {
-          label: 'Delete',
-          icon: <Trash2 className="w-4 h-4" />,
+          label: "Delete",
+          icon: <Trash2 className="h-4 w-4" />,
           onClick: () => console.log('Delete estimate', estimate.id),
           className: "text-red-600 hover:text-red-800"
         }
@@ -335,17 +334,18 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
       className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
       onClick={handleViewDetails}
     >
-      <TableCell>
-        <div className="font-medium text-[#0485ea]">{estimate.id}</div>
+      <TableCell className="font-medium">
+        <Link to={`/estimates/${estimate.id}`} className="text-[#0485ea] hover:underline">
+          {estimate.id.substring(0, 8)}
+        </Link>
       </TableCell>
       <TableCell>{estimate.client}</TableCell>
       <TableCell>{estimate.project}</TableCell>
       <TableCell>{formatDate(estimate.date)}</TableCell>
       <TableCell>{formatCurrency(estimate.amount)}</TableCell>
       <TableCell>
-        <StatusBadge status={estimate.status as any} />
+        <StatusBadge status={estimate.status} />
       </TableCell>
-      <TableCell>{estimate.versions}</TableCell>
       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
         <ActionMenu 
           groups={actionGroups} 

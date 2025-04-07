@@ -3,14 +3,17 @@ import { useState, useEffect } from 'react';
 import { StatusType } from '@/types/common';
 import { supabase } from '@/integrations/supabase/client';
 import { EstimateType } from '../EstimatesTable';
+import { toast } from '@/hooks/use-toast';
 
 export const useEstimates = () => {
   const [estimates, setEstimates] = useState<EstimateType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const fetchEstimates = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Get all estimates with their current revision version
       const { data, error } = await supabase
@@ -76,8 +79,14 @@ export const useEstimates = () => {
       }));
       
       setEstimates(formattedEstimates);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching estimates:', error);
+      setError(error.message || 'Failed to load estimates');
+      toast({
+        title: 'Error',
+        description: 'Failed to load estimates',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -87,5 +96,5 @@ export const useEstimates = () => {
     fetchEstimates();
   }, []);
   
-  return { estimates, loading, fetchEstimates };
+  return { estimates, loading, error, fetchEstimates };
 };

@@ -5,6 +5,8 @@ import EstimateTableHeader from './components/EstimateTableHeader';
 import EstimateRow from './components/EstimateRow';
 import EstimateEmptyState from './components/EstimateEmptyState';
 import EstimateLoadingState from './components/EstimateLoadingState';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export type EstimateType = {
   id: string;
@@ -27,6 +29,7 @@ export type EstimateType = {
 interface EstimatesTableProps {
   estimates: EstimateType[];
   loading: boolean;
+  error?: string | null;
   searchQuery: string;
   onViewEstimate: (estimate: EstimateType) => void;
   formatDate: (dateString: string) => string;
@@ -36,6 +39,7 @@ interface EstimatesTableProps {
 const EstimatesTable = ({ 
   estimates, 
   loading, 
+  error,
   searchQuery, 
   onViewEstimate,
   formatDate,
@@ -46,6 +50,19 @@ const EstimatesTable = ({
     estimate.project.toLowerCase().includes(searchQuery.toLowerCase()) ||
     estimate.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  // Handle error state
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to load estimates: {error}
+        </AlertDescription>
+      </Alert>
+    );
+  }
   
   return (
     <div className="bg-white border rounded-lg shadow-sm animate-in">
