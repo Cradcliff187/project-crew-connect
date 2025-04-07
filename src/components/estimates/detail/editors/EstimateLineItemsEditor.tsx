@@ -13,9 +13,15 @@ interface EstimateLineItemsEditorProps {
   form: UseFormReturn<any>;
   name: string;
   estimateId: string;
+  onSubtotalChange?: (subtotal: number) => void;
 }
 
-const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form, name, estimateId }) => {
+const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ 
+  form, 
+  name, 
+  estimateId,
+  onSubtotalChange
+}) => {
   const { fields, append, remove, update } = useFieldArray({
     control: form.control,
     name: name
@@ -42,6 +48,9 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
       gross_margin: grossMargin,
       gross_margin_percentage: grossMarginPercentage
     });
+    
+    // Calculate and notify parent of updated subtotal
+    calculateAndNotifySubtotal();
   };
 
   // Recalculate unit price when cost or markup changes
@@ -75,6 +84,19 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ form,
       estimate_id: estimateId
     });
   };
+  
+  // Calculate subtotal and notify parent component
+  const calculateAndNotifySubtotal = () => {
+    if (onSubtotalChange) {
+      const subtotal = fields.reduce((sum, item: any) => sum + (item.total_price || 0), 0);
+      onSubtotalChange(subtotal);
+    }
+  };
+  
+  // Call calculateAndNotifySubtotal when fields change
+  useEffect(() => {
+    calculateAndNotifySubtotal();
+  }, [fields]); 
   
   return (
     <div className="space-y-4">

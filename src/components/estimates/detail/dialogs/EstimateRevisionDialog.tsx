@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import EstimateLineItemsEditor from '../editors/EstimateLineItemsEditor';
+import { Card, CardContent } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/utils';
 
 interface EstimateRevisionDialogProps {
   open: boolean;
@@ -44,6 +46,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
   const [activeTab, setActiveTab] = useState('general');
   const [currentRevisionId, setCurrentRevisionId] = useState<string | null>(null);
   const [currentItems, setCurrentItems] = useState<any[]>([]);
+  const [subtotal, setSubtotal] = useState(0);
   const { toast } = useToast();
   
   const form = useForm<RevisionFormValues>({
@@ -53,6 +56,10 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       contingencyPercentage: 0
     }
   });
+  
+  const contingencyPercentage = form.watch('contingencyPercentage');
+  const contingencyAmount = (subtotal * (parseFloat(contingencyPercentage.toString()) / 100)) || 0;
+  const grandTotal = subtotal + contingencyAmount;
   
   useEffect(() => {
     if (open && estimateId) {
@@ -183,6 +190,11 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       setSaving(false);
     }
   };
+
+  // Track subtotal from line items editor
+  const updateSubtotal = (total: number) => {
+    setSubtotal(total);
+  };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -231,11 +243,65 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
               </TabsContent>
               
               <TabsContent value="items">
-                <EstimateLineItemsEditor 
-                  form={form}
-                  name="revisionItems"
-                  estimateId={estimateId}
-                />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <EstimateLineItemsEditor 
+                      form={form}
+                      name="revisionItems"
+                      estimateId={estimateId}
+                      onSubtotalChange={updateSubtotal}
+                    />
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <Card className="bg-[#0485ea]/5">
+                      <CardContent className="p-4">
+                        <h3 className="font-medium text-sm mb-3">Revision Summary</h3>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Subtotal:</span>
+                            <span className="font-medium">{formatCurrency(subtotal)}</span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center text-sm">
+                            <div className="flex items-center">
+                              <span className="text-muted-foreground">Contingency:</span>
+                              <span className="text-muted-foreground ml-1 text-xs">({contingencyPercentage}%)</span>
+                            </div>
+                            <span className="font-medium">{formatCurrency(contingencyAmount)}</span>
+                          </div>
+                          
+                          <div className="border-t pt-2 mt-2">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">Total:</span>
+                              <span className="font-bold text-lg text-[#0485ea]">
+                                {formatCurrency(grandTotal)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4">
+                          <Label htmlFor="itemsContingencyPercentage">Contingency %</Label>
+                          <Input 
+                            id="itemsContingencyPercentage"
+                            type="number" 
+                            step="0.1"
+                            min="0" 
+                            max="100"
+                            className="mt-1"
+                            {...form.register('contingencyPercentage', {
+                              valueAsNumber: true,
+                              min: 0,
+                              max: 100
+                            })}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
             
