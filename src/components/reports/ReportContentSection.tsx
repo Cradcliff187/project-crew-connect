@@ -60,10 +60,6 @@ const ReportContentSection = ({
               data={data}
               compact={true}
               defaultSorting={{ columnId: Object.keys(data[0])[0], direction: 'asc' }}
-              pagination={{
-                pageSize: 25,
-                pageSizeOptions: [10, 25, 50, 100]
-              }}
             />
           </div>
         ) : (
