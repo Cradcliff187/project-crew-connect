@@ -35,7 +35,7 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   children
 }) => {
   const { toast } = useToast();
-  const { generatePdf, checkRevisionPdf, isGenerating, error } = usePdfGeneration({
+  const { generatePdf, generateClientSidePdf, checkRevisionPdf, isGenerating, error } = usePdfGeneration({
     onSuccess,
     onError: (error) => {
       toast({
@@ -63,11 +63,8 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
         
         await generatePdf(estimateId, revisionId);
       } else if (contentRef && contentRef.current) {
-        toast({
-          title: "Info",
-          description: "Content-based PDF generation is in development",
-          variant: "default"
-        });
+        // Use client-side generation with the ref
+        await generateClientSidePdf(contentRef);
       } else {
         toast({
           title: "Missing Parameters",

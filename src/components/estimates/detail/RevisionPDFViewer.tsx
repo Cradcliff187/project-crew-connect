@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
   showCard = true,
   className = ""
 }) => {
+  
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +50,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
     
     loadPdfUrl();
   }, [revision]);
-
+  
   const handleViewPdf = async () => {
     if (pdfUrl) {
       // Log the view action
@@ -122,7 +122,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
   if (!revision?.pdf_document_id) {
     return null;
   }
-
+  
   const content = (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
       <div className="flex items-center space-x-2">

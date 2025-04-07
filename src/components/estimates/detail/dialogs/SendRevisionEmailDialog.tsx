@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,15 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasPdf, setHasPdf] = useState(false);
-  const { generatePdf, isGenerating, checkRevisionPdf } = usePdfGeneration();
+  const { generatePdf, isGenerating, checkRevisionPdf, error } = usePdfGeneration({
+    onError: (err) => {
+      toast({
+        title: 'PDF Generation Error',
+        description: err.message || 'An error occurred while generating the PDF',
+        variant: 'destructive',
+      });
+    }
+  });
   
   useEffect(() => {
     if (open && revision) {
@@ -76,7 +83,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
       
       setTemplates(data || []);
       
-      // Set default template if available
       const defaultTemplate = data?.find(t => t.is_default);
       if (defaultTemplate) {
         setSelectedTemplateId(defaultTemplate.id);
@@ -90,13 +96,11 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
   };
   
   const applyTemplate = (template: EmailTemplate) => {
-    // Replace placeholders in subject
     let processedSubject = template.subject_template
       .replace(/\{client_name\}/g, clientName)
       .replace(/\{estimate_id\}/g, estimateId)
       .replace(/\{revision_number\}/g, revision?.version?.toString() || '');
       
-    // Replace placeholders in body
     let processedBody = template.body_template
       .replace(/\{client_name\}/g, clientName)
       .replace(/\{estimate_id\}/g, estimateId)
@@ -128,7 +132,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
     let pdfDocumentId = revision?.pdf_document_id;
     
     try {
-      // Generate PDF if needed and requested
       if (attachPdf && !hasPdf && revision) {
         pdfDocumentId = await generatePdf(estimateId, revision.id);
         if (!pdfDocumentId) {
@@ -140,7 +143,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         }
       }
       
-      // Prepare email data
       const emailData = {
         to,
         cc,
@@ -149,14 +151,11 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         body: emailBody,
         estimate_id: estimateId,
         revision_id: revision?.id,
-        sent_by: 'system', // This would be the current user in a real system
+        sent_by: 'system',
         sent_at: new Date().toISOString(),
         pdf_document_id: attachPdf ? pdfDocumentId : null,
         status: 'SENT',
       };
-      
-      // In a real application, we would call an API endpoint to send the email
-      // For now, we'll simulate it by logging to the activitylog table
       
       const { error } = await supabase
         .from('activitylog')
@@ -173,7 +172,6 @@ const SendRevisionEmailDialog: React.FC<SendRevisionEmailDialogProps> = ({
         
       if (error) throw error;
       
-      // Update the revision status to 'sent' if it was in 'draft' or 'ready'
       if (revision && ['draft', 'ready'].includes(revision.status.toLowerCase())) {
         const { error: revisionError } = await supabase
           .from('estimate_revisions')
