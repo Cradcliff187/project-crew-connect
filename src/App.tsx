@@ -31,7 +31,8 @@ import RouteGuard from './components/auth/RouteGuard';
 import EstimateEmailSettings from './pages/EstimateEmailSettings';
 import TimeTracking from './pages/TimeTracking';
 import ActiveWork from './pages/ActiveWork';
-import Reports from './pages/Reports'; // Import the new Reports page
+import Reports from './pages/Reports';
+import ReportBuilder from './pages/ReportBuilder';
 
 const queryClient = new QueryClient();
 
@@ -65,7 +66,9 @@ function App() {
               <Route path="settings" element={<Settings />} />
               <Route path="time-tracking" element={<TimeTracking />} />
               <Route path="active-work" element={<ActiveWork />} />
-              <Route path="reports" element={<Reports />} /> {/* Add the Reports route */}
+              <Route path="reports" element={<Reports />} />
+              <Route path="report-builder" element={<ReportBuilder />} />
+              <Route path="report-builder/:reportId" element={<ReportBuilder />} />
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="*" element={<Navigate to="/" replace />} />

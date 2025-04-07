@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Download, Filter, Search, FileDown } from 'lucide-react';
+import { Download, Filter, Search, FileDown, BarChart3, PieChart } from 'lucide-react';
 import PageTransition from '@/components/layout/PageTransition';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,10 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DatePickerWithRange } from '@/components/ui/date-range-picker';
+import { DateRange } from 'react-day-picker';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { formatDate, formatCurrency } from '@/lib/utils';
 
 // Define the types of entities we can report on
-type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses';
+type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders';
 
 // Define table names in Supabase
 const entityTableMap = {
@@ -29,14 +33,16 @@ const entityTableMap = {
   'subcontractors': 'subcontractors',
   'work_orders': 'maintenance_work_orders',
   'estimates': 'estimates',
-  'expenses': 'expenses'
+  'expenses': 'expenses',
+  'time_entries': 'time_entries',
+  'change_orders': 'change_orders'
 } as const;
 
 // Create a type from the values of entityTableMap
 type TableName = typeof entityTableMap[EntityType];
 
-// Define fields for each entity type
-const entityFields: Record<EntityType, { label: string; field: string; type: 'text' | 'date' | 'number' | 'currency' | 'status' }[]> = {
+// Define fields for each entity type with expanded metrics
+const entityFields: Record<EntityType, { label: string; field: string; type: 'text' | 'date' | 'number' | 'currency' | 'status' | 'percentage' | 'boolean' }[]> = {
   projects: [
     { label: 'Project ID', field: 'projectid', type: 'text' },
     { label: 'Project Name', field: 'projectname', type: 'text' },
@@ -47,6 +53,14 @@ const entityFields: Record<EntityType, { label: string; field: string; type: 'te
     { label: 'Current Expenses', field: 'current_expenses', type: 'currency' },
     { label: 'Budget Status', field: 'budget_status', type: 'status' },
     { label: 'Due Date', field: 'due_date', type: 'date' },
+    { label: 'Progress', field: 'progress', type: 'percentage' },
+    { label: 'Site Location', field: 'sitelocationaddress', type: 'text' },
+    { label: 'City', field: 'sitelocationcity', type: 'text' },
+    { label: 'State', field: 'sitelocationstate', type: 'text' },
+    { label: 'Zip', field: 'sitelocationzip', type: 'text' },
+    { label: 'Job Description', field: 'jobdescription', type: 'text' },
+    { label: 'Last Modified', field: 'updated_at', type: 'date' },
+    { label: 'Budget Utilization', field: 'budget_utilization', type: 'percentage' }
   ],
   customers: [
     { label: 'Customer ID', field: 'customerid', type: 'text' },
@@ -98,7 +112,14 @@ const entityFields: Record<EntityType, { label: string; field: string; type: 'te
     { label: 'Actual Hours', field: 'actual_hours', type: 'number' },
     { label: 'Materials Cost', field: 'materials_cost', type: 'currency' },
     { label: 'Total Cost', field: 'total_cost', type: 'currency' },
-    { label: 'Progress', field: 'progress', type: 'number' },
+    { label: 'Progress', field: 'progress', type: 'percentage' },
+    { label: 'Description', field: 'description', type: 'text' },
+    { label: 'Completed Date', field: 'completed_date', type: 'date' },
+    { label: 'Time Estimate', field: 'time_estimate', type: 'number' },
+    { label: 'PO Number', field: 'po_number', type: 'text' },
+    { label: 'Work Order Number', field: 'work_order_number', type: 'text' },
+    { label: 'Created At', field: 'created_at', type: 'date' },
+    { label: 'Project ID', field: 'project_id', type: 'text' }
   ],
   estimates: [
     { label: 'Estimate ID', field: 'estimateid', type: 'text' },
@@ -107,9 +128,17 @@ const entityFields: Record<EntityType, { label: string; field: string; type: 'te
     { label: 'Status', field: 'status', type: 'status' },
     { label: 'Estimate Amount', field: 'estimateamount', type: 'currency' },
     { label: 'Contingency', field: 'contingencyamount', type: 'currency' },
+    { label: 'Contingency %', field: 'contingency_percentage', type: 'percentage' },
     { label: 'Created Date', field: 'datecreated', type: 'date' },
     { label: 'Sent Date', field: 'sentdate', type: 'date' },
     { label: 'Approved Date', field: 'approveddate', type: 'date' },
+    { label: 'Site Location', field: 'sitelocationaddress', type: 'text' },
+    { label: 'City', field: 'sitelocationcity', type: 'text' },
+    { label: 'State', field: 'sitelocationstate', type: 'text' },
+    { label: 'Zip', field: 'sitelocationzip', type: 'text' },
+    { label: 'PO #', field: 'po#', type: 'text' },
+    { label: 'Job Description', field: 'job description', type: 'text' },
+    { label: 'Total With Contingency', field: 'total_with_contingency', type: 'currency' }
   ],
   expenses: [
     { label: 'ID', field: 'id', type: 'text' },
@@ -120,13 +149,56 @@ const entityFields: Record<EntityType, { label: string; field: string; type: 'te
     { label: 'Expense Type', field: 'expense_type', type: 'text' },
     { label: 'Vendor', field: 'vendor_id', type: 'text' },
     { label: 'Expense Date', field: 'expense_date', type: 'date' },
-    { label: 'Is Billable', field: 'is_billable', type: 'status' },
+    { label: 'Is Billable', field: 'is_billable', type: 'boolean' },
     { label: 'Created At', field: 'created_at', type: 'date' },
+    { label: 'Updated At', field: 'updated_at', type: 'date' },
+    { label: 'Quantity', field: 'quantity', type: 'number' },
+    { label: 'Unit Price', field: 'unit_price', type: 'currency' },
+    { label: 'Document ID', field: 'document_id', type: 'text' },
+    { label: 'Status', field: 'status', type: 'status' },
+    { label: 'Notes', field: 'notes', type: 'text' }
   ],
+  time_entries: [
+    { label: 'ID', field: 'id', type: 'text' },
+    { label: 'Entity Type', field: 'entity_type', type: 'text' },
+    { label: 'Entity ID', field: 'entity_id', type: 'text' },
+    { label: 'Employee', field: 'employee_id', type: 'text' },
+    { label: 'Date Worked', field: 'date_worked', type: 'date' },
+    { label: 'Start Time', field: 'start_time', type: 'text' },
+    { label: 'End Time', field: 'end_time', type: 'text' },
+    { label: 'Hours Worked', field: 'hours_worked', type: 'number' },
+    { label: 'Rate', field: 'employee_rate', type: 'currency' },
+    { label: 'Total Cost', field: 'total_cost', type: 'currency' },
+    { label: 'Notes', field: 'notes', type: 'text' },
+    { label: 'Has Receipts', field: 'has_receipts', type: 'boolean' },
+    { label: 'Created At', field: 'created_at', type: 'date' }
+  ],
+  change_orders: [
+    { label: 'ID', field: 'id', type: 'text' },
+    { label: 'Title', field: 'title', type: 'text' },
+    { label: 'Entity Type', field: 'entity_type', type: 'text' },
+    { label: 'Entity ID', field: 'entity_id', type: 'text' },
+    { label: 'Status', field: 'status', type: 'status' },
+    { label: 'Requested By', field: 'requested_by', type: 'text' },
+    { label: 'Requested Date', field: 'requested_date', type: 'date' },
+    { label: 'Approved By', field: 'approved_by', type: 'text' },
+    { label: 'Approved Date', field: 'approved_date', type: 'date' },
+    { label: 'Total Amount', field: 'total_amount', type: 'currency' },
+    { label: 'Impact Days', field: 'impact_days', type: 'number' },
+    { label: 'Change Order Number', field: 'change_order_number', type: 'text' },
+    { label: 'Description', field: 'description', type: 'text' },
+    { label: 'Created At', field: 'created_at', type: 'date' },
+    { label: 'Updated At', field: 'updated_at', type: 'date' }
+  ]
 };
 
-// Define a function to fetch data based on entity type
-const fetchData = async (entityType: EntityType, searchTerm = '') => {
+// Helper function for date range processing
+const formatDateForQuery = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
+
+// Define a function to fetch data based on entity type with enhanced filtering
+const fetchData = async (entityType: EntityType, filters: ReportFilters) => {
   // Get the actual table name from our mapping
   const tableName = entityTableMap[entityType];
   
@@ -134,24 +206,49 @@ const fetchData = async (entityType: EntityType, searchTerm = '') => {
   // Use type assertion to tell TypeScript this is a valid table name
   let query = supabase.from(tableName as TableName).select('*');
   
-  // Add basic filtering if search term is provided
-  if (searchTerm) {
-    // Basic search based on most common field names
+  // Apply filters
+  if (filters.search) {
+    // Apply search filter logic based on entity type
     if (entityType === 'projects') {
-      query = query.or(`projectid.ilike.%${searchTerm}%,projectname.ilike.%${searchTerm}%`);
+      query = query.or(`projectid.ilike.%${filters.search}%,projectname.ilike.%${filters.search}%`);
     } else if (entityType === 'customers') {
-      query = query.or(`customerid.ilike.%${searchTerm}%,customername.ilike.%${searchTerm}%`);
+      query = query.or(`customerid.ilike.%${filters.search}%,customername.ilike.%${filters.search}%`);
     } else if (entityType === 'vendors') {
-      query = query.or(`vendorid.ilike.%${searchTerm}%,vendorname.ilike.%${searchTerm}%`);
+      query = query.or(`vendorid.ilike.%${filters.search}%,vendorname.ilike.%${filters.search}%`);
     } else if (entityType === 'subcontractors') {
-      query = query.or(`subid.ilike.%${searchTerm}%,subname.ilike.%${searchTerm}%`);
+      query = query.or(`subid.ilike.%${filters.search}%,subname.ilike.%${filters.search}%`);
     } else if (entityType === 'work_orders') {
-      query = query.or(`title.ilike.%${searchTerm}%`);
+      query = query.or(`work_order_id::text.ilike.%${filters.search}%,title.ilike.%${filters.search}%`);
     } else if (entityType === 'estimates') {
-      query = query.or(`estimateid.ilike.%${searchTerm}%,projectname.ilike.%${searchTerm}%`);
+      query = query.or(`estimateid.ilike.%${filters.search}%,projectname.ilike.%${filters.search}%`);
     } else if (entityType === 'expenses') {
-      query = query.or(`description.ilike.%${searchTerm}%`);
+      query = query.or(`description.ilike.%${filters.search}%`);
+    } else if (entityType === 'time_entries') {
+      query = query.or(`id::text.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`);
+    } else if (entityType === 'change_orders') {
+      query = query.or(`title.ilike.%${filters.search}%,change_order_number.ilike.%${filters.search}%`);
     }
+  }
+  
+  // Date range filter
+  if (filters.dateRange?.from) {
+    const dateField = getDateFieldForEntity(entityType);
+    query = query.gte(dateField, formatDateForQuery(filters.dateRange.from));
+  }
+  
+  if (filters.dateRange?.to) {
+    const dateField = getDateFieldForEntity(entityType);
+    query = query.lte(dateField, formatDateForQuery(filters.dateRange.to));
+  }
+  
+  // Status filter
+  if (filters.status && filters.status !== 'all') {
+    query = query.eq('status', filters.status);
+  }
+  
+  // Add custom entity-specific filters
+  if (entityType === 'expenses' && filters.expenseType && filters.expenseType !== 'all') {
+    query = query.eq('expense_type', filters.expenseType);
   }
   
   try {
@@ -162,11 +259,63 @@ const fetchData = async (entityType: EntityType, searchTerm = '') => {
       throw error;
     }
     
-    return data;
+    // Process data with derived fields based on entity type
+    const processedData = processEntityData(entityType, data);
+    
+    return processedData;
   } catch (error) {
     console.error(`Error in fetchData for ${entityType}:`, error);
     throw error;
   }
+};
+
+// Get date field name based on entity type for filtering
+const getDateFieldForEntity = (entityType: EntityType): string => {
+  switch (entityType) {
+    case 'projects':
+      return 'createdon';
+    case 'customers':
+      return 'createdon';
+    case 'vendors':
+      return 'createdon';
+    case 'subcontractors':
+      return 'created_at';
+    case 'work_orders':
+      return 'created_at';
+    case 'estimates':
+      return 'datecreated';
+    case 'expenses':
+      return 'expense_date';
+    case 'time_entries':
+      return 'date_worked';
+    case 'change_orders':
+      return 'created_at';
+    default:
+      return 'created_at';
+  }
+};
+
+// Process entity data to add derived fields and format data
+const processEntityData = (entityType: EntityType, data: any[]): any[] => {
+  return data.map(item => {
+    const processed = { ...item };
+    
+    if (entityType === 'projects') {
+      // Calculate budget utilization percentage
+      if (processed.total_budget && processed.total_budget > 0) {
+        processed.budget_utilization = (processed.current_expenses / processed.total_budget) * 100;
+      } else {
+        processed.budget_utilization = 0;
+      }
+    }
+    
+    if (entityType === 'estimates') {
+      // Calculate total with contingency
+      processed.total_with_contingency = (processed.estimateamount || 0) + (processed.contingencyamount || 0);
+    }
+    
+    return processed;
+  });
 };
 
 // Helper function to format hours
@@ -176,25 +325,44 @@ export function formatHours(hours: number | undefined | null): string {
   return `${Number(hours).toFixed(1)}h`;
 }
 
+// Helper function to format percentages
+export function formatPercentage(percentage: number | undefined | null): string {
+  if (percentage === undefined || percentage === null) return '0%';
+  
+  return `${Number(percentage).toFixed(1)}%`;
+}
+
+// Interface for the filters
+interface ReportFilters {
+  search: string;
+  dateRange: DateRange | undefined;
+  status: string;
+  expenseType?: string;
+}
+
 const Reports = () => {
   const [selectedEntity, setSelectedEntity] = useState<EntityType>('projects');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [filters, setFilters] = useState<ReportFilters>({
+    search: '',
+    dateRange: undefined,
+    status: 'all'
+  });
+  const [debouncedFilters, setDebouncedFilters] = useState<ReportFilters>(filters);
   const [showFilters, setShowFilters] = useState(false);
   
-  // Set up debounced search term
+  // Debounce the filters
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
+      setDebouncedFilters(filters);
     }, 300);
     
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [filters]);
   
   // Fetch data using React Query
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['reports', selectedEntity, debouncedSearchTerm],
-    queryFn: () => fetchData(selectedEntity, debouncedSearchTerm),
+    queryKey: ['reports', selectedEntity, debouncedFilters],
+    queryFn: () => fetchData(selectedEntity, debouncedFilters),
   });
   
   // Generate columns for the data table based on entity fields
@@ -214,17 +382,42 @@ const Reports = () => {
           return formatDate(value);
         case 'currency':
           return formatCurrency(value);
+        case 'percentage':
+          return formatPercentage(value);
         case 'status':
           return (
-            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-100">
+            <Badge className="capitalize" variant={getStatusVariant(value?.toString().toLowerCase())}>
               {value?.toString().toLowerCase().replace(/_/g, ' ')}
-            </div>
+            </Badge>
+          );
+        case 'boolean':
+          return value ? (
+            <Badge variant="success">Yes</Badge>
+          ) : (
+            <Badge variant="outline">No</Badge>
           );
         default:
           return value;
       }
     },
   }));
+  
+  // Determine status variant for styling badges
+  const getStatusVariant = (status: string | undefined): "default" | "outline" | "secondary" | "destructive" | "success" => {
+    if (!status) return "default";
+    
+    if (status.includes('active') || status.includes('approved') || status.includes('completed')) {
+      return "success";
+    } else if (status.includes('pending') || status.includes('draft') || status.includes('progress')) {
+      return "secondary";
+    } else if (status.includes('hold') || status.includes('review')) {
+      return "outline";
+    } else if (status.includes('cancel') || status.includes('reject')) {
+      return "destructive";
+    }
+    
+    return "default";
+  };
   
   // Function to handle CSV export
   const exportToCsv = () => {
@@ -244,6 +437,10 @@ const Reports = () => {
           return formatDate(value);
         } else if (field.type === 'currency' && value !== null) {
           return typeof value === 'number' ? value.toFixed(2) : value;
+        } else if (field.type === 'percentage' && value !== null) {
+          return typeof value === 'number' ? value.toFixed(2) : value;
+        } else if (field.type === 'boolean') {
+          return value ? 'Yes' : 'No';
         } else {
           return String(value).replace(/"/g, '""'); // Escape quotes
         }
@@ -267,6 +464,52 @@ const Reports = () => {
     document.body.removeChild(link);
   };
   
+  // Handle filter changes
+  const handleFilterChange = (key: keyof ReportFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+  
+  // Get status options based on the selected entity
+  const getStatusOptions = (): { value: string, label: string }[] => {
+    const allOption = { value: 'all', label: 'All Statuses' };
+    
+    switch (selectedEntity) {
+      case 'projects':
+        return [
+          allOption,
+          { value: 'new', label: 'New' },
+          { value: 'active', label: 'Active' },
+          { value: 'on_hold', label: 'On Hold' },
+          { value: 'completed', label: 'Completed' },
+          { value: 'cancelled', label: 'Cancelled' }
+        ];
+      case 'work_orders':
+        return [
+          allOption,
+          { value: 'NEW', label: 'New' },
+          { value: 'IN_PROGRESS', label: 'In Progress' },
+          { value: 'ON_HOLD', label: 'On Hold' },
+          { value: 'COMPLETED', label: 'Completed' },
+          { value: 'CANCELLED', label: 'Cancelled' }
+        ];
+      case 'estimates':
+        return [
+          allOption,
+          { value: 'draft', label: 'Draft' },
+          { value: 'sent', label: 'Sent' },
+          { value: 'approved', label: 'Approved' },
+          { value: 'rejected', label: 'Rejected' },
+          { value: 'converted', label: 'Converted to Project' }
+        ];
+      default:
+        return [
+          allOption,
+          { value: 'ACTIVE', label: 'Active' },
+          { value: 'INACTIVE', label: 'Inactive' }
+        ];
+    }
+  };
+  
   return (
     <PageTransition>
       <div className="container mx-auto py-6 space-y-6">
@@ -276,19 +519,30 @@ const Reports = () => {
             <p className="text-muted-foreground">View and export data across different entities</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setShowFilters(!showFilters)} variant="outline">
+            <Button 
+              onClick={() => setShowFilters(!showFilters)} 
+              variant="outline"
+              className={showFilters ? "bg-muted" : ""}
+            >
               <Filter className="h-4 w-4 mr-2" />
-              Filters
+              Filters {showFilters ? "▼" : "▶"}
             </Button>
             <Button onClick={exportToCsv} className="bg-[#0485ea] hover:bg-[#0370c9]">
               <FileDown className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
+            <Button 
+              variant="outline"
+              onClick={() => console.log('Navigate to Report Builder')}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Report Builder
+            </Button>
           </div>
         </div>
         
         <Tabs defaultValue="projects" onValueChange={(value) => setSelectedEntity(value as EntityType)}>
-          <TabsList className="grid grid-cols-7">
+          <TabsList className="grid grid-cols-9">
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
@@ -296,10 +550,12 @@ const Reports = () => {
             <TabsTrigger value="work_orders">Work Orders</TabsTrigger>
             <TabsTrigger value="estimates">Estimates</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            <TabsTrigger value="time_entries">Time Logs</TabsTrigger>
+            <TabsTrigger value="change_orders">Change Orders</TabsTrigger>
           </TabsList>
           
           {/* All content areas share the same layout */}
-          {(['projects', 'customers', 'vendors', 'subcontractors', 'work_orders', 'estimates', 'expenses'] as EntityType[]).map((entity) => (
+          {(['projects', 'customers', 'vendors', 'subcontractors', 'work_orders', 'estimates', 'expenses', 'time_entries', 'change_orders'] as EntityType[]).map((entity) => (
             <TabsContent key={entity} value={entity}>
               <Card className="shadow-sm">
                 <CardContent className="pt-6">
@@ -308,8 +564,8 @@ const Reports = () => {
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder={`Search ${entity}...`}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={filters.search}
+                        onChange={(e) => handleFilterChange('search', e.target.value)}
                         className="pl-8"
                       />
                     </div>
@@ -322,16 +578,19 @@ const Reports = () => {
                         {/* Status filter */}
                         <div>
                           <label className="text-xs mb-1 block">Status</label>
-                          <Select>
+                          <Select
+                            value={filters.status}
+                            onValueChange={(value) => handleFilterChange('status', value)}
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder="All Statuses" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Statuses</SelectItem>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="inactive">Inactive</SelectItem>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
+                              {getStatusOptions().map(option => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -339,33 +598,26 @@ const Reports = () => {
                         {/* Date range filter */}
                         <div>
                           <label className="text-xs mb-1 block">Date Range</label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Any Time" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="any">Any Time</SelectItem>
-                              <SelectItem value="today">Today</SelectItem>
-                              <SelectItem value="week">This Week</SelectItem>
-                              <SelectItem value="month">This Month</SelectItem>
-                              <SelectItem value="quarter">This Quarter</SelectItem>
-                              <SelectItem value="year">This Year</SelectItem>
-                              <SelectItem value="custom">Custom Range</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <DatePickerWithRange
+                            value={filters.dateRange}
+                            onChange={(range) => handleFilterChange('dateRange', range)}
+                          />
                         </div>
                         
                         {/* Entity specific filter */}
                         {entity === 'expenses' && (
                           <div>
                             <label className="text-xs mb-1 block">Expense Type</label>
-                            <Select>
+                            <Select
+                              value={filters.expenseType || 'all'}
+                              onValueChange={(value) => handleFilterChange('expenseType', value)}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder="All Types" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="material">Materials</SelectItem>
+                                <SelectItem value="materials">Materials</SelectItem>
                                 <SelectItem value="labor">Labor</SelectItem>
                                 <SelectItem value="service">Services</SelectItem>
                                 <SelectItem value="other">Other</SelectItem>
@@ -411,7 +663,7 @@ const Reports = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 border rounded-md">
                   <div className="text-2xl font-bold">{data.length}</div>
-                  <div className="text-sm text-muted-foreground capitalize">Total {selectedEntity}</div>
+                  <div className="text-sm text-muted-foreground capitalize">Total {selectedEntity.replace('_', ' ')}</div>
                 </div>
                 
                 {selectedEntity === 'projects' && (
@@ -431,6 +683,40 @@ const Reports = () => {
                   </>
                 )}
                 
+                {selectedEntity === 'work_orders' && (
+                  <>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {formatHours(data.reduce((sum: number, item: any) => sum + (parseFloat(item.actual_hours) || 0), 0))}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Hours Worked</div>
+                    </div>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.total_cost) || 0), 0))}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Cost</div>
+                    </div>
+                  </>
+                )}
+                
+                {selectedEntity === 'estimates' && (
+                  <>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.estimateamount) || 0), 0))}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Estimate Amount</div>
+                    </div>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.contingencyamount) || 0), 0))}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Contingency</div>
+                    </div>
+                  </>
+                )}
+                
                 {selectedEntity === 'expenses' && (
                   <div className="p-4 border rounded-md">
                     <div className="text-2xl font-bold">
@@ -438,6 +724,40 @@ const Reports = () => {
                     </div>
                     <div className="text-sm text-muted-foreground">Total Amount</div>
                   </div>
+                )}
+                
+                {selectedEntity === 'time_entries' && (
+                  <>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {formatHours(data.reduce((sum: number, item: any) => sum + (parseFloat(item.hours_worked) || 0), 0))}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Hours</div>
+                    </div>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.total_cost) || 0), 0))}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Cost</div>
+                    </div>
+                  </>
+                )}
+                
+                {selectedEntity === 'change_orders' && (
+                  <>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.total_amount) || 0), 0))}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Amount</div>
+                    </div>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {data.reduce((sum: number, item: any) => sum + (parseInt(item.impact_days) || 0), 0)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Impact Days</div>
+                    </div>
+                  </>
                 )}
               </div>
             </CardContent>
