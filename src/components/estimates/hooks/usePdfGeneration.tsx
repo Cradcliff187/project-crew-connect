@@ -15,6 +15,10 @@ interface UsePdfGenerationProps {
   onError?: (error: PdfGenerationError) => void;
 }
 
+interface PdfResult {
+  document_id: string;
+}
+
 const usePdfGeneration = ({ onSuccess, onError }: UsePdfGenerationProps = {}) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<PdfGenerationError | null>(null);
@@ -84,17 +88,18 @@ const usePdfGeneration = ({ onSuccess, onError }: UsePdfGenerationProps = {}) =>
       
       if (revError) throw revError;
       
-      // Use RPC call to generate PDF
-      const { data: pdfResult, error: pdfError } = await supabase
-        .rpc('generate_estimate_pdf', {
-          p_estimate_id: estimateId,
-          p_revision_id: revisionId,
-          p_items: revisionItems || []
-        });
+      // Use fetch to call the function directly since RPC isn't working correctly
+      const { data: pdfResult, error: pdfError } = await supabase.functions.invoke<PdfResult>('generate-estimate-pdf', {
+        body: {
+          estimate_id: estimateId,
+          revision_id: revisionId,
+          items: revisionItems || []
+        }
+      });
       
       if (pdfError) {
         const enhancedError: PdfGenerationError = new Error(pdfError.message);
-        enhancedError.code = pdfError.code;
+        enhancedError.code = pdfError.name;
         enhancedError.details = 'Error generating PDF';
         throw enhancedError;
       }
