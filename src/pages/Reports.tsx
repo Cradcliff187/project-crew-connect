@@ -25,19 +25,6 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 // Define the types of entities we can report on
 type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders';
 
-// Define table names in Supabase
-const entityTableMap: Record<EntityType, string> = {
-  'projects': 'projects',
-  'customers': 'customers',
-  'vendors': 'vendors',
-  'subcontractors': 'subcontractors',
-  'work_orders': 'maintenance_work_orders',
-  'estimates': 'estimates',
-  'expenses': 'expenses',
-  'time_entries': 'time_entries',
-  'change_orders': 'change_orders'
-};
-
 // Define field type
 type FieldType = 'text' | 'date' | 'number' | 'currency' | 'status' | 'percentage' | 'boolean';
 
@@ -199,12 +186,25 @@ const entityFields: Record<EntityType, FieldDefinition[]> = {
   ]
 };
 
+// Define table names in Supabase - map entity types to actual table names
+const entityTableMap: Record<EntityType, string> = {
+  'projects': 'projects',
+  'customers': 'customers',
+  'vendors': 'vendors',
+  'subcontractors': 'subcontractors',
+  'work_orders': 'maintenance_work_orders',
+  'estimates': 'estimates',
+  'expenses': 'expenses',
+  'time_entries': 'time_entries',
+  'change_orders': 'change_orders'
+};
+
 // Helper function for date range processing
 const formatDateForQuery = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
-// Define fetch data function type more explicitly
+// Define report filters interface
 interface ReportFilters {
   search: string;
   dateRange: DateRange | undefined;
@@ -217,8 +217,8 @@ const fetchData = async (entityType: EntityType, filters: ReportFilters) => {
   // Get the actual table name from our mapping
   const tableName = entityTableMap[entityType];
   
-  // Build a query based on entity type
-  let query = supabase.from(tableName).select('*');
+  // Build a query based on entity type - use type assertion for tableName
+  let query = supabase.from(tableName as any).select('*');
   
   // Apply filters
   if (filters.search) {
@@ -274,7 +274,7 @@ const fetchData = async (entityType: EntityType, filters: ReportFilters) => {
     }
     
     // Process data with derived fields based on entity type
-    const processedData = processEntityData(entityType, data);
+    const processedData = processEntityData(entityType, data || []);
     
     return processedData;
   } catch (error) {
@@ -409,7 +409,7 @@ const Reports = () => {
   }));
   
   // Determine status variant for styling badges
-  const getStatusVariant = (status: string | undefined): "default" | "outline" | "secondary" | "destructive" => {
+  const getStatusVariant = (status: string | undefined): "default" | "outline" | "secondary" | "destructive" | "earth" | "sage" => {
     if (!status) return "default";
     
     if (status.includes('active') || status.includes('approved') || status.includes('completed')) {
