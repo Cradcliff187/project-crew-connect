@@ -18,6 +18,7 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     handleDeleteTimelog
   } = useWorkOrderTimelogs(workOrderId);
   
+  // Refresh data after adding a new time log
   const handleSuccessfulAdd = () => {
     fetchTimelogs();
     if (onTimeLogAdded) onTimeLogAdded();

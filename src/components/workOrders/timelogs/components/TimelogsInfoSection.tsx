@@ -17,7 +17,6 @@ interface TimelogEntry {
   employee_id?: string | null;
   notes?: string | null;
   created_at: string;
-  total_cost?: number;
   employee_rate?: number;
 }
 
@@ -49,16 +48,21 @@ const TimelogsInfoSection = ({
     return employee ? employee.name : "Unknown Employee";
   };
   
-  // Format data for the table
-  const formattedTimelogs = timelogs.map(log => ({
-    id: log.id,
-    date: log.date_worked ? format(new Date(log.date_worked), 'MMM dd, yyyy') : 'N/A',
-    hours: log.hours_worked?.toFixed(2) || '0',
-    employee: getEmployeeName(log.employee_id),
-    notes: log.notes || '',
-    date_raw: log.date_worked || '', // For sorting
-    total_cost: log.total_cost || (log.hours_worked * (log.employee_rate || 75)),
-  }));
+  // Format data for the table - always calculate cost based on hours * rate
+  const formattedTimelogs = timelogs.map(log => {
+    const hourlyRate = log.employee_rate || 75; // Default to $75/hour if no rate
+    const calculatedCost = log.hours_worked * hourlyRate;
+    
+    return {
+      id: log.id,
+      date: log.date_worked ? format(new Date(log.date_worked), 'MMM dd, yyyy') : 'N/A',
+      hours: log.hours_worked?.toFixed(2) || '0',
+      employee: getEmployeeName(log.employee_id),
+      notes: log.notes || '',
+      date_raw: log.date_worked || '', // For sorting
+      total_cost: calculatedCost,
+    };
+  });
   
   if (loading) {
     return (

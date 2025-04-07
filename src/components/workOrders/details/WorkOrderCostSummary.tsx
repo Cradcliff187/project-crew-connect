@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
 import { formatCurrency } from '@/lib/utils';
@@ -10,15 +11,16 @@ const WorkOrderCostSummary = ({ workOrder }: WorkOrderCostSummaryProps) => {
   // Calculate totals with proper null checks
   const materialsCost = workOrder.materials_cost || 0;
   
-  // Labor cost is calculated from actual hours * hourly rate
-  // Default hourly rate is $75 if not specified
+  // For labor cost, use the actual_hours * 75 (default hourly rate)
+  // This ensures consistency with how we calculate costs in time entries
   const laborCost = workOrder.actual_hours ? (workOrder.actual_hours * 75) : 0;
   
   // Other expenses (excluding labor and materials)
   const expensesCost = workOrder.expenses_cost || 0;
   
-  // Use workOrder.total_cost if available, otherwise calculate it
-  const totalCost = workOrder.total_cost || (materialsCost + laborCost + expensesCost);
+  // Calculate total cost - prefer using our calculation over workOrder.total_cost
+  // to ensure consistency with our display values
+  const totalCost = materialsCost + laborCost + expensesCost;
   
   return (
     <Card>
