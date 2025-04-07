@@ -54,23 +54,15 @@ const ReportContentSection = ({
             <p>Error loading data. Please try again.</p>
           </div>
         ) : data && data.length > 0 ? (
-          <div className="border rounded-sm overflow-auto">
+          <div className="border rounded-sm overflow-auto excel-style">
             <DataTable 
               columns={columns} 
               data={data}
-              className="excel-style"
               compact={true}
               defaultSorting={{ columnId: Object.keys(data[0])[0], direction: 'asc' }}
               pagination={{
                 pageSize: 25,
                 pageSizeOptions: [10, 25, 50, 100]
-              }}
-              cssClass={{
-                table: "border-collapse border-spacing-0",
-                thead: "bg-[#f8f9fa] text-xs font-medium text-muted-foreground",
-                th: "py-1.5 px-2 border-b border-r border-border",
-                cell: "py-1 px-2 text-xs border-b border-r border-border whitespace-nowrap",
-                pagination: "mt-2"
               }}
             />
           </div>

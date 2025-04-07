@@ -16,7 +16,8 @@ const DocumentsCard = ({ onUploadClick }: DocumentsCardProps) => {
           <Button 
             onClick={onUploadClick}
             size="sm"
-            variant="earth"
+            variant="outline"
+            className="border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea]/10"
           >
             <Upload className="h-4 w-4 mr-2" />
             Upload Document

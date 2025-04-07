@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatDate, formatCurrency } from '@/lib/utils';
@@ -9,6 +10,7 @@ import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { StatusType } from '@/types/common';
 
 interface EstimateRowProps {
   estimate: EstimateType;
@@ -344,7 +346,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
       <TableCell>{formatDate(estimate.date)}</TableCell>
       <TableCell>{formatCurrency(estimate.amount)}</TableCell>
       <TableCell>
-        <StatusBadge status={estimate.status} />
+        <StatusBadge status={estimate.status as StatusType} />
       </TableCell>
       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
         <ActionMenu 
