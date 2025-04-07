@@ -1,6 +1,6 @@
 
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
-import { DateRange, ReportFilters } from '@/types/reports';
+import { ReportFilters } from '@/types/reports';
 import {
   Select,
   SelectContent,
@@ -24,8 +24,8 @@ const ReportFilterSection = ({
   getRoleOptions = () => [],
   showEmployeeFilters = false
 }: ReportFilterSectionProps) => {
-  // Ensure we have a valid DateRange object
-  const dateRange: DateRange = {
+  // Create a valid DateRange object to pass to the DatePickerWithRange
+  const dateRange = {
     from: filters.dateRange?.from || undefined,
     to: filters.dateRange?.to || undefined
   };

@@ -46,7 +46,10 @@ export interface DateRange {
 // Define report filters
 export interface ReportFilters {
   search: string;
-  dateRange?: DateRange;
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
   status: string;
   expenseType?: string;
   role?: string;

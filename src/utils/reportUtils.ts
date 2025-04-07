@@ -125,8 +125,8 @@ export const fetchReportData = async (entityType: EntityType, filters: ReportFil
   // Get the actual table name from our mapping
   const tableName = entityTableMap[entityType];
   
-  // Build a query based on entity type - cast the tableName to any to avoid the TypeScript error
-  let query = supabase.from(tableName as any).select('*');
+  // Build a query based on entity type
+  let query = supabase.from(tableName).select('*');
   
   // Apply filters
   if (filters.search) {
@@ -198,7 +198,7 @@ export const fetchReportData = async (entityType: EntityType, filters: ReportFil
   }
 };
 
-// Function to generate SQL query from report config - simplify to avoid deep type instantiation
+// Function to generate SQL query from report config
 export const generateSqlQuery = (config: any) => {
   const { primaryEntity, selectedFields, filters, groupByField, sortByField, sortDirection } = config;
   
@@ -221,7 +221,6 @@ export const generateSqlQuery = (config: any) => {
       const fieldName = filter.field.name || filter.field.field;
       clause += `${fieldName} `;
       
-      // Simple operator mapping to avoid deep type instantiation
       switch (filter.operator) {
         case 'equals': clause += `= '${filter.value}'`; break;
         case 'notEquals': clause += `<> '${filter.value}'`; break;
