@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import PageTransition from '@/components/layout/PageTransition';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -42,13 +41,23 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { formatDate, formatCurrency } from '@/lib/utils';
 
-// Defined entity types that match our database tables
+const PageTransition = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 type EntityType = 'projects' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders';
 
-// Define field types
 type FieldType = 'text' | 'date' | 'number' | 'currency' | 'status' | 'percentage' | 'boolean';
 
-// Define a field structure
 interface FieldDefinition {
   name: string;
   label: string;
@@ -56,7 +65,6 @@ interface FieldDefinition {
   entity: EntityType;
 }
 
-// Define a filter structure
 interface FilterDefinition {
   id: string;
   field: FieldDefinition;
@@ -64,7 +72,6 @@ interface FilterDefinition {
   value: string;
 }
 
-// Define available entities with their human-readable labels
 const entities: Record<EntityType, string> = {
   'projects': 'Projects',
   'work_orders': 'Work Orders',
@@ -74,7 +81,6 @@ const entities: Record<EntityType, string> = {
   'change_orders': 'Change Orders'
 };
 
-// Define chart types
 const chartTypes = [
   { value: 'table', label: 'Table', icon: <ListFilter className="h-4 w-4" /> },
   { value: 'bar', label: 'Bar Chart', icon: <BarChart3 className="h-4 w-4" /> },
@@ -82,7 +88,6 @@ const chartTypes = [
   { value: 'pie', label: 'Pie Chart', icon: <PieChart className="h-4 w-4" /> }
 ];
 
-// Define available fields for each entity
 const entityFields: Record<EntityType, FieldDefinition[]> = {
   projects: [
     { name: 'projectid', label: 'Project ID', type: 'text', entity: 'projects' },
@@ -146,7 +151,6 @@ const entityFields: Record<EntityType, FieldDefinition[]> = {
   ]
 };
 
-// Interface for the report configuration
 interface ReportConfig {
   name: string;
   description: string;
@@ -159,7 +163,6 @@ interface ReportConfig {
   sortDirection: 'asc' | 'desc';
 }
 
-// Sortable item component
 interface SortableItemProps {
   id: string;
   children: React.ReactNode;
@@ -187,7 +190,6 @@ function SortableItem({ id, children }: SortableItemProps) {
 }
 
 const ReportBuilder = () => {
-  // State for report configuration
   const [reportConfig, setReportConfig] = useState<ReportConfig>({
     name: 'New Report',
     description: 'Report description',
@@ -198,13 +200,10 @@ const ReportBuilder = () => {
     sortDirection: 'desc'
   });
   
-  // State for preview mode
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   
-  // Dummy data for preview, in a real app this would be fetched based on the configuration
   const [previewData, setPreviewData] = useState<any[]>([]);
   
-  // State for the filter being edited
   const [currentFilter, setCurrentFilter] = useState<Partial<FilterDefinition>>({
     id: '',
     field: undefined,
@@ -212,7 +211,6 @@ const ReportBuilder = () => {
     value: ''
   });
   
-  // Set up DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -220,7 +218,6 @@ const ReportBuilder = () => {
     })
   );
 
-  // Handle changing the primary entity
   const handleEntityChange = (entity: EntityType) => {
     setReportConfig(prev => ({
       ...prev,
@@ -232,9 +229,7 @@ const ReportBuilder = () => {
     }));
   };
   
-  // Handler for adding a field
   const handleAddField = (field: FieldDefinition) => {
-    // Check if the field is already selected
     if (reportConfig.selectedFields.some(f => f.name === field.name && f.entity === field.entity)) {
       return;
     }
@@ -245,12 +240,10 @@ const ReportBuilder = () => {
     }));
   };
   
-  // Handler for removing a field
   const handleRemoveField = (index: number) => {
     const newFields = [...reportConfig.selectedFields];
     newFields.splice(index, 1);
     
-    // Also update groupBy and sortBy if they reference this field
     const removedField = reportConfig.selectedFields[index];
     
     setReportConfig(prev => ({
@@ -261,7 +254,6 @@ const ReportBuilder = () => {
     }));
   };
   
-  // Handler for adding a filter
   const handleAddFilter = () => {
     if (!currentFilter.field) return;
     
@@ -277,7 +269,6 @@ const ReportBuilder = () => {
       filters: [...prev.filters, newFilter]
     }));
     
-    // Reset the current filter
     setCurrentFilter({
       id: '',
       field: undefined,
@@ -286,7 +277,6 @@ const ReportBuilder = () => {
     });
   };
   
-  // Handler for removing a filter
   const handleRemoveFilter = (id: string) => {
     setReportConfig(prev => ({
       ...prev,
@@ -294,7 +284,6 @@ const ReportBuilder = () => {
     }));
   };
   
-  // Handler for drag-and-drop reordering of fields
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -314,24 +303,19 @@ const ReportBuilder = () => {
     });
   };
   
-  // Generate a SQL query based on the current report configuration
   const generateQuery = () => {
     const { primaryEntity, selectedFields, filters, groupByField, sortByField, sortDirection } = reportConfig;
     
-    // Start building the query
     let query = `SELECT `;
     
-    // Add selected fields
     if (selectedFields.length === 0) {
       query += '*';
     } else {
       query += selectedFields.map(field => field.name).join(', ');
     }
     
-    // Add FROM clause
     query += ` FROM ${primaryEntity}`;
     
-    // Add WHERE clause for filters
     if (filters.length > 0) {
       query += ` WHERE `;
       query += filters.map((filter, index) => {
@@ -365,12 +349,10 @@ const ReportBuilder = () => {
       }).join('');
     }
     
-    // Add GROUP BY clause
     if (groupByField) {
       query += ` GROUP BY ${groupByField.name}`;
     }
     
-    // Add ORDER BY clause
     if (sortByField) {
       query += ` ORDER BY ${sortByField.name} ${sortDirection}`;
     }
@@ -378,12 +360,7 @@ const ReportBuilder = () => {
     return query;
   };
   
-  // Generate preview data based on the current report configuration
   const handleGeneratePreview = () => {
-    // In a real app, this would send the query to the backend and get actual data
-    // For now, we'll just simulate some data
-    
-    // Set some dummy data based on the primary entity
     let dummyData: any[] = [];
     
     switch (reportConfig.primaryEntity) {
@@ -401,10 +378,8 @@ const ReportBuilder = () => {
           { work_order_id: 'WO-003', title: 'Paint Room', status: 'NEW', priority: 'LOW', actual_hours: 0, materials_cost: 0, total_cost: 0, progress: 0 }
         ];
         break;
-      // ...add cases for other entity types
     }
     
-    // Filter by selected fields
     if (reportConfig.selectedFields.length > 0) {
       const fieldNames = reportConfig.selectedFields.map(field => field.name);
       dummyData = dummyData.map(item => {
@@ -422,14 +397,12 @@ const ReportBuilder = () => {
     setIsPreviewMode(true);
   };
   
-  // Generate columns for the data table based on selected fields
   const previewColumns = reportConfig.selectedFields.map(field => ({
     accessorKey: field.name,
     header: field.label,
     cell: ({ row }: { row: any }) => {
       const value = row.getValue(field.name);
       
-      // Format the value based on its type
       if (value === null || value === undefined) {
         return '—';
       }
@@ -477,7 +450,6 @@ const ReportBuilder = () => {
         </div>
         
         {isPreviewMode ? (
-          // Preview Mode
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -531,9 +503,7 @@ const ReportBuilder = () => {
             </Card>
           </div>
         ) : (
-          // Edit Mode
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* First column - Report Details & Primary Entity */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -641,7 +611,6 @@ const ReportBuilder = () => {
               </Card>
             </div>
             
-            {/* Second column - Selected Fields & Filters */}
             <div className="space-y-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -699,8 +668,16 @@ const ReportBuilder = () => {
                   <div className="space-y-2">
                     <Label>Sort By</Label>
                     <Select
-                      value={reportConfig.sortByField?.name || ''}
+                      value={reportConfig.sortByField?.name || "none"}
                       onValueChange={(value) => {
+                        if (value === "none") {
+                          setReportConfig(prev => ({
+                            ...prev,
+                            sortByField: undefined
+                          }));
+                          return;
+                        }
+                        
                         const field = reportConfig.selectedFields.find(f => f.name === value);
                         setReportConfig(prev => ({
                           ...prev,
@@ -712,7 +689,7 @@ const ReportBuilder = () => {
                         <SelectValue placeholder="Select field" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {reportConfig.selectedFields.map((field) => (
                           <SelectItem key={field.name} value={field.name}>
                             {field.label}
@@ -748,8 +725,16 @@ const ReportBuilder = () => {
                   <div className="space-y-2">
                     <Label>Group By</Label>
                     <Select
-                      value={reportConfig.groupByField?.name || ''}
+                      value={reportConfig.groupByField?.name || "none"}
                       onValueChange={(value) => {
+                        if (value === "none") {
+                          setReportConfig(prev => ({
+                            ...prev,
+                            groupByField: undefined
+                          }));
+                          return;
+                        }
+                        
                         const field = reportConfig.selectedFields.find(f => f.name === value);
                         setReportConfig(prev => ({
                           ...prev,
@@ -761,7 +746,7 @@ const ReportBuilder = () => {
                         <SelectValue placeholder="Select field" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {reportConfig.selectedFields.map((field) => (
                           <SelectItem key={field.name} value={field.name}>
                             {field.label}
@@ -782,7 +767,6 @@ const ReportBuilder = () => {
                   <Badge variant="outline">{reportConfig.filters.length}</Badge>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Add filter controls */}
                   <div className="space-y-4 p-4 border rounded-md">
                     <div className="space-y-2">
                       <Label>Field</Label>
@@ -853,7 +837,6 @@ const ReportBuilder = () => {
                     </Button>
                   </div>
                   
-                  {/* Display active filters */}
                   {reportConfig.filters.length > 0 && (
                     <div className="space-y-2">
                       <div className="text-sm font-medium">Active Filters</div>
@@ -888,7 +871,6 @@ const ReportBuilder = () => {
               </Card>
             </div>
             
-            {/* Third column - Preview & Export */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
