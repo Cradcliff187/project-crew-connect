@@ -36,13 +36,27 @@ export function useWorkOrderTimelogs(workOrderId: string) {
       console.log('Time logs data:', data);
       
       // Ensure entity_type is properly typed for TimeEntry[]
-      const typedTimelogs = (data || []).map(entry => ({
-        ...entry,
-        entity_type: entry.entity_type as 'work_order' | 'project',
-        employee_name: entry.employees ? 
-          `${entry.employees.first_name} ${entry.employees.last_name}` : 
-          'Unassigned'
-      }));
+      const typedTimelogs = (data || []).map(entry => {
+        // Calculate the proper total cost for each time entry
+        let entryCost = 0;
+        const hours = entry.hours_worked || 0;
+        
+        // Use the employee's rate from the joined data if available
+        const employeeRate = entry.employees?.hourly_rate || entry.employee_rate || 75; // Default to $75/hr
+        
+        entryCost = hours * employeeRate;
+        
+        return {
+          ...entry,
+          entity_type: entry.entity_type as 'work_order' | 'project',
+          employee_name: entry.employees ? 
+            `${entry.employees.first_name} ${entry.employees.last_name}` : 
+            'Unassigned',
+          // Ensure cost is properly set
+          employee_rate: employeeRate,
+          total_cost: entryCost
+        };
+      });
       
       setTimelogs(typedTimelogs);
       

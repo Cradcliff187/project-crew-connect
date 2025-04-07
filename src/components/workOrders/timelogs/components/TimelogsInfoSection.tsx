@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { timelogColumns } from '../data/columns';
@@ -6,8 +5,9 @@ import { DataTable } from '@/components/ui/data-table';
 import { format } from 'date-fns';
 import { TimelogAddHeader } from './header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, DollarSign } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { formatCurrency } from '@/lib/utils';
 
 interface TimelogEntry {
   id: string;
@@ -16,6 +16,8 @@ interface TimelogEntry {
   employee_id?: string | null;
   notes?: string | null;
   created_at: string;
+  total_cost?: number;
+  employee_rate?: number;
 }
 
 interface TimelogsInfoSectionProps {
@@ -38,6 +40,16 @@ const TimelogsInfoSection = ({
   // Total hours spent on this work order
   const totalHours = timelogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
   
+  // Calculate total labor cost
+  const totalLaborCost = timelogs.reduce((sum, log) => {
+    // If total_cost is available, use it
+    if (log.total_cost) return sum + log.total_cost;
+    
+    // Otherwise calculate from hours and rate
+    const rate = log.employee_rate || 75; // Default to $75/hr if no rate
+    return sum + (log.hours_worked * rate);
+  }, 0);
+  
   // Find employee name by ID
   const getEmployeeName = (employeeId: string | null | undefined) => {
     if (!employeeId) return "Unassigned";
@@ -53,6 +65,7 @@ const TimelogsInfoSection = ({
     employee: getEmployeeName(log.employee_id),
     notes: log.notes || '',
     date_raw: log.date_worked || '', // For sorting
+    total_cost: log.total_cost || (log.hours_worked * (log.employee_rate || 75)),
   }));
   
   if (loading) {
@@ -84,10 +97,26 @@ const TimelogsInfoSection = ({
           </div>
         ) : (
           <>
-            <div className="mb-4">
-              <p className="text-sm text-muted-foreground">
-                Total Hours: <span className="font-medium text-foreground">{totalHours.toFixed(2)}</span>
-              </p>
+            <div className="mb-4 flex flex-wrap gap-4">
+              <div className="bg-[#0485ea]/10 px-4 py-2 rounded-md">
+                <p className="text-sm text-muted-foreground">
+                  Total Hours
+                </p>
+                <p className="font-medium text-foreground">
+                  {totalHours.toFixed(2)}
+                </p>
+              </div>
+              
+              <div className="bg-[#0485ea]/10 px-4 py-2 rounded-md flex items-center">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Total Labor Cost
+                  </p>
+                  <p className="font-medium text-foreground">
+                    {formatCurrency(totalLaborCost)}
+                  </p>
+                </div>
+              </div>
             </div>
             
             <DataTable

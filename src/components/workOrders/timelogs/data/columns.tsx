@@ -1,133 +1,83 @@
 
-import React from 'react';
-import { ColumnDef } from '@tanstack/react-table';
-import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from '@/components/ui/alert-dialog';
-import { useState } from 'react';
+import { ColumnDef } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal, Trash } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { formatCurrency } from "@/lib/utils";
 
-interface TimesheetEntry {
+type Timelog = {
   id: string;
   date: string;
-  date_raw: string;
+  date_raw: string; // For sorting
   hours: string;
   employee: string;
-  notes: string;
-}
-
-// Delete confirmation dialog component
-const DeleteConfirmDialog = ({ 
-  open, 
-  onOpenChange, 
-  onConfirm
-}: { 
-  open: boolean; 
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-}) => {
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Time Entry</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete this time entry? This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            Delete
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
+  notes?: string;
+  total_cost: number;
 };
 
-// Action cell with delete button
-const ActionCell = ({ 
-  row, 
-  onDelete 
-}: { 
-  row: { original: TimesheetEntry }; 
-  onDelete: (id: string) => void;
-}) => {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
-  const handleDelete = () => {
-    onDelete(row.original.id);
-    setShowDeleteDialog(false);
-  };
-  
-  return (
-    <>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowDeleteDialog(true);
-        }}
-        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-      
-      <DeleteConfirmDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={handleDelete}
-      />
-    </>
-  );
-};
-
-// Define the columns
-export const timelogColumns = (
-  onDelete: (id: string) => void
-): ColumnDef<TimesheetEntry>[] => [
+export const timelogColumns = (onDelete: (id: string) => void): ColumnDef<Timelog>[] => [
   {
     accessorKey: "date",
     header: "Date",
+  },
+  {
+    accessorKey: "employee",
+    header: "Employee",
   },
   {
     accessorKey: "hours",
     header: "Hours",
   },
   {
-    accessorKey: "employee",
-    header: "Employee",
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id));
-    },
+    accessorKey: "total_cost",
+    header: "Cost",
+    cell: ({ row }) => formatCurrency(row.original.total_cost),
   },
   {
     accessorKey: "notes",
     header: "Notes",
     cell: ({ row }) => {
-      const notes = row.original.notes;
-      return notes ? (
-        <div className="max-w-[200px] truncate" title={notes}>
-          {notes}
-        </div>
-      ) : null;
+      const notes = row.getValue("notes") as string;
+      return notes && notes.length > 30 
+        ? `${notes.substring(0, 30)}...` 
+        : notes || "-";
     },
   },
   {
     id: "actions",
-    cell: ({ row }) => <ActionCell row={row} onDelete={onDelete} />,
+    cell: ({ row }) => {
+      const timelog = row.original;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => onDelete(timelog.id)}
+            >
+              <Trash className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+  },
+  {
+    // Hidden column for sorting
+    accessorKey: "date_raw",
+    header: "",
+    enableHiding: true,
   },
 ];

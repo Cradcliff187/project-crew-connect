@@ -12,6 +12,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
     setIsSubmitting(true);
     
     try {
+      // Get employee rate if available
       let employeeRate = null;
       if (data.employeeId) {
         const { data: empData } = await supabase
@@ -23,6 +24,13 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         employeeRate = empData?.hourly_rate;
       }
       
+      // Default rate if none found
+      const hourlyRate = employeeRate || 75; // Default to $75/hour if no employee rate
+      
+      // Calculate total cost
+      const totalCost = data.hoursWorked * hourlyRate;
+      
+      // Create time entry with proper cost calculation
       const timeEntry = {
         entity_type: data.entityType,
         entity_id: data.entityId,
@@ -31,7 +39,8 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         end_time: data.endTime,
         hours_worked: data.hoursWorked,
         employee_id: data.employeeId || null,
-        employee_rate: employeeRate,
+        employee_rate: hourlyRate, // Store the actual rate used
+        total_cost: totalCost, // Store the calculated total cost
         notes: data.notes,
         has_receipts: selectedFiles.length > 0,
         created_at: new Date().toISOString(),
@@ -46,6 +55,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         
       if (error) throw error;
       
+      // Upload receipts if provided
       if (selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
           const fileExt = file.name.split('.').pop();
@@ -120,9 +130,6 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
       
       // Create expense entry for the labor time
       if (data.entityType === 'work_order' && data.hoursWorked > 0) {
-        const hourlyRate = employeeRate || 75; // Default to $75/hour if no employee rate
-        const totalAmount = data.hoursWorked * hourlyRate;
-        
         const { error: laborExpenseError } = await supabase
           .from('expenses')
           .insert({
@@ -130,7 +137,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             entity_id: data.entityId,
             description: `Labor: ${data.hoursWorked} hours`,
             expense_type: 'LABOR',
-            amount: totalAmount,
+            amount: totalCost, // Use the same total cost
             time_entry_id: insertedEntry.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

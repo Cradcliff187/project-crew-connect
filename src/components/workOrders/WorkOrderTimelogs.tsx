@@ -12,6 +12,8 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     timelogs,
     loading,
     employees,
+    totalHours,
+    totalLaborCost,
     fetchTimelogs,
     handleDeleteTimelog
   } = useWorkOrderTimelogs(workOrderId);
