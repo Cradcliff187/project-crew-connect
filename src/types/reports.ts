@@ -1,5 +1,6 @@
 
 import { ReactNode } from 'react';
+import { DateRange } from 'react-day-picker';
 
 // Define the types of entities we can report on
 export type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders' | 'employees';
@@ -40,10 +41,7 @@ export interface ReportConfig {
 // Define report filters
 export interface ReportFilters {
   search: string;
-  dateRange: {
-    from?: Date;
-    to?: Date;
-  } | undefined;
+  dateRange?: DateRange | undefined;
   status: string;
   expenseType?: string;
   role?: string;

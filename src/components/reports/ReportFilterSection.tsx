@@ -32,7 +32,7 @@ const ReportFilterSection = ({
         <div>
           <label className="text-sm font-medium mb-1 block">Date Range</label>
           <DatePickerWithRange 
-            value={filters.dateRange}
+            value={filters.dateRange || { from: undefined, to: undefined }}
             onChange={(range) => onFilterChange('dateRange', range)}
           />
         </div>

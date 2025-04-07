@@ -1,7 +1,7 @@
 
 import { EntityType, FieldDefinition } from '@/types/reports';
 
-// Define entity names for display
+// Define entity display names
 export const entityNames: Record<EntityType, string> = {
   'projects': 'Projects',
   'customers': 'Customers',
@@ -10,26 +10,12 @@ export const entityNames: Record<EntityType, string> = {
   'work_orders': 'Work Orders',
   'estimates': 'Estimates',
   'expenses': 'Expenses',
-  'time_entries': 'Time Logs',
+  'time_entries': 'Time Entries',
   'change_orders': 'Change Orders',
   'employees': 'Employees'
 };
 
-// Define entity icons (simple text emojis for now, can be replaced with proper icons)
-export const entityIcons: Record<EntityType, string> = {
-  'projects': '📁',
-  'customers': '👥',
-  'vendors': '🏢',
-  'subcontractors': '👷',
-  'work_orders': '🔧',
-  'estimates': '📝',
-  'expenses': '💰',
-  'time_entries': '⏱️',
-  'change_orders': '📊',
-  'employees': '👤'
-};
-
-// Define table names in Supabase - map entity types to actual table names
+// Map entity types to their actual database table names
 export const entityTableMap: Record<EntityType, string> = {
   'projects': 'projects',
   'customers': 'customers',
@@ -43,165 +29,94 @@ export const entityTableMap: Record<EntityType, string> = {
   'employees': 'employees'
 };
 
-// Define fields for each entity type with expanded metrics
+// Define fields for each entity type
 export const entityFields: Record<EntityType, FieldDefinition[]> = {
-  projects: [
+  'projects': [
     { label: 'Project ID', field: 'projectid', type: 'text' },
     { label: 'Project Name', field: 'projectname', type: 'text' },
-    { label: 'Status', field: 'status', type: 'status' },
     { label: 'Customer', field: 'customername', type: 'text' },
-    { label: 'Created On', field: 'createdon', type: 'date' },
+    { label: 'Status', field: 'status', type: 'status' },
+    { label: 'Created Date', field: 'createdon', type: 'date' },
     { label: 'Total Budget', field: 'total_budget', type: 'currency' },
     { label: 'Current Expenses', field: 'current_expenses', type: 'currency' },
-    { label: 'Budget Status', field: 'budget_status', type: 'status' },
-    { label: 'Due Date', field: 'due_date', type: 'date' },
-    { label: 'Progress', field: 'progress', type: 'percentage' },
-    { label: 'Site Location', field: 'sitelocationaddress', type: 'text' },
-    { label: 'City', field: 'sitelocationcity', type: 'text' },
-    { label: 'State', field: 'sitelocationstate', type: 'text' },
-    { label: 'Zip', field: 'sitelocationzip', type: 'text' },
-    { label: 'Job Description', field: 'jobdescription', type: 'text' },
-    { label: 'Last Modified', field: 'updated_at', type: 'date' },
     { label: 'Budget Utilization', field: 'budget_utilization', type: 'percentage' }
   ],
-  customers: [
+  'customers': [
     { label: 'Customer ID', field: 'customerid', type: 'text' },
     { label: 'Customer Name', field: 'customername', type: 'text' },
-    { label: 'Contact Email', field: 'contactemail', type: 'text' },
+    { label: 'Email', field: 'contactemail', type: 'text' },
     { label: 'Phone', field: 'phone', type: 'text' },
-    { label: 'Address', field: 'address', type: 'text' },
-    { label: 'City', field: 'city', type: 'text' },
-    { label: 'State', field: 'state', type: 'text' },
-    { label: 'Zip', field: 'zip', type: 'text' },
     { label: 'Status', field: 'status', type: 'status' },
-    { label: 'Created On', field: 'createdon', type: 'date' },
+    { label: 'Created Date', field: 'createdon', type: 'date' }
   ],
-  vendors: [
+  'vendors': [
     { label: 'Vendor ID', field: 'vendorid', type: 'text' },
     { label: 'Vendor Name', field: 'vendorname', type: 'text' },
     { label: 'Email', field: 'email', type: 'text' },
     { label: 'Phone', field: 'phone', type: 'text' },
-    { label: 'Address', field: 'address', type: 'text' },
-    { label: 'City', field: 'city', type: 'text' },
-    { label: 'State', field: 'state', type: 'text' },
-    { label: 'Zip', field: 'zip', type: 'text' },
     { label: 'Status', field: 'status', type: 'status' },
-    { label: 'Payment Terms', field: 'payment_terms', type: 'text' },
-    { label: 'Created On', field: 'createdon', type: 'date' },
+    { label: 'Created Date', field: 'createdon', type: 'date' }
   ],
-  subcontractors: [
+  'subcontractors': [
     { label: 'Subcontractor ID', field: 'subid', type: 'text' },
     { label: 'Name', field: 'subname', type: 'text' },
     { label: 'Email', field: 'contactemail', type: 'text' },
     { label: 'Phone', field: 'phone', type: 'text' },
-    { label: 'Address', field: 'address', type: 'text' },
-    { label: 'City', field: 'city', type: 'text' },
-    { label: 'State', field: 'state', type: 'text' },
-    { label: 'Zip', field: 'zip', type: 'text' },
     { label: 'Status', field: 'status', type: 'status' },
-    { label: 'Hourly Rate', field: 'hourly_rate', type: 'currency' },
     { label: 'Rating', field: 'rating', type: 'number' },
-    { label: 'Insurance Expiration', field: 'insurance_expiration', type: 'date' },
+    { label: 'Created Date', field: 'created_at', type: 'date' }
   ],
-  work_orders: [
+  'work_orders': [
     { label: 'Work Order ID', field: 'work_order_id', type: 'text' },
     { label: 'Title', field: 'title', type: 'text' },
     { label: 'Status', field: 'status', type: 'status' },
-    { label: 'Priority', field: 'priority', type: 'status' },
-    { label: 'Customer', field: 'customer_id', type: 'text' },
-    { label: 'Scheduled Date', field: 'scheduled_date', type: 'date' },
-    { label: 'Due By Date', field: 'due_by_date', type: 'date' },
-    { label: 'Actual Hours', field: 'actual_hours', type: 'number' },
-    { label: 'Materials Cost', field: 'materials_cost', type: 'currency' },
-    { label: 'Total Cost', field: 'total_cost', type: 'currency' },
+    { label: 'Priority', field: 'priority', type: 'text' },
+    { label: 'Created Date', field: 'created_at', type: 'date' },
+    { label: 'Due Date', field: 'due_by_date', type: 'date' },
     { label: 'Progress', field: 'progress', type: 'percentage' },
-    { label: 'Description', field: 'description', type: 'text' },
-    { label: 'Completed Date', field: 'completed_date', type: 'date' },
-    { label: 'Time Estimate', field: 'time_estimate', type: 'number' },
-    { label: 'PO Number', field: 'po_number', type: 'text' },
-    { label: 'Work Order Number', field: 'work_order_number', type: 'text' },
-    { label: 'Created At', field: 'created_at', type: 'date' },
-    { label: 'Project ID', field: 'project_id', type: 'text' }
+    { label: 'Total Cost', field: 'total_cost', type: 'currency' }
   ],
-  estimates: [
+  'estimates': [
     { label: 'Estimate ID', field: 'estimateid', type: 'text' },
     { label: 'Project Name', field: 'projectname', type: 'text' },
-    { label: 'Customer', field: 'customername', type: 'text' },
+    { label: 'Customer Name', field: 'customername', type: 'text' },
     { label: 'Status', field: 'status', type: 'status' },
-    { label: 'Estimate Amount', field: 'estimateamount', type: 'currency' },
-    { label: 'Contingency', field: 'contingencyamount', type: 'currency' },
-    { label: 'Contingency %', field: 'contingency_percentage', type: 'percentage' },
     { label: 'Created Date', field: 'datecreated', type: 'date' },
-    { label: 'Sent Date', field: 'sentdate', type: 'date' },
-    { label: 'Approved Date', field: 'approveddate', type: 'date' },
-    { label: 'Site Location', field: 'sitelocationaddress', type: 'text' },
-    { label: 'City', field: 'sitelocationcity', type: 'text' },
-    { label: 'State', field: 'sitelocationstate', type: 'text' },
-    { label: 'Zip', field: 'sitelocationzip', type: 'text' },
-    { label: 'PO #', field: 'po#', type: 'text' },
-    { label: 'Job Description', field: 'job description', type: 'text' },
-    { label: 'Total With Contingency', field: 'total_with_contingency', type: 'currency' }
+    { label: 'Amount', field: 'estimateamount', type: 'currency' },
+    { label: 'Contingency', field: 'contingencyamount', type: 'currency' },
+    { label: 'Total with Contingency', field: 'total_with_contingency', type: 'currency' }
   ],
-  expenses: [
-    { label: 'ID', field: 'id', type: 'text' },
+  'expenses': [
     { label: 'Description', field: 'description', type: 'text' },
-    { label: 'Entity Type', field: 'entity_type', type: 'text' },
-    { label: 'Entity ID', field: 'entity_id', type: 'text' },
+    { label: 'Type', field: 'expense_type', type: 'text' },
     { label: 'Amount', field: 'amount', type: 'currency' },
-    { label: 'Expense Type', field: 'expense_type', type: 'text' },
-    { label: 'Vendor', field: 'vendor_id', type: 'text' },
-    { label: 'Expense Date', field: 'expense_date', type: 'date' },
-    { label: 'Is Billable', field: 'is_billable', type: 'boolean' },
-    { label: 'Created At', field: 'created_at', type: 'date' },
-    { label: 'Updated At', field: 'updated_at', type: 'date' },
-    { label: 'Quantity', field: 'quantity', type: 'number' },
-    { label: 'Unit Price', field: 'unit_price', type: 'currency' },
-    { label: 'Document ID', field: 'document_id', type: 'text' },
-    { label: 'Status', field: 'status', type: 'text' },
-    { label: 'Notes', field: 'notes', type: 'text' }
+    { label: 'Date', field: 'expense_date', type: 'date' },
+    { label: 'Vendor', field: 'vendor_id', type: 'text' }
   ],
-  time_entries: [
-    { label: 'ID', field: 'id', type: 'text' },
-    { label: 'Entity Type', field: 'entity_type', type: 'text' },
-    { label: 'Entity ID', field: 'entity_id', type: 'text' },
+  'time_entries': [
     { label: 'Employee', field: 'employee_id', type: 'text' },
     { label: 'Date Worked', field: 'date_worked', type: 'date' },
-    { label: 'Start Time', field: 'start_time', type: 'text' },
-    { label: 'End Time', field: 'end_time', type: 'text' },
-    { label: 'Hours Worked', field: 'hours_worked', type: 'number' },
+    { label: 'Hours', field: 'hours_worked', type: 'number' },
     { label: 'Rate', field: 'employee_rate', type: 'currency' },
     { label: 'Total Cost', field: 'total_cost', type: 'currency' },
-    { label: 'Notes', field: 'notes', type: 'text' },
-    { label: 'Has Receipts', field: 'has_receipts', type: 'boolean' },
-    { label: 'Created At', field: 'created_at', type: 'date' }
+    { label: 'Notes', field: 'notes', type: 'text' }
   ],
-  change_orders: [
-    { label: 'ID', field: 'id', type: 'text' },
+  'change_orders': [
+    { label: 'CO Number', field: 'change_order_number', type: 'text' },
     { label: 'Title', field: 'title', type: 'text' },
-    { label: 'Entity Type', field: 'entity_type', type: 'text' },
-    { label: 'Entity ID', field: 'entity_id', type: 'text' },
     { label: 'Status', field: 'status', type: 'status' },
-    { label: 'Requested By', field: 'requested_by', type: 'text' },
-    { label: 'Requested Date', field: 'requested_date', type: 'date' },
-    { label: 'Approved By', field: 'approved_by', type: 'text' },
-    { label: 'Approved Date', field: 'approved_date', type: 'date' },
-    { label: 'Total Amount', field: 'total_amount', type: 'currency' },
+    { label: 'Amount', field: 'total_amount', type: 'currency' },
     { label: 'Impact Days', field: 'impact_days', type: 'number' },
-    { label: 'Change Order Number', field: 'change_order_number', type: 'text' },
-    { label: 'Description', field: 'description', type: 'text' },
-    { label: 'Created At', field: 'created_at', type: 'date' },
-    { label: 'Updated At', field: 'updated_at', type: 'date' }
+    { label: 'Requested Date', field: 'requested_date', type: 'date' },
+    { label: 'Approved Date', field: 'approved_date', type: 'date' },
+    { label: 'Requested By', field: 'requested_by', type: 'text' }
   ],
-  employees: [
-    { label: 'Employee ID', field: 'employee_id', type: 'text' },
-    { label: 'First Name', field: 'first_name', type: 'text' },
-    { label: 'Last Name', field: 'last_name', type: 'text' },
+  'employees': [
+    { label: 'Name', field: 'full_name', type: 'text' },
     { label: 'Email', field: 'email', type: 'text' },
-    { label: 'Phone', field: 'phone', type: 'text' },
     { label: 'Role', field: 'role', type: 'text' },
     { label: 'Status', field: 'status', type: 'status' },
     { label: 'Hourly Rate', field: 'hourly_rate', type: 'currency' },
-    { label: 'Created At', field: 'created_at', type: 'date' },
-    { label: 'Updated At', field: 'updated_at', type: 'date' }
+    { label: 'Created Date', field: 'created_at', type: 'date' }
   ]
 };

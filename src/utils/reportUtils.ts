@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { EntityType, FieldDefinition, ReportFilters } from '@/types/reports';
 import { entityTableMap } from '@/data/reportEntities';
@@ -238,6 +239,9 @@ export const generateSqlQuery = (config: any) => {
           break;
         case 'lessThan':
           clause += `< '${filter.value}'`;
+          break;
+        default:
+          clause += `= '${filter.value}'`;
           break;
       }
       
