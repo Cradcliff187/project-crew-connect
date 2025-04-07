@@ -35,7 +35,11 @@ export const calculateItemGrossMarginPercentage = (item: any): number => {
  * Calculate line item totals for an estimate
  */
 export const calculateEstimateTotals = (items: any[], contingencyPercentage = '0') => {
-  const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
+  const subtotal = items.reduce((sum, item) => {
+    const itemPrice = calculateItemPrice(item);
+    return sum + itemPrice;
+  }, 0);
+  
   const totalCost = items.reduce((sum, item) => {
     const quantity = parseFloat(item.quantity) || 1;
     const cost = parseFloat(item.cost) || 0;

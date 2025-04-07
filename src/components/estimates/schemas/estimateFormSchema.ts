@@ -26,6 +26,7 @@ export const estimateFormSchema = z.object({
       trade_type: z.string().optional(),
       expense_type: z.string().optional(),
       custom_type: z.string().optional(),
+      notes: z.string().optional(),
     })
   ).default([]), // Set default to empty array to ensure it's always defined
   showSiteLocation: z.boolean().default(false),
@@ -51,7 +52,7 @@ export type EstimateItem = {
   cost: string;
   markup_percentage: string;
   quantity: string;
-  unit_price?: string; // Added unit_price since it's used in calculations
+  unit_price: string; // Make this required to match our calculations
   item_type?: string;
   trade_type?: string;
   expense_type?: string;
@@ -59,5 +60,6 @@ export type EstimateItem = {
   vendor_id?: string;
   subcontractor_id?: string;
   document_id?: string;
-  description?: string; // Added description for display purposes
+  description?: string;
+  notes?: string;
 };

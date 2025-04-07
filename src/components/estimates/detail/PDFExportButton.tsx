@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import usePdfGeneration from '../hooks/usePdfGeneration';
 
@@ -35,7 +35,7 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   children
 }) => {
   const { toast } = useToast();
-  const { generatePdf, checkRevisionPdf, isGenerating } = usePdfGeneration({
+  const { generatePdf, checkRevisionPdf, isGenerating, error } = usePdfGeneration({
     onSuccess,
     onError: (error) => {
       toast({
@@ -77,8 +77,24 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       }
     } catch (error: any) {
       console.error('Error in PDF export:', error);
+      toast({
+        title: "PDF Generation Failed",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive"
+      });
     }
   };
+
+  // Show error message if there was an issue with PDF generation
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: "PDF Generation Error",
+        description: error.message || "Failed to generate PDF",
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
 
   return (
     <Button
@@ -92,6 +108,11 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
         <>
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           {children || "Generating..."}
+        </>
+      ) : error ? (
+        <>
+          <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
+          {children || "Retry PDF"}
         </>
       ) : (
         <>

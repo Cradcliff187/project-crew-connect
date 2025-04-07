@@ -1,3 +1,4 @@
+
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useMemo, useCallback } from 'react';
 import { 
@@ -9,7 +10,6 @@ import {
   calculateTotalGrossMargin,
   calculateOverallGrossMarginPercentage
 } from '../utils/estimateCalculations';
-import { EstimateItem } from '../types/estimateTypes';
 import { useDebounce } from '@/hooks/useDebounce';
 
 interface EstimateFormValues {
@@ -22,7 +22,6 @@ export const useSummaryCalculations = () => {
   const form = useFormContext<EstimateFormValues>();
   
   // Use useWatch for more efficient watching of form values
-  // This prevents unnecessary recalculation on every render
   const items = useWatch({
     control: form.control,
     name: 'items',
@@ -64,39 +63,56 @@ export const useSummaryCalculations = () => {
   );
 
   // Cache the last calculated values to prevent recalculations when inputs haven't changed
-  // This optimization is particularly helpful for complex calculations
-  // Use memoization to calculate values only when the debounced inputs change
   const calculations = useMemo(() => {
     // Add performance tracking for development
     const perfStart = performance.now();
     
-    // Calculate all the totals
-    const totalCost = calculateTotalCost(calculationItems);
-    const totalMarkup = calculateTotalMarkup(calculationItems);
-    const subtotal = calculateSubtotal(calculationItems);
-    const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
-    const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
-    const contingencyAmount = calculateContingencyAmount(calculationItems, debouncedContingencyPercentage);
-    const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
-
-    // Log performance in development only
-    if (process.env.NODE_ENV === 'development') {
-      const perfEnd = performance.now();
-      if (perfEnd - perfStart > 50) {  // Only log if calculations take more than 50ms
-        console.debug(`Summary calculations took ${(perfEnd - perfStart).toFixed(2)}ms`);
+    try {
+      // Calculate all the totals
+      const totalCost = calculateTotalCost(calculationItems);
+      const totalMarkup = calculateTotalMarkup(calculationItems);
+      const subtotal = calculateSubtotal(calculationItems);
+      const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
+      const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
+      const contingencyAmount = calculateContingencyAmount(calculationItems, debouncedContingencyPercentage);
+      const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
+  
+      // Log performance in development only
+      if (process.env.NODE_ENV === 'development') {
+        const perfEnd = performance.now();
+        if (perfEnd - perfStart > 50) {  // Only log if calculations take more than 50ms
+          console.debug(`Summary calculations took ${(perfEnd - perfStart).toFixed(2)}ms`);
+        }
       }
+  
+      return {
+        totalCost,
+        totalMarkup,
+        subtotal,
+        totalGrossMargin,
+        overallMarginPercentage,
+        contingencyAmount,
+        grandTotal,
+        hasError: false,
+        errorMessage: ""
+      };
+    } catch (error: any) {
+      console.error("Error in estimate calculations:", error);
+      return {
+        totalCost: 0,
+        totalMarkup: 0,
+        subtotal: 0, 
+        totalGrossMargin: 0,
+        overallMarginPercentage: 0,
+        contingencyAmount: 0,
+        grandTotal: 0,
+        hasError: true,
+        errorMessage: error.message || "Error calculating totals"
+      };
     }
-
-    return {
-      totalCost,
-      totalMarkup,
-      subtotal,
-      totalGrossMargin,
-      overallMarginPercentage,
-      contingencyAmount,
-      grandTotal
-    };
   }, [calculationItems, debouncedContingencyPercentage]);
 
   return calculations;
 };
+
+export default useSummaryCalculations;

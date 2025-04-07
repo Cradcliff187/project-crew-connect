@@ -1,4 +1,3 @@
-
 export interface EstimateItem {
   id: string;
   description: string;
@@ -23,6 +22,7 @@ export interface EstimateItem {
   created_at?: string;
   updated_at?: string;
   item_category?: string;
+  notes?: string;
 }
 
 export interface EstimateRevision {
