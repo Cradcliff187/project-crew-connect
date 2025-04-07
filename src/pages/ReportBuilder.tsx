@@ -31,12 +31,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult
-} from 'react-beautiful-dnd';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { 
+  arrayMove,
+  SortableContext, 
+  sortableKeyboardCoordinates, 
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { formatDate, formatCurrency } from '@/lib/utils';
 
 // Defined entity types that match our database tables
@@ -156,6 +159,33 @@ interface ReportConfig {
   sortDirection: 'asc' | 'desc';
 }
 
+// Sortable item component
+interface SortableItemProps {
+  id: string;
+  children: React.ReactNode;
+}
+
+function SortableItem({ id, children }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+}
+
 const ReportBuilder = () => {
   // State for report configuration
   const [reportConfig, setReportConfig] = useState<ReportConfig>({
@@ -182,6 +212,14 @@ const ReportBuilder = () => {
     value: ''
   });
   
+  // Set up DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // Handle changing the primary entity
   const handleEntityChange = (entity: EntityType) => {
     setReportConfig(prev => ({
@@ -257,17 +295,23 @@ const ReportBuilder = () => {
   };
   
   // Handler for drag-and-drop reordering of fields
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
     
-    const items = Array.from(reportConfig.selectedFields);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setReportConfig(prev => ({
-      ...prev,
-      selectedFields: items
-    }));
+    setReportConfig(prev => {
+      const oldIndex = prev.selectedFields.findIndex(field => 
+        `${field.entity}-${field.name}` === active.id
+      );
+      const newIndex = prev.selectedFields.findIndex(field => 
+        `${field.entity}-${field.name}` === over.id
+      );
+      
+      return {
+        ...prev,
+        selectedFields: arrayMove(prev.selectedFields, oldIndex, newIndex)
+      };
+    });
   };
   
   // Generate a SQL query based on the current report configuration
@@ -613,43 +657,36 @@ const ReportBuilder = () => {
                       <p className="text-sm text-muted-foreground">No fields selected</p>
                     </div>
                   ) : (
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                      <Droppable droppableId="selected-fields">
-                        {(provided) => (
-                          <div
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                            className="space-y-2"
-                          >
-                            {reportConfig.selectedFields.map((field, index) => (
-                              <Draggable key={`${field.entity}-${field.name}`} draggableId={`${field.entity}-${field.name}`} index={index}>
-                                {(provided) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    className="flex items-center justify-between p-2 border rounded-md bg-background"
-                                  >
-                                    <div className="flex items-center">
-                                      <ArrowDown className="h-4 w-4 mr-2 text-muted-foreground" />
-                                      <span>{field.label}</span>
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleRemoveField(index)}
-                                    >
-                                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                    </Button>
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext
+                        items={reportConfig.selectedFields.map(field => `${field.entity}-${field.name}`)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-2">
+                          {reportConfig.selectedFields.map((field, index) => (
+                            <SortableItem key={`${field.entity}-${field.name}`} id={`${field.entity}-${field.name}`}>
+                              <div className="flex items-center justify-between p-2 border rounded-md bg-background">
+                                <div className="flex items-center">
+                                  <ArrowDown className="h-4 w-4 mr-2 text-muted-foreground" />
+                                  <span>{field.label}</span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveField(index)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </div>
+                            </SortableItem>
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
                   )}
                 </CardContent>
               </Card>

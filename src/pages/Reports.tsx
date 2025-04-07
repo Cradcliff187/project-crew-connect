@@ -26,7 +26,7 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders';
 
 // Define table names in Supabase
-const entityTableMap = {
+const entityTableMap: Record<EntityType, string> = {
   'projects': 'projects',
   'customers': 'customers',
   'vendors': 'vendors',
@@ -36,13 +36,20 @@ const entityTableMap = {
   'expenses': 'expenses',
   'time_entries': 'time_entries',
   'change_orders': 'change_orders'
-} as const;
+};
 
-// Create a type from the values of entityTableMap
-type TableName = typeof entityTableMap[EntityType];
+// Define field type
+type FieldType = 'text' | 'date' | 'number' | 'currency' | 'status' | 'percentage' | 'boolean';
+
+// Define field structure
+interface FieldDefinition {
+  label: string;
+  field: string;
+  type: FieldType;
+}
 
 // Define fields for each entity type with expanded metrics
-const entityFields: Record<EntityType, { label: string; field: string; type: 'text' | 'date' | 'number' | 'currency' | 'status' | 'percentage' | 'boolean' }[]> = {
+const entityFields: Record<EntityType, FieldDefinition[]> = {
   projects: [
     { label: 'Project ID', field: 'projectid', type: 'text' },
     { label: 'Project Name', field: 'projectname', type: 'text' },
@@ -197,14 +204,21 @@ const formatDateForQuery = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
+// Define fetch data function type more explicitly
+interface ReportFilters {
+  search: string;
+  dateRange: DateRange | undefined;
+  status: string;
+  expenseType?: string;
+}
+
 // Define a function to fetch data based on entity type with enhanced filtering
 const fetchData = async (entityType: EntityType, filters: ReportFilters) => {
   // Get the actual table name from our mapping
   const tableName = entityTableMap[entityType];
   
   // Build a query based on entity type
-  // Use type assertion to tell TypeScript this is a valid table name
-  let query = supabase.from(tableName as TableName).select('*');
+  let query = supabase.from(tableName).select('*');
   
   // Apply filters
   if (filters.search) {
@@ -332,14 +346,6 @@ export function formatPercentage(percentage: number | undefined | null): string 
   return `${Number(percentage).toFixed(1)}%`;
 }
 
-// Interface for the filters
-interface ReportFilters {
-  search: string;
-  dateRange: DateRange | undefined;
-  status: string;
-  expenseType?: string;
-}
-
 const Reports = () => {
   const [selectedEntity, setSelectedEntity] = useState<EntityType>('projects');
   const [filters, setFilters] = useState<ReportFilters>({
@@ -392,7 +398,7 @@ const Reports = () => {
           );
         case 'boolean':
           return value ? (
-            <Badge variant="success">Yes</Badge>
+            <Badge variant="secondary">Yes</Badge>
           ) : (
             <Badge variant="outline">No</Badge>
           );
@@ -403,11 +409,11 @@ const Reports = () => {
   }));
   
   // Determine status variant for styling badges
-  const getStatusVariant = (status: string | undefined): "default" | "outline" | "secondary" | "destructive" | "success" => {
+  const getStatusVariant = (status: string | undefined): "default" | "outline" | "secondary" | "destructive" => {
     if (!status) return "default";
     
     if (status.includes('active') || status.includes('approved') || status.includes('completed')) {
-      return "success";
+      return "secondary";
     } else if (status.includes('pending') || status.includes('draft') || status.includes('progress')) {
       return "secondary";
     } else if (status.includes('hold') || status.includes('review')) {
@@ -533,7 +539,7 @@ const Reports = () => {
             </Button>
             <Button 
               variant="outline"
-              onClick={() => console.log('Navigate to Report Builder')}
+              onClick={() => window.location.href = '/report-builder'}
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Report Builder
