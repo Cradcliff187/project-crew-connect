@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
@@ -51,6 +52,53 @@ const EstimateDetailPage = () => {
     }
   }, [estimateId]);
 
+  // Function to update revision amounts if they are missing
+  const updateRevisionAmountsIfNeeded = async (revisionId: string) => {
+    try {
+      // Get the items for this revision
+      const { data: items, error: itemsError } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('revision_id', revisionId);
+      
+      if (itemsError) {
+        console.error('Error fetching items for revision amount update:', itemsError);
+        return;
+      }
+      
+      if (!items || items.length === 0) {
+        return;
+      }
+      
+      // Calculate total amount
+      const totalAmount = items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
+      
+      // Get current revision amount
+      const { data: revision, error: revisionError } = await supabase
+        .from('estimate_revisions')
+        .select('amount')
+        .eq('id', revisionId)
+        .single();
+      
+      if (revisionError) {
+        console.error('Error fetching revision for amount update:', revisionError);
+        return;
+      }
+      
+      // Only update if the amount is null, 0, or different from calculated total
+      if (!revision.amount || revision.amount === 0 || Math.abs(revision.amount - totalAmount) > 0.01) {
+        await supabase
+          .from('estimate_revisions')
+          .update({ amount: totalAmount })
+          .eq('id', revisionId);
+        
+        console.log(`Updated revision ${revisionId} amount to ${totalAmount}`);
+      }
+    } catch (err) {
+      console.error('Error updating revision amount:', err);
+    }
+  };
+
   const fetchEstimateData = async (id: string) => {
     try {
       setLoading(true);
@@ -95,6 +143,9 @@ const EstimateDetailPage = () => {
             .from('estimate_revisions')
             .update({ is_current: true })
             .eq('id', latestRevision.id);
+          
+          // Update the amount if needed
+          await updateRevisionAmountsIfNeeded(latestRevision.id);
             
           toast({
             title: "Revision Updated",
@@ -132,6 +183,11 @@ const EstimateDetailPage = () => {
         }
       } else if (revisionData) {
         setCurrentRevision(revisionData);
+        
+        // Update the amount if needed
+        if (revisionData.id) {
+          await updateRevisionAmountsIfNeeded(revisionData.id);
+        }
       }
       
       // Fetch the estimate items (for the current revision if available)
@@ -157,6 +213,13 @@ const EstimateDetailPage = () => {
         console.error('Error fetching estimate revisions:', revisionsError);
       } else {
         setRevisions(allRevisions || []);
+        
+        // Update amounts for all revisions
+        if (allRevisions && allRevisions.length > 0) {
+          for (const revision of allRevisions) {
+            await updateRevisionAmountsIfNeeded(revision.id);
+          }
+        }
       }
       
       // Set the data

@@ -106,7 +106,10 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
     try {
       setSaving(true);
       
-      // 1. Create new revision record
+      // Calculate total amount for the revision from items
+      const totalAmount = values.revisionItems.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
+      
+      // 1. Create new revision record with the total amount included
       const newVersion = currentVersion + 1;
       const { data: revisionData, error: revisionError } = await supabase
         .from('estimate_revisions')
@@ -117,6 +120,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
           is_current: true,
           notes: values.notes,
           status: 'draft',
+          amount: totalAmount, // Include the amount in the revision record
         })
         .select()
         .single();
@@ -149,7 +153,6 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       if (itemsError) throw itemsError;
       
       // 4. Update estimate with new total and contingency
-      const totalAmount = values.revisionItems.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
       const contingencyAmount = totalAmount * (values.contingencyPercentage / 100);
       
       await supabase
