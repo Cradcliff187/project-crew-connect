@@ -34,11 +34,14 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
 }) => {
   if (!document) return null;
   
-  const isImage = document.file_type?.startsWith('image/');
-  const isPdf = document.file_type?.includes('pdf');
+  // Improved file type detection
+  const isImage = document.file_type?.toLowerCase().startsWith('image/');
+  // Check for both 'pdf' in file_type and '.pdf' in file_name for better detection
+  const isPdf = document.file_type?.toLowerCase().includes('pdf') || 
+                (document.file_name?.toLowerCase().endsWith('.pdf'));
   
-  // Use url property instead of file_url
-  const fileUrl = document.url || '';
+  // Use url property with fallback to file_url for compatibility
+  const fileUrl = document.url || document.file_url || '';
   
   const handleDownload = () => {
     if (fileUrl) {
@@ -96,6 +99,7 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
               src={fileUrl}
               className="w-full h-[60vh]"
               title={document.file_name}
+              sandbox="allow-scripts allow-same-origin"
             />
           ) : (
             <div className="text-center p-8">
