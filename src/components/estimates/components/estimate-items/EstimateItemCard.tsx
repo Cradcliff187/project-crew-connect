@@ -72,6 +72,12 @@ const EstimateItemCard = memo(({
     defaultValue: '1'
   });
 
+  const unit_price = useWatch({
+    control: form.control,
+    name: `items.${index}.unit_price`,
+    defaultValue: '0'
+  });
+
   const description = useWatch({
     control: form.control,
     name: `items.${index}.description`,
@@ -97,13 +103,13 @@ const EstimateItemCard = memo(({
   });
 
   const { itemPrice, grossMargin, grossMarginPercentage } = React.useMemo(() => {
-    const item = { cost, markup_percentage: markupPercentage, quantity };
+    const item = { cost, markup_percentage: markupPercentage, quantity, unit_price };
     return {
       itemPrice: calculateItemPrice(item),
       grossMargin: calculateItemGrossMargin(item),
       grossMarginPercentage: calculateItemGrossMarginPercentage(item)
     };
-  }, [cost, markupPercentage, quantity]);
+  }, [cost, markupPercentage, quantity, unit_price]);
 
   const fetchDocumentInfo = useCallback(async () => {
     if (!documentId) {
