@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDate, formatCurrency } from '@/lib/utils';
 
 // Define the types of entities we can report on
-type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders';
+type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders' | 'employees';
 
 // Define field type
 type FieldType = 'text' | 'date' | 'number' | 'currency' | 'status' | 'percentage' | 'boolean';
@@ -183,6 +183,18 @@ const entityFields: Record<EntityType, FieldDefinition[]> = {
     { label: 'Description', field: 'description', type: 'text' },
     { label: 'Created At', field: 'created_at', type: 'date' },
     { label: 'Updated At', field: 'updated_at', type: 'date' }
+  ],
+  employees: [
+    { label: 'Employee ID', field: 'employee_id', type: 'text' },
+    { label: 'First Name', field: 'first_name', type: 'text' },
+    { label: 'Last Name', field: 'last_name', type: 'text' },
+    { label: 'Email', field: 'email', type: 'text' },
+    { label: 'Phone', field: 'phone', type: 'text' },
+    { label: 'Role', field: 'role', type: 'text' },
+    { label: 'Status', field: 'status', type: 'status' },
+    { label: 'Hourly Rate', field: 'hourly_rate', type: 'currency' },
+    { label: 'Created At', field: 'created_at', type: 'date' },
+    { label: 'Updated At', field: 'updated_at', type: 'date' }
   ]
 };
 
@@ -196,7 +208,8 @@ const entityTableMap: Record<EntityType, string> = {
   'estimates': 'estimates',
   'expenses': 'expenses',
   'time_entries': 'time_entries',
-  'change_orders': 'change_orders'
+  'change_orders': 'change_orders',
+  'employees': 'employees'
 };
 
 // Helper function for date range processing
@@ -210,6 +223,7 @@ interface ReportFilters {
   dateRange: DateRange | undefined;
   status: string;
   expenseType?: string;
+  role?: string;
 }
 
 // Define a function to fetch data based on entity type with enhanced filtering
@@ -241,6 +255,8 @@ const fetchData = async (entityType: EntityType, filters: ReportFilters) => {
       query = query.or(`id::text.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`);
     } else if (entityType === 'change_orders') {
       query = query.or(`title.ilike.%${filters.search}%,change_order_number.ilike.%${filters.search}%`);
+    } else if (entityType === 'employees') {
+      query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
     }
   }
   
@@ -263,6 +279,11 @@ const fetchData = async (entityType: EntityType, filters: ReportFilters) => {
   // Add custom entity-specific filters
   if (entityType === 'expenses' && filters.expenseType && filters.expenseType !== 'all') {
     query = query.eq('expense_type', filters.expenseType);
+  }
+  
+  // Employee role filter
+  if (entityType === 'employees' && filters.role && filters.role !== 'all') {
+    query = query.eq('role', filters.role);
   }
   
   try {
@@ -304,6 +325,8 @@ const getDateFieldForEntity = (entityType: EntityType): string => {
       return 'date_worked';
     case 'change_orders':
       return 'created_at';
+    case 'employees':
+      return 'created_at';
     default:
       return 'created_at';
   }
@@ -326,6 +349,11 @@ const processEntityData = (entityType: EntityType, data: any[]): any[] => {
     if (entityType === 'estimates') {
       // Calculate total with contingency
       processed.total_with_contingency = (processed.estimateamount || 0) + (processed.contingencyamount || 0);
+    }
+    
+    if (entityType === 'employees') {
+      // Add full name field for convenience
+      processed.full_name = `${processed.first_name} ${processed.last_name}`;
     }
     
     return processed;
@@ -507,6 +535,12 @@ const Reports = () => {
           { value: 'rejected', label: 'Rejected' },
           { value: 'converted', label: 'Converted to Project' }
         ];
+      case 'employees':
+        return [
+          allOption,
+          { value: 'ACTIVE', label: 'Active' },
+          { value: 'INACTIVE', label: 'Inactive' }
+        ];
       default:
         return [
           allOption,
@@ -514,6 +548,18 @@ const Reports = () => {
           { value: 'INACTIVE', label: 'Inactive' }
         ];
     }
+  };
+  
+  // Get role options for employees
+  const getRoleOptions = (): { value: string, label: string }[] => {
+    return [
+      { value: 'all', label: 'All Roles' },
+      { value: 'Admin', label: 'Admin' },
+      { value: 'Manager', label: 'Manager' },
+      { value: 'Technician', label: 'Technician' },
+      { value: 'Laborer', label: 'Laborer' },
+      { value: 'Office', label: 'Office' }
+    ];
   };
   
   return (
@@ -548,7 +594,7 @@ const Reports = () => {
         </div>
         
         <Tabs defaultValue="projects" onValueChange={(value) => setSelectedEntity(value as EntityType)}>
-          <TabsList className="grid grid-cols-9">
+          <TabsList className="grid grid-cols-10">
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="customers">Customers</TabsTrigger>
             <TabsTrigger value="vendors">Vendors</TabsTrigger>
@@ -558,10 +604,11 @@ const Reports = () => {
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
             <TabsTrigger value="time_entries">Time Logs</TabsTrigger>
             <TabsTrigger value="change_orders">Change Orders</TabsTrigger>
+            <TabsTrigger value="employees">Employees</TabsTrigger>
           </TabsList>
           
           {/* All content areas share the same layout */}
-          {(['projects', 'customers', 'vendors', 'subcontractors', 'work_orders', 'estimates', 'expenses', 'time_entries', 'change_orders'] as EntityType[]).map((entity) => (
+          {(['projects', 'customers', 'vendors', 'subcontractors', 'work_orders', 'estimates', 'expenses', 'time_entries', 'change_orders', 'employees'] as EntityType[]).map((entity) => (
             <TabsContent key={entity} value={entity}>
               <Card className="shadow-sm">
                 <CardContent className="pt-6">
@@ -627,6 +674,28 @@ const Reports = () => {
                                 <SelectItem value="labor">Labor</SelectItem>
                                 <SelectItem value="service">Services</SelectItem>
                                 <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {/* Employee role filter */}
+                        {entity === 'employees' && (
+                          <div>
+                            <label className="text-xs mb-1 block">Role</label>
+                            <Select
+                              value={filters.role || 'all'}
+                              onValueChange={(value) => handleFilterChange('role', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All Roles" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getRoleOptions().map(option => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -762,6 +831,23 @@ const Reports = () => {
                         {data.reduce((sum: number, item: any) => sum + (parseInt(item.impact_days) || 0), 0)}
                       </div>
                       <div className="text-sm text-muted-foreground">Total Impact Days</div>
+                    </div>
+                  </>
+                )}
+                
+                {selectedEntity === 'employees' && (
+                  <>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {data.filter((employee: any) => employee.status === 'ACTIVE').length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Active Employees</div>
+                    </div>
+                    <div className="p-4 border rounded-md">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.hourly_rate) || 0), 0) / (data.length || 1))}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Average Hourly Rate</div>
                     </div>
                   </>
                 )}
