@@ -1,14 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Download, Filter, Search, FileDown, BarChart3, PieChart } from 'lucide-react';
+import { Download, Filter, Search, FileDown, BarChart3, PieChart, Menu, ChevronRight, ChevronLeft } from 'lucide-react';
 import PageTransition from '@/components/layout/PageTransition';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -20,7 +18,9 @@ import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDate, formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 // Define the types of entities we can report on
 type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders' | 'employees';
@@ -149,7 +149,7 @@ const entityFields: Record<EntityType, FieldDefinition[]> = {
     { label: 'Quantity', field: 'quantity', type: 'number' },
     { label: 'Unit Price', field: 'unit_price', type: 'currency' },
     { label: 'Document ID', field: 'document_id', type: 'text' },
-    { label: 'Status', field: 'status', type: 'status' },
+    { label: 'Status', field: 'status', type: 'text' },
     { label: 'Notes', field: 'notes', type: 'text' }
   ],
   time_entries: [
@@ -196,6 +196,34 @@ const entityFields: Record<EntityType, FieldDefinition[]> = {
     { label: 'Created At', field: 'created_at', type: 'date' },
     { label: 'Updated At', field: 'updated_at', type: 'date' }
   ]
+};
+
+// Define entity names for display
+const entityNames: Record<EntityType, string> = {
+  'projects': 'Projects',
+  'customers': 'Customers',
+  'vendors': 'Vendors',
+  'subcontractors': 'Subcontractors',
+  'work_orders': 'Work Orders',
+  'estimates': 'Estimates',
+  'expenses': 'Expenses',
+  'time_entries': 'Time Logs',
+  'change_orders': 'Change Orders',
+  'employees': 'Employees'
+};
+
+// Define entity icons (simple text emojis for now, can be replaced with proper icons)
+const entityIcons: Record<EntityType, string> = {
+  'projects': '📁',
+  'customers': '👥',
+  'vendors': '🏢',
+  'subcontractors': '👷',
+  'work_orders': '🔧',
+  'estimates': '📝',
+  'expenses': '💰',
+  'time_entries': '⏱️',
+  'change_orders': '📊',
+  'employees': '👤'
 };
 
 // Define table names in Supabase - map entity types to actual table names
@@ -383,6 +411,7 @@ const Reports = () => {
   });
   const [debouncedFilters, setDebouncedFilters] = useState<ReportFilters>(filters);
   const [showFilters, setShowFilters] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Debounce the filters
   useEffect(() => {
@@ -561,6 +590,11 @@ const Reports = () => {
       { value: 'Office', label: 'Office' }
     ];
   };
+
+  // Toggle sidebar collapsed state
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
   
   return (
     <PageTransition>
@@ -593,271 +627,61 @@ const Reports = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="projects" onValueChange={(value) => setSelectedEntity(value as EntityType)}>
-          <TabsList className="grid grid-cols-10">
-            <TabsTrigger value="projects">Projects</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-            <TabsTrigger value="vendors">Vendors</TabsTrigger>
-            <TabsTrigger value="subcontractors">Subcontractors</TabsTrigger>
-            <TabsTrigger value="work_orders">Work Orders</TabsTrigger>
-            <TabsTrigger value="estimates">Estimates</TabsTrigger>
-            <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="time_entries">Time Logs</TabsTrigger>
-            <TabsTrigger value="change_orders">Change Orders</TabsTrigger>
-            <TabsTrigger value="employees">Employees</TabsTrigger>
-          </TabsList>
+        <div className="flex">
+          {/* Sidebar Navigation */}
+          <div className={cn(
+            "transition-all duration-300 ease-in-out bg-white border-r shadow-sm", 
+            sidebarCollapsed ? "w-16" : "w-64"
+          )}>
+            <div className="flex justify-between items-center p-4 border-b">
+              {!sidebarCollapsed && <h3 className="font-medium">Report Types</h3>}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="ml-auto" 
+                onClick={toggleSidebar}
+              >
+                {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </Button>
+            </div>
+            <ScrollArea className="h-[70vh]">
+              <div className="space-y-1 p-2">
+                {(Object.keys(entityNames) as EntityType[]).map((entity) => (
+                  <Button
+                    key={entity}
+                    variant={selectedEntity === entity ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start",
+                      sidebarCollapsed ? "px-2 py-2" : "px-4 py-2"
+                    )}
+                    onClick={() => setSelectedEntity(entity)}
+                  >
+                    <span className="mr-2">{entityIcons[entity]}</span>
+                    {!sidebarCollapsed && <span>{entityNames[entity]}</span>}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
           
-          {/* All content areas share the same layout */}
-          {(['projects', 'customers', 'vendors', 'subcontractors', 'work_orders', 'estimates', 'expenses', 'time_entries', 'change_orders', 'employees'] as EntityType[]).map((entity) => (
-            <TabsContent key={entity} value={entity}>
-              <Card className="shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center mb-6">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder={`Search ${entity}...`}
-                        value={filters.search}
-                        onChange={(e) => handleFilterChange('search', e.target.value)}
-                        className="pl-8"
-                      />
-                    </div>
-                  </div>
-                  
-                  {showFilters && (
-                    <div className="mb-6 p-4 border rounded-md bg-muted/50">
-                      <h3 className="text-sm font-semibold mb-3">Filter Options</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Status filter */}
-                        <div>
-                          <label className="text-xs mb-1 block">Status</label>
-                          <Select
-                            value={filters.status}
-                            onValueChange={(value) => handleFilterChange('status', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="All Statuses" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getStatusOptions().map(option => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {/* Date range filter */}
-                        <div>
-                          <label className="text-xs mb-1 block">Date Range</label>
-                          <DatePickerWithRange
-                            value={filters.dateRange}
-                            onChange={(range) => handleFilterChange('dateRange', range)}
-                          />
-                        </div>
-                        
-                        {/* Entity specific filter */}
-                        {entity === 'expenses' && (
-                          <div>
-                            <label className="text-xs mb-1 block">Expense Type</label>
-                            <Select
-                              value={filters.expenseType || 'all'}
-                              onValueChange={(value) => handleFilterChange('expenseType', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="All Types" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="materials">Materials</SelectItem>
-                                <SelectItem value="labor">Labor</SelectItem>
-                                <SelectItem value="service">Services</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-
-                        {/* Employee role filter */}
-                        {entity === 'employees' && (
-                          <div>
-                            <label className="text-xs mb-1 block">Role</label>
-                            <Select
-                              value={filters.role || 'all'}
-                              onValueChange={(value) => handleFilterChange('role', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="All Roles" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getRoleOptions().map(option => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {isLoading ? (
-                    <div className="flex justify-center items-center h-40">
-                      <div className="animate-spin h-8 w-8 border-4 border-[#0485ea] border-t-transparent rounded-full"></div>
-                    </div>
-                  ) : isError ? (
-                    <div className="flex justify-center items-center h-40">
-                      <p className="text-destructive">Error loading data. Please try again.</p>
-                    </div>
-                  ) : data && data.length > 0 ? (
-                    <DataTable
-                      columns={columns}
-                      data={data}
-                      filterColumn={entityFields[entity][1].field} // Use second field for filtering (usually name)
-                      searchPlaceholder={`Filter ${entity}...`}
+          {/* Main Content */}
+          <div className="flex-1 ml-4">
+            <Card className="shadow-sm">
+              <CardContent className="pt-6">
+                <div className="flex items-center mb-6">
+                  <h2 className="text-xl font-medium">{entityNames[selectedEntity]} Report</h2>
+                  <div className="relative flex-1 ml-4">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder={`Search ${entityNames[selectedEntity]}...`}
+                      value={filters.search}
+                      onChange={(e) => handleFilterChange('search', e.target.value)}
+                      className="pl-8"
                     />
-                  ) : (
-                    <div className="flex justify-center items-center h-40 text-muted-foreground">
-                      <p>No data available.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
-        
-        {/* Summary Section */}
-        {data && data.length > 0 && (
-          <Card className="shadow-sm">
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold mb-2">Summary</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 border rounded-md">
-                  <div className="text-2xl font-bold">{data.length}</div>
-                  <div className="text-sm text-muted-foreground capitalize">Total {selectedEntity.replace('_', ' ')}</div>
+                  </div>
                 </div>
                 
-                {selectedEntity === 'projects' && (
-                  <>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.total_budget) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Budget</div>
-                    </div>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.current_expenses) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Expenses</div>
-                    </div>
-                  </>
-                )}
-                
-                {selectedEntity === 'work_orders' && (
-                  <>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatHours(data.reduce((sum: number, item: any) => sum + (parseFloat(item.actual_hours) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Hours Worked</div>
-                    </div>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.total_cost) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Cost</div>
-                    </div>
-                  </>
-                )}
-                
-                {selectedEntity === 'estimates' && (
-                  <>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.estimateamount) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Estimate Amount</div>
-                    </div>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.contingencyamount) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Contingency</div>
-                    </div>
-                  </>
-                )}
-                
-                {selectedEntity === 'expenses' && (
-                  <div className="p-4 border rounded-md">
-                    <div className="text-2xl font-bold">
-                      {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.amount) || 0), 0))}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Total Amount</div>
-                  </div>
-                )}
-                
-                {selectedEntity === 'time_entries' && (
-                  <>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatHours(data.reduce((sum: number, item: any) => sum + (parseFloat(item.hours_worked) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Hours</div>
-                    </div>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.total_cost) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Cost</div>
-                    </div>
-                  </>
-                )}
-                
-                {selectedEntity === 'change_orders' && (
-                  <>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.total_amount) || 0), 0))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Amount</div>
-                    </div>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {data.reduce((sum: number, item: any) => sum + (parseInt(item.impact_days) || 0), 0)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Total Impact Days</div>
-                    </div>
-                  </>
-                )}
-                
-                {selectedEntity === 'employees' && (
-                  <>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {data.filter((employee: any) => employee.status === 'ACTIVE').length}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Active Employees</div>
-                    </div>
-                    <div className="p-4 border rounded-md">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(data.reduce((sum: number, item: any) => sum + (parseFloat(item.hourly_rate) || 0), 0) / (data.length || 1))}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Average Hourly Rate</div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </PageTransition>
-  );
-};
-
-export default Reports;
+                {showFilters && (
+                  <div className="mb-6 p-4 border rounded-md bg-muted/50">
+                    <h3 className="text-sm font-semibold mb-3">Filter Options</h3>
+                    <div className="grid grid-cols-
