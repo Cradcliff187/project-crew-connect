@@ -41,7 +41,10 @@ const DocumentViewerDialog: React.FC<DocumentViewerDialogProps> = ({
                 (document.file_name?.toLowerCase().endsWith('.pdf'));
   
   // Use url property with fallback to file_url for compatibility
-  const fileUrl = document.url || document.file_url || '';
+  // Checking if the properties exist to avoid TypeScript errors
+  const fileUrl = document.url || 
+                 (('file_url' in document) ? (document as any).file_url : '') || 
+                 '';
   
   const handleDownload = () => {
     if (fileUrl) {
