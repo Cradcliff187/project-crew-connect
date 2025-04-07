@@ -1,166 +1,148 @@
 
 import React from 'react';
+import { MoreHorizontal, FileEdit, Trash, Send, CheckCircle, XCircle, ArrowRightLeft, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  DownloadCloud, 
-  Mail, 
-  FileText, 
-  MoreVertical,
-  Edit,
-  Trash2,
-  Share2
-} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { StatusType } from '@/types/common';
+import { useNavigate } from 'react-router-dom';
 
 interface EstimateActionsProps {
-  status: string;
+  status: StatusType;
   onEdit?: () => void;
-  onConvert?: () => void;
   onDelete?: () => void;
+  onConvert?: () => void;
   onShare?: () => void;
+  size?: 'default' | 'sm';
+  direction?: 'horizontal' | 'vertical';
   currentRevision?: any;
   estimateId?: string;
 }
 
-const EstimateActions: React.FC<EstimateActionsProps> = ({ 
+const EstimateActions: React.FC<EstimateActionsProps> = ({
   status,
   onEdit,
-  onConvert,
   onDelete,
+  onConvert,
   onShare,
+  size = 'default',
+  direction = 'horizontal',
   currentRevision,
   estimateId
 }) => {
-  const isEditable = status === 'draft';
-  const isConvertible = status === 'approved';
-  const isPending = status === 'sent' || status === 'pending';
-  const { toast } = useToast();
-
-  const handleDownload = async () => {
-    if (!currentRevision?.pdf_document_id) {
-      toast({
-        title: 'PDF Not Available',
-        description: 'There is no PDF document available to download.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      // Get document details with URL
-      const { data: document, error: docError } = await supabase
-        .from('documents_with_urls')
-        .select('*')
-        .eq('document_id', currentRevision.pdf_document_id)
-        .single();
-        
-      if (docError) throw docError;
-      
-      if (!document?.url) {
-        throw new Error('Document URL not found');
-      }
-      
-      // Download the file
-      const response = await fetch(document.url);
-      const blob = await response.blob();
-      
-      // Create and trigger download link using the global window.document object
-      const downloadLink = window.document.createElement('a');
-      downloadLink.href = URL.createObjectURL(blob);
-      downloadLink.download = document.file_name || `Estimate-${estimateId}.pdf`;
-      window.document.body.appendChild(downloadLink);
-      downloadLink.click();
-      window.document.body.removeChild(downloadLink);
-      
-      // Log the download action
-      await supabase
-        .from('document_access_logs')
-        .insert({
-          document_id: currentRevision.pdf_document_id,
-          action: 'DOWNLOAD'
-        });
-        
-      toast({
-        title: 'Downloaded',
-        description: 'PDF downloaded successfully',
-      });
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast({
-        title: 'Download Error',
-        description: 'Failed to download the PDF.',
-        variant: 'destructive'
-      });
+  const navigate = useNavigate();
+  
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit();
+    } else if (estimateId) {
+      // Navigate to edit page if no onEdit handler is provided but estimateId is available
+      navigate(`/estimates/edit/${estimateId}`);
     }
   };
 
-  const handleEmail = () => {
-    // Switch to the email tab
-    const emailTabTrigger = document.querySelector('[value="email"]');
-    if (emailTabTrigger && emailTabTrigger instanceof HTMLElement) {
-      emailTabTrigger.click();
-    }
-  };
-
-  return (
+  return direction === 'horizontal' ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <MoreVertical className="h-4 w-4" />
-          Actions
+        <Button variant="ghost" size={size} className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {isEditable && onEdit && (
-          <DropdownMenuItem onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Estimate
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        
+        {onEdit !== null && (
+          <DropdownMenuItem onClick={handleEdit}>
+            <FileEdit className="mr-2 h-4 w-4" />
+            Edit
           </DropdownMenuItem>
         )}
         
-        {isConvertible && onConvert && (
+        {onShare && currentRevision?.pdf_document_id && (
+          <DropdownMenuItem onClick={onShare}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Share
+          </DropdownMenuItem>
+        )}
+        
+        {status !== 'cancelled' && status !== 'converted' && onConvert && (
           <DropdownMenuItem onClick={onConvert}>
-            <FileText className="h-4 w-4 mr-2" />
+            <ArrowRightLeft className="mr-2 h-4 w-4" />
             Convert to Project
           </DropdownMenuItem>
         )}
-
-        <DropdownMenuItem onClick={handleEmail}>
-          <Mail className="h-4 w-4 mr-2" />
-          Email Estimate
-        </DropdownMenuItem>
         
-        <DropdownMenuItem onClick={handleDownload} disabled={!currentRevision?.pdf_document_id}>
-          <DownloadCloud className="h-4 w-4 mr-2" />
-          Download PDF
-        </DropdownMenuItem>
-        
-        {onShare && (
-          <DropdownMenuItem onClick={onShare} disabled={!currentRevision?.pdf_document_id}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Share PDF
-          </DropdownMenuItem>
+        {onDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-red-600" 
+              onClick={onDelete}
+            >
+              <Trash className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </>
         )}
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem 
-          className="text-red-600" 
-          onClick={onDelete}
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Delete
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  ) : (
+    <div className="flex flex-col space-y-2">
+      {onEdit !== null && (
+        <Button 
+          size={size} 
+          variant="outline" 
+          className="justify-start" 
+          onClick={handleEdit}
+        >
+          <FileEdit className="mr-2 h-4 w-4" />
+          Edit
+        </Button>
+      )}
+      
+      {onShare && currentRevision?.pdf_document_id && (
+        <Button 
+          size={size} 
+          variant="outline" 
+          className="justify-start" 
+          onClick={onShare}
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          Share
+        </Button>
+      )}
+      
+      {status !== 'cancelled' && status !== 'converted' && onConvert && (
+        <Button 
+          size={size} 
+          variant="outline" 
+          className="justify-start" 
+          onClick={onConvert}
+        >
+          <ArrowRightLeft className="mr-2 h-4 w-4" />
+          Convert to Project
+        </Button>
+      )}
+      
+      {onDelete && (
+        <Button 
+          size={size} 
+          variant="outline" 
+          className="justify-start text-red-600" 
+          onClick={onDelete}
+        >
+          <Trash className="mr-2 h-4 w-4" />
+          Delete
+        </Button>
+      )}
+    </div>
   );
 };
 
