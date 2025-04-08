@@ -37,27 +37,34 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           <span className="text-muted-foreground">Loading...</span>
         </div>
       ) : (
-        <Select
-          value={entityId}
-          onValueChange={onChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`} />
-          </SelectTrigger>
-          <SelectContent>
-            {entities.length > 0 ? (
-              entities.map(entity => (
-                <SelectItem key={entity.id} value={entity.id}>
-                  {entity.name}
-                </SelectItem>
-              ))
-            ) : (
-              <div className="py-2 px-2 text-center text-sm text-muted-foreground">
-                No {entityType === 'work_order' ? 'work orders' : 'projects'} found
-              </div>
-            )}
-          </SelectContent>
-        </Select>
+        <>
+          <Select
+            value={entityId}
+            onValueChange={onChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {entities.length > 0 ? (
+                entities.map(entity => (
+                  <SelectItem key={entity.id} value={entity.id}>
+                    {entity.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="py-2 px-2 text-center text-sm text-muted-foreground">
+                  No {entityType === 'work_order' ? 'work orders' : 'projects'} found
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+          
+          {/* Show a debug message for development to help troubleshooting */}
+          <div className="text-xs text-gray-400">
+            {entities.length} {entityType === 'work_order' ? 'work orders' : 'projects'} available
+          </div>
+        </>
       )}
       
       {error && <p className="text-sm text-red-500">{error}</p>}
