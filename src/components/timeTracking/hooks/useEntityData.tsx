@@ -5,14 +5,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { TimeEntryFormValues } from './useTimeEntryForm';
 import { toast } from '@/hooks/use-toast';
 
+// Define types for consistency
 interface Entity {
   id: string;
   name: string;
+  status?: string;
 }
 
 interface Employee {
   employee_id: string;
   name: string;
+  hourly_rate?: number;
+}
+
+interface EntityDetails {
+  name: string;
+  type: 'work_order' | 'project';
+  location?: string;
 }
 
 export const useEntityData = (form: UseFormReturn<TimeEntryFormValues>) => {
@@ -21,18 +30,19 @@ export const useEntityData = (form: UseFormReturn<TimeEntryFormValues>) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoadingEntities, setIsLoadingEntities] = useState(false);
   
+  // Watch form values
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
   
-  // Fetch work orders and projects
+  // Fetch work orders, projects and employees
   useEffect(() => {
     const fetchEntities = async () => {
       setIsLoadingEntities(true);
       
       try {
-        console.log('Starting to fetch entities for time tracking...');
+        console.log('Fetching time tracking entities...');
         
-        // Fetch work orders - removed the status filter to show all work orders
+        // Fetch work orders - showing all work orders regardless of status
         const { data: workOrdersData, error: workOrdersError } = await supabase
           .from('maintenance_work_orders')
           .select('work_order_id, title')
@@ -57,7 +67,7 @@ export const useEntityData = (form: UseFormReturn<TimeEntryFormValues>) => {
           setWorkOrders([]);
         }
         
-        // Fetch projects - removed the status filter to show all projects
+        // Fetch projects - showing all projects regardless of status
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select('projectid, projectname, status')
@@ -107,7 +117,7 @@ export const useEntityData = (form: UseFormReturn<TimeEntryFormValues>) => {
       } catch (error) {
         console.error('Error fetching entities:', error);
         toast({
-          title: 'Failed to load projects and work orders',
+          title: 'Failed to load entities',
           description: 'Please try again or contact support',
           variant: 'destructive'
         });
@@ -120,7 +130,7 @@ export const useEntityData = (form: UseFormReturn<TimeEntryFormValues>) => {
   }, []);
   
   // Get selected entity details
-  const getSelectedEntityDetails = () => {
+  const getSelectedEntityDetails = (): EntityDetails | null => {
     if (!entityId) return null;
     
     if (entityType === 'work_order') {
