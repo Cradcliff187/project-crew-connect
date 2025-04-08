@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { FileUpload } from '@/components/ui/file-upload';
 import { Switch } from '@/components/ui/switch';
@@ -111,6 +111,8 @@ const ReceiptUploadManager: React.FC<ReceiptUploadManagerProps> = ({
                 entityId={entityId}
                 metadata={metadata}
                 updateMetadata={updateMetadata}
+                expenseDate={metadata.expenseDate || new Date()}
+                onExpenseDateChange={(date) => updateMetadata({ expenseDate: date })}
               />
             </Card>
           )}

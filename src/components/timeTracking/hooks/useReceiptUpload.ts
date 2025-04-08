@@ -31,7 +31,10 @@ export function useReceiptUpload(options: UseReceiptUploadOptions = {}) {
     tags: initialMetadata.tags || ['time-entry'],
     vendorId: initialMetadata.vendorId,
     vendorType: initialMetadata.vendorType || 'vendor',
-    amount: initialMetadata.amount
+    amount: initialMetadata.amount,
+    expenseDate: initialMetadata.expenseDate || new Date(),
+    notes: initialMetadata.notes,
+    isExpense: initialMetadata.isExpense !== undefined ? initialMetadata.isExpense : true
   });
   
   // Toggle receipts on/off
@@ -89,7 +92,10 @@ export function useReceiptUpload(options: UseReceiptUploadOptions = {}) {
       tags: initialMetadata.tags || ['time-entry'],
       vendorId: initialMetadata.vendorId,
       vendorType: initialMetadata.vendorType || 'vendor',
-      amount: initialMetadata.amount
+      amount: initialMetadata.amount,
+      expenseDate: initialMetadata.expenseDate || new Date(),
+      notes: initialMetadata.notes,
+      isExpense: initialMetadata.isExpense !== undefined ? initialMetadata.isExpense : true
     });
   };
   

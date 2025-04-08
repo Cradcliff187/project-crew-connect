@@ -69,4 +69,7 @@ export interface ReceiptMetadata {
   vendorId?: string;
   vendorType?: 'vendor' | 'subcontractor' | 'other';
   amount?: number;
+  expenseDate?: Date;
+  notes?: string;
+  isExpense?: boolean;
 }

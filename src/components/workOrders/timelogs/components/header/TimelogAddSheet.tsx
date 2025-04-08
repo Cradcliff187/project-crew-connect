@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+
+import { useState, useEffect } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +11,7 @@ import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector'
 import EmployeeSelector from '@/components/timeTracking/form/EmployeeSelector';
 import ReceiptUploadManager from '@/components/timeTracking/form/ReceiptUploadManager';
 import { useReceiptUpload } from '@/components/timeTracking/hooks/useReceiptUpload';
+import { format } from 'date-fns';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -119,7 +121,19 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
-      const formattedDate = workDate.toISOString().split('T')[0];
+      const formattedDate = format(workDate, 'yyyy-MM-dd');
+      
+      // Get employee rate if available
+      let employeeRate = null;
+      if (employeeId) {
+        const { data: empData } = await supabase
+          .from('employees')
+          .select('hourly_rate')
+          .eq('employee_id', employeeId)
+          .maybeSingle();
+        
+        employeeRate = empData?.hourly_rate;
+      }
       
       const timelogEntry = {
         entity_type: 'work_order',
@@ -131,6 +145,7 @@ const TimelogAddSheet = ({
         end_time: endTime,
         notes: notes || null,
         has_receipts: hasReceipts && selectedFiles.length > 0,
+        employee_rate: employeeRate,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -142,6 +157,33 @@ const TimelogAddSheet = ({
         .single();
         
       if (error) throw error;
+      
+      // Create labor expense
+      if (timeEntry && hoursWorked > 0) {
+        const hourlyRate = employeeRate || 75;
+        const totalAmount = hoursWorked * hourlyRate;
+        
+        const { error: laborExpenseError } = await supabase
+          .from('expenses')
+          .insert({
+            entity_type: 'WORK_ORDER',
+            entity_id: workOrderId,
+            description: `Labor: ${hoursWorked} hours`,
+            expense_type: 'LABOR',
+            amount: totalAmount,
+            time_entry_id: timeEntry.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            quantity: hoursWorked,
+            unit_price: hourlyRate,
+            vendor_id: null,
+            expense_date: formattedDate
+          });
+          
+        if (laborExpenseError) {
+          console.error('Error creating labor expense:', laborExpenseError);
+        }
+      }
       
       if (hasReceipts && selectedFiles.length > 0 && timeEntry) {
         for (const file of selectedFiles) {
@@ -213,22 +255,45 @@ const TimelogAddSheet = ({
               updated_at: new Date().toISOString(),
               quantity: 1,
               unit_price: receiptMetadata.amount || 0,
-              expense_date: new Date().toISOString()
+              expense_date: receiptMetadata.expenseDate ? format(receiptMetadata.expenseDate, 'yyyy-MM-dd') : format(workDate, 'yyyy-MM-dd'),
+              vendor_id: receiptMetadata.vendorId || null
             });
             
           if (expenseError) {
             console.error('Error creating expense for receipt:', expenseError);
+          }
+          
+          // If there's a vendor, create or update vendor association
+          if (receiptMetadata.vendorId) {
+            const { error: vendorAssocError } = await supabase
+              .from('vendor_associations')
+              .upsert({
+                vendor_id: receiptMetadata.vendorId,
+                entity_type: 'WORK_ORDER',
+                entity_id: workOrderId,
+                description: `Associated via time entry receipt`,
+                amount: receiptMetadata.amount || null,
+                expense_type: receiptMetadata.expenseType || null,
+                document_id: document.document_id,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+              
+            if (vendorAssocError) {
+              console.error('Error creating vendor association:', vendorAssocError);
+            }
           }
         }
       }
       
       toast({
         title: 'Time entry added',
-        description: `${hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === employeeId)?.name || 'employee'} on ${formattedDate}.`,
+        description: `${hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === employeeId)?.name || 'employee'} on ${format(workDate, 'MMM d, yyyy')}.`,
       });
       
       resetForm();
       onSuccess();
+      onOpenChange(false);
     } catch (error: any) {
       console.error('Error adding time entry:', error);
       toast({

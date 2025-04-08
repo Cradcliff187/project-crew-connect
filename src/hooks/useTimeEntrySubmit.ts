@@ -114,10 +114,12 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           if (documentError) throw documentError;
           
           // Link document to time entry
-          const { data: linkResult, error: linkError } = await supabase
-            .rpc('attach_document_to_time_entry', {
-              p_time_entry_id: insertedEntry.id,
-              p_document_id: insertedDoc.document_id
+          const { error: linkError } = await supabase
+            .from('time_entry_document_links')
+            .insert({
+              time_entry_id: insertedEntry.id,
+              document_id: insertedDoc.document_id,
+              created_at: new Date().toISOString()
             });
             
           if (linkError) {
@@ -141,7 +143,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 updated_at: new Date().toISOString(),
                 quantity: 1,
                 unit_price: receiptMetadata.amount || 0,
-                expense_date: new Date().toISOString(),
+                expense_date: receiptMetadata.expenseDate ? format(receiptMetadata.expenseDate, 'yyyy-MM-dd') : new Date().toISOString(),
                 vendor_id: receiptMetadata.vendorId || null
               });
               
@@ -187,7 +189,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 updated_at: new Date().toISOString(),
                 quantity: 1,
                 unit_price: receiptMetadata.amount || 0,
-                expense_date: new Date().toISOString(),
+                expense_date: receiptMetadata.expenseDate ? format(receiptMetadata.expenseDate, 'yyyy-MM-dd') : new Date().toISOString(),
                 vendor_id: receiptMetadata.vendorId || null
               });
               
@@ -238,7 +240,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             quantity: data.hoursWorked,
             unit_price: hourlyRate,
             vendor_id: null,
-            expense_date: new Date().toISOString()
+            expense_date: format(data.workDate, 'yyyy-MM-dd')
           });
           
         if (laborExpenseError) {
@@ -265,7 +267,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             quantity: data.hoursWorked,
             unit_price: hourlyRate,
             vendor_id: null,
-            expense_date: new Date().toISOString()
+            expense_date: format(data.workDate, 'yyyy-MM-dd')
           });
           
         if (laborExpenseError) {
