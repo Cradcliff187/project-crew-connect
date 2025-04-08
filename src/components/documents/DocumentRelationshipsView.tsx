@@ -3,16 +3,18 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Link2, Trash2, Loader2 } from 'lucide-react';
 import { Document } from './schemas/documentSchema';
-import useDocumentRelationships from '@/hooks/useDocumentRelationships';
+import { useDocumentRelationships } from '@/hooks/useDocumentRelationships';
 
 interface DocumentRelationshipsViewProps {
   document: Document;
   onViewDocument: (document: Document) => void;
+  showManagementButton?: boolean;
 }
 
 const DocumentRelationshipsView: React.FC<DocumentRelationshipsViewProps> = ({
   document,
-  onViewDocument
+  onViewDocument,
+  showManagementButton = false
 }) => {
   const {
     relationships,
