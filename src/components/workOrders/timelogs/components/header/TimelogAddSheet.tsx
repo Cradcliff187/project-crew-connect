@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,6 @@ const TimelogAddSheet = ({
   const [notes, setNotes] = useState('');
   const [employeeError, setEmployeeError] = useState('');
   
-  // Use our standardized receipt upload hook
   const {
     hasReceipts,
     setHasReceipts,
@@ -49,7 +47,6 @@ const TimelogAddSheet = ({
     validateReceiptData
   } = useReceiptUpload();
   
-  // Calculate hours when times change
   const updateHoursWorked = (start: string, end: string) => {
     try {
       const hours = calculateHours(start, end);
@@ -60,24 +57,20 @@ const TimelogAddSheet = ({
     }
   };
 
-  // Handle start time change
   const handleStartTimeChange = (value: string) => {
     setStartTime(value);
     updateHoursWorked(value, endTime);
   };
 
-  // Handle end time change
   const handleEndTimeChange = (value: string) => {
     setEndTime(value);
     updateHoursWorked(startTime, value);
   };
 
-  // Handle date change
   const handleDateChange = (date: Date) => {
     setWorkDate(date);
   };
   
-  // Reset form
   const resetForm = () => {
     setStartTime('09:00');
     setEndTime('17:00');
@@ -86,14 +79,12 @@ const TimelogAddSheet = ({
     setEmployeeId('');
     setNotes('');
     setEmployeeError('');
-    // Reset receipt data
     setHasReceipts(false);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate employee selection
     if (!employeeId) {
       setEmployeeError('Please select an employee');
       toast({
@@ -113,7 +104,6 @@ const TimelogAddSheet = ({
       return;
     }
     
-    // Validate receipt data if indicated
     if (hasReceipts) {
       const validation = validateReceiptData();
       if (!validation.valid) {
@@ -129,7 +119,6 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
-      // Format date to ISO string and extract the date part
       const formattedDate = workDate.toISOString().split('T')[0];
       
       const timelogEntry = {
@@ -154,15 +143,12 @@ const TimelogAddSheet = ({
         
       if (error) throw error;
       
-      // Handle receipt uploads if present
       if (hasReceipts && selectedFiles.length > 0 && timeEntry) {
         for (const file of selectedFiles) {
-          // Create unique filename
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `receipts/time_entries/${timeEntry.id}/${fileName}`;
           
-          // Upload file to storage
           const { error: uploadError } = await supabase.storage
             .from('construction_documents')
             .upload(filePath, file);
@@ -172,7 +158,6 @@ const TimelogAddSheet = ({
             continue;
           }
           
-          // Create document record with enhanced metadata
           const documentMetadata = {
             file_name: file.name,
             file_type: file.type,
@@ -202,7 +187,6 @@ const TimelogAddSheet = ({
             continue;
           }
           
-          // Link the document to the time entry
           const { error: linkError } = await supabase
             .from('time_entry_document_links')
             .insert({
@@ -214,6 +198,27 @@ const TimelogAddSheet = ({
           if (linkError) {
             console.error('Link error:', linkError);
           }
+          
+          const { error: expenseError } = await supabase
+            .from('expenses')
+            .insert({
+              entity_type: 'WORK_ORDER',
+              entity_id: workOrderId,
+              description: `Time entry receipt: ${file.name}`,
+              expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
+              amount: receiptMetadata.amount || 0,
+              document_id: document.document_id,
+              time_entry_id: timeEntry.id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              quantity: 1,
+              unit_price: receiptMetadata.amount || 0,
+              expense_date: new Date().toISOString()
+            });
+            
+          if (expenseError) {
+            console.error('Error creating expense for receipt:', expenseError);
+          }
         }
       }
       
@@ -222,7 +227,6 @@ const TimelogAddSheet = ({
         description: `${hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === employeeId)?.name || 'employee'} on ${formattedDate}.`,
       });
       
-      // Reset form and close sheet
       resetForm();
       onSuccess();
     } catch (error: any) {
@@ -283,7 +287,6 @@ const TimelogAddSheet = ({
             />
           </div>
           
-          {/* Use our new standardized receipt upload manager */}
           <ReceiptUploadManager
             hasReceipts={hasReceipts}
             onHasReceiptsChange={setHasReceipts}

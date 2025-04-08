@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Timer, Upload } from 'lucide-react';
@@ -89,7 +88,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
       }
     }
     
-    // Submit with receipt data
+    // Fixed: Pass correct parameters to submitTimeEntry
     submitTimeEntry(data, selectedFiles, receiptMetadata);
   };
 
@@ -228,7 +227,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
-            {/* Use our new standardized receipt upload manager */}
             <ReceiptUploadManager
               hasReceipts={hasReceipts}
               onHasReceiptsChange={setHasReceipts}

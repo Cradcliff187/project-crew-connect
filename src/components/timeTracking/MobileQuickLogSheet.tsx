@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,7 +24,6 @@ interface MobileQuickLogSheetProps {
   date: Date;
 }
 
-// Define the form values type
 export interface QuickLogFormValues {
   entityType: 'work_order' | 'project';
   entityId: string;
@@ -46,7 +44,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   
-  // Use our standardized receipt upload hook
   const {
     hasReceipts,
     setHasReceipts,
@@ -61,7 +58,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   
   const { toast } = useToast();
   
-  // Update form schema to require employeeId
   const formSchema = z.object({
     entityType: z.enum(['work_order', 'project']),
     entityId: z.string().min(1, "Please select a work order or project"),
@@ -100,7 +96,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   
   const selectedEntity = entityId ? getSelectedEntityDetails() : null;
   
-  // Update hours worked when start or end time changes
   useEffect(() => {
     if (startTime && endTime) {
       try {
@@ -120,7 +115,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     }
   }, [startTime, endTime, form]);
   
-  // Reset form and state when sheet opens/closes
   useEffect(() => {
     if (!open) {
       setTimeout(() => {
@@ -139,7 +133,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     }
   }, [open, form, resetReceiptData]);
   
-  // Handle next step
   const handleNext = async () => {
     if (step === 1) {
       const isValid = await form.trigger(['entityType', 'entityId']);
@@ -154,7 +147,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   };
   
   const handleSubmit: SubmitHandler<QuickLogFormValues> = async (data) => {
-    // Validate receipt data if indicated
     if (hasReceipts) {
       const validation = validateReceiptData();
       if (!validation.valid) {
@@ -170,10 +162,8 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Format date for submission
       const formattedDate = date.toISOString().split('T')[0];
       
-      // Create time entry
       const timelogEntry = {
         entity_type: data.entityType,
         entity_id: data.entityId,
@@ -196,15 +186,12 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         
       if (error) throw error;
       
-      // Handle receipt uploads if present
       if (hasReceipts && selectedFiles.length > 0 && timeEntry) {
         for (const file of selectedFiles) {
-          // Create unique filename
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `receipts/time_entries/${timeEntry.id}/${fileName}`;
           
-          // Upload file to storage
           const { error: uploadError } = await supabase.storage
             .from('construction_documents')
             .upload(filePath, file);
@@ -214,7 +201,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             continue;
           }
           
-          // Create document record with enhanced metadata
           const documentMetadata = {
             file_name: file.name,
             file_type: file.type,
@@ -244,7 +230,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             continue;
           }
           
-          // Link the document to the time entry
           const { error: linkError } = await supabase
             .from('time_entry_document_links')
             .insert({
@@ -257,7 +242,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             console.error('Link error:', linkError);
           }
           
-          // Create expense records if needed based on entity type
           if (data.entityType === 'work_order') {
             const { error: expenseError } = await supabase
               .from('expenses')
@@ -270,7 +254,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
                 document_id: document.document_id,
                 time_entry_id: timeEntry.id,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                unit_price: receiptMetadata.amount || 0,
+                quantity: 1,
+                expense_date: new Date().toISOString()
               });
             
             if (expenseError) {
@@ -280,13 +267,11 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         }
       }
       
-      // Success handling
       toast({
         title: 'Time entry added',
         description: `${data.hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === data.employeeId)?.name || 'employee'} on ${formattedDate}.`,
       });
       
-      // Reset and close
       if (onSuccess) {
         onSuccess();
       }
@@ -480,7 +465,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
                 </div>
               </div>
               
-              {/* Use our standardized receipt upload manager */}
               <ReceiptUploadManager
                 hasReceipts={hasReceipts}
                 onHasReceiptsChange={setHasReceipts}

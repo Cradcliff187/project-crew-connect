@@ -139,7 +139,8 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 updated_at: new Date().toISOString(),
                 quantity: 1,
                 unit_price: receiptMetadata.amount || 0,
-                vendor_id: receiptMetadata.vendorId || null
+                vendor_id: receiptMetadata.vendorId || null,
+                expense_date: new Date().toISOString()
               });
               
             if (expenseError) {
@@ -183,7 +184,8 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 quantity: 1,
-                unit_price: receiptMetadata.amount || 0
+                unit_price: receiptMetadata.amount || 0,
+                expense_date: new Date().toISOString()
               });
               
             if (expenseError) {
