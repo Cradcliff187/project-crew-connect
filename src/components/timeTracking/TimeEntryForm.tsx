@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Timer, Upload } from 'lucide-react';
@@ -88,8 +89,9 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
       }
     }
     
-    // Fixed: Pass correct parameters to submitTimeEntry
-    submitTimeEntry(data, selectedFiles, receiptMetadata);
+    // Fixed: Call submitTimeEntry with the correct data format
+    // The form handler will internally handle passing the files and metadata to the submission function
+    submitTimeEntry(data);
   };
 
   return (
