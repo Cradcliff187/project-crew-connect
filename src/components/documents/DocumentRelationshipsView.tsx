@@ -1,90 +1,152 @@
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { FileText, Link2, Trash2, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, FileText, Link as LinkIcon, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Document } from './schemas/documentSchema';
-import { useDocumentRelationships } from '@/hooks/useDocumentRelationships';
+import { Button } from '@/components/ui/button';
+import { WorkOrderDocument } from '../workOrders/details/DocumentsList/types';
+import { convertToDocument, convertToWorkOrderDocument } from './utils/documentTypeUtils';
 
 interface DocumentRelationshipsViewProps {
-  document: Document;
-  onViewDocument: (document: Document) => void;
+  document: Document | WorkOrderDocument;
+  onViewDocument: (document: Document | WorkOrderDocument) => void;
   showManagementButton?: boolean;
 }
 
 const DocumentRelationshipsView: React.FC<DocumentRelationshipsViewProps> = ({
   document,
   onViewDocument,
-  showManagementButton = false
+  showManagementButton = true
 }) => {
-  const {
-    relationships,
-    loading,
-    deleteRelationship
-  } = useDocumentRelationships(document?.document_id);
+  const [relatedDocuments, setRelatedDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
-        <span className="ml-2 text-muted-foreground">Loading relationships...</span>
-      </div>
-    );
-  }
-
-  if (!relationships || relationships.length === 0) {
-    return (
-      <div className="text-center p-6 bg-gray-50 rounded-md">
-        <p className="text-muted-foreground">No related documents found</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Use the "Link Document" button to create relationships between documents.
-        </p>
-      </div>
-    );
-  }
-
+  // Normalize document to Document type
+  const normalizedDocument = 'document_id' in document ? 
+    document as Document : 
+    convertToDocument(document as WorkOrderDocument);
+  
+  // Load related documents
+  useEffect(() => {
+    const fetchRelatedDocuments = async () => {
+      if (!normalizedDocument.document_id) return;
+      
+      setLoading(true);
+      
+      try {
+        // Fetch source relationships
+        const { data: sourceData, error: sourceError } = await supabase
+          .from('document_relationships')
+          .select('target_document_id')
+          .eq('source_document_id', normalizedDocument.document_id);
+        
+        if (sourceError) throw sourceError;
+        
+        // Fetch target relationships
+        const { data: targetData, error: targetError } = await supabase
+          .from('document_relationships')
+          .select('source_document_id')
+          .eq('target_document_id', normalizedDocument.document_id);
+        
+        if (targetError) throw targetError;
+        
+        // Combine unique document IDs
+        const relatedDocIds = [
+          ...sourceData.map(item => item.target_document_id),
+          ...targetData.map(item => item.source_document_id)
+        ];
+        
+        // Filter out duplicates
+        const uniqueDocIds = [...new Set(relatedDocIds)];
+        
+        if (uniqueDocIds.length === 0) {
+          setRelatedDocuments([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch document details
+        const { data: docsData, error: docsError } = await supabase
+          .from('documents_with_urls')
+          .select('*')
+          .in('document_id', uniqueDocIds);
+        
+        if (docsError) throw docsError;
+        
+        setRelatedDocuments(docsData as Document[]);
+      } catch (error) {
+        console.error('Error fetching related documents:', error);
+        setRelatedDocuments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRelatedDocuments();
+  }, [normalizedDocument.document_id]);
+  
+  const handleViewRelatedDocument = (doc: Document) => {
+    if (onViewDocument) {
+      // Convert to appropriate type based on what the parent expects
+      if ('is_receipt' in document) {
+        // Parent expects WorkOrderDocument
+        onViewDocument(convertToWorkOrderDocument(doc));
+      } else {
+        // Parent expects Document
+        onViewDocument(doc);
+      }
+    }
+  };
+  
   return (
-    <div className="space-y-3">
-      {relationships.map((relation) => {
-        // Determine which document to show (the one that's not the current document)
-        const relatedDoc = relation.source_document_id === document.document_id
-          ? relation.target_document
-          : relation.source_document;
-          
-        if (!relatedDoc) return null;
-
-        return (
-          <div 
-            key={relation.id}
-            className="flex items-center justify-between p-3 border rounded-md hover:bg-gray-50"
-          >
-            <div 
-              className="flex items-center flex-1 min-w-0 cursor-pointer"
-              onClick={() => onViewDocument(relatedDoc as Document)}
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">Document Relationships</CardTitle>
+          {showManagementButton && (
+            <Button 
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
             >
-              <FileText className="h-5 w-5 text-[#0485ea] mr-3" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{relatedDoc.file_name}</p>
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <span className="bg-blue-100 text-blue-800 rounded px-1 py-0.5 text-xs mr-2">
-                    {relation.relationship_type}
-                  </span>
-                  <span>{new Date(relatedDoc.created_at).toLocaleDateString()}</span>
+              <Plus className="h-3 w-3 mr-1" />
+              Add Relationship
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : relatedDocuments.length > 0 ? (
+          <div className="space-y-2 mt-2">
+            {relatedDocuments.map(doc => (
+              <div 
+                key={doc.document_id} 
+                className="flex items-center gap-2 p-2 rounded-md hover:bg-muted cursor-pointer"
+                onClick={() => handleViewRelatedDocument(doc)}
+              >
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 overflow-hidden">
+                  <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {doc.entity_type.toLowerCase()} • {doc.category || 'document'}
+                  </p>
                 </div>
               </div>
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => deleteRelationship(relation.id)}
-              aria-label="Delete relationship"
-            >
-              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
-            </Button>
+            ))}
           </div>
-        );
-      })}
-    </div>
+        ) : (
+          <div className="text-center py-4">
+            <LinkIcon className="h-8 w-8 mx-auto text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground mt-2">No related documents found</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

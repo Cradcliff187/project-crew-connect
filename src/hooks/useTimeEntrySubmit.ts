@@ -11,22 +11,16 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
 
   const submitTimeEntry = async (
     data: TimeEntryFormValues, 
-    selectedFiles: File[] = [],
+    selectedFiles: File[],
     receiptMetadata: ReceiptMetadata = { 
       category: 'receipt', 
       expenseType: null, 
-      tags: ['time-entry'],
-      vendorType: 'vendor' 
+      tags: ['time-entry'] 
     }
   ) => {
     setIsSubmitting(true);
     
     try {
-      // Validate that employee ID is provided
-      if (!data.employeeId) {
-        throw new Error('Employee selection is required');
-      }
-      
       let employeeRate = null;
       if (data.employeeId) {
         // Get employee rate if available
@@ -47,7 +41,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         start_time: data.startTime,
         end_time: data.endTime,
         hours_worked: data.hoursWorked,
-        employee_id: data.employeeId,
+        employee_id: data.employeeId || null,
         employee_rate: employeeRate,
         notes: data.notes,
         has_receipts: selectedFiles.length > 0,
@@ -114,12 +108,10 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           if (documentError) throw documentError;
           
           // Link document to time entry
-          const { error: linkError } = await supabase
-            .from('time_entry_document_links')
-            .insert({
-              time_entry_id: insertedEntry.id,
-              document_id: insertedDoc.document_id,
-              created_at: new Date().toISOString()
+          const { data: linkResult, error: linkError } = await supabase
+            .rpc('attach_document_to_time_entry', {
+              p_time_entry_id: insertedEntry.id,
+              p_document_id: insertedDoc.document_id
             });
             
           if (linkError) {
@@ -143,7 +135,6 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 updated_at: new Date().toISOString(),
                 quantity: 1,
                 unit_price: receiptMetadata.amount || 0,
-                expense_date: receiptMetadata.expenseDate ? format(receiptMetadata.expenseDate, 'yyyy-MM-dd') : new Date().toISOString(),
                 vendor_id: receiptMetadata.vendorId || null
               });
               
@@ -188,9 +179,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 quantity: 1,
-                unit_price: receiptMetadata.amount || 0,
-                expense_date: receiptMetadata.expenseDate ? format(receiptMetadata.expenseDate, 'yyyy-MM-dd') : new Date().toISOString(),
-                vendor_id: receiptMetadata.vendorId || null
+                unit_price: receiptMetadata.amount || 0
               });
               
             if (expenseError) {
@@ -239,39 +228,11 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             updated_at: new Date().toISOString(),
             quantity: data.hoursWorked,
             unit_price: hourlyRate,
-            vendor_id: null,
-            expense_date: format(data.workDate, 'yyyy-MM-dd')
+            vendor_id: null
           });
           
         if (laborExpenseError) {
           console.error('Error creating labor expense:', laborExpenseError);
-        }
-      }
-      
-      // Also create labor expenses for projects to maintain consistency
-      if (data.entityType === 'project' && data.hoursWorked > 0) {
-        const hourlyRate = employeeRate || 75;
-        const totalAmount = data.hoursWorked * hourlyRate;
-        
-        const { error: laborExpenseError } = await supabase
-          .from('expenses')
-          .insert({
-            entity_type: 'PROJECT',
-            entity_id: data.entityId,
-            description: `Labor: ${data.hoursWorked} hours`,
-            expense_type: 'LABOR',
-            amount: totalAmount,
-            time_entry_id: insertedEntry.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            quantity: data.hoursWorked,
-            unit_price: hourlyRate,
-            vendor_id: null,
-            expense_date: format(data.workDate, 'yyyy-MM-dd')
-          });
-          
-        if (laborExpenseError) {
-          console.error('Error creating project labor expense:', laborExpenseError);
         }
       }
       

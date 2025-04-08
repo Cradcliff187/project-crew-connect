@@ -1,6 +1,6 @@
 
+// This file is no longer needed since we've replaced it with DocumentRelationshipsView.tsx
 import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DocumentRelationshipsView from './DocumentRelationshipsView';
 import { Document } from './schemas/documentSchema';
 
@@ -13,18 +13,12 @@ const DocumentRelationshipsTab: React.FC<DocumentRelationshipsTabProps> = ({
   document,
   onViewDocument
 }) => {
+  // This is now just a wrapper for DocumentRelationshipsView
   return (
-    <Tabs defaultValue="relationships" className="w-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="relationships">Related Documents</TabsTrigger>
-      </TabsList>
-      <TabsContent value="relationships">
-        <DocumentRelationshipsView
-          document={document}
-          onViewDocument={onViewDocument}
-        />
-      </TabsContent>
-    </Tabs>
+    <DocumentRelationshipsView
+      document={document}
+      onViewDocument={onViewDocument}
+    />
   );
 };
 

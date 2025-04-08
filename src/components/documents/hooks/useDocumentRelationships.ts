@@ -3,29 +3,25 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
-import { DocumentRelationship } from '@/hooks/useDocumentRelationships';
 
-interface RelationshipOperations {
-  relatedDocuments: Document[];
-  loading: boolean;
-  error: Error | null;
-  fetchRelationships: () => Promise<void>;
-  createRelationship: (targetDocumentId: string, relationshipType: string) => Promise<{
-    success: boolean;
-    error?: Error;
-  }>;
-  removeRelationship: (relationshipId: string) => Promise<{
-    success: boolean;
-    error?: Error;
-  }>;
+export interface DocumentRelationship {
+  id: string;
+  source_document_id: string;
+  target_document_id: string;
+  relationship_type: string;
+  created_at: string;
 }
 
-export const useDocumentRelationshipsOps = (documentId?: string): RelationshipOperations => {
-  const [relatedDocuments, setRelatedDocuments] = useState<Document[]>([]);
+export interface RelatedDocument extends Document {
+  relationship_id?: string;
+  relationship_type?: string;
+}
+
+export const useDocumentRelationships = (documentId?: string) => {
+  const [relatedDocuments, setRelatedDocuments] = useState<RelatedDocument[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  // Reuse the existing fetchRelationships logic but connect to the main hook
   const fetchRelationships = async () => {
     if (!documentId) return;
     
@@ -33,7 +29,7 @@ export const useDocumentRelationshipsOps = (documentId?: string): RelationshipOp
     setError(null);
     
     try {
-      // Use the same supabase queries as the main hook but simplify the response
+      // Fetch relationships where this document is the source
       const { data: sourceRelationships, error: sourceError } = await supabase
         .from('document_relationships')
         .select(`
@@ -45,6 +41,7 @@ export const useDocumentRelationshipsOps = (documentId?: string): RelationshipOp
         
       if (sourceError) throw sourceError;
       
+      // Fetch relationships where this document is the target
       const { data: targetRelationships, error: targetError } = await supabase
         .from('document_relationships')
         .select(`
@@ -88,7 +85,7 @@ export const useDocumentRelationshipsOps = (documentId?: string): RelationshipOp
           ...doc,
           relationship_id: relationship?.id,
           relationship_type: relationship?.relationship_type
-        } as Document;
+        } as RelatedDocument;
       });
       
       setRelatedDocuments(docsWithRelationships);
@@ -99,6 +96,12 @@ export const useDocumentRelationshipsOps = (documentId?: string): RelationshipOp
       setLoading(false);
     }
   };
+  
+  useEffect(() => {
+    if (documentId) {
+      fetchRelationships();
+    }
+  }, [documentId]);
   
   const createRelationship = async (targetDocumentId: string, relationshipType: string) => {
     if (!documentId) return { success: false, error: new Error('No source document ID provided') };
@@ -169,10 +172,6 @@ export const useDocumentRelationshipsOps = (documentId?: string): RelationshipOp
     }
   };
   
-  useEffect(() => {
-    fetchRelationships();
-  }, [documentId]);
-  
   return {
     relatedDocuments,
     loading,
@@ -183,5 +182,4 @@ export const useDocumentRelationshipsOps = (documentId?: string): RelationshipOp
   };
 };
 
-// Compatibility layer to support existing code
-export default useDocumentRelationshipsOps;
+export default useDocumentRelationships;

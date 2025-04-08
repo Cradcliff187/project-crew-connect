@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { TimeEntry } from '@/types/timeTracking';
 import { format } from 'date-fns';
-import { parseTime, calculateHours } from '@/components/timeTracking/utils/timeUtils';
+import { parseTime, timeOptions, calculateHours } from '@/components/timeTracking/utils/timeUtils';
 
 interface TimeEntryEditDialogProps {
   timeEntry: TimeEntry | null;

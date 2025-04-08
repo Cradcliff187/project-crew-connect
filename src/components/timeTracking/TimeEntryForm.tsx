@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Timer } from 'lucide-react';
+import { Calendar as CalendarIcon, Timer, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -10,16 +10,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 
 import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
 import TimeRangeSelector from './form/TimeRangeSelector';
-import ReceiptUploadManager from './form/ReceiptUploadManager';
+import ReceiptMetadataForm from './form/ReceiptMetadataForm';
+import ReceiptUploader from './form/ReceiptUploader';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import { useEntityData } from './hooks/useEntityData';
-import EmployeeSelector from './form/EmployeeSelector';
 import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
 import { EntityType } from '../documents/schemas/documentSchema';
 
@@ -29,7 +30,8 @@ interface TimeEntryFormProps {
 
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
-  
+  const [hasReceipts, setHasReceipts] = useState(false);
+
   const {
     form,
     isLoading,
@@ -38,7 +40,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     handleFilesSelected,
     handleFileClear,
     updateReceiptMetadata,
-    handleSubmit: submitTimeEntry,
+    handleSubmit,
   } = useTimeEntryForm(onSuccess);
 
   const {
@@ -49,17 +51,12 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
     getSelectedEntityDetails
   } = useEntityData(form);
 
+  // Watch form values
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   const hoursWorked = form.watch('hoursWorked');
-  const hasReceipts = form.watch('hasReceipts');
-
-  // Update form when hasReceipts changes from file uploads
-  useEffect(() => {
-    form.setValue('hasReceipts', selectedFiles.length > 0);
-  }, [selectedFiles.length, form]);
 
   const handleReceiptUploadSuccess = () => {
     setShowReceiptUpload(false);
@@ -67,38 +64,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
       title: "Receipt uploaded",
       description: "Your receipt has been added to this time entry."
     });
-  };
-  
-  // Validate receipt data before submission
-  const validateReceipts = () => {
-    if (hasReceipts && selectedFiles.length === 0) {
-      toast({
-        title: "Receipt information required",
-        description: "You indicated you have receipts but none were uploaded. Please upload receipts or turn off the receipt option.",
-        variant: "destructive"
-      });
-      return false;
-    }
-    
-    if (hasReceipts && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
-      toast({
-        title: "Receipt information required",
-        description: "Please select an expense type for your receipt.",
-        variant: "destructive"
-      });
-      return false;
-    }
-    
-    return true;
-  };
-
-  const handleSubmit = (data: any) => {
-    if (!validateReceipts()) {
-      return;
-    }
-    
-    // Pass data to submit function
-    submitTimeEntry(data);
   };
 
   return (
@@ -109,11 +74,13 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         </CardHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)}>
           <CardContent className="space-y-6">
+            {/* Entity Type Selection */}
             <EntityTypeSelector 
               value={entityType} 
               onChange={(value) => form.setValue('entityType', value, { shouldValidate: true })}
             />
             
+            {/* Entity Selection */}
             <EntitySelector
               entityType={entityType}
               entityId={entityId}
@@ -125,14 +92,25 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               selectedEntity={getSelectedEntityDetails()}
             />
             
-            <EmployeeSelector 
-              employees={employees}
-              selectedEmployeeId={form.watch('employeeId')}
-              onChange={(value) => form.setValue('employeeId', value, { shouldValidate: true })}
-              error={form.formState.errors.employeeId?.message}
-              isLoading={isLoadingEntities}
-            />
+            {/* Employee Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="employee">Employee</Label>
+              <select
+                id="employee"
+                className="w-full border border-gray-300 rounded-md p-2"
+                value={form.watch('employeeId') || ''}
+                onChange={(e) => form.setValue('employeeId', e.target.value, { shouldValidate: true })}
+              >
+                <option value="">Select Employee</option>
+                {employees.map(employee => (
+                  <option key={employee.employee_id} value={employee.employee_id}>
+                    {employee.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             
+            {/* Date Selection */}
             <div className="space-y-2">
               <Label>Date</Label>
               <Popover>
@@ -158,12 +136,12 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                     selected={form.watch('workDate')}
                     onSelect={(date) => date && form.setValue('workDate', date, { shouldValidate: true })}
                     initialFocus
-                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
             </div>
             
+            {/* Time Range */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label>Time Range</Label>
@@ -180,6 +158,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                 endTime={endTime}
                 onStartTimeChange={(value) => {
                   form.setValue('startTime', value, { shouldValidate: true });
+                  // Automatically adjust end time if needed
                   if (endTime) {
                     const [startHour, startMinute] = value.split(':').map(Number);
                     const [endHour, endMinute] = endTime.split(':').map(Number);
@@ -199,6 +178,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
+            {/* Total Hours */}
             <div className="space-y-2">
               <Label htmlFor="hoursWorked">Total Hours</Label>
               <Input
@@ -211,6 +191,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
+            {/* Notes */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
@@ -221,18 +202,53 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
-            <ReceiptUploadManager
-              hasReceipts={hasReceipts}
-              onHasReceiptsChange={(value) => form.setValue('hasReceipts', value)}
-              files={selectedFiles}
-              onFilesChange={handleFilesSelected}
-              metadata={receiptMetadata}
-              onMetadataChange={updateReceiptMetadata}
-              entityType={entityType}
-              entityId={entityId}
-              showToggle={true}
-              toggleLabel="Attach Receipt(s)"
-            />
+            {/* Receipts Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
+                <div>
+                  <h4 className="font-medium">Attach Receipt(s)</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Do you have any receipts to upload for this time entry?
+                  </p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Switch
+                    checked={hasReceipts}
+                    onCheckedChange={(checked) => {
+                      setHasReceipts(checked);
+                      form.setValue('hasReceipts', checked);
+                      if (!checked) {
+                        handleFileClear(0); // Clear all files
+                      }
+                    }}
+                    className="data-[state=checked]:bg-[#0485ea]"
+                  />
+                </div>
+              </div>
+              
+              {hasReceipts && (
+                <div className="space-y-4 pt-2">
+                  <ReceiptUploader
+                    selectedFiles={selectedFiles}
+                    onFilesSelected={handleFilesSelected}
+                    onFileClear={handleFileClear}
+                  />
+                  
+                  {selectedFiles.length > 0 && (
+                    <ReceiptMetadataForm
+                      vendor={receiptMetadata.vendorId || ''}
+                      expenseType={receiptMetadata.expenseType || ''}
+                      amount={receiptMetadata.amount}
+                      onVendorChange={(value) => updateReceiptMetadata({ vendorId: value })}
+                      onExpenseTypeChange={(value) => updateReceiptMetadata({ expenseType: value })}
+                      onAmountChange={(value) => updateReceiptMetadata({ amount: value })}
+                      entityType={entityType}
+                      entityId={entityId}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
           
           <CardFooter>
@@ -247,6 +263,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
         </form>
       </Card>
 
+      {/* Receipt Upload Dialog */}
       <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>

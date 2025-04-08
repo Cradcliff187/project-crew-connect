@@ -6,10 +6,9 @@ import MobileTimeEntryView from '@/components/timeTracking/MobileTimeEntryView';
 import DesktopTimeEntryView from '@/components/timeTracking/DesktopTimeEntryView';
 import { useTimeEntries } from '@/components/timeTracking/hooks/useTimeEntries';
 import { Helmet } from 'react-helmet-async';
-import { useDeviceCapabilities } from '@/hooks/use-mobile';
 
 const TimeTracking = () => {
-  // Use our hook with Monday as start of week
+  // Fetch time entries for the current week (hook handles the date range)
   const { 
     entries, 
     loading, 
@@ -21,14 +20,11 @@ const TimeTracking = () => {
     goToCurrentWeek
   } = useTimeEntries();
   
-  // Use our device capabilities hook for better detection
-  const { isMobile, hasCamera, isTouchScreen } = useDeviceCapabilities();
+  // State for add form
+  const [showAddForm, setShowAddForm] = React.useState(false);
   
-  // For fallback, also use media query
-  const isSmallScreen = useMediaQuery("(max-width: 768px)");
-  
-  // Use either the device detection or the media query
-  const useMobileView = isMobile || isSmallScreen || (isTouchScreen ?? false);
+  // Detect if we're on a mobile device
+  const isMobile = useMediaQuery("(max-width: 768px)");
   
   // Trigger initial data loading when component mounts
   useEffect(() => {
@@ -38,16 +34,13 @@ const TimeTracking = () => {
   // Calculate total hours for the selected week
   const totalHours = entries?.reduce((sum, entry) => sum + entry.hours_worked, 0) || 0;
   
-  // Always pass the refreshEntries function as onAddSuccess
   const handleAddSuccess = () => {
+    setShowAddForm(false);
     refreshEntries();
   };
   
-  // State to control showing the add form
-  const [showAddForm, setShowAddForm] = React.useState(false);
-  
-  // If on mobile, show optimized mobile view
-  if (useMobileView) {
+  // If on mobile, show a simplified view
+  if (isMobile) {
     return (
       <PageTransition>
         <Helmet>

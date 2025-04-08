@@ -1,17 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
-import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector';
-import EmployeeSelector from '@/components/timeTracking/form/EmployeeSelector';
-import ReceiptUploadManager from '@/components/timeTracking/form/ReceiptUploadManager';
-import { useReceiptUpload } from '@/components/timeTracking/hooks/useReceiptUpload';
-import { format } from 'date-fns';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -30,273 +25,65 @@ const TimelogAddSheet = ({
 }: TimelogAddSheetProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('17:00');
-  const [workDate, setWorkDate] = useState<Date>(new Date());
-  const [hoursWorked, setHoursWorked] = useState(8);
+  const [hours, setHours] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [notes, setNotes] = useState('');
-  const [employeeError, setEmployeeError] = useState('');
-  
-  const {
-    hasReceipts,
-    setHasReceipts,
-    selectedFiles,
-    receiptMetadata,
-    handleFilesSelected,
-    handleFileClear,
-    updateMetadata,
-    validateReceiptData
-  } = useReceiptUpload({
-    initialHasReceipts: false,
-    initialMetadata: {}
-  });
-  
-  const updateHoursWorked = (start: string, end: string) => {
-    try {
-      const hours = calculateHours(start, end);
-      setHoursWorked(parseFloat(hours.toFixed(2)));
-    } catch (error) {
-      console.error('Error calculating hours:', error);
-      setHoursWorked(0);
-    }
-  };
-
-  const handleStartTimeChange = (value: string) => {
-    setStartTime(value);
-    updateHoursWorked(value, endTime);
-  };
-
-  const handleEndTimeChange = (value: string) => {
-    setEndTime(value);
-    updateHoursWorked(startTime, value);
-  };
-
-  const handleDateChange = (date: Date) => {
-    setWorkDate(date);
-  };
-  
-  const resetForm = () => {
-    setStartTime('09:00');
-    setEndTime('17:00');
-    setWorkDate(new Date());
-    setHoursWorked(8);
-    setEmployeeId('');
-    setNotes('');
-    setEmployeeError('');
-    setHasReceipts(false);
-  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!employeeId) {
-      setEmployeeError('Please select an employee');
-      toast({
-        title: 'Employee required',
-        description: 'Please select an employee for this time entry.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    if (hoursWorked <= 0) {
+    if (!hours || parseFloat(hours) <= 0) {
       toast({
         title: 'Invalid hours',
-        description: 'Please enter valid start and end times.',
+        description: 'Please enter a valid number of hours worked.',
         variant: 'destructive',
       });
       return;
-    }
-    
-    if (hasReceipts) {
-      const validation = validateReceiptData();
-      if (!validation.valid) {
-        toast({
-          title: "Receipt information required",
-          description: validation.error,
-          variant: "destructive"
-        });
-        return;
-      }
     }
     
     setIsSubmitting(true);
     
     try {
-      const formattedDate = format(workDate, 'yyyy-MM-dd');
-      
-      // Get employee rate if available
-      let employeeRate = null;
-      if (employeeId) {
-        const { data: empData } = await supabase
-          .from('employees')
-          .select('hourly_rate')
-          .eq('employee_id', employeeId)
-          .maybeSingle();
-        
-        employeeRate = empData?.hourly_rate;
-      }
+      // Get current date and create placeholder time values
+      const currentDate = new Date().toISOString().split('T')[0];
+      const currentTime = new Date();
+      // Set start time at 9 AM
+      const startTime = `09:00:00`;
+      // Calculate end time based on hours worked
+      const hoursNum = parseFloat(hours);
+      const endHour = Math.min(9 + hoursNum, 23);
+      const endMinutes = (hoursNum % 1) * 60;
+      const endTime = `${Math.floor(endHour).toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
       
       const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
-        employee_id: employeeId,
-        hours_worked: hoursWorked,
-        date_worked: formattedDate,
+        employee_id: employeeId || null,
+        hours_worked: hoursNum,
+        date_worked: currentDate,
         start_time: startTime,
         end_time: endTime,
         notes: notes || null,
-        has_receipts: hasReceipts && selectedFiles.length > 0,
-        employee_rate: employeeRate,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       
-      const { data: timeEntry, error } = await supabase
+      const { error } = await supabase
         .from('time_entries')
-        .insert(timelogEntry)
-        .select('id')
-        .single();
+        .insert(timelogEntry);
         
       if (error) throw error;
       
-      // Create labor expense
-      if (timeEntry && hoursWorked > 0) {
-        const hourlyRate = employeeRate || 75;
-        const totalAmount = hoursWorked * hourlyRate;
-        
-        const { error: laborExpenseError } = await supabase
-          .from('expenses')
-          .insert({
-            entity_type: 'WORK_ORDER',
-            entity_id: workOrderId,
-            description: `Labor: ${hoursWorked} hours`,
-            expense_type: 'LABOR',
-            amount: totalAmount,
-            time_entry_id: timeEntry.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            quantity: hoursWorked,
-            unit_price: hourlyRate,
-            vendor_id: null,
-            expense_date: formattedDate
-          });
-          
-        if (laborExpenseError) {
-          console.error('Error creating labor expense:', laborExpenseError);
-        }
-      }
-      
-      if (hasReceipts && selectedFiles.length > 0 && timeEntry) {
-        for (const file of selectedFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-          const filePath = `receipts/time_entries/${timeEntry.id}/${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('construction_documents')
-            .upload(filePath, file);
-            
-          if (uploadError) {
-            console.error('Upload error:', uploadError);
-            continue;
-          }
-          
-          const documentMetadata = {
-            file_name: file.name,
-            file_type: file.type,
-            file_size: file.size,
-            storage_path: filePath,
-            entity_type: 'TIME_ENTRY',
-            entity_id: timeEntry.id,
-            category: 'receipt',
-            is_expense: true,
-            tags: ['receipt', 'time-entry'],
-            expense_type: receiptMetadata.expenseType || 'other',
-            vendor_id: receiptMetadata.vendorId || null,
-            vendor_type: receiptMetadata.vendorType || null,
-            amount: receiptMetadata.amount || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-          
-          const { data: document, error: documentError } = await supabase
-            .from('documents')
-            .insert(documentMetadata)
-            .select('document_id')
-            .single();
-            
-          if (documentError) {
-            console.error('Document error:', documentError);
-            continue;
-          }
-          
-          const { error: linkError } = await supabase
-            .from('time_entry_document_links')
-            .insert({
-              time_entry_id: timeEntry.id,
-              document_id: document.document_id,
-              created_at: new Date().toISOString()
-            });
-            
-          if (linkError) {
-            console.error('Link error:', linkError);
-          }
-          
-          const { error: expenseError } = await supabase
-            .from('expenses')
-            .insert({
-              entity_type: 'WORK_ORDER',
-              entity_id: workOrderId,
-              description: `Time entry receipt: ${file.name}`,
-              expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
-              amount: receiptMetadata.amount || 0,
-              document_id: document.document_id,
-              time_entry_id: timeEntry.id,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              quantity: 1,
-              unit_price: receiptMetadata.amount || 0,
-              expense_date: receiptMetadata.expenseDate ? format(receiptMetadata.expenseDate, 'yyyy-MM-dd') : format(workDate, 'yyyy-MM-dd'),
-              vendor_id: receiptMetadata.vendorId || null
-            });
-            
-          if (expenseError) {
-            console.error('Error creating expense for receipt:', expenseError);
-          }
-          
-          // If there's a vendor, create or update vendor association
-          if (receiptMetadata.vendorId) {
-            const { error: vendorAssocError } = await supabase
-              .from('vendor_associations')
-              .upsert({
-                vendor_id: receiptMetadata.vendorId,
-                entity_type: 'WORK_ORDER',
-                entity_id: workOrderId,
-                description: `Associated via time entry receipt`,
-                amount: receiptMetadata.amount || null,
-                expense_type: receiptMetadata.expenseType || null,
-                document_id: document.document_id,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-              
-            if (vendorAssocError) {
-              console.error('Error creating vendor association:', vendorAssocError);
-            }
-          }
-        }
-      }
-      
       toast({
         title: 'Time entry added',
-        description: `${hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === employeeId)?.name || 'employee'} on ${format(workDate, 'MMM d, yyyy')}.`,
+        description: `${hours} hours have been logged successfully.`,
       });
       
-      resetForm();
+      // Reset form and close sheet
+      setHours('');
+      setEmployeeId('');
+      setNotes('');
       onSuccess();
-      onOpenChange(false);
     } catch (error: any) {
       console.error('Error adding time entry:', error);
       toast({
@@ -310,38 +97,42 @@ const TimelogAddSheet = ({
   };
   
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) {
-        resetForm();
-      }
-      onOpenChange(isOpen);
-    }}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Log Time</SheetTitle>
         </SheetHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <EmployeeSelector 
-            employees={employees}
-            selectedEmployeeId={employeeId}
-            onChange={(value) => {
-              setEmployeeId(value);
-              setEmployeeError('');
-            }}
-            error={employeeError}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="hours">Hours Worked</Label>
+            <Input
+              id="hours"
+              type="number"
+              step="0.25"
+              min="0.25"
+              placeholder="Enter hours"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              required
+            />
+          </div>
           
           <div className="space-y-2">
-            <TimeRangeSelector
-              startTime={startTime}
-              endTime={endTime}
-              date={workDate}
-              onDateChange={handleDateChange}
-              onStartTimeChange={handleStartTimeChange}
-              onEndTimeChange={handleEndTimeChange}
-              hoursWorked={hoursWorked}
-            />
+            <Label htmlFor="employee">Employee</Label>
+            <select
+              id="employee"
+              className="w-full border border-input bg-background px-3 py-2 rounded-md"
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+            >
+              <option value="">Select Employee</option>
+              {employees.map((employee) => (
+                <option key={employee.employee_id} value={employee.employee_id}>
+                  {employee.name}
+                </option>
+              ))}
+            </select>
           </div>
           
           <div className="space-y-2">
@@ -354,19 +145,6 @@ const TimelogAddSheet = ({
               rows={4}
             />
           </div>
-          
-          <ReceiptUploadManager
-            hasReceipts={hasReceipts}
-            onHasReceiptsChange={setHasReceipts}
-            files={selectedFiles}
-            onFilesChange={handleFilesSelected}
-            metadata={receiptMetadata}
-            onMetadataChange={updateMetadata}
-            entityType="work_order"
-            entityId={workOrderId}
-            showToggle={true}
-            toggleLabel="Attach Receipt(s)"
-          />
           
           <div className="flex justify-end gap-2 pt-4">
             <Button

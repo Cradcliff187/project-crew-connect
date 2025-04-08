@@ -75,7 +75,7 @@ const DocumentRelationshipsList: React.FC<DocumentRelationshipsListProps> = ({
         if (!relatedDoc) return null;
         
         return (
-          <Card key={relationship.id} className="overflow-hidden shadow-sm">
+          <Card key={relationship.id} className="overflow-hidden">
             <CardHeader className="p-3 pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
