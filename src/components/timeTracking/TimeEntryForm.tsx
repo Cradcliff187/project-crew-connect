@@ -19,7 +19,6 @@ import TimeRangeSelector from './form/TimeRangeSelector';
 import ReceiptUploadManager from './form/ReceiptUploadManager';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import { useEntityData } from './hooks/useEntityData';
-import { useReceiptUpload } from './hooks/useReceiptUpload';
 import EmployeeSelector from './form/EmployeeSelector';
 import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
 import { EntityType } from '../documents/schemas/documentSchema';
@@ -130,8 +129,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               employees={employees}
               selectedEmployeeId={form.watch('employeeId')}
               onChange={(value) => form.setValue('employeeId', value, { shouldValidate: true })}
-              isLoading={isLoadingEntities}
               error={form.formState.errors.employeeId?.message}
+              isLoading={isLoadingEntities}
             />
             
             <div className="space-y-2">

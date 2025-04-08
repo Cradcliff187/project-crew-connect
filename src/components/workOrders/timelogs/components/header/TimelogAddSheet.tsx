@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,7 +47,10 @@ const TimelogAddSheet = ({
     handleFileClear,
     updateMetadata,
     validateReceiptData
-  } = useReceiptUpload();
+  } = useReceiptUpload({
+    initialHasReceipts: false,
+    initialMetadata: {}
+  });
   
   const updateHoursWorked = (start: string, end: string) => {
     try {

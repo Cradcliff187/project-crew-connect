@@ -2,6 +2,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Employee {
   employee_id: string;
@@ -14,6 +15,7 @@ interface EmployeeSelectorProps {
   onChange: (employeeId: string) => void;
   error?: string;
   compact?: boolean;
+  isLoading?: boolean;
 }
 
 const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
@@ -21,8 +23,19 @@ const EmployeeSelector: React.FC<EmployeeSelectorProps> = ({
   selectedEmployeeId,
   onChange,
   error,
-  compact = false
+  compact = false,
+  isLoading = false
 }) => {
+  // If loading, show skeleton UI
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+  
   // Compact mode is for mobile views
   if (compact) {
     return (

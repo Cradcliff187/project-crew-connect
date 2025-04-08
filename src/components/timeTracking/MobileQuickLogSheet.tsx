@@ -15,6 +15,7 @@ import { useEntityData } from './hooks/useEntityData';
 import { useReceiptUpload } from './hooks/useReceiptUpload';
 import ReceiptUploadManager from './form/ReceiptUploadManager';
 import EmployeeSelector from './form/EmployeeSelector';
+import { useForm } from 'react-hook-form';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -41,6 +42,25 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   
+  // Create a form object that can be passed to the useEntityData hook
+  const form = useForm({
+    defaultValues: {
+      entityType: entityType,
+      entityId: entityId,
+      employeeId: employeeId
+    }
+  });
+  
+  // Get entity data using our custom hook with the form
+  const { workOrders, projects, employees, isLoadingEntities } = useEntityData(form);
+  
+  // Update form when entity type or ID changes
+  useEffect(() => {
+    form.setValue('entityType', entityType);
+    form.setValue('entityId', entityId);
+    form.setValue('employeeId', employeeId);
+  }, [entityType, entityId, employeeId, form]);
+  
   // Receipt upload handling with our custom hook
   const {
     hasReceipts,
@@ -55,9 +75,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     initialHasReceipts: false,
     initialMetadata: {}
   });
-  
-  // Get entity data using our custom hook
-  const { workOrders, projects, employees, isLoadingEntities } = useEntityData();
   
   // Update hours worked when time changes
   useEffect(() => {
@@ -105,7 +122,9 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   };
   
   // Submit time entry and receipts to database
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     // Validate form data
     if (!validateForm()) {
       toast({
@@ -308,33 +327,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     }
   };
   
-  // Render compact employee selector
-  const renderEmployeeSelector = () => {
-    return (
-      <div className="space-y-2">
-        <Label htmlFor="employee" className="text-sm font-medium">
-          Employee <span className="text-red-500">*</span>
-        </Label>
-        <select
-          id="employee"
-          className={`w-full border ${errors.employeeId ? 'border-red-500' : 'border-gray-300'} rounded-md p-2 bg-white text-sm`}
-          value={employeeId}
-          onChange={(e) => setEmployeeId(e.target.value)}
-        >
-          <option value="">Select Employee</option>
-          {employees.map(employee => (
-            <option key={employee.employee_id} value={employee.employee_id}>
-              {employee.name}
-            </option>
-          ))}
-        </select>
-        {errors.employeeId && (
-          <p className="text-xs text-red-500">{errors.employeeId}</p>
-        )}
-      </div>
-    );
-  };
-  
   return (
     <Sheet open={open} onOpenChange={(isOpen) => {
       if (!isOpen) {
@@ -375,6 +367,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             }}
             error={errors.employeeId}
             compact={true}
+            isLoading={isLoadingEntities}
           />
           
           <div className="space-y-4">
@@ -395,7 +388,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             />
           </div>
           
-          {/* Simplified receipt upload manager for mobile */}
           <ReceiptUploadManager
             hasReceipts={hasReceipts}
             onHasReceiptsChange={setHasReceipts}
