@@ -1,276 +1,259 @@
-import React from 'react';
-import { format, parseISO } from 'date-fns';
+
+import React, { useState } from 'react';
+import { TimeEntry } from '@/types/timeTracking';
 import { Card, CardContent } from '@/components/ui/card';
-import { TimeEntry, TimeOfDay } from '@/types/timeTracking';
 import { Button } from '@/components/ui/button';
-import { 
-  MoreVertical, 
-  Clock, 
-  MapPin, 
-  Trash2, 
-  Edit, 
-  FileSpreadsheet,
-  Calendar
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
-import TimeEntryEditDialog from './TimeEntryEditDialog';
-import { useTimeEntryOperations } from './hooks/useTimeEntryOperations';
+import { Separator } from '@/components/ui/separator';
+import { formatDate } from '@/lib/utils';
 import { formatTime, getTimeOfDay } from './utils/timeUtils';
+import { Edit, Trash, Clock } from 'lucide-react';
+import TimeEntryEditDialog from './TimeEntryEditDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import DeleteConfirmationDialog from '@/components/ui/delete-confirmation-dialog';
 
-const formatDuration = (hours: number): string => {
-  const wholeHours = Math.floor(hours);
-  const minutes = Math.round((hours - wholeHours) * 60);
-  
-  if (wholeHours === 0) {
-    return `${minutes}m`;
-  } else if (minutes === 0) {
-    return `${wholeHours}h`;
-  } else {
-    return `${wholeHours}h ${minutes}m`;
-  }
-};
-
-const groupEntriesByDate = (entries: TimeEntry[]) => {
-  const grouped = new Map<string, TimeEntry[]>();
-
-  entries.forEach(entry => {
-    const dateKey = entry.date_worked;
-    if (!grouped.has(dateKey)) {
-      grouped.set(dateKey, []);
-    }
-    grouped.get(dateKey)?.push(entry);
-  });
-
-  grouped.forEach((entriesForDate, date) => {
-    grouped.set(date, [...entriesForDate].sort((a, b) => 
-      a.start_time.localeCompare(b.start_time)
-    ));
-  });
-
-  return new Map([...grouped.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))); // Sort chronologically (ascending)
-};
-
-const getTimeOfDayColor = (timeOfDay: TimeOfDay): string => {
-  switch (timeOfDay) {
-    case 'morning': return 'bg-blue-100 text-blue-800';
-    case 'afternoon': return 'bg-amber-100 text-amber-800';
-    case 'evening': return 'bg-purple-100 text-purple-800';
-    case 'night': return 'bg-indigo-100 text-indigo-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const formatDayHeader = (dateStr: string): string => {
-  const date = parseISO(dateStr);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  if (format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
-    return `Today, ${format(date, 'EEEE, MMMM d')}`;
-  } else if (format(date, 'yyyy-MM-dd') === format(yesterday, 'yyyy-MM-dd')) {
-    return `Yesterday, ${format(date, 'EEEE, MMMM d')}`;
-  } else {
-    return format(date, 'EEEE, MMMM d');
-  }
-};
-
-const calculateDailyTotal = (entries: TimeEntry[]): number => {
-  return entries.reduce((sum, entry) => sum + entry.hours_worked, 0);
-};
-
-export interface TimeEntryListProps {
+interface TimeEntryListProps {
   entries: TimeEntry[];
-  isLoading?: boolean;
+  isLoading: boolean;
   onEntryChange: () => void;
   isMobile?: boolean;
 }
 
-export const TimeEntryList: React.FC<TimeEntryListProps> = ({ 
-  entries, 
-  isLoading = false, 
+export const TimeEntryList = ({
+  entries,
+  isLoading,
   onEntryChange,
   isMobile = false
-}) => {
-  const {
-    isDeleting,
-    entryToDelete,
-    showDeleteDialog,
-    setShowDeleteDialog,
-    startDelete,
-    confirmDelete,
-    isSaving,
-    entryToEdit,
-    showEditDialog,
-    setShowEditDialog,
-    startEdit,
-    saveEdit
-  } = useTimeEntryOperations(onEntryChange);
-
+}: TimeEntryListProps) => {
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null);
+  
+  // Group entries by date for better organization
+  const entriesByDate = entries.reduce((acc, entry) => {
+    const date = entry.date_worked;
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(entry);
+    return acc;
+  }, {} as Record<string, TimeEntry[]>);
+  
+  // Format dates for display
+  const formattedDates = Object.keys(entriesByDate).sort((a, b) => 
+    new Date(b).getTime() - new Date(a).getTime()
+  );
+  
+  // Handle edit button click
+  const handleEdit = (entry: TimeEntry) => {
+    setEditingEntry(entry);
+    setIsEditing(true);
+  };
+  
+  // Handle save edited entry
+  const handleSaveEdit = async (updatedEntry: TimeEntry) => {
+    try {
+      // Calculate updated cost if employee_rate exists
+      let updatedCost = updatedEntry.total_cost;
+      if (updatedEntry.employee_rate) {
+        updatedCost = updatedEntry.hours_worked * updatedEntry.employee_rate;
+      }
+      
+      const { error } = await supabase
+        .from('time_entries')
+        .update({
+          start_time: updatedEntry.start_time,
+          end_time: updatedEntry.end_time,
+          hours_worked: updatedEntry.hours_worked,
+          notes: updatedEntry.notes,
+          total_cost: updatedCost,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', updatedEntry.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Time entry updated',
+        description: 'The time entry has been updated successfully.',
+      });
+      
+      setIsEditing(false);
+      setEditingEntry(null);
+      onEntryChange();
+    } catch (error: any) {
+      console.error('Error updating time entry:', error);
+      toast({
+        title: 'Error updating time entry',
+        description: error.message || 'An error occurred while updating the entry.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Handle delete button click
+  const handleDelete = (entryId: string) => {
+    setDeleteEntryId(entryId);
+    setDeleteConfirmVisible(true);
+  };
+  
+  // Handle confirm delete
+  const handleConfirmDelete = async () => {
+    if (!deleteEntryId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('time_entries')
+        .delete()
+        .eq('id', deleteEntryId);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Time entry deleted',
+        description: 'The time entry has been deleted successfully.',
+      });
+      
+      setDeleteConfirmVisible(false);
+      setDeleteEntryId(null);
+      onEntryChange();
+    } catch (error: any) {
+      console.error('Error deleting time entry:', error);
+      toast({
+        title: 'Error deleting time entry',
+        description: error.message || 'An error occurred while deleting the entry.',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Handle cancel delete
+  const handleCancelDelete = () => {
+    setDeleteConfirmVisible(false);
+    setDeleteEntryId(null);
+  };
+  
+  // If loading, show skeleton UI
   if (isLoading) {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-4">
-                <div className="flex justify-between items-start">
-                  <Skeleton className="h-6 w-1/3 mb-2" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-                <Skeleton className="h-4 w-2/3 mb-2" />
-                <div className="flex items-center mt-2">
-                  <Skeleton className="h-4 w-24 mr-2" />
-                </div>
-              </div>
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-4">
+              <div className="h-5 w-1/3 bg-gray-200 rounded mb-3"></div>
+              <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+              <div className="h-4 w-2/3 bg-gray-200 rounded"></div>
             </CardContent>
           </Card>
         ))}
       </div>
     );
   }
-
+  
+  // If no entries, show empty state
   if (entries.length === 0) {
     return (
-      <div className="text-center py-6 text-muted-foreground">
-        No time entries for this week. Add one to get started.
+      <div className="text-center py-8">
+        <Clock className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+        <h3 className="text-lg font-medium text-gray-900">No time entries yet</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Create your first time entry to track your work.
+        </p>
       </div>
     );
   }
-
-  const groupedEntries = groupEntriesByDate(entries);
-
+  
   return (
     <div className="space-y-6">
-      {Array.from(groupedEntries.entries()).map(([date, dayEntries]) => {
-        const dailyTotal = calculateDailyTotal(dayEntries);
-        
-        return (
-          <div key={date} className="space-y-2">
-            <div className="flex items-center justify-between border-b pb-2">
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-[#0485ea]" />
-                <h3 className="text-sm font-medium">{formatDayHeader(date)}</h3>
-              </div>
-              <span className="text-sm font-medium text-[#0485ea]">
-                {dailyTotal.toFixed(1)} hours
-              </span>
-            </div>
-            
-            <div className="space-y-2 pl-0 lg:pl-6">
-              {dayEntries.map((entry) => {
-                const startHour = parseInt(entry.start_time.split(':')[0]);
-                const timeOfDay = getTimeOfDay(startHour);
-                const timeOfDayColor = getTimeOfDayColor(timeOfDay);
-                
-                return (
-                  <Card key={entry.id} className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1">
-                            <div className="flex items-center">
-                              <span className="font-medium">
-                                {entry.entity_name || `${entry.entity_type.charAt(0).toUpperCase() + entry.entity_type.slice(1)} ${entry.entity_id.slice(0, 8)}`}
-                              </span>
-                              <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${timeOfDayColor}`}>
-                                {timeOfDay}
-                              </span>
-                            </div>
-                            
-                            {entry.entity_location && (
-                              <div className="text-sm text-muted-foreground flex items-center">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {entry.entity_location}
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium text-[#0485ea]">
-                              {formatDuration(entry.hours_worked)}
-                            </span>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  onSelect={() => startEdit(entry)}
-                                  className="cursor-pointer"
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                {entry.has_receipts && (
-                                  <DropdownMenuItem>
-                                    <FileSpreadsheet className="h-4 w-4 mr-2" />
-                                    View Receipts
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem 
-                                  onSelect={() => startDelete(entry)}
-                                  className="text-destructive cursor-pointer"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center text-sm text-muted-foreground mt-2">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>
-                            {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
-                          </span>
-                        </div>
-                        
-                        {entry.notes && (
-                          <div className="mt-2 text-sm border-t pt-2">
-                            {entry.notes}
-                          </div>
-                        )}
+      {formattedDates.map((date) => (
+        <div key={date} className="space-y-2">
+          <h3 className="font-medium text-sm text-gray-500">
+            {formatDate(date)}
+          </h3>
+          <div className="space-y-3">
+            {entriesByDate[date].map((entry) => {
+              // Get time of day for better UI context
+              const hour = parseInt(entry.start_time.split(':')[0], 10);
+              const timeOfDay = getTimeOfDay(hour);
+              
+              // Format start and end times for display
+              const formattedStartTime = formatTime(entry.start_time);
+              const formattedEndTime = formatTime(entry.end_time);
+              
+              return (
+                <Card key={entry.id} className="overflow-hidden">
+                  <CardContent className={`p-4 ${isMobile ? 'space-y-2' : 'flex justify-between items-start'}`}>
+                    <div className="flex-1">
+                      <div className="flex items-center mb-1">
+                        <span className="text-[#0485ea] font-medium">
+                          {entry.entity_name || (entry.entity_type === 'work_order' ? 'Work Order' : 'Project')}
+                        </span>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                      
+                      <div className="text-sm text-gray-600 mb-1">
+                        {formattedStartTime} - {formattedEndTime} ({entry.hours_worked} hrs)
+                      </div>
+                      
+                      {entry.employee_name && (
+                        <div className="text-sm text-gray-500">
+                          {entry.employee_name}
+                        </div>
+                      )}
+                      
+                      {entry.notes && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          {entry.notes}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className={`${isMobile ? 'flex justify-end pt-2' : 'flex-shrink-0 ml-4'}`}>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEdit(entry)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4 text-gray-500" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleDelete(entry.id)}
+                          className="h-8 w-8 p-0 text-red-500"
+                        >
+                          <Trash className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-        );
-      })}
+          <Separator className="my-4" />
+        </div>
+      ))}
       
-      <TimeEntryDeleteDialog
-        timeEntry={entryToDelete}
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={confirmDelete}
-        isDeleting={isDeleting}
+      {/* Edit Dialog */}
+      <TimeEntryEditDialog 
+        timeEntry={editingEntry}
+        open={isEditing}
+        onOpenChange={setIsEditing}
+        onSave={handleSaveEdit}
+        isSaving={false}
       />
       
-      <TimeEntryEditDialog
-        timeEntry={entryToEdit}
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        onSave={saveEdit}
-        isSaving={isSaving}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteConfirmVisible}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Time Entry"
+        description="Are you sure you want to delete this time entry? This action cannot be undone."
       />
     </div>
   );
 };
-
-export default TimeEntryList;

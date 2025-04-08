@@ -99,3 +99,54 @@ export const timeOptions = (): Array<{value: string, display: string}> => {
   }
   return options;
 };
+
+/**
+ * Format hours with proper decimal places
+ * @param hours - Number of hours
+ * @param decimalPlaces - Number of decimal places to display
+ * @returns Formatted hours string
+ */
+export const formatHours = (hours: number, decimalPlaces: number = 1): string => {
+  return hours.toFixed(decimalPlaces);
+};
+
+/**
+ * Create standardized time display for start/end times
+ * @param startTime - Start time in format "HH:MM"
+ * @param endTime - End time in format "HH:MM"
+ * @returns Formatted time range string (e.g. "9:00 AM - 5:00 PM")
+ */
+export const formatTimeRange = (startTime: string, endTime: string): string => {
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+};
+
+/**
+ * Get current time in HH:MM format
+ * @returns Current time in format "HH:MM"
+ */
+export const getCurrentTime = (): string => {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
+/**
+ * Round time to nearest interval (e.g. 15 minutes)
+ * @param timeString - Time in format "HH:MM"
+ * @param intervalMinutes - Interval to round to in minutes
+ * @returns Rounded time in format "HH:MM"
+ */
+export const roundTimeToInterval = (timeString: string, intervalMinutes: number = 15): string => {
+  const [hourStr, minuteStr] = timeString.split(':');
+  const hour = parseInt(hourStr, 10);
+  const minute = parseInt(minuteStr, 10);
+  
+  const totalMinutes = hour * 60 + minute;
+  const roundedMinutes = Math.round(totalMinutes / intervalMinutes) * intervalMinutes;
+  
+  const newHour = Math.floor(roundedMinutes / 60) % 24;
+  const newMinute = roundedMinutes % 60;
+  
+  return `${newHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`;
+};
