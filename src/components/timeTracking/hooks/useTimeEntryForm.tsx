@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -69,9 +70,11 @@ export function useTimeEntryForm(onSuccess: () => void) {
     }
   }, [startTime, endTime, form]);
   
+  // Updated handlers for receipt-related functionality
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
-    if (files.length > 0 && !form.watch('hasReceipts')) {
+    // Automatically set hasReceipts to true if files are selected
+    if (files.length > 0 && !hasReceipts) {
       form.setValue('hasReceipts', true);
     }
   };
@@ -79,6 +82,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
   const handleFileClear = (index: number) => {
     setSelectedFiles(prev => {
       const newFiles = prev.filter((_, i) => i !== index);
+      // If no files left, optionally reset hasReceipts to false
       if (newFiles.length === 0) {
         form.setValue('hasReceipts', false);
       }
@@ -86,6 +90,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
     });
   };
   
+  // Update receipt metadata
   const updateReceiptMetadata = (
     data: Partial<ReceiptMetadata>
   ) => {
@@ -95,22 +100,26 @@ export function useTimeEntryForm(onSuccess: () => void) {
     }));
   };
   
+  // Validate form before submission
   const validateReceiptData = () => {
-    if (form.watch('hasReceipts') && selectedFiles.length === 0) {
+    // If hasReceipts is true but no files were selected
+    if (hasReceipts && selectedFiles.length === 0) {
       return {
         valid: false,
         error: 'You indicated you have receipts but none were uploaded. Please upload at least one receipt or turn off the receipt option.'
       };
     }
     
-    if (form.watch('hasReceipts') && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
+    // If we have receipts but no expense type
+    if (hasReceipts && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
       return {
         valid: false,
         error: 'Please select an expense type for your receipt.'
       };
     }
     
-    if (form.watch('hasReceipts') && selectedFiles.length > 0 && 
+    // If we have receipts but no vendor selected (unless it's 'other')
+    if (hasReceipts && selectedFiles.length > 0 && 
         receiptMetadata.vendorType !== 'other' && 
         !receiptMetadata.vendorId) {
       return {
@@ -123,7 +132,8 @@ export function useTimeEntryForm(onSuccess: () => void) {
   };
   
   const handleSubmit = (data: TimeEntryFormValues) => {
-    if (form.watch('hasReceipts')) {
+    // Check if we need to validate receipt data
+    if (hasReceipts) {
       const validation = validateReceiptData();
       if (!validation.valid) {
         toast({
@@ -135,6 +145,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
       }
     }
     
+    // Pass all the needed data to the submitTimeEntry function
     submitTimeEntry(data, selectedFiles, receiptMetadata);
   };
   
@@ -146,7 +157,6 @@ export function useTimeEntryForm(onSuccess: () => void) {
     handleFilesSelected,
     handleFileClear,
     updateReceiptMetadata,
-    validateReceiptData,
     handleSubmit,
   };
 }

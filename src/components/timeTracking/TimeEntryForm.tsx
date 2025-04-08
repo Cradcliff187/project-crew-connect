@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Timer, Upload } from 'lucide-react';
@@ -125,6 +124,29 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               isLoading={isLoadingEntities}
               error={form.formState.errors.employeeId?.message}
             />
+            
+            <div className="space-y-2">
+              <Label htmlFor="employee" className="flex items-center">
+                Employee <span className="text-red-500 ml-1">*</span>
+              </Label>
+              <select
+                id="employee"
+                className={`w-full border ${form.formState.errors.employeeId ? 'border-red-500' : 'border-gray-300'} rounded-md p-2`}
+                value={form.watch('employeeId') || ''}
+                onChange={(e) => form.setValue('employeeId', e.target.value, { shouldValidate: true })}
+                required
+              >
+                <option value="">Select Employee</option>
+                {employees.map(employee => (
+                  <option key={employee.employee_id} value={employee.employee_id}>
+                    {employee.name}
+                  </option>
+                ))}
+              </select>
+              {form.formState.errors.employeeId && (
+                <p className="text-sm text-red-500">{form.formState.errors.employeeId.message}</p>
+              )}
+            </div>
             
             <div className="space-y-2">
               <Label>Date</Label>
