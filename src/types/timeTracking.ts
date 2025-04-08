@@ -66,7 +66,7 @@ export interface ReceiptMetadata {
   category: string;
   expenseType: string | null;
   tags: string[];
+  vendorType: 'vendor' | 'subcontractor' | 'other';
   vendorId?: string;
-  vendorType?: 'vendor' | 'subcontractor' | 'other';
   amount?: number;
 }

@@ -13,7 +13,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
       category: 'receipt', 
       expenseType: null, 
       tags: ['time-entry'],
-      vendorType: 'vendor' 
+      vendorType: 'vendor'
     }
   ) => {
     return coreSubmit(data, selectedFiles, receiptMetadata);

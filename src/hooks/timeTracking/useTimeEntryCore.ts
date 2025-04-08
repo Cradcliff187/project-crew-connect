@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { useReceiptUploadService } from './useReceiptUploadService';
 import { useExpenseService } from './useExpenseService';
+import { ReceiptMetadata } from '@/types/timeTracking';
 
 export function useTimeEntryCore(onSuccess: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,13 +16,13 @@ export function useTimeEntryCore(onSuccess: () => void) {
   const submitTimeEntry = async (
     data: TimeEntryFormValues,
     selectedFiles: File[] = [],
-    receiptMetadata = { 
+    receiptMetadata: ReceiptMetadata = { 
       category: 'receipt', 
-      expenseType: null as string | null, 
-      tags: ['time-entry'] as string[],
-      vendorType: 'vendor' as 'vendor' | 'subcontractor' | 'other',
-      vendorId?: string,
-      amount?: number
+      expenseType: null, 
+      tags: ['time-entry'],
+      vendorType: 'vendor',
+      vendorId: undefined,
+      amount: undefined
     }
   ) => {
     setIsSubmitting(true);

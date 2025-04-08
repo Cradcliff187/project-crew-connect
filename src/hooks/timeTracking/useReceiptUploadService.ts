@@ -1,15 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { useVendorAssociationService } from './useVendorAssociationService';
-
-type ReceiptMetadata = {
-  category: string;
-  expenseType: string | null;
-  tags: string[];
-  vendorType: 'vendor' | 'subcontractor' | 'other';
-  vendorId?: string;
-  amount?: number;
-};
+import { ReceiptMetadata } from '@/types/timeTracking';
 
 export function useReceiptUploadService() {
   const { createVendorAssociation } = useVendorAssociationService();
@@ -108,7 +100,10 @@ export function useReceiptUploadService() {
             entityType.toUpperCase(),
             entityId,
             insertedDoc.document_id,
-            metadata
+            {
+              expenseType: metadata.expenseType,
+              amount: metadata.amount
+            }
           );
         }
         
