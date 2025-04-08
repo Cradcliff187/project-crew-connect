@@ -20,13 +20,21 @@ export function useEntityData(form: UseFormReturn<any>) {
       setIsLoadingEntities(true);
       
       try {
-        // Fetch work orders
-        const { data: workOrdersData } = await supabase
+        console.log('Fetching time tracking entities...');
+        
+        // Fetch work orders - removed the status filter to show all work orders
+        const { data: workOrdersData, error: workOrdersError } = await supabase
           .from('maintenance_work_orders')
           .select('work_order_id, title')
-          .eq('status', 'ACTIVE')
           .order('created_at', { ascending: false });
           
+        if (workOrdersError) {
+          console.error('Error fetching work orders:', workOrdersError);
+          throw workOrdersError;
+        }
+        
+        console.log('Work orders fetched:', workOrdersData?.length || 0);
+        
         if (workOrdersData) {
           setWorkOrders(
             workOrdersData.map(wo => ({
@@ -36,13 +44,19 @@ export function useEntityData(form: UseFormReturn<any>) {
           );
         }
         
-        // Fetch projects
-        const { data: projectsData } = await supabase
+        // Fetch projects - removed the status filter to show all projects
+        const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select('projectid, projectname')
-          .eq('status', 'ACTIVE')
           .order('created_at', { ascending: false });
           
+        if (projectsError) {
+          console.error('Error fetching projects:', projectsError);
+          throw projectsError;
+        }
+        
+        console.log('Projects fetched:', projectsData?.length || 0);
+        
         if (projectsData) {
           setProjects(
             projectsData.map(p => ({
@@ -53,12 +67,17 @@ export function useEntityData(form: UseFormReturn<any>) {
         }
         
         // Fetch employees
-        const { data: employeesData } = await supabase
+        const { data: employeesData, error: employeesError } = await supabase
           .from('employees')
           .select('employee_id, first_name, last_name')
           .eq('status', 'ACTIVE')
           .order('first_name');
           
+        if (employeesError) {
+          console.error('Error fetching employees:', employeesError);
+          throw employeesError;
+        }
+        
         if (employeesData) {
           setEmployees(
             employeesData.map(e => ({

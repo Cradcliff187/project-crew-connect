@@ -32,7 +32,7 @@ export const useEntityData = (form: UseFormReturn<TimeEntryFormValues>) => {
       try {
         console.log('Starting to fetch entities for time tracking...');
         
-        // Fetch work orders
+        // Fetch work orders - removed the status filter to show all work orders
         const { data: workOrdersData, error: workOrdersError } = await supabase
           .from('maintenance_work_orders')
           .select('work_order_id, title')
@@ -57,7 +57,7 @@ export const useEntityData = (form: UseFormReturn<TimeEntryFormValues>) => {
           setWorkOrders([]);
         }
         
-        // Fetch projects
+        // Fetch projects - removed the status filter to show all projects
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select('projectid, projectname, status')

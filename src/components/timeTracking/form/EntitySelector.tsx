@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Briefcase, Building, Loader2 } from 'lucide-react';
+import { Briefcase, Building, Loader2, AlertCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface EntitySelectorProps {
@@ -60,10 +60,20 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
             </SelectContent>
           </Select>
           
-          {/* Show a debug message for development to help troubleshooting */}
-          <div className="text-xs text-gray-400">
-            {entities.length} {entityType === 'work_order' ? 'work orders' : 'projects'} available
-          </div>
+          {entities.length === 0 && (
+            <div className="text-xs flex items-center text-amber-600 gap-1">
+              <AlertCircle className="h-3 w-3" />
+              <span>
+                No {entityType === 'work_order' ? 'work orders' : 'projects'} available in the database
+              </span>
+            </div>
+          )}
+          
+          {entities.length > 0 && (
+            <div className="text-xs text-gray-400">
+              {entities.length} {entityType === 'work_order' ? 'work orders' : 'projects'} available
+            </div>
+          )}
         </>
       )}
       
