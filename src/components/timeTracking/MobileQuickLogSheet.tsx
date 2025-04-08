@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Sheet,
@@ -37,7 +38,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [entityType, setEntityType] = useState<'work_order' | 'project'>('work_order');
   const [entityId, setEntityId] = useState('');
   const [entityOptions, setEntityOptions] = useState<Array<{ id: string; name: string }>>([]);
-  const [employeeId, setEmployeeId] = useState('');
+  const [employeeId, setEmployeeId] = useState('none'); // Default to 'none' instead of empty string
   const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
   
   const { toast } = useToast();
@@ -223,7 +224,8 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setHoursWorked(8);
     setNotes('');
     setTimeError('');
-    setEmployeeId('');
+    setEmployeeId('none'); // Reset to 'none' not empty string
+    setEntityId('');
   };
   
   return (

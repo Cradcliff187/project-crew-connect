@@ -25,7 +25,7 @@ const TimeEntryEditDialog: React.FC<TimeEntryEditDialogProps> = ({
     if (!timeEntry) return;
     
     // Handle the special "none" value for employee_id
-    let updatedValues = {...values};
+    const updatedValues = {...values};
     if (updatedValues.employee_id === 'none') {
       updatedValues.employee_id = null;
     }

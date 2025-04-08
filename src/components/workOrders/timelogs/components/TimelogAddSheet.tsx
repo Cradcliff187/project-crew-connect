@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import TimeEntryForm from '@/components/timeTracking/TimeEntryForm';
+import { TimeEntry } from '@/types/timeTracking';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -23,7 +24,7 @@ export const TimelogAddSheet = ({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: Partial<TimeEntry>) => {
     setIsSubmitting(true);
     
     try {
@@ -44,7 +45,7 @@ export const TimelogAddSheet = ({
       
       // Calculate total cost
       const hourlyRate = employeeRate || 75; // Default rate
-      const totalCost = values.hours_worked * hourlyRate;
+      const totalCost = values.hours_worked! * hourlyRate;
       
       // Create time entry
       const timelogEntry = {
@@ -119,6 +120,9 @@ export const TimelogAddSheet = ({
         
         <div className="mt-4">
           <TimeEntryForm
+            initialValues={{
+              employee_id: 'none'
+            }}
             onSubmit={handleSubmit}
             onCancel={() => onOpenChange(false)}
             isSubmitting={isSubmitting}

@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -31,7 +30,7 @@ export const ProjectTimelogAddSheet = ({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hours, setHours] = useState(0);
-  const [employeeId, setEmployeeId] = useState('');
+  const [employeeId, setEmployeeId] = useState('none');
   const [notes, setNotes] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [startTime, setStartTime] = useState('09:00');
@@ -67,7 +66,7 @@ export const ProjectTimelogAddSheet = ({
   // Reset form
   const resetForm = () => {
     setHours(0);
-    setEmployeeId('');
+    setEmployeeId('none');
     setNotes('');
     setSelectedDate(new Date());
     setStartTime('09:00');
