@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import MobileTimeEntryView from '@/components/timeTracking/MobileTimeEntryView';
@@ -9,7 +8,7 @@ import { Helmet } from 'react-helmet-async';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
 
 const TimeTracking = () => {
-  // Fetch time entries for the current week (hook handles the date range)
+  // Use our hook with Monday as start of week
   const { 
     entries, 
     loading, 
@@ -21,17 +20,14 @@ const TimeTracking = () => {
     goToCurrentWeek
   } = useTimeEntries();
   
-  // State for add form
-  const [showAddForm, setShowAddForm] = useState(false);
-  
-  // Use our device capabilities hook to get more info
-  const { isMobile, hasCamera } = useDeviceCapabilities();
+  // Use our device capabilities hook for better detection
+  const { isMobile, hasCamera, isTouchScreen } = useDeviceCapabilities();
   
   // For fallback, also use media query
   const isSmallScreen = useMediaQuery("(max-width: 768px)");
   
   // Use either the device detection or the media query
-  const useMobileView = isMobile || isSmallScreen;
+  const useMobileView = isMobile || isSmallScreen || isTouchScreen;
   
   // Trigger initial data loading when component mounts
   useEffect(() => {
@@ -41,12 +37,12 @@ const TimeTracking = () => {
   // Calculate total hours for the selected week
   const totalHours = entries?.reduce((sum, entry) => sum + entry.hours_worked, 0) || 0;
   
+  // Always pass the refreshEntries function as onAddSuccess
   const handleAddSuccess = () => {
-    setShowAddForm(false);
     refreshEntries();
   };
   
-  // If on mobile, show a simplified view
+  // If on mobile, show optimized mobile view
   if (useMobileView) {
     return (
       <PageTransition>
@@ -62,8 +58,8 @@ const TimeTracking = () => {
           timeEntries={entries}
           isLoading={loading}
           onAddSuccess={handleAddSuccess}
-          showAddForm={showAddForm}
-          setShowAddForm={setShowAddForm}
+          showAddForm={false}
+          setShowAddForm={() => {}}
           totalHours={totalHours}
         />
       </PageTransition>

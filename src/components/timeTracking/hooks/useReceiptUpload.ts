@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { ReceiptMetadata } from '@/types/timeTracking';
+import { EXPENSE_TYPES } from '@/types/expenseTypes';
 
 interface UseReceiptUploadOptions {
   initialHasReceipts?: boolean;
@@ -26,92 +27,54 @@ export function useReceiptUpload(options: UseReceiptUploadOptions = {}) {
   const [hasReceipts, setHasReceipts] = useState(initialHasReceipts);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [receiptMetadata, setReceiptMetadata] = useState<ReceiptMetadata>({
-    category: 'receipt',
-    expenseType: initialMetadata.expenseType || null,
-    tags: initialMetadata.tags || ['time-entry'],
-    vendorId: initialMetadata.vendorId,
-    vendorType: initialMetadata.vendorType || 'vendor',
-    amount: initialMetadata.amount,
-    expenseDate: initialMetadata.expenseDate || new Date(),
-    notes: initialMetadata.notes,
-    isExpense: initialMetadata.isExpense !== undefined ? initialMetadata.isExpense : true
+    ...initialMetadata
   });
   
-  // Toggle receipts on/off
-  const toggleHasReceipts = (value: boolean) => {
-    setHasReceipts(value);
-    if (!value) {
-      setSelectedFiles([]);
-    }
-  };
-  
-  // Update files
-  const updateFiles = (files: File[]) => {
-    setSelectedFiles(files);
-  };
-  
-  // Handle file selection
+  // Handle selection of files
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
-    
-    // Auto-enable receipts when files are selected
+    // Automatically enable receipts if files are selected
     if (files.length > 0 && !hasReceipts) {
       setHasReceipts(true);
     }
   };
   
-  // Handle file removal
+  // Handle removal of a file
   const handleFileClear = (index: number) => {
     const updatedFiles = selectedFiles.filter((_, i) => i !== index);
     setSelectedFiles(updatedFiles);
-    
-    // Auto-disable receipts when no files remain
+    // Reset hasReceipts if no files left
     if (updatedFiles.length === 0) {
       setHasReceipts(false);
     }
   };
   
   // Update metadata
-  const updateMetadata = (update: Partial<ReceiptMetadata>) => {
-    setReceiptMetadata(prev => {
-      const updated = { ...prev, ...update };
-      if (onMetadataChange) {
-        onMetadataChange(updated);
-      }
-      return updated;
-    });
+  const updateMetadata = (data: Partial<ReceiptMetadata>) => {
+    const updatedMetadata = {
+      ...receiptMetadata,
+      ...data
+    };
+    setReceiptMetadata(updatedMetadata);
+    
+    if (onMetadataChange) {
+      onMetadataChange(updatedMetadata);
+    }
   };
   
-  // Reset everything
-  const reset = () => {
-    setHasReceipts(initialHasReceipts);
-    setSelectedFiles([]);
-    setReceiptMetadata({
-      category: 'receipt',
-      expenseType: initialMetadata.expenseType || null,
-      tags: initialMetadata.tags || ['time-entry'],
-      vendorId: initialMetadata.vendorId,
-      vendorType: initialMetadata.vendorType || 'vendor',
-      amount: initialMetadata.amount,
-      expenseDate: initialMetadata.expenseDate || new Date(),
-      notes: initialMetadata.notes,
-      isExpense: initialMetadata.isExpense !== undefined ? initialMetadata.isExpense : true
-    });
-  };
-  
-  // Validate receipt data
-  const validateReceiptData = (): { valid: boolean; error?: string } => {
+  // Validate receipt data before submission
+  const validateReceiptData = () => {
     // If hasReceipts is true but no files were selected
     if (hasReceipts && selectedFiles.length === 0) {
-      return { 
-        valid: false, 
+      return {
+        valid: false,
         error: 'You indicated you have receipts but none were uploaded. Please upload at least one receipt or turn off the receipt option.'
       };
     }
     
     // If we have receipts but no expense type
     if (hasReceipts && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
-      return { 
+      return {
         valid: false,
         error: 'Please select an expense type for your receipt.'
       };
@@ -121,25 +84,23 @@ export function useReceiptUpload(options: UseReceiptUploadOptions = {}) {
     if (hasReceipts && selectedFiles.length > 0 && 
         receiptMetadata.vendorType !== 'other' && 
         !receiptMetadata.vendorId) {
-      return { 
+      return {
         valid: false,
-        error: `Please select a ${receiptMetadata.vendorType || 'vendor'} for this receipt.`
+        error: `Please select a ${receiptMetadata.vendorType} for this receipt.`
       };
     }
     
-    return { valid: true };
+    return { valid: true, error: null };
   };
   
   return {
     hasReceipts,
-    setHasReceipts: toggleHasReceipts,
+    setHasReceipts,
     selectedFiles,
-    setSelectedFiles: updateFiles,
     receiptMetadata,
-    updateMetadata,
     handleFilesSelected,
     handleFileClear,
-    validateReceiptData,
-    reset
+    updateMetadata,
+    validateReceiptData
   };
 }

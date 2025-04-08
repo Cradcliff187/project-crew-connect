@@ -3,7 +3,8 @@ import React from 'react';
 import { format } from 'date-fns';
 import { TimeEntry } from '@/types/timeTracking';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Clock, Receipt, CalendarIcon } from 'lucide-react';
+import { Clock, Receipt, CalendarIcon, Building, Briefcase } from 'lucide-react';
+import { useDeviceCapabilities } from '@/hooks/use-mobile';
 
 interface TimeEntryListProps {
   entries: TimeEntry[];
@@ -16,8 +17,12 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
   entries,
   isLoading,
   onEntryChange,
-  isMobile = false
+  isMobile: forceMobile = false
 }) => {
+  const { isMobile: deviceIsMobile } = useDeviceCapabilities();
+  const isMobile = forceMobile || deviceIsMobile;
+  
+  // Show skeleton loader while loading
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -34,6 +39,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     );
   }
 
+  // Show message when no entries are found
   if (entries.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground">
@@ -43,7 +49,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     );
   }
 
-  // Group entries by date
+  // Group entries by date for better organization
   const entriesByDate = entries.reduce<Record<string, TimeEntry[]>>((acc, entry) => {
     const dateKey = entry.date_worked;
     if (!acc[dateKey]) {
@@ -53,8 +59,16 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     return acc;
   }, {});
 
+  // Helper to get entity name with fallback
   const getEntityName = (entry: TimeEntry): string => {
     return entry.entity_name || `${entry.entity_type.charAt(0).toUpperCase() + entry.entity_type.slice(1)} #${entry.entity_id.slice(-5)}`;
+  };
+
+  // Get entity icon based on type
+  const getEntityIcon = (entityType: string) => {
+    return entityType === 'work_order' ? 
+      <Briefcase className="h-3 w-3 mr-1 text-[#0485ea]" /> : 
+      <Building className="h-3 w-3 mr-1 text-[#0485ea]" />;
   };
 
   return (
@@ -72,10 +86,11 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                 className="p-3 border rounded-md hover:bg-gray-50 transition-colors"
               >
                 {isMobile ? (
-                  // Mobile optimized compact view
+                  // Highly optimized mobile view
                   <div className="text-sm">
                     <div className="flex justify-between items-start mb-1.5">
-                      <div className="font-medium truncate mr-2">
+                      <div className="font-medium truncate mr-2 flex items-center">
+                        {getEntityIcon(entry.entity_type)}
                         {getEntityName(entry)}
                       </div>
                       <div className="flex items-center whitespace-nowrap text-xs bg-gray-100 px-1.5 py-0.5 rounded">
@@ -86,7 +101,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                     
                     <div className="flex flex-wrap justify-between text-xs text-muted-foreground">
                       <div className="flex items-center">
-                        {entry.employee_name || "Unknown"}
+                        {entry.employee_name?.split(' ')[0] || "Unknown"}
                         {entry.has_receipts && (
                           <Receipt className="h-3 w-3 ml-1 text-[#0485ea]" />
                         )}
@@ -100,7 +115,8 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                   // Desktop view with more details
                   <div>
                     <div className="flex justify-between mb-2">
-                      <div className="font-medium">
+                      <div className="font-medium flex items-center">
+                        {getEntityIcon(entry.entity_type)}
                         {getEntityName(entry)}
                       </div>
                       <div className="flex items-center text-sm">
