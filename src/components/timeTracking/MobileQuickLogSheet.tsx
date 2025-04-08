@@ -4,7 +4,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { Briefcase, Building, Clock, Camera, Clock3, Loader2, X } from 'lucide-react';
+import { Briefcase, Building, Clock, Camera, Clock3, Loader2, X, User } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -25,13 +25,15 @@ interface MobileQuickLogSheetProps {
   date: Date;
 }
 
-interface QuickLogFormValues {
+// Define the form values type
+export interface QuickLogFormValues {
   entityType: 'work_order' | 'project';
   entityId: string;
   startTime: string;
   endTime: string;
   hoursWorked: number;
-  notes: string;
+  notes?: string;
+  employeeId: string; // Add required employee ID
 }
 
 const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
@@ -51,6 +53,17 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   
   const { toast } = useToast();
   
+  // Update form schema to require employeeId
+  const formSchema = z.object({
+    entityType: z.enum(['work_order', 'project']),
+    entityId: z.string().min(1, "Please select a work order or project"),
+    startTime: z.string(),
+    endTime: z.string(),
+    hoursWorked: z.number().min(0.1),
+    notes: z.string().optional(),
+    employeeId: z.string().min(1, "Employee selection is required")
+  });
+  
   const form = useForm<QuickLogFormValues>({
     defaultValues: {
       entityType: 'work_order',
@@ -58,23 +71,16 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       startTime: '09:00',
       endTime: '17:00',
       hoursWorked: 8,
-      notes: ''
+      notes: '',
+      employeeId: '' // Default empty but required
     },
-    resolver: zodResolver(
-      z.object({
-        entityType: z.enum(['work_order', 'project']),
-        entityId: z.string().min(1, "Please select a work order or project"),
-        startTime: z.string(),
-        endTime: z.string(),
-        hoursWorked: z.number().min(0.1),
-        notes: z.string().optional()
-      })
-    )
+    resolver: zodResolver(formSchema)
   });
   
   const { 
     workOrders, 
     projects, 
+    employees,
     isLoadingEntities,
     getSelectedEntityDetails
   } = useEntityData(form);
@@ -117,7 +123,8 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
           startTime: '09:00',
           endTime: '17:00',
           hoursWorked: 8,
-          notes: ''
+          notes: '',
+          employeeId: ''
         });
         setSelectedFiles([]);
         setHasReceipts(false);
@@ -136,6 +143,9 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     } else if (step === 2) {
       const isValid = await form.trigger(['startTime', 'endTime', 'hoursWorked']);
       if (isValid) setStep(3);
+    } else if (step === 3) {
+      const isValid = await form.trigger(['employeeId']); // Add employee validation
+      if (isValid) setStep(4);
     }
   };
   
@@ -235,6 +245,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       end_time: data.endTime,
       hours_worked: data.hoursWorked,
       notes: data.notes || '',
+      employee_id: data.employeeId, // Include employee_id
       has_receipts: selectedFiles.length > 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -301,6 +312,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
           <SheetTitle>
             {step === 1 ? 'Select Work Item' : 
              step === 2 ? 'Time Details' : 
+             step === 3 ? 'Select Employee' :
              'Add Receipt (Optional)'}
           </SheetTitle>
         </SheetHeader>
@@ -419,7 +431,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             </div>
           )}
           
-          {/* Step 3: Receipt Upload */}
+          {/* Step 3: Employee Selection */}
           {step === 3 && (
             <div className="space-y-4">
               <div className="rounded-md border p-3">
@@ -435,6 +447,76 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Clock3 className="h-4 w-4 mr-1" />
                   <span>{startTime} - {endTime} ({form.watch('hoursWorked')} hrs)</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="employeeId">Select Employee <span className="text-red-500">*</span></Label>
+                {isLoadingEntities ? (
+                  <div className="h-10 flex items-center px-3 border rounded-md text-muted-foreground">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading Employees...
+                  </div>
+                ) : (
+                  <select
+                    id="employeeId"
+                    className="w-full h-11 rounded-md border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#0485ea]/20 focus:border-[#0485ea]"
+                    {...form.register('employeeId')}
+                  >
+                    <option value="">Select Employee</option>
+                    {employees.map(employee => (
+                      <option key={employee.employee_id} value={employee.employee_id}>
+                        {employee.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {form.formState.errors.employeeId && (
+                  <div className="text-sm text-red-500">
+                    {form.formState.errors.employeeId.message}
+                  </div>
+                )}
+              </div>
+              
+              {form.watch('employeeId') && employees.find(e => e.employee_id === form.watch('employeeId')) && (
+                <div className="rounded-md bg-muted p-3">
+                  <div className="flex items-center">
+                    <User className="h-4 w-4 mr-2 text-[#0485ea]" />
+                    <span className="font-medium">
+                      {employees.find(e => e.employee_id === form.watch('employeeId'))?.name}
+                    </span>
+                  </div>
+                  {employees.find(e => e.employee_id === form.watch('employeeId'))?.hourly_rate && (
+                    <div className="text-sm text-muted-foreground mt-1 ml-6">
+                      Rate: ${employees.find(e => e.employee_id === form.watch('employeeId'))?.hourly_rate?.toFixed(2)}/hr
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Step 4: Receipt Upload */}
+          {step === 4 && (
+            <div className="space-y-4">
+              <div className="rounded-md border p-3">
+                <div className="flex items-center mb-2">
+                  {entityType === 'work_order' ? (
+                    <Briefcase className="h-4 w-4 mr-2 text-[#0485ea]" />
+                  ) : (
+                    <Building className="h-4 w-4 mr-2 text-[#0485ea]" />
+                  )}
+                  <span className="font-medium">{selectedEntity?.name}</span>
+                </div>
+                
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Clock3 className="h-4 w-4 mr-1" />
+                  <span>{startTime} - {endTime} ({form.watch('hoursWorked')} hrs)</span>
+                </div>
+                
+                <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                  <User className="h-4 w-4 mr-1" />
+                  <span>{employees.find(e => e.employee_id === form.watch('employeeId'))?.name}</span>
                 </div>
               </div>
               
@@ -565,7 +647,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
               </Button>
             )}
             
-            {step < 3 ? (
+            {step < 4 ? (
               <Button type="button" onClick={handleNext}>
                 Next
               </Button>

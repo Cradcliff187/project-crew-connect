@@ -1,17 +1,17 @@
 
 import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import TimePickerMobile from './TimePickerMobile';
+import { Clock } from 'lucide-react';
+import { timeOptions } from '../utils/timeUtils';
 
-export interface TimeRangeSelectorProps {
+interface TimeRangeSelectorProps {
   startTime: string;
   endTime: string;
   onStartTimeChange: (value: string) => void;
   onEndTimeChange: (value: string) => void;
-  error?: string;
-  startTimeError?: string;
-  endTimeError?: string;
   hoursWorked?: number;
+  error?: string;
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -19,40 +19,66 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   endTime,
   onStartTimeChange,
   onEndTimeChange,
-  error,
-  startTimeError,
-  endTimeError,
-  hoursWorked
+  hoursWorked,
+  error
 }) => {
+  const times = timeOptions();
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Start Time</Label>
-          <TimePickerMobile
+          <Label htmlFor="startTime">Start Time</Label>
+          <Select
             value={startTime}
-            onChange={onStartTimeChange}
-            label="Start Time"
-          />
-          {startTimeError && <p className="text-sm text-red-500">{startTimeError}</p>}
+            onValueChange={onStartTimeChange}
+          >
+            <SelectTrigger id="startTime">
+              <SelectValue placeholder="Start time" />
+            </SelectTrigger>
+            <SelectContent>
+              {times.map((time) => (
+                <SelectItem key={`start-${time.value}`} value={time.value}>
+                  {time.display}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        
+
         <div className="space-y-2">
-          <Label>End Time</Label>
-          <TimePickerMobile
+          <Label htmlFor="endTime">End Time</Label>
+          <Select
             value={endTime}
-            onChange={onEndTimeChange}
-            label="End Time"
-          />
-          {endTimeError && <p className="text-sm text-red-500">{endTimeError}</p>}
+            onValueChange={onEndTimeChange}
+          >
+            <SelectTrigger id="endTime">
+              <SelectValue placeholder="End time" />
+            </SelectTrigger>
+            <SelectContent>
+              {times.map((time) => (
+                <SelectItem key={`end-${time.value}`} value={time.value}>
+                  {time.display}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
-      {error && <p className="text-sm text-red-500">{error}</p>}
-      
       {hoursWorked !== undefined && (
-        <div className="text-sm text-muted-foreground">
-          Total: <span className="font-medium">{hoursWorked.toFixed(1)} hours</span>
+        <div className="rounded-md bg-muted p-3 flex items-center justify-between">
+          <div className="flex items-center text-sm">
+            <Clock className="h-4 w-4 mr-2 text-[#0485ea]" />
+            <span>Total Hours</span>
+          </div>
+          <div className="font-medium">{hoursWorked}</div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="text-sm text-red-500">
+          {error}
         </div>
       )}
     </div>

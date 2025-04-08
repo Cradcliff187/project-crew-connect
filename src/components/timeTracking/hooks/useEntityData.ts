@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
-import { TimeEntryFormValues } from './useTimeEntryForm';
 
 interface Entity {
   id: string;
@@ -15,7 +14,13 @@ interface Employee {
   hourly_rate?: number;
 }
 
-export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
+// Define a more generic form structure that works with multiple components
+export interface TimeEntryFormBase {
+  entityType: 'work_order' | 'project';
+  entityId: string;
+}
+
+export function useEntityData(form: UseFormReturn<any>) {
   const [workOrders, setWorkOrders] = useState<Entity[]>([]);
   const [projects, setProjects] = useState<Entity[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -56,7 +61,7 @@ export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
         const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select('projectid, projectname')
-          .order('createdon', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(100);
           
         if (projectsError) {
