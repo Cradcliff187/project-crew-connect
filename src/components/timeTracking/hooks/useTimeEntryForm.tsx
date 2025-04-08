@@ -132,11 +132,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
   };
   
   const handleSubmit = (data: TimeEntryFormValues) => {
-    if (!validateReceiptData().valid) {
-      return;
-    }
-    
-    // Call the submitTimeEntry function with all necessary data
+    // Pass all the needed data to the submitTimeEntry function
     submitTimeEntry(data, selectedFiles, receiptMetadata);
   };
   

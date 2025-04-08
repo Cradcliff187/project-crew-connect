@@ -257,7 +257,8 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
                 updated_at: new Date().toISOString(),
                 unit_price: receiptMetadata.amount || 0,
                 quantity: 1,
-                expense_date: new Date().toISOString()
+                expense_date: new Date().toISOString(),
+                vendor_id: receiptMetadata.vendorId || null
               });
             
             if (expenseError) {

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { TimeEntryFormValues } from '@/components/timeTracking/hooks/useTimeEntryForm';
 import { toast } from '@/hooks/use-toast';
@@ -10,11 +11,12 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
 
   const submitTimeEntry = async (
     data: TimeEntryFormValues, 
-    selectedFiles: File[],
+    selectedFiles: File[] = [],
     receiptMetadata: ReceiptMetadata = { 
       category: 'receipt', 
       expenseType: null, 
-      tags: ['time-entry'] 
+      tags: ['time-entry'],
+      vendorType: 'vendor' 
     }
   ) => {
     setIsSubmitting(true);
@@ -139,8 +141,8 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 updated_at: new Date().toISOString(),
                 quantity: 1,
                 unit_price: receiptMetadata.amount || 0,
-                vendor_id: receiptMetadata.vendorId || null,
-                expense_date: new Date().toISOString()
+                expense_date: new Date().toISOString(),
+                vendor_id: receiptMetadata.vendorId || null
               });
               
             if (expenseError) {
@@ -185,7 +187,8 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 updated_at: new Date().toISOString(),
                 quantity: 1,
                 unit_price: receiptMetadata.amount || 0,
-                expense_date: new Date().toISOString()
+                expense_date: new Date().toISOString(),
+                vendor_id: receiptMetadata.vendorId || null
               });
               
             if (expenseError) {
@@ -234,11 +237,39 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             updated_at: new Date().toISOString(),
             quantity: data.hoursWorked,
             unit_price: hourlyRate,
-            vendor_id: null
+            vendor_id: null,
+            expense_date: new Date().toISOString()
           });
           
         if (laborExpenseError) {
           console.error('Error creating labor expense:', laborExpenseError);
+        }
+      }
+      
+      // Also create labor expenses for projects to maintain consistency
+      if (data.entityType === 'project' && data.hoursWorked > 0) {
+        const hourlyRate = employeeRate || 75;
+        const totalAmount = data.hoursWorked * hourlyRate;
+        
+        const { error: laborExpenseError } = await supabase
+          .from('expenses')
+          .insert({
+            entity_type: 'PROJECT',
+            entity_id: data.entityId,
+            description: `Labor: ${data.hoursWorked} hours`,
+            expense_type: 'LABOR',
+            amount: totalAmount,
+            time_entry_id: insertedEntry.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            quantity: data.hoursWorked,
+            unit_price: hourlyRate,
+            vendor_id: null,
+            expense_date: new Date().toISOString()
+          });
+          
+        if (laborExpenseError) {
+          console.error('Error creating project labor expense:', laborExpenseError);
         }
       }
       
