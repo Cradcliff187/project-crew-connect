@@ -20,9 +20,7 @@ export function useTimeEntryCore(onSuccess: () => void) {
       category: 'receipt', 
       expenseType: null, 
       tags: ['time-entry'],
-      vendorType: 'vendor',
-      vendorId: undefined,
-      amount: undefined
+      vendorType: 'vendor'
     }
   ) => {
     setIsSubmitting(true);
