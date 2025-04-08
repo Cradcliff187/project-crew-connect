@@ -15,18 +15,22 @@ interface UseReceiptUploadOptions {
 export function useReceiptUpload(options: UseReceiptUploadOptions = {}) {
   const {
     initialHasReceipts = false,
-    initialMetadata = {
-      category: 'receipt',
-      expenseType: null,
-      tags: ['time-entry'],
-      vendorType: 'vendor'
-    },
+    initialMetadata = {},
     onMetadataChange
   } = options;
+  
+  // Default metadata that satisfies the ReceiptMetadata interface
+  const defaultMetadata: ReceiptMetadata = {
+    category: 'receipt',
+    expenseType: null,
+    tags: ['time-entry'],
+    vendorType: 'vendor'
+  };
   
   const [hasReceipts, setHasReceipts] = useState(initialHasReceipts);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [receiptMetadata, setReceiptMetadata] = useState<ReceiptMetadata>({
+    ...defaultMetadata,
     ...initialMetadata
   });
   

@@ -40,7 +40,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  // Receipt upload handling with our custom hook
+  // Receipt upload handling with our custom hook - fix the empty options object
   const {
     hasReceipts,
     setHasReceipts,
@@ -50,7 +50,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     handleFileClear,
     updateMetadata,
     validateReceiptData
-  } = useReceiptUpload();
+  } = useReceiptUpload({ initialHasReceipts: false });
   
   // Get entity data using our custom hook
   const { workOrders, projects, employees, isLoadingEntities } = useEntityData();

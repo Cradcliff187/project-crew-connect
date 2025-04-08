@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -27,7 +28,7 @@ const TimeTracking = () => {
   const isSmallScreen = useMediaQuery("(max-width: 768px)");
   
   // Use either the device detection or the media query
-  const useMobileView = isMobile || isSmallScreen || isTouchScreen;
+  const useMobileView = isMobile || isSmallScreen || (isTouchScreen ?? false);
   
   // Trigger initial data loading when component mounts
   useEffect(() => {
@@ -41,6 +42,9 @@ const TimeTracking = () => {
   const handleAddSuccess = () => {
     refreshEntries();
   };
+  
+  // State to control showing the add form
+  const [showAddForm, setShowAddForm] = React.useState(false);
   
   // If on mobile, show optimized mobile view
   if (useMobileView) {
@@ -58,8 +62,8 @@ const TimeTracking = () => {
           timeEntries={entries}
           isLoading={loading}
           onAddSuccess={handleAddSuccess}
-          showAddForm={false}
-          setShowAddForm={() => {}}
+          showAddForm={showAddForm}
+          setShowAddForm={setShowAddForm}
           totalHours={totalHours}
         />
       </PageTransition>

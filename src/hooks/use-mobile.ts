@@ -32,6 +32,7 @@ export function useIsMobile() {
 export function useDeviceCapabilities() {
   const [hasCamera, setHasCamera] = useState(false);
   const [hasGPS, setHasGPS] = useState(false);
+  const [isTouchScreen, setIsTouchScreen] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -57,9 +58,19 @@ export function useDeviceCapabilities() {
       setHasGPS('geolocation' in navigator);
     };
     
+    // Check if device has touch screen
+    const checkTouchScreen = () => {
+      setIsTouchScreen(
+        'ontouchstart' in window || 
+        navigator.maxTouchPoints > 0 || 
+        (navigator as any).msMaxTouchPoints > 0
+      );
+    };
+    
     checkCamera();
     checkGPS();
+    checkTouchScreen();
   }, []);
   
-  return { hasCamera, hasGPS, isMobile };
+  return { hasCamera, hasGPS, isMobile, isTouchScreen };
 }
