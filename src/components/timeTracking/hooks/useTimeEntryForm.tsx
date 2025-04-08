@@ -132,6 +132,19 @@ export function useTimeEntryForm(onSuccess: () => void) {
   };
   
   const handleSubmit = (data: TimeEntryFormValues) => {
+    // Check if we need to validate receipt data
+    if (hasReceipts) {
+      const validation = validateReceiptData();
+      if (!validation.valid) {
+        toast({
+          title: "Receipt information required",
+          description: validation.error,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     // Pass all the needed data to the submitTimeEntry function
     submitTimeEntry(data, selectedFiles, receiptMetadata);
   };

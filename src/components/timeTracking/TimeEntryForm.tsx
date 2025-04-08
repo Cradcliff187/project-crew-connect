@@ -88,8 +88,9 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
       }
     }
     
-    // Pass all required data to our updated submitTimeEntry function
-    submitTimeEntry(data, selectedFiles, receiptMetadata);
+    // The issue is here - we're passing 3 arguments but the function expects 1
+    // Fix: Just pass the data as expected by the handleSubmit function
+    submitTimeEntry(data);
   };
 
   return (
