@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Timer, Upload } from 'lucide-react';
@@ -9,17 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 
 import EntityTypeSelector from './form/EntityTypeSelector';
 import EntitySelector from './form/EntitySelector';
 import TimeRangeSelector from './form/TimeRangeSelector';
-import ReceiptMetadataForm from './form/ReceiptMetadataForm';
-import ReceiptUploader from './form/ReceiptUploader';
+import ReceiptUploadManager from './form/ReceiptUploadManager';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import { useEntityData } from './hooks/useEntityData';
+import { useReceiptUpload } from './hooks/useReceiptUpload';
 import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
 import { EntityType } from '../documents/schemas/documentSchema';
 
@@ -29,17 +29,23 @@ interface TimeEntryFormProps {
 
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
-  const [hasReceipts, setHasReceipts] = useState(false);
 
+  // Use our standardized receipt upload hook
   const {
-    form,
-    isLoading,
+    hasReceipts,
+    setHasReceipts,
     selectedFiles,
     receiptMetadata,
     handleFilesSelected,
     handleFileClear,
-    updateReceiptMetadata,
-    handleSubmit,
+    updateMetadata,
+    validateReceiptData
+  } = useReceiptUpload();
+
+  const {
+    form,
+    isLoading,
+    handleSubmit: submitTimeEntry,
   } = useTimeEntryForm(onSuccess);
 
   const {
@@ -56,12 +62,35 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
   const endTime = form.watch('endTime');
   const hoursWorked = form.watch('hoursWorked');
 
+  // Update form when hasReceipts changes
+  React.useEffect(() => {
+    form.setValue('hasReceipts', hasReceipts);
+  }, [hasReceipts, form]);
+
   const handleReceiptUploadSuccess = () => {
     setShowReceiptUpload(false);
     toast({
       title: "Receipt uploaded",
       description: "Your receipt has been added to this time entry."
     });
+  };
+
+  const handleSubmit = (data: any) => {
+    // Validate receipt data before submission
+    if (hasReceipts) {
+      const validation = validateReceiptData();
+      if (!validation.valid) {
+        toast({
+          title: "Receipt information required",
+          description: validation.error,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    // Submit with receipt data
+    submitTimeEntry(data, selectedFiles, receiptMetadata);
   };
 
   return (
@@ -136,6 +165,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
                     selected={form.watch('workDate')}
                     onSelect={(date) => date && form.setValue('workDate', date, { shouldValidate: true })}
                     initialFocus
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -198,52 +228,19 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               />
             </div>
             
-            <div className="space-y-4">
-              <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
-                <div>
-                  <h4 className="font-medium">Attach Receipt(s)</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Do you have any receipts to upload for this time entry?
-                  </p>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Switch
-                    checked={hasReceipts}
-                    onCheckedChange={(checked) => {
-                      setHasReceipts(checked);
-                      form.setValue('hasReceipts', checked);
-                      if (!checked) {
-                        handleFileClear(0);
-                      }
-                    }}
-                    className="data-[state=checked]:bg-[#0485ea]"
-                  />
-                </div>
-              </div>
-              
-              {hasReceipts && (
-                <div className="space-y-4 pt-2">
-                  <ReceiptUploader
-                    selectedFiles={selectedFiles}
-                    onFilesSelected={handleFilesSelected}
-                    onFileClear={handleFileClear}
-                  />
-                  
-                  {selectedFiles.length > 0 && (
-                    <ReceiptMetadataForm
-                      vendor={receiptMetadata.vendorId || ''}
-                      expenseType={receiptMetadata.expenseType || ''}
-                      amount={receiptMetadata.amount}
-                      onVendorChange={(value) => updateReceiptMetadata({ vendorId: value })}
-                      onExpenseTypeChange={(value) => updateReceiptMetadata({ expenseType: value })}
-                      onAmountChange={(value) => updateReceiptMetadata({ amount: value })}
-                      entityType={entityType}
-                      entityId={entityId}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Use our new standardized receipt upload manager */}
+            <ReceiptUploadManager
+              hasReceipts={hasReceipts}
+              onHasReceiptsChange={setHasReceipts}
+              files={selectedFiles}
+              onFilesChange={handleFilesSelected}
+              metadata={receiptMetadata}
+              onMetadataChange={updateMetadata}
+              entityType={entityType}
+              entityId={entityId}
+              showToggle={true}
+              toggleLabel="Attach Receipt(s)"
+            />
           </CardContent>
           
           <CardFooter>

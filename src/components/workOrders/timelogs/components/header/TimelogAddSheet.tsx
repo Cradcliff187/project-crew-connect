@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
 import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector';
 import EmployeeSelector from '@/components/timeTracking/form/EmployeeSelector';
+import ReceiptUploadManager from '@/components/timeTracking/form/ReceiptUploadManager';
+import { useReceiptUpload } from '@/components/timeTracking/hooks/useReceiptUpload';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -34,6 +36,18 @@ const TimelogAddSheet = ({
   const [employeeId, setEmployeeId] = useState('');
   const [notes, setNotes] = useState('');
   const [employeeError, setEmployeeError] = useState('');
+  
+  // Use our standardized receipt upload hook
+  const {
+    hasReceipts,
+    setHasReceipts,
+    selectedFiles,
+    receiptMetadata,
+    handleFilesSelected,
+    handleFileClear,
+    updateMetadata,
+    validateReceiptData
+  } = useReceiptUpload();
   
   // Calculate hours when times change
   const updateHoursWorked = (start: string, end: string) => {
@@ -63,6 +77,19 @@ const TimelogAddSheet = ({
     setWorkDate(date);
   };
   
+  // Reset form
+  const resetForm = () => {
+    setStartTime('09:00');
+    setEndTime('17:00');
+    setWorkDate(new Date());
+    setHoursWorked(8);
+    setEmployeeId('');
+    setNotes('');
+    setEmployeeError('');
+    // Reset receipt data
+    setHasReceipts(false);
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -86,6 +113,19 @@ const TimelogAddSheet = ({
       return;
     }
     
+    // Validate receipt data if indicated
+    if (hasReceipts) {
+      const validation = validateReceiptData();
+      if (!validation.valid) {
+        toast({
+          title: "Receipt information required",
+          description: validation.error,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -101,15 +141,81 @@ const TimelogAddSheet = ({
         start_time: startTime,
         end_time: endTime,
         notes: notes || null,
+        has_receipts: hasReceipts && selectedFiles.length > 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       
-      const { error } = await supabase
+      const { data: timeEntry, error } = await supabase
         .from('time_entries')
-        .insert(timelogEntry);
+        .insert(timelogEntry)
+        .select('id')
+        .single();
         
       if (error) throw error;
+      
+      // Handle receipt uploads if present
+      if (hasReceipts && selectedFiles.length > 0 && timeEntry) {
+        for (const file of selectedFiles) {
+          // Create unique filename
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const filePath = `receipts/time_entries/${timeEntry.id}/${fileName}`;
+          
+          // Upload file to storage
+          const { error: uploadError } = await supabase.storage
+            .from('construction_documents')
+            .upload(filePath, file);
+            
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            continue;
+          }
+          
+          // Create document record with enhanced metadata
+          const documentMetadata = {
+            file_name: file.name,
+            file_type: file.type,
+            file_size: file.size,
+            storage_path: filePath,
+            entity_type: 'TIME_ENTRY',
+            entity_id: timeEntry.id,
+            category: 'receipt',
+            is_expense: true,
+            tags: ['receipt', 'time-entry'],
+            expense_type: receiptMetadata.expenseType || 'other',
+            vendor_id: receiptMetadata.vendorId || null,
+            vendor_type: receiptMetadata.vendorType || null,
+            amount: receiptMetadata.amount || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          const { data: document, error: documentError } = await supabase
+            .from('documents')
+            .insert(documentMetadata)
+            .select('document_id')
+            .single();
+            
+          if (documentError) {
+            console.error('Document error:', documentError);
+            continue;
+          }
+          
+          // Link the document to the time entry
+          const { error: linkError } = await supabase
+            .from('time_entry_document_links')
+            .insert({
+              time_entry_id: timeEntry.id,
+              document_id: document.document_id,
+              created_at: new Date().toISOString()
+            });
+            
+          if (linkError) {
+            console.error('Link error:', linkError);
+          }
+        }
+      }
       
       toast({
         title: 'Time entry added',
@@ -117,13 +223,7 @@ const TimelogAddSheet = ({
       });
       
       // Reset form and close sheet
-      setStartTime('09:00');
-      setEndTime('17:00');
-      setWorkDate(new Date());
-      setHoursWorked(8);
-      setEmployeeId('');
-      setNotes('');
-      setEmployeeError('');
+      resetForm();
       onSuccess();
     } catch (error: any) {
       console.error('Error adding time entry:', error);
@@ -138,7 +238,12 @@ const TimelogAddSheet = ({
   };
   
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        resetForm();
+      }
+      onOpenChange(isOpen);
+    }}>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Log Time</SheetTitle>
@@ -177,6 +282,20 @@ const TimelogAddSheet = ({
               rows={4}
             />
           </div>
+          
+          {/* Use our new standardized receipt upload manager */}
+          <ReceiptUploadManager
+            hasReceipts={hasReceipts}
+            onHasReceiptsChange={setHasReceipts}
+            files={selectedFiles}
+            onFilesChange={handleFilesSelected}
+            metadata={receiptMetadata}
+            onMetadataChange={updateMetadata}
+            entityType="work_order"
+            entityId={workOrderId}
+            showToggle={true}
+            toggleLabel="Attach Receipt(s)"
+          />
           
           <div className="flex justify-end gap-2 pt-4">
             <Button

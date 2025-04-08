@@ -19,6 +19,7 @@ interface TimeRangeSelectorProps {
   onDateChange?: (date: Date) => void;
   hoursWorked?: number;
   error?: string;
+  showDate?: boolean;
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -29,13 +30,14 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   date,
   onDateChange,
   hoursWorked,
-  error
+  error,
+  showDate = true
 }) => {
   const times = timeOptions();
 
   return (
     <div className="space-y-4">
-      {date && onDateChange && (
+      {showDate && date && onDateChange && (
         <div className="space-y-2">
           <Label>Date</Label>
           <Popover>
