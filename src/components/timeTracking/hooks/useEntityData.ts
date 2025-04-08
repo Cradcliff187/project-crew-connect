@@ -4,13 +4,23 @@ import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
 import { TimeEntryFormValues } from './useTimeEntryForm';
 
-export function useEntityData(form: UseFormReturn<any>) {
-  const [workOrders, setWorkOrders] = useState<{ id: string; name: string }[]>([]);
-  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
-  const [employees, setEmployees] = useState<{ employee_id: string; name: string }[]>([]);
+interface Entity {
+  id: string;
+  name: string;
+}
+
+interface Employee {
+  employee_id: string;
+  name: string;
+  hourly_rate?: number;
+}
+
+export function useEntityData(form: UseFormReturn<TimeEntryFormValues>) {
+  const [workOrders, setWorkOrders] = useState<Entity[]>([]);
+  const [projects, setProjects] = useState<Entity[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoadingEntities, setIsLoadingEntities] = useState(false);
   
-  // Watch the entity type to reload data when it changes
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
   
@@ -20,53 +30,68 @@ export function useEntityData(form: UseFormReturn<any>) {
       setIsLoadingEntities(true);
       
       try {
+        console.log('Fetching work orders and projects');
+        
         // Fetch work orders
-        const { data: workOrdersData } = await supabase
+        const { data: workOrdersData, error: workOrdersError } = await supabase
           .from('maintenance_work_orders')
           .select('work_order_id, title')
-          .eq('status', 'ACTIVE')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(100);
           
-        if (workOrdersData) {
-          setWorkOrders(
-            workOrdersData.map(wo => ({
-              id: wo.work_order_id,
-              name: wo.title || `Work Order ${wo.work_order_id.substring(0, 8)}` 
-            }))
-          );
+        if (workOrdersError) {
+          console.error('Error fetching work orders:', workOrdersError);
+          throw workOrdersError;
         }
+        
+        const formattedWorkOrders = (workOrdersData || []).map(wo => ({
+          id: wo.work_order_id,
+          name: wo.title || `Work Order ${wo.work_order_id.substring(0, 8)}`
+        }));
+        
+        console.log('Fetched work orders:', formattedWorkOrders.length);
+        setWorkOrders(formattedWorkOrders);
         
         // Fetch projects
-        const { data: projectsData } = await supabase
+        const { data: projectsData, error: projectsError } = await supabase
           .from('projects')
           .select('projectid, projectname')
-          .eq('status', 'ACTIVE')
-          .order('created_at', { ascending: false });
+          .order('createdon', { ascending: false })
+          .limit(100);
           
-        if (projectsData) {
-          setProjects(
-            projectsData.map(p => ({
-              id: p.projectid,
-              name: p.projectname || `Project ${p.projectid.substring(0, 8)}`
-            }))
-          );
+        if (projectsError) {
+          console.error('Error fetching projects:', projectsError);
+          throw projectsError;
         }
         
+        const formattedProjects = (projectsData || []).map(p => ({
+          id: p.projectid,
+          name: p.projectname || p.projectid
+        }));
+        
+        console.log('Fetched projects:', formattedProjects.length);
+        setProjects(formattedProjects);
+        
         // Fetch employees
-        const { data: employeesData } = await supabase
+        const { data: employeesData, error: employeesError } = await supabase
           .from('employees')
-          .select('employee_id, first_name, last_name')
+          .select('employee_id, first_name, last_name, hourly_rate')
           .eq('status', 'ACTIVE')
-          .order('first_name');
+          .order('last_name', { ascending: true });
           
-        if (employeesData) {
-          setEmployees(
-            employeesData.map(e => ({
-              employee_id: e.employee_id,
-              name: `${e.first_name} ${e.last_name}`
-            }))
-          );
+        if (employeesError) {
+          console.error('Error fetching employees:', employeesError);
+          throw employeesError;
         }
+        
+        const formattedEmployees = (employeesData || []).map(e => ({
+          employee_id: e.employee_id,
+          name: `${e.first_name} ${e.last_name}`,
+          hourly_rate: e.hourly_rate
+        }));
+        
+        console.log('Fetched employees:', formattedEmployees.length);
+        setEmployees(formattedEmployees);
       } catch (error) {
         console.error('Error fetching entities:', error);
       } finally {
@@ -82,21 +107,21 @@ export function useEntityData(form: UseFormReturn<any>) {
     if (!entityId) return null;
     
     if (entityType === 'work_order') {
-      const workOrder = workOrders.find(wo => wo.id === entityId);
-      if (workOrder) {
+      const selectedWorkOrder = workOrders.find(wo => wo.id === entityId);
+      if (selectedWorkOrder) {
         return {
-          id: workOrder.id,
-          name: workOrder.name,
-          type: 'work_order' as const
+          name: selectedWorkOrder.name,
+          type: 'work_order' as const,
+          location: undefined
         };
       }
     } else if (entityType === 'project') {
-      const project = projects.find(p => p.id === entityId);
-      if (project) {
+      const selectedProject = projects.find(p => p.id === entityId);
+      if (selectedProject) {
         return {
-          id: project.id,
-          name: project.name,
-          type: 'project' as const
+          name: selectedProject.name,
+          type: 'project' as const,
+          location: undefined
         };
       }
     }
