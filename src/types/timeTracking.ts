@@ -2,7 +2,7 @@
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
-  entity_type: 'work_order' | 'project';  // Using string literal types to fix type issues
+  entity_type: 'work_order' | 'project';  // Using string literal types for consistency
   entity_id: string;
   entity_name?: string;
   entity_location?: string;
@@ -24,18 +24,26 @@ export interface TimeEntry {
 }
 
 // Form data for creating/updating time entries
-export interface TimeEntryFormData {
-  entity_type: 'work_order' | 'project';
-  entity_id: string;
-  date_worked: Date;
-  start_time: string;
-  end_time: string;
-  hours_worked: number;
+export interface TimeEntryFormValues {
+  entityType: 'work_order' | 'project';
+  entityId: string;
+  workDate: Date;
+  startTime: string;
+  endTime: string;
+  hoursWorked: number;
   notes?: string;
-  employee_id?: string;
-  receipts?: File[];
-  location_data?: any;
+  employeeId?: string;
+  hasReceipts: boolean;
 }
+
+export type QuickLogFormValues = {
+  entityType: 'work_order' | 'project';
+  entityId: string;
+  startTime: string;
+  endTime: string;
+  hoursWorked: number;
+  notes?: string;
+};
 
 export interface TimeEntryReceipt {
   id: string;
@@ -69,4 +77,23 @@ export interface ReceiptMetadata {
   vendorId?: string;
   vendorType?: 'vendor' | 'subcontractor' | 'other';
   amount?: number;
+}
+
+// Entity types for use in the useEntityData hook
+export interface Entity {
+  id: string;
+  name: string;
+  status?: string;
+}
+
+export interface Employee {
+  employee_id: string;
+  name: string;
+  hourly_rate?: number;
+}
+
+export interface EntityDetails {
+  name: string;
+  type: 'work_order' | 'project';
+  location?: string;
 }

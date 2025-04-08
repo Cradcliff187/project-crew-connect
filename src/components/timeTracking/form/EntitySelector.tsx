@@ -3,12 +3,13 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Briefcase, Building, Loader2, AlertCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Entity } from '@/types/timeTracking';
 
 interface EntitySelectorProps {
   entityType: 'work_order' | 'project';
   entityId: string;
-  workOrders: { id: string; name: string }[];
-  projects: { id: string; name: string }[];
+  workOrders: Entity[];
+  projects: Entity[];
   isLoading: boolean;
   onChange: (value: string) => void;
   error?: string;

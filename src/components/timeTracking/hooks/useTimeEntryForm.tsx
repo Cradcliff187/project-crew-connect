@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
 import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
 import { toast } from '@/hooks/use-toast';
 import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
+import { TimeEntryFormValues, ReceiptMetadata } from '@/types/timeTracking';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -19,8 +19,6 @@ const timeEntryFormSchema = z.object({
   employeeId: z.string().optional(),
   hasReceipts: z.boolean().default(false),
 });
-
-export type TimeEntryFormValues = z.infer<typeof timeEntryFormSchema>;
 
 const defaultFormValues: TimeEntryFormValues = {
   entityType: 'work_order',
@@ -36,14 +34,7 @@ const defaultFormValues: TimeEntryFormValues = {
 
 export function useTimeEntryForm(onSuccess: () => void) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [receiptMetadata, setReceiptMetadata] = useState<{
-    category: string,
-    expenseType: string | null,
-    tags: string[],
-    vendorId?: string,
-    vendorType?: 'vendor' | 'subcontractor' | 'other',
-    amount?: number
-  }>({
+  const [receiptMetadata, setReceiptMetadata] = useState<ReceiptMetadata>({
     category: 'receipt',
     expenseType: null,
     tags: ['time-entry'],
@@ -61,8 +52,6 @@ export function useTimeEntryForm(onSuccess: () => void) {
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   const hasReceipts = form.watch('hasReceipts');
-  const entityType = form.watch('entityType');
-  const entityId = form.watch('entityId');
   
   useEffect(() => {
     if (startTime && endTime) {
@@ -98,14 +87,7 @@ export function useTimeEntryForm(onSuccess: () => void) {
   
   // Update receipt metadata
   const updateReceiptMetadata = (
-    data: Partial<{
-      category: string, 
-      expenseType: string | null, 
-      tags: string[],
-      vendorId?: string,
-      vendorType?: 'vendor' | 'subcontractor' | 'other',
-      amount?: number
-    }>
+    data: Partial<ReceiptMetadata>
   ) => {
     setReceiptMetadata(prev => ({
       ...prev,

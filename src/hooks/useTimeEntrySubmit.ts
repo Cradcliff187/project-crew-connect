@@ -1,10 +1,9 @@
 
 import { useState } from 'react';
-import { TimeEntryFormValues } from '@/components/timeTracking/hooks/useTimeEntryForm';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { ReceiptMetadata } from '@/types/timeTracking';
+import { TimeEntryFormValues, ReceiptMetadata } from '@/types/timeTracking';
 
 export function useTimeEntrySubmit(onSuccess: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -2,29 +2,10 @@
 import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/integrations/supabase/client';
-import { TimeEntryFormValues } from './useTimeEntryForm';
+import { TimeEntryFormValues, Entity, Employee, EntityDetails } from '@/types/timeTracking';
 import { toast } from '@/hooks/use-toast';
 
-// Define types for consistency
-interface Entity {
-  id: string;
-  name: string;
-  status?: string;
-}
-
-interface Employee {
-  employee_id: string;
-  name: string;
-  hourly_rate?: number;
-}
-
-interface EntityDetails {
-  name: string;
-  type: 'work_order' | 'project';
-  location?: string;
-}
-
-export const useEntityData = (form: UseFormReturn<TimeEntryFormValues>) => {
+export const useEntityData = (form: UseFormReturn<TimeEntryFormValues | any>) => {
   const [workOrders, setWorkOrders] = useState<Entity[]>([]);
   const [projects, setProjects] = useState<Entity[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);

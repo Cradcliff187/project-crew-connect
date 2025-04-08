@@ -17,6 +17,8 @@ import TimePickerMobile from './form/TimePickerMobile';
 import { supabase } from '@/integrations/supabase/client';
 import VendorSelector from '@/components/documents/vendor-selector/VendorSelector';
 import { useEntityData } from './hooks/useEntityData';
+import { QuickLogFormValues } from '@/types/timeTracking';
+import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -25,14 +27,15 @@ interface MobileQuickLogSheetProps {
   date: Date;
 }
 
-interface QuickLogFormValues {
-  entityType: 'work_order' | 'project';
-  entityId: string;
-  startTime: string;
-  endTime: string;
-  hoursWorked: number;
-  notes: string;
-}
+// Define the QuickLogFormValues schema for zod validation
+const quickLogSchema = z.object({
+  entityType: z.enum(['work_order', 'project']),
+  entityId: z.string().min(1, "Please select a work order or project"),
+  startTime: z.string(),
+  endTime: z.string(),
+  hoursWorked: z.number().min(0.1),
+  notes: z.string().optional()
+});
 
 const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   open,
@@ -41,7 +44,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   date
 }) => {
   const [step, setStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [hasReceipts, setHasReceipts] = useState(false);
@@ -50,6 +52,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [expenseAmount, setExpenseAmount] = useState<number | undefined>(undefined);
   
   const { toast } = useToast();
+  const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess || (() => {}));
   
   const form = useForm<QuickLogFormValues>({
     defaultValues: {
@@ -60,16 +63,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       hoursWorked: 8,
       notes: ''
     },
-    resolver: zodResolver(
-      z.object({
-        entityType: z.enum(['work_order', 'project']),
-        entityId: z.string().min(1, "Please select a work order or project"),
-        startTime: z.string(),
-        endTime: z.string(),
-        hoursWorked: z.number().min(0.1),
-        notes: z.string().optional()
-      })
-    )
+    resolver: zodResolver(quickLogSchema)
   });
   
   const { 
@@ -166,124 +160,34 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     }
   };
   
-  // Upload receipts function
-  const uploadReceipts = async (timeEntryId: string, files: File[]) => {
-    for (const file of selectedFiles) {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `receipts/time_entries/${timeEntryId}/${fileName}`;
-      
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('construction_documents')
-        .upload(filePath, file);
-        
-      if (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        continue;
-      }
-      
-      // Create document record
-      const { data: document, error: documentError } = await supabase
-        .from('documents')
-        .insert({
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          storage_path: filePath,
-          entity_type: 'TIME_ENTRY',
-          entity_id: timeEntryId,
-          category: 'receipt',
-          is_expense: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          expense_type: expenseType || null,
-          vendor_id: vendorId || null,
-          amount: expenseAmount || null,
-          tags: ['receipt', 'time-entry']
-        })
-        .select('document_id')
-        .single();
-        
-      if (documentError) {
-        console.error('Error creating document record:', documentError);
-        continue;
-      }
-      
-      // Link document to time entry
-      const { error: linkError } = await supabase
-        .from('time_entry_document_links')
-        .insert({
-          time_entry_id: timeEntryId,
-          document_id: document.document_id,
-          created_at: new Date().toISOString()
-        });
-        
-      if (linkError) {
-        console.error('Error linking document to time entry:', linkError);
-      }
-    }
-  };
-  
-  // Submit time entry
-  const submitTimeEntry = async (data: QuickLogFormValues): Promise<{ id: string }> => {
-    const timeEntry = {
-      entity_type: data.entityType,
-      entity_id: data.entityId,
-      date_worked: format(date, 'yyyy-MM-dd'),
-      start_time: data.startTime,
-      end_time: data.endTime,
-      hours_worked: data.hoursWorked,
-      notes: data.notes || '',
-      has_receipts: selectedFiles.length > 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      location_data: null
-    };
-    
-    const { data: result, error } = await supabase
-      .from('time_entries')
-      .insert(timeEntry)
-      .select('id')
-      .single();
-      
-    if (error) throw error;
-    return result;
-  };
-  
   // Handle form submission
   const onSubmit: SubmitHandler<QuickLogFormValues> = async (data) => {
-    setIsSubmitting(true);
+    // Prepare receipt metadata
+    const receiptMetadata = {
+      category: 'receipt',
+      expenseType: hasReceipts ? expenseType : null,
+      tags: ['time-entry', 'mobile'],
+      vendorId: hasReceipts ? vendorId : undefined,
+      vendorType: hasReceipts ? 'vendor' as const : undefined,
+      amount: hasReceipts ? expenseAmount : undefined
+    };
     
-    try {
-      // Submit time entry
-      const result = await submitTimeEntry(data);
-      
-      // Upload receipts if any
-      if (selectedFiles.length > 0) {
-        await uploadReceipts(result.id, selectedFiles);
-      }
-      
-      // Show success toast
-      toast({
-        title: "Time entry saved",
-        description: `${data.hoursWorked} hours logged for ${selectedEntity?.name}`,
-      });
-      
-      // Close sheet and call success callback
-      onOpenChange(false);
-      if (onSuccess) onSuccess();
-    } catch (error) {
-      console.error('Error submitting time entry:', error);
-      
-      toast({
-        title: "Error saving time entry",
-        description: "Please try again",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Convert to the format expected by submitTimeEntry
+    const formData = {
+      entityType: data.entityType,
+      entityId: data.entityId,
+      workDate: date,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      hoursWorked: data.hoursWorked,
+      notes: data.notes || '',
+      hasReceipts: selectedFiles.length > 0
+    };
+    
+    await submitTimeEntry(formData, selectedFiles, receiptMetadata);
+    
+    // Close sheet and call success callback
+    onOpenChange(false);
   };
   
   // File selection handler for input element
