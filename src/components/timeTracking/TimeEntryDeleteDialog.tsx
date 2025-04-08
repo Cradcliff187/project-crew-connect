@@ -11,7 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { formatDate, formatTime } from './utils/timeUtils';
+import { formatTime } from './utils/timeUtils';
+import { formatDate } from '@/lib/utils'; // Import formatDate from lib/utils instead
 import { Loader2 } from 'lucide-react';
 
 interface TimeEntryDeleteDialogProps {

@@ -36,13 +36,27 @@ const TimeEntryEditDialog: React.FC<TimeEntryEditDialogProps> = ({
   // Fetch employees
   useEffect(() => {
     const fetchEmployees = async () => {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('employee_id, name')
-        .order('name');
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('employee_id, first_name, last_name')
+          .order('last_name');
+          
+        if (error) {
+          console.error('Error fetching employees:', error);
+          return;
+        }
         
-      if (data && !error) {
-        setEmployees(data);
+        if (data) {
+          // Map the employees data to include a full name field
+          const formattedEmployees = data.map(emp => ({
+            employee_id: emp.employee_id,
+            name: `${emp.first_name} ${emp.last_name}`
+          }));
+          setEmployees(formattedEmployees);
+        }
+      } catch (error) {
+        console.error('Exception when fetching employees:', error);
       }
     };
     
