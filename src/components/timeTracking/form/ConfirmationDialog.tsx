@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { formatTimeRange } from '@/lib/utils';
@@ -12,6 +11,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { TimeEntryFormValues } from '@/types/timeTracking';
+
+// Add a console log to help diagnose any type issues
+console.log('TimeEntryFormValues type:', TimeEntryFormValues);
 
 interface WorkOrderOrProject {
   id: string;
