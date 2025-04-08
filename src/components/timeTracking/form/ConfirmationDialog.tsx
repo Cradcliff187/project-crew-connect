@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { formatTimeRange } from '@/lib/utils';
@@ -12,8 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { TimeEntryFormValues } from '@/types/timeTracking';
 
-// Add a console log to help diagnose any type issues
-console.log('TimeEntryFormValues type:', TimeEntryFormValues);
+// Add type information comment to clarify usage
+// TimeEntryFormValues is a TypeScript interface for form values
 
 interface WorkOrderOrProject {
   id: string;
