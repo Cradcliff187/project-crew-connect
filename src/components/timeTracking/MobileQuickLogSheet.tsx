@@ -14,6 +14,7 @@ import TimeRangeSelector from './form/TimeRangeSelector';
 import { useEntityData } from './hooks/useEntityData';
 import { useReceiptUpload } from './hooks/useReceiptUpload';
 import ReceiptUploadManager from './form/ReceiptUploadManager';
+import EmployeeSelector from './form/EmployeeSelector';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -40,7 +41,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  // Receipt upload handling with our custom hook - fix the empty options object
+  // Receipt upload handling with our custom hook
   const {
     hasReceipts,
     setHasReceipts,
@@ -50,7 +51,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     handleFileClear,
     updateMetadata,
     validateReceiptData
-  } = useReceiptUpload({ initialHasReceipts: false });
+  } = useReceiptUpload({ 
+    initialHasReceipts: false,
+    initialMetadata: {}
+  });
   
   // Get entity data using our custom hook
   const { workOrders, projects, employees, isLoadingEntities } = useEntityData();
@@ -362,7 +366,16 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             error={errors.entityId}
           />
           
-          {renderEmployeeSelector()}
+          <EmployeeSelector 
+            employees={employees}
+            selectedEmployeeId={employeeId}
+            onChange={(value) => {
+              setEmployeeId(value);
+              setErrors({...errors, employeeId: ''});
+            }}
+            error={errors.employeeId}
+            compact={true}
+          />
           
           <div className="space-y-4">
             <div className="flex items-center gap-2">

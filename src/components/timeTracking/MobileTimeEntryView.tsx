@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TimeEntry } from '@/types/timeTracking';
-import { Plus, Map, ChevronRight, Camera, Clock } from 'lucide-react';
+import { Plus, Camera, Clock } from 'lucide-react';
 import { TimeEntryList } from './TimeEntryList';
 import TimeEntryFormWizard from './TimeEntryFormWizard';
 import QuickLogButton from './QuickLogButton';
@@ -42,7 +42,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   totalHours
 }) => {
   const [showQuickLog, setShowQuickLog] = useState(false);
-  const { hasCamera, isMobile } = useDeviceCapabilities();
+  const { hasCamera } = useDeviceCapabilities();
   
   const handleQuickLogSuccess = () => {
     setShowQuickLog(false);
@@ -93,7 +93,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
               variant="outline"
               size="sm"
               className="justify-start"
-              onClick={() => setShowAddForm(true)}
+              onClick={() => setShowQuickLog(true)}
             >
               <Camera className="h-4 w-4 mr-1" />
               Add Receipt
