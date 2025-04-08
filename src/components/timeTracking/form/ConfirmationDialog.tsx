@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { TimeEntryFormValues } from '../hooks/useTimeEntryForm';
+import { TimeEntryFormValues } from '@/types/timeTracking';
 
 interface WorkOrderOrProject {
   id: string;
