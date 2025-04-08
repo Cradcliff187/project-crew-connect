@@ -10,7 +10,8 @@ import {
   Trash2, 
   Edit, 
   FileSpreadsheet,
-  Calendar
+  Calendar,
+  UserRound
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -23,7 +24,7 @@ import { cn } from '@/lib/utils';
 import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
 import TimeEntryEditDialog from './TimeEntryEditDialog';
 import { useTimeEntryOperations } from './hooks/useTimeEntryOperations';
-import { formatTime, getTimeOfDay } from './utils/timeUtils';
+import { formatTime, getTimeOfDay, formatHoursToDuration } from './utils/timeUtils';
 
 const formatDuration = (hours: number): string => {
   const wholeHours = Math.floor(hours);
@@ -168,7 +169,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
             
             <div className="space-y-2 pl-0 lg:pl-6">
               {dayEntries.map((entry) => {
-                const startHour = parseInt(entry.start_time.split(':')[0]);
+                const startHour = parseInt(entry.start_time?.split(':')[0] || '0');
                 const timeOfDay = getTimeOfDay(startHour);
                 const timeOfDayColor = getTimeOfDayColor(timeOfDay);
                 
@@ -187,6 +188,13 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                               </span>
                             </div>
                             
+                            {entry.employee_name && (
+                              <div className="text-sm text-muted-foreground flex items-center">
+                                <UserRound className="h-3 w-3 mr-1" />
+                                {entry.employee_name}
+                              </div>
+                            )}
+                            
                             {entry.entity_location && (
                               <div className="text-sm text-muted-foreground flex items-center">
                                 <MapPin className="h-3 w-3 mr-1" />
@@ -197,7 +205,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                           
                           <div className="flex items-center space-x-2">
                             <span className="font-medium text-[#0485ea]">
-                              {formatDuration(entry.hours_worked)}
+                              {formatHoursToDuration(entry.hours_worked)}
                             </span>
                             
                             <DropdownMenu>

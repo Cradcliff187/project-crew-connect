@@ -1,136 +1,161 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { TimeEntry } from '@/types/timeTracking';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-export function useTimeEntryOperations(onEntryChange: () => void) {
+export const useTimeEntryOperations = (onSuccess: () => void) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<TimeEntry | null>(null);
   const [entryToEdit, setEntryToEdit] = useState<TimeEntry | null>(null);
-  
-  // Dialog visibility states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const { toast } = useToast();
   
-  // Delete operations
+  // Start delete process
   const startDelete = (entry: TimeEntry) => {
     setEntryToDelete(entry);
     setShowDeleteDialog(true);
   };
   
+  // Complete delete process
   const confirmDelete = async () => {
     if (!entryToDelete) return;
     
     setIsDeleting(true);
     
     try {
-      // Check if there are receipts attached to this time entry
-      if (entryToDelete.has_receipts) {
-        // First delete the document links
-        const { error: linkError } = await supabase
-          .from('time_entry_document_links')
-          .delete()
-          .eq('time_entry_id', entryToDelete.id);
-        
-        if (linkError) throw linkError;
-      }
-      
-      // Delete any associated expenses if they exist
-      const { error: expenseError } = await supabase
+      // Delete any related expense entries
+      await supabase
         .from('expenses')
         .delete()
         .eq('time_entry_id', entryToDelete.id);
       
-      if (expenseError) {
-        console.error('Error deleting linked expenses:', expenseError);
-        // Continue even if expense deletion fails
-      }
+      // Delete any document links
+      await supabase
+        .from('time_entry_document_links')
+        .delete()
+        .eq('time_entry_id', entryToDelete.id);
       
-      // Now delete the time entry
+      // Delete the time entry
       const { error } = await supabase
         .from('time_entries')
         .delete()
         .eq('id', entryToDelete.id);
-      
+        
       if (error) throw error;
       
       toast({
         title: 'Time entry deleted',
-        description: 'The time entry has been successfully removed.'
+        description: 'The time entry has been successfully removed.',
       });
       
-      onEntryChange(); // Refresh the list
       setShowDeleteDialog(false);
-    } catch (error: any) {
+      onSuccess();
+    } catch (error) {
       console.error('Error deleting time entry:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete time entry.',
-        variant: 'destructive'
+        title: 'Failed to delete',
+        description: 'An error occurred while trying to delete the time entry.',
+        variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
+      setEntryToDelete(null);
     }
   };
   
-  // Edit operations
+  // Start edit process
   const startEdit = (entry: TimeEntry) => {
     setEntryToEdit(entry);
     setShowEditDialog(true);
   };
   
+  // Complete edit process
   const saveEdit = async (updatedEntry: TimeEntry) => {
     setIsSaving(true);
     
     try {
-      // Update the time entry
-      // Note: We don't need to manually set hours_worked as the database trigger calculate_hours_worked
-      // will automatically calculate it based on start_time and end_time
-      // Similarly, calculate_time_entry_total_cost will update the total_cost based on hours and rate
       const { error } = await supabase
         .from('time_entries')
         .update({
           start_time: updatedEntry.start_time,
           end_time: updatedEntry.end_time,
-          // Note: hours_worked will be calculated by the database trigger
+          hours_worked: updatedEntry.hours_worked,
           notes: updatedEntry.notes,
+          employee_id: updatedEntry.employee_id,
           updated_at: new Date().toISOString()
         })
         .eq('id', updatedEntry.id);
-      
+        
       if (error) throw error;
+      
+      // Update related expense if it exists
+      const { data: expenses } = await supabase
+        .from('expenses')
+        .select('expense_id')
+        .eq('time_entry_id', updatedEntry.id)
+        .eq('expense_type', 'LABOR');
+        
+      if (expenses && expenses.length > 0) {
+        // Get employee rate
+        let hourlyRate = 75; // Default rate
+        if (updatedEntry.employee_id) {
+          const { data: employee } = await supabase
+            .from('employees')
+            .select('hourly_rate')
+            .eq('employee_id', updatedEntry.employee_id)
+            .maybeSingle();
+            
+          if (employee?.hourly_rate) {
+            hourlyRate = employee.hourly_rate;
+          }
+        }
+        
+        // Calculate new cost
+        const totalCost = updatedEntry.hours_worked * hourlyRate;
+        
+        // Update expense
+        await supabase
+          .from('expenses')
+          .update({
+            amount: totalCost,
+            quantity: updatedEntry.hours_worked,
+            unit_price: hourlyRate,
+            description: `Labor: ${updatedEntry.hours_worked} hours`,
+            updated_at: new Date().toISOString()
+          })
+          .eq('expense_id', expenses[0].expense_id);
+      }
       
       toast({
         title: 'Time entry updated',
-        description: 'Your changes have been saved successfully.'
+        description: 'The time entry has been successfully updated.',
       });
       
-      onEntryChange(); // Refresh the list
       setShowEditDialog(false);
-    } catch (error: any) {
+      onSuccess();
+    } catch (error) {
       console.error('Error updating time entry:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to update time entry.',
-        variant: 'destructive'
+        title: 'Failed to update',
+        description: 'An error occurred while trying to update the time entry.',
+        variant: 'destructive',
       });
     } finally {
       setIsSaving(false);
+      setEntryToEdit(null);
     }
   };
   
   return {
-    // Delete state and functions
     isDeleting,
     entryToDelete,
     showDeleteDialog,
     setShowDeleteDialog,
     startDelete,
     confirmDelete,
-    
-    // Edit state and functions
     isSaving,
     entryToEdit,
     showEditDialog,
@@ -138,4 +163,4 @@ export function useTimeEntryOperations(onEntryChange: () => void) {
     startEdit,
     saveEdit
   };
-}
+};

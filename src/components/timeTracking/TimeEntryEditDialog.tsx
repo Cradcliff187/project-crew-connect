@@ -1,159 +1,154 @@
 
-import React, { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 import { TimeEntry } from '@/types/timeTracking';
-import { format } from 'date-fns';
-import { parseTime, timeOptions, calculateHours } from '@/components/timeTracking/utils/timeUtils';
+import { calculateHours } from './utils/timeUtils';
+import TimeRangeSelector from './form/TimeRangeSelector';
+import EmployeeSelect from './form/EmployeeSelect';
 
 interface TimeEntryEditDialogProps {
   timeEntry: TimeEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (updatedEntry: TimeEntry) => void;
+  onSave: (timeEntry: TimeEntry) => Promise<void>;
   isSaving: boolean;
 }
 
-const TimeEntryEditDialog: React.FC<TimeEntryEditDialogProps> = ({
-  timeEntry,
-  open,
-  onOpenChange,
-  onSave,
-  isSaving
+const TimeEntryEditDialog: React.FC<TimeEntryEditDialogProps> = ({ 
+  timeEntry, 
+  open, 
+  onOpenChange, 
+  onSave, 
+  isSaving 
 }) => {
-  const [editedEntry, setEditedEntry] = useState<TimeEntry | null>(null);
-  
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [hoursWorked, setHoursWorked] = useState(0);
+  const [notes, setNotes] = useState('');
+  const [timeError, setTimeError] = useState('');
+  const [employeeId, setEmployeeId] = useState<string>('');
+  const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
+
+  // Fetch employees
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('employee_id, name')
+        .order('name');
+        
+      if (data && !error) {
+        setEmployees(data);
+      }
+    };
+    
+    if (open) {
+      fetchEmployees();
+    }
+  }, [open]);
+
+  // Initialize form when time entry changes
   useEffect(() => {
     if (timeEntry) {
-      setEditedEntry({...timeEntry});
+      setStartTime(timeEntry.start_time || '');
+      setEndTime(timeEntry.end_time || '');
+      setNotes(timeEntry.notes || '');
+      setEmployeeId(timeEntry.employee_id || '');
+      setHoursWorked(timeEntry.hours_worked || 0);
     }
   }, [timeEntry]);
-  
-  if (!editedEntry) return null;
-  
-  const handleTimeChange = (field: 'start_time' | 'end_time', value: string) => {
-    setEditedEntry(prev => {
-      if (!prev) return prev;
-      
-      const updatedEntry = { 
-        ...prev, 
-        [field]: value 
-      };
-      
-      // Recalculate hours worked using the utility function
-      const hoursWorked = calculateHours(
-        field === 'start_time' ? value : prev.start_time,
-        field === 'end_time' ? value : prev.end_time
-      );
-      
-      updatedEntry.hours_worked = hoursWorked;
-      
-      return updatedEntry;
+
+  // Update hours when times change
+  useEffect(() => {
+    if (startTime && endTime) {
+      try {
+        const hours = calculateHours(startTime, endTime);
+        if (hours <= 0) {
+          setTimeError('End time must be after start time');
+        } else {
+          setTimeError('');
+          setHoursWorked(hours);
+        }
+      } catch (error) {
+        console.error('Error calculating hours:', error);
+      }
+    }
+  }, [startTime, endTime]);
+
+  const handleSave = async () => {
+    if (!timeEntry) return;
+    if (timeError) return;
+
+    await onSave({
+      ...timeEntry,
+      start_time: startTime,
+      end_time: endTime,
+      hours_worked: hoursWorked,
+      notes,
+      employee_id: employeeId || null
     });
   };
-  
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editedEntry) {
-      onSave(editedEntry);
-    }
-  };
-  
-  const entityName = editedEntry.entity_name || 
-    `${editedEntry.entity_type.charAt(0).toUpperCase() + editedEntry.entity_type.slice(1)} ${editedEntry.entity_id.slice(0, 8)}`;
-  
-  // Generate time options for select
-  const times = Array.from({ length: 24 * 4 }, (_, i) => {
-    const hour = Math.floor(i / 4);
-    const minute = (i % 4) * 15;
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  });
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Edit Time Entry</DialogTitle>
-            <DialogDescription>
-              Edit time entry for {entityName} on {format(new Date(editedEntry.date_worked), 'MMM d, yyyy')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="start_time">Start Time</Label>
-                <select 
-                  id="start_time"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                  value={editedEntry.start_time}
-                  onChange={(e) => handleTimeChange('start_time', e.target.value)}
-                >
-                  {times.map(time => (
-                    <option key={`start-${time}`} value={time}>{format(parseTime(time), 'h:mm a')}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="end_time">End Time</Label>
-                <select 
-                  id="end_time"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                  value={editedEntry.end_time}
-                  onChange={(e) => handleTimeChange('end_time', e.target.value)}
-                >
-                  {times.map(time => (
-                    <option key={`end-${time}`} value={time}>{format(parseTime(time), 'h:mm a')}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="hours_worked">Hours Worked</Label>
-              <Input 
-                id="hours_worked"
-                type="text"
-                value={editedEntry.hours_worked.toFixed(2)}
-                readOnly
-              />
-            </div>
-            
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea 
-                id="notes"
-                value={editedEntry.notes || ''}
-                onChange={(e) => setEditedEntry({...editedEntry, notes: e.target.value})}
-                placeholder="Add notes about this time entry"
-                rows={3}
-              />
-            </div>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Edit Time Entry</DialogTitle>
+          <DialogDescription>
+            Make changes to your time entry
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <TimeRangeSelector
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+            error={timeError}
+            hoursWorked={hoursWorked}
+          />
+
+          <EmployeeSelect
+            value={employeeId}
+            onChange={setEmployeeId}
+            employees={employees}
+          />
+
+          <div className="space-y-2">
+            <label htmlFor="notes" className="text-sm font-medium">Notes</label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any notes about this time entry"
+              className="h-24"
+            />
           </div>
-          
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={isSaving}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-              disabled={isSaving}
-            >
-              {isSaving ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </form>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !!timeError}
+            className="bg-[#0485ea] hover:bg-[#0375d1]"
+          >
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

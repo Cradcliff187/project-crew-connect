@@ -1,8 +1,11 @@
 
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { formatDate, formatHours, formatCurrency } from "@/lib/utils";
-import { TimelogAddHeader } from "./header";
+import { formatDate, formatCurrency } from "@/lib/utils";
+import { TimelogAddSheet } from "./TimelogAddSheet";
+import { Button } from "@/components/ui/button";
+import { formatTime, formatHoursToDuration } from "@/components/timeTracking/utils/timeUtils";
 
 interface TimelogsInfoSectionProps {
   timelogs: any[];
@@ -25,14 +28,21 @@ export const TimelogsInfoSection = ({
   totalHours,
   totalLaborCost,
 }: TimelogsInfoSectionProps) => {
+  const [showAddSheet, setShowAddSheet] = useState(false);
+
   return (
     <Card>
-      <TimelogAddHeader
-        workOrderId={workOrderId}
-        employees={employees}
-        onTimeLogAdded={onTimeLogAdded}
-      />
-      <CardContent>
+      <div className="flex justify-between items-center p-4 border-b">
+        <h3 className="text-lg font-medium">Time Entries</h3>
+        <Button 
+          size="sm" 
+          onClick={() => setShowAddSheet(true)}
+          className="bg-[#0485ea] hover:bg-[#0375d1]"
+        >
+          Add Time
+        </Button>
+      </div>
+      <CardContent className="pt-4">
         {loading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
@@ -47,7 +57,7 @@ export const TimelogsInfoSection = ({
               <div className="rounded-md bg-muted p-3">
                 <div className="text-sm text-muted-foreground">Total Hours</div>
                 <div className="text-lg font-semibold">
-                  {formatHours(totalHours)}
+                  {totalHours.toFixed(1)}
                 </div>
               </div>
               <div className="rounded-md bg-muted p-3">
@@ -69,12 +79,11 @@ export const TimelogsInfoSection = ({
                   <div>
                     <div className="font-medium">
                       {timelog.employee_name || "Unassigned"} •{" "}
-                      {formatHours(timelog.hours_worked)}
+                      {formatHoursToDuration(timelog.hours_worked)}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {formatDate(timelog.date_worked)} •{" "}
-                      {timelog.start_time?.substring(0, 5)} -{" "}
-                      {timelog.end_time?.substring(0, 5)}
+                      {formatTime(timelog.start_time)} - {formatTime(timelog.end_time)}
                     </div>
                     {timelog.notes && (
                       <div className="text-sm mt-1">{timelog.notes}</div>
@@ -85,11 +94,9 @@ export const TimelogsInfoSection = ({
                       <div className="font-medium">
                         {formatCurrency(timelog.total_cost)}
                       </div>
-                      {timelog.employee_rate && (
-                        <div className="text-xs text-muted-foreground">
-                          @{formatCurrency(timelog.employee_rate)}/hr
-                        </div>
-                      )}
+                      <div className="text-xs text-muted-foreground">
+                        @{formatCurrency(timelog.employee_rate)}/hr
+                      </div>
                     </div>
                     <button
                       onClick={() => onDelete(timelog.id)}
@@ -104,6 +111,14 @@ export const TimelogsInfoSection = ({
           </div>
         )}
       </CardContent>
+      
+      <TimelogAddSheet
+        open={showAddSheet}
+        onOpenChange={setShowAddSheet}
+        workOrderId={workOrderId}
+        employees={employees}
+        onSuccess={onTimeLogAdded}
+      />
     </Card>
   );
 };

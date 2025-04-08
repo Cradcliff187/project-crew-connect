@@ -1,20 +1,26 @@
 
 import React from 'react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { format, parseISO } from 'date-fns';
 import { TimeEntry } from '@/types/timeTracking';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { formatDate, formatTime } from './utils/timeUtils';
+import { Loader2 } from 'lucide-react';
 
 interface TimeEntryDeleteDialogProps {
   timeEntry: TimeEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
   isDeleting: boolean;
 }
-
-const formatDate = (dateStr: string): string => {
-  return format(parseISO(dateStr), 'MMMM d, yyyy');
-};
 
 const TimeEntryDeleteDialog: React.FC<TimeEntryDeleteDialogProps> = ({
   timeEntry,
@@ -25,8 +31,9 @@ const TimeEntryDeleteDialog: React.FC<TimeEntryDeleteDialogProps> = ({
 }) => {
   if (!timeEntry) return null;
 
-  const entityName = timeEntry.entity_name || 
-    `${timeEntry.entity_type.charAt(0).toUpperCase() + timeEntry.entity_type.slice(1)} ${timeEntry.entity_id.slice(0, 8)}`;
+  const handleDelete = async () => {
+    await onConfirm();
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -34,35 +41,33 @@ const TimeEntryDeleteDialog: React.FC<TimeEntryDeleteDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Time Entry</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete the time entry for <strong>{entityName}</strong> on {formatDate(timeEntry.date_worked)}?
-            
-            <div className="mt-2 text-sm">
-              <span className="block">
-                <strong>Time:</strong> {format(timeEntry.start_time, 'h:mm a')} - {format(timeEntry.end_time, 'h:mm a')}
-              </span>
-              <span className="block">
-                <strong>Hours:</strong> {timeEntry.hours_worked}
-              </span>
-              {timeEntry.notes && (
-                <span className="block">
-                  <strong>Notes:</strong> {timeEntry.notes}
-                </span>
-              )}
-            </div>
-            
-            <div className="mt-2 text-destructive font-medium">
-              This action cannot be undone.
-            </div>
+            Are you sure you want to delete this time entry from {timeEntry.date_worked}?
+            {timeEntry.employee_name && (
+              <>
+                <br/>
+                Employee: <strong>{timeEntry.employee_name}</strong>
+              </>
+            )}
+            <br/>
+            Time: <strong>{formatTime(timeEntry.start_time)} - {formatTime(timeEntry.end_time)}</strong>
+            <br/>
+            Hours: <strong>{timeEntry.hours_worked?.toFixed(1)}</strong>
+            <br/>
+            This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm}
-            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            onClick={(e) => {
+              e.preventDefault();
+              handleDelete();
+            }}
+            className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
             disabled={isDeleting}
           >
-            {isDeleting ? "Deleting..." : "Delete"}
+            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
