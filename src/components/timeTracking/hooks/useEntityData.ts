@@ -71,7 +71,7 @@ export function useEntityData(form: UseFormReturn<any>) {
         
         const formattedProjects = (projectsData || []).map(p => ({
           id: p.projectid,
-          name: p.projectname || p.projectid
+          name: p.projectname || `Project ${p.projectid.substring(0, 8)}`
         }));
         
         console.log('Fetched projects:', formattedProjects.length);

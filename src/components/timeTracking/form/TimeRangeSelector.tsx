@@ -2,14 +2,21 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Clock } from 'lucide-react';
+import { Clock, Calendar } from 'lucide-react';
 import { timeOptions } from '../utils/timeUtils';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 interface TimeRangeSelectorProps {
   startTime: string;
   endTime: string;
   onStartTimeChange: (value: string) => void;
   onEndTimeChange: (value: string) => void;
+  date?: Date;
+  onDateChange?: (date: Date) => void;
   hoursWorked?: number;
   error?: string;
 }
@@ -19,6 +26,8 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   endTime,
   onStartTimeChange,
   onEndTimeChange,
+  date,
+  onDateChange,
   hoursWorked,
   error
 }) => {
@@ -26,6 +35,35 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
   return (
     <div className="space-y-4">
+      {date && onDateChange && (
+        <div className="space-y-2">
+          <Label>Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {date ? format(date, "MMMM d, yyyy") : <span>Select date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={date}
+                onSelect={(date) => date && onDateChange(date)}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
+      
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="startTime">Start Time</Label>

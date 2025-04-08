@@ -2,14 +2,13 @@
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Clock } from 'lucide-react';
 import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
 import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector';
+import EmployeeSelector from '@/components/timeTracking/form/EmployeeSelector';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -30,6 +29,7 @@ const TimelogAddSheet = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
+  const [workDate, setWorkDate] = useState<Date>(new Date());
   const [hoursWorked, setHoursWorked] = useState(8);
   const [employeeId, setEmployeeId] = useState('');
   const [notes, setNotes] = useState('');
@@ -56,6 +56,11 @@ const TimelogAddSheet = ({
   const handleEndTimeChange = (value: string) => {
     setEndTime(value);
     updateHoursWorked(startTime, value);
+  };
+
+  // Handle date change
+  const handleDateChange = (date: Date) => {
+    setWorkDate(date);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,15 +89,15 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
-      // Get current date
-      const currentDate = new Date().toISOString().split('T')[0];
+      // Format date to ISO string and extract the date part
+      const formattedDate = workDate.toISOString().split('T')[0];
       
       const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
         employee_id: employeeId,
         hours_worked: hoursWorked,
-        date_worked: currentDate,
+        date_worked: formattedDate,
         start_time: startTime,
         end_time: endTime,
         notes: notes || null,
@@ -108,12 +113,13 @@ const TimelogAddSheet = ({
       
       toast({
         title: 'Time entry added',
-        description: `${hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === employeeId)?.name || 'employee'}.`,
+        description: `${hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === employeeId)?.name || 'employee'} on ${formattedDate}.`,
       });
       
       // Reset form and close sheet
       setStartTime('09:00');
       setEndTime('17:00');
+      setWorkDate(new Date());
       setHoursWorked(8);
       setEmployeeId('');
       setNotes('');
@@ -139,37 +145,22 @@ const TimelogAddSheet = ({
         </SheetHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="employee" className="flex items-center">
-              Employee <span className="text-red-500 ml-1">*</span>
-            </Label>
-            <select
-              id="employee"
-              className={`w-full border ${employeeError ? 'border-red-500' : 'border-input'} bg-background px-3 py-2 rounded-md`}
-              value={employeeId}
-              onChange={(e) => {
-                setEmployeeId(e.target.value);
-                setEmployeeError('');
-              }}
-              required
-            >
-              <option value="">Select Employee</option>
-              {employees.map((employee) => (
-                <option key={employee.employee_id} value={employee.employee_id}>
-                  {employee.name}
-                </option>
-              ))}
-            </select>
-            {employeeError && <p className="text-sm text-red-500">{employeeError}</p>}
-          </div>
+          <EmployeeSelector 
+            employees={employees}
+            selectedEmployeeId={employeeId}
+            onChange={(value) => {
+              setEmployeeId(value);
+              setEmployeeError('');
+            }}
+            error={employeeError}
+          />
           
           <div className="space-y-2">
-            <Label className="flex items-center">
-              Time Range <span className="text-red-500 ml-1">*</span>
-            </Label>
             <TimeRangeSelector
               startTime={startTime}
               endTime={endTime}
+              date={workDate}
+              onDateChange={handleDateChange}
               onStartTimeChange={handleStartTimeChange}
               onEndTimeChange={handleEndTimeChange}
               hoursWorked={hoursWorked}

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Building, Briefcase, CreditCard, Clock, Loader2 } from 'lucide-react';
+import { Building, Briefcase, CreditCard, Clock, Loader2, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +16,9 @@ import TimeRangeSelector from './form/TimeRangeSelector';
 import ReceiptUploader from './form/ReceiptUploader';
 import ReceiptMetadataForm from './form/ReceiptMetadataForm';
 import { useEntityData } from './hooks/useEntityData';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface TimeEntryFormWizardProps {
   onSuccess: () => void;
@@ -53,7 +56,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   
   const { toast } = useToast();
   
-  // Initialize form with default values
   const form = useForm<FormValues>({
     defaultValues: {
       entityType: 'work_order',
@@ -63,13 +65,16 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       endTime: '17:00',
       hoursWorked: 8,
       notes: '',
-      employeeId: '', // Required field, but start with empty string
+      employeeId: '',
       hasReceipts: false
     },
     resolver: zodResolver(formSchema)
   });
   
-  // Get entity data
+  const handleDateChange = (newDate: Date) => {
+    form.setValue('workDate', newDate);
+  };
+  
   const { 
     workOrders, 
     projects, 
@@ -78,16 +83,14 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     getSelectedEntityDetails
   } = useEntityData(form);
   
-  // Watch form fields
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
+  const workDate = form.watch('workDate');
   
-  // Selected entity details
   const selectedEntity = entityId ? getSelectedEntityDetails() : null;
   
-  // Update hours worked when start or end time changes
   useEffect(() => {
     if (startTime && endTime) {
       try {
@@ -107,19 +110,16 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     }
   }, [startTime, endTime, form]);
   
-  // Update form when receipts are added or removed
   useEffect(() => {
     form.setValue('hasReceipts', selectedFiles.length > 0);
   }, [selectedFiles, form]);
   
-  // Upload receipts function
   const uploadReceipts = async (timeEntryId: string, files: File[]) => {
     for (const file of selectedFiles) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `receipts/time_entries/${timeEntryId}/${fileName}`;
       
-      // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file);
@@ -129,7 +129,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         continue;
       }
       
-      // Create document record
       const { data: document, error: documentError } = await supabase
         .from('documents')
         .insert({
@@ -156,7 +155,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         continue;
       }
       
-      // Link document to time entry
       const { error: linkError } = await supabase
         .from('time_entry_document_links')
         .insert({
@@ -171,7 +169,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     }
   };
   
-  // Submit time entry
   const submitTimeEntry = async (data: FormValues): Promise<{ id: string }> => {
     if (!data.employeeId) {
       throw new Error("Employee selection is required");
@@ -185,7 +182,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       end_time: data.endTime,
       hours_worked: data.hoursWorked,
       notes: data.notes || '',
-      employee_id: data.employeeId, // Make sure this is included
+      employee_id: data.employeeId,
       has_receipts: selectedFiles.length > 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -202,15 +199,12 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     return result;
   };
   
-  // Form submission handler
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setIsSubmitting(true);
     
     try {
-      // Submit time entry
       const result = await submitTimeEntry(data);
       
-      // Upload receipts if any
       if (selectedFiles.length > 0) {
         await uploadReceipts(result.id, selectedFiles);
       }
@@ -220,7 +214,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         description: 'Your time entry has been successfully recorded.',
       });
       
-      // Call success callback if provided
       if (onSuccess) {
         onSuccess();
       }
@@ -236,7 +229,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     }
   };
   
-  // Handle next step
   const handleNext = async () => {
     const currentFields = currentStep === 1 
       ? ['entityType', 'entityId'] 
@@ -249,18 +241,15 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     }
   };
   
-  // Handle back step
   const handleBack = () => {
     setCurrentStep(prev => prev - 1);
   };
   
-  // Handle receipt file selection
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files);
     setHasReceipts(files.length > 0);
   };
   
-  // Handle file removal
   const handleFileClear = (index: number) => {
     const newFiles = [...selectedFiles];
     newFiles.splice(index, 1);
@@ -271,7 +260,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Step 1: Select Entity */}
         {currentStep === 1 && (
           <div className="space-y-4">
             <div className="text-lg font-medium">Select Work Item</div>
@@ -306,7 +294,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
           </div>
         )}
         
-        {/* Step 2: Time Range Selection */}
         {currentStep === 2 && (
           <div className="space-y-4">
             <div className="text-lg font-medium">Time Details</div>
@@ -320,10 +307,33 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
                 )}
                 <span className="font-medium">{selectedEntity?.name}</span>
               </div>
-              
-              <div className="text-sm text-muted-foreground">
-                {format(date, 'EEEE, MMMM d, yyyy')}
-              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Work Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !workDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {workDate ? format(workDate, "MMMM d, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={workDate}
+                    onSelect={(date) => date && handleDateChange(date)}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             
             <TimeRangeSelector
@@ -346,7 +356,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
           </div>
         )}
         
-        {/* Step 3: Receipts */}
         {currentStep === 3 && (
           <div className="space-y-4">
             <div className="text-lg font-medium">Receipts & Expenses</div>
@@ -361,9 +370,15 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
                 <span className="font-medium">{selectedEntity?.name}</span>
               </div>
               
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 mr-1" />
-                <span>{startTime} - {endTime} ({form.watch('hoursWorked')} hrs)</span>
+              <div className="flex flex-col text-sm text-muted-foreground">
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  <span>{format(workDate, "MMMM d, yyyy")}</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <Clock className="h-4 w-4 mr-1" />
+                  <span>{startTime} - {endTime} ({form.watch('hoursWorked')} hrs)</span>
+                </div>
               </div>
             </div>
             
@@ -389,6 +404,8 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
                   onVendorChange={setVendor}
                   onExpenseTypeChange={setExpenseType}
                   onAmountChange={setExpenseAmount}
+                  entityType={entityType}
+                  entityId={entityId}
                 />
               </div>
             )}
@@ -397,7 +414,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         
         <Separator />
         
-        {/* Employee Selection - make it required */}
         <div className="space-y-2">
           <Label 
             htmlFor="employee" 
@@ -423,7 +439,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
           )}
         </div>
         
-        {/* Navigation Buttons */}
         <div className="flex justify-between">
           {currentStep === 1 ? (
             <Button type="button" variant="outline" onClick={onCancel}>
