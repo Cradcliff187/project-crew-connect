@@ -21,6 +21,7 @@ import { useEntityData } from './hooks/useEntityData';
 import { useReceiptUpload } from './hooks/useReceiptUpload';
 import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
 import { EntityType } from '../documents/schemas/documentSchema';
+import EmployeeSelector from './form/EmployeeSelector';
 
 interface TimeEntryFormProps {
   onSuccess: () => void;
@@ -88,8 +89,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
       }
     }
     
-    // The issue is here - we're passing 3 arguments but the function expects 1
-    // Fix: Just pass the data as expected by the handleSubmit function
+    // Correctly pass data to submitTimeEntry
     submitTimeEntry(data);
   };
 
@@ -115,6 +115,14 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
               onChange={(value) => form.setValue('entityId', value, { shouldValidate: true })}
               error={form.formState.errors.entityId?.message}
               selectedEntity={getSelectedEntityDetails()}
+            />
+            
+            <EmployeeSelector 
+              employees={employees}
+              selectedEmployeeId={form.watch('employeeId')}
+              onChange={(value) => form.setValue('employeeId', value, { shouldValidate: true })}
+              isLoading={isLoadingEntities}
+              error={form.formState.errors.employeeId?.message}
             />
             
             <div className="space-y-2">
