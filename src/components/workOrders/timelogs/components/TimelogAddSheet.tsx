@@ -28,12 +28,15 @@ export const TimelogAddSheet = ({
     
     try {
       let employeeRate = null;
-      if (values.employee_id) {
+      // Check for "none" special value that means no employee is selected
+      const actualEmployeeId = values.employee_id === 'none' ? null : values.employee_id;
+      
+      if (actualEmployeeId) {
         // Get employee rate if available
         const { data: empData } = await supabase
           .from('employees')
           .select('hourly_rate')
-          .eq('employee_id', values.employee_id)
+          .eq('employee_id', actualEmployeeId)
           .maybeSingle();
         
         employeeRate = empData?.hourly_rate;
@@ -47,7 +50,7 @@ export const TimelogAddSheet = ({
       const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
-        employee_id: values.employee_id || null,
+        employee_id: actualEmployeeId,
         hours_worked: values.hours_worked,
         date_worked: values.date_worked,
         start_time: values.start_time,

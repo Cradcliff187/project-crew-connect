@@ -41,7 +41,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           <SelectValue placeholder="Select employee" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Not assigned</SelectItem>
+          <SelectItem value="none">Not assigned</SelectItem>
           {employees.map((employee) => (
             <SelectItem key={employee.employee_id} value={employee.employee_id}>
               {employee.name}

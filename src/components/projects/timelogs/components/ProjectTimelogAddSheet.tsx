@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { DatePicker } from "@/components/ui/date-picker";
 import TimeRangeSelector from "@/components/timeTracking/form/TimeRangeSelector";
 import { calculateHours } from "@/components/timeTracking/utils/timeUtils";
+import EmployeeSelect from "@/components/timeTracking/form/EmployeeSelect";
 
 interface ProjectTimelogAddSheetProps {
   open: boolean;
@@ -101,13 +102,16 @@ export const ProjectTimelogAddSheet = ({
       // Format date
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
+      // Check for "none" special value that means no employee is selected
+      const actualEmployeeId = employeeId === 'none' ? null : employeeId;
+      
       let employeeRate = null;
-      if (employeeId) {
+      if (actualEmployeeId) {
         // Get employee rate if available
         const { data: empData } = await supabase
           .from('employees')
           .select('hourly_rate')
-          .eq('employee_id', employeeId)
+          .eq('employee_id', actualEmployeeId)
           .maybeSingle();
         
         employeeRate = empData?.hourly_rate;
@@ -120,7 +124,7 @@ export const ProjectTimelogAddSheet = ({
       const timelogEntry = {
         entity_type: 'project',
         entity_id: projectId,
-        employee_id: employeeId || null,
+        employee_id: actualEmployeeId,
         hours_worked: hours,
         date_worked: formattedDate,
         start_time: startTime,
@@ -206,22 +210,12 @@ export const ProjectTimelogAddSheet = ({
             hoursWorked={hours}
           />
           
-          <div className="space-y-2">
-            <Label htmlFor="employee">Employee</Label>
-            <select
-              id="employee"
-              className="w-full border border-input bg-background px-3 py-2 rounded-md"
-              value={employeeId}
-              onChange={(e) => setEmployeeId(e.target.value)}
-            >
-              <option value="">Select Employee</option>
-              {employees.map((employee) => (
-                <option key={employee.employee_id} value={employee.employee_id}>
-                  {employee.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <EmployeeSelect
+            value={employeeId}
+            onChange={setEmployeeId}
+            employees={employees}
+            label="Employee"
+          />
           
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
