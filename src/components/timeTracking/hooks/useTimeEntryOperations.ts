@@ -92,13 +92,15 @@ export const useTimeEntryOperations = (onSuccess: () => void) => {
       if (error) throw error;
       
       // Update related expense if it exists
-      const { data: expenses } = await supabase
+      const { data: expenses, error: expenseError } = await supabase
         .from('expenses')
         .select('expense_id')
         .eq('time_entry_id', updatedEntry.id)
         .eq('expense_type', 'LABOR');
         
-      if (expenses && expenses.length > 0) {
+      if (expenseError) {
+        console.error('Error fetching expenses:', expenseError);
+      } else if (expenses && expenses.length > 0) {
         // Get employee rate
         let hourlyRate = 75; // Default rate
         if (updatedEntry.employee_id) {
@@ -116,17 +118,20 @@ export const useTimeEntryOperations = (onSuccess: () => void) => {
         // Calculate new cost
         const totalCost = updatedEntry.hours_worked * hourlyRate;
         
-        // Update expense
-        await supabase
-          .from('expenses')
-          .update({
-            amount: totalCost,
-            quantity: updatedEntry.hours_worked,
-            unit_price: hourlyRate,
-            description: `Labor: ${updatedEntry.hours_worked} hours`,
-            updated_at: new Date().toISOString()
-          })
-          .eq('expense_id', expenses[0].expense_id);
+        // Update expense - Properly handle the expense ID
+        const expenseId = expenses[0]?.expense_id;
+        if (expenseId) {
+          await supabase
+            .from('expenses')
+            .update({
+              amount: totalCost,
+              quantity: updatedEntry.hours_worked,
+              unit_price: hourlyRate,
+              description: `Labor: ${updatedEntry.hours_worked} hours`,
+              updated_at: new Date().toISOString()
+            })
+            .eq('expense_id', expenseId);
+        }
       }
       
       toast({
