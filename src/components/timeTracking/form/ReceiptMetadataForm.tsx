@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +26,17 @@ interface ReceiptMetadataFormProps {
   onExpenseDateChange?: (date: Date) => void;
 }
 
+const DEFAULT_EXPENSE_TYPES = [
+  { id: 'MATERIAL', name: 'Materials' },
+  { id: 'EQUIPMENT', name: 'Equipment' },
+  { id: 'FUEL', name: 'Fuel' },
+  { id: 'TOOLS', name: 'Tools' },
+  { id: 'SUPPLIES', name: 'Supplies' },
+  { id: 'FOOD', name: 'Food' },
+  { id: 'LODGING', name: 'Lodging' },
+  { id: 'OTHER', name: 'Other' }
+];
+
 const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
   vendor,
   expenseType,
@@ -42,21 +52,26 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
   onExpenseDateChange
 }) => {
   const [vendors, setVendors] = useState<any[]>([]);
-  const [expenseTypes, setExpenseTypes] = useState<{id: string, name: string}[]>([]);
+  const [expenseTypes, setExpenseTypes] = useState<{id: string, name: string}[]>(DEFAULT_EXPENSE_TYPES);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
   
-  // Load vendors and expense types on component mount
   useEffect(() => {
     const fetchVendors = async () => {
       setIsLoadingVendors(true);
       try {
         const { data, error } = await supabase
           .from('vendors')
-          .select('vendor_id, name')
-          .order('name');
+          .select('vendorid, vendorname')
+          .order('vendorname');
           
         if (error) throw error;
-        setVendors(data || []);
+        
+        const formattedVendors = data?.map(v => ({
+          id: v.vendorid,
+          name: v.vendorname
+        })) || [];
+        
+        setVendors(formattedVendors);
       } catch (error) {
         console.error('Error fetching vendors:', error);
       } finally {
@@ -67,13 +82,27 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
     const fetchExpenseTypes = async () => {
       try {
         const { data, error } = await supabase
-          .from('expense_types')
-          .select('id, name')
-          .eq('is_active', true)
-          .order('name');
+          .from('documents')
+          .select('expense_type')
+          .not('expense_type', 'is', null)
+          .order('expense_type');
           
         if (error) throw error;
-        setExpenseTypes(data || []);
+        
+        if (data && data.length > 0) {
+          const uniqueTypes = [...new Set(data.map(item => item.expense_type))].filter(Boolean);
+          const formattedTypes = uniqueTypes.map(type => ({
+            id: type as string,
+            name: (type as string).replace(/_/g, ' ').toLowerCase()
+              .split(' ')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')
+          }));
+          
+          if (formattedTypes.length > 0) {
+            setExpenseTypes(formattedTypes);
+          }
+        }
       } catch (error) {
         console.error('Error fetching expense types:', error);
       }
@@ -98,6 +127,7 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
   const handleExpenseDateChange = (date: Date | undefined) => {
     if (date && onExpenseDateChange) {
       onExpenseDateChange(date);
+      updateMetadata({ expenseDate: date });
     }
   };
   
@@ -108,7 +138,10 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
           <Label htmlFor="vendor">Vendor</Label>
           <Select
             value={vendor}
-            onValueChange={onVendorChange}
+            onValueChange={(value) => {
+              onVendorChange(value);
+              updateMetadata({ vendorId: value });
+            }}
             disabled={isLoadingVendors}
           >
             <SelectTrigger className="w-full">
@@ -117,7 +150,7 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
             <SelectContent>
               <SelectItem value="">Select a vendor</SelectItem>
               {vendors.map((v) => (
-                <SelectItem key={v.vendor_id} value={v.vendor_id}>
+                <SelectItem key={v.id} value={v.id}>
                   {v.name}
                 </SelectItem>
               ))}
@@ -129,7 +162,10 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
           <Label htmlFor="expenseType">Expense Type</Label>
           <Select
             value={expenseType}
-            onValueChange={onExpenseTypeChange}
+            onValueChange={(value) => {
+              onExpenseTypeChange(value);
+              updateMetadata({ expenseType: value });
+            }}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select expense type" />

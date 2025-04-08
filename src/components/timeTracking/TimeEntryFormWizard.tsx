@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +20,7 @@ import { useEntityData } from './hooks/useEntityData';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { ReceiptMetadata } from '@/types/timeTracking';
 
 interface TimeEntryFormWizardProps {
   onSuccess: () => void;
@@ -53,6 +55,16 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   const [vendor, setVendor] = useState('');
   const [expenseType, setExpenseType] = useState('');
   const [expenseAmount, setExpenseAmount] = useState<number | undefined>(undefined);
+  const [expenseDate, setExpenseDate] = useState<Date>(new Date());
+  
+  // Initialize receipt metadata
+  const [receiptMetadata, setReceiptMetadata] = useState<ReceiptMetadata>({
+    category: 'receipt',
+    expenseType: null,
+    tags: ['time-entry'],
+    vendorType: 'vendor',
+    expenseDate: new Date()
+  });
   
   const { toast } = useToast();
   
@@ -114,6 +126,13 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     form.setValue('hasReceipts', selectedFiles.length > 0);
   }, [selectedFiles, form]);
   
+  const updateReceiptMetadata = (data: Partial<ReceiptMetadata>) => {
+    setReceiptMetadata(prev => ({
+      ...prev,
+      ...data
+    }));
+  };
+  
   const uploadReceipts = async (timeEntryId: string, files: File[]) => {
     for (const file of selectedFiles) {
       const fileExt = file.name.split('.').pop();
@@ -142,9 +161,10 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
           is_expense: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          expense_type: expenseType || null,
-          vendor_id: vendor || null,
-          amount: expenseAmount || null,
+          expense_type: receiptMetadata.expenseType || expenseType || null,
+          vendor_id: receiptMetadata.vendorId || vendor || null,
+          amount: receiptMetadata.amount || expenseAmount || null,
+          expense_date: receiptMetadata.expenseDate ? format(receiptMetadata.expenseDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
           tags: ['receipt', 'time-entry']
         })
         .select('document_id')
@@ -166,12 +186,54 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       if (linkError) {
         console.error('Error linking document to time entry:', linkError);
       }
+      
+      // Create expense entry for the uploaded receipt
+      if (entityType && document) {
+        const expenseData = {
+          entity_type: entityType.toUpperCase(),
+          entity_id: entityId,
+          description: `Receipt: ${file.name}`,
+          expense_type: receiptMetadata.expenseType || expenseType || 'MATERIAL',
+          amount: receiptMetadata.amount || expenseAmount || 0,
+          document_id: document.document_id,
+          time_entry_id: timeEntryId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          quantity: 1,
+          unit_price: receiptMetadata.amount || expenseAmount || 0,
+          expense_date: receiptMetadata.expenseDate ? format(receiptMetadata.expenseDate, 'yyyy-MM-dd') : format(workDate, 'yyyy-MM-dd'),
+          vendor_id: receiptMetadata.vendorId || vendor || null,
+          is_receipt: true
+        };
+        
+        const { error: expenseError } = await supabase
+          .from('expenses')
+          .insert(expenseData);
+          
+        if (expenseError) {
+          console.error('Error creating expense for receipt:', expenseError);
+        }
+      }
     }
   };
   
   const submitTimeEntry = async (data: FormValues): Promise<{ id: string }> => {
     if (!data.employeeId) {
       throw new Error("Employee selection is required");
+    }
+    
+    // Get employee rate if available
+    let employeeRate = null;
+    try {
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('hourly_rate')
+        .eq('employee_id', data.employeeId)
+        .maybeSingle();
+      
+      employeeRate = empData?.hourly_rate;
+    } catch (error) {
+      console.error('Error getting employee rate:', error);
     }
     
     const timeEntry = {
@@ -183,6 +245,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       hours_worked: data.hoursWorked,
       notes: data.notes || '',
       employee_id: data.employeeId,
+      employee_rate: employeeRate,
       has_receipts: selectedFiles.length > 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -196,6 +259,33 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       .single();
       
     if (error) throw error;
+    
+    // Create labor expense record
+    if (result && result.id) {
+      const hourlyRate = employeeRate || 75; // Default rate if none set
+      const totalAmount = data.hoursWorked * hourlyRate;
+      
+      const { error: expenseError } = await supabase
+        .from('expenses')
+        .insert({
+          entity_type: data.entityType.toUpperCase(),
+          entity_id: data.entityId,
+          description: `Labor: ${data.hoursWorked} hours`,
+          expense_type: 'LABOR',
+          amount: totalAmount,
+          time_entry_id: result.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          quantity: data.hoursWorked,
+          unit_price: hourlyRate,
+          expense_date: format(data.workDate, 'yyyy-MM-dd')
+        });
+        
+      if (expenseError) {
+        console.error('Error creating labor expense:', expenseError);
+      }
+    }
+    
     return result;
   };
   
@@ -257,9 +347,40 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     setHasReceipts(newFiles.length > 0);
   };
   
+  // Optimize employee selector for mobile
+  const renderEmployeeSelector = () => {
+    return (
+      <div className="space-y-2">
+        <Label 
+          htmlFor="employee" 
+          className="flex items-center font-medium text-sm"
+        >
+          Employee <span className="text-red-500 ml-1">*</span>
+        </Label>
+        <select
+          id="employee"
+          className={`w-full border ${form.formState.errors.employeeId ? 'border-red-500' : 'border-gray-300'} 
+                     rounded-md p-2 bg-white text-sm`}
+          {...form.register('employeeId')}
+          required
+        >
+          <option value="">Select Employee</option>
+          {employees.map(employee => (
+            <option key={employee.employee_id} value={employee.employee_id}>
+              {employee.name}
+            </option>
+          ))}
+        </select>
+        {form.formState.errors.employeeId && (
+          <p className="text-sm text-red-500">{form.formState.errors.employeeId.message}</p>
+        )}
+      </div>
+    );
+  };
+  
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {currentStep === 1 && (
           <div className="space-y-4">
             <div className="text-lg font-medium">Select Work Item</div>
@@ -406,6 +527,10 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
                   onAmountChange={setExpenseAmount}
                   entityType={entityType}
                   entityId={entityId}
+                  metadata={receiptMetadata}
+                  updateMetadata={updateReceiptMetadata}
+                  expenseDate={expenseDate}
+                  onExpenseDateChange={setExpenseDate}
                 />
               </div>
             )}
@@ -414,30 +539,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         
         <Separator />
         
-        <div className="space-y-2">
-          <Label 
-            htmlFor="employee" 
-            className="flex items-center font-medium text-sm"
-          >
-            Employee <span className="text-red-500 ml-1">*</span>
-          </Label>
-          <select
-            id="employee"
-            className={`w-full border ${form.formState.errors.employeeId ? 'border-red-500' : 'border-gray-300'} rounded-md p-2`}
-            {...form.register('employeeId')}
-            required
-          >
-            <option value="">Select Employee</option>
-            {employees.map(employee => (
-              <option key={employee.employee_id} value={employee.employee_id}>
-                {employee.name}
-              </option>
-            ))}
-          </select>
-          {form.formState.errors.employeeId && (
-            <p className="text-sm text-red-500">{form.formState.errors.employeeId.message}</p>
-          )}
-        </div>
+        {renderEmployeeSelector()}
         
         <div className="flex justify-between">
           {currentStep === 1 ? (

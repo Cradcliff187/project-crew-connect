@@ -1,11 +1,12 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import MobileTimeEntryView from '@/components/timeTracking/MobileTimeEntryView';
 import DesktopTimeEntryView from '@/components/timeTracking/DesktopTimeEntryView';
 import { useTimeEntries } from '@/components/timeTracking/hooks/useTimeEntries';
 import { Helmet } from 'react-helmet-async';
+import { useDeviceCapabilities } from '@/hooks/use-mobile';
 
 const TimeTracking = () => {
   // Fetch time entries for the current week (hook handles the date range)
@@ -21,10 +22,16 @@ const TimeTracking = () => {
   } = useTimeEntries();
   
   // State for add form
-  const [showAddForm, setShowAddForm] = React.useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   
-  // Detect if we're on a mobile device
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  // Use our device capabilities hook to get more info
+  const { isMobile, hasCamera } = useDeviceCapabilities();
+  
+  // For fallback, also use media query
+  const isSmallScreen = useMediaQuery("(max-width: 768px)");
+  
+  // Use either the device detection or the media query
+  const useMobileView = isMobile || isSmallScreen;
   
   // Trigger initial data loading when component mounts
   useEffect(() => {
@@ -40,7 +47,7 @@ const TimeTracking = () => {
   };
   
   // If on mobile, show a simplified view
-  if (isMobile) {
+  if (useMobileView) {
     return (
       <PageTransition>
         <Helmet>
