@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { TimeEntryFormValues } from '@/components/timeTracking/hooks/useTimeEntryForm';
 import { toast } from '@/hooks/use-toast';
@@ -21,6 +20,11 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
     setIsSubmitting(true);
     
     try {
+      // Validate that employee ID is provided
+      if (!data.employeeId) {
+        throw new Error('Employee selection is required');
+      }
+      
       let employeeRate = null;
       if (data.employeeId) {
         // Get employee rate if available
@@ -41,7 +45,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         start_time: data.startTime,
         end_time: data.endTime,
         hours_worked: data.hoursWorked,
-        employee_id: data.employeeId || null,
+        employee_id: data.employeeId,
         employee_rate: employeeRate,
         notes: data.notes,
         has_receipts: selectedFiles.length > 0,

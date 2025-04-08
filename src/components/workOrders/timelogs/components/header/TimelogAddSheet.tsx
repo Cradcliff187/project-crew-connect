@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Clock } from 'lucide-react';
+import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
+import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -25,17 +28,54 @@ const TimelogAddSheet = ({
 }: TimelogAddSheetProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hours, setHours] = useState('');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
+  const [hoursWorked, setHoursWorked] = useState(8);
   const [employeeId, setEmployeeId] = useState('');
   const [notes, setNotes] = useState('');
+  const [employeeError, setEmployeeError] = useState('');
+  
+  // Calculate hours when times change
+  const updateHoursWorked = (start: string, end: string) => {
+    try {
+      const hours = calculateHours(start, end);
+      setHoursWorked(parseFloat(hours.toFixed(2)));
+    } catch (error) {
+      console.error('Error calculating hours:', error);
+      setHoursWorked(0);
+    }
+  };
+
+  // Handle start time change
+  const handleStartTimeChange = (value: string) => {
+    setStartTime(value);
+    updateHoursWorked(value, endTime);
+  };
+
+  // Handle end time change
+  const handleEndTimeChange = (value: string) => {
+    setEndTime(value);
+    updateHoursWorked(startTime, value);
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!hours || parseFloat(hours) <= 0) {
+    // Validate employee selection
+    if (!employeeId) {
+      setEmployeeError('Please select an employee');
+      toast({
+        title: 'Employee required',
+        description: 'Please select an employee for this time entry.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (hoursWorked <= 0) {
       toast({
         title: 'Invalid hours',
-        description: 'Please enter a valid number of hours worked.',
+        description: 'Please enter valid start and end times.',
         variant: 'destructive',
       });
       return;
@@ -44,22 +84,14 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
-      // Get current date and create placeholder time values
+      // Get current date
       const currentDate = new Date().toISOString().split('T')[0];
-      const currentTime = new Date();
-      // Set start time at 9 AM
-      const startTime = `09:00:00`;
-      // Calculate end time based on hours worked
-      const hoursNum = parseFloat(hours);
-      const endHour = Math.min(9 + hoursNum, 23);
-      const endMinutes = (hoursNum % 1) * 60;
-      const endTime = `${Math.floor(endHour).toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
       
       const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
-        employee_id: employeeId || null,
-        hours_worked: hoursNum,
+        employee_id: employeeId,
+        hours_worked: hoursWorked,
         date_worked: currentDate,
         start_time: startTime,
         end_time: endTime,
@@ -76,13 +108,16 @@ const TimelogAddSheet = ({
       
       toast({
         title: 'Time entry added',
-        description: `${hours} hours have been logged successfully.`,
+        description: `${hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === employeeId)?.name || 'employee'}.`,
       });
       
       // Reset form and close sheet
-      setHours('');
+      setStartTime('09:00');
+      setEndTime('17:00');
+      setHoursWorked(8);
       setEmployeeId('');
       setNotes('');
+      setEmployeeError('');
       onSuccess();
     } catch (error: any) {
       console.error('Error adding time entry:', error);
@@ -105,26 +140,18 @@ const TimelogAddSheet = ({
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="hours">Hours Worked</Label>
-            <Input
-              id="hours"
-              type="number"
-              step="0.25"
-              min="0.25"
-              placeholder="Enter hours"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="employee">Employee</Label>
+            <Label htmlFor="employee" className="flex items-center">
+              Employee <span className="text-red-500 ml-1">*</span>
+            </Label>
             <select
               id="employee"
-              className="w-full border border-input bg-background px-3 py-2 rounded-md"
+              className={`w-full border ${employeeError ? 'border-red-500' : 'border-input'} bg-background px-3 py-2 rounded-md`}
               value={employeeId}
-              onChange={(e) => setEmployeeId(e.target.value)}
+              onChange={(e) => {
+                setEmployeeId(e.target.value);
+                setEmployeeError('');
+              }}
+              required
             >
               <option value="">Select Employee</option>
               {employees.map((employee) => (
@@ -133,6 +160,20 @@ const TimelogAddSheet = ({
                 </option>
               ))}
             </select>
+            {employeeError && <p className="text-sm text-red-500">{employeeError}</p>}
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="flex items-center">
+              Time Range <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <TimeRangeSelector
+              startTime={startTime}
+              endTime={endTime}
+              onStartTimeChange={handleStartTimeChange}
+              onEndTimeChange={handleEndTimeChange}
+              hoursWorked={hoursWorked}
+            />
           </div>
           
           <div className="space-y-2">

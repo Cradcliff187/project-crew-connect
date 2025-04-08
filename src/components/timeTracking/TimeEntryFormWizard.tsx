@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,7 +23,7 @@ interface TimeEntryFormWizardProps {
   date: Date;
 }
 
-// Form schema
+// Form schema - update to make employeeId required
 const formSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
   entityId: z.string().min(1, "Please select a work order or project"),
@@ -33,7 +32,7 @@ const formSchema = z.object({
   endTime: z.string().min(1, "End time is required"),
   hoursWorked: z.number().min(0.01, "Hours must be greater than 0"),
   notes: z.string().optional(),
-  employeeId: z.string().optional(),
+  employeeId: z.string().min(1, "Employee selection is required"),
   hasReceipts: z.boolean().default(false)
 });
 
@@ -64,6 +63,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       endTime: '17:00',
       hoursWorked: 8,
       notes: '',
+      employeeId: '', // Required field, but start with empty string
       hasReceipts: false
     },
     resolver: zodResolver(formSchema)
@@ -173,6 +173,10 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   
   // Submit time entry
   const submitTimeEntry = async (data: FormValues): Promise<{ id: string }> => {
+    if (!data.employeeId) {
+      throw new Error("Employee selection is required");
+    }
+    
     const timeEntry = {
       entity_type: data.entityType,
       entity_id: data.entityId,
@@ -181,6 +185,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       end_time: data.endTime,
       hours_worked: data.hoursWorked,
       notes: data.notes || '',
+      employee_id: data.employeeId, // Make sure this is included
       has_receipts: selectedFiles.length > 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -391,6 +396,32 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         )}
         
         <Separator />
+        
+        {/* Employee Selection - make it required */}
+        <div className="space-y-2">
+          <Label 
+            htmlFor="employee" 
+            className="flex items-center font-medium text-sm"
+          >
+            Employee <span className="text-red-500 ml-1">*</span>
+          </Label>
+          <select
+            id="employee"
+            className={`w-full border ${form.formState.errors.employeeId ? 'border-red-500' : 'border-gray-300'} rounded-md p-2`}
+            {...form.register('employeeId')}
+            required
+          >
+            <option value="">Select Employee</option>
+            {employees.map(employee => (
+              <option key={employee.employee_id} value={employee.employee_id}>
+                {employee.name}
+              </option>
+            ))}
+          </select>
+          {form.formState.errors.employeeId && (
+            <p className="text-sm text-red-500">{form.formState.errors.employeeId.message}</p>
+          )}
+        </div>
         
         {/* Navigation Buttons */}
         <div className="flex justify-between">

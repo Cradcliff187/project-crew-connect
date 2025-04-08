@@ -1,27 +1,36 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
-export interface TimePickerMobileProps {
+interface TimePickerMobileProps {
   value: string;
   onChange: (value: string) => void;
   label?: string;
+  error?: string;
 }
 
-const TimePickerMobile: React.FC<TimePickerMobileProps> = ({ 
+const TimePickerMobile: React.FC<TimePickerMobileProps> = ({
   value,
   onChange,
-  label
+  label,
+  error
 }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  };
+
   return (
-    <div>
-      {label && <Label className="mb-2 block">{label}</Label>}
-      <input
+    <div className="space-y-1">
+      {label && <Label htmlFor="time">{label}</Label>}
+      <Input
         type="time"
+        id="time"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-11 rounded-md border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#0485ea]/20 focus:border-[#0485ea]"
+        onChange={handleChange}
+        className={error ? 'border-red-500' : ''}
       />
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 };

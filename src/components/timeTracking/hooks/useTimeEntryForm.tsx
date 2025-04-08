@@ -16,7 +16,7 @@ const timeEntryFormSchema = z.object({
   endTime: z.string().min(1, "End time is required"),
   hoursWorked: z.number().min(0.01, "Hours must be greater than 0"),
   notes: z.string().optional(),
-  employeeId: z.string().optional(),
+  employeeId: z.string().min(1, "Employee selection is required"),
   hasReceipts: z.boolean().default(false),
 });
 
@@ -26,9 +26,9 @@ const defaultFormValues: TimeEntryFormValues = {
   entityType: 'work_order',
   entityId: '',
   workDate: new Date(),
-  startTime: '',
-  endTime: '',
-  hoursWorked: 0,
+  startTime: '09:00',
+  endTime: '17:00',
+  hoursWorked: 8,
   notes: '',
   employeeId: '',
   hasReceipts: false,
