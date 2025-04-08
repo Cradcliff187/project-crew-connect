@@ -1,27 +1,11 @@
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { timelogColumns } from '../data/columns';
-import { DataTable } from '@/components/ui/data-table';
-import { format } from 'date-fns';
-import { TimelogAddHeader } from './header';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, DollarSign } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { formatCurrency } from '@/lib/utils';
-
-interface TimelogEntry {
-  id: string;
-  date_worked: string;
-  hours_worked: number;
-  employee_id?: string | null;
-  notes?: string | null;
-  created_at: string;
-  employee_rate?: number;
-}
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { formatDate, formatHours, formatCurrency } from "@/lib/utils";
+import { TimelogAddHeader } from "./header";
 
 interface TimelogsInfoSectionProps {
-  timelogs: TimelogEntry[];
+  timelogs: any[];
   loading: boolean;
   employees: { employee_id: string; name: string }[];
   workOrderId: string;
@@ -31,7 +15,7 @@ interface TimelogsInfoSectionProps {
   totalLaborCost: number;
 }
 
-const TimelogsInfoSection = ({
+export const TimelogsInfoSection = ({
   timelogs,
   loading,
   employees,
@@ -39,96 +23,87 @@ const TimelogsInfoSection = ({
   onDelete,
   onTimeLogAdded,
   totalHours,
-  totalLaborCost
+  totalLaborCost,
 }: TimelogsInfoSectionProps) => {
-  // Find employee name by ID
-  const getEmployeeName = (employeeId: string | null | undefined) => {
-    if (!employeeId) return "Unassigned";
-    const employee = employees.find(e => e.employee_id === employeeId);
-    return employee ? employee.name : "Unknown Employee";
-  };
-  
-  // Format data for the table - always calculate cost based on hours * rate
-  const formattedTimelogs = timelogs.map(log => {
-    const hourlyRate = log.employee_rate || 75; // Default to $75/hour if no rate
-    const calculatedCost = log.hours_worked * hourlyRate;
-    
-    return {
-      id: log.id,
-      date: log.date_worked ? format(new Date(log.date_worked), 'MMM dd, yyyy') : 'N/A',
-      hours: log.hours_worked?.toFixed(2) || '0',
-      employee: getEmployeeName(log.employee_id),
-      notes: log.notes || '',
-      date_raw: log.date_worked || '', // For sorting
-      total_cost: calculatedCost,
-    };
-  });
-  
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-8 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-48 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-  
   return (
     <Card>
-      <TimelogAddHeader 
-        workOrderId={workOrderId} 
+      <TimelogAddHeader
+        workOrderId={workOrderId}
         employees={employees}
         onTimeLogAdded={onTimeLogAdded}
       />
-      
       <CardContent>
-        {timelogs.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            <p>No time entries recorded yet.</p>
-            <p className="text-sm mt-2">Log time using the button above.</p>
+        {loading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
+          </div>
+        ) : timelogs.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            No time entries recorded for this work order yet.
           </div>
         ) : (
-          <>
-            <div className="mb-4 flex flex-wrap gap-4">
-              <div className="bg-[#0485ea]/10 px-4 py-2 rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  Total Hours
-                </p>
-                <p className="font-medium text-foreground">
-                  {totalHours.toFixed(2)}
-                </p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 mb-2">
+              <div className="rounded-md bg-muted p-3">
+                <div className="text-sm text-muted-foreground">Total Hours</div>
+                <div className="text-lg font-semibold">
+                  {formatHours(totalHours)}
+                </div>
               </div>
-              
-              <div className="bg-[#0485ea]/10 px-4 py-2 rounded-md flex items-center">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Total Labor Cost
-                  </p>
-                  <p className="font-medium text-foreground">
-                    {formatCurrency(totalLaborCost)}
-                  </p>
+              <div className="rounded-md bg-muted p-3">
+                <div className="text-sm text-muted-foreground">
+                  Total Labor Cost
+                </div>
+                <div className="text-lg font-semibold">
+                  {formatCurrency(totalLaborCost)}
                 </div>
               </div>
             </div>
-            
-            <DataTable
-              columns={timelogColumns(onDelete)}
-              data={formattedTimelogs}
-              filterColumn="employee"
-              defaultSorting={{
-                columnId: 'date_raw',
-                direction: 'desc'
-              }}
-            />
-          </>
+
+            <div className="space-y-3">
+              {timelogs.map((timelog) => (
+                <div
+                  key={timelog.id}
+                  className="flex justify-between items-center border-b pb-2 last:border-0"
+                >
+                  <div>
+                    <div className="font-medium">
+                      {timelog.employee_name || "Unassigned"} •{" "}
+                      {formatHours(timelog.hours_worked)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDate(timelog.date_worked)} •{" "}
+                      {timelog.start_time?.substring(0, 5)} -{" "}
+                      {timelog.end_time?.substring(0, 5)}
+                    </div>
+                    {timelog.notes && (
+                      <div className="text-sm mt-1">{timelog.notes}</div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <div className="font-medium">
+                        {formatCurrency(timelog.total_cost)}
+                      </div>
+                      {timelog.employee_rate && (
+                        <div className="text-xs text-muted-foreground">
+                          @{formatCurrency(timelog.employee_rate)}/hr
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => onDelete(timelog.id)}
+                      className="text-red-500 hover:text-red-700 text-xs p-1"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
   );
 };
-
-export default TimelogsInfoSection;

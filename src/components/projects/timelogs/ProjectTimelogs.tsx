@@ -1,6 +1,6 @@
 
 import { useProjectTimelogs } from '../hooks/useProjectTimelogs';
-import { TimelogsInfoSection } from '@/components/workOrders/timelogs/components';
+import { ProjectTimelogsInfoSection } from './components/ProjectTimelogsInfoSection';
 
 interface ProjectTimelogsProps {
   projectId: string;
@@ -25,11 +25,11 @@ const ProjectTimelogs = ({ projectId, onTimeLogAdded }: ProjectTimelogsProps) =>
   };
   
   return (
-    <TimelogsInfoSection
+    <ProjectTimelogsInfoSection
       timelogs={timelogs}
       loading={loading}
       employees={employees}
-      workOrderId={projectId} // Reusing the prop name, but passing the projectId
+      projectId={projectId}
       onDelete={handleDeleteTimelog}
       onTimeLogAdded={handleSuccessfulAdd}
       totalHours={totalHours}

@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { DatePicker } from "@/components/ui/date-picker";
+import TimeRangeSelector from "@/components/timeTracking/form/TimeRangeSelector";
+import { calculateHours } from "@/components/timeTracking/utils/timeUtils";
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -25,14 +29,64 @@ const TimelogAddSheet = ({
 }: TimelogAddSheetProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hours, setHours] = useState('');
+  const [hours, setHours] = useState(0);
   const [employeeId, setEmployeeId] = useState('');
   const [notes, setNotes] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
+  const [timeError, setTimeError] = useState('');
+  
+  // Handle time changes and calculate hours
+  const handleStartTimeChange = (value: string) => {
+    setStartTime(value);
+    updateHoursWorked(value, endTime);
+  };
+  
+  const handleEndTimeChange = (value: string) => {
+    setEndTime(value);
+    updateHoursWorked(startTime, value);
+  };
+  
+  const updateHoursWorked = (start: string, end: string) => {
+    try {
+      const calculatedHours = calculateHours(start, end);
+      if (calculatedHours <= 0) {
+        setTimeError('End time must be after start time');
+        setHours(0);
+      } else {
+        setTimeError('');
+        setHours(calculatedHours);
+      }
+    } catch (error) {
+      console.error('Error calculating hours:', error);
+    }
+  };
+  
+  // Reset form
+  const resetForm = () => {
+    setHours(0);
+    setEmployeeId('');
+    setNotes('');
+    setSelectedDate(new Date());
+    setStartTime('09:00');
+    setEndTime('17:00');
+    setTimeError('');
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!hours || parseFloat(hours) <= 0) {
+    if (timeError) {
+      toast({
+        title: 'Invalid time range',
+        description: timeError,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (hours <= 0) {
       toast({
         title: 'Invalid hours',
         description: 'Please enter a valid number of hours worked.',
@@ -44,23 +98,16 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
-      // Get current date and create placeholder time values
-      const currentDate = new Date().toISOString().split('T')[0];
-      const currentTime = new Date();
-      // Set start time at 9 AM
-      const startTime = `09:00:00`;
-      // Calculate end time based on hours worked
-      const hoursNum = parseFloat(hours);
-      const endHour = Math.min(9 + hoursNum, 23);
-      const endMinutes = (hoursNum % 1) * 60;
-      const endTime = `${Math.floor(endHour).toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
+      // Format date
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
+      // Get current date and create placeholder time values
       const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
         employee_id: employeeId || null,
-        hours_worked: hoursNum,
-        date_worked: currentDate,
+        hours_worked: hours,
+        date_worked: formattedDate,
         start_time: startTime,
         end_time: endTime,
         notes: notes || null,
@@ -80,9 +127,7 @@ const TimelogAddSheet = ({
       });
       
       // Reset form and close sheet
-      setHours('');
-      setEmployeeId('');
-      setNotes('');
+      resetForm();
       onSuccess();
     } catch (error: any) {
       console.error('Error adding time entry:', error);
@@ -105,18 +150,21 @@ const TimelogAddSheet = ({
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="hours">Hours Worked</Label>
-            <Input
-              id="hours"
-              type="number"
-              step="0.25"
-              min="0.25"
-              placeholder="Enter hours"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-              required
+            <Label htmlFor="date">Date</Label>
+            <DatePicker 
+              date={selectedDate} 
+              setDate={(date) => date && setSelectedDate(date)} 
             />
           </div>
+          
+          <TimeRangeSelector
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={handleStartTimeChange}
+            onEndTimeChange={handleEndTimeChange}
+            error={timeError}
+            hoursWorked={hours}
+          />
           
           <div className="space-y-2">
             <Label htmlFor="employee">Employee</Label>
@@ -157,7 +205,7 @@ const TimelogAddSheet = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || hours <= 0}
               className="bg-[#0485ea] hover:bg-[#0375d1]"
             >
               {isSubmitting ? 'Saving...' : 'Log Time'}
