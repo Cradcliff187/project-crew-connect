@@ -44,7 +44,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [employeeId, setEmployeeId] = useState('none');
   const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
   
-  // New state for the enhanced workflow
+  // State for the enhanced workflow
   const [showReceiptPrompt, setShowReceiptPrompt] = useState(false);
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -54,6 +54,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     totalAmount: 0
   });
   const [selectedEntityName, setSelectedEntityName] = useState('');
+  const [isSheetClosing, setIsSheetClosing] = useState(false);
   
   const { toast } = useToast();
   
@@ -72,6 +73,18 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       }
     }
   }, [startTime, endTime]);
+  
+  useEffect(() => {
+    if (!open) {
+      // Reset when fully closed, not during workflow transitions
+      if (!showReceiptPrompt && !showReceiptUpload && !showConfirmation) {
+        resetForm();
+      }
+    } else {
+      // Reset the closing flag when opening
+      setIsSheetClosing(false);
+    }
+  }, [open]);
   
   useEffect(() => {
     const fetchRecentEntities = async () => {
@@ -104,8 +117,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       }
     };
     
-    fetchRecentEntities();
-  }, [entityType]);
+    if (open) {
+      fetchRecentEntities();
+    }
+  }, [entityType, open]);
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -132,8 +147,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       }
     };
     
-    fetchEmployees();
-  }, []);
+    if (open) {
+      fetchEmployees();
+    }
+  }, [open]);
   
   // Update the selected entity name when entityId changes
   useEffect(() => {
@@ -239,8 +256,14 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         id: insertedEntry.id
       });
       
-      // Show the receipt prompt instead of immediately closing
-      setShowReceiptPrompt(true);
+      // Mark the sheet as in workflow so it doesn't reset early
+      setIsSheetClosing(true);
+      
+      // Show the receipt prompt now, with a slight delay to ensure state updates
+      setTimeout(() => {
+        setShowReceiptPrompt(true);
+        setIsSubmitting(false);
+      }, 300);
       
     } catch (error: any) {
       console.error('Error adding time entry:', error);
@@ -255,17 +278,25 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   
   // Handle receipt prompt confirmation
   const handleReceiptPromptConfirm = () => {
-    setShowReceiptUpload(true);
+    console.log('Receipt prompt confirmed, showing upload sheet');
+    setShowReceiptPrompt(false);
+    setTimeout(() => {
+      setShowReceiptUpload(true);
+    }, 100);
   };
   
   // Handle receipt prompt cancel
   const handleReceiptPromptCancel = () => {
-    // Show confirmation dialog
-    setShowConfirmation(true);
+    console.log('Receipt prompt canceled, showing confirmation dialog');
+    setShowReceiptPrompt(false);
+    setTimeout(() => {
+      setShowConfirmation(true);
+    }, 100);
   };
   
   // Handle receipt upload success
   const handleReceiptUploadSuccess = async (documentIds: string[]) => {
+    console.log('Receipt upload success with document IDs:', documentIds);
     if (documentIds.length > 0 && submittedTimeEntry.id) {
       try {
         // Update the time entry to mark that it has receipts
@@ -289,8 +320,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         });
         
         // Show the confirmation dialog
-        setShowConfirmation(true);
         setShowReceiptUpload(false);
+        setTimeout(() => {
+          setShowConfirmation(true);
+        }, 100);
         
       } catch (error) {
         console.error('Error processing receipts:', error);
@@ -300,12 +333,15 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   
   // Handle confirmation dialog close
   const handleConfirmationClose = () => {
+    console.log('Confirmation dialog closed, resetting form');
+    setShowConfirmation(false);
     resetForm();
     onSuccess();
     onOpenChange(false);
   };
   
   const resetForm = () => {
+    console.log('Resetting form');
     setStartTime('09:00');
     setEndTime('17:00');
     setHoursWorked(8);
@@ -319,16 +355,26 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setShowConfirmation(false);
     setSubmittedTimeEntry({});
     setUploadedReceipts({ count: 0, totalAmount: 0 });
+    setIsSheetClosing(false);
   };
   
   return (
     <>
-      <Sheet open={open} onOpenChange={(isOpen) => {
-        if (!isOpen && !showReceiptPrompt && !showReceiptUpload && !showConfirmation) {
-          resetForm();
-          onOpenChange(false);
-        }
-      }}>
+      <Sheet 
+        open={open && !isSheetClosing} 
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !showReceiptPrompt && !showReceiptUpload && !showConfirmation) {
+            onOpenChange(false);
+          } else if (!isOpen && (showReceiptPrompt || showReceiptUpload || showConfirmation)) {
+            // Prevent closing during the workflow
+            console.log('Preventing sheet from closing during workflow');
+            return;
+          } else if (!isOpen) {
+            resetForm();
+            onOpenChange(false);
+          }
+        }}
+      >
         <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
           <SheetHeader className="text-left mb-4">
             <SheetTitle>Quick Time Log</SheetTitle>
