@@ -17,6 +17,8 @@ interface EmployeeSelectProps {
   disabled?: boolean;
   className?: string;
   placeholder?: string;
+  includeNoneOption?: boolean;
+  noneLabel?: string;
 }
 
 const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
@@ -27,7 +29,9 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   required = false,
   disabled = false,
   className = "",
-  placeholder = "Select employee"
+  placeholder = "Select employee",
+  includeNoneOption = true,
+  noneLabel = "Not assigned"
 }) => {
   return (
     <div className={`space-y-2 ${className}`}>
@@ -43,7 +47,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="none">Not assigned</SelectItem>
+          {includeNoneOption && <SelectItem value="none">{noneLabel}</SelectItem>}
           {employees.map((employee) => (
             <SelectItem key={employee.employee_id} value={employee.employee_id}>
               {employee.name}
