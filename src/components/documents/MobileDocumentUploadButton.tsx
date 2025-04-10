@@ -44,7 +44,7 @@ const MobileDocumentUploadButton: React.FC<MobileDocumentUploadButtonProps> = ({
       <Button 
         variant={buttonVariant}
         size="sm"
-        className={`justify-start ${className}`}
+        className={`justify-start ${buttonVariant === "default" ? "bg-[#0485ea] hover:bg-[#0375d1]" : ""} ${className}`}
         onClick={() => setOpen(true)}
         disabled={disabled}
       >
@@ -69,7 +69,7 @@ const MobileDocumentUploadButton: React.FC<MobileDocumentUploadButtonProps> = ({
           : "Upload and categorize your document or receipt"
         }
         showHelpText={true}
-        allowEntityTypeSelection={true}
+        allowEntityTypeSelection={!entityType}
       />
     </>
   );

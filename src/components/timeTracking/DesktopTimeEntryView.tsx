@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Clock } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { TimeEntry } from '@/types/timeTracking';
 
 import { TimeEntryList } from './TimeEntryList';
