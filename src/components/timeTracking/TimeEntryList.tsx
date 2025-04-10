@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -152,29 +151,43 @@ export const TimeEntryList = ({
           </Card>
         ))}
         
-        {/* Edit Dialog */}
         {editingEntry && (
           <TimeEntryEditDialog
             open={!!editingEntry}
             onOpenChange={(open) => !open && setEditingEntry(null)}
-            entry={editingEntry}
+            timeEntryId={editingEntry.id}
             onSuccess={() => {
               setEditingEntry(null);
               onEntryChange();
             }}
+            entry={editingEntry}
           />
         )}
         
-        {/* Delete Dialog */}
         {deletingEntry && (
           <TimeEntryDeleteDialog
             open={!!deletingEntry}
             onOpenChange={(open) => !open && setDeletingEntry(null)}
-            entry={deletingEntry}
+            timeEntryId={deletingEntry.id}
             onSuccess={() => {
               setDeletingEntry(null);
               onEntryChange();
             }}
+            entry={deletingEntry}
+          />
+        )}
+        
+        {currentEntryId && (
+          <DocumentUploadDirectSheet
+            open={showReceiptUpload}
+            onOpenChange={setShowReceiptUpload}
+            entityType="TIME_ENTRY"
+            entityId={currentEntryId}
+            onSuccess={handleReceiptUploadSuccess}
+            title="Upload Receipt"
+            isReceiptUploadOnly={true}
+            description="Upload a receipt for this time entry"
+            showHelpText={false}
           />
         )}
       </div>
@@ -246,33 +259,32 @@ export const TimeEntryList = ({
         </Table>
       </ScrollArea>
       
-      {/* Edit Dialog */}
       {editingEntry && (
         <TimeEntryEditDialog
           open={!!editingEntry}
           onOpenChange={(open) => !open && setEditingEntry(null)}
-          entry={editingEntry}
+          timeEntryId={editingEntry.id}
           onSuccess={() => {
             setEditingEntry(null);
             onEntryChange();
           }}
+          entry={editingEntry}
         />
       )}
       
-      {/* Delete Dialog */}
       {deletingEntry && (
         <TimeEntryDeleteDialog
           open={!!deletingEntry}
           onOpenChange={(open) => !open && setDeletingEntry(null)}
-          entry={deletingEntry}
+          timeEntryId={deletingEntry.id}
           onSuccess={() => {
             setDeletingEntry(null);
             onEntryChange();
           }}
+          entry={deletingEntry}
         />
       )}
       
-      {/* Receipt Upload Sheet */}
       {currentEntryId && (
         <DocumentUploadDirectSheet
           open={showReceiptUpload}

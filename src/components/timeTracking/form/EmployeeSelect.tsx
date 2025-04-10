@@ -1,53 +1,69 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
+import { Control, Controller } from 'react-hook-form';
+import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Employee } from '@/types/timeTracking';
 
-interface Employee {
-  employee_id: string;
-  name: string;
-}
-
-interface EmployeeSelectProps {
-  value: string;
-  onChange: (value: string) => void;
+export interface EmployeeSelectProps {
+  control?: Control<any>;
   employees: Employee[];
-  label?: string;
-  required?: boolean;
-  disabled?: boolean;
-  className?: string;
-  placeholder?: string;
-  includeNoneOption?: boolean;
-  noneLabel?: string;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
 const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
-  value,
-  onChange,
+  control,
   employees,
-  label = "Employee",
-  required = false,
-  disabled = false,
-  className = "",
-  placeholder = "Select employee",
-  includeNoneOption = true,
-  noneLabel = "Not assigned"
+  value,
+  onChange
 }) => {
+  // If we're using react-hook-form control
+  if (control) {
+    return (
+      <FormField
+        control={control}
+        name="employeeId"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Employee (Optional)</FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value || ''}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="">-- None --</SelectItem>
+                {employees.map((employee) => (
+                  <SelectItem key={employee.employee_id} value={employee.employee_id}>
+                    {employee.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormItem>
+        )}
+      />
+    );
+  }
+  
+  // If we're using controlled component approach
   return (
-    <div className={`space-y-2 ${className}`}>
-      <Label>
-        {label}{required && <span className="text-red-500 ml-1">*</span>}
-      </Label>
-      <Select 
-        value={value} 
-        onValueChange={onChange}
-        disabled={disabled}
+    <div className="space-y-2">
+      <FormLabel htmlFor="employeeSelect">Employee (Optional)</FormLabel>
+      <Select
+        value={value || ''}
+        onValueChange={onChange || (() => {})}
       >
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
+        <SelectTrigger id="employeeSelect">
+          <SelectValue placeholder="Select employee" />
         </SelectTrigger>
         <SelectContent>
-          {includeNoneOption && <SelectItem value="none">{noneLabel}</SelectItem>}
+          <SelectItem value="none">-- None --</SelectItem>
           {employees.map((employee) => (
             <SelectItem key={employee.employee_id} value={employee.employee_id}>
               {employee.name}

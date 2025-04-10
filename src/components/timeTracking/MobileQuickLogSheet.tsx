@@ -43,7 +43,8 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   defaultEntityType = 'work_order',
   defaultEntityId = ''
 }) => {
-  const { workOrders, projects, loadingEntities } = useEntityData();
+  // Update to use correct property name
+  const { workOrders, projects, isLoadingEntities: loadingEntities } = useEntityData();
   const [showReceiptPrompt, setShowReceiptPrompt] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [formData, setFormData] = useState<QuickLogFormValues | null>(null);

@@ -1,4 +1,3 @@
-
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
@@ -96,4 +95,11 @@ export interface EntityDetails {
   name: string;
   type: 'work_order' | 'project';
   location?: string;
+}
+
+// Adding this WorkOrderOrProject type to fix interface errors
+export interface WorkOrderOrProject {
+  id: string;
+  title: string;
+  status?: string;
 }

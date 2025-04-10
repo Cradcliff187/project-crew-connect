@@ -99,8 +99,8 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
             continue;
           }
           
-          // Create document record
-          const documentData = {
+          // Create document record with proper schema fields
+          const documentData: any = {
             entity_type: 'TIME_ENTRY',
             entity_id: timeEntry.id,
             file_name: file.name,
@@ -147,23 +147,28 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
                 document_id: document.document_id
               });
               
-            // Create expense record from receipt if amount is provided
+            // Create expense record from receipt with correct schema
             if (receiptMetadata?.amount) {
+              // Add correct fields for the expenses table
+              const expenseData = {
+                entity_type: data.entityType.toUpperCase(),
+                entity_id: data.entityId,
+                description: `Receipt: ${file.name}`,
+                expense_type: receiptMetadata.expenseType || 'OTHER',
+                amount: receiptMetadata.amount,
+                vendor_id: receiptMetadata.vendorId,
+                document_id: document.document_id,
+                time_entry_id: timeEntry.id,
+                is_receipt: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                quantity: 1,  // Required field
+                unit_price: receiptMetadata.amount  // Required field
+              };
+              
               await supabase
                 .from('expenses')
-                .insert({
-                  entity_type: data.entityType.toUpperCase(),
-                  entity_id: data.entityId,
-                  description: `Receipt: ${file.name}`,
-                  expense_type: receiptMetadata.expenseType || 'OTHER',
-                  amount: receiptMetadata.amount,
-                  vendor_id: receiptMetadata.vendorId,
-                  document_id: document.document_id,
-                  time_entry_id: timeEntry.id,
-                  is_receipt: true,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                });
+                .insert(expenseData);
             }
           }
         }

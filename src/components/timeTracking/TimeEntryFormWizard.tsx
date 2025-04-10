@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import EntitySelector from './form/EntitySelector';
@@ -44,13 +43,12 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     handleSubmit
   } = useTimeEntryForm(onSuccess);
   
-  const { workOrders, projects, employees, loadingEntities } = useEntityData();
+  const { workOrders, projects, employees, isLoadingEntities: loadingEntities } = useEntityData();
   
   const watchEntityType = form.watch('entityType');
   const watchEntityId = form.watch('entityId');
   const watchHasReceipts = form.watch('hasReceipts');
   
-  // Initialize form with default values
   React.useEffect(() => {
     if (date) {
       form.setValue('workDate', date);
@@ -71,7 +69,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     const isValid = form.trigger();
     isValid.then((valid) => {
       if (valid) {
-        // Show receipt prompt if not already showing receipts
         if (!watchHasReceipts && !showReceiptPrompt) {
           setShowReceiptPrompt(true);
         } else {
@@ -98,12 +95,11 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     handleSubmit(data);
   };
   
-  // Get the current entity name for display in confirmation
   const getEntityName = () => {
     if (watchEntityType === 'work_order') {
-      return workOrders.find(wo => wo.id === watchEntityId)?.title || '';
+      return workOrders.find(wo => wo.id === watchEntityId)?.name || '';
     }
-    return projects.find(p => p.id === watchEntityId)?.title || '';
+    return projects.find(p => p.id === watchEntityId)?.name || '';
   };
   
   return (
@@ -120,7 +116,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <DateSelect control={form.control} />
             <TimeRangeSelector 
-              control={form.control} 
+              control={form.control}
               startFieldName="startTime"
               endFieldName="endTime"
               hoursFieldName="hoursWorked"
@@ -176,7 +172,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         </form>
       </Form>
       
-      {/* Receipt Prompt Dialog */}
       <ReceiptPromptDialog
         open={showReceiptPrompt}
         onOpenChange={setShowReceiptPrompt}
@@ -184,7 +179,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         onCancel={handleReceiptPromptCancel}
       />
       
-      {/* Confirmation Dialog */}
       <ConfirmationDialog
         open={showConfirmation}
         onOpenChange={setShowConfirmation}
