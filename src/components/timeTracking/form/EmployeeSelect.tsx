@@ -10,7 +10,7 @@ export interface EmployeeSelectProps {
   employees: Employee[];
   value?: string;
   onChange?: (value: string) => void;
-  label?: string; // Add the label prop
+  label?: string;
 }
 
 const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
@@ -18,7 +18,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   employees,
   value,
   onChange,
-  label = "Employee (Optional)" // Default label
+  label = "Employee (Optional)"
 }) => {
   // If we're using react-hook-form control
   if (control) {
@@ -39,7 +39,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">-- None --</SelectItem>
+                <SelectItem value="none">-- None --</SelectItem>
                 {employees.map((employee) => (
                   <SelectItem key={employee.employee_id} value={employee.employee_id}>
                     {employee.name}

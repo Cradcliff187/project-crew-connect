@@ -62,6 +62,11 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     if (defaultEntityId) {
       form.setValue('entityId', defaultEntityId);
     }
+    
+    // Set default value for employeeId to "none" instead of empty string
+    if (!form.getValues('employeeId')) {
+      form.setValue('employeeId', 'none');
+    }
   }, [form, date, defaultEntityType, defaultEntityId]);
   
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -93,6 +98,12 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   const handleConfirmSubmit = () => {
     setShowConfirmation(false);
     const data = form.getValues();
+    
+    // Convert employeeId "none" to null before submitting
+    if (data.employeeId === 'none') {
+      data.employeeId = undefined;
+    }
+    
     handleSubmit(data);
   };
   
@@ -144,7 +155,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
                   <>
                     <Separator className="my-4" />
                     <ReceiptMetadataForm
-                      vendor={receiptMetadata.vendorId || ""}
+                      vendor={receiptMetadata.vendorId || "none"}
                       expenseType={receiptMetadata.expenseType || ""}
                       amount={receiptMetadata.amount}
                       onVendorChange={(value) => updateReceiptMetadata({ vendorId: value })}

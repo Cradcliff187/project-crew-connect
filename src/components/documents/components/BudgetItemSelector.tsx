@@ -111,7 +111,7 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               {budgetItems.map((item) => (
                 <SelectItem key={item.id} value={item.id}>
                   {item.description} ({item.category})

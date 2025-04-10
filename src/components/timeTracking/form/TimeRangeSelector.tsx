@@ -51,7 +51,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                     field.onChange(value);
                     if (onStartTimeChange) onStartTimeChange(value);
                   }}
-                  value={field.value || startTime || ''}
+                  value={field.value || startTime || '09:00'}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -77,7 +77,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               onValueChange={(value) => {
                 if (onStartTimeChange) onStartTimeChange(value);
               }}
-              value={startTime || ''}
+              value={startTime || '09:00'}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select start time" />
@@ -105,7 +105,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                     field.onChange(value);
                     if (onEndTimeChange) onEndTimeChange(value);
                   }}
-                  value={field.value || endTime || ''}
+                  value={field.value || endTime || '17:00'}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -131,7 +131,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               onValueChange={(value) => {
                 if (onEndTimeChange) onEndTimeChange(value);
               }}
-              value={endTime || ''}
+              value={endTime || '17:00'}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select end time" />

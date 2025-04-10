@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Entity, Employee, WorkOrderOrProject } from '@/types/timeTracking';
+import { Employee, WorkOrderOrProject } from '@/types/timeTracking';
 
 export function useEntityData() {
   const [workOrders, setWorkOrders] = useState<WorkOrderOrProject[]>([]);

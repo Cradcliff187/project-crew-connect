@@ -82,9 +82,22 @@ export function formatTimeRange(startTime: string, endTime: string): string {
   if (!startTime || !endTime) return 'N/A';
   
   try {
+    // Validate time format first (HH:MM)
+    if (!startTime.match(/^\d{1,2}:\d{2}$/) || !endTime.match(/^\d{1,2}:\d{2}$/)) {
+      return `${startTime} - ${endTime}`;
+    }
+    
     // Handle time strings as 24-hour format (e.g., "09:00", "17:30")
     const [startHours, startMinutes] = startTime.split(':').map(Number);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    // Validate hours and minutes
+    if (isNaN(startHours) || startHours < 0 || startHours > 23 || 
+        isNaN(startMinutes) || startMinutes < 0 || startMinutes > 59 ||
+        isNaN(endHours) || endHours < 0 || endHours > 23 ||
+        isNaN(endMinutes) || endMinutes < 0 || endMinutes > 59) {
+      return `${startTime} - ${endTime}`;
+    }
     
     const start = new Date();
     start.setHours(startHours, startMinutes, 0);
