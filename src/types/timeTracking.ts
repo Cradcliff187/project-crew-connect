@@ -1,3 +1,4 @@
+
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
@@ -82,6 +83,7 @@ export interface ReceiptMetadata {
 export interface Entity {
   id: string;
   name: string;
+  title?: string; // Add title to match WorkOrderOrProject
   status?: string;
 }
 
@@ -101,5 +103,6 @@ export interface EntityDetails {
 export interface WorkOrderOrProject {
   id: string;
   title: string;
+  name?: string; // Add name to make it compatible with Entity
   status?: string;
 }

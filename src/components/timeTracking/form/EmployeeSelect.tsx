@@ -10,13 +10,15 @@ export interface EmployeeSelectProps {
   employees: Employee[];
   value?: string;
   onChange?: (value: string) => void;
+  label?: string; // Add the label prop
 }
 
 const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   control,
   employees,
   value,
-  onChange
+  onChange,
+  label = "Employee (Optional)" // Default label
 }) => {
   // If we're using react-hook-form control
   if (control) {
@@ -26,7 +28,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         name="employeeId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Employee (Optional)</FormLabel>
+            <FormLabel>{label}</FormLabel>
             <Select
               onValueChange={field.onChange}
               value={field.value || ''}
@@ -54,7 +56,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   // If we're using controlled component approach
   return (
     <div className="space-y-2">
-      <FormLabel htmlFor="employeeSelect">Employee (Optional)</FormLabel>
+      <FormLabel htmlFor="employeeSelect">{label}</FormLabel>
       <Select
         value={value || ''}
         onValueChange={onChange || (() => {})}

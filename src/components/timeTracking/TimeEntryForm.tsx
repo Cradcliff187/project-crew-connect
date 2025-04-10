@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { calculateHours } from './utils/timeUtils';
 import { DatePicker } from '@/components/ui/date-picker';
 import { format, parse } from 'date-fns';
+import { useForm } from 'react-hook-form';
 
 interface TimeEntryFormProps {
   initialValues?: Partial<TimeEntry>;
@@ -37,6 +38,17 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       : new Date()
   );
   const [timeError, setTimeError] = useState('');
+  
+  // Create a form control instance for components that need it
+  const form = useForm({
+    defaultValues: {
+      startTime: initialValues?.start_time || '09:00',
+      endTime: initialValues?.end_time || '17:00',
+      hoursWorked: initialValues?.hours_worked || 0,
+      employeeId: initialValues?.employee_id || 'none',
+      notes: initialValues?.notes || ''
+    }
+  });
 
   // Fetch employees
   useEffect(() => {
@@ -113,6 +125,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       </div>
       
       <TimeRangeSelector
+        control={form.control}
         startTime={startTime}
         endTime={endTime}
         onStartTimeChange={setStartTime}
