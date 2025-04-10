@@ -161,7 +161,7 @@ const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
                 parentEntityId: timeEntry.id,
                 amount: amount ? parseFloat(amount) : undefined,
                 vendorId: vendorId || undefined,
-                expenseType: expenseType
+                expenseType: expenseType // Now we can pass expenseType directly
               }}
               onSuccess={handleUploadSuccess}
               onCancel={handleClose}

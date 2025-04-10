@@ -30,6 +30,7 @@ interface EnhancedDocumentUploadProps {
     budgetItemId?: string;
     parentEntityType?: string;
     parentEntityId?: string;
+    expenseType?: string; // Added expenseType to the interface
   };
   preventFormPropagation?: boolean;
   allowEntityTypeSelection?: boolean;
