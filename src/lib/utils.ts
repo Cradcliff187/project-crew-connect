@@ -79,22 +79,36 @@ export function calculateDaysUntilDue(dueDate: string | null): number | null {
  * Format time range for display
  */
 export function formatTimeRange(startTime: string, endTime: string): string {
-  const start = new Date(startTime);
-  const end = new Date(endTime);
+  if (!startTime || !endTime) return 'N/A';
   
-  const startFormat = new Intl.DateTimeFormat('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit',
-    hour12: true
-  }).format(start);
-  
-  const endFormat = new Intl.DateTimeFormat('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit',
-    hour12: true
-  }).format(end);
-  
-  return `${startFormat} - ${endFormat}`;
+  try {
+    // Handle time strings as 24-hour format (e.g., "09:00", "17:30")
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    const start = new Date();
+    start.setHours(startHours, startMinutes, 0);
+    
+    const end = new Date();
+    end.setHours(endHours, endMinutes, 0);
+    
+    const startFormat = new Intl.DateTimeFormat('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true
+    }).format(start);
+    
+    const endFormat = new Intl.DateTimeFormat('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true
+    }).format(end);
+    
+    return `${startFormat} - ${endFormat}`;
+  } catch (error) {
+    console.error('Error formatting time range:', error, { startTime, endTime });
+    return `${startTime} - ${endTime}`;
+  }
 }
 
 /**

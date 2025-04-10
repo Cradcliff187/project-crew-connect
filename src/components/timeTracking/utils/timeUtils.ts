@@ -4,7 +4,26 @@ import { TimeOfDay } from '@/types/timeTracking';
 
 // Parse a time string into a Date object for easier formatting
 export const parseTime = (timeStr: string): Date => {
-  return parse(timeStr, 'HH:mm', new Date());
+  try {
+    if (!timeStr || typeof timeStr !== 'string') {
+      console.warn('Invalid time string provided to parseTime:', timeStr);
+      return new Date();
+    }
+    
+    // Handle HH:MM format
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return date;
+    }
+    
+    // Try to parse as a standard date string
+    return parse(timeStr, 'HH:mm', new Date());
+  } catch (error) {
+    console.error('Error parsing time:', error, timeStr);
+    return new Date();
+  }
 };
 
 // Determine the time of day category
@@ -37,13 +56,28 @@ export const timeOptions = generateTimeOptions();
 // Format the time from 24h to 12h
 export const formatTime = (time: string): string => {
   if (!time) return '';
+  
   try {
+    // Check if the time is already in the expected format
+    if (!/^\d{1,2}:\d{2}$/.test(time)) {
+      console.warn('Time format is not HH:MM:', time);
+      return time;
+    }
+    
     const [hours, minutes] = time.split(':').map(Number);
+    
+    // Validate hours and minutes
+    if (isNaN(hours) || hours < 0 || hours > 23 || 
+        isNaN(minutes) || minutes < 0 || minutes > 59) {
+      console.warn('Invalid hours or minutes:', hours, minutes);
+      return time;
+    }
+    
     const period = hours >= 12 ? 'PM' : 'AM';
     const hour12 = hours % 12 || 12;
     return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
   } catch (error) {
-    console.error('Error formatting time:', error);
+    console.error('Error formatting time:', error, time);
     return time;
   }
 };
@@ -53,8 +87,23 @@ export const calculateHours = (startTime: string, endTime: string): number => {
   if (!startTime || !endTime) return 0;
   
   try {
+    // Validate time format
+    if (!/^\d{1,2}:\d{2}$/.test(startTime) || !/^\d{1,2}:\d{2}$/.test(endTime)) {
+      console.warn('Invalid time format:', { startTime, endTime });
+      return 0;
+    }
+    
     const [startHours, startMinutes] = startTime.split(':').map(Number);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    // Validate hours and minutes
+    if (isNaN(startHours) || startHours < 0 || startHours > 23 || 
+        isNaN(startMinutes) || startMinutes < 0 || startMinutes > 59 ||
+        isNaN(endHours) || endHours < 0 || endHours > 23 ||
+        isNaN(endMinutes) || endMinutes < 0 || endMinutes > 59) {
+      console.warn('Invalid hours or minutes:', { startHours, startMinutes, endHours, endMinutes });
+      return 0;
+    }
     
     let hours = endHours - startHours;
     let minutes = endMinutes - startMinutes;
@@ -72,7 +121,7 @@ export const calculateHours = (startTime: string, endTime: string): number => {
     
     return parseFloat((hours + (minutes / 60)).toFixed(2));
   } catch (error) {
-    console.error('Error calculating hours:', error);
+    console.error('Error calculating hours:', error, { startTime, endTime });
     return 0;
   }
 };
@@ -81,14 +130,19 @@ export const calculateHours = (startTime: string, endTime: string): number => {
 export const formatHoursToDuration = (hours: number): string => {
   if (isNaN(hours) || hours <= 0) return '0h';
   
-  const wholeHours = Math.floor(hours);
-  const minutes = Math.round((hours - wholeHours) * 60);
-  
-  if (wholeHours === 0) {
-    return `${minutes}m`;
-  } else if (minutes === 0) {
-    return `${wholeHours}h`;
-  } else {
-    return `${wholeHours}h ${minutes}m`;
+  try {
+    const wholeHours = Math.floor(hours);
+    const minutes = Math.round((hours - wholeHours) * 60);
+    
+    if (wholeHours === 0) {
+      return `${minutes}m`;
+    } else if (minutes === 0) {
+      return `${wholeHours}h`;
+    } else {
+      return `${wholeHours}h ${minutes}m`;
+    }
+  } catch (error) {
+    console.error('Error formatting hours to duration:', error, hours);
+    return '0h';
   }
 };

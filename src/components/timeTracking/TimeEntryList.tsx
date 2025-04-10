@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Table,
@@ -59,6 +60,16 @@ export const TimeEntryList = ({
     onEntryChange();
   };
   
+  // Helper function to safely format a date
+  const safeFormatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error, dateStr);
+      return dateStr;
+    }
+  };
+  
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -97,7 +108,7 @@ export const TimeEntryList = ({
                 </div>
                 
                 <div className="text-sm text-muted-foreground mb-2">
-                  {format(new Date(entry.date_worked), 'MMM d, yyyy')} • {formatTimeRange(entry.start_time, entry.end_time)}
+                  {safeFormatDate(entry.date_worked)} • {formatTimeRange(entry.start_time, entry.end_time)}
                 </div>
                 
                 {entry.notes && (
@@ -212,7 +223,7 @@ export const TimeEntryList = ({
             {entries.map((entry) => (
               <TableRow key={entry.id}>
                 <TableCell className="font-medium">
-                  {format(new Date(entry.date_worked), 'MMM d, yyyy')}
+                  {safeFormatDate(entry.date_worked)}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center">

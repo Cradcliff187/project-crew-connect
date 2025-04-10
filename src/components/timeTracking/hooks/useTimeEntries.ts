@@ -55,11 +55,17 @@ export function useTimeEntries() {
           employeeName = `${entry.employees.first_name} ${entry.employees.last_name}`;
         }
         
+        // Ensure time fields are in the correct format
+        const startTime = entry.start_time || '00:00';
+        const endTime = entry.end_time || '00:00';
+        
         // Format the entity type to match our TimeEntry type
         return {
           ...entry,
           entity_type: entry.entity_type as 'work_order' | 'project',
-          employee_name: employeeName
+          employee_name: employeeName,
+          start_time: startTime,
+          end_time: endTime
         };
       });
       

@@ -30,6 +30,16 @@ export const TimelogsInfoSection = ({
 }: TimelogsInfoSectionProps) => {
   const [showAddSheet, setShowAddSheet] = useState(false);
 
+  // Helper function to safely format time
+  const safeFormatTime = (timeStr: string) => {
+    try {
+      return formatTime(timeStr);
+    } catch (error) {
+      console.error('Error formatting time:', error, timeStr);
+      return timeStr;
+    }
+  };
+
   return (
     <Card>
       <div className="flex justify-between items-center p-4 border-b">
@@ -83,7 +93,7 @@ export const TimelogsInfoSection = ({
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {formatDate(timelog.date_worked)} •{" "}
-                      {formatTime(timelog.start_time)} - {formatTime(timelog.end_time)}
+                      {safeFormatTime(timelog.start_time)} - {safeFormatTime(timelog.end_time)}
                     </div>
                     {timelog.notes && (
                       <div className="text-sm mt-1">{timelog.notes}</div>
