@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TimeEntry } from '@/types/timeTracking';
-import { Plus, Map, ChevronRight, Camera, Clock } from 'lucide-react';
+import { Plus, Map, ChevronRight, Camera, Clock, Upload, Receipt } from 'lucide-react';
 import { TimeEntryList } from './TimeEntryList';
 import TimeEntryFormWizard from './TimeEntryFormWizard';
 import QuickLogButton from './QuickLogButton';
@@ -85,17 +85,15 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
         
         {/* Action Buttons */}
         <div className="grid grid-cols-1 gap-3 mb-4">
-          {hasCamera && (
-            <Button 
-              variant="outline"
-              size="sm"
-              className="justify-start"
-              onClick={() => setShowDocumentUpload(true)}
-            >
-              <Camera className="h-4 w-4 mr-1" />
-              Upload Receipt/Document
-            </Button>
-          )}
+          <Button 
+            variant="outline"
+            size="sm"
+            className="justify-start"
+            onClick={() => setShowDocumentUpload(true)}
+          >
+            <Upload className="h-4 w-4 mr-1" />
+            Upload Document or Receipt
+          </Button>
         </div>
         
         {/* Time entries list */}
@@ -144,7 +142,10 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           open={showDocumentUpload}
           onOpenChange={setShowDocumentUpload}
           onSuccess={handleDocumentUploadSuccess}
-          title="Upload Receipt/Document"
+          title="Upload Document or Receipt"
+          description="Upload any document or receipt for your projects, work orders or vendors"
+          showHelpText={true}
+          allowEntityTypeSelection={true}
         />
       </div>
     </PageTransition>

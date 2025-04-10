@@ -1,8 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
+import { Button } from '@/components/ui/button';
+import { Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DocumentUploadDirectSheetProps {
   open: boolean;
@@ -12,17 +15,23 @@ interface DocumentUploadDirectSheetProps {
   onSuccess: (documentId?: string) => void;
   title?: string;
   isReceiptUploadOnly?: boolean;
+  description?: string;
+  showHelpText?: boolean;
 }
 
 const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
   open,
   onOpenChange,
-  entityType = 'TIME_ENTRY',
+  entityType,
   entityId,
   onSuccess,
   title = 'Upload Document',
-  isReceiptUploadOnly = false
+  isReceiptUploadOnly = false,
+  description,
+  showHelpText = true
 }) => {
+  const [uploading, setUploading] = useState(false);
+  
   const handleSuccess = (documentId?: string) => {
     if (onSuccess) {
       onSuccess(documentId);
@@ -31,18 +40,35 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
   };
 
   const handleClose = () => {
-    onOpenChange(false);
+    if (!uploading) {
+      onOpenChange(false);
+    }
   };
 
   // Only render content when open to avoid unnecessary calculations
   if (!open) return null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={uploading ? undefined : onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-        <SheetHeader>
+        <SheetHeader className={cn("pb-2", description ? "mb-2" : "")}>
           <SheetTitle>{title}</SheetTitle>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </SheetHeader>
+        
+        {showHelpText && (
+          <div className="mb-4 p-3 rounded-md bg-muted flex items-start gap-2">
+            <Info className="h-5 w-5 text-[#0485ea] mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium mb-1">Tips:</p>
+              <ul className="space-y-1 list-disc pl-5">
+                <li>You can upload receipts, photos, and other documents</li>
+                <li>Select an entity type and ID to associate your document</li>
+                <li>Add details like vendor, amount, and category for better organization</li>
+              </ul>
+            </div>
+          </div>
+        )}
         
         <div className="py-2">
           <EnhancedDocumentUpload
@@ -51,8 +77,19 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
             onSuccess={handleSuccess}
             onCancel={handleClose}
             isReceiptUpload={isReceiptUploadOnly}
-            allowEntityTypeSelection={!entityId}
+            allowEntityTypeSelection={true}
           />
+        </div>
+        
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t">
+          <Button 
+            onClick={handleClose} 
+            variant="outline"
+            className="w-full"
+            disabled={uploading}
+          >
+            Cancel
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

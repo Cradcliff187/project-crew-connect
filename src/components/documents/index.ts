@@ -8,3 +8,5 @@ export { default as DocumentFilters } from './DocumentFilters';
 export { default as DocumentViews } from './DocumentViews';
 export { default as DocumentRelationshipsList } from './DocumentRelationshipsList';
 export { default as DocumentRelationshipForm } from './DocumentRelationshipForm';
+export { default as DocumentUploadButton } from './DocumentUploadButton';
+export { default as MobileDocumentUploadButton } from './MobileDocumentUploadButton';
