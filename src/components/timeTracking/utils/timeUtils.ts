@@ -84,3 +84,48 @@ export function formatDateHeading(dateStr) {
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 }
+
+// Format time for display (convert 24h format to 12h format)
+export function formatTime(timeStr: string): string {
+  if (!timeStr) return '';
+  
+  try {
+    // Validate time format
+    if (!timeStr.match(/^\d{1,2}:\d{2}$/)) {
+      return timeStr; // Return original if not in expected format
+    }
+    
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    
+    // Validate parsed values
+    if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      return timeStr;
+    }
+    
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  } catch (error) {
+    console.error('Error formatting time:', error, timeStr);
+    return timeStr;
+  }
+}
+
+// Format hours worked into a human-readable duration
+export function formatHoursToDuration(hours: number): string {
+  if (hours === undefined || hours === null || isNaN(hours)) {
+    return '0h';
+  }
+  
+  const roundedHours = Math.floor(hours);
+  const minutes = Math.round((hours - roundedHours) * 60);
+  
+  if (roundedHours === 0) {
+    return `${minutes}m`;
+  } else if (minutes === 0) {
+    return `${roundedHours}h`;
+  } else {
+    return `${roundedHours}h ${minutes}m`;
+  }
+}
