@@ -1,9 +1,10 @@
-
 import React, { useEffect } from 'react';
-import { Control, Controller, useForm } from 'react-hook-form';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { generateTimeOptions } from '../utils/timeUtils';
+import { FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { calculateHours } from '../utils/timeUtils';
+import TimePickerSelect from './TimePickerSelect';
+import TimePickerMobile from './TimePickerMobile';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { Control, Controller } from 'react-hook-form';
 
 export interface TimeRangeSelectorProps {
   control?: Control<any>;
@@ -12,8 +13,8 @@ export interface TimeRangeSelectorProps {
   hoursFieldName?: string;
   startTime?: string;
   endTime?: string;
-  onStartTimeChange?: (value: string) => void;
-  onEndTimeChange?: (value: string) => void;
+  onStartTimeChange?: (time: string) => void;
+  onEndTimeChange?: (time: string) => void;
   error?: string;
   hoursWorked?: number;
 }
@@ -28,153 +29,102 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   onStartTimeChange,
   onEndTimeChange,
   error,
-  hoursWorked
+  hoursWorked,
 }) => {
-  const timeOptions = generateTimeOptions();
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const TimePicker = isMobile ? TimePickerMobile : TimePickerSelect;
   
-  // If we don't have control, create a local form instance for standalone usage
-  const localForm = useForm();
-  const formControl = control || localForm.control;
-  
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        {control ? (
+  // If using form control, render form fields
+  if (control) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
           <FormField
-            control={formControl}
+            control={control}
             name={startFieldName}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Start Time</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    if (onStartTimeChange) onStartTimeChange(value);
-                  }}
-                  value={field.value || startTime || '09:00'}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select start time" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {timeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.display}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
+                <TimePicker
+                  label=""
+                  value={field.value}
+                  onChange={field.onChange}
+                />
               </FormItem>
             )}
           />
-        ) : (
-          <div className="space-y-2">
-            <FormLabel>Start Time</FormLabel>
-            <Select
-              onValueChange={(value) => {
-                if (onStartTimeChange) onStartTimeChange(value);
-              }}
-              value={startTime || '09:00'}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select start time" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.display}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        
-        {control ? (
+          
           <FormField
-            control={formControl}
+            control={control}
             name={endFieldName}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>End Time</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    if (onEndTimeChange) onEndTimeChange(value);
-                  }}
-                  value={field.value || endTime || '17:00'}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select end time" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {timeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.display}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
+                <TimePicker
+                  label=""
+                  value={field.value}
+                  onChange={field.onChange}
+                />
               </FormItem>
             )}
           />
-        ) : (
-          <div className="space-y-2">
-            <FormLabel>End Time</FormLabel>
-            <Select
-              onValueChange={(value) => {
-                if (onEndTimeChange) onEndTimeChange(value);
-              }}
-              value={endTime || '17:00'}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select end time" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.display}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        </div>
+        
+        {hoursFieldName && (
+          <FormField
+            control={control}
+            name={hoursFieldName}
+            render={({ field }) => (
+              <FormItem>
+                <div className="text-sm">
+                  Hours: <span className="font-medium">{Number(field.value).toFixed(1)}</span>
+                </div>
+              </FormItem>
+            )}
+          />
+        )}
+        
+        {error && (
+          <div className="text-sm text-destructive">{error}</div>
         )}
       </div>
-      
-      {control ? (
-        <FormField
-          control={formControl}
-          name={hoursFieldName}
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <div className="flex items-center justify-between">
-                <FormLabel>Hours Worked</FormLabel>
-                <span className="text-sm font-medium">
-                  {field.value?.toFixed(2) || (hoursWorked?.toFixed(2) || '0.00')}
-                </span>
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-            </FormItem>
-          )}
-        />
-      ) : (
-        <div className="flex flex-col">
-          <div className="flex items-center justify-between">
-            <FormLabel>Hours Worked</FormLabel>
-            <span className="text-sm font-medium">
-              {hoursWorked?.toFixed(2) || '0.00'}
-            </span>
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+    );
+  }
+  
+  // Otherwise, use the controlled component approach
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <FormLabel>Start Time</FormLabel>
+          <TimePicker
+            value={startTime || ''}
+            onChange={(value) => {
+              if (onStartTimeChange) onStartTimeChange(value);
+            }}
+          />
         </div>
-      )}
+        
+        <div>
+          <FormLabel>End Time</FormLabel>
+          <TimePicker
+            value={endTime || ''}
+            onChange={(value) => {
+              if (onEndTimeChange) onEndTimeChange(value);
+            }}
+          />
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <div className="text-sm">
+          Hours: <span className="font-medium">{hoursWorked !== undefined ? Number(hoursWorked).toFixed(1) : '0.0'}</span>
+        </div>
+        
+        {error && (
+          <div className="text-sm text-destructive">{error}</div>
+        )}
+      </div>
     </div>
   );
 };

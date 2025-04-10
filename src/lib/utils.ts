@@ -99,12 +99,14 @@ export function formatTimeRange(startTime: string, endTime: string): string {
       return `${startTime} - ${endTime}`;
     }
     
+    // Create date objects to use the Intl formatter
     const start = new Date();
     start.setHours(startHours, startMinutes, 0);
     
     const end = new Date();
     end.setHours(endHours, endMinutes, 0);
     
+    // Format with Intl
     const startFormat = new Intl.DateTimeFormat('en-US', { 
       hour: 'numeric', 
       minute: '2-digit',

@@ -102,7 +102,7 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
           <Select
             onValueChange={field.onChange}
             defaultValue={field.value}
-            value={field.value}
+            value={field.value || 'none'}
             disabled={loading}
           >
             <FormControl>

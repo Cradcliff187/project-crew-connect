@@ -31,7 +31,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
             <FormLabel>{label}</FormLabel>
             <Select
               onValueChange={field.onChange}
-              value={field.value || ''}
+              value={field.value || 'none'}
             >
               <FormControl>
                 <SelectTrigger>
@@ -58,7 +58,7 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
     <div className="space-y-2">
       <FormLabel htmlFor="employeeSelect">{label}</FormLabel>
       <Select
-        value={value || ''}
+        value={value || 'none'}
         onValueChange={onChange || (() => {})}
       >
         <SelectTrigger id="employeeSelect">

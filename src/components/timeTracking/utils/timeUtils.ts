@@ -1,148 +1,86 @@
 
-import { format, parse } from 'date-fns';
-import { TimeOfDay } from '@/types/timeTracking';
-
-// Parse a time string into a Date object for easier formatting
-export const parseTime = (timeStr: string): Date => {
-  try {
-    if (!timeStr || typeof timeStr !== 'string') {
-      console.warn('Invalid time string provided to parseTime:', timeStr);
-      return new Date();
-    }
-    
-    // Handle HH:MM format
-    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
-      const [hours, minutes] = timeStr.split(':').map(Number);
-      const date = new Date();
-      date.setHours(hours, minutes, 0, 0);
-      return date;
-    }
-    
-    // Try to parse as a standard date string
-    return parse(timeStr, 'HH:mm', new Date());
-  } catch (error) {
-    console.error('Error parsing time:', error, timeStr);
-    return new Date();
-  }
-};
-
-// Determine the time of day category
-export const getTimeOfDay = (hour: number): TimeOfDay => {
-  if (hour >= 5 && hour < 12) return 'morning';
-  if (hour >= 12 && hour < 17) return 'afternoon';
-  if (hour >= 17 && hour < 21) return 'evening';
-  return 'night';
-};
-
-// Generate time options for the 24-hour day in 15-minute increments
-export const generateTimeOptions = () => {
-  const options = [];
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      const timeValue = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      const displayTime = format(parseTime(timeValue), 'h:mm a');
-      options.push({
-        value: timeValue,
-        display: displayTime,
-        timeOfDay: getTimeOfDay(hour)
-      });
-    }
-  }
-  return options;
-};
-
-export const timeOptions = generateTimeOptions();
-
-// Format the time from 24h to 12h
-export const formatTime = (time: string): string => {
-  if (!time) return '';
+// Generate time options for the time picker (in 15-minute intervals)
+export const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
+  const hour = Math.floor(i / 4);
+  const minute = (i % 4) * 15;
+  const value = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   
-  try {
-    // Check if the time is already in the expected format
-    if (!/^\d{1,2}:\d{2}$/.test(time)) {
-      console.warn('Time format is not HH:MM:', time);
-      return time;
-    }
-    
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    // Validate hours and minutes
-    if (isNaN(hours) || hours < 0 || hours > 23 || 
-        isNaN(minutes) || minutes < 0 || minutes > 59) {
-      console.warn('Invalid hours or minutes:', hours, minutes);
-      return time;
-    }
-    
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const hour12 = hours % 12 || 12;
-    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
-  } catch (error) {
-    console.error('Error formatting time:', error, time);
-    return time;
+  // Format the display value in 12-hour format
+  const displayHour = hour % 12 || 12;
+  const amPm = hour < 12 ? 'AM' : 'PM';
+  const display = `${displayHour}:${minute.toString().padStart(2, '0')} ${amPm}`;
+  
+  // Determine time of day
+  let timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
+  if (hour >= 5 && hour < 12) {
+    timeOfDay = 'morning';
+  } else if (hour >= 12 && hour < 17) {
+    timeOfDay = 'afternoon';
+  } else if (hour >= 17 && hour < 22) {
+    timeOfDay = 'evening';
+  } else {
+    timeOfDay = 'night';
   }
-};
+  
+  return { value, display, timeOfDay };
+});
 
-// Calculate hours between start and end time
-export const calculateHours = (startTime: string, endTime: string): number => {
-  if (!startTime || !endTime) return 0;
+// Calculate hours between two time strings (HH:MM format)
+export function calculateHours(startTime: string, endTime: string): number {
+  if (!startTime || !endTime) {
+    return 0;
+  }
   
   try {
     // Validate time format
-    if (!/^\d{1,2}:\d{2}$/.test(startTime) || !/^\d{1,2}:\d{2}$/.test(endTime)) {
-      console.warn('Invalid time format:', { startTime, endTime });
+    if (!startTime.match(/^\d{1,2}:\d{2}$/) || !endTime.match(/^\d{1,2}:\d{2}$/)) {
+      console.error('Invalid time format, expected HH:MM', { startTime, endTime });
       return 0;
     }
     
     const [startHours, startMinutes] = startTime.split(':').map(Number);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
     
-    // Validate hours and minutes
-    if (isNaN(startHours) || startHours < 0 || startHours > 23 || 
-        isNaN(startMinutes) || startMinutes < 0 || startMinutes > 59 ||
-        isNaN(endHours) || endHours < 0 || endHours > 23 ||
-        isNaN(endMinutes) || endMinutes < 0 || endMinutes > 59) {
-      console.warn('Invalid hours or minutes:', { startHours, startMinutes, endHours, endMinutes });
+    // Validate the parsed values
+    if (isNaN(startHours) || isNaN(startMinutes) || isNaN(endHours) || isNaN(endMinutes)) {
+      console.error('Failed to parse time components', { startTime, endTime });
       return 0;
     }
     
-    let hours = endHours - startHours;
-    let minutes = endMinutes - startMinutes;
+    // Convert to minutes and find the difference
+    const startTotalMinutes = startHours * 60 + startMinutes;
+    const endTotalMinutes = endHours * 60 + endMinutes;
     
-    // Handle negative minutes
-    if (minutes < 0) {
-      minutes += 60;
-      hours -= 1;
-    }
+    // If end time is before start time, assume it's the next day
+    const minutesDiff = endTotalMinutes >= startTotalMinutes
+      ? endTotalMinutes - startTotalMinutes
+      : (24 * 60) - startTotalMinutes + endTotalMinutes;
     
-    // Handle overnight shifts
-    if (hours < 0) {
-      hours += 24;
-    }
+    // Convert back to hours
+    const hours = minutesDiff / 60;
     
-    return parseFloat((hours + (minutes / 60)).toFixed(2));
+    // Round to nearest 0.1
+    return Math.round(hours * 10) / 10;
   } catch (error) {
-    console.error('Error calculating hours:', error, { startTime, endTime });
+    console.error('Error calculating hours:', error);
     return 0;
   }
-};
+}
 
-// Format hours to a readable duration string
-export const formatHoursToDuration = (hours: number): string => {
-  if (isNaN(hours) || hours <= 0) return '0h';
-  
-  try {
-    const wholeHours = Math.floor(hours);
-    const minutes = Math.round((hours - wholeHours) * 60);
-    
-    if (wholeHours === 0) {
-      return `${minutes}m`;
-    } else if (minutes === 0) {
-      return `${wholeHours}h`;
-    } else {
-      return `${wholeHours}h ${minutes}m`;
+// Group time entries by date
+export function groupEntriesByDate(entries) {
+  return entries.reduce((groups, entry) => {
+    const date = entry.date_worked;
+    if (!groups[date]) {
+      groups[date] = [];
     }
-  } catch (error) {
-    console.error('Error formatting hours to duration:', error, hours);
-    return '0h';
-  }
-};
+    groups[date].push(entry);
+    return groups;
+  }, {});
+}
+
+// Format date for display (e.g., "Monday, Apr 15")
+export function formatDateHeading(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}

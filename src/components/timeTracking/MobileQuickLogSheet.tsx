@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -16,6 +16,7 @@ import NotesField from './form/NotesField';
 import EntitySelector from './form/EntitySelector';
 import ReceiptPromptDialog from './dialogs/ReceiptPromptDialog';
 import DocumentUploadDirectSheet from './DocumentUploadDirectSheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -43,8 +44,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   defaultEntityType = 'work_order',
   defaultEntityId = ''
 }) => {
-  // Update to use correct property name
-  const { workOrders, projects, isLoadingEntities: loadingEntities } = useEntityData();
+  const { workOrders, projects, isLoadingEntities } = useEntityData();
   const [showReceiptPrompt, setShowReceiptPrompt] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [formData, setFormData] = useState<QuickLogFormValues | null>(null);
@@ -54,9 +54,9 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     defaultValues: {
       entityType: defaultEntityType,
       entityId: defaultEntityId,
-      startTime: '',
-      endTime: '',
-      hoursWorked: 0,
+      startTime: '09:00',
+      endTime: '17:00',
+      hoursWorked: 8,
       notes: '',
     }
   });
@@ -70,7 +70,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const endTime = form.watch('endTime');
   
   // Update hours when times change
-  React.useEffect(() => {
+  useEffect(() => {
     if (startTime && endTime) {
       try {
         const totalHours = calculateHours(startTime, endTime);
@@ -115,40 +115,42 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[80vh]">
-          <SheetHeader className="pb-4">
+        <SheetContent side="bottom" className="h-[80vh] p-0">
+          <SheetHeader className="px-4 py-4 border-b">
             <SheetTitle>Quick Log Time</SheetTitle>
           </SheetHeader>
           
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <EntitySelector
-                control={form.control}
-                workOrders={workOrders}
-                projects={projects}
-                isLoading={loadingEntities}
-              />
-              
-              <TimeRangeSelector
-                control={form.control}
-                startFieldName="startTime"
-                endFieldName="endTime"
-                hoursFieldName="hoursWorked"
-              />
-              
-              <NotesField control={form.control} />
-              
-              <div className="pt-4">
-                <Button 
-                  type="submit" 
-                  className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Submitting..." : "Log Time"}
-                </Button>
-              </div>
-            </form>
-          </Form>
+          <ScrollArea className="h-[calc(80vh-70px)] px-4 py-2">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <EntitySelector
+                  control={form.control}
+                  workOrders={workOrders}
+                  projects={projects}
+                  isLoading={isLoadingEntities}
+                />
+                
+                <TimeRangeSelector
+                  control={form.control}
+                  startFieldName="startTime"
+                  endFieldName="endTime"
+                  hoursFieldName="hoursWorked"
+                />
+                
+                <NotesField control={form.control} />
+                
+                <div className="pt-4 pb-8">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting..." : "Log Time"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </ScrollArea>
         </SheetContent>
       </Sheet>
       
