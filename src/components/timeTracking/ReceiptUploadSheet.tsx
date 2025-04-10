@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle } from 'lucide-react';
+import { ExpenseType } from '@/components/documents/schemas/documentSchema';
 
 interface ReceiptUploadSheetProps {
   open: boolean;
@@ -21,12 +22,12 @@ interface ReceiptUploadSheetProps {
   onSuccess: (documentIds: string[]) => void;
 }
 
+// Updated to map UI-friendly labels to valid ExpenseType values
 const EXPENSE_TYPES = [
-  { value: 'MATERIALS', label: 'Materials' },
-  { value: 'TOOLS', label: 'Tools & Equipment' },
-  { value: 'FUEL', label: 'Fuel' },
-  { value: 'MEALS', label: 'Meals & Entertainment' },
-  { value: 'OTHER', label: 'Other' }
+  { value: 'materials', label: 'Materials' },
+  { value: 'equipment', label: 'Tools & Equipment' },
+  { value: 'supplies', label: 'Supplies' },
+  { value: 'other', label: 'Other' }
 ];
 
 const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
@@ -38,7 +39,7 @@ const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
 }) => {
   const [uploadedDocIds, setUploadedDocIds] = useState<string[]>([]);
   const [vendorId, setVendorId] = useState<string>('');
-  const [expenseType, setExpenseType] = useState<string>('MATERIALS');
+  const [expenseType, setExpenseType] = useState<string>('materials');
   const [amount, setAmount] = useState<string>('');
   
   // Get vendor options using the hook
@@ -60,7 +61,7 @@ const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
     onOpenChange(false);
     setUploadedDocIds([]);
     setVendorId('');
-    setExpenseType('MATERIALS');
+    setExpenseType('materials');
     setAmount('');
   };
   
@@ -161,7 +162,7 @@ const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
                 parentEntityId: timeEntry.id,
                 amount: amount ? parseFloat(amount) : undefined,
                 vendorId: vendorId || undefined,
-                expenseType: expenseType // Now we can pass expenseType directly
+                expenseType: expenseType // Now we're passing a valid enum value
               }}
               onSuccess={handleUploadSuccess}
               onCancel={handleClose}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,7 +7,8 @@ import {
   EntityType, 
   documentUploadSchema, 
   getEntityCategories,
-  DocumentCategory
+  DocumentCategory,
+  ExpenseType
 } from '../schemas/documentSchema';
 import { useFormSubmitHandler } from './useFormSubmitHandler';
 
@@ -139,7 +141,26 @@ export const useDocumentUploadForm = ({
       }
       
       if (prefillData.expenseType) {
-        form.setValue('metadata.expenseType', prefillData.expenseType);
+        // Convert the string to a valid ExpenseType value
+        let validExpenseType: ExpenseType = 'materials';
+        
+        // Map the incoming string to valid enum values
+        switch(prefillData.expenseType.toLowerCase()) {
+          case 'materials':
+            validExpenseType = 'materials';
+            break;
+          case 'equipment':
+          case 'tools':
+            validExpenseType = 'equipment';
+            break;
+          case 'supplies':
+            validExpenseType = 'supplies';
+            break;
+          default:
+            validExpenseType = 'other';
+        }
+        
+        form.setValue('metadata.expenseType', validExpenseType);
       }
     }
   }, [entityType, entityId, form, isReceiptUpload, prefillData]);
