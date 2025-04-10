@@ -5,6 +5,13 @@ import { Button } from '@/components/ui/button';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { TimeEntry } from '@/types/timeTracking';
 import { formatHours } from '@/lib/utils';
+import { useVendorOptions } from '@/components/documents/vendor-selector/hooks/useVendorOptions';
+import VendorSelector from '@/components/documents/vendor-selector/VendorSelector';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { AlertCircle } from 'lucide-react';
 
 interface ReceiptUploadSheetProps {
   open: boolean;
@@ -14,6 +21,14 @@ interface ReceiptUploadSheetProps {
   onSuccess: (documentIds: string[]) => void;
 }
 
+const EXPENSE_TYPES = [
+  { value: 'MATERIALS', label: 'Materials' },
+  { value: 'TOOLS', label: 'Tools & Equipment' },
+  { value: 'FUEL', label: 'Fuel' },
+  { value: 'MEALS', label: 'Meals & Entertainment' },
+  { value: 'OTHER', label: 'Other' }
+];
+
 const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
   open,
   onOpenChange,
@@ -22,17 +37,18 @@ const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
   onSuccess,
 }) => {
   const [uploadedDocIds, setUploadedDocIds] = useState<string[]>([]);
+  const [vendorId, setVendorId] = useState<string>('');
+  const [expenseType, setExpenseType] = useState<string>('MATERIALS');
+  const [amount, setAmount] = useState<string>('');
+  
+  // Get vendor options using the hook
+  const { vendorOptions, isLoading: loadingVendors } = useVendorOptions();
   
   // Handle successful upload
   const handleUploadSuccess = (documentId?: string) => {
     if (documentId) {
       const newDocIds = [...uploadedDocIds, documentId];
       setUploadedDocIds(newDocIds);
-      
-      // If this is the expected final upload, call onSuccess
-      if (!open) {
-        onSuccess(newDocIds);
-      }
     }
   };
   
@@ -43,6 +59,18 @@ const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
     }
     onOpenChange(false);
     setUploadedDocIds([]);
+    setVendorId('');
+    setExpenseType('MATERIALS');
+    setAmount('');
+  };
+  
+  // Handle amount change
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow numbers and a single decimal point
+    if (/^\d*\.?\d*$/.test(value)) {
+      setAmount(value);
+    }
   };
   
   // Only render content when open to avoid unnecessary calculations
@@ -55,31 +83,90 @@ const ReceiptUploadSheet: React.FC<ReceiptUploadSheetProps> = ({
           <SheetTitle>Upload Receipt</SheetTitle>
         </SheetHeader>
         
-        <div className="mb-4 mt-2 p-3 bg-muted rounded-md">
-          <p className="text-sm mb-2">
-            <span className="font-medium">Time Entry:</span> {formatHours(timeEntry.hours_worked)} for {entityName || timeEntry.entity_type}
-          </p>
-          {timeEntry.notes && (
+        <div className="space-y-4 mt-4">
+          {/* Time Entry Context */}
+          <div className="p-3 bg-muted rounded-md space-y-1">
             <p className="text-sm">
-              <span className="font-medium">Notes:</span> {timeEntry.notes}
+              <span className="font-medium">Time Entry:</span> {formatHours(timeEntry.hours_worked)} for {entityName || timeEntry.entity_type}
             </p>
-          )}
-        </div>
-        
-        <div className="pb-16">
-          <EnhancedDocumentUpload
-            entityType={timeEntry.entity_type?.toUpperCase() as any}
-            entityId={timeEntry.entity_id}
-            isReceiptUpload={true}
-            prefillData={{
-              category: 'receipt',
-              tags: ['time-entry', 'mobile-upload'],
-              parentEntityType: 'TIME_ENTRY',
-              parentEntityId: timeEntry.id
-            }}
-            onSuccess={handleUploadSuccess}
-            onCancel={handleClose}
-          />
+            {timeEntry.notes && (
+              <p className="text-sm">
+                <span className="font-medium">Notes:</span> {timeEntry.notes}
+              </p>
+            )}
+          </div>
+          
+          {/* Receipt Details Form */}
+          <div className="space-y-4 bg-background p-3 rounded-md border">
+            <h3 className="font-medium text-sm flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1 text-[#0485ea]" />
+              Receipt Details
+            </h3>
+            
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+                  <Input 
+                    id="amount" 
+                    value={amount} 
+                    onChange={handleAmountChange}
+                    className="pl-7" 
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="expenseType">Expense Type</Label>
+                <Select
+                  value={expenseType}
+                  onValueChange={setExpenseType}
+                >
+                  <SelectTrigger id="expenseType">
+                    <SelectValue placeholder="Select expense type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPENSE_TYPES.map(type => (
+                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <VendorSelector
+                  vendorType="vendor"
+                  value={vendorId}
+                  onChange={setVendorId}
+                  label="Vendor"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <Separator />
+          
+          {/* Document Upload Section */}
+          <div className="pb-16">
+            <EnhancedDocumentUpload
+              entityType={timeEntry.entity_type?.toUpperCase() as any}
+              entityId={timeEntry.entity_id}
+              isReceiptUpload={true}
+              prefillData={{
+                category: 'receipt',
+                tags: ['time-entry', 'mobile-upload'],
+                parentEntityType: 'TIME_ENTRY',
+                parentEntityId: timeEntry.id,
+                amount: amount ? parseFloat(amount) : undefined,
+                vendorId: vendorId || undefined,
+                expenseType: expenseType
+              }}
+              onSuccess={handleUploadSuccess}
+              onCancel={handleClose}
+            />
+          </div>
         </div>
         
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t">

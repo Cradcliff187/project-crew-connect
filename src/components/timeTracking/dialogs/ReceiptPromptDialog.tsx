@@ -1,16 +1,8 @@
 
 import React from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Receipt } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Receipt, X } from 'lucide-react';
 
 interface ReceiptPromptDialogProps {
   open: boolean;
@@ -25,41 +17,40 @@ const ReceiptPromptDialog: React.FC<ReceiptPromptDialogProps> = ({
   onConfirm,
   onCancel
 }) => {
-  const handleCancel = () => {
-    onCancel();
-    onOpenChange(false);
-  };
-
   const handleConfirm = () => {
     onConfirm();
-    onOpenChange(false);
   };
-
+  
+  const handleCancel = () => {
+    onCancel();
+  };
+  
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <div className="flex items-center justify-center mb-2">
-            <div className="p-3 rounded-full bg-[#0485ea]/10">
-              <Receipt className="h-6 w-6 text-[#0485ea]" />
-            </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add Receipts</DialogTitle>
+          <DialogDescription>
+            Would you like to attach receipts to this time entry?
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-4 flex justify-center">
+          <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center">
+            <Receipt className="h-8 w-8 text-[#0485ea]" />
           </div>
-          <AlertDialogTitle className="text-center">Add Receipts?</AlertDialogTitle>
-          <AlertDialogDescription className="text-center">
-            Would you like to upload receipts for this time entry?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel}>Skip</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
-          >
-            Upload Receipts
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </div>
+        
+        <div className="flex flex-col gap-3 mt-4">
+          <Button onClick={handleConfirm} className="bg-[#0485ea] hover:bg-[#0375d1]">
+            Yes, Add Receipts
+          </Button>
+          <Button variant="outline" onClick={handleCancel}>
+            No, Skip This Step
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

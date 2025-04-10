@@ -13,6 +13,7 @@ import DateNavigation from './DateNavigation';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
 import MobileQuickLogSheet from './MobileQuickLogSheet';
 import { DateRange } from './hooks/useTimeEntries';
+import DocumentUploadDirectSheet from './DocumentUploadDirectSheet';
 
 interface MobileTimeEntryViewProps {
   dateRange: DateRange;
@@ -42,10 +43,16 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   totalHours
 }) => {
   const [showQuickLog, setShowQuickLog] = useState(false);
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const { hasCamera, isMobile } = useDeviceCapabilities();
   
   const handleQuickLogSuccess = () => {
     setShowQuickLog(false);
+    onAddSuccess();
+  };
+  
+  const handleDocumentUploadSuccess = () => {
+    setShowDocumentUpload(false);
     onAddSuccess();
   };
   
@@ -77,26 +84,16 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
         </div>
         
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <Button 
-            variant="outline"
-            size="sm"
-            className="justify-start"
-            onClick={() => setShowAddForm(true)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Detailed Log
-          </Button>
-          
+        <div className="grid grid-cols-1 gap-3 mb-4">
           {hasCamera && (
             <Button 
               variant="outline"
               size="sm"
               className="justify-start"
-              onClick={() => setShowAddForm(true)}
+              onClick={() => setShowDocumentUpload(true)}
             >
               <Camera className="h-4 w-4 mr-1" />
-              Add Receipt
+              Upload Receipt/Document
             </Button>
           )}
         </div>
@@ -140,6 +137,14 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           onOpenChange={setShowQuickLog}
           onSuccess={handleQuickLogSuccess}
           date={new Date()}
+        />
+        
+        {/* Document Upload Sheet */}
+        <DocumentUploadDirectSheet
+          open={showDocumentUpload}
+          onOpenChange={setShowDocumentUpload}
+          onSuccess={handleDocumentUploadSuccess}
+          title="Upload Receipt/Document"
         />
       </div>
     </PageTransition>

@@ -1,17 +1,11 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Check, Clock, FileText, MapPin } from 'lucide-react';
-import { formatHours, formatCurrency } from '@/lib/utils';
 import { TimeEntry } from '@/types/timeTracking';
+import { Check, Clock, Receipt } from 'lucide-react';
+import { formatHours } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface TimeEntryConfirmationDialogProps {
   open: boolean;
@@ -31,68 +25,73 @@ const TimeEntryConfirmationDialog: React.FC<TimeEntryConfirmationDialogProps> = 
   receipts,
   entityName
 }) => {
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+  
+  if (!timeEntry) return null;
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <div className="flex items-center justify-center mb-2">
-            <div className="p-3 rounded-full bg-green-100">
-              <Check className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-          <DialogTitle className="text-center">Time Entry Submitted</DialogTitle>
-          <DialogDescription className="text-center">
-            Your time entry has been successfully recorded
-          </DialogDescription>
+          <DialogTitle>Time Entry Complete</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-3 py-4">
-          <div className="p-4 bg-muted rounded-md space-y-3">
-            <div className="flex justify-between">
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-[#0485ea]" />
-                <span className="text-sm font-medium">Hours:</span>
+        <div className="mt-4 space-y-4">
+          <div className="rounded-lg bg-green-50 border border-green-100 p-4 text-green-700 flex items-center">
+            <Check className="h-5 w-5 mr-2 text-green-600" />
+            <span>Your time has been logged successfully!</span>
+          </div>
+          
+          <div className="border rounded-md p-4 space-y-3">
+            <div className="flex items-start">
+              <Clock className="h-4 w-4 mr-2 text-muted-foreground mt-1" />
+              <div>
+                <p className="font-medium">{formatHours(timeEntry.hours_worked)} hours</p>
+                <p className="text-sm text-muted-foreground">
+                  {timeEntry.start_time} - {timeEntry.end_time}, {' '}
+                  {timeEntry.date_worked && format(new Date(timeEntry.date_worked), 'MMM d, yyyy')}
+                </p>
               </div>
-              <span className="font-semibold">{formatHours(timeEntry.hours_worked)}</span>
             </div>
             
-            {entityName && (
-              <div className="flex justify-between">
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-2 text-[#0485ea]" />
-                  <span className="text-sm font-medium">For:</span>
-                </div>
-                <span className="font-semibold">{entityName}</span>
+            <div className="flex items-start">
+              <div className="h-4 w-4 mr-2 flex-shrink-0" />
+              <div>
+                <p className="font-medium">{entityName || timeEntry.entity_type}</p>
+                {timeEntry.notes && (
+                  <p className="text-sm text-muted-foreground">{timeEntry.notes}</p>
+                )}
               </div>
-            )}
+            </div>
             
             {receipts.count > 0 && (
-              <div className="flex justify-between">
-                <div className="flex items-center">
-                  <FileText className="h-4 w-4 mr-2 text-[#0485ea]" />
-                  <span className="text-sm font-medium">Receipts:</span>
+              <div className="flex items-start">
+                <Receipt className="h-4 w-4 mr-2 text-muted-foreground mt-1" />
+                <div>
+                  <p className="font-medium">
+                    {receipts.count} Receipt{receipts.count !== 1 ? 's' : ''}
+                  </p>
+                  {receipts.totalAmount > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Total: ${receipts.totalAmount.toFixed(2)}
+                    </p>
+                  )}
                 </div>
-                <span className="font-semibold">{receipts.count} ({formatCurrency(receipts.totalAmount)})</span>
-              </div>
-            )}
-            
-            {timeEntry.notes && (
-              <div className="pt-2">
-                <div className="text-sm font-medium mb-1">Notes:</div>
-                <div className="text-sm bg-background p-2 rounded">{timeEntry.notes}</div>
               </div>
             )}
           </div>
         </div>
         
-        <DialogFooter>
+        <div className="mt-4">
           <Button 
-            onClick={() => onOpenChange(false)}
+            onClick={handleClose}
             className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
           >
             Done
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
