@@ -1,11 +1,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Entity, Employee, EntityDetails } from '@/types/timeTracking';
+import { Entity, Employee, EntityDetails, WorkOrderOrProject } from '@/types/timeTracking';
 
 export function useEntityData(entityId?: string) {
-  const [workOrders, setWorkOrders] = useState<Entity[]>([]);
-  const [projects, setProjects] = useState<Entity[]>([]);
+  const [workOrders, setWorkOrders] = useState<WorkOrderOrProject[]>([]);
+  const [projects, setProjects] = useState<WorkOrderOrProject[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoadingEntities, setIsLoadingEntities] = useState(true);
   
@@ -39,16 +39,18 @@ export function useEntityData(entityId?: string) {
         if (employeesError) throw employeesError;
         
         // Format work orders
-        const formattedWorkOrders: Entity[] = workOrdersData.map(wo => ({
+        const formattedWorkOrders: WorkOrderOrProject[] = workOrdersData.map(wo => ({
           id: wo.work_order_id,
           name: wo.title,
+          title: wo.title, // Make sure title is set
           status: 'active'
         }));
         
         // Format projects
-        const formattedProjects: Entity[] = projectsData.map(project => ({
+        const formattedProjects: WorkOrderOrProject[] = projectsData.map(project => ({
           id: project.projectid,
           name: project.projectname,
+          title: project.projectname, // Make sure title is set
           status: 'active'
         }));
         

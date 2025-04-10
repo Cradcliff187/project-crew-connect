@@ -83,7 +83,7 @@ export interface ReceiptMetadata {
 export interface Entity {
   id: string;
   name: string;
-  title?: string; // Add title to match WorkOrderOrProject
+  title: string; // Changed from optional to required to match WorkOrderOrProject
   status?: string;
 }
 

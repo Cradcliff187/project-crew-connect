@@ -5,12 +5,12 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Entity } from '@/types/timeTracking';
+import { WorkOrderOrProject } from '@/types/timeTracking';
 
 export interface EntitySelectorProps {
   control: Control<any>;
-  workOrders: Entity[];
-  projects: Entity[];
+  workOrders: WorkOrderOrProject[];
+  projects: WorkOrderOrProject[];
   isLoading: boolean;
 }
 
@@ -79,13 +79,13 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
                 {entityType === 'work_order' ? (
                   workOrders.map((wo) => (
                     <SelectItem key={wo.id} value={wo.id}>
-                      {wo.name}
+                      {wo.title}
                     </SelectItem>
                   ))
                 ) : (
                   projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
-                      {project.name}
+                      {project.title}
                     </SelectItem>
                   ))
                 )}

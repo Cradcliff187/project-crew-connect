@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useTimeEntryForm } from './hooks/useTimeEntryForm';
 import EntitySelector from './form/EntitySelector';
@@ -43,7 +44,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     handleSubmit
   } = useTimeEntryForm(onSuccess);
   
-  const { workOrders, projects, employees, isLoadingEntities: loadingEntities } = useEntityData();
+  const { workOrders, projects, employees, isLoadingEntities } = useEntityData();
   
   const watchEntityType = form.watch('entityType');
   const watchEntityId = form.watch('entityId');
@@ -97,9 +98,9 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   
   const getEntityName = () => {
     if (watchEntityType === 'work_order') {
-      return workOrders.find(wo => wo.id === watchEntityId)?.name || '';
+      return workOrders.find(wo => wo.id === watchEntityId)?.title || '';
     }
-    return projects.find(p => p.id === watchEntityId)?.name || '';
+    return projects.find(p => p.id === watchEntityId)?.title || '';
   };
   
   return (
@@ -110,7 +111,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
             control={form.control}
             workOrders={workOrders}
             projects={projects}
-            isLoading={loadingEntities}
+            isLoading={isLoadingEntities}
           />
           
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
