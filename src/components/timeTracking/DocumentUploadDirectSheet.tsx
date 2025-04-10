@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
-import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +51,7 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
 
   return (
     <Sheet open={open} onOpenChange={uploading ? undefined : onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto pb-0">
         <SheetHeader className={cn("pb-2", description ? "mb-2" : "")}>
           <SheetTitle>{title}</SheetTitle>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
@@ -83,16 +82,7 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
           />
         </div>
         
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t">
-          <Button 
-            onClick={handleClose} 
-            variant="outline"
-            className="w-full"
-            disabled={uploading}
-          >
-            Cancel
-          </Button>
-        </div>
+        {/* Removed the absolute positioned button that was causing overlap */}
       </SheetContent>
     </Sheet>
   );

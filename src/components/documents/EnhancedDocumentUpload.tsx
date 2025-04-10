@@ -140,11 +140,11 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
 
   return (
     <Card 
-      className="w-full"
+      className="w-full border-0 shadow-none"
       onClick={preventFormPropagation ? (e) => e.stopPropagation() : undefined}
     >
       {!simplifiedUpload && (
-        <CardHeader>
+        <CardHeader className="px-0 pt-0">
           <CardTitle>{getTitle()}</CardTitle>
           <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
@@ -153,7 +153,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
       <Form {...form}>
         <form onSubmit={handleFormSubmit}>
           <CardContent className="p-0">
-            <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
+            <ScrollArea className="h-[55vh] px-0 py-4 md:max-h-[500px]">
               <div className="space-y-6">
                 {/* File Uploader Component */}
                 <DropzoneUploader 
@@ -190,7 +190,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
             </ScrollArea>
           </CardContent>
           
-          <CardFooter className="flex justify-between mt-4">
+          <CardFooter className="flex justify-between gap-2 mt-4 px-0">
             {onCancel && (
               <Button
                 type="button"
@@ -200,13 +200,14 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                   e.stopPropagation();
                   handleCancel();
                 }}
+                className="flex-1"
               >
                 Cancel
               </Button>
             )}
             <Button
               type="submit" 
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
+              className="bg-[#0485ea] hover:bg-[#0375d1] flex-1"
               disabled={isUploading || watchFiles.length === 0}
               onClick={handleButtonClick}
             >
