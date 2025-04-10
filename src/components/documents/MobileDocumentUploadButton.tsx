@@ -69,6 +69,7 @@ const MobileDocumentUploadButton: React.FC<MobileDocumentUploadButtonProps> = ({
           : "Upload and categorize your document or receipt"
         }
         showHelpText={true}
+        allowEntityTypeSelection={true}
       />
     </>
   );

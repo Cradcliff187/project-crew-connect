@@ -17,6 +17,7 @@ interface DocumentUploadDirectSheetProps {
   isReceiptUploadOnly?: boolean;
   description?: string;
   showHelpText?: boolean;
+  allowEntityTypeSelection?: boolean;
 }
 
 const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
@@ -28,7 +29,8 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
   title = 'Upload Document',
   isReceiptUploadOnly = false,
   description,
-  showHelpText = true
+  showHelpText = true,
+  allowEntityTypeSelection = false
 }) => {
   const [uploading, setUploading] = useState(false);
   
@@ -77,7 +79,7 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
             onSuccess={handleSuccess}
             onCancel={handleClose}
             isReceiptUpload={isReceiptUploadOnly}
-            allowEntityTypeSelection={true}
+            allowEntityTypeSelection={allowEntityTypeSelection}
           />
         </div>
         
