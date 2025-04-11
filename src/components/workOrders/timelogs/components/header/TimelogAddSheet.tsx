@@ -11,7 +11,6 @@ import { DatePicker } from "@/components/ui/date-picker";
 import TimeRangeSelector from "@/components/timeTracking/form/TimeRangeSelector";
 import { calculateHours } from "@/components/timeTracking/utils/timeUtils";
 import EmployeeSelect from '@/components/timeTracking/form/EmployeeSelect';
-import { useForm } from 'react-hook-form';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -37,17 +36,6 @@ const TimelogAddSheet = ({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [timeError, setTimeError] = useState('');
-  
-  // Create a form control for form-based components
-  const form = useForm({
-    defaultValues: {
-      startTime: '09:00',
-      endTime: '17:00',
-      hoursWorked: 8,
-      employeeId: 'none',
-      notes: ''
-    }
-  });
   
   // Handle time changes and calculate hours
   const handleStartTimeChange = (value: string) => {
@@ -214,7 +202,6 @@ const TimelogAddSheet = ({
           </div>
           
           <TimeRangeSelector
-            control={form.control}
             startTime={startTime}
             endTime={endTime}
             onStartTimeChange={handleStartTimeChange}

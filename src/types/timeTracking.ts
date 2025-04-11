@@ -1,3 +1,4 @@
+
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
@@ -45,21 +46,18 @@ export type QuickLogFormValues = {
 };
 
 export interface TimeEntryReceipt {
-  id?: string;
-  document_id?: string;
-  time_entry_id?: string;
+  id: string;
+  time_entry_id: string;
   file_name: string;
   file_type?: string;
   file_size?: number;
-  storage_path?: string;
-  uploaded_at?: string;
-  created_at?: string;
+  storage_path: string;
+  uploaded_at: string;
+  document_id?: string;
   url?: string;
   expense_type?: string;
   vendor_id?: string;
   amount?: number;
-  category?: string;
-  tags?: string[];
 }
 
 // Time grouping for better UX
@@ -85,7 +83,6 @@ export interface ReceiptMetadata {
 export interface Entity {
   id: string;
   name: string;
-  title: string; // Changed from optional to required to match WorkOrderOrProject
   status?: string;
 }
 
@@ -99,12 +96,4 @@ export interface EntityDetails {
   name: string;
   type: 'work_order' | 'project';
   location?: string;
-}
-
-// Adding this WorkOrderOrProject type to fix interface errors
-export interface WorkOrderOrProject {
-  id: string;
-  title: string;
-  name?: string; // Add name to make it compatible with Entity
-  status?: string;
 }

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TimeEntry } from '@/types/timeTracking';
-import { Plus, Map, ChevronRight, Camera, Clock, Upload, Receipt } from 'lucide-react';
+import { Plus, Map, ChevronRight, Camera, Clock } from 'lucide-react';
 import { TimeEntryList } from './TimeEntryList';
 import TimeEntryFormWizard from './TimeEntryFormWizard';
 import QuickLogButton from './QuickLogButton';
@@ -13,7 +13,6 @@ import DateNavigation from './DateNavigation';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
 import MobileQuickLogSheet from './MobileQuickLogSheet';
 import { DateRange } from './hooks/useTimeEntries';
-import DocumentUploadDirectSheet from './DocumentUploadDirectSheet';
 
 interface MobileTimeEntryViewProps {
   dateRange: DateRange;
@@ -43,16 +42,10 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   totalHours
 }) => {
   const [showQuickLog, setShowQuickLog] = useState(false);
-  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const { hasCamera, isMobile } = useDeviceCapabilities();
   
   const handleQuickLogSuccess = () => {
     setShowQuickLog(false);
-    onAddSuccess();
-  };
-  
-  const handleDocumentUploadSuccess = () => {
-    setShowDocumentUpload(false);
     onAddSuccess();
   };
   
@@ -84,16 +77,28 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
         </div>
         
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <Button 
             variant="outline"
             size="sm"
             className="justify-start"
-            onClick={() => setShowDocumentUpload(true)}
+            onClick={() => setShowAddForm(true)}
           >
-            <Upload className="h-4 w-4 mr-1" />
-            Upload Document or Receipt
+            <Plus className="h-4 w-4 mr-1" />
+            Detailed Log
           </Button>
+          
+          {hasCamera && (
+            <Button 
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => setShowAddForm(true)}
+            >
+              <Camera className="h-4 w-4 mr-1" />
+              Add Receipt
+            </Button>
+          )}
         </div>
         
         {/* Time entries list */}
@@ -135,17 +140,6 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           onOpenChange={setShowQuickLog}
           onSuccess={handleQuickLogSuccess}
           date={new Date()}
-        />
-        
-        {/* Document Upload Sheet */}
-        <DocumentUploadDirectSheet
-          open={showDocumentUpload}
-          onOpenChange={setShowDocumentUpload}
-          onSuccess={handleDocumentUploadSuccess}
-          title="Upload Document or Receipt"
-          description="Upload any document or receipt for your projects, work orders or vendors"
-          showHelpText={true}
-          allowEntityTypeSelection={true}
         />
       </div>
     </PageTransition>

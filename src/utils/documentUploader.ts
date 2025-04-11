@@ -6,8 +6,6 @@ import { toast } from '@/hooks/use-toast';
 // Function to upload a document to Supabase storage and create a document record
 export const uploadDocument = async (file: File, metadata: DocumentMetadata) => {
   try {
-    console.log('Starting document upload with metadata:', metadata);
-    
     // Create a unique file name based on timestamp and original name
     const timestamp = new Date().getTime();
     const randomString = Math.random().toString(36).substring(2, 10);
@@ -19,9 +17,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     const entityIdPath = metadata.entityId || 'general';
     const filePath = `${entityTypePath}/${entityIdPath}/${fileName}`;
     
-    console.log(`Uploading file to path: ${filePath}`);
-    
-    // Upload file to Supabase storage - ensure we're using the correct bucket name
+    // Upload file to Supabase storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('construction_documents')
       .upload(filePath, file);
@@ -32,7 +28,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     }
     
     // Prepare document data for database
-    const docData: any = {
+    const docData = {
       file_name: file.name,
       file_type: file.type,
       file_size: file.size,
@@ -50,8 +46,6 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
       vendor_type: metadata.vendorType,
       expense_type: metadata.expenseType,
     };
-    
-    console.log('Creating document record with data:', docData);
     
     // Insert document record into database
     const { data: insertedDoc, error: documentError } = await supabase

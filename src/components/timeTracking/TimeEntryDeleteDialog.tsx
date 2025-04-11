@@ -1,109 +1,78 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { TimeEntry } from '@/types/timeTracking';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { formatTime } from './utils/timeUtils';
+import { formatDate } from '@/lib/utils'; // Import formatDate from lib/utils instead
+import { Loader2 } from 'lucide-react';
 
-export interface TimeEntryDeleteDialogProps {
+interface TimeEntryDeleteDialogProps {
+  timeEntry: TimeEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  timeEntryId: string;
-  onSuccess: () => void;
-  entry?: TimeEntry; // Making this optional to fix build errors
+  onConfirm: () => Promise<void>;
+  isDeleting: boolean;
 }
 
 const TimeEntryDeleteDialog: React.FC<TimeEntryDeleteDialogProps> = ({
+  timeEntry,
   open,
   onOpenChange,
-  timeEntryId,
-  onSuccess,
-  entry
+  onConfirm,
+  isDeleting
 }) => {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { toast } = useToast();
-  
+  if (!timeEntry) return null;
+
   const handleDelete = async () => {
-    if (!timeEntryId) {
-      toast({
-        title: "Error",
-        description: "No time entry ID provided",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsDeleting(true);
-    
-    try {
-      // Delete any related expense entries
-      await supabase
-        .from('expenses')
-        .delete()
-        .eq('time_entry_id', timeEntryId);
-      
-      // Delete any document links
-      await supabase
-        .from('time_entry_document_links')
-        .delete()
-        .eq('time_entry_id', timeEntryId);
-      
-      // Finally, delete the time entry
-      const { error } = await supabase
-        .from('time_entries')
-        .delete()
-        .eq('id', timeEntryId);
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Time entry deleted",
-        description: "Time entry has been successfully deleted."
-      });
-      
-      onSuccess();
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error('Error deleting time entry:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete time entry",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDeleting(false);
-    }
+    await onConfirm();
   };
-  
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle>Delete Time Entry</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete this time entry? This action cannot be undone.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="pt-4 flex justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Time Entry</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this time entry from {timeEntry.date_worked}?
+            {timeEntry.employee_name && (
+              <>
+                <br/>
+                Employee: <strong>{timeEntry.employee_name}</strong>
+              </>
+            )}
+            <br/>
+            Time: <strong>{formatTime(timeEntry.start_time)} - {formatTime(timeEntry.end_time)}</strong>
+            <br/>
+            Hours: <strong>{timeEntry.hours_worked?.toFixed(1)}</strong>
+            <br/>
+            This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={(e) => {
+              e.preventDefault();
+              handleDelete();
+            }}
+            className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
             disabled={isDeleting}
           >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

@@ -79,51 +79,22 @@ export function calculateDaysUntilDue(dueDate: string | null): number | null {
  * Format time range for display
  */
 export function formatTimeRange(startTime: string, endTime: string): string {
-  if (!startTime || !endTime) return 'N/A';
+  const start = new Date(startTime);
+  const end = new Date(endTime);
   
-  try {
-    // Validate time format first (HH:MM)
-    if (!startTime.match(/^\d{1,2}:\d{2}$/) || !endTime.match(/^\d{1,2}:\d{2}$/)) {
-      return `${startTime} - ${endTime}`;
-    }
-    
-    // Handle time strings as 24-hour format (e.g., "09:00", "17:30")
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
-    
-    // Validate hours and minutes
-    if (isNaN(startHours) || startHours < 0 || startHours > 23 || 
-        isNaN(startMinutes) || startMinutes < 0 || startMinutes > 59 ||
-        isNaN(endHours) || endHours < 0 || endHours > 23 ||
-        isNaN(endMinutes) || endMinutes < 0 || endMinutes > 59) {
-      return `${startTime} - ${endTime}`;
-    }
-    
-    // Create date objects to use the Intl formatter
-    const start = new Date();
-    start.setHours(startHours, startMinutes, 0);
-    
-    const end = new Date();
-    end.setHours(endHours, endMinutes, 0);
-    
-    // Format with Intl
-    const startFormat = new Intl.DateTimeFormat('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true
-    }).format(start);
-    
-    const endFormat = new Intl.DateTimeFormat('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true
-    }).format(end);
-    
-    return `${startFormat} - ${endFormat}`;
-  } catch (error) {
-    console.error('Error formatting time range:', error, { startTime, endTime });
-    return `${startTime} - ${endTime}`;
-  }
+  const startFormat = new Intl.DateTimeFormat('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  }).format(start);
+  
+  const endFormat = new Intl.DateTimeFormat('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  }).format(end);
+  
+  return `${startFormat} - ${endFormat}`;
 }
 
 /**
