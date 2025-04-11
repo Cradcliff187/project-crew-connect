@@ -29,7 +29,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   const [endTime, setEndTime] = useState(initialValues?.end_time || '17:00');
   const [hoursWorked, setHoursWorked] = useState(initialValues?.hours_worked || 0);
   const [notes, setNotes] = useState(initialValues?.notes || '');
-  const [employeeId, setEmployeeId] = useState<string>(initialValues?.employee_id || '');
+  const [employeeId, setEmployeeId] = useState<string>(initialValues?.employee_id || 'none');
   const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
   const [workDate, setWorkDate] = useState<Date>(
     initialValues?.date_worked 
@@ -97,7 +97,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       end_time: endTime,
       hours_worked: hoursWorked,
       notes,
-      employee_id: employeeId || null,
+      employee_id: employeeId === 'none' ? null : employeeId,
       date_worked: formattedDate
     });
   };
