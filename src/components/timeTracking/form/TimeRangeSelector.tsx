@@ -1,10 +1,11 @@
+
 import React, { useEffect } from 'react';
 import { FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { calculateHours } from '../utils/timeUtils';
 import TimePickerSelect from './TimePickerSelect';
 import TimePickerMobile from './TimePickerMobile';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { Control, Controller, useWatch } from 'react-hook-form';
+import { Control, Controller, useWatch, useFormContext } from 'react-hook-form';
 
 export interface TimeRangeSelectorProps {
   control?: Control<any>;
@@ -47,19 +48,22 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
       name: endFieldName
     });
     
+    // Get formContext to access setValue when using with a form
+    const formContext = useFormContext();
+    
     // Update hours worked whenever start time or end time changes
     React.useEffect(() => {
-      if (watchedStartTime && watchedEndTime && hoursFieldName) {
+      if (watchedStartTime && watchedEndTime && hoursFieldName && formContext) {
         try {
           const calculatedHours = calculateHours(watchedStartTime, watchedEndTime);
           if (!isNaN(calculatedHours) && calculatedHours > 0) {
-            control.setValue(hoursFieldName, calculatedHours);
+            formContext.setValue(hoursFieldName, calculatedHours);
           }
         } catch (error) {
           console.error('Error calculating hours:', error);
         }
       }
-    }, [watchedStartTime, watchedEndTime, hoursFieldName, control]);
+    }, [watchedStartTime, watchedEndTime, hoursFieldName, formContext]);
 
     return (
       <div className="space-y-4">
