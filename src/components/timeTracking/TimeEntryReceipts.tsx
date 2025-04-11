@@ -61,7 +61,7 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
           try {
             const { data: signedUrl } = await supabase
               .storage
-              .from('documents')
+              .from('construction_documents') // Changed from 'documents' to 'construction_documents'
               .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
             
             url = signedUrl?.signedUrl;

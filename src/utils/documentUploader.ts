@@ -19,7 +19,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     
     // Upload file to Supabase storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('construction_documents')
+      .from('construction_documents') // Changed from 'documents' to 'construction_documents'
       .upload(filePath, file);
     
     if (uploadError) {
@@ -58,7 +58,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
       console.error('Document insert error:', documentError);
       // Try to delete the uploaded file if database insert fails
       await supabase.storage
-        .from('construction_documents')
+        .from('construction_documents') // Changed from 'documents' to 'construction_documents'
         .remove([filePath]);
         
       return { success: false, error: 'Error creating document record: ' + documentError.message };

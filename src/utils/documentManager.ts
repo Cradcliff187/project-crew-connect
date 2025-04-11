@@ -23,7 +23,7 @@ export async function getEntityDocuments(entityType: string, entityId: string): 
     const docsWithUrls = await Promise.all(
       (documents || []).map(async (doc) => {
         const { data } = await supabase.storage
-          .from('construction_documents')
+          .from('construction_documents') // Changed from 'documents' to 'construction_documents'
           .getPublicUrl(doc.storage_path);
         
         return {
@@ -109,7 +109,7 @@ export async function getRecentEntityDocuments(
     const docsWithUrls = await Promise.all(
       (documents || []).map(async (doc) => {
         const { data } = await supabase.storage
-          .from('construction_documents')
+          .from('construction_documents') // Changed from 'documents' to 'construction_documents'
           .getPublicUrl(doc.storage_path);
         
         return {

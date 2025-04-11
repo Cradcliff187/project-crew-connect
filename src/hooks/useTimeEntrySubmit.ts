@@ -91,7 +91,7 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
           const filePath = `time_entries/${timeEntry.id}/${fileName}`;
           
           const { error: uploadError } = await supabase.storage
-            .from('documents')
+            .from('construction_documents') // Changed from 'documents' to 'construction_documents'
             .upload(filePath, file);
             
           if (uploadError) {
