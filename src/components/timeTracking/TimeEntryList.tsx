@@ -15,16 +15,17 @@ import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
 import TimeEntryEditDialog from './TimeEntryEditDialog';
 import TimeEntryReceipts from './TimeEntryReceipts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 
 interface TimeEntryListProps {
   entries: TimeEntry[];
   isLoading: boolean;
   onEntryChange: () => void;
+  isMobile?: boolean; // Add this prop to fix the error
 }
 
-export function TimeEntryList({ entries, isLoading, onEntryChange }: TimeEntryListProps) {
-  const router = useRouter();
+export function TimeEntryList({ entries, isLoading, onEntryChange, isMobile = false }: TimeEntryListProps) {
+  const navigate = useNavigate();
   const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -40,9 +41,9 @@ export function TimeEntryList({ entries, isLoading, onEntryChange }: TimeEntryLi
   
   const handleViewDetails = (entityType: string, entityId: string) => {
     if (entityType === 'project') {
-      router.push(`/projects/${entityId}`);
+      navigate(`/projects/${entityId}`);
     } else if (entityType === 'work_order') {
-      router.push(`/work-orders/${entityId}`);
+      navigate(`/work-orders/${entityId}`);
     }
   };
   

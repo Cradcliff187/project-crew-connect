@@ -4,7 +4,7 @@ import { calculateHours } from '../utils/timeUtils';
 import TimePickerSelect from './TimePickerSelect';
 import TimePickerMobile from './TimePickerMobile';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { Control, Controller } from 'react-hook-form';
+import { Control, Controller, useWatch } from 'react-hook-form';
 
 export interface TimeRangeSelectorProps {
   control?: Control<any>;
@@ -36,6 +36,31 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   
   // If using form control, render form fields
   if (control) {
+    // Use react-hook-form's useWatch to watch for changes in start and end time
+    const watchedStartTime = useWatch({ 
+      control,
+      name: startFieldName
+    });
+    
+    const watchedEndTime = useWatch({
+      control,
+      name: endFieldName
+    });
+    
+    // Update hours worked whenever start time or end time changes
+    React.useEffect(() => {
+      if (watchedStartTime && watchedEndTime && hoursFieldName) {
+        try {
+          const calculatedHours = calculateHours(watchedStartTime, watchedEndTime);
+          if (!isNaN(calculatedHours) && calculatedHours > 0) {
+            control.setValue(hoursFieldName, calculatedHours);
+          }
+        } catch (error) {
+          console.error('Error calculating hours:', error);
+        }
+      }
+    }, [watchedStartTime, watchedEndTime, hoursFieldName, control]);
+
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -48,29 +73,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 <TimePicker
                   label=""
                   value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value);
-                    
-                    // Get current end time from form
-                    const endTimeValue = control._formValues[endFieldName];
-                    if (endTimeValue) {
-                      try {
-                        // Calculate hours worked and update form field
-                        const calculatedHours = calculateHours(value, endTimeValue);
-                        if (!isNaN(calculatedHours) && calculatedHours > 0) {
-                          control._formValues[hoursFieldName] = calculatedHours;
-                          if (control._fields[hoursFieldName]) {
-                            control._fields[hoursFieldName]._subjects.state.next({
-                              name: hoursFieldName,
-                              value: calculatedHours
-                            });
-                          }
-                        }
-                      } catch (error) {
-                        console.error('Error calculating hours:', error);
-                      }
-                    }
-                  }}
+                  onChange={field.onChange}
                 />
               </FormItem>
             )}
@@ -85,29 +88,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 <TimePicker
                   label=""
                   value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value);
-                    
-                    // Get current start time from form
-                    const startTimeValue = control._formValues[startFieldName];
-                    if (startTimeValue) {
-                      try {
-                        // Calculate hours worked and update form field
-                        const calculatedHours = calculateHours(startTimeValue, value);
-                        if (!isNaN(calculatedHours) && calculatedHours > 0) {
-                          control._formValues[hoursFieldName] = calculatedHours;
-                          if (control._fields[hoursFieldName]) {
-                            control._fields[hoursFieldName]._subjects.state.next({
-                              name: hoursFieldName,
-                              value: calculatedHours
-                            });
-                          }
-                        }
-                      } catch (error) {
-                        console.error('Error calculating hours:', error);
-                      }
-                    }
-                  }}
+                  onChange={field.onChange}
                 />
               </FormItem>
             )}
