@@ -5,6 +5,7 @@ import { Loader2, AlertCircle, FileText, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TimeEntryReceipt } from '@/types/timeTracking';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 interface TimeEntryReceiptsProps {
   timeEntryId?: string;
