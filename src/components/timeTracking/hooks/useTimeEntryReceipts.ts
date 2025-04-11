@@ -1,25 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { fetchTimeEntryReceipts, deleteReceipt } from '../utils/receiptUtils';
+import { TimeEntryReceipt } from '@/types/timeTracking';
 import { toast } from '@/hooks/use-toast';
 
-interface Receipt {
-  document_id: string;
-  file_name: string;
-  file_type: string;
-  file_size: number;
-  storage_path: string;
-  created_at: string;
-  url: string;
-  tags?: string[];
-  expense_type?: string;
-  category?: string;
-  amount?: number;
-  vendor_id?: string;
-}
-
 export function useTimeEntryReceipts(timeEntryId?: string) {
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [receipts, setReceipts] = useState<TimeEntryReceipt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -31,7 +17,26 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
     
     try {
       const loadedReceipts = await fetchTimeEntryReceipts(timeEntryId);
-      setReceipts(loadedReceipts);
+      // Transform the data to ensure it matches the TimeEntryReceipt interface
+      const formattedReceipts: TimeEntryReceipt[] = loadedReceipts.map(receipt => ({
+        id: receipt.id || receipt.document_id,
+        document_id: receipt.document_id,
+        time_entry_id: timeEntryId,
+        file_name: receipt.file_name,
+        file_type: receipt.file_type,
+        file_size: receipt.file_size,
+        storage_path: receipt.storage_path,
+        uploaded_at: receipt.created_at, // Use created_at as uploaded_at if not available
+        created_at: receipt.created_at,
+        url: receipt.url,
+        expense_type: receipt.expense_type,
+        vendor_id: receipt.vendor_id,
+        amount: receipt.amount,
+        category: receipt.category,
+        tags: receipt.tags
+      }));
+      
+      setReceipts(formattedReceipts);
     } catch (err: any) {
       console.error('Error fetching receipts:', err);
       setError(err.message || 'Failed to load receipts');

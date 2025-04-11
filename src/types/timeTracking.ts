@@ -1,4 +1,3 @@
-
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
@@ -46,18 +45,21 @@ export type QuickLogFormValues = {
 };
 
 export interface TimeEntryReceipt {
-  id: string;
-  time_entry_id: string;
+  id?: string;
+  document_id?: string;
+  time_entry_id?: string;
   file_name: string;
   file_type?: string;
   file_size?: number;
-  storage_path: string;
-  uploaded_at: string;
-  document_id?: string;
+  storage_path?: string;
+  uploaded_at?: string;
+  created_at?: string;
   url?: string;
   expense_type?: string;
   vendor_id?: string;
   amount?: number;
+  category?: string;
+  tags?: string[];
 }
 
 // Time grouping for better UX

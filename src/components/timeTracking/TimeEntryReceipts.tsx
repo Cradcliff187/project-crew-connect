@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Loader2, AlertCircle, FileText, ExternalLink, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TimeEntryReceipt } from '@/types/timeTracking';
@@ -15,7 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { fetchTimeEntryReceipts, deleteReceipt } from './utils/receiptUtils';
+import ReceiptItem from './ReceiptItem';
+import { useTimeEntryReceipts } from './hooks/useTimeEntryReceipts';
 
 interface TimeEntryReceiptsProps {
   timeEntryId?: string;
@@ -26,58 +27,15 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
   timeEntryId,
   onReceiptsChange 
 }) => {
-  const [loading, setLoading] = useState(true);
-  const [receipts, setReceipts] = useState<TimeEntryReceipt[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [receiptToDelete, setReceiptToDelete] = useState<string | null>(null);
-  
-  useEffect(() => {
-    if (timeEntryId) {
-      loadReceipts();
-    } else {
-      setReceipts([]);
-      setLoading(false);
-    }
-  }, [timeEntryId]);
-  
-  const loadReceipts = async () => {
-    if (!timeEntryId) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const loadedReceipts = await fetchTimeEntryReceipts(timeEntryId);
-      setReceipts(loadedReceipts);
-    } catch (err: any) {
-      console.error('Error loading receipts:', err);
-      setError(err.message || 'Failed to fetch receipts');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleOpenReceipt = (url: string | undefined) => {
-    if (url) {
-      window.open(url, '_blank');
-    } else {
-      toast({
-        title: "Error",
-        description: "Unable to open receipt. URL is not available.",
-        variant: "destructive"
-      });
-    }
-  };
+  const { receipts, isLoading, error, fetchReceipts, deleteReceipt } = useTimeEntryReceipts(timeEntryId);
   
   const handleDeleteReceipt = async (documentId: string) => {
     if (!timeEntryId) return;
     
-    const success = await deleteReceipt(timeEntryId, documentId);
+    const success = await deleteReceipt(documentId);
     
     if (success) {
-      // Refresh the receipts list
-      loadReceipts();
-      
       // Notify parent component if provided
       if (onReceiptsChange) {
         onReceiptsChange();
@@ -87,7 +45,7 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
     setReceiptToDelete(null);
   };
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
@@ -118,43 +76,11 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
   return (
     <div className="space-y-4">
       {receipts.map((receipt) => (
-        <div 
-          key={receipt.document_id || receipt.id} 
-          className="border rounded-md p-4 flex justify-between items-center"
-        >
-          <div>
-            <h4 className="font-medium">{receipt.file_name}</h4>
-            <div className="text-sm text-muted-foreground">
-              {receipt.expense_type && (
-                <span className="mr-2">Type: {receipt.expense_type}</span>
-              )}
-              {receipt.amount !== undefined && (
-                <span>Amount: {formatCurrency(receipt.amount)}</span>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleOpenReceipt(receipt.url)}
-              disabled={!receipt.url}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-              onClick={() => setReceiptToDelete(receipt.document_id || receipt.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <ReceiptItem
+          key={receipt.document_id || receipt.id}
+          receipt={receipt}
+          onDelete={() => setReceiptToDelete(receipt.document_id || receipt.id)}
+        />
       ))}
       
       {/* Confirmation dialog for deleting receipts */}
