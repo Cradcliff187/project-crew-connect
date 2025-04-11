@@ -133,7 +133,7 @@ const DocumentsPage: React.FC = () => {
             onDelete={handleDeleteDialogOpen}
             onBatchDelete={handleBatchDelete}
             onUploadClick={() => setIsUploadOpen(true)}
-            showNavigationButtons
+            showNavigationButtons={true}
           />
         </div>
 
@@ -170,6 +170,7 @@ const DocumentsPage: React.FC = () => {
             </DialogHeader>
             <EnhancedDocumentUpload 
               entityType="PROJECT" 
+              entityId=""
               onSuccess={handleDocumentUploadSuccess}
               onCancel={() => setIsUploadOpen(false)}
             />

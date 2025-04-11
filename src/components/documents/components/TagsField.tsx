@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Control, useController } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -17,11 +17,12 @@ const TagsField: React.FC<TagsFieldProps> = ({ control, name = "metadata.tags" }
   const inputRef = useRef<HTMLInputElement>(null);
   
   const { field } = useController({
-    name,
+    name: name as any,
     control,
   });
 
-  const tags = field.value || [];
+  // Ensure we're working with an array of strings
+  const tags = Array.isArray(field.value) ? field.value : [];
   
   // Focus the input when clicking on the container
   const focusInput = () => {

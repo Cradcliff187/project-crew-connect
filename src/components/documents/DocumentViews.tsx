@@ -1,150 +1,118 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
+import { Document } from './schemas/documentSchema';
 import DocumentList from './DocumentList';
 import DocumentGrid from './DocumentGrid';
-import DocumentTableComponent from './DocumentTable'; // Renamed to avoid conflict
-import { FileText, Grid, Table, List } from 'lucide-react';
-import { Document } from './schemas/documentSchema';
+import DocumentTable from './DocumentTable';
+import { Loader2 } from 'lucide-react';
 
 export interface DocumentViewsProps {
   documents: Document[];
   loading: boolean;
-  onViewDocument: (document: Document) => void;
-  onDocumentDelete?: (document: Document) => void;
+  onView: (document: Document) => void;
+  onDelete?: (document: Document) => void;
   onBatchDelete?: (documentIds: string[]) => void;
   onUploadClick?: () => void;
-  showEntityInfo?: boolean;
-  showCategories?: boolean;
-  showNavigationButtons?: boolean;
   emptyMessage?: string;
-  initialViewMode?: 'grid' | 'list' | 'table';
+  showEntityInfo?: boolean;
+  activeFiltersCount?: number;
+  showNavigationButtons?: boolean;
 }
 
 const DocumentViews: React.FC<DocumentViewsProps> = ({
   documents,
   loading,
-  onViewDocument,
-  onDocumentDelete,
+  onView,
+  onDelete,
   onBatchDelete,
   onUploadClick,
+  emptyMessage,
   showEntityInfo = false,
-  showCategories = true,
-  showNavigationButtons = false,
-  emptyMessage = "No documents found",
-  initialViewMode = 'grid'
+  activeFiltersCount = 0,
+  showNavigationButtons = false
 }) => {
-  const [viewMode, setViewMode] = useState(initialViewMode);
-  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
-
-  // Handle document selection for batch operations
-  const toggleDocumentSelection = (documentId: string) => {
-    setSelectedDocuments((prev) =>
-      prev.includes(documentId)
-        ? prev.filter((id) => id !== documentId)
-        : [...prev, documentId]
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
     );
-  };
+  }
 
-  // Clear all selections
-  const clearSelection = () => {
-    setSelectedDocuments([]);
-  };
-
-  // Delete selected documents
-  const handleBatchDelete = () => {
-    if (onBatchDelete && selectedDocuments.length > 0) {
-      onBatchDelete(selectedDocuments);
-      clearSelection();
+  if (documents.length === 0) {
+    if (activeFiltersCount > 0) {
+      return (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium mb-2">No documents match your filters</h3>
+          <p className="text-muted-foreground mb-4">
+            Try adjusting your search or filter criteria
+          </p>
+        </div>
+      );
     }
-  };
+
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium mb-2">{emptyMessage || "No documents found"}</h3>
+        <p className="text-muted-foreground mb-4">
+          Upload documents to get started
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <Tabs defaultValue={viewMode} onValueChange={(v: string) => setViewMode(v as 'grid' | 'list' | 'table')}>
-          <TabsList>
-            <TabsTrigger value="grid">
-              <Grid className="h-4 w-4 mr-2" />
-              Grid
-            </TabsTrigger>
-            <TabsTrigger value="list">
-              <List className="h-4 w-4 mr-2" />
-              List
-            </TabsTrigger>
-            <TabsTrigger value="table">
-              <Table className="h-4 w-4 mr-2" />
-              Table
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="flex gap-2">
-          {selectedDocuments.length > 0 && onBatchDelete && (
-            <>
-              <Button variant="outline" onClick={clearSelection} size="sm">
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleBatchDelete}
-                size="sm"
-              >
-                Delete Selected ({selectedDocuments.length})
-              </Button>
-            </>
-          )}
-          {onUploadClick && (
-            <Button
-              onClick={onUploadClick}
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Upload Document
-            </Button>
-          )}
-        </div>
+    <Tabs defaultValue="grid" className="w-full" onValueChange={(value) => setViewMode(value as any)}>
+      <div className="flex justify-between items-center mb-4">
+        <TabsList>
+          <TabsTrigger value="grid">Grid</TabsTrigger>
+          <TabsTrigger value="list">List</TabsTrigger>
+          <TabsTrigger value="table">Table</TabsTrigger>
+        </TabsList>
       </div>
 
-      {/* Fix onDocumentDelete prop passing */}
-      {viewMode === 'grid' && (
-        <DocumentGrid
+      <TabsContent value="grid" className="mt-2">
+        <DocumentGrid 
           documents={documents}
           loading={loading}
-          onViewDocument={onViewDocument}
-          // Only pass onDelete if it's defined in the DocumentGrid props
-          emptyMessage={emptyMessage}
+          onViewDocument={onView}
           showEntityInfo={showEntityInfo}
-          showCategories={showCategories}
+          showCategories={true}
         />
-      )}
+      </TabsContent>
 
-      {viewMode === 'list' && (
-        <DocumentList
+      <TabsContent value="list" className="mt-2">
+        <DocumentList 
           documents={documents}
           loading={loading}
-          onViewDocument={onViewDocument}
-          onDocumentDelete={onDocumentDelete}
-          emptyMessage={emptyMessage}
+          onView={onView}
+          onDocumentDelete={onDelete}
+          onBatchDelete={onBatchDelete}
+          onUploadClick={onUploadClick}
           showEntityInfo={showEntityInfo}
-          showCategories={showCategories}
+          showCategories={true}
+          showNavigationButtons={showNavigationButtons}
         />
-      )}
+      </TabsContent>
 
-      {viewMode === 'table' && (
-        <DocumentTableComponent
+      <TabsContent value="table" className="mt-2">
+        <DocumentTable 
           documents={documents}
           loading={loading}
-          onViewDocument={onViewDocument}
-          onDocumentDelete={onDocumentDelete}
-          emptyMessage={emptyMessage}
-          selectedDocuments={selectedDocuments}
-          onToggleSelection={toggleDocumentSelection}
+          onViewDocument={onView}
+          onDeleteDocument={onDelete}
           showEntityInfo={showEntityInfo}
-          showCategories={showCategories}
         />
-      )}
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 };
 

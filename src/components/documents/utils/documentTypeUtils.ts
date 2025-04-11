@@ -1,3 +1,4 @@
+
 import { Document } from '../schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -43,21 +44,14 @@ export const downloadDocument = async (document: Document): Promise<void> => {
 
     // Create an invisible link and trigger the download
     const link = document.document_id ? document.document_id : 'download';
-    const a = document.createElement
-      ? document.createElement('a')
-      : (document.doc ? document.doc.createElement('a') : null);
     
-    // Check if we successfully created an anchor element
-    if (!a) {
-      console.error('Cannot create download link');
-      return;
-    }
-
-    a.href = data?.publicUrl || '';
-    a.download = document.file_name || 'document';
-    
-    // Check if we're in a browser environment
-    if (typeof window !== 'undefined' && window.document && window.document.body) {
+    // Check if we're in a browser environment and create an anchor element
+    if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+      const a = document.createElement('a');
+      a.href = data?.publicUrl || '';
+      a.download = document.file_name || 'document';
+      
+      // Append to body, click and remove
       window.document.body.appendChild(a);
       a.click();
       window.document.body.removeChild(a);
@@ -84,7 +78,7 @@ export const openDocumentInNewTab = async (document: Document): Promise<void> =>
       .getPublicUrl(document.storage_path);
 
     // Open in a new tab
-    if (typeof window !== 'undefined' && window.document && window.document.body) {
+    if (typeof window !== 'undefined') {
       window.open(data?.publicUrl || '', '_blank');
     } else {
       console.error('Cannot open document: not in browser environment');

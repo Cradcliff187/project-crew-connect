@@ -42,3 +42,43 @@ export const getFileTypeIcon = (fileType: string | null): string => {
   
   return 'document';
 };
+
+/**
+ * Categorizes documents by their category property
+ */
+export const categorizeDocuments = (documents: Document[]): Record<string, Document[]> => {
+  const documentsByCategory: Record<string, Document[]> = {};
+  
+  documents.forEach(doc => {
+    const category = doc.category || 'Other';
+    if (!documentsByCategory[category]) {
+      documentsByCategory[category] = [];
+    }
+    documentsByCategory[category].push(doc);
+  });
+  
+  return documentsByCategory;
+};
+
+/**
+ * Filters documents based on whether they are line item documents or not
+ */
+export const filterDocumentsByType = (
+  documents: Document[], 
+  isLineItemDocument: boolean
+): Document[] => {
+  return documents.filter(doc => 
+    Boolean((doc as any).item_id || (doc as any).item_reference) === isLineItemDocument
+  );
+};
+
+/**
+ * Determines if a document is associated with a line item
+ */
+export const isLineItemDocument = (document: Document): boolean => {
+  // Check for item_id or item_reference in the document
+  return Boolean(
+    (document as any).item_id || 
+    (document as any).item_reference
+  );
+};

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -16,7 +17,7 @@ import { categorizeDocuments } from './utils/documentUtils';
 import useDocumentManager from './hooks/useDocumentManager';
 import DocumentUploadDialog from './DocumentUploadDialog';
 import DocumentDetailView from './DocumentDetailView';
-import DocumentsFilter from './filters/DocumentsFilter';
+import DocumentsFilterComponent from './filters/DocumentsFilter';
 import DocumentMetrics from './DocumentMetrics';
 import DocumentUploadButton from './DocumentUploadButton';
 
@@ -56,7 +57,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
     updateFilters,
     resetFilters,
     filteredDocuments
-  } = DocumentsFilter(documents);
+  } = DocumentsFilterComponent(documents);
 
   // Reset filters when entity changes
   useEffect(() => {
@@ -136,7 +137,6 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                   documents={filteredDocuments}
                   loading={loading}
                   onViewDocument={handleViewDocument}
-                  onDeleteDocument={handleDeleteDocument}
                 />
               )}
               
@@ -164,7 +164,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
         </div>
         
         <div className="w-full md:w-72 space-y-4">
-          <DocumentsFilter 
+          <DocumentsFilterComponent 
             filters={filters}
             onFiltersChange={updateFilters}
             entityType={entityType}
