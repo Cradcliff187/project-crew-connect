@@ -59,7 +59,10 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
         .select('id')
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating time entry:', error);
+        throw error;
+      }
       
       // Create expense entry for labor
       if (timeEntry?.id) {
@@ -105,7 +108,7 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
             }
             
             // Create document record with proper schema fields
-            const documentData = {
+            const documentData: any = {
               entity_type: 'TIME_ENTRY',
               entity_id: timeEntry.id,
               file_name: file.name,

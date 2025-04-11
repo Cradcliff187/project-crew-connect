@@ -18,6 +18,9 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
   useEffect(() => {
     if (timeEntryId) {
       fetchReceipts();
+    } else {
+      setReceipts([]);
+      setLoading(false);
     }
   }, [timeEntryId]);
   
@@ -36,7 +39,10 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
         .select('document_id')
         .eq('time_entry_id', timeEntryId);
         
-      if (linksError) throw linksError;
+      if (linksError) {
+        console.error('Error fetching document links:', linksError);
+        throw linksError;
+      }
       
       console.log(`Found ${links?.length || 0} linked documents`);
       
@@ -55,8 +61,17 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
         .select('*')
         .in('document_id', documentIds);
         
-      if (documentsError) throw documentsError;
+      if (documentsError) {
+        console.error('Error fetching documents:', documentsError);
+        throw documentsError;
+      }
       console.log(`Retrieved ${documents?.length || 0} document records`);
+      
+      if (!documents || documents.length === 0) {
+        setReceipts([]);
+        setLoading(false);
+        return;
+      }
       
       // Generate signed URLs for each document
       const receiptResults = await Promise.all(
@@ -71,9 +86,9 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
             
             if (urlError) {
               console.error('Error creating signed URL:', urlError);
+            } else {
+              url = signedUrl?.signedUrl;
             }
-            
-            url = signedUrl?.signedUrl;
           } catch (urlError) {
             console.error('Error generating signed URL:', urlError);
           }
@@ -107,6 +122,12 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
   const handleOpenReceipt = (url: string | undefined) => {
     if (url) {
       window.open(url, '_blank');
+    } else {
+      toast({
+        title: "Error",
+        description: "Unable to open receipt. URL is not available.",
+        variant: "destructive"
+      });
     }
   };
   

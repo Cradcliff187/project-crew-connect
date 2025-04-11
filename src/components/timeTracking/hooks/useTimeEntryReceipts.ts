@@ -28,16 +28,24 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
     setError(null);
     
     try {
+      console.log(`Fetching receipts for time entry ID: ${timeEntryId}`);
+      
       // First get the document IDs linked to this time entry
       const { data: links, error: linksError } = await supabase
         .from('time_entry_document_links')
         .select('document_id')
         .eq('time_entry_id', timeEntryId);
         
-      if (linksError) throw linksError;
+      if (linksError) {
+        console.error('Error fetching document links:', linksError);
+        throw linksError;
+      }
+      
+      console.log(`Found ${links?.length || 0} document links`);
       
       if (!links || links.length === 0) {
         setReceipts([]);
+        setIsLoading(false);
         return;
       }
       
@@ -49,24 +57,47 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
         .select('*')
         .in('document_id', documentIds);
         
-      if (documentsError) throw documentsError;
+      if (documentsError) {
+        console.error('Error fetching documents:', documentsError);
+        throw documentsError;
+      }
+      
+      console.log(`Retrieved ${documents?.length || 0} document records`);
       
       if (!documents || documents.length === 0) {
         setReceipts([]);
+        setIsLoading(false);
         return;
       }
       
-      // Get public URLs for each document
+      // Get URLs for each document - using the correct storage bucket name
       const receiptsWithUrls = await Promise.all(documents.map(async (doc) => {
-        const { data } = supabase
-          .storage
-          .from('construction_documents') // Changed from 'documents' to 'construction_documents'
-          .getPublicUrl(doc.storage_path);
+        try {
+          // Using createSignedUrl for better security and access control
+          const { data, error: urlError } = await supabase
+            .storage
+            .from('construction_documents')
+            .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
+            
+          if (urlError) {
+            console.error('Error creating signed URL:', urlError);
+            return {
+              ...doc,
+              url: ''
+            };
+          }
           
-        return {
-          ...doc,
-          url: data.publicUrl
-        };
+          return {
+            ...doc,
+            url: data?.signedUrl || ''
+          };
+        } catch (e) {
+          console.error('Error generating URL for document:', e);
+          return {
+            ...doc,
+            url: ''
+          };
+        }
       }));
       
       setReceipts(receiptsWithUrls);
@@ -82,23 +113,31 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
     if (!timeEntryId || !documentId) return false;
     
     try {
-      // First remove the link between time entry and document
-      const { error: unlinkError } = await supabase
-        .from('time_entry_document_links')
-        .delete()
-        .eq('time_entry_id', timeEntryId)
-        .eq('document_id', documentId);
-        
-      if (unlinkError) throw unlinkError;
+      console.log(`Deleting receipt: document ID ${documentId}, time entry ID ${timeEntryId}`);
       
-      // Get the document details to delete the file from storage
+      // First get the document details to delete the file from storage
       const { data: document, error: docError } = await supabase
         .from('documents')
         .select('storage_path')
         .eq('document_id', documentId)
         .single();
         
-      if (docError) throw docError;
+      if (docError) {
+        console.error('Error fetching document details:', docError);
+        throw docError;
+      }
+      
+      // Remove the link between time entry and document
+      const { error: unlinkError } = await supabase
+        .from('time_entry_document_links')
+        .delete()
+        .eq('time_entry_id', timeEntryId)
+        .eq('document_id', documentId);
+        
+      if (unlinkError) {
+        console.error('Error removing document link:', unlinkError);
+        throw unlinkError;
+      }
       
       // Delete the document record
       const { error: deleteDocError } = await supabase
@@ -106,13 +145,16 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
         .delete()
         .eq('document_id', documentId);
         
-      if (deleteDocError) throw deleteDocError;
+      if (deleteDocError) {
+        console.error('Error deleting document record:', deleteDocError);
+        throw deleteDocError;
+      }
       
-      // Delete the file from storage
+      // Delete the file from storage using the correct bucket name
       if (document?.storage_path) {
         const { error: storageError } = await supabase
           .storage
-          .from('construction_documents') // Changed from 'documents' to 'construction_documents'
+          .from('construction_documents')
           .remove([document.storage_path]);
           
         if (storageError) {
@@ -127,7 +169,10 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
         .select('document_id')
         .eq('time_entry_id', timeEntryId);
         
-      if (countError) throw countError;
+      if (countError) {
+        console.error('Error checking remaining links:', countError);
+        throw countError;
+      }
       
       // Update the time_entry has_receipts flag based on remaining receipts
       const { error: updateError } = await supabase
@@ -135,7 +180,10 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
         .update({ has_receipts: (remainingLinks || []).length > 0 })
         .eq('id', timeEntryId);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating time entry:', updateError);
+        throw updateError;
+      }
       
       // Refresh the receipts list
       await fetchReceipts();

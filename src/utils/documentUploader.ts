@@ -21,7 +21,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     
     console.log(`Uploading file to path: ${filePath}`);
     
-    // Upload file to Supabase storage
+    // Upload file to Supabase storage - ensure we're using the correct bucket name
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('construction_documents')
       .upload(filePath, file);
@@ -32,7 +32,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     }
     
     // Prepare document data for database
-    const docData = {
+    const docData: any = {
       file_name: file.name,
       file_type: file.type,
       file_size: file.size,
