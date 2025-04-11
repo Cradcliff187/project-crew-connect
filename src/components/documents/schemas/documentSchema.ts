@@ -13,7 +13,9 @@ export enum EntityType {
   EXPENSE = 'EXPENSE',
   TIME_ENTRY = 'TIME_ENTRY',
   EMPLOYEE = 'EMPLOYEE',
-  ESTIMATE_ITEM = 'ESTIMATE_ITEM'
+  ESTIMATE_ITEM = 'ESTIMATE_ITEM',
+  BUDGET_ITEM = 'BUDGET_ITEM',
+  CHANGE_ORDER = 'CHANGE_ORDER'
 }
 
 // Define document categories
@@ -26,7 +28,10 @@ export enum DocumentCategory {
   SPECIFICATIONS = 'specifications',
   PERMIT = 'permit',
   CERTIFICATE = 'certificate',
-  OTHER = 'other'
+  OTHER = 'other',
+  THIRD_PARTY_ESTIMATE = '3rd_party_estimate',
+  INSURANCE = 'insurance',
+  CERTIFICATION = 'certification'
 }
 
 // Export an array of document categories for dropdowns
@@ -121,6 +126,16 @@ export const entityCategoryMap: Record<EntityType, DocumentCategory[]> = {
     DocumentCategory.SPECIFICATIONS,
     DocumentCategory.PHOTO,
     DocumentCategory.GENERAL
+  ],
+  [EntityType.BUDGET_ITEM]: [
+    DocumentCategory.RECEIPT,
+    DocumentCategory.INVOICE,
+    DocumentCategory.GENERAL
+  ],
+  [EntityType.CHANGE_ORDER]: [
+    DocumentCategory.CONTRACT,
+    DocumentCategory.SPECIFICATIONS,
+    DocumentCategory.GENERAL
   ]
 };
 
@@ -211,7 +226,7 @@ export const DocumentMetadataSchema = z.object({
   version: z.number().optional()
 });
 
-// Main document upload form schema
+// Main document upload form schema - Renamed from documentUploadSchema to DocumentUploadSchema for consistency
 export const DocumentUploadSchema = z.object({
   files: z.array(DocumentFileSchema).min(1, "At least one file is required"),
   metadata: DocumentMetadataSchema,

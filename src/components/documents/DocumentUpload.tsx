@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,7 +43,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   
-  // Initialize the form with react-hook-form
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(DocumentUploadSchema),
     defaultValues: {
@@ -65,20 +63,16 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     }
   });
   
-  // Get the selected file(s) from the form
   const watchFiles = form.watch('files');
   
-  // Handle file selection
   const handleFileSelect = (files: File[]) => {
     if (files.length > 0) {
-      // Update form value
       form.setValue('files', files, { 
         shouldValidate: true, 
         shouldDirty: true, 
         shouldTouch: true 
       });
       
-      // Create preview URL for images
       if (files[0].type.includes('image')) {
         const objectUrl = URL.createObjectURL(files[0]);
         setPreviewURL(objectUrl);
@@ -88,14 +82,12 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     }
   };
   
-  // Handle form submission
   const onSubmit = async (data: DocumentUploadFormValues) => {
     if (isUploading) return;
     
     try {
       setIsUploading(true);
       
-      // Get relevant form data for easier tracking in logs
       const { entityType, entityId, category, isExpense } = data.metadata;
       
       console.log('Document upload metadata:', {
@@ -118,10 +110,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           : "Your document has been uploaded and indexed."
       });
       
-      // Reset form state
       form.reset();
       
-      // Clean up preview URL if it exists
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
         setPreviewURL(null);
@@ -129,7 +119,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       
       console.log('Document upload successful, documentId:', result.documentId);
       
-      // Call success callback with documentId
       if (onSuccess) {
         onSuccess(result.documentId);
       }
@@ -179,7 +168,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                       value={field.value || ''}
-                      disabled={isReceiptUpload} // Disable if it's a receipt upload
+                      disabled={isReceiptUpload}
                     >
                       <FormControl>
                         <SelectTrigger>
