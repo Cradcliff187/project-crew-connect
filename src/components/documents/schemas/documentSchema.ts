@@ -1,7 +1,7 @@
 
 import { z } from 'zod';
 
-// Define the EntityType enum
+// Define the EntityType enum that will be used application-wide
 export enum EntityType {
   PROJECT = 'PROJECT',
   WORK_ORDER = 'WORK_ORDER',
@@ -178,13 +178,16 @@ export interface Document {
   vendor_type?: string;
   expense_type?: string;
   budget_item_id?: string;
+  parent_entity_type?: EntityType;
+  parent_entity_id?: string;
+  mime_type?: string;
 }
 
 // Document upload metadata schema
 export interface DocumentUploadMetadata {
   entityType: EntityType;
   entityId: string;
-  category?: string;
+  category?: DocumentCategory | string;
   isExpense?: boolean;
   amount?: number | null;
   expenseDate?: string | Date | null;
@@ -226,7 +229,7 @@ export const DocumentMetadataSchema = z.object({
   version: z.number().optional()
 });
 
-// Main document upload form schema - Renamed from documentUploadSchema to DocumentUploadSchema for consistency
+// Main document upload form schema
 export const DocumentUploadSchema = z.object({
   files: z.array(DocumentFileSchema).min(1, "At least one file is required"),
   metadata: DocumentMetadataSchema,

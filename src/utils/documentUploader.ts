@@ -42,7 +42,7 @@ export const uploadDocument = async (file: File, metadata: DocumentUploadMetadat
       storage_path: filePath,
       entity_type: metadata.entityType,
       entity_id: metadata.entityId,
-      category: metadata.category as DocumentCategory,
+      category: metadata.category,
       amount: metadata.amount,
       expense_date: expenseDate,
       version: metadata.version || 1,
@@ -72,73 +72,99 @@ export const uploadDocument = async (file: File, metadata: DocumentUploadMetadat
       return { success: false, error: 'Error creating document record: ' + documentError.message };
     }
     
+    // Get the document ID from the inserted record
+    const documentId = insertedDoc.document_id;
+    
+    // If there's a parent entity relationship, create it
+    if (metadata.parentEntityType && metadata.parentEntityId) {
+      const relationData = {
+        source_document_id: documentId,
+        target_document_id: null,
+        relationship_type: 'PARENT_ENTITY',
+        relationship_metadata: {
+          parent_entity_type: metadata.parentEntityType,
+          parent_entity_id: metadata.parentEntityId
+        }
+      };
+      
+      // Insert relationship record
+      const { error: relationError } = await supabase
+        .from('document_relationships')
+        .insert(relationData);
+      
+      if (relationError) {
+        console.error('Relationship insert error:', relationError);
+        // We continue even if relationship creation fails
+      }
+    }
+    
     // Show success toast with feedback
     toast({
       title: "Upload successful",
-      description: `${file.name} has been uploaded successfully.`,
-      variant: "default",
+      description: `${file.name} has been uploaded successfully.`
     });
     
     return { 
       success: true, 
-      documentId: insertedDoc.document_id,
-      document: insertedDoc
+      documentId,
+      document: insertedDoc 
     };
   } catch (error: any) {
-    console.error('Upload document error:', error);
-    return { success: false, error: error.message || 'An unexpected error occurred' };
+    console.error('Document upload error:', error);
+    return { 
+      success: false, 
+      error: error.message || 'An unexpected error occurred during upload' 
+    };
   }
 };
 
-// Function to upload multiple documents
-export const uploadMultipleDocuments = async (
-  files: File[], 
-  metadata: DocumentUploadMetadata
-) => {
+// Function to download a document from Supabase storage
+export const downloadDocument = async (documentId: string) => {
   try {
-    const results = [];
+    // Get document details
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('storage_path, file_name')
+      .eq('document_id', documentId)
+      .single();
     
-    for (const file of files) {
-      const result = await uploadDocument(file, metadata);
-      results.push(result);
+    if (docError || !document) {
+      console.error('Document fetch error:', docError);
+      return { success: false, error: 'Document not found' };
     }
     
-    const successCount = results.filter(r => r.success).length;
+    // Get download URL from Supabase storage
+    const { data, error } = await supabase.storage
+      .from('construction_documents')
+      .download(document.storage_path);
     
-    // Show appropriate toast message
-    if (successCount === files.length) {
-      toast({
-        title: "All uploads successful",
-        description: `${successCount} document${successCount !== 1 ? 's' : ''} uploaded successfully.`,
-      });
-    } else if (successCount > 0) {
-      toast({
-        title: "Some uploads failed",
-        description: `${successCount} of ${files.length} documents uploaded successfully.`,
-        variant: "default",
-      });
-    } else {
-      toast({
-        title: "Upload failed",
-        description: "All document uploads failed.",
-        variant: "destructive",
-      });
+    if (error) {
+      console.error('Download error:', error);
+      return { success: false, error: 'Error downloading file: ' + error.message };
     }
     
-    return {
-      success: successCount > 0,
-      totalCount: files.length,
-      successCount,
-      results
-    };
+    // Create a blob URL for the downloaded data
+    const url = URL.createObjectURL(data);
+    
+    // Create a temporary anchor element to trigger download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = document.file_name;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+    return { success: true };
   } catch (error: any) {
-    console.error('Multiple upload error:', error);
+    console.error('Document download error:', error);
     return { 
       success: false, 
-      error: error.message, 
-      totalCount: files.length, 
-      successCount: 0, 
-      results: [] 
+      error: error.message || 'An unexpected error occurred during download' 
     };
   }
 };

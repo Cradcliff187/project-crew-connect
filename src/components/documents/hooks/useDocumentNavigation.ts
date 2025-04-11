@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Document } from '../schemas/documentSchema';
+import { Document, EntityType } from '../schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
 
 /**
@@ -26,30 +26,32 @@ export const useDocumentNavigation = () => {
 
     try {
       // Navigate based on entity type
-      switch (document.entity_type.toUpperCase()) {
-        case 'PROJECT':
+      const entityType = document.entity_type.toString().toUpperCase() as EntityType;
+      
+      switch (entityType) {
+        case EntityType.PROJECT:
           navigate(`/projects/${document.entity_id}`);
           break;
-        case 'WORK_ORDER':
+        case EntityType.WORK_ORDER:
           navigate(`/work-orders/${document.entity_id}`);
           break;
-        case 'ESTIMATE':
+        case EntityType.ESTIMATE:
           navigate(`/estimates/${document.entity_id}`);
           break;
-        case 'CUSTOMER':
+        case EntityType.CUSTOMER:
           navigate(`/customers/${document.entity_id}`);
           break;
-        case 'VENDOR':
+        case EntityType.VENDOR:
           navigate(`/vendors/${document.entity_id}`);
           break;
-        case 'SUBCONTRACTOR':
+        case EntityType.SUBCONTRACTOR:
           navigate(`/subcontractors/${document.entity_id}`);
           break;
-        case 'EXPENSE':
+        case EntityType.EXPENSE:
           // Check if the expense has a parent entity
-          if (document.parent_entity_type && document.parent_entity_id) {
+          if (document.parentEntityType && document.parentEntityId) {
             // Navigate to the parent entity with a query parameter to highlight this expense
-            navigate(`/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=expense&expenseId=${document.entity_id}`);
+            navigate(`/${document.parentEntityType.toLowerCase()}s/${document.parentEntityId}?highlight=expense&expenseId=${document.entity_id}`);
           } else {
             toast({
               title: "Navigation limited",
@@ -57,11 +59,11 @@ export const useDocumentNavigation = () => {
             });
           }
           break;
-        case 'TIME_ENTRY':
+        case EntityType.TIME_ENTRY:
           // Check if the time entry has a parent entity
-          if (document.parent_entity_type && document.parent_entity_id) {
+          if (document.parentEntityType && document.parentEntityId) {
             // Navigate to the parent entity with a query parameter to highlight this time entry
-            navigate(`/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=timeEntry&timeEntryId=${document.entity_id}`);
+            navigate(`/${document.parentEntityType.toLowerCase()}s/${document.parentEntityId}?highlight=timeEntry&timeEntryId=${document.entity_id}`);
           } else {
             toast({
               title: "Navigation limited",

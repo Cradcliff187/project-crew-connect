@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,7 +26,7 @@ interface UseDocumentUploadFormProps {
     tags?: string[];
     category?: string;
     budgetItemId?: string;
-    parentEntityType?: string;
+    parentEntityType?: EntityType;
     parentEntityId?: string;
   };
   allowEntityTypeSelection?: boolean;
@@ -51,13 +52,15 @@ export const useDocumentUploadForm = ({
     entityType ? getEntityCategories(entityType) : []
   );
 
+  const defaultEntityType = entityType || EntityType.PROJECT;
+
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(DocumentUploadSchema),
     defaultValues: {
       files: [],
       metadata: {
-        category: isReceiptUpload ? 'receipt' as DocumentCategory : (prefillData?.category as DocumentCategory || 'other' as DocumentCategory),
-        entityType: entityType || EntityType.PROJECT,
+        category: isReceiptUpload ? DocumentCategory.RECEIPT : (prefillData?.category as DocumentCategory || DocumentCategory.OTHER),
+        entityType: defaultEntityType,
         entityId: entityId || '',
         isExpense: isReceiptUpload,
         tags: prefillData?.tags || [],
@@ -94,14 +97,14 @@ export const useDocumentUploadForm = ({
       setAvailableCategories(getEntityCategories(entityType));
 
       if (isReceiptUpload) {
-        form.setValue('metadata.category', 'receipt' as DocumentCategory);
+        form.setValue('metadata.category', DocumentCategory.RECEIPT);
         form.setValue('metadata.isExpense', true);
-      } else if (entityType === 'WORK_ORDER') {
-        form.setValue('metadata.category', 'receipt' as DocumentCategory);
-      } else if (entityType === 'PROJECT') {
-        form.setValue('metadata.category', 'photo' as DocumentCategory);
-      } else if (entityType === 'VENDOR' || entityType === 'SUBCONTRACTOR') {
-        form.setValue('metadata.category', 'certification' as DocumentCategory);
+      } else if (entityType === EntityType.WORK_ORDER) {
+        form.setValue('metadata.category', DocumentCategory.RECEIPT);
+      } else if (entityType === EntityType.PROJECT) {
+        form.setValue('metadata.category', DocumentCategory.PHOTO);
+      } else if (entityType === EntityType.VENDOR || entityType === EntityType.SUBCONTRACTOR) {
+        form.setValue('metadata.category', DocumentCategory.CERTIFICATION);
       }
     }
     
@@ -133,7 +136,7 @@ export const useDocumentUploadForm = ({
       }
       
       if (prefillData.parentEntityType && prefillData.parentEntityId) {
-        form.setValue('metadata.parentEntityType', prefillData.parentEntityType as EntityType);
+        form.setValue('metadata.parentEntityType', prefillData.parentEntityType);
         form.setValue('metadata.parentEntityId', prefillData.parentEntityId);
       }
     }

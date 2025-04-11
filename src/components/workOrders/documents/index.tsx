@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileUp, FileText, Upload, RefreshCw } from 'lucide-react';
-import { DocumentUpload, DocumentViewer, DocumentList } from '@/components/documents';
-import { Document, documentService, EntityType } from '@/services/documentService';
+import { DocumentUpload, DocumentViewer } from '@/components/documents';
+import { Document, EntityType } from '@/components/documents/schemas/documentSchema';
+import { documentService } from '@/services/documentService';
+import { parseEntityType } from '@/components/documents/utils/documentTypeUtils';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;
@@ -26,15 +28,15 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
     
     setLoading(true);
     try {
-      // Normalize entity type to our standard format
-      const normalizedEntityType = entityType.toUpperCase() as EntityType;
+      // Convert the entity type string to our EntityType enum
+      const normalizedEntityType = parseEntityType(entityType);
       
       // Fetch documents using our standardized service
       const docs = await documentService.getDocumentsByEntity(normalizedEntityType, workOrderId);
       setDocuments(docs);
       
       // If this is a work order, we also need to fetch related expense receipts
-      if (normalizedEntityType === 'WORK_ORDER') {
+      if (normalizedEntityType === EntityType.WORK_ORDER) {
         // This would be handled by a specialized function for work order-specific document relationships
         // For now, we'll keep it simple
       }
@@ -55,20 +57,9 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
     setSelectedDocument(document);
   };
   
-  // Convert string entityType to proper EntityType
+  // Safely convert string entityType to our EntityType enum
   const getEntityType = (): EntityType => {
-    const upperEntityType = entityType.toUpperCase();
-    
-    // Ensure we're using a valid EntityType
-    const validTypes: EntityType[] = [
-      'PROJECT', 'WORK_ORDER', 'ESTIMATE', 'CUSTOMER', 
-      'VENDOR', 'CONTACT', 'SUBCONTRACTOR', 'EXPENSE', 
-      'TIME_ENTRY', 'EMPLOYEE', 'ESTIMATE_ITEM'
-    ];
-    
-    return validTypes.includes(upperEntityType as EntityType) 
-      ? upperEntityType as EntityType
-      : 'WORK_ORDER';
+    return parseEntityType(entityType);
   };
   
   return (
@@ -101,11 +92,26 @@ const WorkOrderDocuments = ({ workOrderId, entityType }: WorkOrderDocumentsProps
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
-          <DocumentList
-            documents={documents}
-            loading={loading}
-            onViewDocument={handleViewDocument}
-          />
+          <div className="space-y-2">
+            {loading ? (
+              <p>Loading documents...</p>
+            ) : documents.length > 0 ? (
+              documents.map(doc => (
+                <div 
+                  key={doc.document_id}
+                  className="p-3 border rounded-md cursor-pointer hover:bg-slate-50"
+                  onClick={() => handleViewDocument(doc)}
+                >
+                  <div className="flex justify-between">
+                    <span>{doc.file_name}</span>
+                    <span className="text-xs text-slate-500">{doc.created_at}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No documents found for this work order</p>
+            )}
+          </div>
         </div>
       </div>
       

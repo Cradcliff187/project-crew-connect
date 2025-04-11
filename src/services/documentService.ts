@@ -2,55 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
-
-/**
- * Standard document type used across the application
- */
-export interface Document {
-  document_id: string;
-  file_name: string;
-  file_type: string | null;
-  file_size: number | null;
-  storage_path: string;
-  entity_type: EntityType;
-  entity_id: string;
-  category?: string | null;
-  tags?: string[];
-  notes?: string | null;
-  is_expense?: boolean;
-  amount?: number | null;
-  expense_date?: string | null;
-  vendor_id?: string | null;
-  vendor_type?: string | null;
-  expense_type?: string | null;
-  budget_item_id?: string | null;
-  version?: number;
-  is_latest_version?: boolean;
-  parent_document_id?: string | null;
-  url?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-/**
- * Standard entity types used for document relationships
- * Always use uppercase for consistency
- */
-export type EntityType = 
-  | 'PROJECT'
-  | 'WORK_ORDER' 
-  | 'ESTIMATE' 
-  | 'ESTIMATE_ITEM'
-  | 'CUSTOMER' 
-  | 'VENDOR' 
-  | 'CONTACT'
-  | 'SUBCONTRACTOR' 
-  | 'EXPENSE' 
-  | 'TIME_ENTRY' 
-  | 'EMPLOYEE'
-  | 'BUDGET_ITEM'
-  | 'CHANGE_ORDER'
-  | 'DETACHED';
+import { EntityType, DocumentCategory, Document, RelationshipType } from '@/components/documents/schemas/documentSchema';
 
 /**
  * Document upload metadata
@@ -58,7 +10,7 @@ export type EntityType =
 export interface DocumentUploadMetadata {
   entityType: EntityType;
   entityId: string;
-  category?: string;
+  category?: DocumentCategory | string;
   tags?: string[];
   notes?: string;
   isExpense?: boolean;
@@ -190,8 +142,9 @@ export const documentService = {
         .getPublicUrl(filePath);
       
       const document: Document = {
-        ...documentData,
-        url: urlData.publicUrl
+        ...documentData as Document,
+        url: urlData.publicUrl,
+        entity_type: documentData.entity_type as EntityType
       };
       
       return {
@@ -243,7 +196,8 @@ export const documentService = {
       
       const document: Document = {
         ...data,
-        url: urlData.publicUrl
+        url: urlData.publicUrl,
+        entity_type: data.entity_type as EntityType
       };
       
       return {
@@ -266,7 +220,7 @@ export const documentService = {
   getDocumentsByEntity: async (entityType: EntityType, entityId: string): Promise<Document[]> => {
     try {
       // Ensure consistent uppercase entity type
-      const normalizedEntityType = entityType.toUpperCase() as EntityType;
+      const normalizedEntityType = entityType;
       
       // Fetch documents from the database
       const { data, error } = await supabase
@@ -290,7 +244,8 @@ export const documentService = {
           
           return {
             ...doc,
-            url: urlData.publicUrl
+            url: urlData.publicUrl,
+            entity_type: doc.entity_type as EntityType
           } as Document;
         })
       );
@@ -476,8 +431,9 @@ export const documentService = {
         .getPublicUrl(filePath);
       
       const document: Document = {
-        ...documentData,
-        url: urlData.publicUrl
+        ...documentData as Document,
+        url: urlData.publicUrl,
+        entity_type: documentData.entity_type as EntityType
       };
       
       return {
@@ -544,7 +500,8 @@ export const documentService = {
           
           return {
             ...doc,
-            url: urlData.publicUrl
+            url: urlData.publicUrl,
+            entity_type: doc.entity_type as EntityType
           } as Document;
         })
       );
@@ -587,7 +544,10 @@ export const documentService = {
       
       return {
         success: true,
-        document: data as Document,
+        document: {
+          ...data as Document,
+          entity_type: data.entity_type as EntityType
+        },
         documentId,
         message: 'Document attached successfully'
       };
@@ -600,6 +560,9 @@ export const documentService = {
     }
   }
 };
+
+// Re-export the types to maintain backward compatibility
+export { EntityType, DocumentCategory, Document, RelationshipType };
 
 /**
  * Helper function to get a signed URL for a document
@@ -646,7 +609,7 @@ export const categorizeDocuments = (documents: Document[]): Record<string, Docum
   for (const doc of documents) {
     const category = doc.category?.toLowerCase() || 'other';
     
-    if (categories[category]) {
+    if (category in categories) {
       categories[category].push(doc);
     } else {
       categories['other'].push(doc);
