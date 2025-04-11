@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useEntityData } from './hooks/useEntityData';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog } from '@/components/ui/dialog';
 import ReceiptPromptDialog from './dialogs/ReceiptPromptDialog';
 
 interface TimeEntryFormWizardProps {
@@ -32,6 +31,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
 }) => {
   const [showReceiptPrompt, setShowReceiptPrompt] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   
   const {
     form,
@@ -87,7 +87,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   const handleReceiptPromptConfirm = () => {
     setShowReceiptPrompt(false);
     form.setValue('hasReceipts', true);
-    setShowConfirmation(true);
+    setShowReceiptUpload(true);
   };
   
   const handleReceiptPromptCancel = () => {
@@ -112,6 +112,12 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       return workOrders.find(wo => wo.id === watchEntityId)?.title || '';
     }
     return projects.find(p => p.id === watchEntityId)?.title || '';
+  };
+  
+  // Handle closing the receipt upload form and proceeding to confirmation
+  const handleReceiptUploadComplete = () => {
+    setShowReceiptUpload(false);
+    setShowConfirmation(true);
   };
   
   return (
@@ -142,7 +148,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
           
           <NotesField control={form.control} />
           
-          {watchHasReceipts && (
+          {watchHasReceipts && showReceiptUpload && (
             <Card>
               <CardContent className="pt-4">
                 <ReceiptUploader
@@ -166,6 +172,15 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
                       metadata={receiptMetadata}
                       updateMetadata={updateReceiptMetadata}
                     />
+                    <div className="mt-4 flex justify-end">
+                      <Button 
+                        type="button" 
+                        onClick={handleReceiptUploadComplete}
+                        className="bg-[#0485ea] hover:bg-[#0375d1]"
+                      >
+                        Continue
+                      </Button>
+                    </div>
                   </>
                 )}
               </CardContent>

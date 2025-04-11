@@ -1,172 +1,164 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Receipt, Download, ExternalLink, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, FileText, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TimeEntryReceipt } from '@/types/timeTracking';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
 
 interface TimeEntryReceiptsProps {
-  timeEntryId: string;
-  onViewReceipt?: (receipt: TimeEntryReceipt) => void;
+  timeEntryId?: string;
 }
 
-const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ 
-  timeEntryId,
-  onViewReceipt 
-}) => {
+const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) => {
+  const [loading, setLoading] = useState(true);
   const [receipts, setReceipts] = useState<TimeEntryReceipt[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
+  
   useEffect(() => {
-    const fetchReceipts = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // First get the document IDs linked to this time entry
-        const { data: linkData, error: linkError } = await supabase
-          .from('time_entry_document_links')
-          .select('document_id')
-          .eq('time_entry_id', timeEntryId);
-        
-        if (linkError) throw linkError;
-        
-        if (!linkData || linkData.length === 0) {
-          setReceipts([]);
-          return;
-        }
-        
-        // Get the documents with their URLs
-        const documentIds = linkData.map(link => link.document_id);
-        const { data: docData, error: docError } = await supabase
-          .from('documents_with_urls')
-          .select('*')
-          .in('document_id', documentIds);
-        
-        if (docError) throw docError;
-        
-        // Map to the right format
-        const formattedReceipts = (docData || []).map(doc => ({
-          id: doc.document_id,
-          time_entry_id: timeEntryId,
-          file_name: doc.file_name,
-          file_type: doc.file_type,
-          file_size: doc.file_size,
-          storage_path: doc.storage_path,
-          uploaded_at: doc.created_at,
-          document_id: doc.document_id,
-          url: doc.url,
-          expense_type: doc.expense_type,
-          vendor_id: doc.vendor_id,
-          amount: doc.amount
-        }));
-        
-        setReceipts(formattedReceipts);
-      } catch (error: any) {
-        console.error('Error fetching receipts:', error);
-        setError(error.message || 'Failed to load receipts');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     if (timeEntryId) {
       fetchReceipts();
     }
   }, [timeEntryId]);
-
-  const handleDownload = async (receipt: TimeEntryReceipt) => {
+  
+  const fetchReceipts = async () => {
+    if (!timeEntryId) return;
+    
+    setLoading(true);
+    setError(null);
+    
     try {
-      // If URL is available, open it directly
-      if (receipt.url) {
-        window.open(receipt.url, '_blank');
+      // First get document IDs linked to this time entry
+      const { data: links, error: linksError } = await supabase
+        .from('time_entry_document_links')
+        .select('document_id')
+        .eq('time_entry_id', timeEntryId);
+        
+      if (linksError) throw linksError;
+      
+      if (!links || links.length === 0) {
+        setReceipts([]);
+        setLoading(false);
         return;
       }
       
-      // Otherwise, try to generate a URL
-      const { data, error } = await supabase.storage
-        .from('construction_documents')
-        .createSignedUrl(receipt.storage_path, 60);
+      // Extract document IDs
+      const documentIds = links.map(link => link.document_id);
       
-      if (error) throw error;
+      // Get document details
+      const { data: documents, error: documentsError } = await supabase
+        .from('documents')
+        .select('*')
+        .in('document_id', documentIds);
+        
+      if (documentsError) throw documentsError;
       
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, '_blank');
-      } else {
-        throw new Error('Could not generate download URL');
-      }
-    } catch (error: any) {
-      console.error('Error downloading receipt:', error);
-      toast({
-        title: 'Download Error',
-        description: error.message || 'Failed to download the receipt',
-        variant: 'destructive',
-      });
+      // Generate signed URLs for each document
+      const receiptResults = await Promise.all(
+        (documents || []).map(async (doc) => {
+          let url = null;
+          
+          try {
+            const { data: signedUrl } = await supabase
+              .storage
+              .from('documents')
+              .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
+            
+            url = signedUrl?.signedUrl;
+          } catch (urlError) {
+            console.error('Error generating signed URL:', urlError);
+          }
+          
+          return {
+            id: doc.document_id,
+            time_entry_id: timeEntryId,
+            file_name: doc.file_name,
+            file_type: doc.file_type,
+            file_size: doc.file_size,
+            storage_path: doc.storage_path,
+            uploaded_at: doc.created_at,
+            document_id: doc.document_id,
+            url: url,
+            expense_type: doc.expense_type,
+            vendor_id: doc.vendor_id,
+            amount: doc.amount
+          };
+        })
+      );
+      
+      setReceipts(receiptResults);
+    } catch (err: any) {
+      console.error('Error fetching receipts:', err);
+      setError(err.message || 'Failed to fetch receipts');
+    } finally {
+      setLoading(false);
     }
   };
-
+  
+  const handleOpenReceipt = (url: string | undefined) => {
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
+  
   if (loading) {
     return (
-      <div className="flex items-center text-sm text-muted-foreground">
-        <Receipt className="h-4 w-4 mr-1" />
-        Loading receipts...
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
       </div>
     );
   }
-
+  
   if (error) {
     return (
-      <div className="flex items-center text-sm text-destructive">
-        <AlertCircle className="h-4 w-4 mr-1" />
-        {error}
+      <div className="flex flex-col items-center py-8 text-center">
+        <AlertCircle className="h-10 w-10 text-red-500 mb-2" />
+        <h3 className="text-lg font-semibold mb-1">Error loading receipts</h3>
+        <p className="text-muted-foreground">{error}</p>
       </div>
     );
   }
-
+  
   if (receipts.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium">Receipts</div>
-      <div className="flex flex-wrap gap-2">
-        {receipts.map((receipt) => (
-          <Tooltip key={receipt.id}>
-            <TooltipTrigger asChild>
-              <div className="group relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-auto py-1 px-2 text-xs flex items-center"
-                  onClick={() => onViewReceipt ? onViewReceipt(receipt) : handleDownload(receipt)}
-                >
-                  <Receipt className="h-3 w-3 mr-1" />
-                  <span className="max-w-[120px] truncate">{receipt.file_name}</span>
-                </Button>
-                
-                {receipt.expense_type && (
-                  <Badge variant="outline" className="absolute -top-2 -right-2 text-[10px] px-1 py-0 h-4">
-                    {receipt.expense_type}
-                  </Badge>
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <div className="text-xs space-y-1">
-                <div>{receipt.file_name}</div>
-                {receipt.expense_type && <div>Type: {receipt.expense_type}</div>}
-                {receipt.amount && <div>Amount: ${receipt.amount.toFixed(2)}</div>}
-                <div className="italic">Click to {onViewReceipt ? 'view' : 'download'}</div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        ))}
+    return (
+      <div className="flex flex-col items-center py-8 text-center">
+        <FileText className="h-10 w-10 text-muted-foreground mb-2" />
+        <h3 className="text-lg font-semibold mb-1">No receipts found</h3>
+        <p className="text-muted-foreground">This time entry doesn't have any receipts attached.</p>
       </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      {receipts.map((receipt) => (
+        <div 
+          key={receipt.id} 
+          className="border rounded-md p-4 flex justify-between items-center"
+        >
+          <div>
+            <h4 className="font-medium">{receipt.file_name}</h4>
+            <div className="text-sm text-muted-foreground">
+              {receipt.expense_type && (
+                <span className="mr-2">Type: {receipt.expense_type}</span>
+              )}
+              {receipt.amount !== undefined && (
+                <span>Amount: {formatCurrency(receipt.amount)}</span>
+              )}
+            </div>
+          </div>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleOpenReceipt(receipt.url)}
+            disabled={!receipt.url}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            View
+          </Button>
+        </div>
+      ))}
     </div>
   );
 };

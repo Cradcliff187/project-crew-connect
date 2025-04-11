@@ -24,12 +24,39 @@ const TimeEntryDeleteDialog: React.FC<TimeEntryDeleteDialogProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   
-  // For now, this is a simple placeholder component that will be implemented later
   const handleDelete = async () => {
+    if (!timeEntryId) {
+      toast({
+        title: "Error",
+        description: "No time entry ID provided",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsDeleting(true);
     
     try {
-      // Implementation will be added later
+      // Delete any related expense entries
+      await supabase
+        .from('expenses')
+        .delete()
+        .eq('time_entry_id', timeEntryId);
+      
+      // Delete any document links
+      await supabase
+        .from('time_entry_document_links')
+        .delete()
+        .eq('time_entry_id', timeEntryId);
+      
+      // Finally, delete the time entry
+      const { error } = await supabase
+        .from('time_entries')
+        .delete()
+        .eq('id', timeEntryId);
+        
+      if (error) throw error;
+      
       toast({
         title: "Time entry deleted",
         description: "Time entry has been successfully deleted."

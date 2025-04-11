@@ -1,314 +1,179 @@
 
-import React, { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { useState } from 'react';
 import { TimeEntry } from '@/types/timeTracking';
-import { Button } from '@/components/ui/button';
-import { formatTimeRange } from '@/lib/utils';
-import { format } from 'date-fns';
-import { Edit, Trash2, Receipt, Clock } from 'lucide-react';
-import TimeEntryEditDialog from './TimeEntryEditDialog';
-import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
-import DocumentUploadDirectSheet from './DocumentUploadDirectSheet';
-import { MobileDocumentUploadButton } from '@/components/documents';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2, Calendar, MoreHorizontal } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { groupEntriesByDate, formatDateHeading, formatTime } from './utils/timeUtils';
+import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
+import TimeEntryEditDialog from './TimeEntryEditDialog';
+import TimeEntryReceipts from './TimeEntryReceipts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useRouter } from 'next/navigation';
 
 interface TimeEntryListProps {
   entries: TimeEntry[];
   isLoading: boolean;
   onEntryChange: () => void;
-  isMobile?: boolean;
 }
 
-export const TimeEntryList = ({
-  entries,
-  isLoading,
-  onEntryChange,
-  isMobile = false
-}: TimeEntryListProps) => {
-  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
-  const [deletingEntry, setDeletingEntry] = useState<TimeEntry | null>(null);
-  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
-  const [currentEntryId, setCurrentEntryId] = useState<string | null>(null);
+export function TimeEntryList({ entries, isLoading, onEntryChange }: TimeEntryListProps) {
+  const router = useRouter();
+  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
   
-  const handleEditClick = (entry: TimeEntry) => {
-    setEditingEntry(entry);
-  };
+  // Group entries by date
+  const groupedEntries = groupEntriesByDate(entries);
   
-  const handleDeleteClick = (entry: TimeEntry) => {
-    setDeletingEntry(entry);
-  };
+  // Get dates sorted in descending order (newest first)
+  const dates = Object.keys(groupedEntries).sort((a, b) => 
+    new Date(b).getTime() - new Date(a).getTime()
+  );
   
-  const handleReceiptClick = (entry: TimeEntry) => {
-    setCurrentEntryId(entry.id);
-    setShowReceiptUpload(true);
-  };
-  
-  const handleReceiptUploadSuccess = () => {
-    setShowReceiptUpload(false);
-    onEntryChange();
-  };
-  
-  // Helper function to safely format a date
-  const safeFormatDate = (dateStr: string) => {
-    try {
-      return format(new Date(dateStr), 'MMM d, yyyy');
-    } catch (error) {
-      console.error('Error formatting date:', error, dateStr);
-      return dateStr;
+  const handleViewDetails = (entityType: string, entityId: string) => {
+    if (entityType === 'project') {
+      router.push(`/projects/${entityId}`);
+    } else if (entityType === 'work_order') {
+      router.push(`/work-orders/${entityId}`);
     }
+  };
+  
+  const handleEditEntry = (entry: TimeEntry) => {
+    setSelectedEntry(entry);
+    setShowEditDialog(true);
+  };
+  
+  const handleDeleteEntry = (entry: TimeEntry) => {
+    setSelectedEntry(entry);
+    setShowDeleteDialog(true);
+  };
+  
+  const handleViewReceipts = (entry: TimeEntry) => {
+    setSelectedEntry(entry);
+    setShowReceiptsDialog(true);
   };
   
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {Array(5).fill(0).map((_, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <Skeleton className="h-10 w-full" />
-          </div>
-        ))}
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
       </div>
     );
   }
   
   if (entries.length === 0) {
     return (
-      <div className="py-8 text-center">
-        <Clock className="h-12 w-12 mx-auto text-muted-foreground/60 mb-3" />
-        <p className="text-muted-foreground">No time entries for this period</p>
-      </div>
-    );
-  }
-  
-  if (isMobile) {
-    return (
-      <div className="space-y-4">
-        {entries.map((entry) => (
-          <Card key={entry.id} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-4">
-                <div className="flex justify-between mb-2">
-                  <div className="font-medium">
-                    {entry.entity_name || entry.entity_id}
-                  </div>
-                  <Badge className="ml-2 bg-[#0485ea]">
-                    {entry.hours_worked} hrs
-                  </Badge>
-                </div>
-                
-                <div className="text-sm text-muted-foreground mb-2">
-                  {safeFormatDate(entry.date_worked)} • {formatTimeRange(entry.start_time, entry.end_time)}
-                </div>
-                
-                {entry.notes && (
-                  <div className="text-sm mt-1">
-                    {entry.notes}
-                  </div>
-                )}
-                
-                {entry.has_receipts && (
-                  <div className="flex items-center text-xs text-[#0485ea] mt-2">
-                    <Receipt className="h-3 w-3 mr-1" />
-                    Has receipt(s)
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex border-t">
-                <Button 
-                  variant="ghost" 
-                  className="flex-1 rounded-none h-10 text-xs" 
-                  onClick={() => handleEditClick(entry)}
-                >
-                  <Edit className="h-3 w-3 mr-1" />
-                  Edit
-                </Button>
-                
-                <div className="border-r h-10" />
-                
-                <MobileDocumentUploadButton
-                  entityType="TIME_ENTRY"
-                  entityId={entry.id}
-                  onSuccess={onEntryChange}
-                  buttonVariant="ghost"
-                  buttonText="Receipt"
-                  className="flex-1 rounded-none h-10 text-xs"
-                  isReceiptOnly={true}
-                />
-                
-                <div className="border-r h-10" />
-                
-                <Button 
-                  variant="ghost" 
-                  className="flex-1 rounded-none h-10 text-xs text-destructive hover:text-destructive" 
-                  onClick={() => handleDeleteClick(entry)}
-                >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {editingEntry && (
-          <TimeEntryEditDialog
-            open={!!editingEntry}
-            onOpenChange={(open) => !open && setEditingEntry(null)}
-            timeEntryId={editingEntry.id}
-            onSuccess={() => {
-              setEditingEntry(null);
-              onEntryChange();
-            }}
-            entry={editingEntry}
-          />
-        )}
-        
-        {deletingEntry && (
-          <TimeEntryDeleteDialog
-            open={!!deletingEntry}
-            onOpenChange={(open) => !open && setDeletingEntry(null)}
-            timeEntryId={deletingEntry.id}
-            onSuccess={() => {
-              setDeletingEntry(null);
-              onEntryChange();
-            }}
-            entry={deletingEntry}
-          />
-        )}
-        
-        {currentEntryId && (
-          <DocumentUploadDirectSheet
-            open={showReceiptUpload}
-            onOpenChange={setShowReceiptUpload}
-            entityType="TIME_ENTRY"
-            entityId={currentEntryId}
-            onSuccess={handleReceiptUploadSuccess}
-            title="Upload Receipt"
-            isReceiptUploadOnly={true}
-            description="Upload a receipt for this time entry"
-            showHelpText={false}
-          />
-        )}
+      <div className="text-center p-4 border-2 border-dashed rounded-lg mt-6">
+        <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+        <h3 className="text-lg font-medium text-muted-foreground">No time entries found</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Use the "Log Time" button to track your work hours.
+        </p>
       </div>
     );
   }
   
   return (
-    <>
-      <ScrollArea className="h-[45vh]">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Entity</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead className="text-right">Hours</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead className="w-[120px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {entries.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell className="font-medium">
-                  {safeFormatDate(entry.date_worked)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    {entry.entity_name || entry.entity_id}
-                    {entry.has_receipts && (
-                      <Receipt className="h-4 w-4 ml-2 text-[#0485ea]" />
+    <div className="space-y-6">
+      {dates.map(date => (
+        <Card key={date}>
+          <div className="bg-[#0485ea]/10 px-4 py-2 font-semibold">
+            {formatDateHeading(date)}
+          </div>
+          
+          <CardContent className="p-0">
+            {groupedEntries[date].map((entry) => (
+              <div key={entry.id} className="p-4 border-b last:border-0">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">
+                      {entry.entity_name || 
+                        (entry.entity_type === 'project' ? 'Project' : 'Work Order')}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatTime(entry.start_time)} - {formatTime(entry.end_time)} • 
+                      {entry.hours_worked.toFixed(1)} hours
+                    </div>
+                    {entry.employee_name && (
+                      <div className="text-sm">Employee: {entry.employee_name}</div>
+                    )}
+                    {entry.notes && (
+                      <div className="text-sm mt-1 text-muted-foreground">
+                        {entry.notes}
+                      </div>
                     )}
                   </div>
-                </TableCell>
-                <TableCell>{formatTimeRange(entry.start_time, entry.end_time)}</TableCell>
-                <TableCell className="text-right">{entry.hours_worked}</TableCell>
-                <TableCell className="max-w-[200px] truncate">{entry.notes}</TableCell>
-                <TableCell>
-                  <div className="flex space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-8 w-8" 
-                      onClick={() => handleEditClick(entry)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-8 w-8 text-[#0485ea]" 
-                      onClick={() => handleReceiptClick(entry)}
-                    >
-                      <Receipt className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive" 
-                      onClick={() => handleDeleteClick(entry)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleViewDetails(entry.entity_type, entry.entity_id)}>
+                        View {entry.entity_type === 'work_order' ? 'Work Order' : 'Project'}
+                      </DropdownMenuItem>
+                      {entry.has_receipts && (
+                        <DropdownMenuItem onClick={() => handleViewReceipts(entry)}>
+                          View Receipts
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => handleEditEntry(entry)}>
+                        Edit Entry
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-red-600"
+                        onClick={() => handleDeleteEntry(entry)}
+                      >
+                        Delete Entry
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+          </CardContent>
+        </Card>
+      ))}
       
-      {editingEntry && (
-        <TimeEntryEditDialog
-          open={!!editingEntry}
-          onOpenChange={(open) => !open && setEditingEntry(null)}
-          timeEntryId={editingEntry.id}
-          onSuccess={() => {
-            setEditingEntry(null);
-            onEntryChange();
-          }}
-          entry={editingEntry}
-        />
-      )}
+      {/* Delete Dialog */}
+      <TimeEntryDeleteDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        timeEntryId={selectedEntry?.id || ''}
+        entry={selectedEntry || undefined}
+        onSuccess={onEntryChange}
+      />
       
-      {deletingEntry && (
-        <TimeEntryDeleteDialog
-          open={!!deletingEntry}
-          onOpenChange={(open) => !open && setDeletingEntry(null)}
-          timeEntryId={deletingEntry.id}
-          onSuccess={() => {
-            setDeletingEntry(null);
-            onEntryChange();
-          }}
-          entry={deletingEntry}
-        />
-      )}
+      {/* Edit Dialog */}
+      <TimeEntryEditDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        timeEntryId={selectedEntry?.id || ''}
+        entry={selectedEntry || undefined}
+        onSuccess={onEntryChange}
+      />
       
-      {currentEntryId && (
-        <DocumentUploadDirectSheet
-          open={showReceiptUpload}
-          onOpenChange={setShowReceiptUpload}
-          entityType="TIME_ENTRY"
-          entityId={currentEntryId}
-          onSuccess={handleReceiptUploadSuccess}
-          title="Upload Receipt"
-          isReceiptUploadOnly={true}
-          description="Upload a receipt for this time entry"
-          showHelpText={false}
-        />
-      )}
-    </>
+      {/* Receipts Dialog */}
+      <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Time Entry Receipts</DialogTitle>
+          </DialogHeader>
+          <TimeEntryReceipts 
+            timeEntryId={selectedEntry?.id}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
   );
-};
+}

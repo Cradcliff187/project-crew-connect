@@ -48,7 +48,29 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 <TimePicker
                   label=""
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    
+                    // Get current end time from form
+                    const endTimeValue = control._formValues[endFieldName];
+                    if (endTimeValue) {
+                      try {
+                        // Calculate hours worked and update form field
+                        const calculatedHours = calculateHours(value, endTimeValue);
+                        if (!isNaN(calculatedHours) && calculatedHours > 0) {
+                          control._formValues[hoursFieldName] = calculatedHours;
+                          if (control._fields[hoursFieldName]) {
+                            control._fields[hoursFieldName]._subjects.state.next({
+                              name: hoursFieldName,
+                              value: calculatedHours
+                            });
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Error calculating hours:', error);
+                      }
+                    }
+                  }}
                 />
               </FormItem>
             )}
@@ -63,7 +85,29 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 <TimePicker
                   label=""
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    
+                    // Get current start time from form
+                    const startTimeValue = control._formValues[startFieldName];
+                    if (startTimeValue) {
+                      try {
+                        // Calculate hours worked and update form field
+                        const calculatedHours = calculateHours(startTimeValue, value);
+                        if (!isNaN(calculatedHours) && calculatedHours > 0) {
+                          control._formValues[hoursFieldName] = calculatedHours;
+                          if (control._fields[hoursFieldName]) {
+                            control._fields[hoursFieldName]._subjects.state.next({
+                              name: hoursFieldName,
+                              value: calculatedHours
+                            });
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Error calculating hours:', error);
+                      }
+                    }
+                  }}
                 />
               </FormItem>
             )}
@@ -71,7 +115,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         </div>
         
         {hoursFieldName && (
-          <FormField
+          <Controller
             control={control}
             name={hoursFieldName}
             render={({ field }) => (

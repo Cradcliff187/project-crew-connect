@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Receipt, X } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 
 interface ReceiptPromptDialogProps {
   open: boolean;
@@ -17,38 +17,30 @@ const ReceiptPromptDialog: React.FC<ReceiptPromptDialogProps> = ({
   onConfirm,
   onCancel
 }) => {
-  const handleConfirm = () => {
-    onConfirm();
-  };
-  
-  const handleCancel = () => {
-    onCancel();
-  };
-  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Receipts</DialogTitle>
-          <DialogDescription>
-            Would you like to attach receipts to this time entry?
+          <div className="mx-auto bg-gray-100 p-3 rounded-full w-fit">
+            <Receipt className="h-6 w-6 text-[#0485ea]" />
+          </div>
+          <DialogTitle className="text-center pt-2">Add Receipt?</DialogTitle>
+          <DialogDescription className="text-center">
+            Do you have any receipts for this time entry that you would like to upload?
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 flex justify-center">
-          <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center">
-            <Receipt className="h-8 w-8 text-[#0485ea]" />
-          </div>
-        </div>
-        
-        <div className="flex flex-col gap-3 mt-4">
-          <Button onClick={handleConfirm} className="bg-[#0485ea] hover:bg-[#0375d1]">
-            Yes, Add Receipts
+        <DialogFooter className="sm:justify-center gap-2 pt-2">
+          <Button variant="outline" onClick={onCancel}>
+            No, Skip
           </Button>
-          <Button variant="outline" onClick={handleCancel}>
-            No, Skip This Step
+          <Button 
+            className="bg-[#0485ea] hover:bg-[#0375d1]"
+            onClick={onConfirm}
+          >
+            Yes, Upload Receipt
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
