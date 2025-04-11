@@ -46,19 +46,47 @@ export const useDocumentNavigation = () => {
         case 'ESTIMATE':
           navigate(`/estimates?id=${document.entity_id}`);
           break;
-        case 'MAINTENANCE_WORK_ORDER':
-          navigate(`/maintenance/work-orders/${document.entity_id}`);
-          break;
-        case 'CHANGE_ORDER':
-          // For change orders, we need to determine if it's for a project or other entity
-          // This might need additional context from the document metadata
-          navigate(`/change-orders?id=${document.entity_id}`);
-          break;
-        case 'INVOICE':
-          navigate(`/invoices?id=${document.entity_id}`);
-          break;
         case 'EXPENSE':
-          navigate(`/expenses?id=${document.entity_id}`);
+          // For expenses, check if there's parent entity information
+          if (document.parent_entity_type && document.parent_entity_id) {
+            // Navigate to the parent entity instead
+            switch (document.parent_entity_type.toUpperCase()) {
+              case 'PROJECT':
+                navigate(`/projects/${document.parent_entity_id}`);
+                break;
+              case 'WORK_ORDER':
+                navigate(`/work-orders/${document.parent_entity_id}`);
+                break;
+              default:
+                navigate(`/expenses?id=${document.entity_id}`);
+            }
+          } else {
+            navigate(`/expenses?id=${document.entity_id}`);
+          }
+          break;
+        case 'TIME_ENTRY':
+          // For time entries, check if there's parent entity information
+          if (document.parent_entity_type && document.parent_entity_id) {
+            // Navigate to the parent entity instead
+            switch (document.parent_entity_type.toUpperCase()) {
+              case 'PROJECT':
+                navigate(`/projects/${document.parent_entity_id}`);
+                break;
+              case 'WORK_ORDER':
+                navigate(`/work-orders/${document.parent_entity_id}`);
+                break;
+              default:
+                toast({
+                  title: 'Navigation',
+                  description: 'Time entries are viewed within their parent entities',
+                });
+            }
+          } else {
+            toast({
+              title: 'Navigation',
+              description: 'Time entries are viewed within their parent entities',
+            });
+          }
           break;
         default:
           // Default to document detail page

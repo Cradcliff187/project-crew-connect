@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -12,12 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, Grid2X2, List } from 'lucide-react';
 import DocumentsTable from './DocumentsTable';
 import DocumentGrid from './DocumentGrid';
+import { Document, EntityType } from './schemas/documentSchema';
+import { categorizeDocuments } from './utils/documentUtils';
 import useDocumentManager from './hooks/useDocumentManager';
-import { EntityType } from './schemas/documentSchema';
 import DocumentUploadDialog from './DocumentUploadDialog';
 import DocumentDetailView from './DocumentDetailView';
 import DocumentsFilter from './filters/DocumentsFilter';
-import useDocumentFilters from './hooks/useDocumentFilters';
 import DocumentMetrics from './DocumentMetrics';
 import DocumentUploadButton from './DocumentUploadButton';
 
@@ -57,7 +56,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
     updateFilters,
     resetFilters,
     filteredDocuments
-  } = useDocumentFilters(documents);
+  } = DocumentsFilter(documents);
 
   // Reset filters when entity changes
   useEffect(() => {

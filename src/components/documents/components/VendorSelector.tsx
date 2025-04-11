@@ -1,155 +1,117 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Control } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { DocumentUploadFormValues, VendorType } from '../schemas/documentSchema';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
-  vendorType: VendorType;
+  vendorType?: string;
   prefillVendorId?: string;
-  onAddVendorClick?: () => void;
 }
 
 interface Vendor {
-  id: string;
-  name: string;
+  vendorid: string;
+  vendorname: string;
+}
+
+interface Subcontractor {
+  subid: string;
+  subname: string;
 }
 
 const VendorSelector: React.FC<VendorSelectorProps> = ({ 
   control, 
-  vendorType, 
-  prefillVendorId,
-  onAddVendorClick
+  vendorType = 'vendor',
+  prefillVendorId 
 }) => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [loading, setLoading] = useState(false);
-  
+  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const fetchVendors = async () => {
+    const loadVendors = async () => {
       setLoading(true);
       try {
-        let data: Vendor[] = [];
-        
-        if (vendorType === 'vendor') {
-          const { data: vendorsData } = await supabase
+        if (vendorType === 'vendor' || vendorType === 'other') {
+          const { data, error } = await supabase
             .from('vendors')
             .select('vendorid, vendorname')
             .order('vendorname', { ascending: true });
-          
-          data = (vendorsData || []).map(v => ({
-            id: v.vendorid,
-            name: v.vendorname || v.vendorid
-          }));
-        } else if (vendorType === 'subcontractor') {
-          const { data: subcontractorsData } = await supabase
+
+          if (error) throw error;
+          setVendors(data || []);
+        }
+
+        if (vendorType === 'subcontractor') {
+          const { data, error } = await supabase
             .from('subcontractors')
             .select('subid, subname')
             .order('subname', { ascending: true });
-          
-          data = (subcontractorsData || []).map(s => ({
-            id: s.subid,
-            name: s.subname || s.subid
-          }));
+
+          if (error) throw error;
+          setSubcontractors(data || []);
         }
-        
-        setVendors(data);
-      } catch (error) {
-        console.error(`Error fetching ${vendorType}s:`, error);
+      } catch (err) {
+        console.error('Error loading vendors/subcontractors:', err);
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchVendors();
+
+    loadVendors();
   }, [vendorType]);
-  
+
+  // If there's a prefill vendor ID, set it when component mounts
   useEffect(() => {
     if (prefillVendorId) {
-      // Wait for vendors to be loaded before setting the value
-      if (vendors.length > 0 && vendors.some(v => v.id === prefillVendorId)) {
-        // If we find the vendor in our list, we'll set it
-        console.log(`Setting prefilled vendor ID: ${prefillVendorId}`);
-      }
+      console.log('Setting prefilled vendor ID:', prefillVendorId);
+      // This should be handled by the form's defaultValues, but we're doing it here as a fallback
     }
-  }, [prefillVendorId, vendors]);
-  
-  const entityLabel = vendorType === 'vendor' ? 'Vendor' : 
-                     vendorType === 'subcontractor' ? 'Subcontractor' : 
-                     'Supplier';
-  
+  }, [prefillVendorId]);
+
   return (
     <FormField
       control={control}
       name="metadata.vendorId"
       render={({ field }) => (
         <FormItem>
-          <div className="flex justify-between items-center">
-            <FormLabel>{entityLabel}</FormLabel>
-            {onAddVendorClick && (
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 text-xs text-[#0485ea]"
-                onClick={onAddVendorClick}
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Add New
-              </Button>
-            )}
-          </div>
-          {loading ? (
-            <div className="flex items-center space-x-2 h-10 px-3 border rounded-md">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Loading {entityLabel.toLowerCase()}s...</span>
-            </div>
-          ) : vendors.length > 0 ? (
-            <Select
-              value={field.value}
-              onValueChange={field.onChange}
-              defaultValue={prefillVendorId}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={`Select ${entityLabel.toLowerCase()}`} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {vendors.map((vendor) => (
-                  <SelectItem key={vendor.id} value={vendor.id}>
-                    {vendor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <div className="flex items-center justify-between h-10 px-4 border rounded-md bg-muted/20">
-              <span className="text-sm text-muted-foreground">No {entityLabel.toLowerCase()}s found</span>
-              {onAddVendorClick && (
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 text-xs text-[#0485ea]"
-                  onClick={onAddVendorClick}
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add
-                </Button>
-              )}
-            </div>
-          )}
+          <FormLabel>
+            {vendorType === 'vendor' ? 'Vendor' : 
+             vendorType === 'subcontractor' ? 'Subcontractor' : 'Provider'}
+          </FormLabel>
+          <Select
+            value={field.value}
+            onValueChange={field.onChange}
+            disabled={loading}
+          >
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              <SelectItem value="add-new" className="text-[#0485ea] flex items-center">
+                <Plus className="h-4 w-4 mr-2" />
+                Add New {vendorType === 'subcontractor' ? 'Subcontractor' : 'Vendor'}
+              </SelectItem>
+              
+              {vendorType === 'vendor' && vendors.map(vendor => (
+                <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
+                  {vendor.vendorname}
+                </SelectItem>
+              ))}
+              
+              {vendorType === 'subcontractor' && subcontractors.map(sub => (
+                <SelectItem key={sub.subid} value={sub.subid}>
+                  {sub.subname}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <FormMessage />
         </FormItem>
       )}

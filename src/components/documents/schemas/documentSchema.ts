@@ -10,6 +10,7 @@ export const documentCategories = [
   'insurance',
   'certification',
   'photo',
+  'specification',
   'other'
 ] as const;
 
@@ -73,6 +74,9 @@ export const documentMetadataSchema = z.object({
   vendorId: z.string().optional(),
   vendorType: z.enum(vendorTypes).optional(),
   expenseType: z.enum(expenseTypes).optional(),
+  budget_item_id: z.string().optional(),
+  parent_entity_type: z.enum(entityTypes).optional(),
+  parent_entity_id: z.string().optional(),
 });
 
 // Define the form schema with validation for document upload
@@ -122,7 +126,14 @@ export const documentSchema = z.object({
   
   // Add the missing fields required for the type
   is_latest_version: z.boolean().default(true),
-  mime_type: z.string().default('application/octet-stream')
+  mime_type: z.string().default('application/octet-stream'),
+  
+  // Add budget item ID
+  budget_item_id: z.string().optional(),
+  
+  // Add parent entity fields
+  parent_entity_type: z.string().optional(),
+  parent_entity_id: z.string().optional(),
 });
 
 export type DocumentCategory = typeof documentCategories[number];
@@ -133,7 +144,15 @@ export type DocumentMetadata = z.infer<typeof documentMetadataSchema>;
 export type DocumentUploadFormValues = z.infer<typeof documentUploadSchema>;
 export type Document = z.infer<typeof documentSchema>;
 
+// Define the WorkOrderDocument type that extends Document with required url field
+export interface WorkOrderDocument extends Omit<Document, 'url'> {
+  url: string; // Make url required in WorkOrderDocument
+  is_receipt?: boolean;
+}
+
 // Helper function to get available categories for a specific entity type
 export const getEntityCategories = (entityType: string): DocumentCategory[] => {
   return (entityCategoryMap[entityType] || documentCategories) as DocumentCategory[];
 };
+
+// Don't re-export types that cause conflicts

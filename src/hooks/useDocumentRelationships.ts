@@ -6,7 +6,7 @@ import { Document } from '@/components/documents/schemas/documentSchema';
 
 export type RelationshipType = 'REFERENCE' | 'VERSION' | 'ATTACHMENT' | 'RELATED' | 'SUPPLEMENT';
 
-export type DocumentRelationship = {
+export interface DocumentRelationship {
   id: string;
   source_document_id: string;
   target_document_id: string;
@@ -19,13 +19,13 @@ export type DocumentRelationship = {
   updated_at: string;
   source_document?: Document;
   target_document?: Document;
-};
+}
 
 export interface CreateRelationshipParams {
   sourceDocumentId: string;
   targetDocumentId: string;
   relationshipType: RelationshipType;
-  metadata?: {
+  relationship_metadata?: {
     description?: string;
     created_by?: string;
   };
@@ -101,23 +101,30 @@ export const useDocumentRelationships = (documentId?: string) => {
           : 'RELATED'; // Default to RELATED if type is invalid
       };
       
-      // Process source relationships with proper type casting
-      const typedSourceRelationships = sourceRelationships?.map(rel => ({
-        ...rel,
-        relationship_type: validateRelationshipType(rel.relationship_type)
-      })) || [];
+      // Process relationships safely
+      const typedSourceRelationships = sourceRelationships ? sourceRelationships.map(rel => {
+        return {
+          ...rel,
+          relationship_type: validateRelationshipType(rel.relationship_type),
+          // Cast the document to ensure it has the correct shape
+          target_document: rel.target_document as unknown as Document
+        };
+      }) : [];
       
-      // Process target relationships with proper type casting
-      const typedTargetRelationships = targetRelationships?.map(rel => ({
-        ...rel,
-        relationship_type: validateRelationshipType(rel.relationship_type)
-      })) || [];
+      const typedTargetRelationships = targetRelationships ? targetRelationships.map(rel => {
+        return {
+          ...rel,
+          relationship_type: validateRelationshipType(rel.relationship_type),
+          // Cast the document to ensure it has the correct shape
+          source_document: rel.source_document as unknown as Document
+        };
+      }) : [];
       
-      // Combine and set relationships with proper typing
+      // Combine relationships safely
       setRelationships([
         ...typedSourceRelationships,
         ...typedTargetRelationships
-      ] as DocumentRelationship[]);
+      ]);
     } catch (err: any) {
       console.error('Error fetching document relationships:', err);
       setError(err.message);
@@ -135,7 +142,7 @@ export const useDocumentRelationships = (documentId?: string) => {
     sourceDocumentId,
     targetDocumentId,
     relationshipType,
-    metadata
+    relationship_metadata
   }: CreateRelationshipParams) => {
     setLoading(true);
     setError(null);
@@ -166,7 +173,7 @@ export const useDocumentRelationships = (documentId?: string) => {
           source_document_id: sourceDocumentId,
           target_document_id: targetDocumentId,
           relationship_type: relationshipType,
-          relationship_metadata: metadata
+          relationship_metadata: relationship_metadata
         })
         .select()
         .single();
