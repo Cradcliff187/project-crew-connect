@@ -1,15 +1,14 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Briefcase, Building, Loader2, AlertCircle } from 'lucide-react';
+import { Briefcase, Building, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Entity } from '@/types/timeTracking';
 
 interface EntitySelectorProps {
   entityType: 'work_order' | 'project';
   entityId: string;
-  workOrders: Entity[];
-  projects: Entity[];
+  workOrders: { id: string; name: string }[];
+  projects: { id: string; name: string }[];
   isLoading: boolean;
   onChange: (value: string) => void;
   error?: string;
@@ -38,44 +37,27 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           <span className="text-muted-foreground">Loading...</span>
         </div>
       ) : (
-        <>
-          <Select
-            value={entityId}
-            onValueChange={onChange}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {entities.length > 0 ? (
-                entities.map(entity => (
-                  <SelectItem key={entity.id} value={entity.id}>
-                    {entity.name}
-                  </SelectItem>
-                ))
-              ) : (
-                <div className="py-2 px-2 text-center text-sm text-muted-foreground">
-                  No {entityType === 'work_order' ? 'work orders' : 'projects'} found
-                </div>
-              )}
-            </SelectContent>
-          </Select>
-          
-          {entities.length === 0 && (
-            <div className="text-xs flex items-center text-amber-600 gap-1">
-              <AlertCircle className="h-3 w-3" />
-              <span>
-                No {entityType === 'work_order' ? 'work orders' : 'projects'} available in the database
-              </span>
-            </div>
-          )}
-          
-          {entities.length > 0 && (
-            <div className="text-xs text-gray-400">
-              {entities.length} {entityType === 'work_order' ? 'work orders' : 'projects'} available
-            </div>
-          )}
-        </>
+        <Select
+          value={entityId}
+          onValueChange={onChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`} />
+          </SelectTrigger>
+          <SelectContent>
+            {entities.length > 0 ? (
+              entities.map(entity => (
+                <SelectItem key={entity.id} value={entity.id}>
+                  {entity.name}
+                </SelectItem>
+              ))
+            ) : (
+              <div className="py-2 px-2 text-center text-sm text-muted-foreground">
+                No {entityType === 'work_order' ? 'work orders' : 'projects'} found
+              </div>
+            )}
+          </SelectContent>
+        </Select>
       )}
       
       {error && <p className="text-sm text-red-500">{error}</p>}

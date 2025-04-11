@@ -57,17 +57,9 @@ const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
   ];
 
   return (
-    <TableRow 
-      key={workOrder.work_order_id} 
-      className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
-      onClick={handleViewDetails}
-    >
+    <TableRow key={workOrder.work_order_id} className="hover:bg-[#0485ea]/5 transition-colors">
       <TableCell className="font-medium">
-        <Link 
-          to={`/work-orders/${workOrder.work_order_id}`} 
-          className="text-[#0485ea] hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <Link to={`/work-orders/${workOrder.work_order_id}`} className="text-[#0485ea] hover:underline">
           {workOrder.work_order_number || '-'}
         </Link>
       </TableCell>
@@ -94,7 +86,7 @@ const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
       <TableCell>
         <StatusBadge status={workOrder.status} />
       </TableCell>
-      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+      <TableCell className="text-right">
         <ActionMenu 
           groups={actionGroups} 
           size="sm" 

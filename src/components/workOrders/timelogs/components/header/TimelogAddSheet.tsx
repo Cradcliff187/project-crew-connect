@@ -1,16 +1,15 @@
 
 import { useState } from 'react';
-import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { DatePicker } from "@/components/ui/date-picker";
-import TimeRangeSelector from "@/components/timeTracking/form/TimeRangeSelector";
-import { calculateHours } from "@/components/timeTracking/utils/timeUtils";
-import EmployeeSelect from '@/components/timeTracking/form/EmployeeSelect';
+import { Clock } from 'lucide-react';
+import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
+import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -29,67 +28,54 @@ const TimelogAddSheet = ({
 }: TimelogAddSheetProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hours, setHours] = useState(0);
-  const [employeeId, setEmployeeId] = useState('none');
-  const [notes, setNotes] = useState('');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
-  const [timeError, setTimeError] = useState('');
+  const [hoursWorked, setHoursWorked] = useState(8);
+  const [employeeId, setEmployeeId] = useState('');
+  const [notes, setNotes] = useState('');
+  const [employeeError, setEmployeeError] = useState('');
   
-  // Handle time changes and calculate hours
+  // Calculate hours when times change
+  const updateHoursWorked = (start: string, end: string) => {
+    try {
+      const hours = calculateHours(start, end);
+      setHoursWorked(parseFloat(hours.toFixed(2)));
+    } catch (error) {
+      console.error('Error calculating hours:', error);
+      setHoursWorked(0);
+    }
+  };
+
+  // Handle start time change
   const handleStartTimeChange = (value: string) => {
     setStartTime(value);
     updateHoursWorked(value, endTime);
   };
-  
+
+  // Handle end time change
   const handleEndTimeChange = (value: string) => {
     setEndTime(value);
     updateHoursWorked(startTime, value);
   };
   
-  const updateHoursWorked = (start: string, end: string) => {
-    try {
-      const calculatedHours = calculateHours(start, end);
-      if (calculatedHours <= 0) {
-        setTimeError('End time must be after start time');
-        setHours(0);
-      } else {
-        setTimeError('');
-        setHours(calculatedHours);
-      }
-    } catch (error) {
-      console.error('Error calculating hours:', error);
-    }
-  };
-  
-  // Reset form
-  const resetForm = () => {
-    setHours(0);
-    setEmployeeId('none');
-    setNotes('');
-    setSelectedDate(new Date());
-    setStartTime('09:00');
-    setEndTime('17:00');
-    setTimeError('');
-  };
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (timeError) {
+    // Validate employee selection
+    if (!employeeId) {
+      setEmployeeError('Please select an employee');
       toast({
-        title: 'Invalid time range',
-        description: timeError,
+        title: 'Employee required',
+        description: 'Please select an employee for this time entry.',
         variant: 'destructive',
       });
       return;
     }
     
-    if (hours <= 0) {
+    if (hoursWorked <= 0) {
       toast({
         title: 'Invalid hours',
-        description: 'Please enter a valid number of hours worked.',
+        description: 'Please enter valid start and end times.',
         variant: 'destructive',
       });
       return;
@@ -98,80 +84,40 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
-      // Format date
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      // Get current date
+      const currentDate = new Date().toISOString().split('T')[0];
       
-      // Check for "none" special value that means no employee is selected
-      const actualEmployeeId = employeeId === 'none' ? null : employeeId;
-      
-      let employeeRate = null;
-      if (actualEmployeeId) {
-        // Get employee rate if available
-        const { data: empData } = await supabase
-          .from('employees')
-          .select('hourly_rate')
-          .eq('employee_id', actualEmployeeId)
-          .maybeSingle();
-        
-        employeeRate = empData?.hourly_rate;
-      }
-      
-      // Calculate total cost
-      const hourlyRate = employeeRate || 75; // Default rate
-      const totalCost = hours * hourlyRate;
-      
-      // Create time entry
       const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
-        employee_id: actualEmployeeId,
-        hours_worked: hours,
-        date_worked: formattedDate,
+        employee_id: employeeId,
+        hours_worked: hoursWorked,
+        date_worked: currentDate,
         start_time: startTime,
         end_time: endTime,
-        employee_rate: hourlyRate,
-        total_cost: totalCost,
         notes: notes || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       
-      const { data: insertedEntry, error } = await supabase
+      const { error } = await supabase
         .from('time_entries')
-        .insert(timelogEntry)
-        .select('id')
-        .single();
+        .insert(timelogEntry);
         
       if (error) throw error;
       
-      // Create expense entry for labor time
-      if (insertedEntry?.id) {
-        const laborExpenseData = {
-          entity_type: 'WORK_ORDER',
-          entity_id: workOrderId,
-          description: `Labor: ${hours} hours`,
-          expense_type: 'LABOR',
-          amount: totalCost,
-          time_entry_id: insertedEntry.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          quantity: hours,
-          unit_price: hourlyRate,
-          vendor_id: null
-        };
-        
-        await supabase
-          .from('expenses')
-          .insert(laborExpenseData);
-      }
-      
       toast({
         title: 'Time entry added',
-        description: `${hours} hours have been logged successfully.`,
+        description: `${hoursWorked} hours have been logged for ${employees.find(e => e.employee_id === employeeId)?.name || 'employee'}.`,
       });
       
       // Reset form and close sheet
-      resetForm();
+      setStartTime('09:00');
+      setEndTime('17:00');
+      setHoursWorked(8);
+      setEmployeeId('');
+      setNotes('');
+      setEmployeeError('');
       onSuccess();
     } catch (error: any) {
       console.error('Error adding time entry:', error);
@@ -194,27 +140,41 @@ const TimelogAddSheet = ({
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <DatePicker 
-              date={selectedDate} 
-              setDate={(date) => date && setSelectedDate(date)} 
-            />
+            <Label htmlFor="employee" className="flex items-center">
+              Employee <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <select
+              id="employee"
+              className={`w-full border ${employeeError ? 'border-red-500' : 'border-input'} bg-background px-3 py-2 rounded-md`}
+              value={employeeId}
+              onChange={(e) => {
+                setEmployeeId(e.target.value);
+                setEmployeeError('');
+              }}
+              required
+            >
+              <option value="">Select Employee</option>
+              {employees.map((employee) => (
+                <option key={employee.employee_id} value={employee.employee_id}>
+                  {employee.name}
+                </option>
+              ))}
+            </select>
+            {employeeError && <p className="text-sm text-red-500">{employeeError}</p>}
           </div>
           
-          <TimeRangeSelector
-            startTime={startTime}
-            endTime={endTime}
-            onStartTimeChange={handleStartTimeChange}
-            onEndTimeChange={handleEndTimeChange}
-            error={timeError}
-            hoursWorked={hours}
-          />
-          
-          <EmployeeSelect
-            value={employeeId}
-            onChange={setEmployeeId}
-            employees={employees}
-          />
+          <div className="space-y-2">
+            <Label className="flex items-center">
+              Time Range <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <TimeRangeSelector
+              startTime={startTime}
+              endTime={endTime}
+              onStartTimeChange={handleStartTimeChange}
+              onEndTimeChange={handleEndTimeChange}
+              hoursWorked={hoursWorked}
+            />
+          </div>
           
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
@@ -238,7 +198,7 @@ const TimelogAddSheet = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting || hours <= 0}
+              disabled={isSubmitting}
               className="bg-[#0485ea] hover:bg-[#0375d1]"
             >
               {isSubmitting ? 'Saving...' : 'Log Time'}

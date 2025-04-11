@@ -1,7 +1,7 @@
 
-import React, { useEffect } from 'react';
-import TimePickerSelect from './TimePickerSelect';
-import { calculateHours } from '../utils/timeUtils';
+import React from 'react';
+import { Label } from '@/components/ui/label';
+import TimePickerMobile from './TimePickerMobile';
 
 export interface TimeRangeSelectorProps {
   startTime: string;
@@ -28,21 +28,21 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <TimePickerSelect
+          <Label>Start Time</Label>
+          <TimePickerMobile
             value={startTime}
             onChange={onStartTimeChange}
             label="Start Time"
-            id="start-time"
           />
           {startTimeError && <p className="text-sm text-red-500">{startTimeError}</p>}
         </div>
         
         <div className="space-y-2">
-          <TimePickerSelect
+          <Label>End Time</Label>
+          <TimePickerMobile
             value={endTime}
             onChange={onEndTimeChange}
             label="End Time"
-            id="end-time"
           />
           {endTimeError && <p className="text-sm text-red-500">{endTimeError}</p>}
         </div>

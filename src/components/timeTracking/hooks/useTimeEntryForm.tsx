@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
 import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
 import { toast } from '@/hooks/use-toast';
 import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
-import { TimeEntryFormValues, ReceiptMetadata } from '@/types/timeTracking';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -16,17 +16,19 @@ const timeEntryFormSchema = z.object({
   endTime: z.string().min(1, "End time is required"),
   hoursWorked: z.number().min(0.01, "Hours must be greater than 0"),
   notes: z.string().optional(),
-  employeeId: z.string().optional(),
+  employeeId: z.string().min(1, "Employee selection is required"),
   hasReceipts: z.boolean().default(false),
 });
+
+export type TimeEntryFormValues = z.infer<typeof timeEntryFormSchema>;
 
 const defaultFormValues: TimeEntryFormValues = {
   entityType: 'work_order',
   entityId: '',
   workDate: new Date(),
-  startTime: '',
-  endTime: '',
-  hoursWorked: 0,
+  startTime: '09:00',
+  endTime: '17:00',
+  hoursWorked: 8,
   notes: '',
   employeeId: '',
   hasReceipts: false,
@@ -34,7 +36,14 @@ const defaultFormValues: TimeEntryFormValues = {
 
 export function useTimeEntryForm(onSuccess: () => void) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [receiptMetadata, setReceiptMetadata] = useState<ReceiptMetadata>({
+  const [receiptMetadata, setReceiptMetadata] = useState<{
+    category: string,
+    expenseType: string | null,
+    tags: string[],
+    vendorId?: string,
+    vendorType?: 'vendor' | 'subcontractor' | 'other',
+    amount?: number
+  }>({
     category: 'receipt',
     expenseType: null,
     tags: ['time-entry'],
@@ -52,6 +61,8 @@ export function useTimeEntryForm(onSuccess: () => void) {
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
   const hasReceipts = form.watch('hasReceipts');
+  const entityType = form.watch('entityType');
+  const entityId = form.watch('entityId');
   
   useEffect(() => {
     if (startTime && endTime) {
@@ -87,7 +98,14 @@ export function useTimeEntryForm(onSuccess: () => void) {
   
   // Update receipt metadata
   const updateReceiptMetadata = (
-    data: Partial<ReceiptMetadata>
+    data: Partial<{
+      category: string, 
+      expenseType: string | null, 
+      tags: string[],
+      vendorId?: string,
+      vendorType?: 'vendor' | 'subcontractor' | 'other',
+      amount?: number
+    }>
   ) => {
     setReceiptMetadata(prev => ({
       ...prev,

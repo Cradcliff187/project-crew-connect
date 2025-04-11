@@ -12,7 +12,6 @@ interface TimelogsTableBodyProps {
 }
 
 const TimelogsTableBody = ({ timelogs, employeeNameFn, onDelete }: TimelogsTableBodyProps) => {
-  // The parent components will handle empty states, so we'll just render the rows here
   return (
     <TableBody>
       {timelogs.map((log) => {
@@ -39,10 +38,13 @@ const TimelogsTableBody = ({ timelogs, employeeNameFn, onDelete }: TimelogsTable
           }
         ];
 
+        // Ensure we always display an employee name - never undefined or null
+        const employeeName = employeeNameFn(log.employee_id);
+
         return (
           <TableRow key={log.id} className="hover:bg-[#0485ea]/5 transition-colors">
             <TableCell>{formatDate(log.date_worked)}</TableCell>
-            <TableCell>{employeeNameFn(log.employee_id)}</TableCell>
+            <TableCell>{employeeName || 'Unassigned'}</TableCell>
             <TableCell className="font-medium">{log.hours_worked}</TableCell>
             <TableCell className="max-w-[200px] truncate">{log.notes || '-'}</TableCell>
             <TableCell className="text-right">

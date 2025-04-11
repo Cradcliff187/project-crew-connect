@@ -28,6 +28,11 @@ export const timelogColumns = (onDelete: (id: string) => void): ColumnDef<Timelo
   {
     accessorKey: "employee",
     header: "Employee",
+    cell: ({ row }) => {
+      // Ensure employee is always displayed
+      const employee = row.getValue("employee") as string;
+      return employee || "Unassigned";
+    },
   },
   {
     accessorKey: "hours",

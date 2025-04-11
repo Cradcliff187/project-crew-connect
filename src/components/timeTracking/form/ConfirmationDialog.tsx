@@ -11,10 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { TimeEntryFormValues } from '@/types/timeTracking';
-
-// Add type information comment to clarify usage
-// TimeEntryFormValues is a TypeScript interface for form values
+import { TimeEntryFormValues } from '../hooks/useTimeEntryForm';
 
 interface WorkOrderOrProject {
   id: string;

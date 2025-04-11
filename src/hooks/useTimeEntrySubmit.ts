@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
+import { TimeEntryFormValues } from '@/components/timeTracking/hooks/useTimeEntryForm';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { TimeEntryFormValues, ReceiptMetadata } from '@/types/timeTracking';
+import { ReceiptMetadata } from '@/types/timeTracking';
 
 export function useTimeEntrySubmit(onSuccess: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,9 +18,13 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
     }
   ) => {
     setIsSubmitting(true);
-    console.log('Starting time entry submission with files:', selectedFiles.length);
     
     try {
+      // Validate that employee ID is provided
+      if (!data.employeeId) {
+        throw new Error('Employee selection is required');
+      }
+      
       let employeeRate = null;
       if (data.employeeId) {
         // Get employee rate if available
@@ -33,10 +37,6 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         employeeRate = empData?.hourly_rate;
       }
       
-      // Calculate total cost
-      const hourlyRate = employeeRate || 75; // Default rate
-      const totalCost = data.hoursWorked * hourlyRate;
-      
       // Create the time entry
       const timeEntry = {
         entity_type: data.entityType,
@@ -45,16 +45,13 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         start_time: data.startTime,
         end_time: data.endTime,
         hours_worked: data.hoursWorked,
-        employee_id: data.employeeId || null,
-        employee_rate: hourlyRate,
-        total_cost: totalCost,
-        notes: data.notes || null,
+        employee_id: data.employeeId,
+        employee_rate: employeeRate,
+        notes: data.notes,
         has_receipts: selectedFiles.length > 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
-      console.log('Creating time entry:', timeEntry);
       
       const { data: insertedEntry, error } = await supabase
         .from('time_entries')
@@ -62,185 +59,184 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         .select('id')
         .single();
         
-      if (error) {
-        console.error('Error inserting time entry:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('Time entry created successfully with ID:', insertedEntry.id);
-      
-      // Upload receipts if provided
+      // Upload receipts if provided, with enhanced metadata
       if (selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
-          try {
-            // Create a unique filename
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-            const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
+          // Create a unique filename
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
+          
+          // Upload the file to storage
+          const { error: uploadError } = await supabase.storage
+            .from('construction_documents')
+            .upload(filePath, file);
             
-            console.log('Uploading file to path:', filePath);
+          if (uploadError) throw uploadError;
+          
+          const mimeType = file.type || `application/${fileExt}`;
+          
+          // Enhanced document metadata for better categorization
+          const documentMetadataObj = {
+            file_name: file.name,
+            file_type: file.type,
+            mime_type: mimeType,
+            file_size: file.size,
+            storage_path: filePath,
+            entity_type: 'TIME_ENTRY',
+            entity_id: insertedEntry.id,
+            category: receiptMetadata.category || 'receipt',
+            is_expense: true,
+            uploaded_by: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tags: receiptMetadata.tags || ['receipt', 'time-entry'],
+            // Additional expense metadata
+            expense_type: receiptMetadata.expenseType || 'other',
+            // Add vendor information if available
+            vendor_id: receiptMetadata.vendorId || null,
+            vendor_type: receiptMetadata.vendorType || null,
+            // Add amount if available
+            amount: receiptMetadata.amount || null
+          };
+          
+          // Create document record
+          const { data: insertedDoc, error: documentError } = await supabase
+            .from('documents')
+            .insert(documentMetadataObj)
+            .select('document_id')
+            .single();
             
-            // Upload the file to storage
-            const { error: uploadError } = await supabase.storage
-              .from('construction_documents')
-              .upload(filePath, file);
-              
-            if (uploadError) {
-              console.error('Error uploading file to storage:', uploadError);
-              throw uploadError;
-            }
+          if (documentError) throw documentError;
+          
+          // Link document to time entry
+          const { data: linkResult, error: linkError } = await supabase
+            .rpc('attach_document_to_time_entry', {
+              p_time_entry_id: insertedEntry.id,
+              p_document_id: insertedDoc.document_id
+            });
             
-            console.log('File uploaded successfully');
-            
-            const mimeType = file.type || `application/${fileExt}`;
-            
-            // Create document metadata
-            const documentData = {
-              file_name: file.name,
-              file_type: file.type,
-              mime_type: mimeType,
-              file_size: file.size,
-              storage_path: filePath,
-              entity_type: 'TIME_ENTRY',
-              entity_id: insertedEntry.id,
-              category: receiptMetadata.category || 'receipt',
-              is_expense: true,
-              uploaded_by: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              tags: receiptMetadata.tags || ['receipt', 'time-entry'],
-              expense_type: receiptMetadata.expenseType || 'other',
-              vendor_id: receiptMetadata.vendorId || null,
-              vendor_type: receiptMetadata.vendorType || null,
-              amount: receiptMetadata.amount || null
-            };
-            
-            console.log('Creating document record:', documentData);
-            
-            // Insert document record
-            const { data: insertedDoc, error: documentError } = await supabase
-              .from('documents')
-              .insert(documentData)
-              .select('document_id')
-              .single();
-              
-            if (documentError) {
-              console.error('Error creating document record:', documentError);
-              throw documentError;
-            }
-            
-            console.log('Document record created successfully with ID:', insertedDoc.document_id);
-            
-            // Link document to time entry using the optimized function
-            console.log('Linking document to time entry using RPC function');
-            const { data: linkResult, error: linkError } = await supabase
-              .rpc('attach_document_to_time_entry', {
-                p_time_entry_id: insertedEntry.id,
-                p_document_id: insertedDoc.document_id
-              });
-              
-            if (linkError) {
-              console.error('Error linking document to time entry:', linkError);
-              // Don't throw, continue with other operations
-            } else {
-              console.log('Document linked to time entry successfully');
-            }
-            
-            // Create expense entry for receipts if we have an amount
-            if (receiptMetadata.amount && receiptMetadata.amount > 0) {
-              console.log('Creating expense record for receipt');
-              const expenseData = {
-                entity_type: data.entityType.toUpperCase(),
+          if (linkError) {
+            console.error('Error linking document to time entry:', linkError);
+          }
+          
+          // Create expense entries for work orders
+          if (data.entityType === 'work_order') {
+            // Create a more detailed expense entry for the time entry receipt
+            const { error: expenseError } = await supabase
+              .from('expenses')
+              .insert({
+                entity_type: 'WORK_ORDER',
                 entity_id: data.entityId,
-                description: `Receipt: ${file.name}`,
-                expense_type: receiptMetadata.expenseType || 'MATERIAL',
-                amount: receiptMetadata.amount,
+                description: `Time entry receipt: ${file.name}`,
+                expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
+                amount: receiptMetadata.amount || 0,
                 document_id: insertedDoc.document_id,
                 time_entry_id: insertedEntry.id,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 quantity: 1,
-                unit_price: receiptMetadata.amount,
-                vendor_id: receiptMetadata.vendorId || null,
-                is_receipt: true
-              };
+                unit_price: receiptMetadata.amount || 0,
+                vendor_id: receiptMetadata.vendorId || null
+              });
               
-              const { error: expenseError } = await supabase
-                .from('expenses')
-                .insert(expenseData);
+            if (expenseError) {
+              console.error('Error creating expense for receipt:', expenseError);
+            }
+            
+            // If there's a vendor, create or update vendor association
+            if (receiptMetadata.vendorId) {
+              const { error: vendorAssocError } = await supabase
+                .from('vendor_associations')
+                .upsert({
+                  vendor_id: receiptMetadata.vendorId,
+                  entity_type: 'WORK_ORDER',
+                  entity_id: data.entityId,
+                  description: `Associated via time entry receipt`,
+                  amount: receiptMetadata.amount || null,
+                  expense_type: receiptMetadata.expenseType || null,
+                  document_id: insertedDoc.document_id,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
                 
-              if (expenseError) {
-                console.error('Error creating expense for receipt:', expenseError);
-                // Continue execution despite error
-              } else {
-                console.log('Expense record created successfully');
+              if (vendorAssocError) {
+                console.error('Error creating vendor association:', vendorAssocError);
               }
             }
-          } catch (fileError: any) {
-            console.error('Error processing file upload:', fileError);
-            // Continue with other files - don't fail the whole submission for one file
-            toast({
-              title: 'Receipt upload issue',
-              description: `Error with file ${file.name}: ${fileError.message}`,
-              variant: 'destructive',
-            });
+          }
+          
+          // For project entities, similar handling with project-specific logic
+          if (data.entityType === 'project') {
+            // Create project expense records
+            const { error: expenseError } = await supabase
+              .from('expenses')
+              .insert({
+                entity_type: 'PROJECT',
+                entity_id: data.entityId,
+                description: `Time entry receipt: ${file.name}`,
+                expense_type: receiptMetadata.expenseType || 'TIME_RECEIPT',
+                amount: receiptMetadata.amount || 0,
+                document_id: insertedDoc.document_id,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                quantity: 1,
+                unit_price: receiptMetadata.amount || 0
+              });
+              
+            if (expenseError) {
+              console.error('Error creating project expense for receipt:', expenseError);
+            }
+            
+            // If there's a vendor, create or update vendor association
+            if (receiptMetadata.vendorId) {
+              const { error: vendorAssocError } = await supabase
+                .from('vendor_associations')
+                .upsert({
+                  vendor_id: receiptMetadata.vendorId,
+                  entity_type: 'PROJECT',
+                  entity_id: data.entityId,
+                  description: `Associated via time entry receipt`,
+                  amount: receiptMetadata.amount || null,
+                  expense_type: receiptMetadata.expenseType || null,
+                  document_id: insertedDoc.document_id,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (vendorAssocError) {
+                console.error('Error creating vendor association:', vendorAssocError);
+              }
+            }
           }
         }
       }
       
-      // Create expense entry for labor time
+      // Create expense entry for the labor time if it's a work order
       if (data.entityType === 'work_order' && data.hoursWorked > 0) {
-        console.log('Creating labor expense record');
-        const laborExpenseData = {
-          entity_type: 'WORK_ORDER',
-          entity_id: data.entityId,
-          description: `Labor: ${data.hoursWorked} hours`,
-          expense_type: 'LABOR',
-          amount: totalCost,
-          time_entry_id: insertedEntry.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          quantity: data.hoursWorked,
-          unit_price: hourlyRate,
-          vendor_id: null
-        };
+        const hourlyRate = employeeRate || 75; // Default to $75/hour if no employee rate
+        const totalAmount = data.hoursWorked * hourlyRate;
         
         const { error: laborExpenseError } = await supabase
           .from('expenses')
-          .insert(laborExpenseData);
+          .insert({
+            entity_type: 'WORK_ORDER',
+            entity_id: data.entityId,
+            description: `Labor: ${data.hoursWorked} hours`,
+            expense_type: 'LABOR',
+            amount: totalAmount,
+            time_entry_id: insertedEntry.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            quantity: data.hoursWorked,
+            unit_price: hourlyRate,
+            vendor_id: null
+          });
           
         if (laborExpenseError) {
           console.error('Error creating labor expense:', laborExpenseError);
-        } else {
-          console.log('Labor expense record created successfully');
-        }
-      }
-      
-      // Create expense entry for projects as well
-      if (data.entityType === 'project' && data.hoursWorked > 0) {
-        console.log('Creating project labor expense record');
-        const projectLaborExpenseData = {
-          entity_type: 'PROJECT',
-          entity_id: data.entityId,
-          description: `Labor: ${data.hoursWorked} hours`,
-          expense_type: 'LABOR',
-          amount: totalCost,
-          time_entry_id: insertedEntry.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          quantity: data.hoursWorked,
-          unit_price: hourlyRate,
-          vendor_id: null
-        };
-        
-        const { error: laborExpenseError } = await supabase
-          .from('expenses')
-          .insert(projectLaborExpenseData);
-          
-        if (laborExpenseError) {
-          console.error('Error creating project labor expense:', laborExpenseError);
-        } else {
-          console.log('Project labor expense record created successfully');
         }
       }
       

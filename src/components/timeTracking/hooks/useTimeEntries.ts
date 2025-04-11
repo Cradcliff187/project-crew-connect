@@ -21,98 +21,167 @@ export interface DateRange {
   endDate: Date;
 }
 
-export function useTimeEntries() {
-  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange());
+export const useTimeEntries = (initialDateRange?: DateRange) => {
+  const [dateRange, setDateRange] = useState<DateRange>(initialDateRange || getDefaultDateRange());
   const [entries, setEntries] = useState<TimeEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
-  // Function to fetch time entries for the specified date range
-  const fetchEntriesForDateRange = useCallback(async (range: DateRange) => {
+  const fetchTimeEntries = useCallback(async () => {
     setLoading(true);
+    setError(null);
     
     try {
-      const start = format(range.startDate, 'yyyy-MM-dd');
-      const end = format(range.endDate, 'yyyy-MM-dd');
+      const startDateStr = format(dateRange.startDate, 'yyyy-MM-dd');
+      const endDateStr = format(dateRange.endDate, 'yyyy-MM-dd');
       
-      console.log(`Fetching time entries from ${start} to ${end}`);
+      console.log(`Fetching time entries from ${startDateStr} to ${endDateStr}`);
       
-      const { data, error } = await supabase
+      // Fetch time entries within date range
+      const { data: timeEntries, error: fetchError } = await supabase
         .from('time_entries')
-        .select('*, employees(first_name, last_name, hourly_rate)')
-        .gte('date_worked', start)
-        .lte('date_worked', end)
-        .order('date_worked', { ascending: false });
+        .select('*')
+        .gte('date_worked', startDateStr)
+        .lte('date_worked', endDateStr)
+        .order('date_worked', { ascending: true });
       
-      if (error) {
-        throw error;
+      if (fetchError) throw fetchError;
+      
+      console.log(`Found ${timeEntries?.length || 0} time entries`);
+      
+      if (!timeEntries || timeEntries.length === 0) {
+        setEntries([]);
+        setLoading(false);
+        return;
       }
       
-      // Process the data to include employee names and ensure types
-      const enhancedData = (data || []).map(entry => {
-        // Get employee name from joined table if available
-        let employeeName = "Unassigned";
-        if (entry.employees) {
-          employeeName = `${entry.employees.first_name} ${entry.employees.last_name}`;
-        }
-        
-        // Format the entity type to match our TimeEntry type
-        return {
+      // Convert raw entries to TimeEntry type with additional data
+      const enhancedEntriesPromises = timeEntries.map(async (entry) => {
+        // Type assertion to handle string vs enum type mismatch
+        const typedEntry = {
           ...entry,
-          entity_type: entry.entity_type as 'work_order' | 'project',
-          employee_name: employeeName
+          entity_type: entry.entity_type as "work_order" | "project"
         };
+        
+        return await enhanceTimeEntry(typedEntry);
       });
       
-      setEntries(enhancedData);
-    } catch (error) {
-      console.error("Error fetching time entries:", error);
-      setEntries([]);
+      const enhancedEntries = await Promise.all(enhancedEntriesPromises);
+      setEntries(enhancedEntries);
+    } catch (err) {
+      console.error('Error fetching time entries:', err);
+      setError(err as Error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
   
-  // Function to refresh entries using the current date range
-  const refreshEntries = useCallback(() => {
-    fetchEntriesForDateRange(dateRange);
-  }, [dateRange, fetchEntriesForDateRange]);
-  
-  // Navigation functions
-  const goToNextWeek = useCallback(() => {
-    const newStartDate = addWeeks(dateRange.startDate, 1);
-    const newEndDate = addWeeks(dateRange.endDate, 1);
-    const newRange = { startDate: newStartDate, endDate: newEndDate };
-    setDateRange(newRange);
-    fetchEntriesForDateRange(newRange);
-  }, [dateRange, fetchEntriesForDateRange]);
-  
-  const goToPrevWeek = useCallback(() => {
-    const newStartDate = subWeeks(dateRange.startDate, 1);
-    const newEndDate = subWeeks(dateRange.endDate, 1);
-    const newRange = { startDate: newStartDate, endDate: newEndDate };
-    setDateRange(newRange);
-    fetchEntriesForDateRange(newRange);
-  }, [dateRange, fetchEntriesForDateRange]);
-  
-  const goToCurrentWeek = useCallback(() => {
-    const newRange = getDefaultDateRange();
-    setDateRange(newRange);
-    fetchEntriesForDateRange(newRange);
-  }, [fetchEntriesForDateRange]);
-  
-  // Effect to fetch data when the date range changes
+  // Effect to fetch data when date range changes
   useEffect(() => {
-    fetchEntriesForDateRange(dateRange);
-  }, [dateRange, fetchEntriesForDateRange]);
+    fetchTimeEntries();
+  }, [fetchTimeEntries, dateRange]);
+  
+  // Navigate to next week
+  const goToNextWeek = useCallback(() => {
+    setDateRange(current => ({
+      startDate: addWeeks(current.startDate, 1),
+      endDate: addWeeks(current.endDate, 1)
+    }));
+  }, []);
+
+  // Navigate to previous week
+  const goToPrevWeek = useCallback(() => {
+    setDateRange(current => ({
+      startDate: subWeeks(current.startDate, 1),
+      endDate: subWeeks(current.endDate, 1)
+    }));
+  }, []);
+
+  // Go to current week
+  const goToCurrentWeek = useCallback(() => {
+    setDateRange(getDefaultDateRange());
+  }, []);
+
+  // Helper to enhance time entry with entity and receipt data
+  const enhanceTimeEntry = async (entry: TimeEntry): Promise<TimeEntry> => {
+    try {
+      let entityName = '';
+      let entityLocation = '';
+      
+      // Fetch entity details based on type
+      if (entry.entity_type === 'work_order') {
+        const { data } = await supabase
+          .from('maintenance_work_orders')
+          .select('title, description')
+          .eq('work_order_id', entry.entity_id)
+          .single();
+        
+        if (data) {
+          entityName = data.title || '';
+          // We don't have location data in this table, so leave it empty
+          entityLocation = '';
+        }
+      } else if (entry.entity_type === 'project') {
+        const { data } = await supabase
+          .from('projects')
+          .select('projectname, sitelocationaddress, sitelocationcity, sitelocationstate')
+          .eq('projectid', entry.entity_id)
+          .single();
+        
+        if (data) {
+          entityName = data.projectname || entry.entity_id;
+          entityLocation = [
+            data.sitelocationaddress,
+            data.sitelocationcity,
+            data.sitelocationstate
+          ].filter(Boolean).join(', ');
+        }
+      }
+      
+      // Fetch documents/receipts if any
+      let documents = [];
+      if (entry.has_receipts) {
+        // Use document links instead of nonexistent receipts table
+        const { data: documentLinks } = await supabase
+          .from('time_entry_document_links')
+          .select('document_id')
+          .eq('time_entry_id', entry.id);
+        
+        if (documentLinks && documentLinks.length > 0) {
+          const documentIds = documentLinks.map(link => link.document_id);
+          const { data: docs } = await supabase
+            .from('documents')
+            .select('*')
+            .in('document_id', documentIds);
+            
+          if (docs) {
+            documents = docs;
+          }
+        }
+      }
+      
+      // Return enhanced entry
+      return {
+        ...entry,
+        entity_name: entityName,
+        entity_location: entityLocation,
+        documents: documents
+      };
+    } catch (error) {
+      console.error('Error enhancing time entry:', error);
+      return entry;
+    }
+  };
   
   return {
     entries,
     loading,
-    refreshEntries,
+    error,
     dateRange,
     setDateRange,
     goToNextWeek,
     goToPrevWeek,
-    goToCurrentWeek
+    goToCurrentWeek,
+    refreshEntries: fetchTimeEntries
   };
-}
+};
