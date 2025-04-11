@@ -1,271 +1,216 @@
 
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Form } from '@/components/ui/form';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { documentUploadSchema, DocumentUploadFormValues, EntityType } from './schemas/documentSchema';
-import { documentService } from '@/services/documentService';
-import { useFormInitialization } from './hooks/useFormInitialization';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useDeviceCapabilities } from '@/hooks/use-mobile';
+import { EntityType } from './schemas/documentSchema';
 
-// Import components
-import FileUploadField from './components/FileUploadField';
-import DocumentMetadataFields from './components/DocumentMetadataFields';
-import DocumentCategorySelector from './components/DocumentCategorySelector';
-import TagsField from './components/TagsField';
-import ExpenseDatePicker from './components/ExpenseDatePicker';
-import ExpenseAmountField from './components/ExpenseAmountField';
-import VendorSelector from './components/VendorSelector';
-import EntitySelector from './components/EntitySelector';
+// Import refactored components
+import DropzoneUploader from './components/DropzoneUploader';
+import MetadataForm from './components/MetadataForm';
+import MobileCaptureWrapper from './components/MobileCaptureWrapper';
+import { useDocumentUploadForm } from './hooks/useDocumentUploadForm';
 
-export interface EnhancedDocumentUploadProps {
-  entityType: EntityType;
-  entityId: string;
+interface EnhancedDocumentUploadProps {
+  entityType?: EntityType;
+  entityId?: string;
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
-  onError?: (error: Error) => void;
   isReceiptUpload?: boolean;
-  preventFormPropagation?: boolean;
   prefillData?: {
     amount?: number;
     vendorId?: string;
     materialName?: string;
     expenseName?: string;
+    notes?: string;
+    category?: string;
+    tags?: string[];
     budgetItemId?: string;
     parentEntityType?: string;
     parentEntityId?: string;
-    tags?: string[];
   };
+  preventFormPropagation?: boolean;
   allowEntityTypeSelection?: boolean;
+  onEntityTypeChange?: (entityType: EntityType) => void;
 }
 
-/**
- * Enhanced document upload component with metadata, category selection, and more
- */
 const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   entityType,
   entityId,
   onSuccess,
   onCancel,
-  onError,
   isReceiptUpload = false,
-  preventFormPropagation = false,
   prefillData,
-  allowEntityTypeSelection = false
+  preventFormPropagation = false,
+  allowEntityTypeSelection = false,
+  onEntityTypeChange
 }) => {
-  const { toast } = useToast();
+  const [showMobileCapture, setShowMobileCapture] = useState(false);
+  const { isMobile, hasCamera } = useDeviceCapabilities();
 
-  // Initialize form with react-hook-form and zod validation
-  const form = useForm<DocumentUploadFormValues>({
-    resolver: zodResolver(documentUploadSchema),
-    mode: 'onChange',
-    defaultValues: {
-      files: [],
-      metadata: {
-        entityType: entityType,
-        entityId: entityId,
-        isExpense: isReceiptUpload,
-        category: isReceiptUpload ? 'receipt' : undefined,
-        tags: []
-      }
-    }
-  });
-  
-  // Use our custom hook to initialize the form with the correct values
-  const { initializeForm } = useFormInitialization({
+  // Use the custom hook for form management
+  const {
     form,
+    isUploading,
+    previewURL,
+    showVendorSelector,
+    setShowVendorSelector,
+    handleFileSelect,
+    onSubmit,
+    initializeForm,
+    handleCancel,
+    handleFormSubmit,
+    availableCategories,
+    watchIsExpense,
+    watchVendorType,
+    watchFiles,
+    watchCategory,
+    watchExpenseType,
+    watchEntityType
+  } = useDocumentUploadForm({
     entityType,
     entityId,
+    onSuccess,
+    onCancel,
     isReceiptUpload,
-    prefillData
+    prefillData,
+    allowEntityTypeSelection,
+    preventFormPropagation,
+    onEntityTypeChange
   });
 
-  // Initialize the form when props change
-  useEffect(() => {
-    initializeForm();
-  }, [entityType, entityId, isReceiptUpload, prefillData, initializeForm]);
+  // Handle capture from mobile device
+  const handleMobileCapture = useCallback((file: File) => {
+    handleFileSelect([file]);
+    setShowMobileCapture(false);
+  }, [handleFileSelect]);
 
-  // Derived state
-  const files = form.watch('files');
-  const isExpense = form.watch('metadata.isExpense');
-  const vendorType = form.watch('metadata.vendorType');
-  const isSubmitting = form.formState.isSubmitting;
-  const isValid = files.length > 0;
+  // If prefill data is available and it's a receipt upload, simplify the UI
+  const simplifiedUpload = isReceiptUpload && prefillData;
 
-  // Handle form submission
-  const handleSubmit = async (data: DocumentUploadFormValues) => {
-    if (data.files.length === 0) {
-      toast({
-        title: "No files selected",
-        description: "Please select at least one file to upload",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Upload the first file (we'll enhance this for multi-file support later)
-      const file = data.files[0];
-
-      // Determine expense type based on metadata
-      let expenseType = data.metadata.expenseType;
-      
-      // If this is a material receipt, default to 'material'
-      if (isReceiptUpload && prefillData?.materialName) {
-        expenseType = 'materials';
-      }
-
-      // Create metadata for document service
-      const uploadMetadata = {
-        entityType: data.metadata.entityType,
-        entityId: data.metadata.entityId,
-        category: data.metadata.category,
-        isExpense: isExpense,
-        amount: data.metadata.amount,
-        expenseDate: data.metadata.expenseDate,
-        vendorId: data.metadata.vendorId,
-        vendorType: data.metadata.vendorType,
-        expenseType: expenseType,
-        budgetItemId: prefillData?.budgetItemId,
-        tags: data.metadata.tags,
-        notes: data.metadata.notes,
-        version: data.metadata.version,
-        parentEntityType: prefillData?.parentEntityType,
-        parentEntityId: prefillData?.parentEntityId
-      };
-
-      // Upload document using the document service
-      const result = await documentService.uploadDocument(file, uploadMetadata);
-
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to upload document');
-      }
-
-      toast({
-        title: "Document uploaded",
-        description: "Document was uploaded successfully"
-      });
-
-      // Call success callback with the document ID
-      if (onSuccess) {
-        onSuccess(result.documentId);
-      }
-    } catch (error: any) {
-      console.error('Document upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "An unexpected error occurred during upload",
-        variant: "destructive"
-      });
-
-      if (onError) {
-        onError(error);
-      }
-    }
-  };
-
-  // Prevent event propagation if needed (for nested forms)
-  const handleFormClick = (e: React.MouseEvent) => {
+  // Click handler for buttons to prevent event bubbling
+  const handleButtonClick = useCallback((e: React.MouseEvent) => {
     if (preventFormPropagation) {
       e.stopPropagation();
     }
+  }, [preventFormPropagation]);
+
+  // Get the proper title based on context
+  const getTitle = () => {
+    if (isReceiptUpload) return "Upload Receipt";
+    
+    if (watchEntityType === 'VENDOR' || watchEntityType === 'SUBCONTRACTOR') {
+      return `Upload ${watchEntityType === 'VENDOR' ? 'Vendor' : 'Subcontractor'} Document`;
+    }
+    
+    return "Upload Document";
+  };
+
+  // Get the proper description based on context
+  const getDescription = () => {
+    if (isReceiptUpload) {
+      return "Upload receipts for expenses related to this work order or project.";
+    }
+    
+    if (watchEntityType === 'VENDOR') {
+      return "Upload documents related to this vendor such as certifications or contracts.";
+    }
+    
+    if (watchEntityType === 'SUBCONTRACTOR') {
+      return "Upload documents related to this subcontractor such as insurance, certifications or contracts.";
+    }
+    
+    if (watchEntityType === 'PROJECT') {
+      return "Upload documents for this project such as photos, contracts or specifications.";
+    }
+    
+    if (watchEntityType === 'WORK_ORDER') {
+      return "Upload documents for this work order such as receipts, photos or contracts.";
+    }
+    
+    if (watchEntityType === 'ESTIMATE') {
+      return "Upload documents for this estimate such as contracts, specifications or reference materials.";
+    }
+    
+    return "Upload and categorize documents for your projects, invoices, and more.";
   };
 
   return (
-    <Card className="border shadow-sm">
+    <Card 
+      className="w-full"
+      onClick={preventFormPropagation ? (e) => e.stopPropagation() : undefined}
+    >
+      {!simplifiedUpload && (
+        <CardHeader>
+          <CardTitle>{getTitle()}</CardTitle>
+          <CardDescription>{getDescription()}</CardDescription>
+        </CardHeader>
+      )}
+      
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(handleSubmit)}
-          className="space-y-4"
-          onClick={handleFormClick}
-        >
-          <CardContent className="space-y-4 pt-6">
-            <FileUploadField
-              control={form.control}
-              name="files"
-              maxFiles={1}
-              acceptedFileTypes={{
-                'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
-                'application/pdf': ['.pdf'],
-                'application/msword': ['.doc'],
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                'text/plain': ['.txt'],
-                'application/vnd.ms-excel': ['.xls'],
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
-              }}
-              maxSize={15 * 1024 * 1024} // 15MB
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <DocumentCategorySelector
-                control={form.control}
-                isReceiptUpload={isReceiptUpload}
-              />
-
-              <div className="space-y-4">
-                {allowEntityTypeSelection && (
-                  <EntitySelector
-                    control={form.control}
-                    isReceiptUpload={isReceiptUpload}
-                  />
-                )}
-                
-                <DocumentMetadataFields
+        <form onSubmit={handleFormSubmit}>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
+              <div className="space-y-6">
+                {/* File Uploader Component */}
+                <DropzoneUploader 
                   control={form.control}
-                  isExpense={isExpense}
-                  materialName={prefillData?.materialName}
-                  expenseName={prefillData?.expenseName}
+                  onFileSelect={handleFileSelect}
+                  previewURL={previewURL}
+                  watchFiles={watchFiles}
+                  label={getTitle()}
                 />
-
-                {isExpense && (
-                  <>
-                    <ExpenseDatePicker control={form.control} />
-                    <ExpenseAmountField
-                      control={form.control}
-                      amount={prefillData?.amount}
-                    />
-                  </>
-                )}
+                
+                {/* Mobile Capture Component */}
+                <MobileCaptureWrapper
+                  onCapture={handleMobileCapture}
+                  isMobile={isMobile}
+                  hasCamera={hasCamera}
+                  showMobileCapture={showMobileCapture}
+                  setShowMobileCapture={setShowMobileCapture}
+                />
+                
+                {/* Metadata Form Component */}
+                <MetadataForm
+                  form={form}
+                  control={form.control}
+                  watchIsExpense={watchIsExpense}
+                  watchVendorType={watchVendorType}
+                  watchCategory={watchCategory}
+                  watchEntityType={watchEntityType}
+                  isReceiptUpload={isReceiptUpload}
+                  showVendorSelector={showVendorSelector}
+                  prefillData={prefillData}
+                  allowEntityTypeSelection={allowEntityTypeSelection}
+                />
               </div>
-            </div>
-
-            {isExpense && vendorType && (
-              <VendorSelector
-                control={form.control}
-                vendorType={vendorType}
-                prefillVendorId={prefillData?.vendorId}
-              />
-            )}
-
-            <TagsField
-              control={form.control}
-            />
+            </ScrollArea>
           </CardContent>
-
-          <CardFooter className="flex justify-between border-t pt-4">
+          
+          <CardFooter className="flex justify-between mt-4">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCancel();
+                }}
+              >
+                Cancel
+              </Button>
+            )}
             <Button
-              type="button"
-              variant="ghost"
-              onClick={onCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!isValid || isSubmitting}
+              type="submit" 
               className="bg-[#0485ea] hover:bg-[#0375d1]"
+              disabled={isUploading || watchFiles.length === 0}
+              onClick={handleButtonClick}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                'Upload Document'
+              {isUploading ? "Uploading..." : (
+                isReceiptUpload ? "Upload Receipt" : `Upload ${watchCategory || 'Document'}`
               )}
             </Button>
           </CardFooter>
@@ -275,4 +220,4 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   );
 };
 
-export default EnhancedDocumentUpload;
+export default React.memo(EnhancedDocumentUpload);

@@ -12,10 +12,13 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     timelogs,
     loading,
     employees,
+    totalHours,
+    totalLaborCost,
     fetchTimelogs,
     handleDeleteTimelog
   } = useWorkOrderTimelogs(workOrderId);
   
+  // Refresh data after adding a new time log
   const handleSuccessfulAdd = () => {
     fetchTimelogs();
     if (onTimeLogAdded) onTimeLogAdded();
@@ -29,6 +32,8 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
       workOrderId={workOrderId}
       onDelete={handleDeleteTimelog}
       onTimeLogAdded={handleSuccessfulAdd}
+      totalHours={totalHours}
+      totalLaborCost={totalLaborCost}
     />
   );
 };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { Upload, FileText, Share2 } from 'lucide-react';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import DocumentUploadDialog from '@/components/documents/DocumentUpload';
 import { useEstimateDocuments } from '@/components/documents/hooks/useEstimateDocuments';
+import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
+import DocumentShareDialog from '@/components/estimates/detail/dialogs/DocumentShareDialog';
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
@@ -18,6 +20,9 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
   onShareDocument
 }) => {
   const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
+  const [viewerDialogOpen, setViewerDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const { documents, loading, error, refetchDocuments } = useEstimateDocuments(estimateId);
 
   React.useEffect(() => {
@@ -29,6 +34,19 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
   const handleUploadComplete = () => {
     refetchDocuments();
     setUploadDialogOpen(false);
+  };
+
+  const handleViewDocument = (doc: Document) => {
+    setSelectedDocument(doc);
+    setViewerDialogOpen(true);
+  };
+
+  const handleShareDocument = (doc: Document) => {
+    setSelectedDocument(doc);
+    setShareDialogOpen(true);
+    if (onShareDocument) {
+      onShareDocument(doc);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -102,28 +120,24 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
                   )}
                 </div>
                 <div className="border-t p-3 flex justify-between">
-                  <Button variant="ghost" size="sm" asChild>
-                    <a 
-                      href={doc.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-[#0485ea]"
-                    >
-                      View
-                    </a>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleViewDocument(doc)}
+                    className="text-[#0485ea]"
+                  >
+                    View
                   </Button>
                   
-                  {onShareDocument && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => onShareDocument(doc)}
-                      className="text-[#0485ea]"
-                    >
-                      <Share2 className="h-4 w-4 mr-1" />
-                      Share
-                    </Button>
-                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleShareDocument(doc)}
+                    className="text-[#0485ea]"
+                  >
+                    <Share2 className="h-4 w-4 mr-1" />
+                    Share
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -138,6 +152,26 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
           entityId={estimateId}
           onSuccess={handleUploadComplete}
           onCancel={() => setUploadDialogOpen(false)}
+        />
+      )}
+
+      {/* Document Viewer Dialog */}
+      {selectedDocument && (
+        <DocumentViewerDialog
+          document={selectedDocument}
+          open={viewerDialogOpen}
+          onOpenChange={setViewerDialogOpen}
+          title={selectedDocument.file_name}
+        />
+      )}
+
+      {/* Document Share Dialog */}
+      {selectedDocument && (
+        <DocumentShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          document={selectedDocument}
+          estimateId={estimateId}
         />
       )}
     </div>

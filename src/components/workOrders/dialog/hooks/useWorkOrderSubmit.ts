@@ -26,6 +26,19 @@ export const useWorkOrderSubmit = ({
       // Use our new hook to handle location creation
       const locationId = await createLocationIfNeeded(values);
 
+      // Handle date values properly - ensure they are actual Date objects before calling toISOString
+      const scheduledDate = values.scheduled_date 
+        ? (values.scheduled_date instanceof Date 
+            ? values.scheduled_date.toISOString() 
+            : values.scheduled_date)
+        : null;
+      
+      const dueByDate = values.due_by_date
+        ? (values.due_by_date instanceof Date 
+            ? values.due_by_date.toISOString() 
+            : values.due_by_date)
+        : null;
+
       // Create the work order with either the selected or newly created location
       const { error } = await supabase
         .from('maintenance_work_orders')
@@ -36,8 +49,8 @@ export const useWorkOrderSubmit = ({
           priority: values.priority,
           po_number: values.po_number,
           time_estimate: values.time_estimate,
-          scheduled_date: values.scheduled_date ? values.scheduled_date.toISOString() : null,
-          due_by_date: values.due_by_date ? values.due_by_date.toISOString() : null,
+          scheduled_date: scheduledDate,
+          due_by_date: dueByDate,
           customer_id: values.customer_id || null,
           location_id: locationId || null,
           assigned_to: values.assigned_to || null,

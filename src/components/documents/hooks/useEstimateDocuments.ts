@@ -64,7 +64,8 @@ export const useEstimateDocuments = (estimateId: string) => {
         
         return { 
           ...doc,
-          file_url: publicUrl,
+          url: publicUrl,           // Add url property
+          file_url: publicUrl,      // Keep file_url for backward compatibility
           item_reference: itemDescription || null,
           item_id: null, // Will be populated if this is a line item document
           is_latest_version: doc.is_latest_version ?? true,
@@ -128,7 +129,8 @@ export const useEstimateDocuments = (estimateId: string) => {
                 
                 return { 
                   ...doc,
-                  file_url: publicUrl,
+                  url: publicUrl,           // Add url property
+                  file_url: publicUrl,      // Keep file_url for backward compatibility  
                   item_reference: relatedItem ? `Item: ${relatedItem.description}` : null,
                   item_id: relatedItem ? relatedItem.id : null,
                   revision_id: relatedItem?.revision_id,

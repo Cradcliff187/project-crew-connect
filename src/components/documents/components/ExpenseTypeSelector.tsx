@@ -1,42 +1,55 @@
 
 import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues, expenseTypes } from '../schemas/documentSchema';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
+
+// Define expense type options
+export const expenseTypes = [
+  { value: 'material', label: 'Material' },
+  { value: 'tools', label: 'Tools & Equipment' },
+  { value: 'labor', label: 'Labor' },
+  { value: 'subcontractor', label: 'Subcontractor' },
+  { value: 'permit', label: 'Permit Fees' },
+  { value: 'travel', label: 'Travel & Transportation' },
+  { value: 'office', label: 'Office Expense' },
+  { value: 'utility', label: 'Utilities' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+// Type for expense type values
+export type ExpenseType = typeof expenseTypes[number]['value'];
 
 interface ExpenseTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
 }
 
-// Component for use within a form with react-hook-form
 const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ control }) => {
   return (
     <FormField
       control={control}
       name="metadata.expenseType"
       render={({ field }) => (
-        <FormItem className="space-y-1">
-          <FormLabel>Expense Type</FormLabel>
-          <FormControl>
-            <RadioGroup
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-              className="flex flex-wrap gap-4"
-            >
+        <FormItem>
+          <FormLabel>Expense Category</FormLabel>
+          <Select 
+            onValueChange={field.onChange} 
+            defaultValue={field.value || 'material'}
+          >
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder="Select expense category" />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
               {expenseTypes.map((type) => (
-                <div key={type} className="flex items-center space-x-2">
-                  <RadioGroupItem value={type} id={`expense-type-${type}`} />
-                  <label 
-                    htmlFor={`expense-type-${type}`} 
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </label>
-                </div>
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
               ))}
-            </RadioGroup>
-          </FormControl>
+            </SelectContent>
+          </Select>
           <FormMessage />
         </FormItem>
       )}

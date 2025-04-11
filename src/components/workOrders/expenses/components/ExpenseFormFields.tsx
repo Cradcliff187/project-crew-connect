@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import { expenseTypes } from '@/components/documents/utils/expenseTypes';
+import { expenseTypes } from '@/components/documents/schemas/documentSchema';
 
 interface ExpenseFormFieldsProps {
   expenseName: string;

@@ -12,13 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, Grid2X2, List } from 'lucide-react';
 import DocumentsTable from './DocumentsTable';
 import DocumentGrid from './DocumentGrid';
-import { Document, EntityType } from './schemas/documentSchema';
-import { categorizeDocuments } from './utils/documentUtils';
 import useDocumentManager from './hooks/useDocumentManager';
+import { EntityType } from './schemas/documentSchema';
 import DocumentUploadDialog from './DocumentUploadDialog';
 import DocumentDetailView from './DocumentDetailView';
 import DocumentsFilter from './filters/DocumentsFilter';
-import { DocumentFilterState } from './hooks/useDocumentFilters';
+import useDocumentFilters from './hooks/useDocumentFilters';
 import DocumentMetrics from './DocumentMetrics';
 import DocumentUploadButton from './DocumentUploadButton';
 
@@ -39,13 +38,6 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [filters, setFilters] = useState<DocumentFilterState>({
-    search: '',
-    startDate: null,
-    endDate: null,
-    categories: [],
-    tags: []
-  });
   
   const { 
     documents, 
@@ -59,93 +51,18 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
     selectRelatedDocument,
     fetchDocuments
   } = useDocumentManager(entityType, entityId);
+  
+  const {
+    filters,
+    updateFilters,
+    resetFilters,
+    filteredDocuments
+  } = useDocumentFilters(documents);
 
-  // Filter documents based on current filters
-  const filteredDocuments = React.useMemo(() => {
-    return documents.filter(doc => {
-      // Search filter
-      if (filters.search && !matchesSearch(doc, filters.search.toLowerCase())) {
-        return false;
-      }
-      
-      // Category filter
-      if (filters.categories.length > 0 && doc.category && !filters.categories.includes(doc.category)) {
-        return false;
-      }
-      
-      // Tags filter
-      if (filters.tags.length > 0 && doc.tags) {
-        const docTags = doc.tags || [];
-        if (!filters.tags.some(tag => docTags.includes(tag))) {
-          return false;
-        }
-      }
-      
-      // Date range filter
-      const docDate = new Date(doc.created_at);
-      if (filters.startDate && docDate < filters.startDate) {
-        return false;
-      }
-      if (filters.endDate) {
-        const endOfDay = new Date(filters.endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        if (docDate > endOfDay) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  }, [documents, filters]);
-  
-  // Update filters
-  const updateFilters = (newFilters: Partial<DocumentFilterState>) => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      ...newFilters
-    }));
-  };
-  
-  // Reset filters
-  const resetFilters = () => {
-    setFilters({
-      search: '',
-      startDate: null,
-      endDate: null,
-      categories: [],
-      tags: []
-    });
-  };
-  
   // Reset filters when entity changes
   useEffect(() => {
     resetFilters();
-  }, [entityType, entityId]);
-
-  // Helper function to check if a document matches the search query
-  const matchesSearch = (document: Document, searchQuery: string): boolean => {
-    // Match file name
-    if (document.file_name.toLowerCase().includes(searchQuery)) {
-      return true;
-    }
-    
-    // Match category
-    if (document.category && document.category.toLowerCase().includes(searchQuery)) {
-      return true;
-    }
-    
-    // Match tags
-    if (document.tags && document.tags.some(tag => tag.toLowerCase().includes(searchQuery))) {
-      return true;
-    }
-    
-    // Match notes
-    if (document.notes && document.notes.toLowerCase().includes(searchQuery)) {
-      return true;
-    }
-    
-    return false;
-  };
+  }, [entityType, entityId, resetFilters]);
 
   return (
     <div className="space-y-4">
@@ -220,6 +137,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                   documents={filteredDocuments}
                   loading={loading}
                   onViewDocument={handleViewDocument}
+                  onDeleteDocument={handleDeleteDocument}
                 />
               )}
               

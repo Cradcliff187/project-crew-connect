@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
@@ -72,6 +73,12 @@ const EstimateItemCard = memo(({
     defaultValue: '1'
   });
 
+  const unit_price = useWatch({
+    control: form.control,
+    name: `items.${index}.unit_price`,
+    defaultValue: '0'
+  });
+
   const description = useWatch({
     control: form.control,
     name: `items.${index}.description`,
@@ -97,13 +104,13 @@ const EstimateItemCard = memo(({
   });
 
   const { itemPrice, grossMargin, grossMarginPercentage } = React.useMemo(() => {
-    const item = { cost, markup_percentage: markupPercentage, quantity };
+    const item = { cost, markup_percentage: markupPercentage, quantity, unit_price };
     return {
       itemPrice: calculateItemPrice(item),
       grossMargin: calculateItemGrossMargin(item),
       grossMarginPercentage: calculateItemGrossMarginPercentage(item)
     };
-  }, [cost, markupPercentage, quantity]);
+  }, [cost, markupPercentage, quantity, unit_price]);
 
   const fetchDocumentInfo = useCallback(async () => {
     if (!documentId) {
@@ -137,15 +144,8 @@ const EstimateItemCard = memo(({
   }, [form, index]);
 
   const getEntityTypeForDocument = useCallback(() => {
-    switch (itemType) {
-      case 'vendor':
-        return 'VENDOR';
-      case 'subcontractor':
-        return 'SUBCONTRACTOR';
-      default:
-        return 'ESTIMATE';
-    }
-  }, [itemType]);
+    return 'ESTIMATE_ITEM';
+  }, []);
 
   const getEntityIdForDocument = useCallback(() => {
     const tempId = form.getValues('temp_id') || 'pending';
@@ -269,7 +269,7 @@ const EstimateItemCard = memo(({
 
             <CostInput index={index} />
             <MarkupInput index={index} />
-            <PriceDisplay price={itemPrice} />
+            <PriceDisplay index={index} price={itemPrice} />
             <MarginDisplay grossMargin={grossMargin} grossMarginPercentage={grossMarginPercentage} />
           </div>
           

@@ -4,15 +4,22 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TimeEntry } from '@/types/timeTracking';
-import { Plus } from 'lucide-react';
-import TimeEntryList from './TimeEntryList';
-import TimeEntryForm from './TimeEntryForm';
+import { Plus, Map, ChevronRight, Camera, Clock } from 'lucide-react';
+import { TimeEntryList } from './TimeEntryList';
+import TimeEntryFormWizard from './TimeEntryFormWizard';
+import QuickLogButton from './QuickLogButton';
 import PageTransition from '@/components/layout/PageTransition';
 import DateNavigation from './DateNavigation';
+import { useDeviceCapabilities } from '@/hooks/use-mobile';
+import MobileQuickLogSheet from './MobileQuickLogSheet';
+import { DateRange } from './hooks/useTimeEntries';
 
 interface MobileTimeEntryViewProps {
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
+  dateRange: DateRange;
+  onDateRangeChange: (dateRange: DateRange) => void;
+  onNextWeek: () => void;
+  onPrevWeek: () => void;
+  onCurrentWeek: () => void;
   timeEntries: TimeEntry[];
   isLoading: boolean;
   onAddSuccess: () => void;
@@ -22,8 +29,11 @@ interface MobileTimeEntryViewProps {
 }
 
 const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
-  selectedDate,
-  setSelectedDate,
+  dateRange,
+  onDateRangeChange,
+  onNextWeek,
+  onPrevWeek,
+  onCurrentWeek,
   timeEntries,
   isLoading,
   onAddSuccess,
@@ -31,37 +41,74 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   setShowAddForm,
   totalHours
 }) => {
+  const [showQuickLog, setShowQuickLog] = useState(false);
+  const { hasCamera, isMobile } = useDeviceCapabilities();
+  
+  const handleQuickLogSuccess = () => {
+    setShowQuickLog(false);
+    onAddSuccess();
+  };
+  
   return (
     <PageTransition>
       <div className="container px-4 py-4">
-        {/* Date Selection Header */}
+        {/* Date Navigation Header */}
         <DateNavigation
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
+          dateRange={dateRange}
+          onDateRangeChange={onDateRangeChange}
+          onNextWeek={onNextWeek}
+          onPrevWeek={onPrevWeek}
+          onCurrentWeek={onCurrentWeek}
           totalHours={totalHours}
           isMobile={true}
         />
         
-        {/* Log Time Button */}
-        <div className="flex justify-end mb-4">
+        {/* Quick Log Button */}
+        <div className="mb-4">
+          <QuickLogButton onQuickLog={() => setShowQuickLog(true)} />
+        </div>
+        
+        {/* Total Hours Display */}
+        <div className="mb-4 px-3 py-2 bg-muted rounded-md flex items-center">
+          <Clock className="h-4 w-4 mr-2 text-[#0485ea]" />
+          <span className="text-sm">
+            Total Hours This Week: <span className="font-medium text-[#0485ea]">{totalHours.toFixed(1)}</span>
+          </span>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <Button 
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
+            variant="outline"
             size="sm"
+            className="justify-start"
             onClick={() => setShowAddForm(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
-            Log Time
+            Detailed Log
           </Button>
+          
+          {hasCamera && (
+            <Button 
+              variant="outline"
+              size="sm"
+              className="justify-start"
+              onClick={() => setShowAddForm(true)}
+            >
+              <Camera className="h-4 w-4 mr-1" />
+              Add Receipt
+            </Button>
+          )}
         </div>
         
         {/* Time entries list */}
         <Card className="mb-6 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Time Entries</CardTitle>
+            <CardTitle className="text-lg">Weekly Entries</CardTitle>
           </CardHeader>
           <CardContent>
             <TimeEntryList 
-              timeEntries={timeEntries} 
+              entries={timeEntries} 
               isLoading={isLoading}
               onEntryChange={onAddSuccess}
               isMobile={true}
@@ -71,15 +118,29 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
         
         {/* Log Time Sheet */}
         <Sheet open={showAddForm} onOpenChange={setShowAddForm}>
-          <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
-            <SheetHeader>
+          <SheetContent side="bottom" className="h-[90vh] overflow-y-auto p-0">
+            <SheetHeader className="p-4 border-b">
               <SheetTitle>Log Time</SheetTitle>
             </SheetHeader>
-            <div className="py-4">
-              <TimeEntryForm onSuccess={onAddSuccess} />
+            <div className="py-2 px-2">
+              <TimeEntryFormWizard 
+                onSuccess={() => {
+                  setShowAddForm(false);
+                  onAddSuccess();
+                }}
+                date={new Date()}
+              />
             </div>
           </SheetContent>
         </Sheet>
+        
+        {/* Quick Log Sheet */}
+        <MobileQuickLogSheet 
+          open={showQuickLog}
+          onOpenChange={setShowQuickLog}
+          onSuccess={handleQuickLogSuccess}
+          date={new Date()}
+        />
       </div>
     </PageTransition>
   );

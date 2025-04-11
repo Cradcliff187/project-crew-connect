@@ -1,14 +1,18 @@
 
 import React from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
 
 interface ExpenseDatePickerProps {
   control: Control<DocumentUploadFormValues>;
@@ -26,7 +30,7 @@ const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ control }) => {
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
-                  variant={"outline"}
+                  variant="outline"
                   className={cn(
                     "w-full pl-3 text-left font-normal",
                     !field.value && "text-muted-foreground"
@@ -35,7 +39,7 @@ const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ control }) => {
                   {field.value ? (
                     format(field.value, "PPP")
                   ) : (
-                    <span>Select a date</span>
+                    <span>Pick a date</span>
                   )}
                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </Button>
@@ -44,11 +48,8 @@ const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ control }) => {
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={field.value as Date}
+                selected={field.value}
                 onSelect={field.onChange}
-                disabled={(date) =>
-                  date > new Date() || date < new Date("1900-01-01")
-                }
                 initialFocus
               />
             </PopoverContent>

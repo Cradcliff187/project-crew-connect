@@ -1,188 +1,163 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
+import { v4 as uuidv4 } from 'uuid';
 
-export interface UploadResult {
+interface UploadResult {
   success: boolean;
   documentId?: string;
-  error?: any;
+  error?: Error;
 }
 
-export const uploadDocument = async (
-  data: DocumentUploadFormValues
-): Promise<UploadResult> => {
+export const uploadDocument = async (data: DocumentUploadFormValues): Promise<UploadResult> => {
   try {
-    // Only log in development environment
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Uploading document with data:', data);
+    const { files, metadata } = data;
+    const file = files[0]; // Currently we only support uploading one file at a time
+    
+    // Generate a unique ID for the document
+    const documentId = uuidv4();
+    
+    // Generate a storage path that includes entity info for better organization
+    const entityType = metadata.entityType.toLowerCase();
+    const entityId = metadata.entityId;
+    const timestamp = Date.now();
+    const filePath = `${entityType}/${entityId}/${documentId}_${timestamp}_${file.name}`;
+    
+    // Upload the file to Supabase Storage
+    const { error: uploadError } = await supabase
+      .storage
+      .from('construction_documents')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+    
+    if (uploadError) {
+      console.error('Error uploading to storage:', uploadError);
+      throw uploadError;
     }
     
-    let uploadedDocumentId: string | undefined;
+    // Format the date field properly
+    let expenseDate = null;
+    if (metadata.expenseDate) {
+      expenseDate = metadata.expenseDate instanceof Date
+        ? metadata.expenseDate.toISOString()
+        : new Date(metadata.expenseDate).toISOString();
+    }
     
-    const { files, metadata } = data;
-    
-    // We'll handle multiple files if they're provided
-    for (const file of files) {
-      // Create a unique file name using timestamp and original name
-      const timestamp = new Date().getTime();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      
-      // Format entity type for path to ensure consistency
-      const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
-      const entityId = metadata.entityId || 'general'; // Ensuring entityId always has a value
-      const filePath = `${entityTypePath}/${entityId}/${fileName}`;
-      
-      // Only log in development environment
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Uploading file to construction_documents bucket, path: ${filePath}`);
-      }
-      
-      // Check if file is actually a File object
-      if (!(file instanceof File)) {
-        console.error('Not a valid File object:', file);
-        throw new Error('Invalid file object provided');
-      }
-      
-      // Determine the proper content type based on file extension if needed
-      let contentType = file.type;
-      if (!contentType || contentType === 'application/octet-stream') {
-        // Map common extensions to MIME types
-        const mimeMap: Record<string, string> = {
-          'pdf': 'application/pdf',
-          'doc': 'application/msword',
-          'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'xls': 'application/vnd.ms-excel',
-          'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'png': 'image/png',
-          'jpg': 'image/jpeg',
-          'jpeg': 'image/jpeg',
-          'gif': 'image/gif',
-          'txt': 'text/plain'
-        };
-        
-        if (fileExt && mimeMap[fileExt.toLowerCase()]) {
-          contentType = mimeMap[fileExt.toLowerCase()];
-          
-          // Only log in development environment
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`File type not provided, using extension-based type: ${contentType}`);
-          }
-        }
-      }
-      
-      // Create file options with proper headers to preserve content type
-      const fileOptions = {
-        contentType: contentType,
-        cacheControl: '3600',
-        upsert: true,
-        // Use explicit options for storage
-        duplex: 'half' as const
-      };
-      
-      // Upload the file to Supabase Storage with explicit content type
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('construction_documents')
-        .upload(filePath, file, fileOptions);
-        
-      if (uploadError) {
-        console.error('Storage upload error:', {
-          message: uploadError.message,
-          error: uploadError,
-          name: uploadError.name,
-          stack: uploadError.stack
-        });
-        throw uploadError;
-      }
-      
-      // Only log in development environment
-      if (process.env.NODE_ENV === 'development') {
-        console.log('File uploaded successfully:', uploadData);
-      }
-      
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(filePath);
-        
-      // Only log in development environment
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Public URL generated:', publicUrl);
-      }
-      
-      // Now insert document metadata to Supabase
-      const documentData = {
+    // Insert document metadata into the database
+    const { error: dbError } = await supabase
+      .from('documents')
+      .insert({
+        document_id: documentId,
         file_name: file.name,
-        file_type: contentType, // Use our determined content type
+        file_type: file.type,
         file_size: file.size,
         storage_path: filePath,
         entity_type: metadata.entityType,
-        entity_id: entityId, // Use the sanitized entity ID
-        tags: metadata.tags || [],
-        // Additional metadata fields
+        entity_id: metadata.entityId,
         category: metadata.category,
-        amount: metadata.amount || null,
-        expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
-        version: metadata.version || 1,
-        is_expense: metadata.isExpense || false,
-        notes: metadata.notes || null,
-        vendor_id: metadata.vendorId || null,
-        vendor_type: metadata.vendorType || null,
-        expense_type: metadata.expenseType || null,
-      };
-      
-      // Only log in development environment
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Inserting document metadata:', documentData);
-      }
-      
-      // For this DB call we need to ensure headers are correctly sent
-      const { data: insertedData, error: insertError } = await supabase
-        .from('documents')
-        .insert(documentData)
-        .select('document_id')
-        .single();
-        
-      if (insertError) {
-        console.error('Document metadata insert error:', {
-          message: insertError.message,
-          error: insertError
-        });
-        throw insertError;
-      }
-      
-      // Only log in development environment
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Document metadata inserted:', insertedData);
-      }
-      
-      // Store the document ID for the first file
-      if (insertedData) {
-        uploadedDocumentId = insertedData.document_id;
-      }
+        is_expense: metadata.isExpense,
+        tags: metadata.tags || [],
+        expense_date: expenseDate,
+        amount: metadata.amount,
+        notes: metadata.notes,
+        vendor_id: metadata.vendorId,
+        vendor_type: metadata.vendorType,
+        expense_type: metadata.expenseType,
+        budget_item_id: metadata.budgetItemId,
+        version: 1,
+        is_latest_version: true
+      });
+    
+    if (dbError) {
+      console.error('Error inserting document metadata:', dbError);
+      throw dbError;
     }
+    
+    // If document is linked to an expense or budget item, update relationships
+    if (metadata.isExpense || metadata.category === 'receipt' || metadata.category === 'invoice') {
+      await updateExpenseRelationships(documentId, metadata);
+    }
+
+    // If this document has a parent entity, create a relationship
+    if (metadata.parentEntityType && metadata.parentEntityId) {
+      await createParentEntityRelationship(documentId, metadata);
+    }
+    
+    console.log('Document upload completed successfully');
     
     return {
       success: true,
-      documentId: uploadedDocumentId
+      documentId
     };
     
   } catch (error: any) {
-    // Enhanced error logging, but only critical errors are always shown
-    console.error('Upload error:', error.message);
-    
-    // More detailed error only in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Upload error details:', {
-        errorObject: error,
-        name: error.name,
-        stack: error.stack
-      });
-    }
-    
+    console.error('Document upload failed:', error);
     return {
       success: false,
       error
     };
+  }
+};
+
+// Helper to update expense relationships
+const updateExpenseRelationships = async (documentId: string, metadata: any) => {
+  try {
+    // If we have a budget item ID, update it with this document
+    if (metadata.budgetItemId) {
+      // Create expense data object with all required fields
+      const expenseData = {
+        entity_type: metadata.entityType,
+        entity_id: metadata.entityId,
+        expense_type: metadata.expenseType || 'other',
+        document_id: documentId,
+        vendor_id: metadata.vendorId,
+        expense_date: metadata.expenseDate,
+        description: metadata.notes || `${metadata.category} document`,
+        amount: metadata.amount || 0,
+        budget_item_id: metadata.budgetItemId,
+        is_receipt: metadata.category === 'receipt',
+        // Add required unit_price field
+        unit_price: metadata.amount || 0,
+        // Default quantity to 1 if not provided
+        quantity: 1
+      };
+        
+      const { error } = await supabase
+        .from('expenses')
+        .insert(expenseData);
+        
+      if (error) {
+        console.error('Error creating expense relationship:', error);
+      }
+    }
+  } catch (error) {
+    console.error('Error in updateExpenseRelationships:', error);
+  }
+};
+
+// Helper to create parent entity relationship
+const createParentEntityRelationship = async (documentId: string, metadata: any) => {
+  try {
+    // Create a document relationship
+    const { error } = await supabase
+      .from('document_relationships')
+      .insert({
+        source_document_id: documentId,
+        target_document_id: null, // We don't have a target document, just establishing parent relationship
+        relationship_type: 'PARENT_ENTITY',
+        relationship_metadata: {
+          parent_entity_type: metadata.parentEntityType,
+          parent_entity_id: metadata.parentEntityId,
+          description: 'Document belongs to this parent entity'
+        }
+      });
+      
+    if (error) {
+      console.error('Error creating parent entity relationship:', error);
+    }
+  } catch (error) {
+    console.error('Error in createParentEntityRelationship:', error);
   }
 };

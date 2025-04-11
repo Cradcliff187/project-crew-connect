@@ -1,28 +1,51 @@
 
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, isToday, isYesterday, differenceInDays } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(dateString: string): string {
-  if (!dateString) return "—";
+/**
+ * Format a date string to a human-readable format
+ */
+export function formatDate(dateString: string | undefined | null): string {
+  if (!dateString) return 'N/A';
   
   const date = new Date(dateString);
-  
-  if (isNaN(date.getTime())) return "Invalid date";
-  
-  if (isToday(date)) {
-    return `Today at ${format(date, "h:mm a")}`;
-  } else if (isYesterday(date)) {
-    return `Yesterday at ${format(date, "h:mm a")}`;
-  } else {
-    return format(date, "MMM d, yyyy");
-  }
+  return new Intl.DateTimeFormat('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  }).format(date);
 }
 
+/**
+ * Format a number as currency (USD)
+ */
+export function formatCurrency(amount: number | undefined | null): string {
+  if (amount === undefined || amount === null) return '$0.00';
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+}
+
+/**
+ * Format hours to display with proper precision
+ */
+export function formatHours(hours: number | undefined | null): string {
+  if (hours === undefined || hours === null) return '0h';
+  
+  return `${Number(hours).toFixed(1)}h`;
+}
+
+/**
+ * Format file size in bytes to human-readable string
+ */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
   
@@ -34,35 +57,7 @@ export function formatFileSize(bytes: number): string {
 }
 
 /**
- * Format a number as currency (USD)
- */
-export function formatCurrency(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return '$0.00';
-  
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount);
-}
-
-/**
- * Format a time range in a human-readable format
- */
-export function formatTimeRange(startTime: string, endTime: string): string {
-  if (!startTime || !endTime) return "Invalid time range";
-  
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return "Invalid time range";
-  
-  return `${format(start, "h:mm a")} - ${format(end, "h:mm a")}`;
-}
-
-/**
- * Calculate days until due from a due date
+ * Calculate days until due date
  */
 export function calculateDaysUntilDue(dueDate: string | null): number | null {
   if (!dueDate) return null;
@@ -70,7 +65,60 @@ export function calculateDaysUntilDue(dueDate: string | null): number | null {
   const today = new Date();
   const due = new Date(dueDate);
   
-  if (isNaN(due.getTime())) return null;
+  // Reset time part for accurate day calculation
+  today.setHours(0, 0, 0, 0);
+  due.setHours(0, 0, 0, 0);
   
-  return differenceInDays(due, today);
+  const diffTime = due.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}
+
+/**
+ * Format time range for display
+ */
+export function formatTimeRange(startTime: string, endTime: string): string {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  
+  const startFormat = new Intl.DateTimeFormat('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  }).format(start);
+  
+  const endFormat = new Intl.DateTimeFormat('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true
+  }).format(end);
+  
+  return `${startFormat} - ${endFormat}`;
+}
+
+/**
+ * Get color for entity type
+ */
+export function getEntityColor(entityType: string): string {
+  const type = entityType?.toUpperCase() || '';
+  
+  switch (type) {
+    case 'PROJECT':
+      return 'blue';
+    case 'ESTIMATE':
+      return 'purple';
+    case 'VENDOR':
+      return 'emerald';
+    case 'CUSTOMER':
+      return 'cyan';
+    case 'WORK_ORDER':
+      return 'amber';
+    case 'SUBCONTRACTOR':
+      return 'green';
+    case 'EXPENSE':
+      return 'red';
+    default:
+      return 'gray';
+  }
 }

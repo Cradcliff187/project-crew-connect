@@ -1,20 +1,23 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { VendorDocument } from '../types';
+import { BaseDocument } from '@/components/common/documents/DocumentsSection';
 import { toast } from '@/hooks/use-toast';
+
+export interface VendorDocument extends BaseDocument {
+  vendor_id?: string;
+  vendor_type?: string;
+}
 
 export const useVendorDocuments = (vendorId: string) => {
   const [documents, setDocuments] = useState<VendorDocument[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     if (!vendorId) return;
     
     setLoading(true);
     try {
-      console.log('Fetching documents for vendor:', vendorId);
-      
       // Get documents directly related to the vendor
       const { data: vendorDocs, error: vendorError } = await supabase
         .from('documents')
@@ -39,9 +42,6 @@ export const useVendorDocuments = (vendorId: string) => {
         return;
       }
       
-      console.log('Vendor documents:', vendorDocs?.length || 0);
-      console.log('Referenced documents:', referencedDocs?.length || 0);
-      
       // Combine all documents
       const allDocs = [...(vendorDocs || []), ...(referencedDocs || [])];
       
@@ -50,15 +50,11 @@ export const useVendorDocuments = (vendorId: string) => {
         new Map(allDocs.map(doc => [doc.document_id, doc])).values()
       );
       
-      console.log('Total unique documents:', uniqueDocs.length);
-      
       // Get signed URLs for documents for better security
       const enhancedDocuments = await Promise.all(
         uniqueDocs.map(async (doc) => {
           let url = '';
           if (doc.storage_path) {
-            console.log('Getting signed URL for document:', doc.document_id, 'Path:', doc.storage_path);
-            
             // Using createSignedUrl with correct content type option
             const options = {
               download: false,
@@ -78,22 +74,20 @@ export const useVendorDocuments = (vendorId: string) => {
               console.error('Error generating signed URL for', doc.document_id, error);
             } else {
               url = data.signedUrl;
-              console.log('Successfully generated signed URL for', doc.document_id);
             }
-          } else {
-            console.warn('Document has no storage path:', doc.document_id);
           }
           
           // Make sure we return a document with all required fields
           return {
             ...doc,
-            url,
+            url, // Ensure url is provided (now required by BaseDocument)
             // Ensure all required fields from BaseDocument are present
             entity_id: doc.entity_id || vendorId,
             entity_type: doc.entity_type || 'VENDOR',
             updated_at: doc.updated_at || doc.created_at,
-            file_type: doc.file_type || null,
-            storage_path: doc.storage_path
+            file_type: doc.file_type || '',
+            storage_path: doc.storage_path,
+            file_size: 0 // Default value for file_size
           } as VendorDocument;
         })
       );
@@ -101,14 +95,19 @@ export const useVendorDocuments = (vendorId: string) => {
       setDocuments(enhancedDocuments);
     } catch (error) {
       console.error('Error processing vendor documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load vendor documents",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [vendorId]);
   
   useEffect(() => {
     fetchDocuments();
-  }, [vendorId]);
+  }, [fetchDocuments]);
   
   return { documents, loading, fetchDocuments };
 };

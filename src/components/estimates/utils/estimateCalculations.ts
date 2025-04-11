@@ -1,189 +1,143 @@
 
-import { EstimateItem } from '../schemas/estimateFormSchema';
-
-// Set DEBUG_CALCULATIONS to false to disable calculation logging
-const DEBUG_CALCULATIONS = false;
-
-// Function for controlled logging
-const logCalculation = (name: string, input: any, result: number) => {
-  if (DEBUG_CALCULATIONS) {
-    console.log(`${name} calculation:`, { input, result });
-  }
-  return result;
+/**
+ * Calculate the total price of an estimate item
+ */
+export const calculateItemPrice = (item: any): number => {
+  const quantity = parseFloat(item.quantity) || 1;
+  const unitPrice = parseFloat(item.unit_price) || 0;
+  return quantity * unitPrice;
 };
 
-// Calculate the total cost for a single item
-export const calculateItemCost = (item: EstimateItem): number => {
-  if (!item) {
-    return 0;
-  }
+/**
+ * Calculate the gross margin of an estimate item
+ */
+export const calculateItemGrossMargin = (item: any): number => {
+  const totalPrice = calculateItemPrice(item);
+  const quantity = parseFloat(item.quantity) || 1;
+  const cost = parseFloat(item.cost) || 0;
+  const totalCost = quantity * cost;
   
-  const cost = parseFloat(item.cost || '0') || 0;
-  const quantity = parseFloat(item.quantity || "1") || 1; // Default to 1 if not provided
-  return logCalculation('ItemCost', { cost, quantity }, cost * quantity);
+  return totalPrice - totalCost;
 };
 
-// Calculate the markup amount for a single item
-export const calculateItemMarkup = (item: EstimateItem): number => {
-  if (!item) {
-    return 0;
-  }
+/**
+ * Calculate the gross margin percentage of an estimate item
+ */
+export const calculateItemGrossMarginPercentage = (item: any): number => {
+  const totalPrice = calculateItemPrice(item);
+  const grossMargin = calculateItemGrossMargin(item);
   
-  const cost = calculateItemCost(item);
-  const markupPercentage = parseFloat(item.markup_percentage || '0') || 0;
-  return logCalculation('ItemMarkup', { cost, markupPercentage }, (cost * markupPercentage) / 100);
+  if (totalPrice <= 0) return 0;
+  return (grossMargin / totalPrice) * 100;
 };
 
-// Calculate the selling price for a single item
-export const calculateItemPrice = (item: EstimateItem): number => {
-  if (!item) {
-    return 0;
-  }
-  
-  const cost = calculateItemCost(item);
-  const markup = calculateItemMarkup(item);
-  return logCalculation('ItemPrice', { cost, markup }, cost + markup);
-};
-
-// Calculate the gross margin for a single item
-export const calculateItemGrossMargin = (item: EstimateItem): number => {
-  if (!item) {
-    return 0;
-  }
-  
-  const price = calculateItemPrice(item);
-  const cost = calculateItemCost(item);
-  return logCalculation('ItemGrossMargin', { price, cost }, price - cost);
-};
-
-// Calculate the gross margin percentage for a single item
-export const calculateItemGrossMarginPercentage = (item: EstimateItem): number => {
-  if (!item) {
-    return 0;
-  }
-  
-  const price = calculateItemPrice(item);
-  const margin = calculateItemGrossMargin(item);
-  
-  if (price === 0) return 0;
-  return logCalculation('ItemGrossMarginPercentage', { margin, price }, (margin / price) * 100);
-};
-
-// Calculate the total cost of all items
-export const calculateTotalCost = (items: EstimateItem[]): number => {
-  if (!Array.isArray(items)) {
-    return 0;
-  }
-  
-  const result = items.reduce((total, item) => {
-    return total + calculateItemCost(item);
+/**
+ * Calculate line item totals for an estimate
+ */
+export const calculateEstimateTotals = (items: any[], contingencyPercentage = '0') => {
+  const subtotal = items.reduce((sum, item) => {
+    const itemPrice = calculateItemPrice(item);
+    return sum + itemPrice;
   }, 0);
   
-  return logCalculation('TotalCost', { itemsCount: items.length }, result);
-};
-
-// Calculate the total markup amount of all items
-export const calculateTotalMarkup = (items: EstimateItem[]): number => {
-  if (!Array.isArray(items)) {
-    return 0;
-  }
-  
-  const result = items.reduce((total, item) => {
-    return total + calculateItemMarkup(item);
+  const totalCost = items.reduce((sum, item) => {
+    const quantity = parseFloat(item.quantity) || 1;
+    const cost = parseFloat(item.cost) || 0;
+    return sum + (quantity * cost);
   }, 0);
   
-  return logCalculation('TotalMarkup', { itemsCount: items.length }, result);
-};
-
-// Rest of utility functions with limited logging
-export const calculateSubtotal = (items: EstimateItem[]): number => {
-  if (!Array.isArray(items)) return 0;
+  const grossMargin = subtotal - totalCost;
+  const grossMarginPercentage = subtotal > 0 ? (grossMargin / subtotal) * 100 : 0;
   
-  const result = items.reduce((total, item) => {
-    return total + calculateItemPrice(item);
-  }, 0);
-  
-  return logCalculation('Subtotal', { itemsCount: items.length }, result);
-};
-
-export const calculateTotalGrossMargin = (items: EstimateItem[]): number => {
-  if (!Array.isArray(items)) return 0;
-  
-  const result = items.reduce((total, item) => {
-    return total + calculateItemGrossMargin(item);
-  }, 0);
-  
-  return logCalculation('TotalGrossMargin', { itemsCount: items.length }, result);
-};
-
-export const calculateOverallGrossMarginPercentage = (items: EstimateItem[]): number => {
-  if (!Array.isArray(items)) return 0;
-  
-  const subtotal = calculateSubtotal(items);
-  const totalGrossMargin = calculateTotalGrossMargin(items);
-  
-  if (subtotal === 0) return 0;
-  
-  const result = (totalGrossMargin / subtotal) * 100;
-  return logCalculation('OverallGrossMarginPercentage', { totalGrossMargin, subtotal }, result);
-};
-
-export const calculateContingencyAmount = (
-  items: EstimateItem[],
-  contingencyPercentage: string
-): number => {
-  if (!Array.isArray(items)) return 0;
-  
-  const totalAmount = calculateSubtotal(items);
-  const contingencyPercentageNum = parseFloat(contingencyPercentage) || 0;
-  
-  const result = (totalAmount * contingencyPercentageNum) / 100;
-  return logCalculation('ContingencyAmount', { totalAmount, contingencyPercentageNum }, result);
-};
-
-export const calculateGrandTotal = (
-  items: EstimateItem[],
-  contingencyPercentage: string
-): number => {
-  if (!Array.isArray(items)) return 0;
-  
-  const result = calculateSubtotal(items) + calculateContingencyAmount(items, contingencyPercentage);
-  return logCalculation('GrandTotal', { 
-    subtotal: calculateSubtotal(items), 
-    contingency: calculateContingencyAmount(items, contingencyPercentage) 
-  }, result);
-};
-
-// Optimized calculation function - calculates all at once
-export const calculateEstimateTotals = (
-  items: EstimateItem[],
-  contingencyPercentage: string
-): { totalPrice: number; contingencyAmount: number; grandTotal: number } => {
-  if (!Array.isArray(items)) {
-    return { totalPrice: 0, contingencyAmount: 0, grandTotal: 0 };
-  }
-  
-  // Ensure all required properties have values
-  const safeItems = items.map(item => ({
-    cost: item.cost || '0',
-    markup_percentage: item.markup_percentage || '0',
-    quantity: item.quantity || '1',
-    item_type: item.item_type,
-    trade_type: item.trade_type,
-    expense_type: item.expense_type,
-    custom_type: item.custom_type,
-    vendor_id: item.vendor_id,
-    subcontractor_id: item.subcontractor_id,
-    document_id: item.document_id
-  }));
-  
-  const totalPrice = calculateSubtotal(safeItems);
-  const contingencyAmount = calculateContingencyAmount(safeItems, contingencyPercentage);
-  const grandTotal = totalPrice + contingencyAmount;
+  const contingencyAmount = calculateContingency(subtotal, parseFloat(contingencyPercentage));
+  const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
   
   return {
-    totalPrice,
+    subtotal,
+    totalCost,
+    grossMargin,
+    grossMarginPercentage,
     contingencyAmount,
     grandTotal
   };
+};
+
+/**
+ * Calculate contingency amount based on subtotal and percentage
+ */
+export const calculateContingency = (subtotal: number, percentage: number): number => {
+  return subtotal * (percentage / 100);
+};
+
+/**
+ * Calculate grand total with contingency
+ */
+export const calculateGrandTotal = (subtotal: number, contingencyAmount: number): number => {
+  return subtotal + contingencyAmount;
+};
+
+/**
+ * Calculate subtotal for all items
+ */
+export const calculateSubtotal = (items: any[]): number => {
+  return items.reduce((sum, item) => {
+    const quantity = parseFloat(item.quantity) || 1;
+    const unitPrice = parseFloat(item.unit_price) || 0;
+    return sum + (quantity * unitPrice);
+  }, 0);
+};
+
+/**
+ * Calculate total cost for all items
+ */
+export const calculateTotalCost = (items: any[]): number => {
+  return items.reduce((sum, item) => {
+    const quantity = parseFloat(item.quantity) || 1;
+    const cost = parseFloat(item.cost) || 0;
+    return sum + (quantity * cost);
+  }, 0);
+};
+
+/**
+ * Calculate total markup for all items
+ */
+export const calculateTotalMarkup = (items: any[]): number => {
+  return items.reduce((sum, item) => {
+    const cost = parseFloat(item.cost) || 0;
+    const quantity = parseFloat(item.quantity) || 1;
+    const markupPercentage = parseFloat(item.markup_percentage) || 0;
+    const totalCost = cost * quantity;
+    const markup = totalCost * (markupPercentage / 100);
+    return sum + markup;
+  }, 0);
+};
+
+/**
+ * Calculate total gross margin for all items
+ */
+export const calculateTotalGrossMargin = (items: any[]): number => {
+  return items.reduce((sum, item) => {
+    const grossMargin = calculateItemGrossMargin(item);
+    return sum + grossMargin;
+  }, 0);
+};
+
+/**
+ * Calculate overall gross margin percentage
+ */
+export const calculateOverallGrossMarginPercentage = (items: any[]): number => {
+  const subtotal = calculateSubtotal(items);
+  const totalGrossMargin = calculateTotalGrossMargin(items);
+  
+  if (subtotal <= 0) return 0;
+  return (totalGrossMargin / subtotal) * 100;
+};
+
+/**
+ * Calculate contingency amount from items and percentage
+ */
+export const calculateContingencyAmount = (items: any[], contingencyPercentage: any): number => {
+  const subtotal = calculateSubtotal(items);
+  const percentage = parseFloat(contingencyPercentage) || 0;
+  return calculateContingency(subtotal, percentage);
 };

@@ -1,179 +1,465 @@
-
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { formatDate, formatCurrency } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { 
+  FileText, CheckCircle, Clock, AlertCircle, XCircle, 
+  ArrowRightCircle, ChevronDown, ChevronUp, LineChart, 
+  FileUp, Download
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { 
+  Table, TableBody, TableCell, TableHead, 
+  TableHeader, TableRow 
+} from '@/components/ui/table';
 import { EstimateRevision } from '../types/estimateTypes';
-import { ChevronDown, ChevronUp, ArrowLeftRight, Clock, Check, X, Send } from 'lucide-react';
-import EstimateRevisionCompareDialog from '../detail/dialogs/EstimateRevisionCompareDialog';
-import { Badge } from "@/components/ui/badge";
+import { supabase } from '@/integrations/supabase/client';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import PDFExportButton from '../detail/PDFExportButton';
+import RevisionPDFViewer from '../components/RevisionPDFViewer';
 
-type EstimateRevisionsTabProps = {
-  revisions: EstimateRevision[];
-  formatDate: (dateString: string) => string;
+interface EstimateRevisionsTabProps {
   estimateId: string;
-};
+  revisions: EstimateRevision[];
+  currentRevisionId?: string;
+  onRevisionSelect: (revisionId: string) => void;
+}
 
-const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({ revisions, formatDate, estimateId }) => {
+const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
+  estimateId,
+  revisions,
+  currentRevisionId,
+  onRevisionSelect
+}) => {
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
-  const [compareDialogOpen, setCompareDialogOpen] = useState(false);
-  const [selectedRevisions, setSelectedRevisions] = useState<{
-    oldRevisionId?: string;
-    newRevisionId: string;
-  }>({ newRevisionId: '' });
+  const [activeTab, setActiveTab] = useState('timeline');
+  const [revisionItems, setRevisionItems] = useState<Record<string, any[]>>({});
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const toggleExpand = (revisionId: string) => {
-    if (expandedRevision === revisionId) {
+  const sortedRevisions = [...revisions].sort((a, b) => b.version - a.version);
+  
+  useEffect(() => {
+    if (currentRevisionId) {
+      setExpandedRevision(currentRevisionId);
+      fetchRevisionItems(currentRevisionId);
+    }
+  }, [currentRevisionId]);
+
+  const fetchRevisionItems = async (revisionId: string) => {
+    if (revisionItems[revisionId]) return; // Already fetched
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('revision_id', revisionId)
+        .order('created_at', { ascending: true });
+        
+      if (error) throw error;
+      
+      setRevisionItems(prev => ({
+        ...prev,
+        [revisionId]: data || []
+      }));
+    } catch (error) {
+      console.error('Error fetching revision items:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load revision items',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusIcon = (status: string | undefined) => {
+    switch(status?.toLowerCase()) {
+      case 'approved':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'sent':
+        return <Clock className="h-4 w-4 text-[#0485ea]" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <AlertCircle className="h-4 w-4 text-gray-500" />;
+    }
+  };
+  
+  const getStatusColor = (status: string | undefined) => {
+    switch(status?.toLowerCase()) {
+      case 'approved':
+        return 'bg-green-100 text-green-800 border-green-300';
+      case 'sent':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+  
+  const handleRevisionClick = (revision: EstimateRevision) => {
+    if (expandedRevision === revision.id) {
       setExpandedRevision(null);
     } else {
-      setExpandedRevision(revisionId);
+      setExpandedRevision(revision.id);
+      fetchRevisionItems(revision.id);
     }
   };
-
-  const handleCompare = (revisionId: string, previousRevisionId?: string) => {
-    setSelectedRevisions({
-      oldRevisionId: previousRevisionId,
-      newRevisionId: revisionId
-    });
-    setCompareDialogOpen(true);
+  
+  const handleSetAsCurrent = (revisionId: string) => {
+    onRevisionSelect(revisionId);
   };
+  
+  const renderEmptyState = () => (
+    <div className="text-center p-4 border rounded-md bg-slate-50 mb-4">
+      <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+      <h3 className="text-base font-medium mb-1">No Revisions Available</h3>
+      <p className="text-sm text-muted-foreground">
+        This estimate doesn't have any revisions yet.
+      </p>
+    </div>
+  );
 
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return <Clock className="h-3.5 w-3.5 text-gray-500" />;
-      case 'ready':
-        return <Clock className="h-3.5 w-3.5 text-blue-500" />;
-      case 'sent':
-        return <Send className="h-3.5 w-3.5 text-blue-500" />;
-      case 'approved':
-        return <Check className="h-3.5 w-3.5 text-green-500" />;
-      case 'rejected':
-        return <X className="h-3.5 w-3.5 text-red-500" />;
-      default:
-        return <Clock className="h-3.5 w-3.5 text-gray-500" />;
+  const renderTimelineView = () => {
+    if (sortedRevisions.length === 0) {
+      return renderEmptyState();
     }
-  };
 
-  const getStatusBadge = (status: string) => {
-    const color = {
-      draft: "bg-gray-100 text-gray-800",
-      ready: "bg-blue-100 text-blue-800",
-      sent: "bg-blue-100 text-blue-800",
-      approved: "bg-green-100 text-green-800",
-      rejected: "bg-red-100 text-red-800"
-    }[status.toLowerCase()] || "bg-gray-100 text-gray-800";
-    
     return (
-      <div className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${color}`}>
-        {getStatusIcon(status)}
-        <span className="ml-1 capitalize">{status}</span>
+      <div className="space-y-4">
+        {sortedRevisions.map((revision) => {
+          const isCurrent = revision.id === currentRevisionId;
+          const isExpanded = revision.id === expandedRevision;
+          const items = revisionItems[revision.id] || [];
+          
+          return (
+            <Card 
+              key={revision.id} 
+              className={`${isCurrent ? 'border-[#0485ea]/30 shadow-sm' : ''}`}
+            >
+              <Collapsible
+                open={isExpanded}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setExpandedRevision(revision.id);
+                    fetchRevisionItems(revision.id);
+                  } else {
+                    setExpandedRevision(null);
+                  }
+                }}
+              >
+                <CollapsibleTrigger className="w-full">
+                  <div 
+                    className={`p-4 flex items-center justify-between w-full hover:bg-slate-50 cursor-pointer
+                      ${isCurrent ? 'bg-[#0485ea]/5' : ''}`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {isCurrent ? (
+                        <div className="w-8 h-8 rounded-full bg-[#0485ea] text-white flex items-center justify-center">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                      )}
+                      
+                      <div>
+                        <div className="flex items-center">
+                          <span className="font-medium">Version {revision.version}</span>
+                          {isCurrent && (
+                            <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-800 border-blue-200">
+                              Current
+                            </Badge>
+                          )}
+                          
+                          <Badge variant="outline" className={`ml-2 ${getStatusColor(revision.status)}`}>
+                            <span className="flex items-center">
+                              {getStatusIcon(revision.status)}
+                              <span className="ml-1 uppercase text-xs">{revision.status || 'Draft'}</span>
+                            </span>
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDate(revision.revision_date)} • {formatCurrency(revision.amount || 0)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <CardContent className="pt-0 pb-4">
+                    {revision.notes && (
+                      <div className="mb-4 p-3 bg-slate-50 rounded-md text-sm">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Revision Notes
+                        </div>
+                        <div>
+                          {revision.notes}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Created On</div>
+                        <div className="text-sm">{formatDate(revision.created_at || '')}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Created By</div>
+                        <div className="text-sm">{revision.revision_by || 'Not specified'}</div>
+                      </div>
+                      {revision.sent_date && (
+                        <>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">Sent Date</div>
+                            <div className="text-sm">{formatDate(revision.sent_date)}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground mb-1">Sent To</div>
+                            <div className="text-sm">{revision.sent_to || 'Not specified'}</div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    
+                    {revision.pdf_document_id && (
+                      <RevisionPDFViewer revision={revision} />
+                    )}
+                    
+                    {!revision.pdf_document_id && (
+                      <div className="mb-4">
+                        <PDFExportButton
+                          estimateId={estimateId}
+                          revisionId={revision.id}
+                          size="sm"
+                          className="w-full"
+                        >
+                          <FileUp className="mr-2 h-4 w-4" />
+                          Generate PDF for Version {revision.version}
+                        </PDFExportButton>
+                      </div>
+                    )}
+                    
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium mb-2">Items Summary</h4>
+                      {loading ? (
+                        <div className="p-3 border rounded-md text-center">
+                          <p className="text-sm text-muted-foreground">Loading items...</p>
+                        </div>
+                      ) : items.length > 0 ? (
+                        <div className="border rounded-md overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Description</TableHead>
+                                <TableHead className="text-right">Quantity</TableHead>
+                                <TableHead className="text-right">Price</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {items.slice(0, 5).map(item => (
+                                <TableRow key={item.id}>
+                                  <TableCell className="text-sm">{item.description}</TableCell>
+                                  <TableCell className="text-sm text-right">{item.quantity}</TableCell>
+                                  <TableCell className="text-sm text-right">{formatCurrency(item.total_price)}</TableCell>
+                                </TableRow>
+                              ))}
+                              
+                              {items.length > 5 && (
+                                <TableRow>
+                                  <TableCell colSpan={3} className="text-center py-2">
+                                    <span className="text-xs text-muted-foreground">
+                                      +{items.length - 5} more items
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <div className="p-3 border rounded-md text-center">
+                          <p className="text-sm text-muted-foreground">No items in this revision</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      {!isCurrent ? (
+                        <Button 
+                          size="sm"
+                          onClick={() => handleSetAsCurrent(revision.id)}
+                          className="bg-[#0485ea] hover:bg-[#0373d1] text-sm"
+                        >
+                          <ArrowRightCircle className="h-4 w-4 mr-1.5" />
+                          Set as Current Version
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-300"
+                          disabled
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1.5" />
+                          Current Version
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          );
+        })}
       </div>
     );
   };
 
-  // Safe date formatting helper
-  const safeFormatDate = (dateString?: string) => {
-    if (!dateString) return "—";
-    try {
-      return formatDate(dateString);
-    } catch (error) {
-      console.error("Error formatting date:", error, dateString);
-      return "Invalid date";
+  const renderCompactTableView = () => {
+    if (sortedRevisions.length === 0) {
+      return renderEmptyState();
     }
+    
+    return (
+      <div className="border rounded-md overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Version</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedRevisions.map(revision => {
+              const isCurrent = revision.id === currentRevisionId;
+              
+              return (
+                <TableRow 
+                  key={revision.id}
+                  className={isCurrent ? 'bg-[#0485ea]/5' : ''}
+                >
+                  <TableCell>
+                    <div className="flex items-center">
+                      <span className="font-medium mr-2">V{revision.version}</span>
+                      {isCurrent && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
+                          Current
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{formatDate(revision.revision_date)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getStatusColor(revision.status)}>
+                      <span className="flex items-center">
+                        {getStatusIcon(revision.status)}
+                        <span className="ml-1 uppercase text-xs">{revision.status || 'Draft'}</span>
+                      </span>
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatCurrency(revision.amount || 0)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {revision.pdf_document_id && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            // Open PDF in new tab (basic implementation)
+                            // In a real app, integrate with RevisionPDFViewer component
+                          }}
+                          className="h-7 text-xs"
+                        >
+                          <Download className="h-3.5 w-3.5 mr-1" />
+                          PDF
+                        </Button>
+                      )}
+                      
+                      {!isCurrent && (
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSetAsCurrent(revision.id)}
+                          className="h-7 text-xs text-[#0485ea]"
+                        >
+                          <ArrowRightCircle className="h-3.5 w-3.5 mr-1" />
+                          Set Current
+                        </Button>
+                      )}
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setExpandedRevision(revision.id);
+                          fetchRevisionItems(revision.id);
+                          setActiveTab('timeline');
+                        }}
+                        className="h-7 text-xs"
+                      >
+                        <LineChart className="h-3.5 w-3.5 mr-1" />
+                        Details
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Revision History</CardTitle>
-          <CardDescription>Track changes to this estimate over time</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {revisions.length > 0 ? (
-            <div className="space-y-6">
-              {revisions.map((revision, index) => {
-                const previousRevision = revisions[index + 1]; // Next in array is previous in time (sorted desc)
-                
-                return (
-                  <div key={revision.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">Version {revision.version}</h4>
-                        {revision.is_current && (
-                          <Badge variant="outline" className="bg-blue-100 border-blue-200">Current</Badge>
-                        )}
-                        {getStatusBadge(revision.status)}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{safeFormatDate(revision.revision_date)}</span>
-                        {previousRevision && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-8 px-2"
-                            onClick={() => handleCompare(revision.id, previousRevision.id)}
-                          >
-                            <ArrowLeftRight className="h-3.5 w-3.5 mr-1" />
-                            <span className="text-xs">Compare</span>
-                          </Button>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0"
-                          onClick={() => toggleExpand(revision.id)}
-                        >
-                          {expandedRevision === revision.id ? 
-                            <ChevronUp className="h-4 w-4" /> : 
-                            <ChevronDown className="h-4 w-4" />
-                          }
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {expandedRevision === revision.id && (
-                      <div className="mt-2 pl-2 border-l-2 border-gray-200">
-                        {revision.notes && <p className="text-sm mb-2">{revision.notes}</p>}
-                        {revision.amount && (
-                          <p className="text-sm font-medium">
-                            Amount: {formatCurrency(revision.amount)}
-                          </p>
-                        )}
-                        <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                          {revision.status && (
-                            <p>Status: {revision.status}</p>
-                          )}
-                          {revision.sent_date && (
-                            <p>Sent: {safeFormatDate(revision.sent_date)}</p>
-                          )}
-                          {revision.revision_by && (
-                            <p>Revised by: {revision.revision_by}</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-4 text-muted-foreground">
-              No revision history available for this estimate.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <EstimateRevisionCompareDialog
-        open={compareDialogOpen}
-        onOpenChange={setCompareDialogOpen}
-        estimateId={estimateId}
-        oldRevisionId={selectedRevisions.oldRevisionId}
-        newRevisionId={selectedRevisions.newRevisionId}
-      />
-    </>
+    <div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <div className="flex justify-between items-center mb-4">
+          <TabsList>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="table">Table</TabsTrigger>
+          </TabsList>
+          
+          <div>
+            <PDFExportButton
+              estimateId={estimateId}
+              revisionId={currentRevisionId}
+              size="sm"
+              variant="outline"
+            >
+              <FileUp className="mr-2 h-4 w-4" />
+              Generate PDF
+            </PDFExportButton>
+          </div>
+        </div>
+        
+        <TabsContent value="timeline" className="mt-0">
+          {renderTimelineView()}
+        </TabsContent>
+        
+        <TabsContent value="table" className="mt-0">
+          {renderCompactTableView()}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

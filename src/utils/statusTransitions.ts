@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EntityType } from '@/hooks/useStatusHistory';
@@ -56,6 +55,25 @@ export const validateStatusTransition = (
       'approved': ['converted'],
       'rejected': ['draft'],
       'converted': []
+    },
+    'CUSTOMER': {
+      'PROSPECT': ['ACTIVE', 'INACTIVE'],
+      'ACTIVE': ['INACTIVE'],
+      'INACTIVE': ['ACTIVE']
+    },
+    'TIME_ENTRY': {
+      'DRAFT': ['SUBMITTED', 'CANCELLED'],
+      'SUBMITTED': ['APPROVED', 'REJECTED'],
+      'APPROVED': ['PAID', 'CANCELLED'],
+      'REJECTED': ['DRAFT'],
+      'PAID': [],
+      'CANCELLED': ['DRAFT']
+    },
+    'EMPLOYEE': {
+      'ACTIVE': ['INACTIVE', 'TERMINATED'],
+      'INACTIVE': ['ACTIVE'],
+      'TERMINATED': [],
+      'NEW': ['ACTIVE', 'TERMINATED']
     }
   };
 
@@ -193,6 +211,12 @@ export const getDefaultStatusForEntityType = (entityType: EntityType): string =>
       return 'PROSPECT';
     case 'VENDOR':
       return 'POTENTIAL';
+    case 'CUSTOMER':
+      return 'PROSPECT';
+    case 'TIME_ENTRY':
+      return 'DRAFT';
+    case 'EMPLOYEE':
+      return 'NEW';
     default:
       return '';
   }

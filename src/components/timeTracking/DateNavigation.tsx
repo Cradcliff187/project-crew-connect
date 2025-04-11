@@ -1,119 +1,140 @@
 
-import React, { useState } from 'react';
-import { format, subDays, addDays } from 'date-fns';
+import React from 'react';
+import { format, isWithinInterval, startOfWeek, endOfWeek } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarDays, ChevronDown, ChevronUp, Clock } from 'lucide-react';
-import { CardTitle, CardDescription } from '@/components/ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { DateRange } from './hooks/useTimeEntries';
 
 interface DateNavigationProps {
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
+  dateRange: DateRange;
+  onDateRangeChange: (dateRange: DateRange) => void;
+  onNextWeek: () => void;
+  onPrevWeek: () => void;
+  onCurrentWeek: () => void;
   totalHours: number;
   isMobile?: boolean;
 }
 
 const DateNavigation: React.FC<DateNavigationProps> = ({
-  selectedDate,
-  onDateChange,
+  dateRange,
+  onDateRangeChange,
+  onNextWeek,
+  onPrevWeek,
+  onCurrentWeek,
   totalHours,
   isMobile = false
 }) => {
-  const [showCalendar, setShowCalendar] = useState(false);
+  const { startDate, endDate } = dateRange;
+  const today = new Date();
   
-  // Format for display
-  const formattedDate = format(selectedDate, 'EEEE, MMMM d, yyyy');
+  // Check if current date range contains today
+  const isCurrentWeek = isWithinInterval(today, { start: startDate, end: endDate });
   
-  const handlePreviousDay = () => {
-    onDateChange(subDays(selectedDate, 1));
-  };
-  
-  const handleNextDay = () => {
-    onDateChange(addDays(selectedDate, 1));
-  };
-  
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      onDateChange(date);
-      setShowCalendar(false);
+  const formatDateRange = () => {
+    if (isMobile) {
+      // Shorter format for mobile
+      return `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d')}`;
+    }
+    
+    // Full format for desktop
+    if (format(startDate, 'MMM yyyy') === format(endDate, 'MMM yyyy')) {
+      // Same month and year
+      return `${format(startDate, 'MMM d')} - ${format(endDate, 'd, yyyy')}`;
+    } else if (format(startDate, 'yyyy') === format(endDate, 'yyyy')) {
+      // Same year, different month
+      return `${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`;
+    } else {
+      // Different year
+      return `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`;
     }
   };
   
-  if (isMobile) {
-    return (
-      <div className="mb-4">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={handlePreviousDay}>
-            <ChevronUp className="h-5 w-5 rotate-90" />
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            className="flex items-center gap-2 font-medium text-md"
-            onClick={() => setShowCalendar(!showCalendar)}
-          >
-            <CalendarDays className="h-4 w-4 text-[#0485ea]" />
-            {format(selectedDate, 'EEE, MMM d')}
-            {showCalendar ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-          
-          <Button variant="ghost" size="icon" onClick={handleNextDay}>
-            <ChevronUp className="h-5 w-5 -rotate-90" />
-          </Button>
-        </div>
-        
-        {showCalendar && (
-          <div className="mt-2 border rounded-md p-2 bg-background">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateChange}
-              className="rounded-md"
-            />
-          </div>
-        )}
-        
-        <div className="flex items-center mt-2">
-          <Clock className="h-4 w-4 mr-2 text-[#0485ea]" />
-          <span className="font-semibold">Total Hours: {totalHours.toFixed(1)}</span>
-        </div>
-      </div>
-    );
-  }
+  // When a date is selected in the calendar, set the week containing that date
+  const handleDateSelect = (date: Date) => {
+    if (!date) return;
+    
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
+    
+    onDateRangeChange({
+      startDate: weekStart,
+      endDate: weekEnd
+    });
+  };
   
   return (
-    <div className="flex justify-between items-center">
-      <div className="flex-1">
-        <Collapsible open={showCalendar} onOpenChange={setShowCalendar}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="p-0 font-normal flex items-center text-left">
-              <CalendarDays className="h-4 w-4 mr-2 text-[#0485ea]" />
-              <CardTitle className="text-xl">{formattedDate}</CardTitle>
-              {showCalendar ? (
-                <ChevronUp className="h-4 w-4 ml-2" />
-              ) : (
-                <ChevronDown className="h-4 w-4 ml-2" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateChange}
-              className="rounded-md border"
-            />
-          </CollapsibleContent>
-        </Collapsible>
+    <div className="flex flex-col space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onPrevWeek}
+            className="h-8 w-8"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Previous week</span>
+          </Button>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={isCurrentWeek ? "default" : "outline"}
+                className={`mx-1 px-3 h-8 ${isCurrentWeek ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}`}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                {formatDateRange()}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="center" className="p-0 w-auto">
+              <CalendarComponent
+                mode="single"
+                selected={new Date(startDate)}
+                onSelect={(date) => date && handleDateSelect(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onNextWeek}
+            className="h-8 w-8"
+          >
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Next week</span>
+          </Button>
+        </div>
+        
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCurrentWeek}
+            className={isCurrentWeek ? 'invisible' : ''}
+          >
+            This Week
+          </Button>
+        )}
       </div>
-      <div className="flex space-x-2">
-        <Button variant="outline" size="sm" onClick={handlePreviousDay}>
-          Previous
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleNextDay}>
-          Next
-        </Button>
+      
+      <div className={`flex items-center ${isMobile ? 'justify-between' : 'justify-start'}`}>
+        <div className="text-sm font-medium">
+          {isCurrentWeek ? 'Current Week' : `Week of ${format(startDate, 'MMMM d')}`}
+        </div>
+        
+        <div className="flex items-center ml-3">
+          <span className="text-sm font-semibold">
+            {totalHours.toFixed(2)} hours logged
+          </span>
+        </div>
       </div>
     </div>
   );

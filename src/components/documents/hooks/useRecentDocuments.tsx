@@ -1,30 +1,30 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document } from '@/components/documents/schemas/documentSchema';
 import { useToast } from '@/hooks/use-toast';
+import { Document } from '@/components/documents/schemas/documentSchema';
 
-export const useRecentDocuments = (limit: number = 3) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
+export const useRecentDocuments = () => {
+  const [recentDocuments, setRecentDocuments] = useState<Document[]>([]);
+  const [recentDocumentsLoading, setRecentDocumentsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Function to fetch recent documents
   const fetchRecentDocuments = async () => {
+    setRecentDocumentsLoading(true);
     try {
-      setLoading(true);
-      
-      // Fetch the most recently created documents
+      // Fetch the 5 most recently created or modified documents
       const { data, error } = await supabase
         .from('documents')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(limit);
-      
+        .limit(5);
+
       if (error) {
         throw error;
       }
-      
-      // Get document URLs
+
+      // Process the documents to get URLs
       const docsWithUrls = await Promise.all(data.map(async (doc) => {
         const { data: { publicUrl } } = supabase.storage
           .from('construction_documents')
@@ -32,28 +32,34 @@ export const useRecentDocuments = (limit: number = 3) => {
         
         return { ...doc, url: publicUrl };
       }));
-      
-      setDocuments(docsWithUrls);
+
+      setRecentDocuments(docsWithUrls);
     } catch (error: any) {
       console.error('Error fetching recent documents:', error);
       toast({
-        title: "Error loading recent documents",
+        title: "Failed to load recent documents",
         description: error.message,
         variant: "destructive"
       });
-      setDocuments([]);
+      setRecentDocuments([]);
     } finally {
-      setLoading(false);
+      setRecentDocumentsLoading(false);
     }
   };
 
+  // Refresh documents function (doesn't take arguments)
+  const refreshRecentDocuments = () => {
+    fetchRecentDocuments();
+  };
+
+  // Fetch documents on component mount
   useEffect(() => {
     fetchRecentDocuments();
   }, []);
 
   return {
-    recentDocuments: documents,
-    recentDocumentsLoading: loading,
-    refreshRecentDocuments: fetchRecentDocuments
+    recentDocuments,
+    recentDocumentsLoading,
+    refreshRecentDocuments
   };
 };

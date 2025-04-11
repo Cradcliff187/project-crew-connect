@@ -37,21 +37,23 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onE
   }
 
   return (
-    <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
-      <Table>
-        <TableHeader className="bg-[#0485ea]/10">
-          <TableRow>
-            <VendorsTableHeader />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <VendorsTableBody 
-            vendors={filteredVendors}
-            onViewDetails={onViewDetails}
-            onEditVendor={onEditVendor}
-          />
-        </TableBody>
-      </Table>
+    <div className="rounded-md border shadow-sm animate-fade-in">
+      <div className="overflow-x-auto">
+        <Table className="w-full table-fixed">
+          <TableHeader className="bg-[#0485ea]/10">
+            <TableRow>
+              <VendorsTableHeader />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <VendorsTableBody 
+              vendors={filteredVendors}
+              onViewDetails={onViewDetails}
+              onEditVendor={onEditVendor}
+            />
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

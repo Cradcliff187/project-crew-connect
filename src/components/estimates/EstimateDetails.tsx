@@ -1,39 +1,37 @@
 
 import React from 'react';
+import { EstimateType } from './EstimatesTable';
+import { StatusType } from '@/types/common';
 import EstimateDetailsDialog from './details/EstimateDetailsDialog';
+import { EstimateItem, EstimateRevision } from './types/estimateTypes';
 
+/**
+ * Props for the EstimateDetails component
+ */
 export interface EstimateDetailsProps {
   estimate: {
     id: string;
+    customerId: string;
     client: string;
     project?: string;
     date: string;
-    status: string;
+    status: StatusType;
     total?: number;
     description?: string;
+    amount?: number;
+    versions?: number;
   };
-  items: {
-    id: string;
-    description: string;
-    quantity: number;
-    unit_price: number;
-    total_price?: number; // Make this optional to handle both formats
-    total?: number; // Support legacy format
-  }[];
-  revisions: {
-    id: string;
-    version: number;
-    date?: string; // Legacy field
-    revision_date?: string; // New field name
-    notes?: string;
-    status: string;
-    is_current: boolean;
-  }[];
+  items: EstimateItem[];
+  revisions: EstimateRevision[];
   open: boolean;
   onClose: () => void;
   onStatusChange?: () => void;
 }
 
+/**
+ * EstimateDetails component serves as a wrapper for EstimateDetailsDialog
+ * It's used primarily on the Estimates listing page to show details in a dialog
+ */
 const EstimateDetails: React.FC<EstimateDetailsProps> = (props) => {
   return <EstimateDetailsDialog {...props} />;
 };

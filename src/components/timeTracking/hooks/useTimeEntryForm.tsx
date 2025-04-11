@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
 import { useTimeEntrySubmit } from '@/hooks/useTimeEntrySubmit';
+import { toast } from '@/hooks/use-toast';
+import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
+import { TimeEntryFormValues, ReceiptMetadata } from '@/types/timeTracking';
 
 const timeEntryFormSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -15,9 +17,8 @@ const timeEntryFormSchema = z.object({
   hoursWorked: z.number().min(0.01, "Hours must be greater than 0"),
   notes: z.string().optional(),
   employeeId: z.string().optional(),
+  hasReceipts: z.boolean().default(false),
 });
-
-export type TimeEntryFormValues = z.infer<typeof timeEntryFormSchema>;
 
 const defaultFormValues: TimeEntryFormValues = {
   entityType: 'work_order',
@@ -28,12 +29,17 @@ const defaultFormValues: TimeEntryFormValues = {
   hoursWorked: 0,
   notes: '',
   employeeId: '',
+  hasReceipts: false,
 };
 
 export function useTimeEntryForm(onSuccess: () => void) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [confirmationData, setConfirmationData] = useState<TimeEntryFormValues | null>(null);
+  const [receiptMetadata, setReceiptMetadata] = useState<ReceiptMetadata>({
+    category: 'receipt',
+    expenseType: null,
+    tags: ['time-entry'],
+    vendorType: 'vendor'
+  });
   
   // Use our submission hook
   const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(onSuccess);
@@ -45,67 +51,104 @@ export function useTimeEntryForm(onSuccess: () => void) {
   
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
+  const hasReceipts = form.watch('hasReceipts');
   
   useEffect(() => {
     if (startTime && endTime) {
-      const [startHour, startMinute] = startTime.split(':').map(Number);
-      const [endHour, endMinute] = endTime.split(':').map(Number);
-      
-      let hours = endHour - startHour;
-      let minutes = endMinute - startMinute;
-      
-      if (minutes < 0) {
-        hours -= 1;
-        minutes += 60;
+      try {
+        const totalHours = calculateHours(startTime, endTime);
+        form.setValue('hoursWorked', parseFloat(totalHours.toFixed(2)));
+      } catch (error) {
+        console.error('Error calculating hours:', error);
+        form.setValue('hoursWorked', 0);
       }
-      
-      if (hours < 0) {
-        hours += 24; // Handle overnight shifts
-      }
-      
-      const totalHours = hours + (minutes / 60);
-      form.setValue('hoursWorked', parseFloat(totalHours.toFixed(2)));
     }
   }, [startTime, endTime, form]);
   
+  // Updated handlers for receipt-related functionality
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
+    // Automatically set hasReceipts to true if files are selected
+    if (files.length > 0 && !hasReceipts) {
+      form.setValue('hasReceipts', true);
+    }
   };
   
   const handleFileClear = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles(prev => {
+      const newFiles = prev.filter((_, i) => i !== index);
+      // If no files left, optionally reset hasReceipts to false
+      if (newFiles.length === 0) {
+        form.setValue('hasReceipts', false);
+      }
+      return newFiles;
+    });
+  };
+  
+  // Update receipt metadata
+  const updateReceiptMetadata = (
+    data: Partial<ReceiptMetadata>
+  ) => {
+    setReceiptMetadata(prev => ({
+      ...prev,
+      ...data
+    }));
+  };
+  
+  // Validate form before submission
+  const validateReceiptData = () => {
+    // If hasReceipts is true but no files were selected
+    if (hasReceipts && selectedFiles.length === 0) {
+      toast({
+        title: 'Receipt required',
+        description: 'You indicated you have receipts but none were uploaded. Please upload at least one receipt or turn off the receipt option.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    // If we have receipts but no expense type
+    if (hasReceipts && selectedFiles.length > 0 && !receiptMetadata.expenseType) {
+      toast({
+        title: 'Expense type required',
+        description: 'Please select an expense type for your receipt.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    // If we have receipts but no vendor selected (unless it's 'other')
+    if (hasReceipts && selectedFiles.length > 0 && 
+        receiptMetadata.vendorType !== 'other' && 
+        !receiptMetadata.vendorId) {
+      toast({
+        title: 'Vendor required',
+        description: `Please select a ${receiptMetadata.vendorType} for this receipt.`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+    
+    return true;
   };
   
   const handleSubmit = (data: TimeEntryFormValues) => {
-    setConfirmationData(data);
-    setShowConfirmDialog(true);
-  };
-  
-  const confirmSubmit = async () => {
-    if (!confirmationData) return;
-    
-    try {
-      await submitTimeEntry(confirmationData, selectedFiles);
-      
-      form.reset(defaultFormValues);
-      setSelectedFiles([]);
-      setShowConfirmDialog(false);
-    } catch (error) {
-      // Error handling is already done in submitTimeEntry
-      console.error("Error in confirmSubmit:", error);
+    if (!validateReceiptData()) {
+      return;
     }
+    
+    // Submit with enhanced receipt metadata
+    submitTimeEntry(data, selectedFiles, receiptMetadata);
   };
   
   return {
     form,
     isLoading: isSubmitting,
-    showConfirmDialog,
-    setShowConfirmDialog,
     selectedFiles,
+    receiptMetadata,
     handleFilesSelected,
     handleFileClear,
-    confirmationData,
+    updateReceiptMetadata,
     handleSubmit,
-    confirmSubmit,
   };
 }

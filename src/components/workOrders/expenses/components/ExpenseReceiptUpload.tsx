@@ -20,11 +20,14 @@ const ExpenseReceiptUpload: React.FC<ExpenseReceiptUploadProps> = ({
   onSuccess,
   onCancel
 }) => {
-  // Prefill data for receipt upload
+  // Prefill data for receipt upload with more context
   const prefillData = {
     amount: expense.total_price,
     vendorId: expense.vendor_id || undefined,
-    expenseName: expense.expense_name
+    expenseName: expense.expense_name,
+    category: 'receipt',
+    notes: `Receipt for ${expense.expense_name} (${vendorName})`,
+    tags: ['receipt', 'work_order_expense', expense.expense_type?.toLowerCase() || 'material']
   };
 
   console.log("ExpenseReceiptUpload component rendering with:", { 

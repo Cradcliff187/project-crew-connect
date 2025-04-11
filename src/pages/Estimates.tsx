@@ -1,55 +1,26 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
-import EstimateDetails from '@/components/estimates/EstimateDetails';
 import EstimatesTable, { EstimateType } from '@/components/estimates/EstimatesTable';
 import EstimatesHeader from '@/components/estimates/EstimatesHeader';
 import { useEstimates } from '@/components/estimates/hooks/useEstimates';
-import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
+import { StatusType } from '@/types/common';
+import { formatDate } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
+/**
+ * Estimates page component for listing and managing estimates
+ * Navigates to the detail page for viewing estimate details
+ */
 const Estimates = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedEstimate, setSelectedEstimate] = useState<EstimateType | null>(null);
+  const navigate = useNavigate();
   
-  const { estimates, loading, fetchEstimates } = useEstimates();
-  const { 
-    estimateItems, 
-    estimateRevisions, 
-    fetchEstimateDetails,
-    setEstimateItems,
-    setEstimateRevisions,
-    isLoading: detailsLoading,
-    refetchItems,
-    refetchRevisions
-  } = useEstimateDetails();
+  const { estimates, loading, error, fetchEstimates } = useEstimates();
   
   const handleViewEstimate = (estimate: EstimateType) => {
-    setSelectedEstimate(estimate);
-    fetchEstimateDetails(estimate.id);
-  };
-  
-  const closeEstimateDetails = () => {
-    setSelectedEstimate(null);
-    setEstimateItems([]);
-    setEstimateRevisions([]);
-    fetchEstimates(); // Refresh the list when the dialog is closed
-  };
-
-  const handleStatusChange = () => {
-    // Refresh both the estimate details and the main estimate list
-    if (selectedEstimate) {
-      fetchEstimateDetails(selectedEstimate.id);
-      fetchEstimates();
-    }
-  };
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    }).format(date);
+    navigate(`/estimates/${estimate.id}`);
   };
   
   return (
@@ -61,26 +32,18 @@ const Estimates = () => {
           onEstimateAdded={fetchEstimates}
         />
         
-        <EstimatesTable 
-          estimates={estimates}
-          loading={loading}
-          searchQuery={searchQuery}
-          onViewEstimate={handleViewEstimate}
-          formatDate={formatDate}
-          onRefreshEstimates={fetchEstimates}
-        />
+        <div className="mt-6">
+          <EstimatesTable 
+            estimates={estimates}
+            loading={loading}
+            error={error}
+            searchQuery={searchQuery}
+            onViewEstimate={handleViewEstimate}
+            formatDate={formatDate}
+            onRefreshEstimates={fetchEstimates}
+          />
+        </div>
       </div>
-      
-      {selectedEstimate && (
-        <EstimateDetails 
-          estimate={selectedEstimate}
-          items={estimateItems}
-          revisions={estimateRevisions}
-          open={!!selectedEstimate}
-          onClose={closeEstimateDetails}
-          onStatusChange={handleStatusChange}
-        />
-      )}
     </PageTransition>
   );
 };

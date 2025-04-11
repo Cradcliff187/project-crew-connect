@@ -1,225 +1,182 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Document } from './schemas/documentSchema';
-import { 
-  FileText, 
-  Image, 
-  FileSpreadsheet, 
-  File, 
-  Calendar, 
-  Tag, 
-  Trash2,
-  Download,
-  Eye,
-  ExternalLink
-} from 'lucide-react';
-import { formatDate, formatFileSize } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Download, Eye, Trash2, Calendar, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import NavigateToEntityButton from './NavigateToEntityButton';
+import { formatDate } from '@/lib/utils';
+import { documentCardAnimations, getDocumentCategoryColor } from '@/lib/animations';
+import { cn } from '@/lib/utils';
+import EntityInformation from './EntityInformation';
+import DocumentEntityLink from './DocumentEntityLink';
+import { useDocumentNavigation } from './hooks/useDocumentNavigation';
 
-export interface DocumentPreviewCardProps {
+interface DocumentPreviewCardProps {
   document: Document;
-  onView?: (document: Document) => void;
-  onDelete?: (document: Document) => void;
-  onDownload?: (document: Document) => void;
+  onView: () => void;
+  onDelete?: () => void;
+  showEntityInfo?: boolean;
   isSelected?: boolean;
   batchMode?: boolean;
   showNavigationButton?: boolean;
-  showEntityInfo?: boolean;
+  categoryColor?: string;
 }
-
-export const DocumentCardSkeleton = () => (
-  <Card>
-    <CardContent className="p-0">
-      <div className="animate-pulse">
-        <div className="bg-muted h-32 rounded-t-lg"></div>
-        <div className="p-4 space-y-2">
-          <div className="h-4 bg-muted rounded w-3/4"></div>
-          <div className="h-3 bg-muted rounded w-1/2"></div>
-          <div className="h-3 bg-muted rounded w-1/4"></div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
 
 const DocumentPreviewCard: React.FC<DocumentPreviewCardProps> = ({
   document,
   onView,
   onDelete,
-  onDownload,
+  showEntityInfo = false,
   isSelected = false,
   batchMode = false,
   showNavigationButton = false,
-  showEntityInfo = false
+  categoryColor
 }) => {
-  // Determine file type icon
-  const getFileIcon = () => {
-    const fileType = document.file_type || '';
+  const { navigateToEntity } = useDocumentNavigation();
+  const isImage = document.file_type?.startsWith('image/');
+  const isPdf = document.file_type === 'application/pdf';
+  
+  const color = categoryColor || getDocumentCategoryColor(document.category);
+  
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     
-    if (fileType.startsWith('image/')) {
-      return <Image className="h-8 w-8 text-blue-500" />;
-    } else if (fileType.includes('spreadsheet') || fileType.includes('excel') || fileType.includes('csv')) {
-      return <FileSpreadsheet className="h-8 w-8 text-green-500" />;
-    } else if (fileType.includes('pdf')) {
-      return <FileText className="h-8 w-8 text-red-500" />;
-    } else {
-      return <File className="h-8 w-8 text-gray-500" />;
+    if (document.url) {
+      // Use window.document instead of document to avoid confusion with the Document type
+      const a = window.document.createElement('a');
+      a.href = document.url;
+      a.download = document.file_name || 'download';
+      a.target = '_blank';
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
     }
   };
-  
-  // Function to truncate long file names
-  const truncateFileName = (name: string, maxLength: number = 30) => {
-    if (!name) return '';
-    if (name.length <= maxLength) return name;
-    
-    const extension = name.lastIndexOf('.') > 0 ? name.substring(name.lastIndexOf('.')) : '';
-    const baseName = name.substring(0, name.lastIndexOf('.') > 0 ? name.lastIndexOf('.') : name.length);
-    
-    if (baseName.length <= maxLength - 3 - extension.length) return name;
-    
-    return `${baseName.substring(0, maxLength - 3 - extension.length)}...${extension}`;
-  };
-  
-  // Handle download
-  const handleDownload = () => {
-    if (!document.url) return;
-    
-    if (onDownload) {
-      onDownload(document);
-      return;
-    }
-    
-    // Use the window.document API for download
-    const a = window.document.createElement('a');
-    a.href = document.url;
-    a.download = document.file_name || 'document';
-    window.document.body.appendChild(a);
-    a.click();
-    window.document.body.removeChild(a);
-  };
-  
-  // Display an image preview for image files
-  const renderPreview = () => {
-    const isImage = document.file_type?.startsWith('image/');
-    
-    if (isImage && document.url) {
-      return (
-        <div 
-          className="h-32 bg-muted rounded-t-lg overflow-hidden flex items-center justify-center cursor-pointer"
-          onClick={() => onView && onView(document)}
-        >
+
+  return (
+    <Card 
+      className={cn(
+        documentCardAnimations.enter,
+        documentCardAnimations.hover,
+        documentCardAnimations.active,
+        "h-full flex flex-col overflow-hidden border-l-4 cursor-pointer",
+        {
+          [documentCardAnimations.selected]: isSelected,
+          "pointer-events-none opacity-75": batchMode && !isSelected
+        }
+      )}
+      style={{ borderLeftColor: color }}
+      onClick={batchMode ? undefined : onView}
+    >
+      <div className="h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
+        {isImage && document.url ? (
           <img 
             src={document.url} 
             alt={document.file_name || 'Document preview'} 
-            className="max-h-full max-w-full object-cover w-full h-full"
+            className="h-full w-full object-cover hover:scale-110 transition-transform"
           />
-        </div>
-      );
-    }
-    
-    return (
-      <div 
-        className="h-32 bg-muted/40 rounded-t-lg flex items-center justify-center cursor-pointer"
-        onClick={() => onView && onView(document)}
-      >
-        {getFileIcon()}
+        ) : isPdf ? (
+          <div className="flex flex-col items-center justify-center h-full bg-red-50">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <path d="M9 15v-2h6v2"></path>
+              <path d="M12 15v3"></path>
+            </svg>
+            <span className="text-xs text-red-700 font-medium mt-1">PDF</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <line x1="10" y1="9" x2="8" y2="9"></line>
+            </svg>
+            <span className="text-xs font-medium mt-1">{document.file_type?.split('/')[1] || 'File'}</span>
+          </div>
+        )}
       </div>
-    );
-  };
-  
-  return (
-    <Card className={`overflow-hidden ${isSelected ? 'ring-2 ring-[#0485ea]' : ''}`}>
-      {renderPreview()}
       
-      <CardContent className="p-4">
-        <h3 
-          className="font-medium mb-1 truncate cursor-pointer text-[#0485ea]"
-          title={document.file_name || 'Untitled document'}
-          onClick={() => onView && onView(document)}
-        >
-          {truncateFileName(document.file_name || 'Untitled document')}
+      <CardContent className="flex-grow p-3 space-y-2">
+        <h3 className="font-medium text-sm line-clamp-1" title={document.file_name}>
+          {document.file_name}
         </h3>
         
-        <div className="flex flex-col space-y-2">
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3 mr-1" />
-            <span>{formatDate(document.created_at || '')}</span>
-            <span className="mx-1">•</span>
-            <span>{formatFileSize(document.file_size || 0)}</span>
+        <div className="flex items-center text-xs text-muted-foreground">
+          <Calendar className="h-3 w-3 mr-1" />
+          <span>{formatDate(document.created_at)}</span>
+        </div>
+
+        {document.category && (
+          <Badge variant="outline" style={{ borderColor: `${color}30`, color: color, background: `${color}10` }}>
+            {document.category.replace(/_/g, ' ')}
+          </Badge>
+        )}
+        
+        {document.budget_item_id && (
+          <Badge variant="outline" className="ml-1 bg-green-50 text-green-700 border-green-200">
+            Budget Item
+          </Badge>
+        )}
+        
+        {showEntityInfo && document.entity_type && document.entity_id && !document.entity_id.includes('general') && (
+          <div className="mt-2 border-t pt-2">
+            <EntityInformation document={document} />
           </div>
+        )}
+      </CardContent>
+      
+      <CardFooter className="p-2 border-t bg-gray-50">
+        <div className="flex justify-between w-full">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onView}
+            className="h-8 text-[#0485ea] hover:text-[#0485ea]/80"
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            <span className="text-xs">View</span>
+          </Button>
           
-          {document.tags && document.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {document.tags.slice(0, 2).map((tag, i) => (
-                <Badge key={i} variant="outline" className="text-xs px-1 py-0 h-5">
-                  <Tag className="h-3 w-3 mr-1" />
-                  {tag}
-                </Badge>
-              ))}
-              {document.tags.length > 2 && (
-                <Badge variant="outline" className="text-xs px-1 py-0 h-5">
-                  +{document.tags.length - 2}
-                </Badge>
-              )}
-            </div>
-          )}
-          
-          {/* Entity information if it exists and showEntityInfo is true */}
-          {showEntityInfo && document.entity_type && document.entity_id && document.entity_id !== 'detached' && (
-            <div className="mt-1">
-              <NavigateToEntityButton document={document} />
-            </div>
-          )}
-          
-          {/* Action buttons */}
-          <div className="flex gap-1 mt-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 px-2 flex-1"
-              onClick={() => onView && onView(document)}
-            >
-              <Eye className="h-3.5 w-3.5 mr-1" />
-              <span className="text-xs">View</span>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 px-2 flex-1"
+          <div className="flex">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleDownload}
+              className="h-8"
             >
-              <Download className="h-3.5 w-3.5 mr-1" />
-              <span className="text-xs">Download</span>
+              <Download className="h-4 w-4" />
             </Button>
             
-            {onDelete && !batchMode && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 px-2 text-red-500 hover:text-red-600 hover:bg-red-50"
-                onClick={() => onDelete(document)}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
-            
-            {showNavigationButton && document.entity_type && document.entity_id && document.entity_id !== 'detached' && (
-              <Button 
+
+            {showNavigationButton && document.entity_type && document.entity_id && (
+              <DocumentEntityLink 
+                document={document} 
                 variant="ghost" 
-                size="sm" 
-                className="h-8 px-2 text-[#0485ea] hover:text-[#0375d1] hover:bg-blue-50"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </Button>
+                size="sm"
+                showEntityType={false}
+              />
             )}
           </div>
         </div>
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 };

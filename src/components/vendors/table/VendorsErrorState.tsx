@@ -1,45 +1,29 @@
 
-import { AlertCircle } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 interface VendorsErrorStateProps {
   error: string;
 }
 
 const VendorsErrorState = ({ error }: VendorsErrorStateProps) => {
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
   return (
-    <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
-      <Table>
-        <TableHeader className="bg-[#0485ea]/10">
-          <TableRow>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Vendor</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Added</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-            <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow>
-            <TableCell colSpan={6} className="text-center py-8">
-              <div className="flex flex-col items-center">
-                <AlertCircle className="h-8 w-8 text-red-500 mb-2" />
-                <h3 className="font-semibold text-lg mb-1">Error Loading Vendors</h3>
-                <p className="text-muted-foreground mb-4">{error}</p>
-                <Button 
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                  className="border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea] hover:text-white"
-                >
-                  Try Again
-                </Button>
-              </div>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
+    <div className="flex flex-col items-center justify-center p-8 bg-red-50 border border-red-100 rounded-md animate-in fade-in-50">
+      <div className="rounded-full bg-red-100 p-3 mb-3">
+        <AlertCircle className="h-10 w-10 text-red-600" />
+      </div>
+      <h3 className="text-lg font-semibold mb-1 text-red-700">Error Loading Vendors</h3>
+      <p className="text-red-600 text-center mb-4 max-w-md">
+        {error || "There was an issue loading the vendors. Please try again."}
+      </p>
+      <Button variant="outline" onClick={handleRefresh}>
+        <RefreshCw className="mr-2 h-4 w-4" />
+        Refresh
+      </Button>
     </div>
   );
 };

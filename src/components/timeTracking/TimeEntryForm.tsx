@@ -1,279 +1,161 @@
 
-import React, { useState } from 'react';
-import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Timer, Upload } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn, formatTimeRange } from '@/lib/utils';
-import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { toast } from '@/hooks/use-toast';
-
-import EntityTypeSelector from './form/EntityTypeSelector';
-import EntitySelector from './form/EntitySelector';
 import TimeRangeSelector from './form/TimeRangeSelector';
-import ConfirmationDialog from './form/ConfirmationDialog';
-import { useTimeEntryForm } from './hooks/useTimeEntryForm';
-import { useEntityData } from './hooks/useEntityData';
-import EnhancedDocumentUpload from '../documents/EnhancedDocumentUpload';
-import { EntityType } from '../documents/schemas/documentSchema';
+import EmployeeSelect from './form/EmployeeSelect';
+import { TimeEntry } from '@/types/timeTracking';
+import { supabase } from '@/integrations/supabase/client';
+import { calculateHours } from './utils/timeUtils';
+import { DatePicker } from '@/components/ui/date-picker';
+import { format, parse } from 'date-fns';
 
 interface TimeEntryFormProps {
-  onSuccess: () => void;
+  initialValues?: Partial<TimeEntry>;
+  onSubmit: (values: Partial<TimeEntry>) => Promise<void>;
+  onCancel: () => void;
+  isSubmitting: boolean;
+  title?: string;
 }
 
-const TimeEntryForm: React.FC<TimeEntryFormProps> = ({ onSuccess }) => {
-  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
-  const [hasReceipts, setHasReceipts] = useState(false);
+const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
+  initialValues,
+  onSubmit,
+  onCancel,
+  isSubmitting,
+  title = "Time Entry"
+}) => {
+  const [startTime, setStartTime] = useState(initialValues?.start_time || '09:00');
+  const [endTime, setEndTime] = useState(initialValues?.end_time || '17:00');
+  const [hoursWorked, setHoursWorked] = useState(initialValues?.hours_worked || 0);
+  const [notes, setNotes] = useState(initialValues?.notes || '');
+  const [employeeId, setEmployeeId] = useState<string>(initialValues?.employee_id || 'none');
+  const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
+  const [workDate, setWorkDate] = useState<Date>(
+    initialValues?.date_worked 
+      ? parse(initialValues.date_worked, 'yyyy-MM-dd', new Date()) 
+      : new Date()
+  );
+  const [timeError, setTimeError] = useState('');
 
-  const {
-    form,
-    isLoading,
-    showConfirmDialog,
-    setShowConfirmDialog,
-    selectedFiles,
-    handleFilesSelected,
-    handleFileClear,
-    confirmationData,
-    handleSubmit,
-    confirmSubmit,
-  } = useTimeEntryForm(onSuccess);
+  // Fetch employees
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('employee_id, first_name, last_name')
+          .order('last_name');
+          
+        if (error) {
+          console.error('Error fetching employees:', error);
+          return;
+        }
+        
+        if (data) {
+          // Map the employees data to include a full name field
+          const formattedEmployees = data.map(emp => ({
+            employee_id: emp.employee_id,
+            name: `${emp.first_name} ${emp.last_name}`
+          }));
+          setEmployees(formattedEmployees);
+        }
+      } catch (error) {
+        console.error('Exception when fetching employees:', error);
+      }
+    };
+    
+    fetchEmployees();
+  }, []);
 
-  const {
-    workOrders,
-    projects,
-    employees,
-    isLoadingEntities,
-    getSelectedEntityDetails
-  } = useEntityData(form);
+  // Update hours when times change
+  useEffect(() => {
+    if (startTime && endTime) {
+      try {
+        const hours = calculateHours(startTime, endTime);
+        if (hours <= 0) {
+          setTimeError('End time must be after start time');
+        } else {
+          setTimeError('');
+          setHoursWorked(hours);
+        }
+      } catch (error) {
+        console.error('Error calculating hours:', error);
+      }
+    }
+  }, [startTime, endTime]);
 
-  // Watch form values
-  const entityType = form.watch('entityType');
-  const entityId = form.watch('entityId');
-  const startTime = form.watch('startTime');
-  const endTime = form.watch('endTime');
-  const hoursWorked = form.watch('hoursWorked');
-
-  const handleReceiptUploadSuccess = () => {
-    setShowReceiptUpload(false);
-    toast({
-      title: "Receipt uploaded",
-      description: "Your receipt has been added to this time entry."
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (timeError) return;
+    
+    const formattedDate = format(workDate, 'yyyy-MM-dd');
+    
+    await onSubmit({
+      start_time: startTime,
+      end_time: endTime,
+      hours_worked: hoursWorked,
+      notes,
+      employee_id: employeeId === 'none' ? null : employeeId,
+      date_worked: formattedDate
     });
   };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Log Time</CardTitle>
-        </CardHeader>
-        <form onSubmit={form.handleSubmit(handleSubmit)}>
-          <CardContent className="space-y-6">
-            {/* Entity Type Selection */}
-            <EntityTypeSelector 
-              entityType={entityType} 
-              onChange={(value) => form.setValue('entityType', value, { shouldValidate: true })}
-            />
-            
-            {/* Entity Selection */}
-            <EntitySelector
-              entityType={entityType}
-              entityId={entityId}
-              workOrders={workOrders}
-              projects={projects}
-              isLoading={isLoadingEntities}
-              onChange={(value) => form.setValue('entityId', value, { shouldValidate: true })}
-              error={form.formState.errors.entityId?.message}
-              selectedEntity={getSelectedEntityDetails()}
-            />
-            
-            {/* Employee Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="employee">Employee</Label>
-              <select
-                id="employee"
-                className="w-full border border-gray-300 rounded-md p-2"
-                value={form.watch('employeeId') || ''}
-                onChange={(e) => form.setValue('employeeId', e.target.value, { shouldValidate: true })}
-              >
-                {employees.map(employee => (
-                  <option key={employee.employee_id} value={employee.employee_id}>
-                    {employee.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Date Selection */}
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !form.watch('workDate') && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {form.watch('workDate') ? (
-                      format(form.watch('workDate'), "MMMM d, yyyy")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={form.watch('workDate')}
-                    onSelect={(date) => date && form.setValue('workDate', date, { shouldValidate: true })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            {/* Time Range */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label>Time Range</Label>
-                {startTime && endTime && (
-                  <div className="flex items-center text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
-                    <Timer className="h-3.5 w-3.5 mr-1" />
-                    <span>Duration: {hoursWorked.toFixed(2)} hours</span>
-                  </div>
-                )}
-              </div>
-              
-              <TimeRangeSelector
-                startTime={startTime}
-                endTime={endTime}
-                onStartTimeChange={(value) => {
-                  form.setValue('startTime', value, { shouldValidate: true });
-                  // Automatically adjust end time if needed
-                  if (endTime) {
-                    const [startHour, startMinute] = value.split(':').map(Number);
-                    const [endHour, endMinute] = endTime.split(':').map(Number);
-                    const startTotal = startHour * 60 + startMinute;
-                    const endTotal = endHour * 60 + endMinute;
-                    
-                    if (endTotal <= startTotal && endTotal > startTotal - 120) {
-                      let newEndHour = startHour + 1;
-                      if (newEndHour >= 24) newEndHour -= 24;
-                      const newEndTime = `${newEndHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
-                      form.setValue('endTime', newEndTime, { shouldValidate: true });
-                    }
-                  }
-                }}
-                onEndTimeChange={(value) => form.setValue('endTime', value, { shouldValidate: true })}
-                startTimeError={form.formState.errors.startTime?.message}
-                endTimeError={form.formState.errors.endTime?.message}
-              />
-            </div>
-            
-            {/* Total Hours */}
-            <div className="space-y-2">
-              <Label htmlFor="hoursWorked">Total Hours</Label>
-              <Input
-                id="hoursWorked"
-                type="number"
-                step="0.01"
-                readOnly
-                value={hoursWorked}
-                className="bg-muted"
-              />
-            </div>
-            
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any notes about the work performed..."
-                {...form.register('notes')}
-                rows={3}
-              />
-            </div>
-            
-            {/* Receipts Option */}
-            <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
-              <div>
-                <h4 className="font-medium">Attach Receipt(s)</h4>
-                <p className="text-sm text-muted-foreground">
-                  Do you have any receipts to upload for this time entry?
-                </p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Switch
-                  checked={hasReceipts}
-                  onCheckedChange={setHasReceipts}
-                  className="data-[state=checked]:bg-[#0485ea]"
-                />
-                {hasReceipts && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="gap-1"
-                    onClick={() => setShowReceiptUpload(true)}
-                  >
-                    <Upload className="h-4 w-4" />
-                    Upload Receipts
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-          
-          <CardFooter>
-            <Button 
-              type="submit" 
-              className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Processing...' : 'Review & Submit'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Work Date</label>
+        <DatePicker
+          date={workDate}
+          setDate={(date) => date && setWorkDate(date)}
+        />
+      </div>
       
-      {/* Confirmation Dialog */}
-      <ConfirmationDialog
-        open={showConfirmDialog}
-        onOpenChange={setShowConfirmDialog}
-        confirmationData={confirmationData}
-        employees={employees}
-        entityType={entityType}
-        workOrders={workOrders}
-        projects={projects}
-        selectedFiles={selectedFiles}
-        isLoading={isLoading}
-        onConfirm={confirmSubmit}
+      <TimeRangeSelector
+        startTime={startTime}
+        endTime={endTime}
+        onStartTimeChange={setStartTime}
+        onEndTimeChange={setEndTime}
+        error={timeError}
+        hoursWorked={hoursWorked}
       />
-
-      {/* Receipt Upload Dialog */}
-      <Dialog open={showReceiptUpload} onOpenChange={setShowReceiptUpload}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Upload Receipt(s)</DialogTitle>
-          </DialogHeader>
-          <EnhancedDocumentUpload
-            entityType={entityType === 'work_order' ? 'WORK_ORDER' as EntityType : 'PROJECT' as EntityType}
-            entityId={entityId}
-            onSuccess={handleReceiptUploadSuccess}
-            onCancel={() => setShowReceiptUpload(false)}
-            isReceiptUpload={true}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+      
+      <EmployeeSelect
+        value={employeeId}
+        onChange={setEmployeeId}
+        employees={employees}
+      />
+      
+      <div className="space-y-2">
+        <label htmlFor="notes" className="text-sm font-medium">Notes</label>
+        <Textarea
+          id="notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add any notes about this time entry"
+          className="h-24"
+        />
+      </div>
+      
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting || !!timeError}
+          className="bg-[#0485ea] hover:bg-[#0375d1]"
+        >
+          {isSubmitting ? 'Saving...' : 'Save'}
+        </Button>
+      </div>
+    </form>
   );
 };
 

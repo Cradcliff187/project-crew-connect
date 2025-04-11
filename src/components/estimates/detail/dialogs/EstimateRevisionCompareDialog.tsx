@@ -1,36 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ArrowLeftRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-
-interface CompareItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-  item_type?: string;
-  changeType?: 'added' | 'removed' | 'modified' | 'unchanged';
-  original_item_id?: string;
-}
-
-interface RevisionInfo {
-  version: number;
-  revision_date: string;
-  status: string;
-  notes?: string;
-  amount?: number;
-}
 
 interface EstimateRevisionCompareDialogProps {
   open: boolean;
@@ -40,6 +12,18 @@ interface EstimateRevisionCompareDialogProps {
   newRevisionId: string;
 }
 
+interface ItemComparison {
+  id: string;
+  description: string;
+  oldQuantity?: number;
+  oldUnitPrice?: number;
+  oldTotalPrice?: number;
+  newQuantity?: number;
+  newUnitPrice?: number;
+  newTotalPrice?: number;
+  status: 'added' | 'removed' | 'changed' | 'unchanged';
+}
+
 const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps> = ({
   open,
   onOpenChange,
@@ -47,338 +31,267 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
   oldRevisionId,
   newRevisionId
 }) => {
-  const [loading, setLoading] = useState(true);
-  const [oldItems, setOldItems] = useState<CompareItem[]>([]);
-  const [newItems, setNewItems] = useState<CompareItem[]>([]);
-  const [oldRevision, setOldRevision] = useState<RevisionInfo | null>(null);
-  const [newRevision, setNewRevision] = useState<RevisionInfo | null>(null);
-  const [comparedItems, setComparedItems] = useState<CompareItem[]>([]);
-  const [oldTotal, setOldTotal] = useState(0);
-  const [newTotal, setNewTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [itemComparisons, setItemComparisons] = useState<ItemComparison[]>([]);
+  const [oldRevision, setOldRevision] = useState<any>(null);
+  const [newRevision, setNewRevision] = useState<any>(null);
 
   useEffect(() => {
     if (open && newRevisionId) {
-      fetchRevisionData();
+      fetchRevisions();
     }
   }, [open, newRevisionId, oldRevisionId]);
 
-  const fetchRevisionData = async () => {
-    setLoading(true);
+  const fetchRevisions = async () => {
+    if (!newRevisionId) return;
+    
+    setIsLoading(true);
     try {
-      const { data: newRevisionData, error: newRevError } = await supabase
+      const { data: newRevData, error: newRevError } = await supabase
         .from('estimate_revisions')
         .select('*')
         .eq('id', newRevisionId)
         .single();
-
-      if (newRevError) throw newRevError;
       
-      if (newRevisionData) {
-        setNewRevision({
-          version: newRevisionData.version,
-          revision_date: newRevisionData.revision_date,
-          status: newRevisionData.status,
-          notes: newRevisionData.notes,
-          amount: newRevisionData.amount
-        });
-
-        const { data: newItemsData, error: newItemsError } = await supabase
-          .from('estimate_items')
-          .select('*')
-          .eq('revision_id', newRevisionId)
-          .order('id');
-
-        if (newItemsError) throw newItemsError;
-        
-        if (newItemsData) {
-          setNewItems(newItemsData);
-          const newItemsTotal = newItemsData.reduce(
-            (sum, item) => sum + (item.total_price || 0), 
-            0
-          );
-          setNewTotal(newItemsTotal);
-        }
-      }
-
+      if (newRevError) throw newRevError;
+      setNewRevision(newRevData);
+      
       if (oldRevisionId) {
-        const { data: oldRevisionData, error: oldRevError } = await supabase
+        const { data: oldRevData, error: oldRevError } = await supabase
           .from('estimate_revisions')
           .select('*')
           .eq('id', oldRevisionId)
           .single();
-  
+        
         if (oldRevError) throw oldRevError;
-        
-        if (oldRevisionData) {
-          setOldRevision({
-            version: oldRevisionData.version,
-            revision_date: oldRevisionData.revision_date,
-            status: oldRevisionData.status,
-            notes: oldRevisionData.notes,
-            amount: oldRevisionData.amount
-          });
-  
-          const { data: oldItemsData, error: oldItemsError } = await supabase
-            .from('estimate_items')
-            .select('*')
-            .eq('revision_id', oldRevisionId)
-            .order('id');
-  
-          if (oldItemsError) throw oldItemsError;
-          
-          if (oldItemsData) {
-            setOldItems(oldItemsData);
-            const oldItemsTotal = oldItemsData.reduce(
-              (sum, item) => sum + (item.total_price || 0), 
-              0
-            );
-            setOldTotal(oldItemsTotal);
-          }
-        }
+        setOldRevision(oldRevData);
       }
       
-      else {
-        if (newRevisionData && newRevisionData.version > 1) {
-          const { data: prevRevision, error: prevRevError } = await supabase
-            .from('estimate_revisions')
-            .select('*')
-            .eq('estimate_id', estimateId)
-            .eq('version', newRevisionData.version - 1)
-            .single();
-
-          if (!prevRevError && prevRevision) {
-            setOldRevision({
-              version: prevRevision.version,
-              revision_date: prevRevision.revision_date,
-              status: prevRevision.status,
-              notes: prevRevision.notes,
-              amount: prevRevision.amount
-            });
-
-            const { data: oldItemsData, error: oldItemsError } = await supabase
-              .from('estimate_items')
-              .select('*')
-              .eq('revision_id', prevRevision.id)
-              .order('id');
-
-            if (!oldItemsError && oldItemsData) {
-              setOldItems(oldItemsData);
-              const oldItemsTotal = oldItemsData.reduce(
-                (sum, item) => sum + (item.total_price || 0), 
-                0
-              );
-              setOldTotal(oldItemsTotal);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching revision data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (newItems.length > 0) {
-      const compared: CompareItem[] = [];
+      const { data: newItems, error: newItemsError } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('revision_id', newRevisionId);
       
-      newItems.forEach(newItem => {
-        let changeType: 'added' | 'modified' | 'unchanged' = 'added';
-        let oldItemMatch: CompareItem | undefined;
+      if (newItemsError) throw newItemsError;
+      
+      let comparisons: ItemComparison[] = [];
+      
+      if (oldRevisionId) {
+        const { data: oldItems, error: oldItemsError } = await supabase
+          .from('estimate_items')
+          .select('*')
+          .eq('revision_id', oldRevisionId);
         
-        if (newItem.original_item_id) {
-          oldItemMatch = oldItems.find(old => old.id === newItem.original_item_id);
-          if (oldItemMatch) {
-            changeType = itemsEqual(newItem, oldItemMatch) ? 'unchanged' : 'modified';
-          }
-        } else {
-          oldItemMatch = oldItems.find(old => old.description === newItem.description);
-          if (oldItemMatch) {
-            changeType = itemsEqual(newItem, oldItemMatch) ? 'unchanged' : 'modified';
-          }
-        }
-
-        compared.push({
-          ...newItem,
-          changeType
+        if (oldItemsError) throw oldItemsError;
+        
+        const oldItemMap = new Map();
+        (oldItems || []).forEach((item: any) => {
+          const trackingId = item.original_item_id || item.id;
+          oldItemMap.set(trackingId, item);
         });
-      });
-      
-      oldItems.forEach(oldItem => {
-        const exists = newItems.some(
-          newItem => newItem.original_item_id === oldItem.id || 
-                    (newItem.description === oldItem.description && 
-                    !newItem.original_item_id)
-        );
         
-        if (!exists) {
-          compared.push({
-            ...oldItem,
-            changeType: 'removed'
+        (newItems || []).forEach((newItem: any) => {
+          const trackingId = newItem.original_item_id || newItem.id;
+          const oldItem = oldItemMap.get(trackingId);
+          
+          if (oldItem) {
+            const hasChanged = 
+              newItem.description !== oldItem.description ||
+              newItem.quantity !== oldItem.quantity ||
+              newItem.unit_price !== oldItem.unit_price ||
+              newItem.total_price !== oldItem.total_price;
+              
+            comparisons.push({
+              id: newItem.id,
+              description: newItem.description,
+              oldQuantity: oldItem.quantity,
+              oldUnitPrice: oldItem.unit_price,
+              oldTotalPrice: oldItem.total_price,
+              newQuantity: newItem.quantity,
+              newUnitPrice: newItem.unit_price,
+              newTotalPrice: newItem.total_price,
+              status: hasChanged ? 'changed' : 'unchanged'
+            });
+            
+            oldItemMap.delete(trackingId);
+          } else {
+            comparisons.push({
+              id: newItem.id,
+              description: newItem.description,
+              newQuantity: newItem.quantity,
+              newUnitPrice: newItem.unit_price,
+              newTotalPrice: newItem.total_price,
+              status: 'added'
+            });
+          }
+        });
+        
+        oldItemMap.forEach((oldItem: any) => {
+          comparisons.push({
+            id: oldItem.id,
+            description: oldItem.description,
+            oldQuantity: oldItem.quantity,
+            oldUnitPrice: oldItem.unit_price,
+            oldTotalPrice: oldItem.total_price,
+            status: 'removed'
           });
-        }
+        });
+      } else {
+        (newItems || []).forEach((item: any) => {
+          comparisons.push({
+            id: item.id,
+            description: item.description,
+            newQuantity: item.quantity,
+            newUnitPrice: item.unit_price,
+            newTotalPrice: item.total_price,
+            status: 'added'
+          });
+        });
+      }
+      
+      comparisons = comparisons.sort((a, b) => {
+        const statusOrder = { added: 0, changed: 1, unchanged: 2, removed: 3 };
+        return statusOrder[a.status] - statusOrder[b.status];
       });
       
-      compared.sort((a, b) => {
-        const order = { 'unchanged': 0, 'modified': 1, 'added': 2, 'removed': 3 };
-        return (order[a.changeType!] || 0) - (order[b.changeType!] || 0);
-      });
-      
-      setComparedItems(compared);
-    }
-  }, [newItems, oldItems]);
-
-  const itemsEqual = (item1: CompareItem, item2: CompareItem) => {
-    return (
-      item1.description === item2.description &&
-      item1.quantity === item2.quantity &&
-      item1.unit_price === item2.unit_price &&
-      item1.total_price === item2.total_price &&
-      item1.item_type === item2.item_type
-    );
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "—";
-    try {
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-      }).format(date);
+      setItemComparisons(comparisons);
     } catch (error) {
-      return "Invalid date";
+      console.error('Error fetching revision data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const renderChangeTypeBadge = (changeType?: string) => {
-    switch (changeType) {
+  const getStatusClass = (status: string) => {
+    switch (status) {
       case 'added':
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Added</Badge>;
+        return 'bg-green-50 text-green-700';
       case 'removed':
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Removed</Badge>;
-      case 'modified':
-        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Modified</Badge>;
-      case 'unchanged':
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Unchanged</Badge>;
+        return 'bg-red-50 text-red-700';
+      case 'changed':
+        return 'bg-amber-50 text-amber-700';
       default:
-        return null;
+        return '';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'added':
+        return 'Added';
+      case 'removed':
+        return 'Removed';
+      case 'changed':
+        return 'Changed';
+      default:
+        return '';
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Compare Revisions</DialogTitle>
-          <DialogDescription>
-            {oldRevision && newRevision ? (
-              <>
-                Comparing Version {oldRevision.version} ({formatDate(oldRevision.revision_date)}) 
-                <ArrowLeftRight className="inline mx-2 h-4 w-4" /> 
-                Version {newRevision.version} ({formatDate(newRevision.revision_date)})
-              </>
-            ) : (
-              newRevision && (
-                <>Viewing changes in Version {newRevision.version} ({formatDate(newRevision.revision_date)})</>
-              )
-            )}
-          </DialogDescription>
         </DialogHeader>
-
-        <div className="flex-1 overflow-auto p-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-40">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-              <span className="ml-2">Loading revision data...</span>
-            </div>
-          ) : (
-            <>
-              {oldRevision && (
-                <div className="grid grid-cols-2 gap-6 mb-6">
-                  <div className="bg-gray-50 rounded-md p-4">
-                    <h3 className="text-sm font-medium mb-2">Version {oldRevision.version}</h3>
-                    <div className="text-xs space-y-1">
-                      <p>Date: {formatDate(oldRevision.revision_date)}</p>
-                      <p>Status: <span className="capitalize">{oldRevision.status}</span></p>
-                      <p>Total: {formatCurrency(oldTotal)}</p>
-                      {oldRevision.notes && <p className="text-xs text-muted-foreground mt-2">{oldRevision.notes}</p>}
-                    </div>
-                  </div>
-                  <div className="bg-blue-50 rounded-md p-4">
-                    <h3 className="text-sm font-medium mb-2">Version {newRevision?.version}</h3>
-                    <div className="text-xs space-y-1">
-                      <p>Date: {formatDate(newRevision?.revision_date)}</p>
-                      <p>Status: <span className="capitalize">{newRevision?.status}</span></p>
-                      <p>Total: {formatCurrency(newTotal)}</p>
-                      {newRevision?.notes && <p className="text-xs text-muted-foreground mt-2">{newRevision.notes}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {comparedItems.length > 0 && (
-                <div className="mb-4">
-                  <div className="text-sm mb-2">
-                    <span className="font-medium">
-                      Changes Summary: 
-                    </span> {" "}
-                    <span className="text-green-600">
-                      {comparedItems.filter(i => i.changeType === 'added').length} added
-                    </span>, {" "}
-                    <span className="text-amber-600">
-                      {comparedItems.filter(i => i.changeType === 'modified').length} modified
-                    </span>, {" "}
-                    <span className="text-red-600">
-                      {comparedItems.filter(i => i.changeType === 'removed').length} removed
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="w-[80px] text-right">Quantity</TableHead>
-                      <TableHead className="w-[100px] text-right">Unit Price</TableHead>
-                      <TableHead className="w-[100px] text-right">Total</TableHead>
-                      <TableHead className="w-[100px]">Change</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {comparedItems.length > 0 ? (
-                      comparedItems.map((item, index) => (
-                        <TableRow key={index} className={
-                          item.changeType === 'added' ? 'bg-green-50' : 
-                          item.changeType === 'removed' ? 'bg-red-50' : 
-                          item.changeType === 'modified' ? 'bg-amber-50' : ''
-                        }>
-                          <TableCell className="font-medium">{item.description}</TableCell>
-                          <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.total_price)}</TableCell>
-                          <TableCell>
-                            {renderChangeTypeBadge(item.changeType)}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
-                          No changes found between revisions
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
+            <span className="ml-2">Loading comparison data...</span>
+          </div>
+        ) : (
+          <div className="overflow-y-auto flex-1 pr-2">
+            <div className="flex justify-between text-sm mb-4">
+              <div>
+                <p className="font-semibold">
+                  {oldRevision ? `Version ${oldRevision.version}` : 'No previous version'}
+                </p>
+                {oldRevision && (
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(oldRevision.revision_date).toLocaleDateString()}
+                  </p>
+                )}
               </div>
-            </>
-          )}
-        </div>
+              <div className="text-right">
+                <p className="font-semibold">Version {newRevision?.version || 'Unknown'}</p>
+                {newRevision && (
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(newRevision?.revision_date).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            <div className="border rounded-md overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="py-2 px-3 text-left">Item</th>
+                    <th className="py-2 px-3 text-right">Old Value</th>
+                    <th className="py-2 px-3 text-right">New Value</th>
+                    <th className="py-2 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itemComparisons.map((item) => (
+                    <tr key={item.id} className="border-t">
+                      <td className="py-2 px-3">{item.description}</td>
+                      <td className="py-2 px-3 text-right">
+                        {item.oldTotalPrice !== undefined ? (
+                          <>
+                            <div>{formatCurrency(item.oldTotalPrice)}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.oldQuantity} x {formatCurrency(item.oldUnitPrice || 0)}
+                            </div>
+                          </>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        {item.newTotalPrice !== undefined ? (
+                          <>
+                            <div>{formatCurrency(item.newTotalPrice)}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {item.newQuantity} x {formatCurrency(item.newUnitPrice || 0)}
+                            </div>
+                          </>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <span className={`inline-block rounded-full px-2 py-1 text-xs ${getStatusClass(item.status)}`}>
+                          {getStatusText(item.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {itemComparisons.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-muted-foreground">
+                        No comparison data available
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+                <tfoot className="bg-muted font-medium">
+                  <tr>
+                    <td className="py-2 px-3">Total</td>
+                    <td className="py-2 px-3 text-right">
+                      {oldRevision?.amount ? formatCurrency(oldRevision.amount) : '-'}
+                    </td>
+                    <td className="py-2 px-3 text-right">
+                      {newRevision?.amount ? formatCurrency(newRevision.amount) : '-'}
+                    </td>
+                    <td className="py-2 px-3"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

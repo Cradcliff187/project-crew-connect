@@ -47,6 +47,18 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
     setShowReceiptsDialog(true);
   };
   
+  // Calculate entry cost properly
+  const calculateEntryCost = (entry: TimeEntry) => {
+    // Use total_cost if already calculated
+    if (entry.total_cost) {
+      return entry.total_cost;
+    }
+    
+    // Calculate based on hours and rate
+    const hourlyRate = entry.employee_rate || 75; // Default to $75/hr if no rate
+    return entry.hours_worked * hourlyRate;
+  };
+  
   if (entries.length === 0) {
     return (
       <div className="text-center py-10 border rounded-md bg-muted/20">
@@ -97,10 +109,7 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
                 <TableCell>{entry.hours_worked.toFixed(2)}</TableCell>
                 <TableCell>{entry.employee_name || 'Unassigned'}</TableCell>
                 <TableCell className="text-right">
-                  {entry.cost ? formatCurrency(entry.cost) : 
-                    (entry.hours_worked && entry.employee_rate ? 
-                      formatCurrency(entry.hours_worked * entry.employee_rate) : 
-                      formatCurrency(entry.hours_worked * 75))}
+                  {formatCurrency(calculateEntryCost(entry))}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end items-center space-x-2">

@@ -10,7 +10,6 @@ export const documentCategories = [
   'insurance',
   'certification',
   'photo',
-  'specification',
   'other'
 ] as const;
 
@@ -49,15 +48,16 @@ export const costTypes = expenseTypes;
 
 // Entity-specific category mapping
 export const entityCategoryMap: Record<string, string[]> = {
-  'PROJECT': ['contract', 'photo', 'certification', 'other'],
+  'PROJECT': ['contract', 'photo', 'certification', 'receipt', 'invoice', 'other'],
   'CUSTOMER': ['contract', 'invoice', 'other'],
   'ESTIMATE': ['3rd_party_estimate', 'contract', 'other'],
-  'WORK_ORDER': ['receipt', 'photo', 'other'],
-  'VENDOR': ['invoice', 'certification', 'contract', 'other'],
-  'SUBCONTRACTOR': ['certification', 'insurance', 'contract', 'other'],
+  'WORK_ORDER': ['receipt', 'photo', 'invoice', 'other'],
+  'VENDOR': ['invoice', 'certification', 'contract', 'receipt', 'other'],
+  'SUBCONTRACTOR': ['certification', 'insurance', 'contract', 'invoice', 'other'],
   'CONTACT': ['contract', 'certification', 'other'],
   'EXPENSE': ['receipt', 'invoice', 'other'],
-  'TIME_ENTRY': ['receipt', 'photo', 'other']
+  'TIME_ENTRY': ['receipt', 'photo', 'other'],
+  'ESTIMATE_ITEM': ['receipt', 'invoice', '3rd_party_estimate', 'other']
 };
 
 // Define the document metadata schema
@@ -74,9 +74,10 @@ export const documentMetadataSchema = z.object({
   vendorId: z.string().optional(),
   vendorType: z.enum(vendorTypes).optional(),
   expenseType: z.enum(expenseTypes).optional(),
-  budget_item_id: z.string().optional(),
-  parent_entity_type: z.enum(entityTypes).optional(),
-  parent_entity_id: z.string().optional(),
+  // Add parent entity fields for better tracking of relationships
+  parentEntityType: z.enum(entityTypes).optional(),
+  parentEntityId: z.string().optional(),
+  budgetItemId: z.string().optional(),
 });
 
 // Define the form schema with validation for document upload
@@ -124,16 +125,16 @@ export const documentSchema = z.object({
   // Add revision ID for tracking which revision a document belongs to
   revision_id: z.string().optional(),
   
-  // Add the missing fields required for the type
-  is_latest_version: z.boolean().default(true),
-  mime_type: z.string().default('application/octet-stream'),
-  
-  // Add budget item ID
+  // Add budget item ID for expense tracking
   budget_item_id: z.string().optional(),
-  
-  // Add parent entity fields
+
+  // Add parent entity fields for better navigation
   parent_entity_type: z.string().optional(),
   parent_entity_id: z.string().optional(),
+  
+  // Add the missing fields required for the type
+  is_latest_version: z.boolean().default(true),
+  mime_type: z.string().default('application/octet-stream')
 });
 
 export type DocumentCategory = typeof documentCategories[number];
@@ -144,15 +145,72 @@ export type DocumentMetadata = z.infer<typeof documentMetadataSchema>;
 export type DocumentUploadFormValues = z.infer<typeof documentUploadSchema>;
 export type Document = z.infer<typeof documentSchema>;
 
-// Define the WorkOrderDocument type that extends Document with required url field
-export interface WorkOrderDocument extends Omit<Document, 'url'> {
-  url: string; // Make url required in WorkOrderDocument
-  is_receipt?: boolean;
-}
-
 // Helper function to get available categories for a specific entity type
 export const getEntityCategories = (entityType: string): DocumentCategory[] => {
-  return (entityCategoryMap[entityType] || documentCategories) as DocumentCategory[];
+  if (entityType in entityCategoryMap) {
+    return entityCategoryMap[entityType] as DocumentCategory[];
+  }
+  return documentCategories as unknown as DocumentCategory[];
 };
 
-// Don't re-export types that cause conflicts
+// Helper function to determine if a document is an expense based on category and entity type
+export const isDocumentExpense = (category: string, entityType?: string): boolean => {
+  if (category === 'receipt' || category === 'invoice') {
+    return true;
+  }
+  
+  if (entityType === 'EXPENSE') {
+    return true;
+  }
+  
+  return false;
+};
+
+// Helper function to get suggested tags based on entity type and category
+export const getSuggestedTags = (entityType: string, category: string): string[] => {
+  const tags: string[] = [];
+  
+  // Add category as tag
+  tags.push(category);
+  
+  // Add entity type as tag
+  tags.push(entityType.toLowerCase());
+  
+  // Add special tags based on combinations
+  if (category === 'receipt' || category === 'invoice') {
+    tags.push('expense');
+    
+    if (entityType === 'PROJECT') {
+      tags.push('project_expense');
+    } else if (entityType === 'WORK_ORDER') {
+      tags.push('work_order_expense');
+    }
+  }
+  
+  if (category === 'insurance' && 
+      (entityType === 'VENDOR' || entityType === 'SUBCONTRACTOR')) {
+    tags.push('compliance');
+  }
+  
+  if (category === 'certification' && 
+      (entityType === 'VENDOR' || entityType === 'SUBCONTRACTOR')) {
+    tags.push('compliance');
+  }
+  
+  return tags;
+};
+
+// Helper to determine if a document is related to a budget item
+export const isBudgetExpense = (document: Document): boolean => {
+  return Boolean(document.budget_item_id);
+};
+
+// Helper to determine if expense is from a work order
+export const isWorkOrderExpense = (document: Document): boolean => {
+  return document.is_expense && document.entity_type === 'WORK_ORDER';
+};
+
+// Helper to determine if expense is from a project
+export const isProjectExpense = (document: Document): boolean => {
+  return document.is_expense && document.entity_type === 'PROJECT';
+};

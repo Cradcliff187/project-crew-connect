@@ -2,7 +2,7 @@
 import React from 'react';
 import { Clock, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDate } from '../utils/vendorUtils';
+import { formatDate } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';

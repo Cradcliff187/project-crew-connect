@@ -1,52 +1,33 @@
 
-export type StatusType = 
-  | 'active' 
-  | 'inactive' 
-  | 'pending' 
-  | 'draft'
-  | 'approved'
-  | 'completed'
-  | 'on_track'
-  | 'in_progress'
-  | 'warning'
-  | 'critical'
-  | 'not_set'
-  | 'converted'
-  | 'cancelled'
-  | 'on-hold'
-  | 'on_hold'
-  | 'qualified'
-  | 'unknown'
-  | 'potential'
-  | 'prospect'
-  | 'sent'
-  | 'rejected'
-  | 'verified'
-  | 'new'
-  | 'not_started'
-  | 'not-started'
-  | 'in-progress'
-  // Work order status types (uppercase for consistency with the database)
-  | 'NEW'
-  | 'IN_PROGRESS'
-  | 'ON_HOLD'
-  | 'COMPLETED'
-  | 'CANCELLED'
-  // Vendor status types
-  | 'POTENTIAL'
-  | 'APPROVED'
-  | 'ACTIVE'
-  | 'INACTIVE'
-  // UI status types for badges
-  | 'success'
-  | 'info'
-  | 'error'
-  | 'neutral'
-  | 'purple';
+/**
+ * Common types used throughout the application
+ */
 
-export interface Option {
-  label: string;
+export type StatusType = 
+  | 'NEW' | 'DRAFT' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'APPROVED' | 'REJECTED' 
+  | 'SENT' | 'READY' | 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'QUALIFIED' | 'VERIFIED'
+  | 'draft' | 'sent' | 'approved' | 'rejected' | 'converted' | 'active' | 'inactive' | 'completed'
+  | 'cancelled' | 'pending' | 'on_hold' | 'on-hold' | 'in_progress' | 'qualified' | 'verified'
+  | 'success' | 'error' | 'warning' | 'info' | 'neutral' | 'purple' | 'unknown' | 'critical';
+
+export interface StatusOption {
   value: string;
+  label: string;
+  color: string;
+  description?: string;
 }
 
-export type EntityType = 'PROJECT' | 'WORK_ORDER' | 'CHANGE_ORDER' | 'CONTACT' | 'VENDOR' | 'ESTIMATE';
+export interface EntityWithStatus {
+  id: string;
+  status: StatusType;
+  [key: string]: any;
+}
+
+export interface DataTableProps<TData> {
+  data: TData[];
+  columns: any[];
+  searchQuery?: string;
+  searchFields?: string[];
+  loading?: boolean;
+  error?: string | null;
+}

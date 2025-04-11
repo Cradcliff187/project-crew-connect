@@ -1,37 +1,59 @@
-import React, { useState } from 'react';
+
+import React, { useEffect } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import MobileTimeEntryView from '@/components/timeTracking/MobileTimeEntryView';
 import DesktopTimeEntryView from '@/components/timeTracking/DesktopTimeEntryView';
 import { useTimeEntries } from '@/components/timeTracking/hooks/useTimeEntries';
+import { Helmet } from 'react-helmet-async';
 
 const TimeTracking = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [showAddForm, setShowAddForm] = useState(false);
+  // Fetch time entries for the current week (hook handles the date range)
+  const { 
+    entries, 
+    loading, 
+    refreshEntries, 
+    dateRange, 
+    setDateRange,
+    goToNextWeek,
+    goToPrevWeek,
+    goToCurrentWeek
+  } = useTimeEntries();
+  
+  // State for add form
+  const [showAddForm, setShowAddForm] = React.useState(false);
   
   // Detect if we're on a mobile device
   const isMobile = useMediaQuery("(max-width: 768px)");
   
-  // Fetch time entries and related data
-  const { timeEntries, isLoading, refetch } = useTimeEntries(selectedDate);
+  // Trigger initial data loading when component mounts
+  useEffect(() => {
+    refreshEntries();
+  }, [refreshEntries]);
   
-  // Calculate total hours for the selected day
-  const totalHours = timeEntries?.reduce((sum, entry) => sum + entry.hours_worked, 0) || 0;
+  // Calculate total hours for the selected week
+  const totalHours = entries?.reduce((sum, entry) => sum + entry.hours_worked, 0) || 0;
   
   const handleAddSuccess = () => {
     setShowAddForm(false);
-    refetch();
+    refreshEntries();
   };
   
   // If on mobile, show a simplified view
   if (isMobile) {
     return (
       <PageTransition>
+        <Helmet>
+          <title>Time Tracking | AKC LLC</title>
+        </Helmet>
         <MobileTimeEntryView 
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          timeEntries={timeEntries}
-          isLoading={isLoading}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          onNextWeek={goToNextWeek}
+          onPrevWeek={goToPrevWeek}
+          onCurrentWeek={goToCurrentWeek}
+          timeEntries={entries}
+          isLoading={loading}
           onAddSuccess={handleAddSuccess}
           showAddForm={showAddForm}
           setShowAddForm={setShowAddForm}
@@ -44,28 +66,20 @@ const TimeTracking = () => {
   // Otherwise show the desktop view
   return (
     <PageTransition>
+      <Helmet>
+        <title>Time Tracking | AKC LLC</title>
+      </Helmet>
       <DesktopTimeEntryView
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        timeEntries={timeEntries}
-        isLoading={isLoading}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        onNextWeek={goToNextWeek}
+        onPrevWeek={goToPrevWeek}
+        onCurrentWeek={goToCurrentWeek}
+        timeEntries={entries}
+        isLoading={loading}
         onAddSuccess={handleAddSuccess}
         totalHours={totalHours}
       />
-      
-      {/* Mobile Add Form Dialog - keep for compatibility with existing code */}
-      {isMobile && showAddForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-auto">
-            <div className="p-4 border-b">
-              <h2 className="text-xl font-semibold">Log Time</h2>
-            </div>
-            <div className="p-4">
-              {/* This is handled by MobileTimeEntryView now, but keeping for backward compatibility */}
-            </div>
-          </div>
-        </div>
-      )}
     </PageTransition>
   );
 };

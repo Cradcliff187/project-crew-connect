@@ -1,37 +1,35 @@
 
-import { Button } from '@/components/ui/button';
-import { Briefcase, Wrench } from 'lucide-react';
+import React from 'react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
-interface EntityTypeSelectorProps {
-  entityType: 'work_order' | 'project';
+export interface EntityTypeSelectorProps {
+  value: 'work_order' | 'project';
   onChange: (value: 'work_order' | 'project') => void;
 }
 
-const EntityTypeSelector: React.FC<EntityTypeSelectorProps> = ({ entityType, onChange }) => {
+const EntityTypeSelector: React.FC<EntityTypeSelectorProps> = ({
+  value,
+  onChange
+}) => {
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">Time Entry Type</label>
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          type="button"
-          variant={entityType === 'work_order' ? 'default' : 'outline'}
-          className={entityType === 'work_order' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
-          onClick={() => onChange('work_order')}
-        >
-          <Wrench className="h-4 w-4 mr-2" />
-          Work Order
-        </Button>
+    <div className="space-y-3">
+      <Label>Type</Label>
+      <RadioGroup
+        value={value}
+        onValueChange={onChange}
+        className="flex gap-6"
+      >
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="work_order" id="work_order" />
+          <Label htmlFor="work_order" className="cursor-pointer">Work Order</Label>
+        </div>
         
-        <Button
-          type="button"
-          variant={entityType === 'project' ? 'default' : 'outline'}
-          className={entityType === 'project' ? 'bg-[#0485ea] hover:bg-[#0375d1]' : ''}
-          onClick={() => onChange('project')}
-        >
-          <Briefcase className="h-4 w-4 mr-2" />
-          Project
-        </Button>
-      </div>
+        <div className="flex items-center space-x-2">
+          <RadioGroupItem value="project" id="project" />
+          <Label htmlFor="project" className="cursor-pointer">Project</Label>
+        </div>
+      </RadioGroup>
     </div>
   );
 };

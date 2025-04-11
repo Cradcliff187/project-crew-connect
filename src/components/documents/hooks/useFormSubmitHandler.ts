@@ -24,6 +24,29 @@ export const useFormSubmitHandler = (
         console.log('Submitting document upload form', data);
       }
       
+      // Get relevant form data for easier tracking in logs
+      const {
+        entityType,
+        entityId,
+        category,
+        isExpense,
+        vendorId,
+        budgetItemId,
+        parentEntityType,
+        parentEntityId
+      } = data.metadata;
+      
+      console.log('Document upload metadata:', {
+        entityType,
+        entityId,
+        category,
+        isExpense,
+        vendorId: vendorId || 'none',
+        budgetItemId: budgetItemId || 'none',
+        parentEntityType: parentEntityType || 'none',
+        parentEntityId: parentEntityId || 'none'
+      });
+      
       const result = await uploadDocument(data);
       
       if (!result.success) {
@@ -47,12 +70,15 @@ export const useFormSubmitHandler = (
         URL.revokeObjectURL(previewURL);
       }
       
+      console.log('Document upload successful, documentId:', result.documentId);
+      
       // Call success callback with documentId
       if (onSuccess) {
         onSuccess(result.documentId);
       }
       
     } catch (error: any) {
+      console.error('Document upload failed:', error);
       toast({
         title: "Upload failed",
         description: error.message || "There was an error uploading your document.",

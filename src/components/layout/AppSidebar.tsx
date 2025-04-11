@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -11,7 +12,7 @@ import {
   FileText,
   ClipboardList,
   Briefcase,
-  Wrench,
+  BarChart,
 } from "lucide-react";
 
 import {
@@ -89,6 +90,11 @@ const mainNav = [
     title: "Documents",
     href: "/documents",
     icon: <FileText className="h-5 w-5" />,
+  },
+  {
+    title: "Reports",
+    href: "/reports",
+    icon: <BarChart className="h-5 w-5" />,
   },
 ];
 

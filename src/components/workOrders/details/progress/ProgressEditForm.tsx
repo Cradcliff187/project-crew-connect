@@ -1,6 +1,8 @@
 
-import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { SliderProps } from '@radix-ui/react-slider';
+import { ChangeEvent } from 'react';
 
 interface ProgressEditFormProps {
   progressValue: number;
@@ -13,39 +15,39 @@ const ProgressEditForm = ({
   onProgressChange,
   loading
 }: ProgressEditFormProps) => {
+  const handleSliderChange = (value: number[]) => {
+    onProgressChange(value[0]);
+  };
+  
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    if (!isNaN(value) && value >= 0 && value <= 100) {
+      onProgressChange(value);
+    }
+  };
+  
   return (
-    <div className="mt-4 space-y-3">
-      <div>
-        <label className="text-sm font-medium mb-2 block">Update Progress</label>
+    <div className="mt-4 space-y-4">
+      <div className="flex items-center gap-2">
         <Slider
+          disabled={loading}
           value={[progressValue]}
+          onValueChange={handleSliderChange as SliderProps['onValueChange']}
           max={100}
           step={5}
-          onValueChange={(value) => onProgressChange(value[0])}
-          disabled={loading}
-          className="my-4"
+          className="flex-1"
         />
-      </div>
-      
-      <div className="flex items-center gap-2">
         <Input
           type="number"
           value={progressValue}
-          onChange={(e) => onProgressChange(Number(e.target.value))}
+          onChange={handleInputChange}
+          className="w-16 text-right"
           min={0}
           max={100}
-          className="w-24"
           disabled={loading}
         />
-        <span>%</span>
+        <span className="text-sm">%</span>
       </div>
-      
-      <p className="text-xs text-muted-foreground mt-1">
-        {progressValue === 0 && "Work has not started yet"}
-        {progressValue > 0 && progressValue < 50 && "Work is in the early stages"}
-        {progressValue >= 50 && progressValue < 100 && "Work is progressing well"}
-        {progressValue === 100 && "Work is now complete"}
-      </p>
     </div>
   );
 };

@@ -6,7 +6,7 @@ import { Document } from '@/components/documents/schemas/documentSchema';
 
 export type RelationshipType = 'REFERENCE' | 'VERSION' | 'ATTACHMENT' | 'RELATED' | 'SUPPLEMENT';
 
-export interface DocumentRelationship {
+export type DocumentRelationship = {
   id: string;
   source_document_id: string;
   target_document_id: string;
@@ -19,13 +19,13 @@ export interface DocumentRelationship {
   updated_at: string;
   source_document?: Document;
   target_document?: Document;
-}
+};
 
 export interface CreateRelationshipParams {
   sourceDocumentId: string;
   targetDocumentId: string;
   relationshipType: RelationshipType;
-  relationship_metadata?: {
+  metadata?: {
     description?: string;
     created_by?: string;
   };
@@ -101,44 +101,23 @@ export const useDocumentRelationships = (documentId?: string) => {
           : 'RELATED'; // Default to RELATED if type is invalid
       };
       
-      // Process relationships safely with proper type handling
-      const typedSourceRelationships = sourceRelationships ? sourceRelationships.map(rel => {
-        // Safely extract metadata fields with proper type checking
-        const metadata = rel.relationship_metadata as Record<string, unknown> || {};
-        const typedMetadata = {
-          description: typeof metadata.description === 'string' ? metadata.description : undefined,
-          created_by: typeof metadata.created_by === 'string' ? metadata.created_by : undefined
-        };
-        
-        return {
-          ...rel,
-          relationship_type: validateRelationshipType(rel.relationship_type),
-          relationship_metadata: typedMetadata,
-          target_document: rel.target_document as unknown as Document
-        } as DocumentRelationship;
-      }) : [];
+      // Process source relationships with proper type casting
+      const typedSourceRelationships = sourceRelationships?.map(rel => ({
+        ...rel,
+        relationship_type: validateRelationshipType(rel.relationship_type)
+      })) || [];
       
-      const typedTargetRelationships = targetRelationships ? targetRelationships.map(rel => {
-        // Safely extract metadata fields with proper type checking
-        const metadata = rel.relationship_metadata as Record<string, unknown> || {};
-        const typedMetadata = {
-          description: typeof metadata.description === 'string' ? metadata.description : undefined,
-          created_by: typeof metadata.created_by === 'string' ? metadata.created_by : undefined
-        };
-        
-        return {
-          ...rel,
-          relationship_type: validateRelationshipType(rel.relationship_type),
-          relationship_metadata: typedMetadata,
-          source_document: rel.source_document as unknown as Document
-        } as DocumentRelationship;
-      }) : [];
+      // Process target relationships with proper type casting
+      const typedTargetRelationships = targetRelationships?.map(rel => ({
+        ...rel,
+        relationship_type: validateRelationshipType(rel.relationship_type)
+      })) || [];
       
-      // Combine relationships safely with proper typing
+      // Combine and set relationships with proper typing
       setRelationships([
         ...typedSourceRelationships,
         ...typedTargetRelationships
-      ]);
+      ] as DocumentRelationship[]);
     } catch (err: any) {
       console.error('Error fetching document relationships:', err);
       setError(err.message);
@@ -156,7 +135,7 @@ export const useDocumentRelationships = (documentId?: string) => {
     sourceDocumentId,
     targetDocumentId,
     relationshipType,
-    relationship_metadata
+    metadata
   }: CreateRelationshipParams) => {
     setLoading(true);
     setError(null);
@@ -187,7 +166,7 @@ export const useDocumentRelationships = (documentId?: string) => {
           source_document_id: sourceDocumentId,
           target_document_id: targetDocumentId,
           relationship_type: relationshipType,
-          relationship_metadata: relationship_metadata
+          relationship_metadata: metadata
         })
         .select()
         .single();

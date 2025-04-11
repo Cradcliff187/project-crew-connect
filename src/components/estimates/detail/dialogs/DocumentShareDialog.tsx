@@ -1,20 +1,21 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Mail, Send, X } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { Document } from '@/components/documents/schemas/documentSchema';
+import { Loader2, Info, Paperclip, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useDocumentSharing } from '@/components/documents/hooks/useDocumentSharing';
+import { Badge } from '@/components/ui/badge';
 
 interface DocumentShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  document: Document | null;
+  document: any;
   estimateId: string;
   clientEmail?: string;
 }
@@ -24,168 +25,196 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
   onOpenChange,
   document,
   estimateId,
-  clientEmail = ''
+  clientEmail
 }) => {
-  const [email, setEmail] = useState(clientEmail);
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [includeEstimateLink, setIncludeEstimateLink] = useState(true);
-  const [isSending, setIsSending] = useState(false);
-
-  // Reset form when dialog opens
-  React.useEffect(() => {
-    if (open && document) {
-      setEmail(clientEmail);
-      setSubject(`Document from AKC LLC: ${document.file_name}`);
-      setMessage(`Please find attached the document "${document.file_name}" related to your estimate. \n\nIf you have any questions, please don't hesitate to contact us.`);
+  const [recipientEmail, setRecipientEmail] = useState<string>(clientEmail || '');
+  const [subject, setSubject] = useState<string>('Document Shared: Estimate PDF');
+  const [message, setMessage] = useState<string>(`Please find the attached PDF document for your estimate.\n\nThank you for your business.`);
+  const [includeEntityLink, setIncludeEntityLink] = useState<boolean>(false);
+  const [includeBranding, setIncludeBranding] = useState<boolean>(true);
+  const { shareDocument, isSending } = useDocumentSharing();
+  
+  useEffect(() => {
+    // Reset form when dialog opens
+    if (open) {
+      setRecipientEmail(clientEmail || '');
+      setSubject('Document Shared: Estimate PDF');
+      setMessage(`Please find the attached PDF document for your estimate.\n\nThank you for your business.`);
+      setIncludeEntityLink(false);
+      setIncludeBranding(true);
     }
-  }, [open, document, clientEmail]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!document || !email) {
+  }, [open, clientEmail]);
+  
+  const handleSendEmail = async () => {
+    if (!document || !document.document_id) {
       toast({
-        title: "Missing information",
-        description: "Please provide an email address",
-        variant: "destructive",
+        title: 'Missing Document',
+        description: 'No document available to share.',
+        variant: 'destructive',
       });
       return;
     }
     
-    setIsSending(true);
-    
-    try {
-      // Format details as JSON string
-      const detailsJson = JSON.stringify({
-        document_id: document.document_id,
-        entity_id: estimateId,
-        entity_type: 'ESTIMATE',
-        recipient_email: email,
-        subject: subject,
-        message: message,
-        include_estimate_link: includeEstimateLink,
-        sent_at: new Date().toISOString()
-      });
-      
-      // Log to activitylog
-      const { error } = await supabase
-        .from('activitylog')
-        .insert({
-          logid: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          action: 'DOCUMENT_SHARE',
-          moduletype: 'DOCUMENTS',
-          referenceid: document.document_id,
-          detailsjson: detailsJson,
-          status: 'SENT',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      
-      if (error) throw error;
-      
+    if (!recipientEmail) {
       toast({
-        title: "Email notification sent",
-        description: `Document has been shared with ${email}`,
-        className: "bg-[#0485ea]",
+        title: 'Missing Recipient',
+        description: 'Please enter a recipient email address.',
+        variant: 'destructive',
       });
+      return;
+    }
+    
+    const success = await shareDocument({
+      documentId: document.document_id,
+      estimateId,
+      recipientEmail,
+      subject,
+      message,
+      includeEntityLink,
+      includeBranding,
+    });
+    
+    if (success) {
+      // Log the document sharing action for activity tracking
+      try {
+        await supabase
+          .from('document_access_logs')
+          .insert({
+            document_id: document.document_id,
+            action: 'SHARE_EMAIL',
+            accessed_by: recipientEmail
+          });
+      } catch (error) {
+        console.error('Error logging document share:', error);
+      }
       
       onOpenChange(false);
-    } catch (err: any) {
-      console.error('Error sending notification:', err);
-      toast({
-        title: "Failed to send notification",
-        description: err.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSending(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[530px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <Mail className="h-5 w-5 mr-2 text-[#0485ea]" />
-            Share Document
-          </DialogTitle>
-          <DialogDescription>
-            Send this document by email to your client or team members.
-          </DialogDescription>
+          <DialogTitle>Share Document</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label htmlFor="email">Recipient Email</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="client@example.com"
-              required
-            />
-          </div>
+        <div className="space-y-4 py-4">
+          {document ? (
+            <>
+              <div className="bg-muted p-3 rounded-md mb-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm mb-1">Document Details</h4>
+                    <p className="text-sm">{document.file_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {document.file_type} • {(document.file_size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-[#0485ea] border-[#0485ea] bg-[#0485ea]/10">
+                    <Paperclip className="h-3 w-3 mr-1" />
+                    Attachment
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Recipient Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  placeholder="recipient@example.com"
+                  disabled={isSending}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="subject">Subject</Label>
+                <Input
+                  id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Email subject"
+                  disabled={isSending}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  rows={5}
+                  placeholder="Email message"
+                  disabled={isSending}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="includeLink"
+                    checked={includeEntityLink}
+                    onCheckedChange={(checked) => setIncludeEntityLink(checked as boolean)}
+                    disabled={isSending}
+                  />
+                  <Label htmlFor="includeLink">
+                    Include a link to view online (if available)
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="includeBranding"
+                    checked={includeBranding}
+                    onCheckedChange={(checked) => setIncludeBranding(checked as boolean)}
+                    disabled={isSending}
+                  />
+                  <Label htmlFor="includeBranding">
+                    Include AKC LLC branding in email
+                  </Label>
+                </div>
+              </div>
+              
+              <div className="flex items-center text-xs text-muted-foreground">
+                <Info className="h-3 w-3 mr-1" />
+                The document will be shared as an email attachment
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              No document is available to share. Please generate a PDF first.
+            </div>
+          )}
+        </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="subject">Subject</Label>
-            <Input 
-              id="subject" 
-              value={subject} 
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Document from AKC LLC"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
-            <Textarea 
-              id="message" 
-              value={message} 
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Please find attached the document..."
-              rows={4}
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="includeEstimateLink" 
-              checked={includeEstimateLink}
-              onCheckedChange={(checked) => setIncludeEstimateLink(!!checked)}
-            />
-            <Label 
-              htmlFor="includeEstimateLink"
-              className="text-sm font-normal cursor-pointer"
-            >
-              Include link to view estimate
-            </Label>
-          </div>
-          
-          <DialogFooter className="pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={isSending}
-            >
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              className="bg-[#0485ea] hover:bg-[#0373ce]"
-              disabled={isSending}
-            >
-              <Send className="h-4 w-4 mr-1" />
-              {isSending ? 'Sending...' : 'Send'}
-            </Button>
-          </DialogFooter>
-        </form>
+        <DialogFooter>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => onOpenChange(false)} 
+            disabled={isSending}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSendEmail} 
+            disabled={isSending || !document} 
+            className="bg-[#0485ea] hover:bg-[#0375d1]"
+          >
+            {isSending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              'Send Document'
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

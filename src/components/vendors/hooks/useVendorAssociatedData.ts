@@ -1,64 +1,112 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
 import { VendorProject, VendorWorkOrder } from '../detail/types';
 
+interface UseVendorAssociatedDataResult {
+  projects: VendorProject[];
+  workOrders: VendorWorkOrder[];
+  loadingAssociations: boolean;
+  fetchAssociatedData: (vendorId: string) => Promise<void>;
+}
+
 /**
- * Hook to fetch vendor associated data like projects and work orders
+ * Hook to fetch data associated with a vendor
  */
-const useVendorAssociatedData = () => {
+const useVendorAssociatedData = (): UseVendorAssociatedDataResult => {
   const [projects, setProjects] = useState<VendorProject[]>([]);
   const [workOrders, setWorkOrders] = useState<VendorWorkOrder[]>([]);
   const [loadingAssociations, setLoadingAssociations] = useState(false);
   
+  /**
+   * Fetch all data associated with a vendor
+   */
   const fetchAssociatedData = useCallback(async (vendorId: string) => {
     if (!vendorId) return;
     
     setLoadingAssociations(true);
-    console.log('Fetching associated data for vendor:', vendorId);
     
     try {
-      // Fetch associated projects using the get_vendor_projects database function
-      const { data: projectsData, error: projectsError } = await supabase
-        .rpc('get_vendor_projects', { p_vendor_id: vendorId });
+      // Step 1: Get project associations
+      const { data: projectAssociations, error: projectAssociationsError } = await supabase
+        .from('vendor_associations')
+        .select('entity_id')
+        .eq('vendor_id', vendorId)
+        .eq('entity_type', 'PROJECT');
       
-      if (projectsError) {
-        console.error('Error fetching vendor project associations:', projectsError);
-        toast({
-          title: 'Error',
-          description: 'Failed to load associated projects.',
-          variant: 'destructive',
-        });
+      if (projectAssociationsError) {
+        console.error('Error fetching project associations:', projectAssociationsError);
         setProjects([]);
+      } else if (projectAssociations && projectAssociations.length > 0) {
+        // Extract project IDs from associations
+        const projectIds = projectAssociations.map(association => association.entity_id);
+        
+        // Step 2: Fetch the actual projects using the IDs we collected
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('projectid, projectname, status, createdon, total_budget')
+          .in('projectid', projectIds);
+        
+        if (projectsError) {
+          console.error('Error fetching projects:', projectsError);
+          setProjects([]);
+        } else if (projectsData) {
+          // Transform projects data to match our interface
+          const vendorProjects: VendorProject[] = projectsData.map(project => ({
+            projectid: project.projectid,
+            projectname: project.projectname,
+            status: project.status || 'Unknown',
+            createdon: project.createdon,
+            total_budget: project.total_budget
+          }));
+          
+          setProjects(vendorProjects);
+        }
       } else {
-        console.log('Successfully fetched projects:', projectsData);
-        setProjects(projectsData || []);
+        setProjects([]);
       }
       
-      // Fetch associated work orders using the get_vendor_work_orders database function
-      const { data: workOrdersData, error: workOrdersError } = await supabase
-        .rpc('get_vendor_work_orders', { p_vendor_id: vendorId });
+      // Step 1: Get work order associations
+      const { data: workOrderAssociations, error: workOrderAssociationsError } = await supabase
+        .from('vendor_associations')
+        .select('entity_id')
+        .eq('vendor_id', vendorId)
+        .eq('entity_type', 'WORK_ORDER');
       
-      if (workOrdersError) {
-        console.error('Error fetching vendor work orders:', workOrdersError);
-        toast({
-          title: 'Error',
-          description: 'Failed to load associated work orders.',
-          variant: 'destructive',
-        });
+      if (workOrderAssociationsError) {
+        console.error('Error fetching work order associations:', workOrderAssociationsError);
         setWorkOrders([]);
+      } else if (workOrderAssociations && workOrderAssociations.length > 0) {
+        // Extract work order IDs from associations
+        const workOrderIds = workOrderAssociations.map(association => association.entity_id);
+        
+        // Step 2: Fetch the actual work orders using the IDs we collected
+        const { data: workOrdersData, error: workOrdersError } = await supabase
+          .from('maintenance_work_orders')
+          .select('work_order_id, title, status, created_at, progress, materials_cost')
+          .in('work_order_id', workOrderIds);
+        
+        if (workOrdersError) {
+          console.error('Error fetching work orders:', workOrdersError);
+          setWorkOrders([]);
+        } else if (workOrdersData) {
+          // Transform work orders data to match our interface
+          const vendorWorkOrders: VendorWorkOrder[] = workOrdersData.map(workOrder => ({
+            work_order_id: workOrder.work_order_id,
+            title: workOrder.title,
+            status: workOrder.status || 'Unknown',
+            created_at: workOrder.created_at,
+            progress: workOrder.progress,
+            materials_cost: workOrder.materials_cost
+          }));
+          
+          setWorkOrders(vendorWorkOrders);
+        }
       } else {
-        console.log('Successfully fetched work orders:', workOrdersData);
-        setWorkOrders(workOrdersData || []);
+        setWorkOrders([]);
       }
     } catch (error) {
       console.error('Error in fetchAssociatedData:', error);
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
       setProjects([]);
       setWorkOrders([]);
     } finally {
@@ -66,12 +114,7 @@ const useVendorAssociatedData = () => {
     }
   }, []);
   
-  return {
-    projects,
-    workOrders,
-    loadingAssociations,
-    fetchAssociatedData
-  };
+  return { projects, workOrders, loadingAssociations, fetchAssociatedData };
 };
 
 export default useVendorAssociatedData;

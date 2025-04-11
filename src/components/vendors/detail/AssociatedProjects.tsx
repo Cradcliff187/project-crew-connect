@@ -1,13 +1,9 @@
 
 import React from 'react';
-import { Calendar, Folder } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { formatDate } from '../utils/vendorUtils';
-import StatusBadge from '@/components/ui/StatusBadge';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableCell } from '@/components/ui/table';
+import { Link, useNavigate } from 'react-router-dom';
 import { VendorProject } from './types';
-import { StatusType } from '@/types/common';
 
 interface AssociatedProjectsProps {
   projects: VendorProject[];
@@ -17,79 +13,57 @@ interface AssociatedProjectsProps {
 const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loading }) => {
   const navigate = useNavigate();
 
-  const handleProjectClick = (projectId: string) => {
-    navigate(`/projects/${projectId}`);
+  const handleViewProject = (project: VendorProject) => {
+    navigate(`/projects/${project.projectid}`);
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Folder className="h-5 w-5" />
-          Associated Projects
-        </h3>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex justify-between items-center pb-4 border-b">
-            <div className="space-y-1">
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-            <Skeleton className="h-8 w-20" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (projects.length === 0) {
-    return (
-      <div>
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Folder className="h-5 w-5" />
-          Associated Projects
-        </h3>
-        <div className="text-center py-6 text-muted-foreground">
-          <Folder className="h-12 w-12 mx-auto mb-2 opacity-20" />
-          <p>No projects are associated with this vendor yet.</p>
-        </div>
-      </div>
-    );
-  }
+  // Format date function to safely handle null/undefined dates
+  const formatDate = (date?: string | null) => {
+    if (!date) return 'N/A';
+    try {
+      return new Date(date).toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
+  };
 
   return (
-    <div>
-      <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
-        <Folder className="h-5 w-5" />
-        Associated Projects
-      </h3>
-      <div className="space-y-4">
-        {projects.map((project) => (
-          <div 
-            key={project.project_id} 
-            className="flex justify-between items-center pb-4 border-b last:border-b-0 last:pb-0"
-          >
-            <div className="space-y-1">
-              <h4 className="font-medium">{project.project_name}</h4>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Calendar className="h-3 w-3 mr-1" />
-                {formatDate(project.created_at)}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <StatusBadge status={(project.status?.toLowerCase() || 'unknown') as StatusType} size="sm" />
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs h-8"
-                onClick={() => handleProjectClick(project.project_id)}
-              >
-                View
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Associated Projects</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div>Loading projects...</div>
+        ) : projects.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableCell>Project Name</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Created At</TableCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {projects.map((project) => (
+                <TableRow key={project.projectid} className="cursor-pointer hover:bg-gray-100" onClick={() => handleViewProject(project)}>
+                  <TableCell>
+                    <Link to={`/projects/${project.projectid}`} className="text-[#0485ea] hover:underline">
+                      {project.projectname || 'Unnamed Project'}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{project.status || 'Unknown'}</TableCell>
+                  <TableCell>{formatDate(project.createdon)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <div>No associated projects found.</div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

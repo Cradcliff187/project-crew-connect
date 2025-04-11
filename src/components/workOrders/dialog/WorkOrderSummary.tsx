@@ -12,8 +12,21 @@ const WorkOrderSummary = ({ form }: WorkOrderSummaryProps) => {
   const values = form.getValues();
   
   const formatDate = (date: Date | undefined) => {
-    return date ? format(date, 'MMMM d, yyyy') : 'Not specified';
+    if (!date) return 'Not specified';
+    return format(new Date(date), 'MMMM d, yyyy');
   };
+
+  const formattedScheduledDate = values.scheduled_date 
+    ? formatDate(values.scheduled_date) 
+    : 'Not set';
+
+  const formattedDueDate = values.due_by_date 
+    ? formatDate(values.due_by_date) 
+    : 'Not set';
+
+  const locationDetails = values.useCustomAddress
+    ? `${values.address || ''}, ${values.city || ''}, ${values.state || ''} ${values.zip || ''}`
+    : 'Using existing location';
 
   return (
     <div className="space-y-4">
@@ -65,12 +78,12 @@ const WorkOrderSummary = ({ form }: WorkOrderSummaryProps) => {
                 
                 <div>
                   <span className="text-sm font-medium">Scheduled Date:</span>
-                  <p className="text-sm">{formatDate(values.scheduled_date)}</p>
+                  <p className="text-sm">{formattedScheduledDate}</p>
                 </div>
                 
                 <div>
                   <span className="text-sm font-medium">Due By Date:</span>
-                  <p className="text-sm">{formatDate(values.due_by_date)}</p>
+                  <p className="text-sm">{formattedDueDate}</p>
                 </div>
               </div>
             </div>
@@ -79,12 +92,12 @@ const WorkOrderSummary = ({ form }: WorkOrderSummaryProps) => {
           <div className="mt-6">
             <h4 className="font-medium text-[#0485ea]">Location Information</h4>
             
-            {values.use_custom_address ? (
+            {values.useCustomAddress ? (
               <div className="mt-2 space-y-2">
                 <div>
                   <span className="text-sm font-medium">Custom Address:</span>
                   <p className="text-sm">
-                    {values.address}, {values.city}, {values.state} {values.zip}
+                    {locationDetails}
                   </p>
                 </div>
               </div>

@@ -1,14 +1,17 @@
 
-import React from 'react';
-import { Label } from '@/components/ui/label';
+import React, { useEffect } from 'react';
+import TimePickerSelect from './TimePickerSelect';
+import { calculateHours } from '../utils/timeUtils';
 
-interface TimeRangeSelectorProps {
+export interface TimeRangeSelectorProps {
   startTime: string;
   endTime: string;
   onStartTimeChange: (value: string) => void;
   onEndTimeChange: (value: string) => void;
+  error?: string;
   startTimeError?: string;
   endTimeError?: string;
+  hoursWorked?: number;
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -16,73 +19,42 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   endTime,
   onStartTimeChange,
   onEndTimeChange,
+  error,
   startTimeError,
-  endTimeError
+  endTimeError,
+  hoursWorked
 }) => {
-  // Generate time options in 15-minute increments
-  const generateTimeOptions = () => {
-    const options = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        const hourString = hour.toString().padStart(2, '0');
-        const minuteString = minute.toString().padStart(2, '0');
-        const value = `${hourString}:${minuteString}`;
-        
-        // Format for display (12-hour clock)
-        let displayHour = hour % 12;
-        if (displayHour === 0) displayHour = 12;
-        const period = hour < 12 ? 'AM' : 'PM';
-        const display = `${displayHour}:${minuteString} ${period}`;
-        
-        options.push({ value, display });
-      }
-    }
-    return options;
-  };
-  
-  const timeOptions = generateTimeOptions();
-  
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label htmlFor="start-time" className={startTimeError ? "text-destructive" : ""}>Start Time</Label>
-        <select
-          id="start-time"
-          className={`w-full border rounded-md px-3 py-2 ${startTimeError ? "border-destructive" : "border-input"}`}
-          value={startTime || ''}
-          onChange={(e) => onStartTimeChange(e.target.value)}
-        >
-          <option value="" disabled>Select start time</option>
-          {timeOptions.map((option, index) => (
-            <option key={`start-${index}`} value={option.value}>
-              {option.display}
-            </option>
-          ))}
-        </select>
-        {startTimeError && (
-          <p className="text-xs text-destructive">{startTimeError}</p>
-        )}
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <TimePickerSelect
+            value={startTime}
+            onChange={onStartTimeChange}
+            label="Start Time"
+            id="start-time"
+          />
+          {startTimeError && <p className="text-sm text-red-500">{startTimeError}</p>}
+        </div>
+        
+        <div className="space-y-2">
+          <TimePickerSelect
+            value={endTime}
+            onChange={onEndTimeChange}
+            label="End Time"
+            id="end-time"
+          />
+          {endTimeError && <p className="text-sm text-red-500">{endTimeError}</p>}
+        </div>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="end-time" className={endTimeError ? "text-destructive" : ""}>End Time</Label>
-        <select
-          id="end-time"
-          className={`w-full border rounded-md px-3 py-2 ${endTimeError ? "border-destructive" : "border-input"}`}
-          value={endTime || ''}
-          onChange={(e) => onEndTimeChange(e.target.value)}
-        >
-          <option value="" disabled>Select end time</option>
-          {timeOptions.map((option, index) => (
-            <option key={`end-${index}`} value={option.value}>
-              {option.display}
-            </option>
-          ))}
-        </select>
-        {endTimeError && (
-          <p className="text-xs text-destructive">{endTimeError}</p>
-        )}
-      </div>
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      
+      {hoursWorked !== undefined && (
+        <div className="text-sm text-muted-foreground">
+          Total: <span className="font-medium">{hoursWorked.toFixed(1)} hours</span>
+        </div>
+      )}
     </div>
   );
 };

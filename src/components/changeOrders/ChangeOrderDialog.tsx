@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -140,6 +140,11 @@ const ChangeOrderDialog = ({
     }
   };
 
+  // Preserve form context when switching tabs
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
@@ -149,99 +154,104 @@ const ChangeOrderDialog = ({
           </DialogTitle>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4">
-            <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
-            <TabsTrigger value="items">Items</TabsTrigger>
-            <TabsTrigger value="financial-analysis" disabled={!isEditing && !form.getValues().items?.length}>Financial Impact</TabsTrigger>
-            <TabsTrigger value="approval" disabled={!isEditing}>Approval</TabsTrigger>
-          </TabsList>
-          
-          <form onSubmit={form.handleSubmit(handleSubmit)}>
-            <TabsContent value="basic-info" className="py-4">
-              <ChangeOrderBasicInfo form={form} isEditing={isEditing} />
-              
-              <div className="flex justify-end mt-6 space-x-2">
-                <Button type="button" variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  className="bg-[#0485ea] hover:bg-[#0375d1]"
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save Change Order'}
-                </Button>
-              </div>
-            </TabsContent>
+        <FormProvider {...form}>
+          <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="basic-info">
+            <TabsList className="grid grid-cols-4">
+              <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
+              <TabsTrigger value="items">Items</TabsTrigger>
+              <TabsTrigger value="financial-analysis" 
+                disabled={!isEditing && !form.getValues().items?.length}>
+                Financial Impact
+              </TabsTrigger>
+              <TabsTrigger value="approval" disabled={!isEditing}>Approval</TabsTrigger>
+            </TabsList>
             
-            <TabsContent value="items" className="py-4">
-              <ChangeOrderItems 
-                form={form} 
-                changeOrderId={changeOrder?.id} 
-                isEditing={isEditing}
-                onUpdated={onSaved}
-              />
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              <TabsContent value="basic-info" className="py-4">
+                <ChangeOrderBasicInfo form={form} isEditing={isEditing} />
+                
+                <div className="flex justify-end mt-6 space-x-2">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    className="bg-[#0485ea] hover:bg-[#0375d1]"
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : 'Save Change Order'}
+                  </Button>
+                </div>
+              </TabsContent>
               
-              <div className="flex justify-end mt-6 space-x-2">
-                <Button type="button" variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  className="bg-[#0485ea] hover:bg-[#0375d1]"
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save Change Order'}
-                </Button>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="financial-analysis" className="py-4">
-              {entityId && (
-                <FinancialAnalysisTab 
+              <TabsContent value="items" className="py-4">
+                <ChangeOrderItems 
                   form={form} 
-                  entityType={entityType}
-                  entityId={entityId}
+                  changeOrderId={changeOrder?.id} 
+                  isEditing={isEditing}
+                  onUpdated={onSaved}
                 />
-              )}
+                
+                <div className="flex justify-end mt-6 space-x-2">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    className="bg-[#0485ea] hover:bg-[#0375d1]"
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : 'Save Change Order'}
+                  </Button>
+                </div>
+              </TabsContent>
               
-              <div className="flex justify-end mt-6 space-x-2">
-                <Button type="button" variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  className="bg-[#0485ea] hover:bg-[#0375d1]"
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save Change Order'}
-                </Button>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="approval" className="py-4">
-              <ChangeOrderApproval 
-                form={form} 
-                changeOrderId={changeOrder?.id} 
-                onUpdated={onSaved}
-              />
+              <TabsContent value="financial-analysis" className="py-4">
+                {entityId && (
+                  <FinancialAnalysisTab 
+                    form={form} 
+                    entityType={entityType}
+                    entityId={entityId}
+                  />
+                )}
+                
+                <div className="flex justify-end mt-6 space-x-2">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    className="bg-[#0485ea] hover:bg-[#0375d1]"
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : 'Save Change Order'}
+                  </Button>
+                </div>
+              </TabsContent>
               
-              <div className="flex justify-end mt-6 space-x-2">
-                <Button type="button" variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  className="bg-[#0485ea] hover:bg-[#0375d1]"
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save Change Order'}
-                </Button>
-              </div>
-            </TabsContent>
-          </form>
-        </Tabs>
+              <TabsContent value="approval" className="py-4">
+                <ChangeOrderApproval 
+                  form={form} 
+                  changeOrderId={changeOrder?.id} 
+                  onUpdated={onSaved}
+                />
+                
+                <div className="flex justify-end mt-6 space-x-2">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    className="bg-[#0485ea] hover:bg-[#0375d1]"
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : 'Save Change Order'}
+                  </Button>
+                </div>
+              </TabsContent>
+            </form>
+          </Tabs>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );

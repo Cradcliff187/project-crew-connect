@@ -1,183 +1,190 @@
 
-import React from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import PageTransition from "@/components/layout/PageTransition";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
-} from "@/components/ui/dialog";
-
-import DocumentFilters from '@/components/documents/DocumentFilters';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import DocumentViews from '@/components/documents/DocumentViews';
-import DocumentDetailView from '@/components/documents/DocumentDetailView';
-import DeleteConfirmation from '@/components/documents/DeleteConfirmation';
-import PageHeader from '@/components/layout/PageHeader';
-import RecentDocumentsSection from '@/components/documents/RecentDocumentsSection';
-
-import { useDocuments } from '@/components/documents/hooks/useDocuments';
-import { useDocumentActions } from '@/components/documents/hooks/useDocumentActions';
-import { useRecentDocuments } from '@/components/documents/hooks/useRecentDocuments';
+// src/pages/Documents.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plus, Search, Upload } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Document } from '@/components/documents/schemas/documentSchema';
+import { supabase } from '@/integrations/supabase/client';
+import EnhancedDocumentUploadDialog from '@/components/documents/EnhancedDocumentUploadDialog';
+import DocumentCard from '@/components/workOrders/details/DocumentsList/DocumentCard';
+import DocumentViewer from '@/components/workOrders/details/DocumentsList/DocumentViewer';
+import { formatDate } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import DocumentVersionHistoryCard from '@/components/documents/DocumentVersionHistoryCard';
+import DocumentRelationshipsView from '@/components/documents/DocumentRelationshipsView';
+import { convertToWorkOrderDocument } from '@/components/documents/utils/documentTypeUtils';
+import { WorkOrderDocument } from '@/components/workOrders/details/DocumentsList/types';
 
 const DocumentsPage: React.FC = () => {
-  const isMobile = useIsMobile();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [viewDocument, setViewDocument] = useState<WorkOrderDocument | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
-  // Use the custom hook for document state management
   const { 
-    documents,
-    loading,
-    filters,
-    activeFiltersCount,
-    handleFilterChange,
-    handleResetFilters,
-    fetchDocuments
-  } = useDocuments({
-    search: '',
-    category: undefined,
-    entityType: undefined,
-    isExpense: undefined,
-    dateRange: undefined,
-    sortBy: 'newest'
+    data: recentDocuments, 
+    isLoading, 
+    refetch: refreshRecentDocuments 
+  } = useQuery({
+    queryKey: ['recentDocuments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documents_with_urls')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+        
+      if (error) {
+        console.error("Error fetching recent documents:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load recent documents.",
+          variant: "destructive"
+        });
+        return [];
+      }
+      
+      return data as Document[];
+    }
   });
   
-  // Use the custom hook for document actions
-  const {
-    selectedDocument,
-    isDetailOpen,
-    isDeleteOpen,
-    isUploadOpen,
-    deleteError,
-    hasReferences,
-    batchDeleteLoading,
-    setIsUploadOpen,
-    setIsDetailOpen,
-    setIsDeleteOpen,
-    handleDocumentSelect,
-    handleDeleteDialogOpen,
-    handleDeleteDocument,
-    handleForceDelete,
-    handleUploadSuccess,
-    handleBatchDelete
-  } = useDocumentActions(fetchDocuments);
-
-  // Use the recent documents hook
-  const { 
-    recentDocuments, 
-    recentDocumentsLoading, 
-    refreshRecentDocuments 
-  } = useRecentDocuments();
-
-  // Handler for successful upload that refreshes both document lists
-  const handleDocumentUploadSuccess = () => {
-    handleUploadSuccess();
-    refreshRecentDocuments();
+  const handleSearch = async () => {
+    if (!searchTerm) return;
+    
+    navigate(`/documents?search=${searchTerm}`);
   };
   
-  // Handle viewing a related document
-  const handleViewRelatedDocument = (document: Document) => {
-    // Close the current detail view first
-    setIsDetailOpen(false);
+  const handleDocumentUploadSuccess = (documentId?: string) => {
+    refreshRecentDocuments();
+    setIsUploadModalOpen(false);
     
-    // Small timeout to ensure the dialog properly closes before opening new one
-    setTimeout(() => {
-      handleDocumentSelect(document);
-    }, 100);
+    if (documentId) {
+      // Navigate to the document detail view
+      navigate(`/documents/${documentId}`);
+    }
   };
-
+  
+  const handleViewDocument = (doc: Document) => {
+    // Convert Document to WorkOrderDocument for viewer
+    const workOrderDoc = convertToWorkOrderDocument(doc);
+    setViewDocument(workOrderDoc);
+  };
+  
+  const handleCloseViewer = () => {
+    setViewDocument(null);
+  };
+  
   return (
-    <PageTransition>
-      <div className="flex flex-col min-h-full">
-        <PageHeader
-          title="Documents"
-          description="Upload and manage documents for your projects"
-        >
-          <div className="flex-1"></div>
-          <Button 
-            className="bg-[#0485ea] hover:bg-[#0375d1]" 
-            size={isMobile ? "icon" : "default"}
-            onClick={() => setIsUploadOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            {!isMobile && <span>Add Document</span>}
-          </Button>
-        </PageHeader>
-
-        <Separator className="my-6" />
-        
-        {/* Recent Documents Section */}
-        <RecentDocumentsSection 
-          documents={recentDocuments}
-          loading={recentDocumentsLoading}
-          onViewDocument={handleDocumentSelect}
-          showNavigationButtons
-        />
-        
-        {/* Unified Filter Area */}
-        <DocumentFilters
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onReset={handleResetFilters}
-          activeFiltersCount={activeFiltersCount}
-        />
-
-        {/* Documents Content Area */}
-        <div className="space-y-4 mt-6">
-          <DocumentViews 
-            documents={documents}
-            loading={loading}
-            activeFiltersCount={activeFiltersCount}
-            onView={handleDocumentSelect}
-            onDelete={handleDeleteDialogOpen}
-            onBatchDelete={handleBatchDelete}
-            onUploadClick={() => setIsUploadOpen(true)}
-            showNavigationButtons={true}
-          />
-        </div>
-
-        {/* Document Detail Dialog */}
-        <DocumentDetailView 
-          document={selectedDocument}
-          open={isDetailOpen}
-          onClose={() => setIsDetailOpen(false)}
-          onDelete={() => {
-            setIsDetailOpen(false);
-            handleDeleteDialogOpen(selectedDocument!);
-          }}
-          onViewRelatedDocument={handleViewRelatedDocument}
-        />
-
-        {/* Delete Confirmation Dialog */}
-        <DeleteConfirmation 
-          open={isDeleteOpen}
-          onClose={() => setIsDeleteOpen(false)}
-          onConfirm={handleDeleteDocument}
-          onForceDelete={handleForceDelete}
-          error={deleteError}
-          hasReferences={hasReferences}
-        />
-
-        {/* Upload Dialog */}
-        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-          <DialogContent className={isMobile ? "w-[95vw] max-w-[600px]" : "sm:max-w-[600px]"}>
-            <DialogHeader>
-              <DialogTitle>Upload Document</DialogTitle>
-              <DialogDescription>
-                Upload and categorize a new document to your system.
-              </DialogDescription>
-            </DialogHeader>
-            <EnhancedDocumentUpload 
-              entityType="PROJECT" 
-              entityId=""
-              onSuccess={handleDocumentUploadSuccess}
-              onCancel={() => setIsUploadOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+    <div className="container max-w-7xl mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Documents</h1>
+        <Button onClick={() => setIsUploadModalOpen(true)} className="bg-[#0485ea] hover:bg-[#0375d1]">
+          <Upload className="h-4 w-4 mr-2" />
+          Upload Document
+        </Button>
       </div>
-    </PageTransition>
+      
+      <div className="flex items-center space-x-2">
+        <Input
+          type="text"
+          placeholder="Search documents..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+        />
+        <Button onClick={handleSearch}>
+          <Search className="h-4 w-4 mr-2" />
+          Search
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Documents</CardTitle>
+              <CardDescription>
+                Here's a list of your most recently uploaded documents.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-[500px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                  {isLoading ? (
+                    <>
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-24 w-full" />
+                        </div>
+                      ))}
+                    </>
+                  ) : recentDocuments && recentDocuments.length > 0 ? (
+                    recentDocuments.map((doc) => (
+                      <DocumentCard 
+                        key={doc.document_id} 
+                        document={convertToWorkOrderDocument(doc)} 
+                        onViewDocument={() => handleViewDocument(doc)} 
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center p-6">
+                      <p className="text-muted-foreground">No documents found.</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {viewDocument && viewDocument.document_id && (
+          <div className="md:col-span-1 space-y-4">
+            <DocumentVersionHistoryCard 
+              documentId={viewDocument.document_id}
+              onVersionChange={(document) => {
+                // Convert Document to WorkOrderDocument
+                const workOrderDoc = convertToWorkOrderDocument(document);
+                setViewDocument(workOrderDoc);
+              }}
+            />
+            
+            <DocumentRelationshipsView 
+              document={viewDocument}
+              onViewDocument={(doc) => {
+                setViewDocument(convertToWorkOrderDocument(doc));
+              }}
+              showManagementButton={false}
+            />
+          </div>
+        )}
+      </div>
+      
+      <EnhancedDocumentUploadDialog
+        open={isUploadModalOpen}
+        onOpenChange={setIsUploadModalOpen}
+        onSuccess={handleDocumentUploadSuccess}
+        onCancel={() => setIsUploadModalOpen(false)}
+        title="Upload New Document"
+        description="Upload and categorize your document for easy access later"
+        allowEntityTypeSelection={true}
+      />
+      
+      {viewDocument && (
+        <DocumentViewer 
+          document={viewDocument}
+          open={!!viewDocument}
+          onOpenChange={(open) => !open && handleCloseViewer()}
+        />
+      )}
+    </div>
   );
 };
 

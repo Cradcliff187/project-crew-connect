@@ -5,11 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 export const useEstimateItemData = () => {
   const [vendors, setVendors] = useState<{ vendorid: string; vendorname: string }[]>([]);
   const [subcontractors, setSubcontractors] = useState<{ subid: string; subname: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      
       try {
         // Fetch vendors
         const { data: vendorData, error: vendorError } = await supabase
@@ -18,7 +20,6 @@ export const useEstimateItemData = () => {
           .order('vendorname');
           
         if (vendorError) throw vendorError;
-        setVendors(vendorData || []);
         
         // Fetch subcontractors
         const { data: subData, error: subError } = await supabase
@@ -27,9 +28,12 @@ export const useEstimateItemData = () => {
           .order('subname');
           
         if (subError) throw subError;
+        
+        setVendors(vendorData || []);
         setSubcontractors(subData || []);
-      } catch (error) {
-        console.error('Error fetching vendors and subcontractors:', error);
+      } catch (err: any) {
+        console.error('Error fetching estimate item data:', err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -37,10 +41,6 @@ export const useEstimateItemData = () => {
     
     fetchData();
   }, []);
-
-  return {
-    vendors,
-    subcontractors,
-    loading
-  };
+  
+  return { vendors, subcontractors, loading, error };
 };

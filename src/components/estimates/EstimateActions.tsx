@@ -1,101 +1,147 @@
 
 import React from 'react';
+import { MoreHorizontal, FileEdit, Trash, Send, CheckCircle, XCircle, ArrowRightLeft, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  DownloadCloud, 
-  Mail, 
-  FileText, 
-  MoreVertical,
-  Edit,
-  Trash2,
-  Send,
-  Check,
-  X
-} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { StatusType } from '@/types/common';
+import { useNavigate } from 'react-router-dom';
 
 interface EstimateActionsProps {
-  status: string;
+  status: StatusType;
   onEdit?: () => void;
-  onConvert?: () => void;
   onDelete?: () => void;
+  onConvert?: () => void;
+  onShare?: () => void;
+  size?: 'default' | 'sm';
+  direction?: 'horizontal' | 'vertical';
+  currentRevision?: any;
+  estimateId?: string;
 }
 
-const EstimateActions: React.FC<EstimateActionsProps> = ({ 
+const EstimateActions: React.FC<EstimateActionsProps> = ({
   status,
   onEdit,
+  onDelete,
   onConvert,
-  onDelete
+  onShare,
+  size = 'default',
+  direction = 'horizontal',
+  currentRevision,
+  estimateId
 }) => {
-  const isEditable = status === 'draft';
-  const isConvertible = status === 'approved';
-  const isPending = status === 'sent' || status === 'pending';
+  const navigate = useNavigate();
+  
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit();
+    } else if (estimateId) {
+      // Navigate to edit page if no onEdit handler is provided but estimateId is available
+      navigate(`/estimates/edit/${estimateId}`);
+    }
+  };
 
-  return (
-    <div className="flex gap-2 items-center">
-      {isEditable && onEdit && (
-        <Button variant="outline" size="sm" onClick={onEdit}>
-          <Edit className="h-4 w-4 mr-1" /> Edit
+  return direction === 'horizontal' ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size={size} className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        
+        {onEdit !== null && (
+          <DropdownMenuItem onClick={handleEdit}>
+            <FileEdit className="mr-2 h-4 w-4" />
+            Edit
+          </DropdownMenuItem>
+        )}
+        
+        {onShare && currentRevision?.pdf_document_id && (
+          <DropdownMenuItem onClick={onShare}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Share
+          </DropdownMenuItem>
+        )}
+        
+        {status !== 'cancelled' && status !== 'converted' && onConvert && (
+          <DropdownMenuItem onClick={onConvert}>
+            <ArrowRightLeft className="mr-2 h-4 w-4" />
+            Convert to Project
+          </DropdownMenuItem>
+        )}
+        
+        {onDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-red-600" 
+              onClick={onDelete}
+            >
+              <Trash className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : (
+    <div className="flex flex-col space-y-2">
+      {onEdit !== null && (
+        <Button 
+          size={size} 
+          variant="outline" 
+          className="justify-start" 
+          onClick={handleEdit}
+        >
+          <FileEdit className="mr-2 h-4 w-4" />
+          Edit
         </Button>
       )}
       
-      {isConvertible && onConvert && (
+      {onShare && currentRevision?.pdf_document_id && (
         <Button 
-          size="sm" 
-          variant="default"
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
+          size={size} 
+          variant="outline" 
+          className="justify-start" 
+          onClick={onShare}
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          Share
+        </Button>
+      )}
+      
+      {status !== 'cancelled' && status !== 'converted' && onConvert && (
+        <Button 
+          size={size} 
+          variant="outline" 
+          className="justify-start" 
           onClick={onConvert}
         >
-          <FileText className="h-4 w-4 mr-1" /> Convert to Project
+          <ArrowRightLeft className="mr-2 h-4 w-4" />
+          Convert to Project
         </Button>
       )}
       
-      <Button variant="outline" size="sm">
-        <Mail className="h-4 w-4 mr-1" /> Email
-      </Button>
-      
-      <Button variant="outline" size="sm">
-        <DownloadCloud className="h-4 w-4 mr-1" /> Download
-      </Button>
-      
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {isEditable && onEdit && (
-            <DropdownMenuItem onClick={onEdit}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Estimate
-            </DropdownMenuItem>
-          )}
-          
-          {isConvertible && onConvert && (
-            <DropdownMenuItem onClick={onConvert}>
-              <FileText className="h-4 w-4 mr-2" />
-              Convert to Project
-            </DropdownMenuItem>
-          )}
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
-            className="text-red-600" 
-            onClick={onDelete}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {onDelete && (
+        <Button 
+          size={size} 
+          variant="outline" 
+          className="justify-start text-red-600" 
+          onClick={onDelete}
+        >
+          <Trash className="mr-2 h-4 w-4" />
+          Delete
+        </Button>
+      )}
     </div>
   );
 };

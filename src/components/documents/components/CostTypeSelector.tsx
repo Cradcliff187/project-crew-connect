@@ -1,41 +1,30 @@
 
 import React from 'react';
-import { Control, useController } from 'react-hook-form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
-import { expenseTypes } from '../utils/expenseTypes';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { expenseTypes } from '../schemas/documentSchema';
 
 interface CostTypeSelectorProps {
-  control: Control<DocumentUploadFormValues>;
+  value: string;
+  onChange: (value: string) => void;
 }
 
-const CostTypeSelector: React.FC<CostTypeSelectorProps> = ({ control }) => {
+const CostTypeSelector: React.FC<CostTypeSelectorProps> = ({ value, onChange }) => {
   return (
-    <FormField
-      control={control}
-      name="metadata.expenseType"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Cost Type</FormLabel>
-          <Select value={field.value} onValueChange={field.onChange}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select cost type" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {expenseTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <RadioGroup
+      value={value}
+      onValueChange={onChange}
+      className="flex flex-col space-y-1"
+    >
+      {expenseTypes.map((type) => (
+        <div key={type} className="flex items-center space-x-2">
+          <RadioGroupItem value={type} id={`cost-type-${type}`} />
+          <Label htmlFor={`cost-type-${type}`} className="capitalize">
+            {type}
+          </Label>
+        </div>
+      ))}
+    </RadioGroup>
   );
 };
 

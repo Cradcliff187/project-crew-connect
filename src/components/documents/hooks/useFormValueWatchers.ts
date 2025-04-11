@@ -1,25 +1,48 @@
 
+import { useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
-import { useDebounce } from '@/hooks/useDebounce';
+import { DocumentUploadFormValues, EntityType, VendorType } from '../schemas/documentSchema';
 
-export const useFormValueWatchers = (
-  form: UseFormReturn<DocumentUploadFormValues>
-) => {
-  // Use debounced values for form watches to prevent excessive re-renders
-  const watchIsExpense = useDebounce(form.watch('metadata.isExpense'), 300);
-  const watchVendorType = useDebounce(form.watch('metadata.vendorType'), 300);
-  const watchCategory = useDebounce(form.watch('metadata.category'), 300);
-  const watchExpenseType = useDebounce(form.watch('metadata.expenseType'), 300);
-  
-  // Don't debounce files as we need immediate feedback
-  const watchFiles = form.watch('files');
+export const useFormValueWatchers = (form: UseFormReturn<DocumentUploadFormValues>) => {
+  const watchIsExpense = form.watch('metadata.isExpense');
+  const watchVendorType = form.watch('metadata.vendorType') as VendorType;
+  const watchFiles = form.watch('files') || [];
+  const watchCategory = form.watch('metadata.category');
+  const watchExpenseType = form.watch('metadata.expenseType');
+  const watchEntityType = form.watch('metadata.entityType') as EntityType;
+  const watchEntityId = form.watch('metadata.entityId');
+  const watchAmount = form.watch('metadata.amount');
+  const watchExpenseDate = form.watch('metadata.expenseDate');
+  const watchTags = form.watch('metadata.tags') || [];
+
+  // Helper to determine if vendor selection is needed
+  const needsVendorSelection = useCallback(() => {
+    return (
+      watchIsExpense || 
+      watchCategory === 'receipt' || 
+      watchCategory === 'invoice' ||
+      watchEntityType === 'VENDOR' ||
+      watchEntityType === 'SUBCONTRACTOR'
+    );
+  }, [watchIsExpense, watchCategory, watchEntityType]);
+
+  // Helper to determine if entity selection is needed
+  const needsEntitySelection = useCallback(() => {
+    return !!(watchEntityType && !watchEntityId);
+  }, [watchEntityType, watchEntityId]);
 
   return {
     watchIsExpense,
     watchVendorType,
     watchFiles,
     watchCategory,
-    watchExpenseType
+    watchExpenseType,
+    watchEntityType,
+    watchEntityId,
+    watchAmount,
+    watchExpenseDate,
+    watchTags,
+    needsVendorSelection,
+    needsEntitySelection
   };
 };

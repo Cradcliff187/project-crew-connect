@@ -1,98 +1,120 @@
 
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { FileDown, Loader2 } from 'lucide-react';
-import { generateEstimatePDF } from '@/utils/pdfGenerator';
-import { toast } from '@/hooks/use-toast';
+import { FileText, Loader2, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import usePdfGeneration from '../hooks/usePdfGeneration';
 
 interface PDFExportButtonProps {
   estimateId: string;
-  clientName: string;
-  projectName: string;
-  date: string;
-  contentRef: React.RefObject<HTMLDivElement>;
+  revisionId?: string;
+  contentRef?: React.RefObject<HTMLDivElement>;
+  onSuccess?: (documentId: string) => void;
+  className?: string;
+  variant?: 
+    | 'default'
+    | 'destructive'
+    | 'outline'
+    | 'secondary'
+    | 'ghost'
+    | 'link'
+    | null
+    | undefined;
+  size?: 'default' | 'sm' | 'lg' | 'icon' | null | undefined;
+  children?: React.ReactNode;
 }
 
 const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   estimateId,
-  clientName,
-  projectName,
-  date,
-  contentRef
+  revisionId,
+  contentRef,
+  onSuccess,
+  className = "",
+  variant = 'default',
+  size = 'default',
+  children
 }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleExportPDF = async () => {
-    if (!contentRef.current) {
+  const { toast } = useToast();
+  const { generatePdf, generateClientSidePdf, checkRevisionPdf, isGenerating, error } = usePdfGeneration({
+    onSuccess,
+    onError: (error) => {
       toast({
-        title: "Error generating PDF",
-        description: "Could not find content to export",
+        title: "Error",
+        description: error.message || "An error occurred while generating the PDF",
         variant: "destructive"
       });
-      return;
     }
+  });
 
-    setIsGenerating(true);
-
+  const handleGeneratePdf = async () => {
     try {
-      // Clone the element to avoid modifying the visible DOM
-      const elementToExport = contentRef.current.cloneNode(true) as HTMLElement;
-      
-      // Temporarily append to document but hide it
-      elementToExport.style.position = 'absolute';
-      elementToExport.style.left = '-9999px';
-      elementToExport.style.overflow = 'visible';  // Ensure everything renders
-      elementToExport.style.height = 'auto';
-      document.body.appendChild(elementToExport);
-      
-      // Generate the PDF
-      await generateEstimatePDF(
-        elementToExport,
-        {
-          id: estimateId,
-          client: clientName,
-          project: projectName,
-          date: date
+      // Check if we're using a revision ID
+      if (revisionId) {
+        // Check if PDF already exists
+        const existingPdfId = await checkRevisionPdf(revisionId);
+        
+        if (existingPdfId) {
+          // If PDF exists and we're regenerating, inform the user
+          toast({
+            title: "Regenerating PDF",
+            description: "Creating a new PDF version for this revision",
+          });
         }
-      );
-      
-      // Remove the cloned element
-      document.body.removeChild(elementToExport);
-      
+        
+        await generatePdf(estimateId, revisionId);
+      } else if (contentRef && contentRef.current) {
+        // Use client-side generation with the ref
+        await generateClientSidePdf(contentRef);
+      } else {
+        toast({
+          title: "Missing Parameters",
+          description: "Either a revision ID or content reference is required",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('Error in PDF export:', error);
       toast({
-        title: "PDF Generated",
-        description: "Your estimate has been exported to PDF",
-        className: "bg-[#0485ea] text-white"
-      });
-    } catch (err) {
-      console.error('PDF generation error:', err);
-      toast({
-        title: "Error generating PDF",
-        description: "There was a problem creating your PDF",
+        title: "PDF Generation Failed",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive"
       });
-    } finally {
-      setIsGenerating(false);
     }
   };
 
+  // Show error message if there was an issue with PDF generation
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: "PDF Generation Error",
+        description: error.message || "Failed to generate PDF",
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
+
   return (
-    <Button 
-      onClick={handleExportPDF}
-      variant="outline"
-      size="sm"
+    <Button
+      onClick={handleGeneratePdf}
       disabled={isGenerating}
-      className="flex items-center gap-1"
+      variant={variant}
+      size={size}
+      className={className}
     >
       {isGenerating ? (
         <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Generating...
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          {children || "Generating..."}
+        </>
+      ) : error ? (
+        <>
+          <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
+          {children || "Retry PDF"}
         </>
       ) : (
         <>
-          <FileDown className="h-4 w-4" />
-          Export PDF
+          <FileText className="h-4 w-4 mr-2" />
+          {children || "Generate PDF"}
         </>
       )}
     </Button>

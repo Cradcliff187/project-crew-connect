@@ -1,59 +1,42 @@
 
 import React from 'react';
-import { Control, useController } from 'react-hook-form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
-
-// Define vendor types explicitly here
-const vendorTypes = ['vendor', 'subcontractor', 'other'] as const;
-export type VendorType = typeof vendorTypes[number];
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Control } from 'react-hook-form';
+import { DocumentUploadFormValues, vendorTypes } from '../schemas/documentSchema';
 
 interface VendorTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
 }
 
 const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
-  // Get controller for the vendorId field outside of the render function
-  const vendorIdController = useController({
-    control,
-    name: 'metadata.vendorId',
-  });
-
-  const handleVendorTypeChange = (value: string) => {
-    // First update the vendor type
-    control._formValues.metadata.vendorType = value;
-    
-    // Then reset the vendor ID
-    vendorIdController.field.onChange('');
-  };
-
   return (
     <FormField
       control={control}
       name="metadata.vendorType"
       render={({ field }) => (
-        <FormItem>
+        <FormItem className="space-y-1">
           <FormLabel>Vendor Type</FormLabel>
-          <Select 
-            value={field.value} 
-            onValueChange={(value) => {
-              field.onChange(value);
-              // Reset the vendor ID when changing type
-              handleVendorTypeChange(value);
-            }}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select vendor type" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="vendor">Material Vendor</SelectItem>
-              <SelectItem value="subcontractor">Subcontractor</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+          <FormControl>
+            <RadioGroup
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+              className="flex flex-col space-y-1"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="vendor" id="vendor-type" />
+                <label htmlFor="vendor-type" className="text-sm font-normal cursor-pointer">Supplier</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="subcontractor" id="subcontractor-type" />
+                <label htmlFor="subcontractor-type" className="text-sm font-normal cursor-pointer">Subcontractor</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="other" id="other-type" />
+                <label htmlFor="other-type" className="text-sm font-normal cursor-pointer">Other</label>
+              </div>
+            </RadioGroup>
+          </FormControl>
           <FormMessage />
         </FormItem>
       )}

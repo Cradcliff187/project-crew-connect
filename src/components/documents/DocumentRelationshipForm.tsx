@@ -70,7 +70,7 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
       setLoading(true);
       try {
         // Get all documents except the source and excluded ones
-        const excludeIds = [sourceDocumentId, ...excludeDocumentIds].filter(Boolean);
+        const excludeIds = [sourceDocumentId, ...excludeDocumentIds];
         
         const { data, error } = await supabase
           .from('documents')
@@ -79,14 +79,7 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
           .order('created_at', { ascending: false });
         
         if (error) throw error;
-        
-        // Ensure the documents match our Document type
-        const typedDocuments = data?.map(doc => ({
-          ...doc,
-          tags: doc.tags || [] 
-        })) as Document[] || [];
-        
-        setDocuments(typedDocuments);
+        setDocuments(data || []);
       } catch (err: any) {
         console.error('Error fetching documents:', err);
         toast({
@@ -112,7 +105,7 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
         sourceDocumentId,
         targetDocumentId: values.targetDocumentId,
         relationshipType: values.relationshipType as RelationshipType,
-        relationship_metadata: {
+        metadata: {
           created_by: 'system',
           description: 'Document relationship'
         }
@@ -125,7 +118,7 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
           source_document_id: relationshipParams.sourceDocumentId,
           target_document_id: relationshipParams.targetDocumentId,
           relationship_type: relationshipParams.relationshipType,
-          relationship_metadata: relationshipParams.relationship_metadata
+          relationship_metadata: relationshipParams.metadata
         })
         .select()
         .single();

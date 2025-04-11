@@ -3,14 +3,17 @@ import { useState, useEffect } from 'react';
 import { StatusType } from '@/types/common';
 import { supabase } from '@/integrations/supabase/client';
 import { EstimateType } from '../EstimatesTable';
+import { toast } from '@/hooks/use-toast';
 
 export const useEstimates = () => {
   const [estimates, setEstimates] = useState<EstimateType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const fetchEstimates = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Get all estimates with their current revision version
       const { data, error } = await supabase
@@ -56,10 +59,11 @@ export const useEstimates = () => {
       
       const revisionCounts = await Promise.all(revisionsPromises);
       
-      // Format the data for the UI
+      // Format the data for the UI, preserving both ID and name separately
       const formattedEstimates: EstimateType[] = data.map((estimate, index) => ({
         id: estimate.estimateid,
-        client: estimate.customername || estimate.customerid || 'Unknown Client',
+        customerId: estimate.customerid || '', // Store customer ID separately
+        client: estimate.customername || 'Unknown Client', // Use name for display
         project: estimate.projectname || `Estimate ${estimate.estimateid}`,
         date: estimate.datecreated || new Date().toISOString(),
         amount: estimate.estimateamount || 0,
@@ -75,8 +79,14 @@ export const useEstimates = () => {
       }));
       
       setEstimates(formattedEstimates);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching estimates:', error);
+      setError(error.message || 'Failed to load estimates');
+      toast({
+        title: 'Error',
+        description: 'Failed to load estimates',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -86,5 +96,5 @@ export const useEstimates = () => {
     fetchEstimates();
   }, []);
   
-  return { estimates, loading, fetchEstimates };
+  return { estimates, loading, error, fetchEstimates };
 };

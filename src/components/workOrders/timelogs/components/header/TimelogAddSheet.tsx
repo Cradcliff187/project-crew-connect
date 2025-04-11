@@ -1,12 +1,16 @@
 
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { DatePicker } from "@/components/ui/date-picker";
+import TimeRangeSelector from "@/components/timeTracking/form/TimeRangeSelector";
+import { calculateHours } from "@/components/timeTracking/utils/timeUtils";
+import EmployeeSelect from '@/components/timeTracking/form/EmployeeSelect';
 
 interface TimelogAddSheetProps {
   open: boolean;
@@ -25,14 +29,64 @@ const TimelogAddSheet = ({
 }: TimelogAddSheetProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hours, setHours] = useState('');
-  const [employeeId, setEmployeeId] = useState('');
+  const [hours, setHours] = useState(0);
+  const [employeeId, setEmployeeId] = useState('none');
   const [notes, setNotes] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
+  const [timeError, setTimeError] = useState('');
+  
+  // Handle time changes and calculate hours
+  const handleStartTimeChange = (value: string) => {
+    setStartTime(value);
+    updateHoursWorked(value, endTime);
+  };
+  
+  const handleEndTimeChange = (value: string) => {
+    setEndTime(value);
+    updateHoursWorked(startTime, value);
+  };
+  
+  const updateHoursWorked = (start: string, end: string) => {
+    try {
+      const calculatedHours = calculateHours(start, end);
+      if (calculatedHours <= 0) {
+        setTimeError('End time must be after start time');
+        setHours(0);
+      } else {
+        setTimeError('');
+        setHours(calculatedHours);
+      }
+    } catch (error) {
+      console.error('Error calculating hours:', error);
+    }
+  };
+  
+  // Reset form
+  const resetForm = () => {
+    setHours(0);
+    setEmployeeId('none');
+    setNotes('');
+    setSelectedDate(new Date());
+    setStartTime('09:00');
+    setEndTime('17:00');
+    setTimeError('');
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!hours || parseFloat(hours) <= 0) {
+    if (timeError) {
+      toast({
+        title: 'Invalid time range',
+        description: timeError,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (hours <= 0) {
       toast({
         title: 'Invalid hours',
         description: 'Please enter a valid number of hours worked.',
@@ -44,35 +98,72 @@ const TimelogAddSheet = ({
     setIsSubmitting(true);
     
     try {
-      // Get current date and create placeholder time values
-      const currentDate = new Date().toISOString().split('T')[0];
-      const currentTime = new Date();
-      // Set start time at 9 AM
-      const startTime = `09:00:00`;
-      // Calculate end time based on hours worked
-      const hoursNum = parseFloat(hours);
-      const endHour = Math.min(9 + hoursNum, 23);
-      const endMinutes = (hoursNum % 1) * 60;
-      const endTime = `${Math.floor(endHour).toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}:00`;
+      // Format date
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
+      // Check for "none" special value that means no employee is selected
+      const actualEmployeeId = employeeId === 'none' ? null : employeeId;
+      
+      let employeeRate = null;
+      if (actualEmployeeId) {
+        // Get employee rate if available
+        const { data: empData } = await supabase
+          .from('employees')
+          .select('hourly_rate')
+          .eq('employee_id', actualEmployeeId)
+          .maybeSingle();
+        
+        employeeRate = empData?.hourly_rate;
+      }
+      
+      // Calculate total cost
+      const hourlyRate = employeeRate || 75; // Default rate
+      const totalCost = hours * hourlyRate;
+      
+      // Create time entry
       const timelogEntry = {
         entity_type: 'work_order',
         entity_id: workOrderId,
-        employee_id: employeeId || null,
-        hours_worked: hoursNum,
-        date_worked: currentDate,
+        employee_id: actualEmployeeId,
+        hours_worked: hours,
+        date_worked: formattedDate,
         start_time: startTime,
         end_time: endTime,
+        employee_rate: hourlyRate,
+        total_cost: totalCost,
         notes: notes || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       
-      const { error } = await supabase
+      const { data: insertedEntry, error } = await supabase
         .from('time_entries')
-        .insert(timelogEntry);
+        .insert(timelogEntry)
+        .select('id')
+        .single();
         
       if (error) throw error;
+      
+      // Create expense entry for labor time
+      if (insertedEntry?.id) {
+        const laborExpenseData = {
+          entity_type: 'WORK_ORDER',
+          entity_id: workOrderId,
+          description: `Labor: ${hours} hours`,
+          expense_type: 'LABOR',
+          amount: totalCost,
+          time_entry_id: insertedEntry.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          quantity: hours,
+          unit_price: hourlyRate,
+          vendor_id: null
+        };
+        
+        await supabase
+          .from('expenses')
+          .insert(laborExpenseData);
+      }
       
       toast({
         title: 'Time entry added',
@@ -80,9 +171,7 @@ const TimelogAddSheet = ({
       });
       
       // Reset form and close sheet
-      setHours('');
-      setEmployeeId('');
-      setNotes('');
+      resetForm();
       onSuccess();
     } catch (error: any) {
       console.error('Error adding time entry:', error);
@@ -105,35 +194,27 @@ const TimelogAddSheet = ({
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="hours">Hours Worked</Label>
-            <Input
-              id="hours"
-              type="number"
-              step="0.25"
-              min="0.25"
-              placeholder="Enter hours"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-              required
+            <Label htmlFor="date">Date</Label>
+            <DatePicker 
+              date={selectedDate} 
+              setDate={(date) => date && setSelectedDate(date)} 
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="employee">Employee</Label>
-            <select
-              id="employee"
-              className="w-full border border-input bg-background px-3 py-2 rounded-md"
-              value={employeeId}
-              onChange={(e) => setEmployeeId(e.target.value)}
-            >
-              <option value="">Select Employee</option>
-              {employees.map((employee) => (
-                <option key={employee.employee_id} value={employee.employee_id}>
-                  {employee.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <TimeRangeSelector
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={handleStartTimeChange}
+            onEndTimeChange={handleEndTimeChange}
+            error={timeError}
+            hoursWorked={hours}
+          />
+          
+          <EmployeeSelect
+            value={employeeId}
+            onChange={setEmployeeId}
+            employees={employees}
+          />
           
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
@@ -157,7 +238,7 @@ const TimelogAddSheet = ({
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || hours <= 0}
               className="bg-[#0485ea] hover:bg-[#0375d1]"
             >
               {isSubmitting ? 'Saving...' : 'Log Time'}

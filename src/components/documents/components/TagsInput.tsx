@@ -1,97 +1,109 @@
 
-import React, { useState } from 'react';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import React, { useState, useEffect } from 'react';
 import { Control } from 'react-hook-form';
+import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface TagsInputProps {
-  control: Control<DocumentUploadFormValues>;
-  name?: string;
-  label?: string;
-  description?: string;
+  control: Control<any>;
+  name: string;
+  prefillTags?: string[];
 }
 
-const TagsInput: React.FC<TagsInputProps> = ({ 
-  control, 
-  name = "metadata.tags", 
-  label = "Tags", 
-  description = "Add tags to help organize and search for this document later" 
-}) => {
+const TagsInput: React.FC<TagsInputProps> = ({ control, name, prefillTags }) => {
+  const [inputValue, setInputValue] = useState('');
+  const [localTags, setLocalTags] = useState<string[]>([]);
+
+  // Add tag to tags array
+  const addTag = (tag: string, onChange: (value: any) => void) => {
+    if (!tag.trim()) return;
+    
+    const normalizedTag = tag.trim().toLowerCase();
+    
+    // Don't add duplicate tags
+    if (!localTags.includes(normalizedTag)) {
+      const newTags = [...localTags, normalizedTag];
+      setLocalTags(newTags);
+      onChange(newTags);
+    }
+    
+    setInputValue('');
+  };
+
+  // Remove tag from tags array
+  const removeTag = (tagToRemove: string, onChange: (value: any) => void) => {
+    const newTags = localTags.filter(tag => tag !== tagToRemove);
+    setLocalTags(newTags);
+    onChange(newTags);
+  };
+
+  // Handle key down events (Enter to add tag)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, onChange: (value: any) => void) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(inputValue, onChange);
+    }
+  };
+
+  // Initialize with prefill tags if provided
+  useEffect(() => {
+    if (prefillTags?.length && !localTags.length) {
+      setLocalTags(prefillTags);
+    }
+  }, [prefillTags]);
+
   return (
     <FormField
       control={control}
-      name="metadata.tags"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{label}</FormLabel>
-          <FormControl>
-            <TagsInputField
-              value={field.value || []}
-              onChange={field.onChange}
-              placeholder="Type and press Enter to add a tag"
-            />
-          </FormControl>
-          {description && <FormDescription>{description}</FormDescription>}
-          <FormMessage />
-        </FormItem>
-      )}
+      name={name}
+      render={({ field }) => {
+        // Sync field value with local state when field value changes externally
+        useEffect(() => {
+          if (field.value && Array.isArray(field.value) && field.value.length > 0) {
+            setLocalTags(field.value);
+          }
+        }, [field.value]);
+        
+        return (
+          <FormItem>
+            <FormLabel>Tags</FormLabel>
+            <div className="flex flex-col space-y-2">
+              <div className="flex flex-wrap gap-2 mb-2">
+                {localTags.map((tag, index) => (
+                  <Badge key={index} className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                    {tag}
+                    <button 
+                      type="button" 
+                      className="ml-1 hover:text-red-600" 
+                      onClick={() => removeTag(tag, field.onChange)}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              
+              <FormControl>
+                <Input
+                  type="text"
+                  placeholder="Type tag and press Enter or comma"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, field.onChange)}
+                  onBlur={(e) => {
+                    if (inputValue) {
+                      addTag(inputValue, field.onChange);
+                    }
+                  }}
+                />
+              </FormControl>
+            </div>
+          </FormItem>
+        );
+      }}
     />
-  );
-};
-
-export interface TagsInputFieldProps {
-  value: string[];
-  onChange: (value: string[]) => void;
-  placeholder?: string;
-}
-
-export const TagsInputField: React.FC<TagsInputFieldProps> = ({ 
-  value = [], 
-  onChange, 
-  placeholder = "Add tag..." 
-}) => {
-  const [inputValue, setInputValue] = useState('');
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault();
-      if (!value.includes(inputValue.trim())) {
-        onChange([...value, inputValue.trim()]);
-      }
-      setInputValue('');
-    } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
-      // Remove the last tag when backspace is pressed and input is empty
-      onChange(value.slice(0, -1));
-    }
-  };
-  
-  const removeTag = (tag: string) => {
-    onChange(value.filter(t => t !== tag));
-  };
-  
-  return (
-    <div className="flex flex-wrap gap-2 p-2 border rounded-md items-center bg-background">
-      {value.map((tag, index) => (
-        <Badge key={index} variant="secondary" className="gap-1">
-          {tag}
-          <X 
-            className="h-3 w-3 cursor-pointer hover:text-destructive" 
-            onClick={() => removeTag(tag)} 
-          />
-        </Badge>
-      ))}
-      <Input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={value.length === 0 ? placeholder : ''}
-        className="flex-grow border-0 px-2 py-1 focus-visible:ring-0 focus-visible:ring-offset-0"
-      />
-    </div>
   );
 };
 

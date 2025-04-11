@@ -2,7 +2,7 @@
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
-  entity_type: 'work_order' | 'project';
+  entity_type: 'work_order' | 'project';  // Using string literal types for consistency
   entity_id: string;
   entity_name?: string;
   entity_location?: string;
@@ -15,26 +15,35 @@ export interface TimeEntry {
   employee_name?: string;
   employee_rate?: number;
   cost?: number;
-  total_cost?: number; // Added to match database
+  total_cost?: number;
   has_receipts?: boolean;
   location_data?: any;
   created_at: string;
   updated_at: string;
+  documents?: any[];
 }
 
 // Form data for creating/updating time entries
-export interface TimeEntryFormData {
-  entity_type: 'work_order' | 'project';
-  entity_id: string;
-  date_worked: Date;
-  start_time: string;
-  end_time: string;
-  hours_worked: number;
+export interface TimeEntryFormValues {
+  entityType: 'work_order' | 'project';
+  entityId: string;
+  workDate: Date;
+  startTime: string;
+  endTime: string;
+  hoursWorked: number;
   notes?: string;
-  employee_id?: string;
-  receipts?: File[];
-  location_data?: any;
+  employeeId?: string;
+  hasReceipts: boolean;
 }
+
+export type QuickLogFormValues = {
+  entityType: 'work_order' | 'project';
+  entityId: string;
+  startTime: string;
+  endTime: string;
+  hoursWorked: number;
+  notes?: string;
+};
 
 export interface TimeEntryReceipt {
   id: string;
@@ -44,6 +53,11 @@ export interface TimeEntryReceipt {
   file_size?: number;
   storage_path: string;
   uploaded_at: string;
+  document_id?: string;
+  url?: string;
+  expense_type?: string;
+  vendor_id?: string;
+  amount?: number;
 }
 
 // Time grouping for better UX
@@ -53,4 +67,33 @@ export interface TimeOption {
   value: string;      // 24h format value (e.g. "14:30")
   display: string;    // 12h format display (e.g. "2:30 PM")
   timeOfDay: TimeOfDay;
+}
+
+// Receipt metadata for better integration with expense tracking
+export interface ReceiptMetadata {
+  category: string;
+  expenseType: string | null;
+  tags: string[];
+  vendorId?: string;
+  vendorType?: 'vendor' | 'subcontractor' | 'other';
+  amount?: number;
+}
+
+// Entity types for use in the useEntityData hook
+export interface Entity {
+  id: string;
+  name: string;
+  status?: string;
+}
+
+export interface Employee {
+  employee_id: string;
+  name: string;
+  hourly_rate?: number;
+}
+
+export interface EntityDetails {
+  name: string;
+  type: 'work_order' | 'project';
+  location?: string;
 }

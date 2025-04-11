@@ -5,11 +5,7 @@ import { Document } from '@/components/documents/schemas/documentSchema';
  * Determines if a document is associated with a line item
  */
 export const isLineItemDocument = (document: Document): boolean => {
-  // Check for item_id or item_reference in the document
-  return Boolean(
-    (document as any).item_id || 
-    (document as any).item_reference
-  );
+  return !!(document.item_id || document.item_reference);
 };
 
 /**

@@ -1,115 +1,78 @@
 
 import { useState, useEffect } from 'react';
-import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export interface FormData {
-  customers: { customerid: string; customername: string }[];
-  locations: { location_id: string; location_name: string }[];
-  employees: { employee_id: string; first_name: string; last_name: string }[];
+  customers: Array<{ customerid: string, customername: string }>;
+  locations: Array<{ location_id: string, location_name: string, address: string }>;
+  employees: Array<{ employee_id: string, first_name: string, last_name: string }>;
 }
 
-export const useWorkOrderData = (isOpen: boolean = true) => {
+export const useWorkOrderData = (dialogOpen: boolean) => {
   const [formData, setFormData] = useState<FormData>({
     customers: [],
     locations: [],
     employees: []
   });
-  const [dataLoaded, setDataLoaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = async () => {
-    if (!isOpen) return;
-    
-    try {
-      setIsLoading(true);
-      setDataLoaded(false);
-      setError(null);
-
-      // Fetch customers data
-      const { data: customersData, error: customersError } = await supabase
-        .from('customers')
-        .select('customerid, customername')
-        .order('customername');
-      
-      if (customersError) {
-        toast({
-          title: 'Error fetching customers',
-          description: customersError.message,
-          variant: 'destructive',
-        });
-        setError(customersError.message);
-        return; 
-      }
-      
-      // Create customers array with proper fallback
-      const customers = Array.isArray(customersData) ? customersData : [];
-      
-      // Fetch locations
-      const { data: locationsData, error: locationsError } = await supabase
-        .from('site_locations')
-        .select('location_id, location_name')
-        .eq('is_active', true)
-        .order('location_name');
-      
-      if (locationsError) {
-        toast({
-          title: 'Error fetching locations',
-          description: locationsError.message,
-          variant: 'destructive',
-        });
-        setError(locationsError.message);
-      }
-      
-      // Fetch employees
-      const { data: employeesData, error: employeesError } = await supabase
-        .from('employees')
-        .select('employee_id, first_name, last_name')
-        .eq('status', 'ACTIVE')
-        .order('last_name');
-      
-      if (employeesError) {
-        toast({
-          title: 'Error fetching employees',
-          description: employeesError.message,
-          variant: 'destructive',
-        });
-        setError(employeesError.message);
-      }
-      
-      const updatedFormData = {
-        customers: customers,
-        locations: Array.isArray(locationsData) ? locationsData : [],
-        employees: Array.isArray(employeesData) ? employeesData : []
-      };
-      
-      setFormData(updatedFormData);
-      setDataLoaded(true);
-    } catch (error) {
-      setError('Failed to load necessary data. Please try again.');
-      toast({
-        title: 'Error fetching form data',
-        description: 'Failed to load necessary data. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
-  // Fetch data when component mounts or dialog opens
+  const [isLoading, setIsLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  
   useEffect(() => {
-    if (isOpen) {
-      fetchData();
-    }
-  }, [isOpen]);
-
-  return {
-    formData,
-    dataLoaded,
-    isLoading,
-    error,
-    fetchData
-  };
+    const fetchFormData = async () => {
+      if (!dialogOpen) return;
+      
+      setIsLoading(true);
+      try {
+        // Fetch customers
+        const { data: customersData, error: customersError } = await supabase
+          .from('customers')
+          .select('customerid, customername')
+          .order('customername');
+          
+        if (customersError) throw customersError;
+        
+        // Fetch locations
+        const { data: locationsData, error: locationsError } = await supabase
+          .from('site_locations')
+          .select('location_id, location_name, address, city, state, zip')
+          .order('location_name');
+          
+        if (locationsError) throw locationsError;
+        
+        // Fetch employees for assignment
+        const { data: employeesData, error: employeesError } = await supabase
+          .from('employees')
+          .select('employee_id, first_name, last_name')
+          .eq('status', 'ACTIVE')
+          .order('first_name');
+          
+        if (employeesError) throw employeesError;
+        
+        setFormData({
+          customers: customersData || [],
+          locations: locationsData || [],
+          employees: employeesData || []
+        });
+        
+        setDataLoaded(true);
+      } catch (error: any) {
+        console.error('Error fetching form data:', error);
+        toast({
+          title: 'Error loading data',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchFormData();
+  }, [dialogOpen]);
+  
+  return { formData, isLoading, dataLoaded };
 };
+
+export default useWorkOrderData;

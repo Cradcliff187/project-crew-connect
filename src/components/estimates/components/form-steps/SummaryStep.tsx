@@ -1,21 +1,23 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { useSummaryCalculations } from '../../hooks/useSummaryCalculations';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
-import { PaperclipIcon, FileIcon } from 'lucide-react';
+import { PaperclipIcon, FileIcon, ExternalLinkIcon } from 'lucide-react';
 import DocumentList from '@/components/documents/DocumentList';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
-import { useState } from 'react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const SummaryStep = () => {
   const form = useFormContext<EstimateFormValues>();
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
+  const [attachedItemDocuments, setAttachedItemDocuments] = useState<Record<string, {file_name?: string, file_type?: string}>>({});
   
   const {
     totalCost,
@@ -36,11 +38,46 @@ const SummaryStep = () => {
     refetchDocuments 
   } = useEstimateDocuments(tempEstimateId);
 
+  useEffect(() => {
+    const items = form.getValues('items') || [];
+    const itemsWithDocs = items.filter(item => item.document_id);
+
+    const fetchDocumentInfo = async () => {
+      const docInfo: Record<string, {file_name?: string, file_type?: string}> = {};
+      
+      for (const item of itemsWithDocs) {
+        if (!item.document_id) continue;
+        
+        try {
+          const { data, error } = await supabase
+            .from('documents')
+            .select('file_name, file_type')
+            .eq('document_id', item.document_id)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching document:', error);
+            continue;
+          }
+          
+          docInfo[item.document_id] = data;
+        } catch (err) {
+          console.error('Error in document fetch:', err);
+        }
+      }
+      
+      setAttachedItemDocuments(docInfo);
+    };
+    
+    if (itemsWithDocs.length > 0) {
+      fetchDocumentInfo();
+    }
+  }, [form]);
+
   const handleDocumentUploadSuccess = (documentId?: string) => {
     setIsDocumentUploadOpen(false);
     
     if (documentId) {
-      // Add the document ID to the form values
       const currentDocuments = form.getValues('estimate_documents') || [];
       form.setValue('estimate_documents', [...currentDocuments, documentId]);
       
@@ -49,12 +86,12 @@ const SummaryStep = () => {
         description: 'Document has been attached to the estimate',
       });
       
-      // Refresh the document list
       refetchDocuments();
     }
   };
 
   const items = form.watch('items') || [];
+  const estimateDocuments = form.watch('estimate_documents') || [];
   
   return (
     <div className="space-y-6">
@@ -87,12 +124,30 @@ const SummaryStep = () => {
                   return (
                     <tr key={index} className="border-b hover:bg-gray-50">
                       <td className="py-2 text-sm">
-                        {item.description || `Item ${index + 1}`}
-                        {item.document_id && (
-                          <span className="ml-2 text-blue-500">
-                            <PaperclipIcon className="h-3 w-3 inline" />
-                          </span>
-                        )}
+                        <div className="flex items-center">
+                          <span>{item.description || `Item ${index + 1}`}</span>
+                          {item.document_id && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="ml-2 flex items-center gap-1 bg-blue-50">
+                                    <PaperclipIcon className="h-3 w-3" />
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-xs">
+                                    <div className="font-medium">
+                                      {attachedItemDocuments[item.document_id]?.file_name || 'Document attached'}
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                      {attachedItemDocuments[item.document_id]?.file_type || ''}
+                                    </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
                       </td>
                       <td className="py-2 text-right text-sm">${(cost * quantity).toFixed(2)}</td>
                       <td className="py-2 text-right text-sm">${(markup * quantity).toFixed(2)}</td>
@@ -128,7 +183,12 @@ const SummaryStep = () => {
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg font-medium">Supporting Documents</CardTitle>
+          <CardTitle className="text-lg font-medium">
+            Supporting Documents 
+            <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700">
+              {estimateDocuments.length + items.filter(item => item.document_id).length}
+            </Badge>
+          </CardTitle>
           <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
             <SheetTrigger asChild>
               <Button 
@@ -166,7 +226,6 @@ const SummaryStep = () => {
             loading={loading}
             onUploadClick={() => setIsDocumentUploadOpen(true)}
             onDocumentDelete={(document) => {
-              // Remove the document ID from the form values
               const currentDocuments = form.getValues('estimate_documents') || [];
               form.setValue(
                 'estimate_documents', 
@@ -178,13 +237,37 @@ const SummaryStep = () => {
                 description: 'Document has been removed from the estimate',
               });
               
-              // Refresh the document list
               refetchDocuments();
             }}
             emptyMessage="No documents attached yet. Add supporting documents like contracts, specifications, or reference materials."
             showEntityInfo={false}
             showCategories={true}
           />
+          
+          {items.filter(item => item.document_id).length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium mb-2">Line Item Attachments:</h4>
+              <div className="border rounded-md divide-y">
+                {items.filter(item => item.document_id).map((item, index) => {
+                  const docInfo = item.document_id ? attachedItemDocuments[item.document_id] : null;
+                  
+                  return (
+                    <div key={`doc-${index}`} className="flex items-center justify-between p-3">
+                      <div className="flex items-center">
+                        <FileIcon className="h-4 w-4 text-blue-500 mr-2" />
+                        <div>
+                          <p className="text-sm font-medium">{docInfo?.file_name || 'Document'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            For: {item.description || `Item ${index + 1}`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           
           {error && (
             <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800 text-sm mt-4">

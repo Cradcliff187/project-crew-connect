@@ -1,117 +1,80 @@
 
-import React, { useState, useEffect } from 'react';
-import { Control } from 'react-hook-form';
+import React, { useState } from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Control } from 'react-hook-form';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
-import { supabase } from '@/integrations/supabase/client';
+import VendorSearchCombobox from '../vendor-selector/VendorSearchCombobox';
+import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
 interface VendorSelectorProps {
   control: Control<DocumentUploadFormValues>;
-  vendorType?: string;
+  vendorType: 'vendor' | 'subcontractor' | 'other';
   prefillVendorId?: string;
+  onAddVendorClick?: () => void;
 }
 
-interface Vendor {
-  vendorid: string;
-  vendorname: string;
-}
-
-interface Subcontractor {
-  subid: string;
-  subname: string;
-}
-
-const VendorSelector: React.FC<VendorSelectorProps> = ({ 
-  control, 
-  vendorType = 'vendor',
-  prefillVendorId 
+const VendorSelector: React.FC<VendorSelectorProps> = ({
+  control,
+  vendorType,
+  prefillVendorId,
+  onAddVendorClick
 }) => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadVendors = async () => {
-      setLoading(true);
-      try {
-        if (vendorType === 'vendor' || vendorType === 'other') {
-          const { data, error } = await supabase
-            .from('vendors')
-            .select('vendorid, vendorname')
-            .order('vendorname', { ascending: true });
-
-          if (error) throw error;
-          setVendors(data || []);
-        }
-
-        if (vendorType === 'subcontractor') {
-          const { data, error } = await supabase
-            .from('subcontractors')
-            .select('subid, subname')
-            .order('subname', { ascending: true });
-
-          if (error) throw error;
-          setSubcontractors(data || []);
-        }
-      } catch (err) {
-        console.error('Error loading vendors/subcontractors:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadVendors();
-  }, [vendorType]);
-
-  // If there's a prefill vendor ID, set it when component mounts
-  useEffect(() => {
-    if (prefillVendorId) {
-      console.log('Setting prefilled vendor ID:', prefillVendorId);
-      // This should be handled by the form's defaultValues, but we're doing it here as a fallback
+  const [showAddVendor, setShowAddVendor] = useState(false);
+  
+  // Handle vendor type to set the right field and label
+  const getFieldName = () => {
+    // Always return "metadata.vendorId" as the field name since that's the expected field in the schema
+    return "metadata.vendorId" as const;
+  };
+  
+  const getLabel = () => {
+    switch (vendorType) {
+      case 'vendor':
+        return 'Vendor';
+      case 'subcontractor':
+        return 'Subcontractor';
+      default:
+        return 'Service Provider';
     }
-  }, [prefillVendorId]);
-
+  };
+  
+  // Don't render for other vendor types
+  if (vendorType === 'other') {
+    return null;
+  }
+  
   return (
     <FormField
       control={control}
-      name="metadata.vendorId"
+      name={getFieldName()}
+      defaultValue={prefillVendorId}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>
-            {vendorType === 'vendor' ? 'Vendor' : 
-             vendorType === 'subcontractor' ? 'Subcontractor' : 'Provider'}
-          </FormLabel>
-          <Select
-            value={field.value}
-            onValueChange={field.onChange}
-            disabled={loading}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select..." />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="add-new" className="text-[#0485ea] flex items-center">
-                <Plus className="h-4 w-4 mr-2" />
-                Add New {vendorType === 'subcontractor' ? 'Subcontractor' : 'Vendor'}
-              </SelectItem>
-              
-              {vendorType === 'vendor' && vendors.map(vendor => (
-                <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                  {vendor.vendorname}
-                </SelectItem>
-              ))}
-              
-              {vendorType === 'subcontractor' && subcontractors.map(sub => (
-                <SelectItem key={sub.subid} value={sub.subid}>
-                  {sub.subname}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <FormLabel>{getLabel()}</FormLabel>
+          <div className="flex items-center space-x-2">
+            <div className="flex-1">
+              <FormControl>
+                <VendorSearchCombobox
+                  value={field.value as string}
+                  onChange={(value: string) => field.onChange(value)}
+                  vendorType={vendorType}
+                  onAddNewClick={onAddVendorClick}
+                />
+              </FormControl>
+            </div>
+            {onAddVendorClick && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-shrink-0 h-10"
+                onClick={onAddVendorClick}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
           <FormMessage />
         </FormItem>
       )}

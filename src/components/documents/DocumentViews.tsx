@@ -1,118 +1,120 @@
 
 import React, { useState } from 'react';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { Document } from './schemas/documentSchema';
 import DocumentList from './DocumentList';
-import DocumentGrid from './DocumentGrid';
-import DocumentTable from './DocumentTable';
-import { Loader2 } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { FolderIcon, FilterIcon, LayoutGrid, List, Loader2, FileText, Upload } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Document } from './schemas/documentSchema';
 
-export interface DocumentViewsProps {
+interface DocumentViewsProps {
   documents: Document[];
   loading: boolean;
-  onView: (document: Document) => void;
+  activeFiltersCount: number;
+  onView?: (document: Document) => void;
   onDelete?: (document: Document) => void;
   onBatchDelete?: (documentIds: string[]) => void;
   onUploadClick?: () => void;
-  emptyMessage?: string;
-  showEntityInfo?: boolean;
-  activeFiltersCount?: number;
   showNavigationButtons?: boolean;
 }
 
 const DocumentViews: React.FC<DocumentViewsProps> = ({
   documents,
   loading,
+  activeFiltersCount,
   onView,
   onDelete,
   onBatchDelete,
   onUploadClick,
-  emptyMessage,
-  showEntityInfo = false,
-  activeFiltersCount = 0,
   showNavigationButtons = false
 }) => {
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
-  
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const [view, setView] = useState<'grid' | 'list'>('grid');
 
-  if (documents.length === 0) {
-    if (activeFiltersCount > 0) {
-      return (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium mb-2">No documents match your filters</h3>
-          <p className="text-muted-foreground mb-4">
-            Try adjusting your search or filter criteria
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="text-center py-12">
-        <h3 className="text-lg font-medium mb-2">{emptyMessage || "No documents found"}</h3>
-        <p className="text-muted-foreground mb-4">
-          Upload documents to get started
-        </p>
-      </div>
-    );
-  }
+  const handleSwitchLayout = (newView: 'grid' | 'list') => {
+    setView(newView);
+  };
 
   return (
-    <Tabs defaultValue="grid" className="w-full" onValueChange={(value) => setViewMode(value as any)}>
-      <div className="flex justify-between items-center mb-4">
-        <TabsList>
-          <TabsTrigger value="grid">Grid</TabsTrigger>
-          <TabsTrigger value="list">List</TabsTrigger>
-          <TabsTrigger value="table">Table</TabsTrigger>
-        </TabsList>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-medium flex items-center">
+          {activeFiltersCount > 0 ? (
+            <>
+              <FilterIcon className="mr-2 h-5 w-5 text-[#0485ea]" />
+              Filtered Documents
+              <Badge variant="outline" className="ml-2">
+                {activeFiltersCount} filter{activeFiltersCount !== 1 ? 's' : ''}
+              </Badge>
+            </>
+          ) : (
+            <>
+              <FolderIcon className="mr-2 h-5 w-5 text-[#0485ea]" />
+              All Documents
+            </>
+          )}
+        </h2>
+        <div className="flex items-center space-x-2">
+          <ToggleGroup type="single" value={view} onValueChange={(value) => value && setView(value as any)}>
+            <ToggleGroupItem value="grid" aria-label="Grid view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </div>
 
-      <TabsContent value="grid" className="mt-2">
-        <DocumentGrid 
-          documents={documents}
-          loading={loading}
-          onViewDocument={onView}
-          showEntityInfo={showEntityInfo}
-          showCategories={true}
-        />
-      </TabsContent>
-
-      <TabsContent value="list" className="mt-2">
-        <DocumentList 
-          documents={documents}
-          loading={loading}
-          onView={onView}
-          onDocumentDelete={onDelete}
-          onBatchDelete={onBatchDelete}
-          onUploadClick={onUploadClick}
-          showEntityInfo={showEntityInfo}
-          showCategories={true}
-          showNavigationButtons={showNavigationButtons}
-        />
-      </TabsContent>
-
-      <TabsContent value="table" className="mt-2">
-        <DocumentTable 
-          documents={documents}
-          loading={loading}
-          onViewDocument={onView}
-          onDeleteDocument={onDelete}
-          showEntityInfo={showEntityInfo}
-        />
-      </TabsContent>
-    </Tabs>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 text-[#0485ea] animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading documents...</p>
+        </div>
+      ) : documents.length === 0 ? (
+        <div className="text-center py-8">
+          <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+          <h3 className="font-medium mb-2">No documents found</h3>
+          {onUploadClick && (
+            <Button 
+              onClick={onUploadClick}
+              className="mt-4 bg-[#0485ea] hover:bg-[#0375d1]"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Document
+            </Button>
+          )}
+        </div>
+      ) : (
+        <>
+          {view === 'grid' && (
+            <DocumentList
+              documents={documents}
+              loading={loading}
+              onView={onView}
+              onDocumentDelete={onDelete}
+              onBatchDelete={onBatchDelete}
+              onUploadClick={onUploadClick}
+              showEntityInfo={true}
+              showCategories={false}
+              showNavigationButtons={showNavigationButtons}
+            />
+          )}
+          {view === 'list' && (
+            <DocumentList
+              documents={documents}
+              loading={loading}
+              onView={onView}
+              onDocumentDelete={onDelete}
+              onBatchDelete={onBatchDelete}
+              onUploadClick={onUploadClick}
+              showEntityInfo={true}
+              showCategories={true}
+              showNavigationButtons={showNavigationButtons}
+            />
+          )}
+        </>
+      )}
+    </div>
   );
 };
 

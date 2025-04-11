@@ -14,11 +14,16 @@ const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
   onFilesSelected,
   onFileClear
 }) => {
+  const handleFilesSelected = (files: File[]) => {
+    console.log('Files selected in ReceiptUploader:', files.map(f => f.name));
+    onFilesSelected(files);
+  };
+
   return (
     <div className="space-y-2">
-      <Label>Add Receipts (Optional)</Label>
+      <Label>Add Receipts</Label>
       <FileUpload
-        onFilesSelected={onFilesSelected}
+        onFilesSelected={handleFilesSelected}
         onFileClear={onFileClear}
         selectedFiles={selectedFiles}
         allowMultiple={true}

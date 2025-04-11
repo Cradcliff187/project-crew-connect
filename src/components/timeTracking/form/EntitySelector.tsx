@@ -1,18 +1,19 @@
 
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Briefcase, Building, Loader2, AlertCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Entity } from '@/types/timeTracking';
 
 interface EntitySelectorProps {
   entityType: 'work_order' | 'project';
   entityId: string;
-  workOrders: { id: string; title: string; }[];
-  projects: { id: string; title: string; }[];
+  workOrders: Entity[];
+  projects: Entity[];
   isLoading: boolean;
   onChange: (value: string) => void;
   error?: string;
-  selectedEntity: { id: string; title: string; location?: string; } | null;
+  selectedEntity?: { name: string; location?: string } | null;
 }
 
 const EntitySelector: React.FC<EntitySelectorProps> = ({
@@ -26,45 +27,75 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
   selectedEntity
 }) => {
   const entities = entityType === 'work_order' ? workOrders : projects;
-  const label = entityType === 'work_order' ? 'Work Order' : 'Project';
   
   return (
     <div className="space-y-2">
-      <Label htmlFor="entity-selector" className={error ? "text-destructive" : ""}>{label}</Label>
-      <Select value={entityId} onValueChange={onChange}>
-        <SelectTrigger id="entity-selector" className={error ? "border-destructive" : ""}>
-          {isLoading ? (
-            <div className="flex items-center">
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              <span>Loading...</span>
-            </div>
-          ) : (
-            <SelectValue placeholder={`Select a ${entityType.replace('_', ' ')}`} />
-          )}
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {entities.length === 0 ? (
-              <SelectItem value="none" disabled>No {entityType.replace('_', ' ')}s found</SelectItem>
-            ) : (
-              entities.map(entity => (
-                <SelectItem key={entity.id} value={entity.id}>
-                  {entity.title}
-                </SelectItem>
-              ))
-            )}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      <Label>{entityType === 'work_order' ? 'Work Order' : 'Project'}</Label>
       
-      {error && (
-        <p className="text-xs text-destructive">{error}</p>
+      {isLoading ? (
+        <div className="flex items-center space-x-2 border rounded-md p-2 h-10">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <span className="text-muted-foreground">Loading...</span>
+        </div>
+      ) : (
+        <>
+          <Select
+            value={entityId}
+            onValueChange={onChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {entities.length > 0 ? (
+                entities.map(entity => (
+                  <SelectItem key={entity.id} value={entity.id}>
+                    {entity.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <div className="py-2 px-2 text-center text-sm text-muted-foreground">
+                  No {entityType === 'work_order' ? 'work orders' : 'projects'} found
+                </div>
+              )}
+            </SelectContent>
+          </Select>
+          
+          {entities.length === 0 && (
+            <div className="text-xs flex items-center text-amber-600 gap-1">
+              <AlertCircle className="h-3 w-3" />
+              <span>
+                No {entityType === 'work_order' ? 'work orders' : 'projects'} available in the database
+              </span>
+            </div>
+          )}
+          
+          {entities.length > 0 && (
+            <div className="text-xs text-gray-400">
+              {entities.length} {entityType === 'work_order' ? 'work orders' : 'projects'} available
+            </div>
+          )}
+        </>
       )}
       
-      {selectedEntity && selectedEntity.location && (
-        <p className="text-xs text-muted-foreground mt-1">
-          Location: {selectedEntity.location}
-        </p>
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      
+      {selectedEntity && (
+        <div className="mt-2 p-3 bg-muted rounded-md">
+          <div className="flex items-center">
+            {entityType === 'work_order' ? (
+              <Briefcase className="h-4 w-4 mr-2 text-[#0485ea]" />
+            ) : (
+              <Building className="h-4 w-4 mr-2 text-[#0485ea]" />
+            )}
+            <span className="font-medium">{selectedEntity.name}</span>
+          </div>
+          {selectedEntity.location && (
+            <p className="text-xs text-muted-foreground mt-1 ml-6">
+              {selectedEntity.location}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

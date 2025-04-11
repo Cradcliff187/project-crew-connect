@@ -21,7 +21,13 @@ export const useEstimateFormState = (open: boolean) => {
         state: '',
         zip: '',
       },
-      items: [{ description: '', quantity: '1', unitPrice: '0', cost: '0', markup_percentage: '0' }],
+      items: [{ 
+        description: '', 
+        quantity: '1', 
+        unit_price: '0', 
+        cost: '0', 
+        markup_percentage: '0' 
+      }],
       showSiteLocation: false,
       isNewCustomer: false,
       newCustomer: {
@@ -52,7 +58,13 @@ export const useEstimateFormState = (open: boolean) => {
           state: '',
           zip: '',
         },
-        items: [{ description: '', quantity: '1', unitPrice: '0', cost: '0', markup_percentage: '0' }],
+        items: [{ 
+          description: '', 
+          quantity: '1', 
+          unit_price: '0', 
+          cost: '0', 
+          markup_percentage: '0' 
+        }],
         showSiteLocation: false,
         isNewCustomer: false,
         newCustomer: {

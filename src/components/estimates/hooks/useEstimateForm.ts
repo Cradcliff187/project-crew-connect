@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,7 +27,13 @@ export const useEstimateForm = ({ open }: UseEstimateFormProps) => {
         state: '',
         zip: '',
       },
-      items: [{ description: '', quantity: '1', unitPrice: '0', cost: '0', markup_percentage: '0' }],
+      items: [{ 
+        description: '', 
+        quantity: '1', 
+        unit_price: '0', 
+        cost: '0', 
+        markup_percentage: '0' 
+      }],
       showSiteLocation: false,
       isNewCustomer: false,
       newCustomer: {
@@ -57,7 +62,13 @@ export const useEstimateForm = ({ open }: UseEstimateFormProps) => {
           state: '',
           zip: '',
         },
-        items: [{ description: '', quantity: '1', unitPrice: '0', cost: '0', markup_percentage: '0' }],
+        items: [{ 
+          description: '', 
+          quantity: '1', 
+          unit_price: '0', 
+          cost: '0', 
+          markup_percentage: '0' 
+        }],
         showSiteLocation: false,
         isNewCustomer: false,
         newCustomer: {

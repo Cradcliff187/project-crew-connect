@@ -77,7 +77,11 @@ const DocumentDetailView: React.FC<DocumentDetailViewProps> = ({
         <div className="flex flex-col md:flex-row gap-6 overflow-hidden">
           {/* Document Preview */}
           <div className="flex-1 min-h-[300px] md:max-h-[500px] overflow-hidden flex flex-col">
-            <DocumentViewer document={document} />
+            <DocumentViewer 
+              document={document} 
+              open={true} 
+              onOpenChange={() => {}}
+            />
           </div>
           
           {/* Document Details */}

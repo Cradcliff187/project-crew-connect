@@ -1,161 +1,172 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Receipt, Download, ExternalLink, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileText, Download, Trash2, Upload, Loader2 } from 'lucide-react';
-import { useTimeEntryReceipts } from './hooks/useTimeEntryReceipts';
-import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { TimeEntryReceipt } from '@/types/timeTracking';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
 
 interface TimeEntryReceiptsProps {
-  timeEntryId?: string;
-  onReceiptChange?: () => void;
+  timeEntryId: string;
+  onViewReceipt?: (receipt: TimeEntryReceipt) => void;
 }
 
 const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ 
   timeEntryId,
-  onReceiptChange
+  onViewReceipt 
 }) => {
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showViewDialog, setShowViewDialog] = useState(false);
-  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
-  
-  const { receipts, isLoading, fetchReceipts, deleteReceipt } = useTimeEntryReceipts(timeEntryId);
-  
-  const handleUploadSuccess = () => {
-    setShowUploadDialog(false);
-    fetchReceipts();
-    if (onReceiptChange) onReceiptChange();
-  };
-  
-  const handleViewReceipt = (url: string) => {
-    setSelectedReceipt(url);
-    setShowViewDialog(true);
-  };
-  
-  const handleDeleteReceipt = async (documentId: string) => {
-    if (!window.confirm('Are you sure you want to delete this receipt?')) {
-      return;
-    }
+  const [receipts, setReceipts] = useState<TimeEntryReceipt[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchReceipts = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // First get the document IDs linked to this time entry
+        const { data: linkData, error: linkError } = await supabase
+          .from('time_entry_document_links')
+          .select('document_id')
+          .eq('time_entry_id', timeEntryId);
+        
+        if (linkError) throw linkError;
+        
+        if (!linkData || linkData.length === 0) {
+          setReceipts([]);
+          return;
+        }
+        
+        // Get the documents with their URLs
+        const documentIds = linkData.map(link => link.document_id);
+        const { data: docData, error: docError } = await supabase
+          .from('documents_with_urls')
+          .select('*')
+          .in('document_id', documentIds);
+        
+        if (docError) throw docError;
+        
+        // Map to the right format
+        const formattedReceipts = (docData || []).map(doc => ({
+          id: doc.document_id,
+          time_entry_id: timeEntryId,
+          file_name: doc.file_name,
+          file_type: doc.file_type,
+          file_size: doc.file_size,
+          storage_path: doc.storage_path,
+          uploaded_at: doc.created_at,
+          document_id: doc.document_id,
+          url: doc.url,
+          expense_type: doc.expense_type,
+          vendor_id: doc.vendor_id,
+          amount: doc.amount
+        }));
+        
+        setReceipts(formattedReceipts);
+      } catch (error: any) {
+        console.error('Error fetching receipts:', error);
+        setError(error.message || 'Failed to load receipts');
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    const success = await deleteReceipt(documentId);
-    if (success && onReceiptChange) {
-      onReceiptChange();
+    if (timeEntryId) {
+      fetchReceipts();
+    }
+  }, [timeEntryId]);
+
+  const handleDownload = async (receipt: TimeEntryReceipt) => {
+    try {
+      // If URL is available, open it directly
+      if (receipt.url) {
+        window.open(receipt.url, '_blank');
+        return;
+      }
+      
+      // Otherwise, try to generate a URL
+      const { data, error } = await supabase.storage
+        .from('construction_documents')
+        .createSignedUrl(receipt.storage_path, 60);
+      
+      if (error) throw error;
+      
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      } else {
+        throw new Error('Could not generate download URL');
+      }
+    } catch (error: any) {
+      console.error('Error downloading receipt:', error);
+      toast({
+        title: 'Download Error',
+        description: error.message || 'Failed to download the receipt',
+        variant: 'destructive',
+      });
     }
   };
-  
-  if (!timeEntryId) {
-    return <div className="text-sm text-muted-foreground">Please save the time entry first to manage receipts.</div>;
+
+  if (loading) {
+    return (
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Receipt className="h-4 w-4 mr-1" />
+        Loading receipts...
+      </div>
+    );
   }
-  
+
+  if (error) {
+    return (
+      <div className="flex items-center text-sm text-destructive">
+        <AlertCircle className="h-4 w-4 mr-1" />
+        {error}
+      </div>
+    );
+  }
+
+  if (receipts.length === 0) {
+    return null;
+  }
+
   return (
-    <div>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-md">Receipts</CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 border-blue-200"
-            onClick={() => setShowUploadDialog(true)}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Receipt
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
-            </div>
-          ) : receipts.length === 0 ? (
-            <div className="text-center py-6 border rounded bg-muted/50">
-              <p className="text-sm text-muted-foreground">No receipts have been attached yet</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {receipts.map((receipt) => (
-                <div 
-                  key={receipt.document_id} 
-                  className="flex items-center justify-between p-3 rounded-md border"
+    <div className="space-y-2">
+      <div className="text-sm font-medium">Receipts</div>
+      <div className="flex flex-wrap gap-2">
+        {receipts.map((receipt) => (
+          <Tooltip key={receipt.id}>
+            <TooltipTrigger asChild>
+              <div className="group relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-auto py-1 px-2 text-xs flex items-center"
+                  onClick={() => onViewReceipt ? onViewReceipt(receipt) : handleDownload(receipt)}
                 >
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <p className="font-medium text-sm">{receipt.file_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(receipt.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {receipt.url && (
-                      <>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => receipt.url && handleViewReceipt(receipt.url)}
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          asChild
-                        >
-                          <a href={receipt.url} download={receipt.file_name} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4" />
-                          </a>
-                        </Button>
-                      </>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeleteReceipt(receipt.document_id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Upload Receipt</DialogTitle>
-          </DialogHeader>
-          <EnhancedDocumentUpload
-            entityType={'TIME_ENTRY'}
-            entityId={timeEntryId}
-            onSuccess={handleUploadSuccess}
-            onCancel={() => setShowUploadDialog(false)}
-            isReceiptUpload={true}
-          />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>View Receipt</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto">
-            {selectedReceipt && (
-              <iframe
-                src={selectedReceipt}
-                className="w-full h-full rounded-md border"
-                title="Receipt"
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+                  <Receipt className="h-3 w-3 mr-1" />
+                  <span className="max-w-[120px] truncate">{receipt.file_name}</span>
+                </Button>
+                
+                {receipt.expense_type && (
+                  <Badge variant="outline" className="absolute -top-2 -right-2 text-[10px] px-1 py-0 h-4">
+                    {receipt.expense_type}
+                  </Badge>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <div className="text-xs space-y-1">
+                <div>{receipt.file_name}</div>
+                {receipt.expense_type && <div>Type: {receipt.expense_type}</div>}
+                {receipt.amount && <div>Amount: ${receipt.amount.toFixed(2)}</div>}
+                <div className="italic">Click to {onViewReceipt ? 'view' : 'download'}</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
     </div>
   );
 };

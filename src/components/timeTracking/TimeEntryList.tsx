@@ -1,230 +1,220 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TimeEntry } from '@/types/timeTracking';
-import { formatTimeRange } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Clock, MapPin, User, FileText, MoreVertical, Trash2, ExternalLink } from 'lucide-react';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import TimeEntryReceipts from './TimeEntryReceipts';
-import { useToast } from '@/hooks/use-toast';
+import { formatTime } from './utils/timeUtils';
+import { formatDate } from '@/lib/utils';
+import { Edit, Trash } from 'lucide-react';
+import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
+import TimeEntryEditDialog from './TimeEntryEditDialog';
+import { useTimeEntryOperations } from './hooks/useTimeEntryOperations';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TimeEntryListProps {
-  timeEntries: TimeEntry[];
+  entries: TimeEntry[];
   isLoading: boolean;
   onEntryChange: () => void;
   isMobile?: boolean;
 }
 
-const TimeEntryList: React.FC<TimeEntryListProps> = ({ 
-  timeEntries, 
-  isLoading, 
+export const TimeEntryList: React.FC<TimeEntryListProps> = ({ 
+  entries,
+  isLoading,
   onEntryChange,
   isMobile = false
 }) => {
-  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
-  const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
-  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
-  const { toast } = useToast();
-  
-  const handleDelete = async (entryId: string) => {
-    if (!confirm('Are you sure you want to delete this time entry?')) {
-      return;
-    }
-    
-    setDeletingEntryId(entryId);
-    
-    try {
-      // First delete any document links
-      const { error: linkError } = await supabase
-        .from('time_entry_document_links')
-        .delete()
-        .eq('time_entry_id', entryId);
+  const { 
+    showDeleteDialog, 
+    setShowDeleteDialog,
+    entryToDelete,
+    startDelete,
+    confirmDelete,
+    isDeleting,
+    showEditDialog,
+    setShowEditDialog,
+    entryToEdit,
+    startEdit,
+    saveEdit,
+    isSaving
+  } = useTimeEntryOperations(onEntryChange);
+  const [employeeMap, setEmployeeMap] = useState<{[key: string]: string}>({});
+
+  // Fetch employee names for displaying
+  useEffect(() => {
+    const fetchEmployeeNames = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('employee_id, first_name, last_name');
+          
+        if (error) {
+          console.error('Error fetching employees:', error);
+          return;
+        }
         
-      if (linkError) {
-        console.error('Error deleting document links:', linkError);
+        if (data) {
+          const employeeNameMap = data.reduce((acc, emp) => {
+            acc[emp.employee_id] = `${emp.first_name} ${emp.last_name}`;
+            return acc;
+          }, {} as {[key: string]: string});
+          setEmployeeMap(employeeNameMap);
+        }
+      } catch (error) {
+        console.error('Error fetching employee names:', error);
       }
-      
-      // Then delete the time entry
-      const { error } = await supabase
-        .from('time_entries')
-        .delete()
-        .eq('id', entryId);
-        
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: 'Time entry deleted',
-        description: 'The time entry has been removed successfully.'
-      });
-      
-      onEntryChange();
-    } catch (error) {
-      console.error('Error deleting time entry:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete the time entry. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setDeletingEntryId(null);
-    }
+    };
+    
+    fetchEmployeeNames();
+  }, []);
+
+  const getEmployeeName = (employeeId: string | undefined | null): string => {
+    if (!employeeId) return "Unassigned";
+    return employeeMap[employeeId] || "Unknown";
   };
-  
-  const openReceiptsDialog = (entry: TimeEntry) => {
-    setSelectedEntry(entry);
-    setShowReceiptsDialog(true);
-  };
-  
+
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0485ea]"></div>
       </div>
     );
   }
-  
-  if (timeEntries.length === 0) {
+
+  if (entries.length === 0) {
     return (
-      <div className="text-center py-8 bg-muted/30 rounded-lg border border-dashed">
-        <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-        <h3 className="text-lg font-medium text-muted-foreground">No time entries</h3>
-        <p className="text-sm text-muted-foreground">
-          You haven't logged any time for this day yet.
-        </p>
+      <div className="text-center p-8 text-gray-500">
+        <p>No time entries found for this period.</p>
+        <p className="text-sm mt-2">Click "Add Entry" to log your time.</p>
       </div>
     );
   }
-  
-  return (
-    <div className="space-y-4">
-      {timeEntries.map((entry) => (
-        <Card key={entry.id} className="overflow-hidden shadow-sm border-l-4 border-l-[#0485ea]">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <h3 className="font-medium text-base">
-                  {entry.entity_name || "Unknown"} 
-                  <span className="ml-1 text-xs capitalize px-2 py-0.5 bg-gray-100 rounded-full">
-                    {entry.entity_type.replace('_', ' ')}
-                  </span>
-                </h3>
-                
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5 mr-1" />
-                  <span>
-                    {formatTimeRange(entry.start_time, entry.end_time)} • {entry.hours_worked.toFixed(1)} hrs
-                  </span>
+
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        {entries.map((entry) => (
+          <div key={entry.id} className="bg-white border rounded-lg p-4 shadow-sm">
+            <div className="flex justify-between">
+              <div>
+                <div className="font-medium">{formatDate(entry.date_worked)}</div>
+                <div className="text-sm text-gray-600">
+                  {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
                 </div>
-                
-                {entry.entity_location && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5 mr-1" />
-                    <span>{entry.entity_location}</span>
-                  </div>
-                )}
-                
-                {entry.employee_name && (
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <User className="h-3.5 w-3.5 mr-1" />
-                    <span>{entry.employee_name}</span>
-                  </div>
-                )}
-                
-                {entry.notes && (
-                  <p className="text-sm mt-2 bg-muted/30 p-2 rounded">
-                    {entry.notes}
-                  </p>
-                )}
               </div>
-              
-              <div className="flex items-center">
-                {entry.has_receipts && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-[#0485ea]"
-                    onClick={() => openReceiptsDialog(entry)}
-                  >
-                    <FileText className="h-5 w-5" />
-                  </Button>
-                )}
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {entry.entity_type === 'work_order' && (
-                      <DropdownMenuItem asChild>
-                        <a href={`/work-orders/${entry.entity_id}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          <span>View Work Order</span>
-                        </a>
-                      </DropdownMenuItem>
-                    )}
-                    {entry.entity_type === 'project' && (
-                      <DropdownMenuItem asChild>
-                        <a href={`/projects/${entry.entity_id}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          <span>View Project</span>
-                        </a>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      onClick={() => openReceiptsDialog(entry)}
-                      className="text-blue-600"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      <span>{entry.has_receipts ? 'View Receipts' : 'Add Receipt'}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleDelete(entry.id)}
-                      className="text-red-600"
-                      disabled={deletingEntryId === entry.id}
-                    >
-                      {deletingEntryId === entry.id ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4 mr-2" />
-                      )}
-                      <span>Delete Entry</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <div className="text-right">
+                <div className="font-medium">{entry.hours_worked.toFixed(1)} hrs</div>
+                <div className="text-sm text-gray-600">{getEmployeeName(entry.employee_id)}</div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      ))}
+            
+            {entry.notes && (
+              <div className="mt-2 text-sm border-t pt-2">
+                {entry.notes}
+              </div>
+            )}
+            
+            <div className="mt-3 flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8"
+                onClick={() => startEdit(entry)}
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 text-red-500 hover:text-red-700"
+                onClick={() => startDelete(entry)}
+              >
+                <Trash className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        
+        <TimeEntryDeleteDialog 
+          timeEntry={entryToDelete}
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={confirmDelete}
+          isDeleting={isDeleting}
+        />
+        
+        <TimeEntryEditDialog
+          timeEntry={entryToEdit}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          onSave={saveEdit}
+          isSaving={isSaving}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Time</TableHead>
+            <TableHead>Hours</TableHead>
+            <TableHead>Employee</TableHead>
+            <TableHead>Notes</TableHead>
+            <TableHead className="w-24 text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {entries.map(entry => (
+            <TableRow key={entry.id}>
+              <TableCell>{formatDate(entry.date_worked)}</TableCell>
+              <TableCell>
+                {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
+              </TableCell>
+              <TableCell>{entry.hours_worked.toFixed(1)}</TableCell>
+              <TableCell>{getEmployeeName(entry.employee_id)}</TableCell>
+              <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => startEdit(entry)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-red-500 hover:text-red-700"
+                    onClick={() => startDelete(entry)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
       
-      {/* Receipts Dialog */}
-      <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
-        <DialogContent className={isMobile ? "w-[95vw] max-w-lg" : "max-w-2xl"}>
-          <DialogHeader>
-            <DialogTitle>Time Entry Receipts</DialogTitle>
-          </DialogHeader>
-          {selectedEntry && (
-            <TimeEntryReceipts 
-              timeEntryId={selectedEntry.id} 
-              onReceiptChange={onEntryChange}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <TimeEntryDeleteDialog 
+        timeEntry={entryToDelete}
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
+      />
+      
+      <TimeEntryEditDialog
+        timeEntry={entryToEdit}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSave={saveEdit}
+        isSaving={isSaving}
+      />
     </div>
   );
 };
-
-export default TimeEntryList;

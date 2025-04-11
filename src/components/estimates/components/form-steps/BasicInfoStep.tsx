@@ -305,26 +305,6 @@ const BasicInfoStep = ({
             </div>
           </div>
         )}
-        
-        <FormField
-          control={form.control}
-          name="contingency_percentage"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Contingency (%)</FormLabel>
-              <FormControl>
-                <Input 
-                  placeholder="0" 
-                  {...field} 
-                  type="number" 
-                  min="0" 
-                  max="100" 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       </div>
     </div>
   );

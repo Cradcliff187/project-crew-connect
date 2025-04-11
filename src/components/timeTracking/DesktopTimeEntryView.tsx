@@ -1,18 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Clock } from 'lucide-react';
 import { TimeEntry } from '@/types/timeTracking';
 
-import TimeEntryList from './TimeEntryList';
-import TimeEntryForm from './TimeEntryForm';
+import { TimeEntryList } from './TimeEntryList';
+import TimeEntryFormWizard from './TimeEntryFormWizard';
 import DateNavigation from './DateNavigation';
+import { DateRange } from './hooks/useTimeEntries';
 
 interface DesktopTimeEntryViewProps {
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
+  dateRange: DateRange;
+  onDateRangeChange: (dateRange: DateRange) => void;
+  onNextWeek: () => void;
+  onPrevWeek: () => void;
+  onCurrentWeek: () => void;
   timeEntries: TimeEntry[];
   isLoading: boolean;
   onAddSuccess: () => void;
@@ -20,14 +24,23 @@ interface DesktopTimeEntryViewProps {
 }
 
 const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
-  selectedDate,
-  setSelectedDate,
+  dateRange,
+  onDateRangeChange,
+  onNextWeek,
+  onPrevWeek,
+  onCurrentWeek,
   timeEntries,
   isLoading,
   onAddSuccess,
   totalHours
 }) => {
   const [activeTab, setActiveTab] = useState('entries');
+  
+  // Effect to trigger data loading when component mounts or dateRange changes
+  useEffect(() => {
+    // No specific action needed here, just ensuring the component re-renders
+    // when date range changes since we're now passing timeEntries as props
+  }, [dateRange, timeEntries]);
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -42,58 +55,43 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="mb-6">
-            <CardHeader className="pb-3">
-              <DateNavigation 
-                selectedDate={selectedDate} 
-                onDateChange={setSelectedDate}
-                totalHours={totalHours}
-              />
-              <CardDescription>
-                <div className="flex items-center mt-2">
-                  <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    Total Hours: <span className="font-medium text-[#0485ea]">{totalHours.toFixed(1)}</span>
-                  </span>
-                </div>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="entries" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="entries">Time Entries</TabsTrigger>
-                  <TabsTrigger value="add">Add Entry</TabsTrigger>
-                </TabsList>
-                <TabsContent value="entries" className="mt-4">
-                  <TimeEntryList 
-                    timeEntries={timeEntries} 
-                    isLoading={isLoading}
-                    onEntryChange={onAddSuccess}
-                  />
-                </TabsContent>
-                <TabsContent value="add" className="mt-4">
-                  <TimeEntryForm onSuccess={onAddSuccess} />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="hidden lg:block">
-          <Card className="sticky top-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Add Time Entry</CardTitle>
-              <CardDescription>
-                Log your time for work orders or projects
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TimeEntryForm onSuccess={onAddSuccess} />
-            </CardContent>
-          </Card>
-        </div>
+      <div className="grid grid-cols-1 gap-6">
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <DateNavigation 
+              dateRange={dateRange}
+              onDateRangeChange={onDateRangeChange}
+              onNextWeek={onNextWeek}
+              onPrevWeek={onPrevWeek}
+              onCurrentWeek={onCurrentWeek}
+              totalHours={totalHours}
+            />
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="entries" value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="entries">Time Entries</TabsTrigger>
+                <TabsTrigger value="add">Add Entry</TabsTrigger>
+              </TabsList>
+              <TabsContent value="entries" className="mt-4">
+                <TimeEntryList 
+                  entries={timeEntries} 
+                  isLoading={isLoading}
+                  onEntryChange={onAddSuccess}
+                />
+              </TabsContent>
+              <TabsContent value="add" className="mt-4">
+                <TimeEntryFormWizard 
+                  onSuccess={() => {
+                    onAddSuccess();
+                    setActiveTab('entries');
+                  }}
+                  date={new Date()}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
