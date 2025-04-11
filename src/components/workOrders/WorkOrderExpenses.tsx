@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { useExpenses } from './expenses/hooks/useExpenses';
 import { ExpensesInfoSection } from './expenses/components';
 import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
 import { WorkOrderExpense } from '@/types/workOrder';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface WorkOrderExpensesProps {
   workOrderId: string;
@@ -56,7 +56,19 @@ const WorkOrderExpenses = ({ workOrderId, onExpenseAdded }: WorkOrderExpensesPro
   
   const handleReceiptUpload = async (expenseId: string, documentId: string) => {
     console.log('Uploading receipt for expense:', expenseId, 'with document ID:', documentId);
-    await handleReceiptUploaded(expenseId, documentId);
+    const receipt = await handleReceiptUploaded(expenseId, documentId);
+    const documentData = {
+      document_id: receipt.id,
+      file_name: receipt.filename,
+      file_type: receipt.filetype,
+      url: receipt.url,
+      storage_path: receipt.path,
+      entity_type: EntityType.WORK_ORDER,
+      entity_id: workOrderId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      tags: []
+    };
     fetchExpenses();
   };
   

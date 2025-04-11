@@ -96,24 +96,36 @@ const DocumentList: React.FC<DocumentListProps> = ({
     else return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
   };
   
+  // Fixed download function that properly handles DOM elements
+  const downloadDocument = (doc: Document) => {
+    if (!doc.url) return;
+    
+    const link = document.createElement('a');
+    link.href = doc.url;
+    link.download = doc.file_name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   return (
     <Card>
       <CardContent className="p-4">
         <div className="space-y-2">
-          {documents.map((document) => (
+          {documents.map((doc) => (
             <div 
-              key={document.document_id} 
+              key={doc.document_id} 
               className="flex justify-between items-center p-3 border rounded-md hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-2">
-                {getFileIcon(document.file_type)}
+                {getFileIcon(doc.file_type)}
                 <div>
                   <p className="font-medium truncate max-w-[200px] md:max-w-[300px]">
-                    {document.file_name}
+                    {doc.file_name}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {document.file_size && formatFileSize(document.file_size)}
-                    {document.created_at && ` • ${new Date(document.created_at).toLocaleDateString()}`}
+                    {doc.file_size && formatFileSize(doc.file_size)}
+                    {doc.created_at && ` • ${new Date(doc.created_at).toLocaleDateString()}`}
                   </p>
                 </div>
               </div>
@@ -122,7 +134,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => onViewDocument(document)}
+                  onClick={() => onViewDocument(doc)}
                 >
                   <Eye className="h-4 w-4 mr-1" />
                   View
@@ -130,11 +142,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => {
-                    if (document.url) {
-                      window.open(document.url, '_blank');
-                    }
-                  }}
+                  onClick={() => downloadDocument(doc)}
                 >
                   <Download className="h-4 w-4 mr-1" />
                   Download
@@ -144,7 +152,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                     variant="ghost" 
                     size="sm"
                     className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => onDocumentDelete(document)}
+                    onClick={() => onDocumentDelete(doc)}
                   >
                     <FileX className="h-4 w-4 mr-1" />
                     Delete

@@ -1,8 +1,8 @@
 
 import { useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { DocumentUploadFormValues, EntityType } from '../schemas/documentSchema';
-import { toDocumentCategory, isValidDocumentCategory } from '../utils/DocumentCategoryHelper';
+import { DocumentUploadFormValues, EntityType, DocumentCategory } from '../schemas/documentSchema';
+import { isValidDocumentCategory, toDocumentCategory } from '../utils/DocumentCategoryHelper';
 
 interface UseFormInitializationProps {
   form: UseFormReturn<DocumentUploadFormValues>;
@@ -17,19 +17,22 @@ interface UseFormInitializationProps {
     notes?: string;
     category?: string;
     tags?: string[];
+    budgetItemId?: string;
+    parentEntityType?: EntityType;
+    parentEntityId?: string;
   };
 }
 
 export const useFormInitialization = ({
   form,
-  entityType = 'PROJECT',
+  entityType = EntityType.PROJECT,
   entityId,
   isReceiptUpload = false,
   prefillData
 }: UseFormInitializationProps) => {
   const initializeForm = useCallback(() => {
     const defaultCategory = isReceiptUpload ? 'receipt' : (prefillData?.category && isValidDocumentCategory(prefillData.category) ? 
-      toDocumentCategory(prefillData.category) : 'other');
+      toDocumentCategory(prefillData.category) : DocumentCategory.OTHER);
       
     form.reset({
       files: [],
@@ -44,6 +47,9 @@ export const useFormInitialization = ({
         notes: prefillData?.notes || '',
         isExpense: isReceiptUpload || defaultCategory === 'receipt' || defaultCategory === 'invoice',
         vendorId: prefillData?.vendorId,
+        budgetItemId: prefillData?.budgetItemId,
+        parentEntityType: prefillData?.parentEntityType,
+        parentEntityId: prefillData?.parentEntityId
       }
     });
   }, [form, entityType, entityId, isReceiptUpload, prefillData]);

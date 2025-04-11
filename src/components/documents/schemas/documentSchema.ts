@@ -181,6 +181,32 @@ export interface Document {
   parent_entity_type?: EntityType;
   parent_entity_id?: string;
   mime_type?: string;
+  // Add item reference fields for estimate items
+  item_id?: string;
+  item_reference?: string;
+}
+
+// Document relationship interface
+export interface DocumentRelationship {
+  id: string;
+  source_document_id: string;
+  target_document_id: string;
+  relationship_type: RelationshipType;
+  relationship_metadata?: Record<string, any>;
+  created_at: string;
+}
+
+// Export a type for document with relationships
+export interface DocumentWithRelation extends Document {
+  relationships?: DocumentRelationship[];
+}
+
+// Export params type for creating relationships
+export interface CreateRelationshipParams {
+  sourceDocumentId: string;
+  targetDocumentId: string;
+  relationshipType: RelationshipType;
+  metadata?: Record<string, any>;
 }
 
 // Document upload metadata schema
@@ -235,29 +261,9 @@ export const DocumentUploadSchema = z.object({
   metadata: DocumentMetadataSchema,
 });
 
-// Types derived from the schemas
+// Export with correct TypeScript syntax for types
 export type DocumentUploadFormValues = z.infer<typeof DocumentUploadSchema>;
 export type DocumentMetadata = z.infer<typeof DocumentMetadataSchema>;
 
-// Export a relationship interface for document relationships
-export interface DocumentRelationship {
-  id: string;
-  source_document_id: string;
-  target_document_id: string;
-  relationship_type: RelationshipType;
-  relationship_metadata?: Record<string, any>;
-  created_at: string;
-}
-
-// Export a type for document with relationships
-export interface DocumentWithRelation extends Document {
-  relationships?: DocumentRelationship[];
-}
-
-// Export params type for creating relationships
-export interface CreateRelationshipParams {
-  sourceDocumentId: string;
-  targetDocumentId: string;
-  relationshipType: RelationshipType;
-  metadata?: Record<string, any>;
-}
+// Re-export types correctly 
+export type { Document, DocumentWithRelation, DocumentRelationship, CreateRelationshipParams };

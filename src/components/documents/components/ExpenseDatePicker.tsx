@@ -1,43 +1,45 @@
 
 import React from 'react';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { CalendarIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface ExpenseDatePickerProps {
   control: Control<DocumentUploadFormValues>;
+  defaultDate?: Date;
 }
 
-const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ control }) => {
+const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({
+  control,
+  defaultDate = new Date()
+}) => {
   return (
     <FormField
       control={control}
       name="metadata.expenseDate"
       render={({ field }) => (
-        <FormItem className="flex flex-col">
-          <FormLabel>Date</FormLabel>
+        <FormItem className="flex flex-col w-full">
+          <FormLabel className="font-medium text-slate-700">Date</FormLabel>
           <Popover>
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full pl-3 text-left font-normal",
+                    "pl-3 text-left font-normal",
                     !field.value && "text-muted-foreground"
                   )}
                 >
                   {field.value ? (
-                    format(field.value, "PPP")
+                    field.value instanceof Date ?
+                      format(field.value, "PPP") :
+                      format(new Date(field.value), "PPP")
                   ) : (
                     <span>Pick a date</span>
                   )}
@@ -48,7 +50,7 @@ const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ control }) => {
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={field.value}
+                selected={field.value instanceof Date ? field.value : new Date(field.value || defaultDate)}
                 onSelect={field.onChange}
                 initialFocus
               />

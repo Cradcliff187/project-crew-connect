@@ -26,7 +26,7 @@ export const useDocumentNavigation = () => {
 
     try {
       // Navigate based on entity type
-      const entityType = document.entity_type.toString().toUpperCase() as EntityType;
+      const entityType = document.entity_type;
       
       switch (entityType) {
         case EntityType.PROJECT:
@@ -49,21 +49,20 @@ export const useDocumentNavigation = () => {
           break;
         case EntityType.EXPENSE:
           // Check if the expense has a parent entity
-          if (document.parentEntityType && document.parentEntityId) {
+          if (document.parent_entity_type && document.parent_entity_id) {
             // Navigate to the parent entity with a query parameter to highlight this expense
-            navigate(`/${document.parentEntityType.toLowerCase()}s/${document.parentEntityId}?highlight=expense&expenseId=${document.entity_id}`);
+            navigate(`/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=expense&expenseId=${document.entity_id}`);
           } else {
             toast({
               title: "Navigation limited",
-              description: "This expense is not linked to a parent entity. Navigate to the associated project or work order.",
+              description: "This expense isn't linked to a parent entity for direct navigation.",
             });
           }
           break;
         case EntityType.TIME_ENTRY:
-          // Check if the time entry has a parent entity
-          if (document.parentEntityType && document.parentEntityId) {
-            // Navigate to the parent entity with a query parameter to highlight this time entry
-            navigate(`/${document.parentEntityType.toLowerCase()}s/${document.parentEntityId}?highlight=timeEntry&timeEntryId=${document.entity_id}`);
+          // Time entries are typically viewed within parent entities
+          if (document.parent_entity_type && document.parent_entity_id) {
+            navigate(`/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=time&timeEntryId=${document.entity_id}`);
           } else {
             toast({
               title: "Navigation limited",
@@ -74,7 +73,7 @@ export const useDocumentNavigation = () => {
         default:
           toast({
             title: "Navigation unavailable",
-            description: `Navigation to ${document.entity_type} is not supported.`,
+            description: `Navigation to ${entityType} is not supported.`,
             variant: "destructive"
           });
       }
@@ -90,35 +89,8 @@ export const useDocumentNavigation = () => {
     }
   }, [navigate]);
 
-  // Navigate directly to the document details page
-  const navigateToDocument = useCallback((documentId: string) => {
-    if (!documentId) {
-      toast({
-        title: "Navigation error",
-        description: "Document ID is required to navigate to document.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsNavigating(true);
-    try {
-      navigate(`/documents/${documentId}`);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      toast({
-        title: "Navigation failed",
-        description: "An error occurred while trying to navigate to the document.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsNavigating(false);
-    }
-  }, [navigate]);
-
   return {
     navigateToEntity,
-    navigateToDocument,
     isNavigating
   };
 };

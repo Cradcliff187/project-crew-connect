@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
@@ -562,7 +561,7 @@ export const documentService = {
 };
 
 // Re-export the types to maintain backward compatibility
-export { EntityType, DocumentCategory, Document, RelationshipType };
+export type { EntityType, DocumentCategory, Document, RelationshipType };
 
 /**
  * Helper function to get a signed URL for a document

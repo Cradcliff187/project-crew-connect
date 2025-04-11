@@ -8,12 +8,36 @@ export function getCategoryDisplayName(category: string | DocumentCategory | nul
   if (!category) return 'Other';
   
   // Handle both string and enum type
-  const categoryStr = typeof category === 'string' ? category : category.toString();
+  const categoryStr = typeof category === 'string' ? category : String(category);
   
   // Convert from snake_case or lowercase to Title Case
   return categoryStr
     .replace(/_/g, ' ')
     .replace(/\b\w/g, l => l.toUpperCase());
+}
+
+/**
+ * Helper function to convert string to DocumentCategory if valid
+ */
+export function toDocumentCategory(category: string): DocumentCategory {
+  const normalizedCategory = category.toLowerCase();
+  
+  // Check if it's a valid category
+  const matchingCategory = Object.values(DocumentCategory).find(
+    cat => cat.toLowerCase() === normalizedCategory
+  );
+  
+  return matchingCategory || DocumentCategory.OTHER;
+}
+
+/**
+ * Check if a string is a valid document category
+ */
+export function isValidDocumentCategory(category: string): boolean {
+  const normalizedCategory = category.toLowerCase();
+  return Object.values(DocumentCategory).some(
+    cat => String(cat).toLowerCase() === normalizedCategory
+  );
 }
 
 /**
@@ -23,7 +47,7 @@ export function getCategoryColorClass(category: string | DocumentCategory | null
   if (!category) return 'bg-gray-400';
   
   // Normalize category to string and lowercase for comparison
-  const categoryStr = typeof category === 'string' ? category.toLowerCase() : category.toString().toLowerCase();
+  const categoryStr = typeof category === 'string' ? category.toLowerCase() : String(category).toLowerCase();
   
   // Map categories to color classes
   const categoryColors: Record<string, string> = {
@@ -99,7 +123,9 @@ export function isFinancialDocument(doc: Document): boolean {
   if (doc.is_expense) return true;
   
   if (doc.category) {
-    const category = doc.category.toString().toLowerCase();
+    const category = typeof doc.category === 'string' ? 
+      doc.category.toLowerCase() : 
+      String(doc.category).toLowerCase();
     return category === 'receipt' || category === 'invoice';
   }
   
@@ -113,7 +139,9 @@ export function getCategoryIconName(category: string | DocumentCategory | null |
   if (!category) return 'file';
   
   // Normalize category to string and lowercase for comparison
-  const categoryStr = typeof category === 'string' ? category.toLowerCase() : category.toString().toLowerCase();
+  const categoryStr = typeof category === 'string' ? 
+    category.toLowerCase() : 
+    String(category).toLowerCase();
   
   // Map categories to icon names
   const categoryIcons: Record<string, string> = {
