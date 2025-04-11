@@ -1,7 +1,15 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from '@/hooks/use-toast';
-import { EntityType, DocumentCategory, Document, RelationshipType } from '@/components/documents/schemas/documentSchema';
+import { 
+  EntityType, 
+  DocumentCategory, 
+  Document, 
+  RelationshipType, 
+  DocumentUploadResult 
+} from '@/components/documents/schemas/documentSchema';
+import { parseEntityType } from '@/components/documents/utils/documentTypeUtils';
 
 /**
  * Document upload metadata
@@ -13,25 +21,14 @@ export interface DocumentUploadMetadata {
   tags?: string[];
   notes?: string;
   isExpense?: boolean;
-  amount?: number;
-  expenseDate?: Date | string;
-  vendorId?: string;
-  vendorType?: string;
-  expenseType?: string;
-  budgetItemId?: string;
+  amount?: number | null;
+  expenseDate?: Date | string | null;
+  vendorId?: string | null;
+  vendorType?: string | null;
+  expenseType?: string | null;
+  budgetItemId?: string | null;
   parentEntityType?: EntityType;
   parentEntityId?: string;
-}
-
-/**
- * Result of document operations
- */
-export interface DocumentResult {
-  success: boolean;
-  documentId?: string;
-  error?: Error | string;
-  message?: string;
-  document?: Document;
 }
 
 /**
@@ -41,7 +38,7 @@ export const documentService = {
   /**
    * Upload a document with metadata
    */
-  uploadDocument: async (file: File, metadata: DocumentUploadMetadata): Promise<DocumentResult> => {
+  uploadDocument: async (file: File, metadata: DocumentUploadMetadata): Promise<DocumentUploadResult> => {
     try {
       // Generate a unique document ID
       const documentId = uuidv4();
@@ -119,53 +116,81 @@ export const documentService = {
         };
       }
       
-      // Create relationship to parent entity if specified
-      if (metadata.parentEntityType && metadata.parentEntityId) {
-        await supabase
-          .from('document_relationships')
-          .insert({
-            source_document_id: documentId,
-            target_document_id: null,
-            relationship_type: 'PARENT_ENTITY',
-            relationship_metadata: {
-              parent_entity_type: metadata.parentEntityType,
-              parent_entity_id: metadata.parentEntityId,
-              description: 'Document belongs to this parent entity'
-            }
-          });
-      }
-      
-      // Get the public URL for the document
+      // Get URL for the document
       const { data: urlData } = await supabase.storage
         .from('construction_documents')
         .getPublicUrl(filePath);
       
-      const document: Document = {
-        ...documentData as Document,
-        url: urlData.publicUrl,
-        entity_type: documentData.entity_type as EntityType
-      };
-      
+      // Return success response with document ID
       return {
         success: true,
         documentId,
-        document,
-        message: 'Document uploaded successfully'
+        document: {
+          ...documentData as Document,
+          url: urlData.publicUrl,
+          entity_type: metadata.entityType
+        }
       };
     } catch (error: any) {
-      console.error('Document upload error:', error);
+      console.error('Document upload failed:', error);
       return {
         success: false,
         error,
-        message: error.message || 'An unexpected error occurred during upload'
+        message: error.message || 'Failed to upload document'
       };
+    }
+  },
+
+  /**
+   * Get documents by entity type and ID
+   */
+  getDocumentsByEntity: async (entityType: EntityType, entityId: string): Promise<Document[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('entity_type', entityType)
+        .eq('entity_id', entityId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Process the documents to ensure entity_type is the correct enum
+      const documents = data.map(doc => ({
+        ...doc,
+        entity_type: parseEntityType(doc.entity_type)
+      })) as Document[];
+      
+      // Get URLs for all documents
+      const documentsWithUrls = await Promise.all(
+        documents.map(async (doc) => {
+          const { data } = await supabase.storage
+            .from('construction_documents')
+            .getPublicUrl(doc.storage_path);
+          
+          return {
+            ...doc,
+            url: data.publicUrl
+          };
+        })
+      );
+      
+      return documentsWithUrls;
+    } catch (error: any) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load documents',
+        variant: 'destructive'
+      });
+      return [];
     }
   },
   
   /**
-   * Fetch a document by ID
+   * Get document by ID
    */
-  getDocumentById: async (documentId: string): Promise<DocumentResult> => {
+  getDocumentById: async (documentId: string): Promise<Document | null> => {
     try {
       const { data, error } = await supabase
         .from('documents')
@@ -173,475 +198,136 @@ export const documentService = {
         .eq('document_id', documentId)
         .single();
       
-      if (error) {
-        return {
-          success: false,
-          error,
-          message: `Failed to retrieve document: ${error.message}`
-        };
-      }
+      if (error) throw error;
       
-      if (!data) {
-        return {
-          success: false,
-          message: 'Document not found'
-        };
-      }
-      
-      // Get the URL for the document
+      // Get URL for the document
       const { data: urlData } = await supabase.storage
         .from('construction_documents')
         .getPublicUrl(data.storage_path);
       
+      // Process the document to ensure entity_type is the correct enum
       const document: Document = {
         ...data,
         url: urlData.publicUrl,
-        entity_type: data.entity_type as EntityType
+        entity_type: parseEntityType(data.entity_type)
       };
       
-      return {
-        success: true,
-        document,
-        documentId
-      };
+      return document;
     } catch (error: any) {
-      return {
-        success: false,
-        error,
-        message: error.message || 'Failed to retrieve document'
-      };
+      console.error('Error fetching document:', error);
+      return null;
     }
   },
   
   /**
-   * Fetch documents by entity
+   * Delete document by ID
    */
-  getDocumentsByEntity: async (entityType: EntityType, entityId: string): Promise<Document[]> => {
+  deleteDocument: async (documentId: string): Promise<boolean> => {
     try {
-      // Ensure consistent uppercase entity type
-      const normalizedEntityType = entityType;
-      
-      // Fetch documents from the database
+      // Get the document to retrieve the storage path
       const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('entity_type', normalizedEntityType)
-        .eq('entity_id', entityId)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching documents:', error);
-        return [];
-      }
-      
-      // Enhance documents with URLs
-      const documentsWithUrls = await Promise.all(
-        (data || []).map(async (doc) => {
-          const { data: urlData } = await supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(doc.storage_path);
-          
-          return {
-            ...doc,
-            url: urlData.publicUrl,
-            entity_type: doc.entity_type as EntityType
-          } as Document;
-        })
-      );
-      
-      return documentsWithUrls;
-    } catch (error) {
-      console.error('Error in getDocumentsByEntity:', error);
-      return [];
-    }
-  },
-  
-  /**
-   * Delete a document from both storage and database
-   */
-  deleteDocument: async (documentId: string): Promise<DocumentResult> => {
-    try {
-      // First, get the document to find its storage path
-      const { data: document, error: fetchError } = await supabase
         .from('documents')
         .select('storage_path')
         .eq('document_id', documentId)
         .single();
       
-      if (fetchError) {
-        return {
-          success: false,
-          error: fetchError,
-          message: `Failed to find document: ${fetchError.message}`
-        };
-      }
+      if (error) throw error;
       
       // Delete the file from storage
-      if (document?.storage_path) {
-        const { error: storageError } = await supabase.storage
-          .from('construction_documents')
-          .remove([document.storage_path]);
-        
-        if (storageError) {
-          console.error('Error removing file from storage:', storageError);
-          // Continue with database deletion even if storage deletion fails
-        }
-      }
+      const { error: storageError } = await supabase.storage
+        .from('construction_documents')
+        .remove([data.storage_path]);
       
-      // Delete document relationships
-      await supabase
-        .from('document_relationships')
-        .delete()
-        .or(`source_document_id.eq.${documentId},target_document_id.eq.${documentId}`);
+      if (storageError) throw storageError;
       
-      // Delete the document record from the database
+      // Delete the document record
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
         .eq('document_id', documentId);
       
-      if (dbError) {
-        return {
-          success: false,
-          error: dbError,
-          message: `Failed to delete document: ${dbError.message}`
-        };
-      }
+      if (dbError) throw dbError;
       
-      return {
-        success: true,
-        message: 'Document deleted successfully'
-      };
+      return true;
     } catch (error: any) {
-      return {
-        success: false,
-        error,
-        message: error.message || 'Failed to delete document'
-      };
+      console.error('Error deleting document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete document',
+        variant: 'destructive'
+      });
+      return false;
     }
   },
   
   /**
-   * Create a new version of an existing document
+   * Update document metadata
    */
-  createNewVersion: async (
-    parentDocumentId: string,
-    file: File,
-    metadata: Partial<DocumentUploadMetadata>
-  ): Promise<DocumentResult> => {
+  updateDocumentMetadata: async (documentId: string, metadata: Partial<DocumentUploadMetadata>): Promise<boolean> => {
     try {
-      // First, get the parent document details
-      const { data: parentDoc, error: fetchError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('document_id', parentDocumentId)
-        .single();
-      
-      if (fetchError || !parentDoc) {
-        return {
-          success: false,
-          error: fetchError || new Error('Parent document not found'),
-          message: 'Failed to find parent document'
-        };
-      }
-      
-      // Generate a unique ID for the new version
-      const documentId = uuidv4();
-      const timestamp = Date.now();
-      const fileExt = file.name.split('.').pop();
-      
-      // Use the same entity information as the parent document
-      const entityType = parentDoc.entity_type as EntityType;
-      const entityId = parentDoc.entity_id;
-      const formattedEntityType = entityType.toLowerCase().replace(/_/g, '-');
-      
-      // Create a storage path that indicates this is a version
-      const filePath = `${formattedEntityType}/${entityId}/versions/${documentId}_${timestamp}_${file.name}`;
-      
-      // Upload the new file
-      const { error: storageError } = await supabase.storage
-        .from('construction_documents')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-      
-      if (storageError) {
-        return {
-          success: false,
-          error: storageError,
-          message: `Failed to upload file: ${storageError.message}`
-        };
-      }
-      
-      // Calculate the new version number
-      const newVersion = (parentDoc.version || 1) + 1;
-      
-      // Insert the new document version
-      const { data: documentData, error: dbError } = await supabase
-        .from('documents')
-        .insert({
-          document_id: documentId,
-          parent_document_id: parentDocumentId,
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          storage_path: filePath,
-          entity_type: entityType,
-          entity_id: entityId,
-          category: metadata.category || parentDoc.category,
-          tags: metadata.tags || parentDoc.tags,
-          notes: metadata.notes || parentDoc.notes,
-          is_expense: parentDoc.is_expense,
-          amount: parentDoc.amount,
-          expense_date: parentDoc.expense_date,
-          vendor_id: parentDoc.vendor_id,
-          vendor_type: parentDoc.vendor_type,
-          expense_type: parentDoc.expense_type,
-          budget_item_id: parentDoc.budget_item_id,
-          version: newVersion,
-          is_latest_version: true
-        })
-        .select()
-        .single();
-      
-      if (dbError) {
-        // Clean up the uploaded file if database insert fails
-        await supabase.storage
-          .from('construction_documents')
-          .remove([filePath]);
-          
-        return {
-          success: false,
-          error: dbError,
-          message: `Failed to create document record: ${dbError.message}`
-        };
-      }
-      
-      // Update the parent document to no longer be the latest version
-      await supabase
-        .from('documents')
-        .update({ is_latest_version: false })
-        .eq('document_id', parentDocumentId);
-      
-      // Get the public URL for the document
-      const { data: urlData } = await supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(filePath);
-      
-      const document: Document = {
-        ...documentData as Document,
-        url: urlData.publicUrl,
-        entity_type: documentData.entity_type as EntityType
-      };
-      
-      return {
-        success: true,
-        documentId,
-        document,
-        message: `Document version ${newVersion} created successfully`
-      };
-    } catch (error: any) {
-      console.error('Error creating new document version:', error);
-      return {
-        success: false,
-        error,
-        message: error.message || 'Failed to create new document version'
-      };
-    }
-  },
-  
-  /**
-   * Get all versions of a document
-   */
-  getDocumentVersions: async (documentId: string): Promise<Document[]> => {
-    try {
-      // First, get the original document to find its parent or children
-      const { data: originalDoc, error: fetchError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('document_id', documentId)
-        .single();
-      
-      if (fetchError || !originalDoc) {
-        console.error('Error fetching original document:', fetchError);
-        return [];
-      }
-      
-      let rootDocId: string;
-      
-      // If this is a child version, get its parent ID
-      if (originalDoc.parent_document_id) {
-        rootDocId = originalDoc.parent_document_id;
-      } else {
-        // This is the root document
-        rootDocId = documentId;
-      }
-      
-      // Get all versions of this document (parent + all children)
-      const { data: versions, error: versionsError } = await supabase
-        .from('documents')
-        .select('*')
-        .or(`document_id.eq.${rootDocId},parent_document_id.eq.${rootDocId}`)
-        .order('version', { ascending: false });
-      
-      if (versionsError) {
-        console.error('Error fetching document versions:', versionsError);
-        return [];
-      }
-      
-      // Enhance documents with URLs
-      const versionsWithUrls = await Promise.all(
-        (versions || []).map(async (doc) => {
-          const { data: urlData } = await supabase.storage
-            .from('construction_documents')
-            .getPublicUrl(doc.storage_path);
-          
-          return {
-            ...doc,
-            url: urlData.publicUrl,
-            entity_type: doc.entity_type as EntityType
-          } as Document;
-        })
-      );
-      
-      return versionsWithUrls;
-    } catch (error) {
-      console.error('Error in getDocumentVersions:', error);
-      return [];
-    }
-  },
-  
-  /**
-   * Attach/link an existing document to an entity
-   */
-  attachDocumentToEntity: async (
-    documentId: string, 
-    entityType: EntityType, 
-    entityId: string
-  ): Promise<DocumentResult> => {
-    try {
-      // Update the document with the new entity information
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('documents')
         .update({
-          entity_type: entityType,
-          entity_id: entityId,
+          category: metadata.category,
+          tags: metadata.tags,
+          notes: metadata.notes,
+          is_expense: metadata.isExpense,
+          amount: metadata.amount,
+          expense_date: metadata.expenseDate instanceof Date 
+            ? metadata.expenseDate.toISOString() 
+            : metadata.expenseDate,
+          vendor_id: metadata.vendorId,
+          vendor_type: metadata.vendorType,
+          expense_type: metadata.expenseType,
           updated_at: new Date().toISOString()
         })
-        .eq('document_id', documentId)
-        .select()
-        .single();
+        .eq('document_id', documentId);
       
-      if (error) {
-        return {
-          success: false,
-          error,
-          message: `Failed to attach document: ${error.message}`
-        };
-      }
+      if (error) throw error;
       
-      return {
-        success: true,
-        document: {
-          ...data as Document,
-          entity_type: data.entity_type as EntityType
-        },
-        documentId,
-        message: 'Document attached successfully'
-      };
+      return true;
     } catch (error: any) {
-      return {
-        success: false,
-        error,
-        message: error.message || 'Failed to attach document'
-      };
+      console.error('Error updating document metadata:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update document',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  },
+  
+  /**
+   * Create a document relationship
+   */
+  createRelationship: async (
+    sourceDocumentId: string, 
+    targetDocumentId: string, 
+    relationshipType: RelationshipType
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('document_relationships')
+        .insert({
+          source_document_id: sourceDocumentId,
+          target_document_id: targetDocumentId,
+          relationship_type: relationshipType,
+          created_at: new Date().toISOString()
+        });
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error: any) {
+      console.error('Error creating document relationship:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create document relationship',
+        variant: 'destructive'
+      });
+      return false;
     }
   }
 };
 
-// Re-export the types to maintain backward compatibility
-export type { EntityType, DocumentCategory, Document, RelationshipType };
-
-/**
- * Helper function to get a signed URL for a document
- * More secure than public URLs for sensitive documents
- */
-export const getSignedDocumentUrl = async (
-  storagePath: string, 
-  options: { download?: boolean; expiresIn?: number } = {}
-): Promise<string | null> => {
-  try {
-    const { data, error } = await supabase.storage
-      .from('construction_documents')
-      .createSignedUrl(
-        storagePath, 
-        options.expiresIn || 60 * 5, // Default 5 minutes
-        { download: options.download }
-      );
-    
-    if (error || !data) {
-      console.error('Error creating signed URL:', error);
-      return null;
-    }
-    
-    return data.signedUrl;
-  } catch (error) {
-    console.error('Error in getSignedDocumentUrl:', error);
-    return null;
-  }
-};
-
-/**
- * Helper function to categorize documents by their category
- */
-export const categorizeDocuments = (documents: Document[]): Record<string, Document[]> => {
-  const categories: Record<string, Document[]> = {
-    'receipts': [],
-    'invoices': [],
-    'contracts': [],
-    'photos': [],
-    'general': [],
-    'other': []
-  };
-  
-  for (const doc of documents) {
-    const category = doc.category?.toLowerCase() || 'other';
-    
-    if (category in categories) {
-      categories[category].push(doc);
-    } else {
-      categories['other'].push(doc);
-    }
-  }
-  
-  return categories;
-};
-
-/**
- * Helper function to get a file icon based on file type
- */
-export const getFileIcon = (fileType: string | null): string => {
-  if (!fileType) return 'file';
-  
-  if (fileType.includes('image')) return 'image';
-  if (fileType.includes('pdf')) return 'file-pdf';
-  if (fileType.includes('word') || fileType.includes('document')) return 'file-text';
-  if (fileType.includes('excel') || fileType.includes('spreadsheet')) return 'file-spreadsheet';
-  if (fileType.includes('text')) return 'file-text';
-  if (fileType.includes('zip') || fileType.includes('compressed')) return 'archive';
-  
-  return 'file';
-};
-
-/**
- * Helper function to format file size
- */
-export const formatFileSize = (sizeInBytes: number | null): string => {
-  if (sizeInBytes === null || sizeInBytes === undefined) return 'Unknown size';
-  
-  if (sizeInBytes < 1024) return `${sizeInBytes} bytes`;
-  if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`;
-  
-  return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
-};
+export default documentService;

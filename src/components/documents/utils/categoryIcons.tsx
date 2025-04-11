@@ -1,71 +1,89 @@
 
-import { 
-  FileText, 
-  Receipt, 
-  FileCheck, 
-  Landmark, 
-  Image, 
-  FileSignature,
-  ShieldCheck,
-  LucideIcon
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Receipt,
+  FileText,
+  FileContract,
+  Camera,
+  FileQuestion,
+  FileCode,
+  Stamp,
+  Award,
+  FileWarning,
+  FileSearch,
+  Shield,
+  Medal
 } from 'lucide-react';
 
-interface CategoryConfig {
-  icon: LucideIcon;
-  label: string;
-  color: string;
+interface DocumentCategoryBadgeProps {
+  category: string;
 }
 
-const defaultConfig: CategoryConfig = {
-  icon: FileText,
-  label: 'Document',
-  color: '#6b7280', // Gray-500
-};
+export const DocumentCategoryBadge: React.FC<DocumentCategoryBadgeProps> = ({ category }) => {
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'receipt':
+        return 'bg-green-100 text-green-700 hover:bg-green-200';
+      case 'invoice':
+        return 'bg-blue-100 text-blue-700 hover:bg-blue-200';
+      case 'contract':
+        return 'bg-purple-100 text-purple-700 hover:bg-purple-200';
+      case 'photo':
+        return 'bg-amber-100 text-amber-700 hover:bg-amber-200';
+      case 'specifications':
+        return 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200';
+      case 'permit':
+        return 'bg-red-100 text-red-700 hover:bg-red-200';
+      case 'certificate':
+        return 'bg-teal-100 text-teal-700 hover:bg-teal-200';
+      case '3rd_party_estimate':
+        return 'bg-orange-100 text-orange-700 hover:bg-orange-200';
+      case 'insurance':
+        return 'bg-sky-100 text-sky-700 hover:bg-sky-200';
+      case 'certification':
+        return 'bg-lime-100 text-lime-700 hover:bg-lime-200';
+      default:
+        return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+    }
+  };
 
-const categoryConfigs: Record<string, CategoryConfig> = {
-  'invoice': {
-    icon: FileSignature,
-    label: 'Invoice',
-    color: '#0284c7', // Sky-600
-  },
-  'receipt': {
-    icon: Receipt,
-    label: 'Receipt',
-    color: '#ea580c', // Orange-600
-  },
-  '3rd_party_estimate': {
-    icon: FileCheck,
-    label: 'Third Party Estimate',
-    color: '#16a34a', // Green-600
-  },
-  'contract': {
-    icon: FileSignature,
-    label: 'Contract',
-    color: '#7c3aed', // Violet-600
-  },
-  'insurance': {
-    icon: ShieldCheck,
-    label: 'Insurance',
-    color: '#0891b2', // Cyan-600
-  },
-  'certification': {
-    icon: Landmark,
-    label: 'Certification',
-    color: '#be123c', // Rose-700
-  },
-  'photo': {
-    icon: Image,
-    label: 'Photo',
-    color: '#0369a1', // Sky-700
-  },
-  'other': {
-    icon: FileText,
-    label: 'Other Document',
-    color: '#6b7280', // Gray-500
-  },
-};
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'receipt':
+        return <Receipt className="h-3 w-3 mr-1" />;
+      case 'invoice':
+        return <FileText className="h-3 w-3 mr-1" />;
+      case 'contract':
+        return <FileContract className="h-3 w-3 mr-1" />;
+      case 'photo':
+        return <Camera className="h-3 w-3 mr-1" />;
+      case 'specifications':
+        return <FileCode className="h-3 w-3 mr-1" />;
+      case 'permit':
+        return <Stamp className="h-3 w-3 mr-1" />;
+      case 'certificate':
+        return <Award className="h-3 w-3 mr-1" />;
+      case '3rd_party_estimate':
+        return <FileSearch className="h-3 w-3 mr-1" />;
+      case 'insurance':
+        return <Shield className="h-3 w-3 mr-1" />;
+      case 'certification':
+        return <Medal className="h-3 w-3 mr-1" />;
+      default:
+        return <FileQuestion className="h-3 w-3 mr-1" />;
+    }
+  };
 
-export const getCategoryConfig = (category: string): CategoryConfig => {
-  if (!category) return defaultConfig;
-  return categoryConfigs[category.toLowerCase()] || defaultConfig;
+  const formattedCategory = category.replace(/_/g, ' ');
+  
+  return (
+    <Badge 
+      className={`${getCategoryColor(category)} font-normal flex items-center`}
+      variant="outline"
+    >
+      {getCategoryIcon(category)}
+      {formattedCategory}
+    </Badge>
+  );
 };

@@ -10,7 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Upload, X, Loader2 } from 'lucide-react';
-import { DocumentUploadSchema, DocumentUploadFormValues, EntityType, documentCategories, DocumentCategory } from './schemas/documentSchema';
+import { 
+  DocumentUploadSchema, 
+  DocumentUploadFormValues, 
+  EntityType, 
+  documentCategories, 
+  DocumentCategory, 
+  DocumentUploadResult 
+} from './schemas/documentSchema';
 import DropzoneUploader from './components/DropzoneUploader';
 import { toast } from '@/hooks/use-toast';
 import { uploadDocument } from '@/utils/documentUploader';
@@ -98,23 +105,26 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         isExpense: isExpense || false
       });
       
-      const result = await uploadDocument(data.files[0], {
-        entityType,
-        entityId,
-        category,
-        isExpense: isExpense || false,
-        amount: data.metadata.amount,
-        expenseDate: data.metadata.expenseDate,
-        vendorId: data.metadata.vendorId,
-        vendorType: data.metadata.vendorType,
-        expenseType: data.metadata.expenseType,
-        budgetItemId: data.metadata.budgetItemId,
-        parentEntityType: data.metadata.parentEntityType,
-        parentEntityId: data.metadata.parentEntityId,
-        tags: data.metadata.tags,
-        notes: data.metadata.notes,
-        version: data.metadata.version
-      });
+      const result: DocumentUploadResult = await uploadDocument(
+        data.files[0], 
+        entityType, 
+        entityId, 
+        {
+          category,
+          isExpense: isExpense || false,
+          amount: data.metadata.amount,
+          expenseDate: data.metadata.expenseDate,
+          vendorId: data.metadata.vendorId,
+          vendorType: data.metadata.vendorType,
+          expenseType: data.metadata.expenseType,
+          budgetItemId: data.metadata.budgetItemId,
+          parentEntityType: data.metadata.parentEntityType,
+          parentEntityId: data.metadata.parentEntityId,
+          tags: data.metadata.tags,
+          notes: data.metadata.notes,
+          version: data.metadata.version
+        }
+      );
       
       if (!result.success) {
         throw result.error || new Error('Upload failed');

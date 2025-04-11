@@ -37,14 +37,14 @@ const DocumentList: React.FC<DocumentListProps> = ({
   };
   
   // Handle document download
-  const handleDownload = (document: Document) => {
-    if (document.url) {
-      const link = document.createElement('a');
-      link.href = document.url;
-      link.download = document.file_name;
-      document.body.appendChild(link);
+  const handleDownload = (doc: Document) => {
+    if (doc.url) {
+      const link = window.document.createElement('a');
+      link.href = doc.url;
+      link.download = doc.file_name;
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
     }
   };
   
@@ -96,18 +96,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
     else return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
   };
   
-  // Fixed download function that properly handles DOM elements
-  const downloadDocument = (doc: Document) => {
-    if (!doc.url) return;
-    
-    const link = document.createElement('a');
-    link.href = doc.url;
-    link.download = doc.file_name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-  
   return (
     <Card>
       <CardContent className="p-4">
@@ -142,7 +130,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => downloadDocument(doc)}
+                  onClick={() => handleDownload(doc)}
                 >
                   <Download className="h-4 w-4 mr-1" />
                   Download

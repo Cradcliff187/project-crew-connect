@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
@@ -7,6 +6,7 @@ import { Document } from '@/components/documents/schemas/documentSchema';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 import { filterDocumentsByType, categorizeDocuments } from '../components/document-upload/utils';
 import { useDebounce } from '@/hooks/useDebounce';
+import { parseEntityType } from '@/components/documents/utils/documentTypeUtils';
 
 interface UseEstimateDocumentManagerOptions {
   /**
@@ -56,7 +56,12 @@ export function useEstimateDocumentManager(options: UseEstimateDocumentManagerOp
           variant: 'destructive',
         });
       } else {
-        setAttachedDocuments(data || []);
+        // Convert entity_type string to EntityType enum
+        const processedDocuments = (data || []).map(doc => ({
+          ...doc,
+          entity_type: parseEntityType(doc.entity_type)
+        }));
+        setAttachedDocuments(processedDocuments);
       }
     } catch (err) {
       console.error('Unexpected error:', err);

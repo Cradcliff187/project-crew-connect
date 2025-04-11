@@ -1,4 +1,3 @@
-
 // src/pages/Documents.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +17,7 @@ import { formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import DocumentVersionHistoryCard from '@/components/documents/DocumentVersionHistoryCard';
 import DocumentRelationshipsView from '@/components/documents/DocumentRelationshipsView';
-import { convertToWorkOrderDocument } from '@/components/documents/utils/documentTypeUtils';
+import { convertToDocument, convertToWorkOrderDocument } from '@/components/documents/utils/documentTypeUtils';
 import { WorkOrderDocument } from '@/components/workOrders/details/DocumentsList/types';
 
 const DocumentsPage: React.FC = () => {
@@ -71,10 +70,13 @@ const DocumentsPage: React.FC = () => {
     }
   };
   
-  const handleViewDocument = (doc: Document) => {
-    // Convert Document to WorkOrderDocument for viewer
-    const workOrderDoc = convertToWorkOrderDocument(doc);
-    setViewDocument(workOrderDoc);
+  const handleViewDocument = (doc: Document | WorkOrderDocument) => {
+    // Convert WorkOrderDocument to Document if needed
+    if ('entity_type' in doc && typeof doc.entity_type === 'string') {
+      setViewDocument(convertToDocument(doc as WorkOrderDocument));
+    } else {
+      setViewDocument(doc as Document);
+    }
   };
   
   const handleCloseViewer = () => {

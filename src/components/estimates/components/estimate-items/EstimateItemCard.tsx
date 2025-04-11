@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
@@ -26,6 +25,7 @@ import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUploa
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface EstimateItemCardProps {
   index: number;
@@ -34,6 +34,7 @@ interface EstimateItemCardProps {
   loading: boolean;
   onRemove: () => void;
   showRemoveButton: boolean;
+  onViewDocument?: (documentId: string, entityType: EntityType) => void;
 }
 
 const EstimateItemCard = memo(({ 
@@ -42,7 +43,8 @@ const EstimateItemCard = memo(({
   subcontractors, 
   loading, 
   onRemove,
-  showRemoveButton 
+  showRemoveButton,
+  onViewDocument 
 }: EstimateItemCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
@@ -165,6 +167,15 @@ const EstimateItemCard = memo(({
     e.stopPropagation();
     setIsDocumentUploadOpen(true);
   }, []);
+
+  const handleViewDocument = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (onViewDocument && item.document_id) {
+      onViewDocument(item.document_id, EntityType.ESTIMATE_ITEM);
+    }
+  };
 
   return (
     <Collapsible

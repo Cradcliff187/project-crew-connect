@@ -6,6 +6,7 @@ export enum EntityType {
   PROJECT = 'PROJECT',
   WORK_ORDER = 'WORK_ORDER',
   ESTIMATE = 'ESTIMATE',
+  ESTIMATE_ITEM = 'ESTIMATE_ITEM',
   CUSTOMER = 'CUSTOMER',
   VENDOR = 'VENDOR',
   CONTACT = 'CONTACT',
@@ -13,7 +14,6 @@ export enum EntityType {
   EXPENSE = 'EXPENSE',
   TIME_ENTRY = 'TIME_ENTRY',
   EMPLOYEE = 'EMPLOYEE',
-  ESTIMATE_ITEM = 'ESTIMATE_ITEM',
   BUDGET_ITEM = 'BUDGET_ITEM',
   CHANGE_ORDER = 'CHANGE_ORDER'
 }
@@ -194,6 +194,8 @@ export interface DocumentRelationship {
   relationship_type: RelationshipType;
   relationship_metadata?: Record<string, any>;
   created_at: string;
+  source_document?: Document;
+  target_document?: Document;
 }
 
 // Export a type for document with relationships
@@ -226,6 +228,14 @@ export interface DocumentUploadMetadata {
   tags?: string[];
   notes?: string;
   version?: number;
+}
+
+// Document upload result type
+export interface DocumentUploadResult {
+  success: boolean;
+  documentId?: string;
+  error?: Error | any;
+  document?: Document;
 }
 
 // Document file validation schema
@@ -264,6 +274,3 @@ export const DocumentUploadSchema = z.object({
 // Export with correct TypeScript syntax for types
 export type DocumentUploadFormValues = z.infer<typeof DocumentUploadSchema>;
 export type DocumentMetadata = z.infer<typeof DocumentMetadataSchema>;
-
-// Re-export types correctly 
-export type { Document, DocumentWithRelation, DocumentRelationship, CreateRelationshipParams };

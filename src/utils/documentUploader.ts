@@ -1,7 +1,32 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Document, EntityType } from '@/components/documents/schemas/documentSchema';
+import { 
+  Document, 
+  EntityType, 
+  DocumentCategory,
+  DocumentUploadResult
+} from '@/components/documents/schemas/documentSchema';
+
+/**
+ * Upload options interface
+ */
+interface UploadOptions {
+  category?: string;
+  tags?: string[];
+  notes?: string;
+  isExpense?: boolean;
+  amount?: number | null;
+  expenseDate?: Date | string | null;
+  vendorId?: string | null;
+  vendorType?: string | null;
+  expenseType?: string | null;
+  budgetItemId?: string | null;
+  parentEntityType?: EntityType;
+  parentEntityId?: string;
+  version?: number;
+}
 
 /**
  * Upload a document to storage and create a record in the documents table
@@ -10,21 +35,14 @@ import { Document, EntityType } from '@/components/documents/schemas/documentSch
  * @param entityType The type of entity the document is associated with
  * @param entityId The ID of the entity the document is associated with
  * @param options Additional options
- * @returns The created document record
+ * @returns The upload result containing success status and document info
  */
 export const uploadDocument = async (
   file: File,
   entityType: EntityType,
   entityId: string,
-  options: {
-    category?: string;
-    tags?: string[];
-    notes?: string;
-    isExpense?: boolean;
-    amount?: number;
-    expenseDate?: Date;
-  } = {}
-): Promise<Document | null> => {
+  options: UploadOptions = {}
+): Promise<DocumentUploadResult> => {
   try {
     // Generate a unique ID for the document
     const documentId = uuidv4();
@@ -45,7 +63,18 @@ export const uploadDocument = async (
     
     if (storageError) {
       console.error('Error uploading file:', storageError);
-      throw new Error(storageError.message);
+      return {
+        success: false,
+        error: storageError.message,
+      };
+    }
+    
+    // Format the expense date properly if provided
+    let expenseDateFormatted = null;
+    if (options.expenseDate) {
+      expenseDateFormatted = options.expenseDate instanceof Date
+        ? options.expenseDate.toISOString()
+        : new Date(options.expenseDate).toISOString();
     }
     
     // Prepare metadata for document record
@@ -62,11 +91,17 @@ export const uploadDocument = async (
       notes: options.notes || '',
       is_expense: options.isExpense || false,
       amount: options.amount || null,
-      expense_date: options.expenseDate ? options.expenseDate.toISOString() : null,
+      expense_date: expenseDateFormatted,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      version: 1,
-      is_latest_version: true
+      version: options.version || 1,
+      is_latest_version: true,
+      vendor_id: options.vendorId || null,
+      vendor_type: options.vendorType || null,
+      expense_type: options.expenseType || null,
+      budget_item_id: options.budgetItemId || null,
+      parent_entity_type: options.parentEntityType || null,
+      parent_entity_id: options.parentEntityId || null
     };
     
     // Insert document record into the database
@@ -83,7 +118,11 @@ export const uploadDocument = async (
         .storage
         .from('construction_documents')
         .remove([filePath]);
-      throw new Error(dbError.message);
+      
+      return {
+        success: false,
+        error: dbError.message,
+      };
     }
     
     // Get the URL for the uploaded file
@@ -93,21 +132,20 @@ export const uploadDocument = async (
       .getPublicUrl(filePath);
     
     // Return the document with the URL
-    const fullDocument: Document = {
-      ...documentData as Document,
-      url: publicUrlData.publicUrl,
-      entity_type: documentData.entity_type as EntityType,
+    return {
+      success: true,
+      documentId: documentId,
+      document: {
+        ...documentData as Document,
+        url: publicUrlData?.publicUrl || '',
+      },
     };
-    
-    return fullDocument;
   } catch (error: any) {
     console.error('Document upload failed:', error);
-    toast({
-      title: 'Upload failed',
-      description: error.message || 'Failed to upload document',
-      variant: 'destructive'
-    });
-    return null;
+    return {
+      success: false,
+      error: error.message || 'Failed to upload document',
+    };
   }
 };
 
@@ -116,7 +154,7 @@ export const uploadDocument = async (
  * 
  * @param document The document to download
  */
-export const downloadDocument = (document: { storage_path: string, file_name: string }) => {
+export const downloadDocument = (document: Document) => {
   if (!document || !document.storage_path) {
     toast({
       title: 'Download failed',
@@ -138,12 +176,12 @@ export const downloadDocument = (document: { storage_path: string, file_name: st
       }
       
       // Create a download link
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = URL.createObjectURL(data);
       link.download = document.file_name;
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch (error: any) {
       console.error('Download error:', error);
@@ -156,7 +194,7 @@ export const downloadDocument = (document: { storage_path: string, file_name: st
   };
   
   // Use global document object
-  const a = document.createElement('a');
+  const a = window.document.createElement('a');
   // Check if we can get a public URL
   supabase
     .storage
@@ -167,9 +205,9 @@ export const downloadDocument = (document: { storage_path: string, file_name: st
         // If public URL is available, use it directly
         a.href = data.publicUrl;
         a.download = document.file_name;
-        document.body.appendChild(a);
+        window.document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        window.document.body.removeChild(a);
       } else {
         // Otherwise fall back to download method
         downloadFile();

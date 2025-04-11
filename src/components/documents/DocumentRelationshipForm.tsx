@@ -22,11 +22,12 @@ import {
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Document } from './schemas/documentSchema';
 import { 
-  CreateRelationshipParams,
-  RelationshipType 
-} from '@/hooks/useDocumentRelationships';
+  Document, 
+  RelationshipType, 
+  CreateRelationshipParams 
+} from './schemas/documentSchema';
+import { parseEntityType } from './utils/documentTypeUtils';
 
 // Form validation schema
 const formSchema = z.object({
@@ -71,15 +72,23 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
       try {
         // Get all documents except the source and excluded ones
         const excludeIds = [sourceDocumentId, ...excludeDocumentIds];
+        const excludeIdsString = excludeIds.map(id => `'${id}'`).join(',');
         
         const { data, error } = await supabase
           .from('documents')
           .select('*')
-          .not('document_id', 'in', `(${excludeIds.join(',')})`)
+          .not('document_id', 'in', `(${excludeIdsString})`)
           .order('created_at', { ascending: false });
         
         if (error) throw error;
-        setDocuments(data || []);
+
+        // Parse the results and convert entity_type strings to EntityType enum
+        const parsedDocuments: Document[] = (data || []).map(doc => ({
+          ...doc,
+          entity_type: parseEntityType(doc.entity_type)
+        }));
+        
+        setDocuments(parsedDocuments);
       } catch (err: any) {
         console.error('Error fetching documents:', err);
         toast({
@@ -150,11 +159,10 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
   };
 
   const getRelationshipOptions = () => [
-    { value: 'RELATED', label: 'Related to' },
-    { value: 'REFERENCE', label: 'References' },
-    { value: 'VERSION', label: 'Version of' },
-    { value: 'ATTACHMENT', label: 'Attachment to' },
-    { value: 'SUPPLEMENT', label: 'Supplements' },
+    { value: RelationshipType.RELATED, label: 'Related to' },
+    { value: RelationshipType.REFERENCE, label: 'References' },
+    { value: RelationshipType.VERSION, label: 'Version of' },
+    { value: RelationshipType.PARENT_CHILD, label: 'Child of' }
   ];
 
   if (loading) {

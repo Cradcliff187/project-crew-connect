@@ -42,23 +42,23 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     if (!document?.url) return;
     
     // Create a temporary anchor element to trigger download
-    const a = document.createElement('a');
+    const a = window.document.createElement('a');
     a.href = document.url;
     a.download = document.file_name;
-    document.body.appendChild(a);
+    window.document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    window.document.body.removeChild(a);
   };
 
   const downloadDocument = () => {
     if (!document.url) return;
     
-    const link = document.createElement('a');
+    const link = window.document.createElement('a');
     link.href = document.url;
     link.download = document.file_name;
-    document.body.appendChild(link);
+    window.document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    window.document.body.removeChild(link);
   };
 
   return (

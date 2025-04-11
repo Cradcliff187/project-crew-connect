@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Document } from './schemas/documentSchema';
+import { Document, RelationshipType } from './schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
 import { Link2, Search, X } from 'lucide-react';
+import { parseEntityType } from './utils/documentTypeUtils';
 
 interface DocumentRelationshipManagerProps {
   document: Document;
@@ -20,12 +21,10 @@ interface DocumentWithRelation extends Document {
 }
 
 const RELATIONSHIP_TYPES = [
-  { label: 'Related To', value: 'related_to' },
-  { label: 'Previous Version', value: 'previous_version' },
-  { label: 'Revision Of', value: 'revision_of' },
-  { label: 'Attachment For', value: 'attachment_for' },
-  { label: 'Source Document', value: 'source_document' },
-  { label: 'Supporting Document', value: 'supporting_document' },
+  { label: 'Related To', value: RelationshipType.RELATED },
+  { label: 'References', value: RelationshipType.REFERENCE },
+  { label: 'Version Of', value: RelationshipType.VERSION },
+  { label: 'Child Of', value: RelationshipType.PARENT_CHILD }
 ];
 
 const DocumentRelationshipManager: React.FC<DocumentRelationshipManagerProps> = ({
@@ -38,7 +37,7 @@ const DocumentRelationshipManager: React.FC<DocumentRelationshipManagerProps> = 
   const [searchResults, setSearchResults] = useState<Document[]>([]);
   const [searching, setSearching] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<DocumentWithRelation | null>(null);
-  const [relationshipType, setRelationshipType] = useState('related_to');
+  const [relationshipType, setRelationshipType] = useState(RelationshipType.RELATED);
   const [submitting, setSubmitting] = useState(false);
   
   useEffect(() => {
@@ -46,7 +45,7 @@ const DocumentRelationshipManager: React.FC<DocumentRelationshipManagerProps> = 
       setSearchTerm('');
       setSearchResults([]);
       setSelectedDocument(null);
-      setRelationshipType('related_to');
+      setRelationshipType(RelationshipType.RELATED);
     }
   }, [open, document]);
   
@@ -72,10 +71,16 @@ const DocumentRelationshipManager: React.FC<DocumentRelationshipManagerProps> = 
         .limit(10);
         
       if (error) throw error;
+
+      // Convert entity_type strings to EntityType enum
+      const processedResults = data.map(doc => ({
+        ...doc,
+        entity_type: parseEntityType(doc.entity_type)
+      })) as Document[];
       
-      setSearchResults(data);
+      setSearchResults(processedResults);
       
-      if (data.length === 0) {
+      if (processedResults.length === 0) {
         toast({
           title: "No documents found",
           description: "Try a different search term",
@@ -234,7 +239,7 @@ const DocumentRelationshipManager: React.FC<DocumentRelationshipManagerProps> = 
                   <select
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     value={relationshipType}
-                    onChange={(e) => setRelationshipType(e.target.value)}
+                    onChange={(e) => setRelationshipType(e.target.value as RelationshipType)}
                   >
                     {RELATIONSHIP_TYPES.map(type => (
                       <option key={type.value} value={type.value}>

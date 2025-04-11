@@ -2,7 +2,8 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Check, X } from 'lucide-react';
-import { DocumentCategory, entityCategoryMap, getEntityCategories } from '../schemas/documentSchema';
+import { DocumentCategory, EntityType, entityCategoryMap, getEntityCategories } from '../schemas/documentSchema';
+import { parseEntityType } from '../utils/documentTypeUtils';
 
 interface CategoryFilterProps {
   selectedCategories: string[];
@@ -15,11 +16,12 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
   onCategoryChange,
   entityType
 }) => {
+  // Get available categories based on entity type
   const availableCategories = entityType 
-    ? getEntityCategories(entityType)
+    ? getEntityCategories(entityType ? parseEntityType(entityType) : EntityType.PROJECT)
     : Object.keys(entityCategoryMap).reduce((acc, key) => {
-        return [...acc, ...entityCategoryMap[key]];
-      }, [] as string[]).filter((value, index, self) => self.indexOf(value) === index);
+        return [...acc, ...entityCategoryMap[EntityType[key as keyof typeof EntityType]]];
+      }, [] as DocumentCategory[]).filter((value, index, self) => self.indexOf(value) === index);
 
   const toggleCategory = (category: string) => {
     if (selectedCategories.includes(category)) {
