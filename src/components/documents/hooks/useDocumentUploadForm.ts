@@ -23,6 +23,10 @@ interface UseDocumentUploadFormProps {
     vendorId?: string;
     materialName?: string;
     expenseName?: string;
+    budgetItemId?: string;
+    parentEntityType?: string;
+    parentEntityId?: string;
+    tags?: string[];
   };
 }
 
@@ -37,7 +41,6 @@ export const useDocumentUploadForm = ({
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [showVendorSelector, setShowVendorSelector] = useState(false);
-  const [isFormInitialized, setIsFormInitialized] = useState(false);
   
   // Create form with default values
   const form = useForm<DocumentUploadFormValues>({
@@ -65,17 +68,23 @@ export const useDocumentUploadForm = ({
   const { watchIsExpense, watchVendorType, watchFiles, watchCategory, watchExpenseType } = 
     useFormValueWatchers(form);
   
-  const { initializeForm, handleCancel } = useFormInitialization({
+  const { initializeForm } = useFormInitialization({
     form,
     entityType,
     entityId,
     isReceiptUpload,
-    prefillData,
-    isFormInitialized,
-    setIsFormInitialized,
-    previewURL,
-    onCancel
+    prefillData
   });
+  
+  // Handle cancel action with proper cleanup
+  const handleCancel = () => {
+    if (previewURL) {
+      URL.revokeObjectURL(previewURL);
+    }
+    if (onCancel) {
+      onCancel();
+    }
+  };
   
   // Run initialization once on mount
   useEffect(() => {
