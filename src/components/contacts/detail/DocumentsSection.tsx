@@ -128,7 +128,9 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
             <DocumentList 
               documents={documents}
               loading={loading}
-              onViewDocument={handleViewDocument}
+              onView={handleViewDocument}
+              showEntityInfo={false}
+              showNavigationButtons
             />
           )}
         </CardContent>

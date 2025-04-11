@@ -7,15 +7,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
 import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
-import DocumentViewer from '@/components/documents/DocumentViewer';
-import { Document } from '@/components/documents/schemas/documentSchema';
+import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
 
-export interface BaseDocument extends Document {
+export interface BaseDocument {
+  document_id: string;
+  file_name: string;
+  category?: string;
+  created_at: string;
+  updated_at: string;
+  file_type: string;
+  storage_path: string;
+  entity_id: string;
+  entity_type: string;
   url: string; // Changed from optional to required
+  file_size?: number; // Added to match WorkOrderDocument
 }
 
 interface DocumentsSectionProps {
-  documents: Document[];
+  documents: BaseDocument[];
   loading: boolean;
   entityId: string;
   entityType: EntityType;
@@ -32,9 +41,9 @@ const DocumentsSection = memo(({
   emptyStateMessage = "No documents have been attached"
 }: DocumentsSectionProps) => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [viewDocument, setViewDocument] = useState<Document | null>(null);
+  const [viewDocument, setViewDocument] = useState<BaseDocument | null>(null);
   
-  const handleViewDocument = (doc: Document) => {
+  const handleViewDocument = (doc: BaseDocument) => {
     setViewDocument(doc);
   };
   
@@ -113,7 +122,7 @@ const DocumentsSection = memo(({
           </DialogHeader>
           {viewDocument && (
             <DocumentViewer 
-              document={viewDocument}
+              document={viewDocument as any} // We'll cast to any here as a temporary fix
               open={!!viewDocument}
               onOpenChange={(open) => !open && setViewDocument(null)}
             />

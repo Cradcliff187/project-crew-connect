@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   DocumentUploadFormValues, 
   EntityType, 
-  DocumentUploadSchema,
+  documentUploadSchema, 
   getEntityCategories,
   DocumentCategory
 } from '../schemas/documentSchema';
@@ -26,7 +26,7 @@ interface UseDocumentUploadFormProps {
     tags?: string[];
     category?: string;
     budgetItemId?: string;
-    parentEntityType?: EntityType;
+    parentEntityType?: string;
     parentEntityId?: string;
   };
   allowEntityTypeSelection?: boolean;
@@ -52,15 +52,14 @@ export const useDocumentUploadForm = ({
     entityType ? getEntityCategories(entityType) : []
   );
 
-  const defaultEntityType = entityType || EntityType.PROJECT;
-
+  // Initialize form
   const form = useForm<DocumentUploadFormValues>({
-    resolver: zodResolver(DocumentUploadSchema),
+    resolver: zodResolver(documentUploadSchema),
     defaultValues: {
       files: [],
       metadata: {
-        category: isReceiptUpload ? DocumentCategory.RECEIPT : (prefillData?.category as DocumentCategory || DocumentCategory.OTHER),
-        entityType: defaultEntityType,
+        category: isReceiptUpload ? 'receipt' as DocumentCategory : (prefillData?.category as DocumentCategory || 'other' as DocumentCategory),
+        entityType: entityType || 'PROJECT',
         entityId: entityId || '',
         isExpense: isReceiptUpload,
         tags: prefillData?.tags || [],
@@ -69,6 +68,7 @@ export const useDocumentUploadForm = ({
     }
   });
 
+  // Watch form values for conditional display
   const watchIsExpense = form.watch('metadata.isExpense');
   const watchVendorType = form.watch('metadata.vendorType');
   const watchFiles = form.watch('files');
@@ -76,9 +76,11 @@ export const useDocumentUploadForm = ({
   const watchExpenseType = form.watch('metadata.expenseType');
   const watchEntityType = form.watch('metadata.entityType');
 
+  // Handle file selection
   const handleFileSelect = useCallback((files: File[]) => {
     form.setValue('files', files);
     
+    // Create preview URL for the first file if it's an image
     if (files.length > 0 && files[0].type.startsWith('image/')) {
       const url = URL.createObjectURL(files[0]);
       setPreviewURL(url);
@@ -87,27 +89,32 @@ export const useDocumentUploadForm = ({
     }
   }, [form]);
 
+  // Handle form submission
   const { onSubmit } = useFormSubmitHandler(form, isUploading, setIsUploading, onSuccess, previewURL);
 
+  // Initialize form with default values
   const initializeForm = useCallback(() => {
     if (entityType && entityId) {
       form.setValue('metadata.entityType', entityType);
       form.setValue('metadata.entityId', entityId);
       
+      // Update available categories based on entity type
       setAvailableCategories(getEntityCategories(entityType));
 
+      // Set default category for entity type
       if (isReceiptUpload) {
-        form.setValue('metadata.category', DocumentCategory.RECEIPT);
+        form.setValue('metadata.category', 'receipt' as DocumentCategory);
         form.setValue('metadata.isExpense', true);
-      } else if (entityType === EntityType.WORK_ORDER) {
-        form.setValue('metadata.category', DocumentCategory.RECEIPT);
-      } else if (entityType === EntityType.PROJECT) {
-        form.setValue('metadata.category', DocumentCategory.PHOTO);
-      } else if (entityType === EntityType.VENDOR || entityType === EntityType.SUBCONTRACTOR) {
-        form.setValue('metadata.category', DocumentCategory.CERTIFICATION);
+      } else if (entityType === 'WORK_ORDER') {
+        form.setValue('metadata.category', 'receipt' as DocumentCategory);
+      } else if (entityType === 'PROJECT') {
+        form.setValue('metadata.category', 'photo' as DocumentCategory);
+      } else if (entityType === 'VENDOR' || entityType === 'SUBCONTRACTOR') {
+        form.setValue('metadata.category', 'certification' as DocumentCategory);
       }
     }
     
+    // Initialize with prefill data if available
     if (prefillData) {
       if (prefillData.amount !== undefined) {
         form.setValue('metadata.amount', prefillData.amount);
@@ -128,6 +135,7 @@ export const useDocumentUploadForm = ({
       }
       
       if (prefillData.category) {
+        // Ensure we cast the category to DocumentCategory type
         form.setValue('metadata.category', prefillData.category as DocumentCategory);
       }
       
@@ -136,24 +144,29 @@ export const useDocumentUploadForm = ({
       }
       
       if (prefillData.parentEntityType && prefillData.parentEntityId) {
-        form.setValue('metadata.parentEntityType', prefillData.parentEntityType);
+        form.setValue('metadata.parentEntityType', prefillData.parentEntityType as EntityType);
         form.setValue('metadata.parentEntityId', prefillData.parentEntityId);
       }
     }
   }, [entityType, entityId, form, isReceiptUpload, prefillData]);
-
+  
+  // Handle cancel button
   const handleCancel = useCallback(() => {
+    // Cleanup any previews
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
     }
     
+    // Reset form
     form.reset();
     
+    // Call onCancel callback if provided
     if (onCancel) {
       onCancel();
     }
   }, [form, onCancel, previewURL]);
-
+  
+  // Handle form submission
   const handleFormSubmit = useCallback((e: React.FormEvent) => {
     if (preventFormPropagation) {
       e.stopPropagation();
@@ -161,21 +174,25 @@ export const useDocumentUploadForm = ({
     
     form.handleSubmit(onSubmit)(e);
   }, [form, onSubmit, preventFormPropagation]);
-
+  
+  // Initialize the form on mount
   useEffect(() => {
     initializeForm();
   }, [initializeForm]);
-
+  
+  // Notify parent component when entity type changes
   useEffect(() => {
     if (onEntityTypeChange && watchEntityType) {
       onEntityTypeChange(watchEntityType);
     }
   }, [watchEntityType, onEntityTypeChange]);
 
+  // Update categories when entity type changes
   useEffect(() => {
     setAvailableCategories(getEntityCategories(watchEntityType));
   }, [watchEntityType]);
 
+  // Cleanup preview URL when component unmounts
   useEffect(() => {
     return () => {
       if (previewURL) {
@@ -183,7 +200,8 @@ export const useDocumentUploadForm = ({
       }
     };
   }, [previewURL]);
-
+  
+  // Show vendor selector when watching vendor type changes
   useEffect(() => {
     if (watchVendorType) {
       setShowVendorSelector(true);

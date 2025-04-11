@@ -1,61 +1,105 @@
 
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Control } from 'react-hook-form';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { EntityType, DocumentCategory, getEntityCategories } from '../schemas/documentSchema';
+import { 
+  DocumentUploadFormValues,
+  EntityType,
+  DocumentCategory
+} from '../schemas/documentSchema';
+import { 
+  getEntityCategories, 
+  getCategoryDisplayName, 
+  isValidDocumentCategory 
+} from '../utils/DocumentCategoryHelper';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DocumentCategorySelectorProps {
-  control: Control<any>;
+  control: Control<DocumentUploadFormValues>;
   isReceiptUpload?: boolean;
-  entityType: EntityType;
+  entityType?: EntityType;
 }
 
-// This component handles category selection based on entity type
-const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
-  control,
+const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({ 
+  control, 
   isReceiptUpload = false,
   entityType
 }) => {
-  // Get categories for the given entity type
-  const availableCategories = getEntityCategories(entityType);
+  const isMobile = useIsMobile();
+  
+  // Get available categories based on entity type
+  const availableCategories = entityType ? getEntityCategories(entityType) : [];
+
+  if (isReceiptUpload) {
+    return (
+      <FormField
+        control={control}
+        name="metadata.category"
+        render={({ field }) => (
+          <FormItem className="space-y-1">
+            <FormLabel>Receipt Type</FormLabel>
+            <FormControl>
+              <RadioGroup
+                onValueChange={(value) => field.onChange(value as DocumentCategory)}
+                defaultValue={field.value}
+                className="flex flex-col space-y-1"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="receipt" id="receipt" />
+                  <label htmlFor="receipt" className="text-sm font-normal cursor-pointer">Material Receipt</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="invoice" id="invoice" />
+                  <label htmlFor="invoice" className="text-sm font-normal cursor-pointer">Subcontractor Invoice</label>
+                </div>
+              </RadioGroup>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  // Create a list of categories to display based on entity type
+  // Filter for only valid DocumentCategory types
+  const baseCategories: DocumentCategory[] = ['receipt', 'invoice'];
+  
+  // Ensure we only include valid DocumentCategory values by explicitly checking with our type guard
+  const additionalCategories: DocumentCategory[] = availableCategories.length > 0 
+    ? availableCategories
+        .filter(isValidDocumentCategory) 
+    : ['3rd_party_estimate', 'contract', 'insurance', 'certification', 'photo', 'other'];
+
+  const categoriesToShow: DocumentCategory[] = [...baseCategories, ...additionalCategories];
+  
+  // Remove duplicates
+  const uniqueCategories = Array.from(new Set(categoriesToShow));
 
   return (
     <FormField
       control={control}
       name="metadata.category"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>Category</FormLabel>
-          <Select
-            onValueChange={field.onChange}
-            value={field.value || ''}
-            disabled={isReceiptUpload} // When it's a receipt upload, the category is fixed
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Document Categories</SelectLabel>
-                {availableCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ')}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+        <FormItem className="space-y-1">
+          <FormLabel>Document Type</FormLabel>
+          <FormControl>
+            <RadioGroup
+              onValueChange={(value) => field.onChange(value as DocumentCategory)}
+              defaultValue={field.value}
+              className={isMobile ? "grid grid-cols-2 gap-2" : "flex flex-wrap gap-4"}
+            >
+              {uniqueCategories.map((category) => (
+                <div key={category} className="flex items-center space-x-2">
+                  <RadioGroupItem value={category} id={`${category}-doc`} />
+                  <label htmlFor={`${category}-doc`} className="text-sm font-normal cursor-pointer">
+                    {getCategoryDisplayName(category)}
+                  </label>
+                </div>
+              ))}
+            </RadioGroup>
+          </FormControl>
           <FormMessage />
         </FormItem>
       )}

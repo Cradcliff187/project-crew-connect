@@ -1,75 +1,80 @@
 
-import React, { useEffect, useState } from 'react';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import React, { useState } from 'react';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
+import VendorSearchCombobox from '../vendor-selector/VendorSearchCombobox';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface VendorSelectorProps {
-  control: Control<any>;
-  initialVendorId?: string;
+  control: Control<DocumentUploadFormValues>;
+  vendorType: 'vendor' | 'subcontractor' | 'other';
+  prefillVendorId?: string;
+  onAddVendorClick?: () => void;
 }
 
-interface Vendor {
-  vendorid: string;
-  vendorname: string;
-}
-
-const VendorSelector: React.FC<VendorSelectorProps> = ({ 
+const VendorSelector: React.FC<VendorSelectorProps> = ({
   control,
-  initialVendorId
+  vendorType,
+  prefillVendorId,
+  onAddVendorClick
 }) => {
-  const { data: vendors, isLoading } = useQuery({
-    queryKey: ['vendors'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('vendorid, vendorname')
-        .order('vendorname');
-        
-      if (error) throw error;
-      return data as Vendor[];
+  const [showAddVendor, setShowAddVendor] = useState(false);
+  
+  // Handle vendor type to set the right field and label
+  const getFieldName = () => {
+    // Always return "metadata.vendorId" as the field name since that's the expected field in the schema
+    return "metadata.vendorId" as const;
+  };
+  
+  const getLabel = () => {
+    switch (vendorType) {
+      case 'vendor':
+        return 'Vendor';
+      case 'subcontractor':
+        return 'Subcontractor';
+      default:
+        return 'Service Provider';
     }
-  });
-
+  };
+  
+  // Don't render for other vendor types
+  if (vendorType === 'other') {
+    return null;
+  }
+  
   return (
     <FormField
       control={control}
-      name="metadata.vendorId"
+      name={getFieldName()}
+      defaultValue={prefillVendorId}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Vendor</FormLabel>
-          <Select 
-            onValueChange={field.onChange} 
-            value={field.value || initialVendorId || ''} 
-            disabled={isLoading}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a vendor" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Vendors</SelectLabel>
-                {vendors?.map((vendor) => (
-                  <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                    {vendor.vendorname}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <FormLabel>{getLabel()}</FormLabel>
+          <div className="flex items-center space-x-2">
+            <div className="flex-1">
+              <FormControl>
+                <VendorSearchCombobox
+                  value={field.value as string}
+                  onChange={(value: string) => field.onChange(value)}
+                  vendorType={vendorType}
+                  onAddNewClick={onAddVendorClick}
+                />
+              </FormControl>
+            </div>
+            {onAddVendorClick && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-shrink-0 h-10"
+                onClick={onAddVendorClick}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
           <FormMessage />
         </FormItem>
       )}

@@ -1,223 +1,136 @@
 
-import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/integrations/supabase/client';
+import { DocumentMetadata, DocumentCategory } from '@/components/documents/schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
-import { 
-  Document, 
-  EntityType, 
-  DocumentCategory,
-  DocumentUploadResult
-} from '@/components/documents/schemas/documentSchema';
 
-/**
- * Upload options interface
- */
-interface UploadOptions {
-  category?: string;
-  tags?: string[];
-  notes?: string;
-  isExpense?: boolean;
-  amount?: number | null;
-  expenseDate?: Date | string | null;
-  vendorId?: string | null;
-  vendorType?: string | null;
-  expenseType?: string | null;
-  budgetItemId?: string | null;
-  parentEntityType?: EntityType;
-  parentEntityId?: string;
-  version?: number;
-}
-
-/**
- * Upload a document to storage and create a record in the documents table
- * 
- * @param file The file to upload
- * @param entityType The type of entity the document is associated with
- * @param entityId The ID of the entity the document is associated with
- * @param options Additional options
- * @returns The upload result containing success status and document info
- */
-export const uploadDocument = async (
-  file: File,
-  entityType: EntityType,
-  entityId: string,
-  options: UploadOptions = {}
-): Promise<DocumentUploadResult> => {
+// Function to upload a document to Supabase storage and create a document record
+export const uploadDocument = async (file: File, metadata: DocumentMetadata) => {
   try {
-    // Generate a unique ID for the document
-    const documentId = uuidv4();
-    
-    // Generate a storage path with folder structure based on entity type and ID
-    const timestamp = Date.now();
+    // Create a unique file name based on timestamp and original name
+    const timestamp = new Date().getTime();
+    const randomString = Math.random().toString(36).substring(2, 10);
     const fileExt = file.name.split('.').pop();
-    const filePath = `${entityType.toLowerCase()}/${entityId}/${documentId}_${timestamp}.${fileExt}`;
+    const fileName = `${timestamp}-${randomString}.${fileExt}`;
     
-    // Upload the file to Supabase storage
-    const { data: storageData, error: storageError } = await supabase
-      .storage
+    // Create storage path based on entity type and ID
+    const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
+    const entityIdPath = metadata.entityId || 'general';
+    const filePath = `${entityTypePath}/${entityIdPath}/${fileName}`;
+    
+    // Upload file to Supabase storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('construction_documents')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
+      .upload(filePath, file);
     
-    if (storageError) {
-      console.error('Error uploading file:', storageError);
-      return {
-        success: false,
-        error: storageError,
-        message: storageError.message
-      };
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return { success: false, error: 'Error uploading file: ' + uploadError.message };
     }
     
-    // Format the expense date properly if provided
-    let expenseDateFormatted = null;
-    if (options.expenseDate) {
-      expenseDateFormatted = options.expenseDate instanceof Date
-        ? options.expenseDate.toISOString()
-        : new Date(options.expenseDate).toISOString();
-    }
-    
-    // Prepare metadata for document record
-    const documentMetadata = {
-      document_id: documentId,
+    // Prepare document data for database
+    const docData = {
       file_name: file.name,
       file_type: file.type,
       file_size: file.size,
       storage_path: filePath,
-      entity_type: entityType,
-      entity_id: entityId,
-      category: options.category || 'general',
-      tags: options.tags || [],
-      notes: options.notes || '',
-      is_expense: options.isExpense || false,
-      amount: options.amount || null,
-      expense_date: expenseDateFormatted,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      version: options.version || 1,
-      is_latest_version: true,
-      vendor_id: options.vendorId || null,
-      vendor_type: options.vendorType || null,
-      expense_type: options.expenseType || null,
-      budget_item_id: options.budgetItemId || null,
-      parent_entity_type: options.parentEntityType || null,
-      parent_entity_id: options.parentEntityId || null
+      entity_type: metadata.entityType,
+      entity_id: metadata.entityId,
+      category: metadata.category as DocumentCategory,
+      amount: metadata.amount,
+      expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
+      version: metadata.version || 1,
+      tags: metadata.tags || [],
+      notes: metadata.notes,
+      is_expense: metadata.isExpense,
+      vendor_id: metadata.vendorId,
+      vendor_type: metadata.vendorType,
+      expense_type: metadata.expenseType,
     };
     
-    // Insert document record into the database
-    const { data: documentData, error: dbError } = await supabase
+    // Insert document record into database
+    const { data: insertedDoc, error: documentError } = await supabase
       .from('documents')
-      .insert(documentMetadata)
+      .insert(docData)
       .select()
       .single();
     
-    if (dbError) {
-      console.error('Error creating document record:', dbError);
-      // Clean up the uploaded file if database insert fails
-      await supabase
-        .storage
+    if (documentError) {
+      console.error('Document insert error:', documentError);
+      // Try to delete the uploaded file if database insert fails
+      await supabase.storage
         .from('construction_documents')
         .remove([filePath]);
-      
-      return {
-        success: false,
-        error: dbError,
-        message: dbError.message
-      };
+        
+      return { success: false, error: 'Error creating document record: ' + documentError.message };
     }
     
-    // Get the URL for the uploaded file
-    const { data: publicUrlData } = await supabase
-      .storage
-      .from('construction_documents')
-      .getPublicUrl(filePath);
+    // Show success toast with feedback
+    toast({
+      title: "Upload successful",
+      description: `${file.name} has been uploaded successfully.`,
+      variant: "default",
+    });
     
-    // Return the document with the URL
-    return {
-      success: true,
-      documentId: documentId,
-      document: {
-        ...documentData as Document,
-        url: publicUrlData?.publicUrl || '',
-      },
+    return { 
+      success: true, 
+      documentId: insertedDoc.document_id,
+      document: insertedDoc
     };
   } catch (error: any) {
-    console.error('Document upload failed:', error);
-    return {
-      success: false,
-      error: error,
-      message: error.message || 'Failed to upload document',
-    };
+    console.error('Upload document error:', error);
+    return { success: false, error: error.message || 'An unexpected error occurred' };
   }
 };
 
-/**
- * Download a document
- * 
- * @param document The document to download
- */
-export const downloadDocument = (document: Document) => {
-  if (!document || !document.storage_path) {
-    toast({
-      title: 'Download failed',
-      description: 'Invalid document data',
-      variant: 'destructive'
-    });
-    return;
-  }
-  
-  const downloadFile = async () => {
-    try {
-      const { data, error } = await supabase
-        .storage
-        .from('construction_documents')
-        .download(document.storage_path);
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Create a download link
-      const link = window.document.createElement('a');
-      link.href = URL.createObjectURL(data);
-      link.download = document.file_name;
-      window.document.body.appendChild(link);
-      link.click();
-      window.document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-    } catch (error: any) {
-      console.error('Download error:', error);
+// Function to upload multiple documents
+export const uploadMultipleDocuments = async (
+  files: File[], 
+  metadata: DocumentMetadata
+) => {
+  try {
+    const results = [];
+    
+    for (const file of files) {
+      const result = await uploadDocument(file, metadata);
+      results.push(result);
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    
+    // Show appropriate toast message
+    if (successCount === files.length) {
       toast({
-        title: 'Download failed',
-        description: error.message || 'Failed to download the file',
-        variant: 'destructive'
+        title: "All uploads successful",
+        description: `${successCount} document${successCount !== 1 ? 's' : ''} uploaded successfully.`,
+      });
+    } else if (successCount > 0) {
+      toast({
+        title: "Some uploads failed",
+        description: `${successCount} of ${files.length} documents uploaded successfully.`,
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Upload failed",
+        description: "All document uploads failed.",
+        variant: "destructive",
       });
     }
-  };
-  
-  // Use global document object
-  const a = window.document.createElement('a');
-  // Check if we can get a public URL
-  supabase
-    .storage
-    .from('construction_documents')
-    .getPublicUrl(document.storage_path)
-    .then(({ data }) => {
-      if (data && data.publicUrl) {
-        // If public URL is available, use it directly
-        a.href = data.publicUrl;
-        a.download = document.file_name;
-        window.document.body.appendChild(a);
-        a.click();
-        window.document.body.removeChild(a);
-      } else {
-        // Otherwise fall back to download method
-        downloadFile();
-      }
-    })
-    .catch(() => {
-      // If getting public URL fails, fall back to download method
-      downloadFile();
-    });
+    
+    return {
+      success: successCount > 0,
+      totalCount: files.length,
+      successCount,
+      results
+    };
+  } catch (error: any) {
+    console.error('Multiple upload error:', error);
+    return { 
+      success: false, 
+      error: error.message, 
+      totalCount: files.length, 
+      successCount: 0, 
+      results: [] 
+    };
+  }
 };

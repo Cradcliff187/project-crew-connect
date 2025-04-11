@@ -1,12 +1,13 @@
 
 import { useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { EntityType, DocumentUploadFormValues } from '../schemas/documentSchema';
+import { DocumentUploadFormValues, EntityType } from '../schemas/documentSchema';
+import { toDocumentCategory, isValidDocumentCategory } from '../utils/DocumentCategoryHelper';
 
 interface UseFormInitializationProps {
   form: UseFormReturn<DocumentUploadFormValues>;
-  entityType: EntityType;
-  entityId: string;
+  entityType?: EntityType;
+  entityId?: string;
   isReceiptUpload?: boolean;
   prefillData?: {
     amount?: number;
@@ -16,44 +17,40 @@ interface UseFormInitializationProps {
     notes?: string;
     category?: string;
     tags?: string[];
-    budgetItemId?: string;
-    parentEntityType?: EntityType;
-    parentEntityId?: string;
   };
 }
 
-const useFormInitialization = ({ 
+export const useFormInitialization = ({
   form,
-  entityType,
+  entityType = 'PROJECT',
   entityId,
   isReceiptUpload = false,
   prefillData
 }: UseFormInitializationProps) => {
-  
-  // Initialize the form with values from props and prefill data
   const initializeForm = useCallback(() => {
-    // Reset the form with initial values
+    const defaultCategory = isReceiptUpload ? 'receipt' : (prefillData?.category && isValidDocumentCategory(prefillData.category) ? 
+      toDocumentCategory(prefillData.category) : 'other');
+      
     form.reset({
       files: [],
       metadata: {
-        entityType,
-        entityId,
-        isExpense: isReceiptUpload,
-        category: isReceiptUpload ? 'receipt' : prefillData?.category,
+        category: defaultCategory,
+        entityType: entityType,
+        entityId: entityId || '',
+        amount: prefillData?.amount,
+        expenseDate: new Date(),
+        version: 1,
         tags: prefillData?.tags || [],
         notes: prefillData?.notes || '',
-        amount: prefillData?.amount,
+        isExpense: isReceiptUpload || defaultCategory === 'receipt' || defaultCategory === 'invoice',
         vendorId: prefillData?.vendorId,
-        expenseDate: new Date(),
-        budgetItemId: prefillData?.budgetItemId,
-        parentEntityType: prefillData?.parentEntityType,
-        parentEntityId: prefillData?.parentEntityId,
-        version: 1
       }
     });
   }, [form, entityType, entityId, isReceiptUpload, prefillData]);
 
-  return { initializeForm };
+  return {
+    initializeForm
+  };
 };
 
 export default useFormInitialization;

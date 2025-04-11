@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Document, EntityType } from '@/components/documents/schemas/documentSchema';
+import { Document } from '@/components/documents/schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentViewerOptions {
@@ -45,11 +45,10 @@ export function useDocumentViewer(options?: DocumentViewerOptions) {
         .from('construction_documents')
         .getPublicUrl(data.storage_path);
       
-      // Combine the data and ensure entity_type is properly cast to EntityType
+      // Combine the data
       const documentWithUrl: Document = {
         ...data,
         url: urlData.publicUrl,
-        entity_type: data.entity_type as EntityType
       };
       
       setCurrentDocument(documentWithUrl);

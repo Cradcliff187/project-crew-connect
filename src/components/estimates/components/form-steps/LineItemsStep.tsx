@@ -1,3 +1,4 @@
+
 import React from 'react';
 import EstimateItemFields from '../EstimateItemFields';
 import EstimateSummary from '../EstimateSummary';
@@ -12,13 +13,10 @@ import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUploa
 import { toast } from '@/hooks/use-toast';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
 import ContingencyInput from '../summary/ContingencyInput';
-import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 const LineItemsStep = () => {
   const form = useFormContext<EstimateFormValues>();
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
-  const [showItemDocumentUpload, setShowItemDocumentUpload] = useState(false);
-  const [currentEntityType, setCurrentEntityType] = useState(EntityType.ESTIMATE);
   const tempEstimateId = form.getValues('temp_id') || '';
   
   const { 
@@ -44,11 +42,6 @@ const LineItemsStep = () => {
     }
   };
   
-  const handleOpenDocumentUpload = () => {
-    setShowItemDocumentUpload(true);
-    setCurrentEntityType(EntityType.ESTIMATE);
-  };
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
@@ -94,7 +87,7 @@ const LineItemsStep = () => {
                   
                   {tempEstimateId && (
                     <EnhancedDocumentUpload 
-                      entityType={currentEntityType}
+                      entityType="ESTIMATE"
                       entityId={tempEstimateId}
                       onSuccess={handleDocumentUploadSuccess}
                       onCancel={() => setIsDocumentUploadOpen(false)}

@@ -1,71 +1,43 @@
 
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { cn } from '@/lib/utils';
-import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
-import { FileIcon, UploadIcon, XIcon } from 'lucide-react';
-import { useState } from 'react';
+import React, { useCallback, memo } from 'react';
+import { Upload, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Control } from 'react-hook-form';
+import { cn } from '@/lib/utils';
+import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface DropzoneUploaderProps {
   control: Control<DocumentUploadFormValues>;
   onFileSelect: (files: File[]) => void;
-  previewURL?: string | null;
-  watchFiles?: File[];
+  previewURL: string | null;
+  watchFiles: File[];
   label?: string;
 }
 
-const DropzoneUploader = ({
+const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   control,
   onFileSelect,
   previewURL,
   watchFiles,
-  label = "Upload File"
-}: DropzoneUploaderProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isDragging) {
-      setIsDragging(true);
+  label = 'Upload Document'
+}) => {
+  // Create a memoized file change handler
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // Ensure we're passing proper File objects
+      const fileArray = Array.from(files);
+      onFileSelect(fileArray);
     }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
+  }, [onFileSelect]);
+  
+  // Create a memoized click handler
+  const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsDragging(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files);
-      onFileSelect(files);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
-      onFileSelect(files);
-    }
-  };
-
-  const handleRemoveFile = () => {
-    onFileSelect([]);
-  };
-
+    document.getElementById('dropzone-file')?.click();
+  }, []);
+  
   return (
     <FormField
       control={control}
@@ -74,90 +46,72 @@ const DropzoneUploader = ({
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <div
-              className={cn(
-                "border-2 border-dashed rounded-md transition-colors",
-                isDragging 
-                  ? "border-blue-500 bg-blue-50" 
-                  : "border-gray-300 bg-gray-50/50 hover:bg-gray-100/50",
-                "cursor-pointer"
-              )}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <input
-                type="file"
-                className="sr-only"
-                onChange={handleFileChange}
-                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
-                id="file-upload"
-              />
-              
-              {watchFiles && watchFiles.length > 0 ? (
-                <div className="p-4">
-                  {previewURL ? (
-                    <div className="relative mb-4">
-                      <img 
-                        src={previewURL} 
-                        alt="Preview" 
-                        className="max-h-48 mx-auto object-contain rounded border" 
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-7 w-7"
-                        onClick={handleRemoveFile}
-                      >
-                        <XIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-3 py-3 px-4 rounded border mb-4">
-                      <FileIcon className="h-8 w-8 text-blue-500" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {watchFiles[0].name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {(watchFiles[0].size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-gray-400 hover:text-red-500"
-                        onClick={handleRemoveFile}
-                      >
-                        <XIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                  <div className="text-center">
-                    <label 
-                      htmlFor="file-upload" 
-                      className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
-                    >
-                      Change file
-                    </label>
+            <div className="flex flex-col items-center justify-center w-full">
+              <div
+                className={cn(
+                  "flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
+                  watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
+                )}
+                onClick={handleClick}
+              >
+                {previewURL ? (
+                  <div className="w-full h-full p-2 flex flex-col items-center justify-center">
+                    <img
+                      src={previewURL}
+                      alt="Preview"
+                      className="max-h-36 max-w-full object-contain mb-2"
+                    />
+                    <p className="text-sm text-[#0485ea] font-medium">
+                      {watchFiles[0]?.name}
+                    </p>
                   </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-10 h-10 mb-3 text-[#0485ea]" />
+                    <p className="mb-2 text-sm">
+                      <span className="font-semibold text-[#0485ea]">Drag and drop</span> your file here
+                    </p>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      className="mt-2 border-[#0485ea] text-[#0485ea]"
+                      onClick={handleClick}
+                    >
+                      <FolderOpen className="h-4 w-4 mr-2" />
+                      Browse Files
+                    </Button>
+                    {watchFiles.length > 0 && (
+                      <p className="mt-2 text-sm text-[#0485ea] font-medium">
+                        {watchFiles.length > 1 
+                          ? `${watchFiles.length} files selected` 
+                          : watchFiles[0].name}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <input
+                  id="dropzone-file"
+                  type="file"
+                  className="hidden"
+                  multiple={false}
+                  accept="image/*,application/pdf"
+                  onChange={(e) => {
+                    handleFileChange(e);
+                    // Make sure field.onChange is still called for React Hook Form
+                    if (e.target.files && e.target.files.length > 0) {
+                      field.onChange(Array.from(e.target.files));
+                    }
+                  }}
+                />
+              </div>
+              
+              {watchFiles.length > 0 && (
+                <div className="w-full mt-2">
+                  <p className="text-sm text-[#0485ea] font-medium text-center">
+                    {watchFiles.length} file(s) selected
+                  </p>
                 </div>
-              ) : (
-                <label 
-                  htmlFor="file-upload" 
-                  className="flex flex-col items-center justify-center p-6 cursor-pointer"
-                >
-                  <UploadIcon className="h-10 w-10 text-gray-400 mb-2" />
-                  <p className="text-sm font-medium text-gray-700">
-                    Drag & drop your file here, or <span className="text-blue-600">browse</span>
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Supports images, PDFs, and common document formats (max 15MB)
-                  </p>
-                </label>
               )}
             </div>
           </FormControl>
@@ -168,4 +122,5 @@ const DropzoneUploader = ({
   );
 };
 
-export default DropzoneUploader;
+// Use React.memo to prevent unnecessary re-renders
+export default memo(DropzoneUploader);

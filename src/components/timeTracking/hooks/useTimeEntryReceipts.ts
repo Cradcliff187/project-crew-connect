@@ -1,15 +1,15 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
-import { parseEntityType } from '@/components/documents/utils/documentTypeUtils';
 
 export interface TimeEntryReceipt extends Document {
   url?: string;
 }
 
 export function useTimeEntryReceipts(timeEntryId: string | undefined) {
-  const [receipts, setTimeEntryReceipts] = useState<TimeEntryReceipt[]>([]);
+  const [receipts, setReceipts] = useState<TimeEntryReceipt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
   const fetchReceipts = async () => {
@@ -26,7 +26,7 @@ export function useTimeEntryReceipts(timeEntryId: string | undefined) {
       if (linksError) throw linksError;
       
       if (!links || links.length === 0) {
-        setTimeEntryReceipts([]);
+        setReceipts([]);
         return;
       }
       
@@ -59,13 +59,7 @@ export function useTimeEntryReceipts(timeEntryId: string | undefined) {
         };
       }));
       
-      // Convert data to TimeEntryReceipt objects
-      const receipts = (receiptsWithUrls || []).map(doc => ({
-        ...doc,
-        entity_type: parseEntityType(doc.entity_type) // Convert string to EntityType enum
-      }));
-      
-      setTimeEntryReceipts(receipts);
+      setReceipts(receiptsWithUrls);
     } catch (error: any) {
       console.error('Error fetching time entry receipts:', error);
       toast({

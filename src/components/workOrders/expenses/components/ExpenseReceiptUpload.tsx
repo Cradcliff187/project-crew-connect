@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { WorkOrderExpense } from '@/types/workOrder';
 import { toast } from '@/hooks/use-toast';
-import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface ExpenseReceiptUploadProps {
   workOrderId: string;
@@ -55,7 +54,7 @@ const ExpenseReceiptUpload: React.FC<ExpenseReceiptUploadProps> = ({
     <Card className="shadow-none border-0 p-0">
       <CardContent className="p-0">
         <EnhancedDocumentUpload
-          entityType={EntityType.WORK_ORDER}
+          entityType="WORK_ORDER"
           entityId={workOrderId}
           onSuccess={handleSuccess}
           onCancel={onCancel}

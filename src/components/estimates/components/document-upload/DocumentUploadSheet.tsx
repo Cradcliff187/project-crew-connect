@@ -2,7 +2,6 @@
 import React, { useCallback } from 'react';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface DocumentUploadSheetProps {
   isOpen: boolean;
@@ -26,13 +25,6 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
   // If the sheet is not open, don't render the contents to prevent unnecessary calculations
   if (!isOpen) return null;
 
-  // Convert string entity type to EntityType enum
-  const getEntityType = (): EntityType => {
-    if (entityType === "ESTIMATE") return EntityType.ESTIMATE;
-    if (entityType === "ESTIMATE_ITEM") return EntityType.ESTIMATE_ITEM;
-    return EntityType.ESTIMATE; // Default fallback
-  };
-
   // Memoize the success handler to prevent unnecessary re-renders
   const handleSuccess = useCallback((documentId?: string) => {
     if (documentId) {
@@ -55,7 +47,7 @@ const DocumentUploadSheet: React.FC<DocumentUploadSheetProps> = ({
       
       {tempId && (
         <EnhancedDocumentUpload 
-          entityType={getEntityType()}
+          entityType={entityType}
           entityId={itemId || tempId}
           onSuccess={handleSuccess}
           onCancel={handleCancel}

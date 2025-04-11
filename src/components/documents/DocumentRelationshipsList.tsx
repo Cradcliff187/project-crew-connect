@@ -19,16 +19,17 @@ import {
 import { formatDate } from '@/lib/utils';
 import { 
   DocumentRelationship, 
-  RelationshipType,
-  Document
-} from './schemas/documentSchema';
+  RelationshipType 
+} from '@/hooks/useDocumentRelationships';
+import { Document } from './schemas/documentSchema';
 import { DocumentCategoryBadge } from './utils/categoryIcons';
 
 const relationshipLabels: Record<RelationshipType, string> = {
   'REFERENCE': 'References',
   'VERSION': 'Version of',
-  'PARENT_CHILD': 'Child of',
-  'RELATED': 'Related to'
+  'ATTACHMENT': 'Attached to',
+  'RELATED': 'Related to',
+  'SUPPLEMENT': 'Supplements'
 };
 
 interface DocumentRelationshipsListProps {
@@ -95,7 +96,7 @@ const DocumentRelationshipsList: React.FC<DocumentRelationshipsListProps> = ({
               <CardDescription className="text-xs">
                 <span className="flex items-center gap-1">
                   <Link2 className="h-3 w-3" />
-                  {relationship.relationship_type === RelationshipType.REFERENCE && !isCurrentDocument(relationship.source_document_id) 
+                  {relationship.relationship_type === 'REFERENCE' && !isCurrentDocument(relationship.source_document_id) 
                     ? 'Referenced by this document'
                     : `${relationshipLabels[relationship.relationship_type]} this document`}
                 </span>

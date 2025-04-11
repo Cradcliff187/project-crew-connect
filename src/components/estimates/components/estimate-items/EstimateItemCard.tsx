@@ -1,169 +1,301 @@
 
-// src/components/estimates/components/estimate-items/EstimateItemCard.tsx
-import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
-import { Pencil, Trash2, FileText, Paperclip } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import EnhancedDocumentUpload from "@/components/documents/EnhancedDocumentUpload";
-import { toast } from "@/hooks/use-toast";
-import { EntityType, Document } from "@/components/documents/schemas/documentSchema";
-import { EstimateItem } from "@/components/estimates/types";
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
+import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
+import { EstimateFormValues } from '../../schemas/estimateFormSchema';
+import ItemDescription from './ItemDescription';
+import ItemTypeSelector from './ItemTypeSelector';
+import VendorSelector from './VendorSelector';
+import SubcontractorSelector from './SubcontractorSelector';
+import TradeTypeSelector from './TradeTypeSelector';
+import ExpenseTypeSelector from './ExpenseTypeSelector';
+import CostInput from './CostInput';
+import MarkupInput from './MarkupInput';
+import PriceDisplay from './PriceDisplay';
+import MarginDisplay from './MarginDisplay';
+import RemoveItemButton from './RemoveItemButton';
+import { 
+  calculateItemPrice, 
+  calculateItemGrossMargin, 
+  calculateItemGrossMarginPercentage 
+} from '../../utils/estimateCalculations';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EstimateItemCardProps {
-  item: EstimateItem;
-  onEdit: (itemId: string) => void;
-  onDelete: (itemId: string) => void;
-  onDocumentAdded?: (itemId: string) => void;
+  index: number;
+  vendors: { vendorid: string; vendorname: string }[];
+  subcontractors: { subid: string; subname: string }[];
+  loading: boolean;
+  onRemove: () => void;
+  showRemoveButton: boolean;
 }
 
-const EstimateItemCard: React.FC<EstimateItemCardProps> = ({
-  item,
-  onEdit,
-  onDelete,
-  onDocumentAdded
-}) => {
+const EstimateItemCard = memo(({ 
+  index, 
+  vendors, 
+  subcontractors, 
+  loading, 
+  onRemove,
+  showRemoveButton 
+}: EstimateItemCardProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
+  const [attachedDocument, setAttachedDocument] = useState<{file_name?: string; file_type?: string} | null>(null);
+  const form = useFormContext<EstimateFormValues>();
+  
+  const itemType = useWatch({
+    control: form.control,
+    name: `items.${index}.item_type`,
+    defaultValue: 'labor'
+  });
+  
+  const cost = useWatch({
+    control: form.control,
+    name: `items.${index}.cost`,
+    defaultValue: '0'
+  });
 
-  // Calculate profit and margin
-  const cost = item.cost || 0;
-  const totalPrice = item.total_price || 0;
-  const profit = totalPrice - cost;
-  const margin = totalPrice > 0 ? (profit / totalPrice) * 100 : 0;
+  const markupPercentage = useWatch({
+    control: form.control,
+    name: `items.${index}.markup_percentage`,
+    defaultValue: '0'
+  });
+  
+  const quantity = useWatch({
+    control: form.control,
+    name: `items.${index}.quantity`,
+    defaultValue: '1'
+  });
 
-  // Get badge color based on item type
-  const getBadgeColor = (type: string | undefined) => {
-    switch (type?.toLowerCase()) {
-      case 'material':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
-      case 'labor':
-        return 'bg-green-100 text-green-800 hover:bg-green-200';
-      case 'subcontractor':
-        return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
-      case 'equipment':
-        return 'bg-amber-100 text-amber-800 hover:bg-amber-200';
-      case 'other':
-      default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+  const unit_price = useWatch({
+    control: form.control,
+    name: `items.${index}.unit_price`,
+    defaultValue: '0'
+  });
+
+  const description = useWatch({
+    control: form.control,
+    name: `items.${index}.description`,
+    defaultValue: ''
+  });
+
+  const vendorId = useWatch({
+    control: form.control,
+    name: `items.${index}.vendor_id`,
+    defaultValue: ''
+  });
+  
+  const subcontractorId = useWatch({
+    control: form.control,
+    name: `items.${index}.subcontractor_id`,
+    defaultValue: ''
+  });
+  
+  const documentId = useWatch({
+    control: form.control,
+    name: `items.${index}.document_id`,
+    defaultValue: ''
+  });
+
+  const { itemPrice, grossMargin, grossMarginPercentage } = React.useMemo(() => {
+    const item = { cost, markup_percentage: markupPercentage, quantity, unit_price };
+    return {
+      itemPrice: calculateItemPrice(item),
+      grossMargin: calculateItemGrossMargin(item),
+      grossMarginPercentage: calculateItemGrossMarginPercentage(item)
+    };
+  }, [cost, markupPercentage, quantity, unit_price]);
+
+  const fetchDocumentInfo = useCallback(async () => {
+    if (!documentId) {
+      setAttachedDocument(null);
+      return;
     }
-  };
-
-  // Handle document upload success
-  const handleDocumentUploadSuccess = (documentId?: string) => {
-    setIsDocumentUploadOpen(false);
     
-    if (documentId) {
-      toast({
-        title: 'Document added',
-        description: 'Document has been successfully attached to this line item',
-      });
+    const { data, error } = await supabase
+      .from('documents')
+      .select('file_name, file_type')
+      .eq('document_id', documentId)
+      .single();
       
-      if (onDocumentAdded) {
-        onDocumentAdded(item.id);
-      }
+    if (error) {
+      console.error('Error fetching document:', error);
+      return;
     }
-  };
+    
+    setAttachedDocument(data);
+  }, [documentId]);
+
+  useEffect(() => {
+    fetchDocumentInfo();
+  }, [fetchDocumentInfo]);
+
+  const handleDocumentUploadSuccess = useCallback((docId?: string) => {
+    setIsDocumentUploadOpen(false);
+    if (docId) {
+      form.setValue(`items.${index}.document_id`, docId);
+    }
+  }, [form, index]);
+
+  const getEntityTypeForDocument = useCallback(() => {
+    return 'ESTIMATE_ITEM';
+  }, []);
+
+  const getEntityIdForDocument = useCallback(() => {
+    const tempId = form.getValues('temp_id') || 'pending';
+    
+    switch (itemType) {
+      case 'vendor':
+        return vendorId || tempId;
+      case 'subcontractor':
+        return subcontractorId || tempId;
+      default:
+        return tempId;
+    }
+  }, [form, itemType, vendorId, subcontractorId]);
+
+  const handleAttachClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDocumentUploadOpen(true);
+  }, []);
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="p-4 border-b">
-          <div className="flex justify-between items-start mb-2">
-            <div className="space-y-1">
-              <Badge className={getBadgeColor(item.item_type)} variant="outline">
-                {item.item_type || 'Other'}
-              </Badge>
-              <h3 className="font-medium text-base line-clamp-2">{item.description}</h3>
-            </div>
-            <div className="flex space-x-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8"
-                onClick={() => onEdit(item.id)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-destructive"
-                onClick={() => onDelete(item.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
-            <div>
-              <p className="text-muted-foreground">Quantity</p>
-              <p>{item.quantity}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Unit Price</p>
-              <p>{formatCurrency(item.unit_price || 0)}</p>
-            </div>
-            {item.cost !== undefined && (
-              <>
-                <div>
-                  <p className="text-muted-foreground">Cost</p>
-                  <p>{formatCurrency(cost)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Margin</p>
-                  <p>{margin.toFixed(1)}%</p>
-                </div>
-              </>
-            )}
-          </div>
-          
-          <div className="mt-3 pt-2 border-t">
-            <div className="flex justify-between items-center">
-              <p className="font-medium">Total</p>
-              <p className="font-semibold text-lg">{formatCurrency(item.total_price || 0)}</p>
-            </div>
-          </div>
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className="border rounded-md overflow-hidden transition-all"
+    >
+      <div className="p-3 bg-white flex items-center gap-2">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm" className="p-1 h-8 w-8">
+            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </CollapsibleTrigger>
+        
+        <div className="flex-1 font-medium truncate">
+          {description || 'Untitled Item'}
         </div>
         
-        <div className="p-3 bg-gray-50 border-t flex justify-between items-center">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <FileText className="h-4 w-4 mr-1" />
-            {item.document_id ? "Has specifications" : "No documents"}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium">${itemPrice.toFixed(2)}</span>
+            {quantity !== '1' && <span> × {quantity}</span>}
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-xs"
-            onClick={() => setIsDocumentUploadOpen(true)}
-          >
-            <Paperclip className="h-3 w-3 mr-1" />
-            Add Doc
-          </Button>
-        </div>
-      </CardContent>
-      
-      <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
-        <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
-          <SheetHeader className="p-6 pb-2">
-            <SheetTitle>Add Document to Line Item</SheetTitle>
-            <SheetDescription>
-              Upload specifications or other documentation for this estimate line item.
-            </SheetDescription>
-          </SheetHeader>
           
-          <EnhancedDocumentUpload
-            entityType={EntityType.ESTIMATE_ITEM}
-            entityId={item.id}
-            onSuccess={handleDocumentUploadSuccess}
-            onCancel={() => setIsDocumentUploadOpen(false)}
-          />
-        </SheetContent>
-      </Sheet>
-    </Card>
+          <div className="text-sm text-muted-foreground hidden md:block">
+            GM: {grossMarginPercentage.toFixed(1)}%
+          </div>
+          
+          {documentId ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 cursor-pointer">
+                    <PaperclipIcon className="h-3 w-3" />
+                    <span className="hidden sm:inline-block">Document</span>
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-xs">
+                    <div className="font-medium">{attachedDocument?.file_name || 'Document attached'}</div>
+                    <div className="text-muted-foreground">{attachedDocument?.file_type}</div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
+                  onClick={handleAttachClick}
+                >
+                  <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
+                  <span className="hidden sm:inline-block">Attach</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" aria-describedby="item-document-upload-description">
+                <SheetHeader className="p-6 pb-2">
+                  <SheetTitle>Attach Document to Line Item</SheetTitle>
+                  <SheetDescription id="item-document-upload-description">
+                    Upload a document to attach to this line item.
+                  </SheetDescription>
+                </SheetHeader>
+                
+                <EnhancedDocumentUpload 
+                  entityType={getEntityTypeForDocument()}
+                  entityId={getEntityIdForDocument()}
+                  onSuccess={handleDocumentUploadSuccess}
+                  onCancel={() => setIsDocumentUploadOpen(false)}
+                />
+              </SheetContent>
+            </Sheet>
+          )}
+          
+          {showRemoveButton && (
+            <RemoveItemButton onRemove={onRemove} showButton={true} />
+          )}
+        </div>
+      </div>
+      
+      <CollapsibleContent>
+        <div className="border-t p-3 bg-gray-50">
+          <div className="grid grid-cols-12 gap-2 items-start">
+            <ItemDescription index={index} />
+            <ItemTypeSelector index={index} />
+            
+            {itemType === 'vendor' && (
+              <>
+                <VendorSelector index={index} vendors={vendors} loading={loading} />
+                <ExpenseTypeSelector index={index} />
+              </>
+            )}
+
+            {itemType === 'subcontractor' && (
+              <>
+                <SubcontractorSelector index={index} subcontractors={subcontractors} loading={loading} />
+                <TradeTypeSelector index={index} />
+              </>
+            )}
+
+            <CostInput index={index} />
+            <MarkupInput index={index} />
+            <PriceDisplay index={index} price={itemPrice} />
+            <MarginDisplay grossMargin={grossMargin} grossMarginPercentage={grossMarginPercentage} />
+          </div>
+          
+          {documentId && (
+            <div className="mt-4 p-2 border rounded bg-blue-50 flex items-center">
+              <FileIcon className="h-4 w-4 text-blue-500 mr-2" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{attachedDocument?.file_name || 'Document attached'}</p>
+                <p className="text-xs text-muted-foreground">{attachedDocument?.file_type}</p>
+              </div>
+              <Button
+                variant="ghost" 
+                size="sm"
+                className="text-red-500 h-8 hover:text-red-700 hover:bg-red-50"
+                onClick={() => form.setValue(`items.${index}.document_id`, '')}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
-};
+});
+
+EstimateItemCard.displayName = 'EstimateItemCard';
 
 export default EstimateItemCard;

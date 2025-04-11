@@ -1,244 +1,174 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Document, EntityType } from '../schemas/documentSchema';
-import { parseEntityType } from '../utils/documentTypeUtils';
-import { useToast } from '@/hooks/use-toast';
+import { Document } from '../schemas/documentSchema';
+import { DocumentFilterValues } from '../DocumentFilter';
+import { DateRange } from 'react-day-picker';
+import { toast } from '@/hooks/use-toast';
 
-interface UseDocumentsOptions {
-  entityType?: EntityType;
-  entityId?: string;
-  category?: string;
-  tag?: string;
-  limit?: number;
-  autoFetch?: boolean;
+interface DocumentFilters extends DocumentFilterValues {
+  search: string;
 }
 
-/**
- * Hook for fetching and managing documents
- */
-export function useDocuments(options: UseDocumentsOptions = {}) {
+export const useDocuments = (initialFilters: DocumentFilters) => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<DocumentFilters>(initialFilters);
 
-  /**
-   * Fetch documents based on provided filters
-   */
+  // Calculate the number of active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.search?.trim()) count++;
+    if (filters.category) count++;
+    if (filters.entityType) count++;
+    if (filters.dateRange?.from) count++;
+    if (filters.isExpense !== undefined) count++;
+    if (filters.sortBy && filters.sortBy !== 'newest') count++;
+    return count;
+  }, [filters]);
+
   const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
+      
+      // Start building the query
       let query = supabase
-        .from('documents_with_urls')
+        .from('documents')
         .select('*');
-
-      // Add filters if provided
-      if (options.entityType && options.entityId) {
-        query = query
-          .eq('entity_type', options.entityType)
-          .eq('entity_id', options.entityId);
-      }
-
-      if (options.category) {
-        query = query.eq('category', options.category);
-      }
-
-      if (options.tag) {
-        query = query.contains('tags', [options.tag]);
-      }
-
-      // Add sorting and limit
-      query = query.order('created_at', { ascending: false });
-
-      if (options.limit && options.limit > 0) {
-        query = query.limit(options.limit);
-      }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        throw new Error(`Error fetching documents: ${fetchError.message}`);
-      }
-
-      // Convert the data to our Document type
-      const typedDocuments: Document[] = (data || []).map(doc => ({
-        ...doc,
-        entity_type: parseEntityType(doc.entity_type)
-      } as Document));
-
-      setDocuments(typedDocuments);
-    } catch (err: any) {
-      console.error('Error in useDocuments:', err);
-      setError(err);
       
-      toast({
-        title: "Error loading documents",
-        description: err.message || "An unexpected error occurred",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    options.entityType,
-    options.entityId,
-    options.category,
-    options.tag,
-    options.limit,
-    toast
-  ]);
-
-  /**
-   * Trigger a refresh of the documents
-   */
-  const refreshDocuments = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
-  }, []);
-
-  /**
-   * Delete a document
-   */
-  const deleteDocument = useCallback(async (documentId: string) => {
-    try {
-      setLoading(true);
-
-      // First, get the document to find its storage path
-      const { data: document, error: fetchError } = await supabase
-        .from('documents')
-        .select('storage_path')
-        .eq('document_id', documentId)
-        .single();
-
-      if (fetchError) {
-        throw new Error(`Failed to find document: ${fetchError.message}`);
+      // Add filters
+      if (filters.search?.trim()) {
+        query = query.or(`file_name.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`);
       }
-
-      // Delete the file from storage
-      if (document?.storage_path) {
-        await supabase.storage
-          .from('construction_documents')
-          .remove([document.storage_path]);
-      }
-
-      // Delete document relationships
-      await supabase
-        .from('document_relationships')
-        .delete()
-        .or(`source_document_id.eq.${documentId},target_document_id.eq.${documentId}`);
-
-      // Delete the document record
-      const { error: deleteError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('document_id', documentId);
-
-      if (deleteError) {
-        throw new Error(`Failed to delete document: ${deleteError.message}`);
-      }
-
-      // Update local state
-      setDocuments(prev => prev.filter(doc => doc.document_id !== documentId));
-
-      toast({
-        title: "Document deleted",
-        description: "The document has been successfully deleted"
-      });
-
-    } catch (err: any) {
-      console.error('Error deleting document:', err);
       
-      toast({
-        title: "Error deleting document",
-        description: err.message || "An unexpected error occurred",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  /**
-   * Batch delete multiple documents
-   */
-  const batchDeleteDocuments = useCallback(async (documentIds: string[]) => {
-    if (!documentIds.length) return;
-    
-    try {
-      setLoading(true);
-
-      for (const docId of documentIds) {
-        // First, get the document to find its storage path
-        const { data: document, error: fetchError } = await supabase
-          .from('documents')
-          .select('storage_path')
-          .eq('document_id', docId)
-          .single();
-
-        if (fetchError) {
-          console.error(`Failed to find document ${docId}: ${fetchError.message}`);
-          continue;
+      if (filters.category) {
+        query = query.eq('category', filters.category);
+      }
+      
+      if (filters.entityType) {
+        query = query.eq('entity_type', filters.entityType);
+      }
+      
+      if (filters.isExpense !== undefined) {
+        query = query.eq('is_expense', filters.isExpense);
+      }
+      
+      if (filters.dateRange?.from) {
+        query = query.gte('created_at', filters.dateRange.from.toISOString());
+        
+        if (filters.dateRange.to) {
+          // Add one day to the end date to include the whole day
+          const endDate = new Date(filters.dateRange.to);
+          endDate.setDate(endDate.getDate() + 1);
+          query = query.lt('created_at', endDate.toISOString());
         }
-
-        // Delete the file from storage
-        if (document?.storage_path) {
-          await supabase.storage
-            .from('construction_documents')
-            .remove([document.storage_path]);
-        }
-
-        // Delete document relationships
-        await supabase
-          .from('document_relationships')
-          .delete()
-          .or(`source_document_id.eq.${docId},target_document_id.eq.${docId}`);
-
-        // Delete the document record
-        await supabase
-          .from('documents')
-          .delete()
-          .eq('document_id', docId);
       }
-
-      // Update local state
-      setDocuments(prev => prev.filter(doc => !documentIds.includes(doc.document_id)));
-
-      toast({
-        title: "Documents deleted",
-        description: `${documentIds.length} document(s) have been successfully deleted`
-      });
-
-    } catch (err: any) {
-      console.error('Error batch deleting documents:', err);
       
+      // Add sorting
+      if (filters.sortBy) {
+        switch (filters.sortBy) {
+          case 'newest':
+            query = query.order('created_at', { ascending: false });
+            break;
+          case 'oldest':
+            query = query.order('created_at', { ascending: true });
+            break;
+          case 'name':
+            query = query.order('file_name', { ascending: true });
+            break;
+          case 'size':
+            query = query.order('file_size', { ascending: false });
+            break;
+        }
+      } else {
+        // Default sort by newest
+        query = query.order('created_at', { ascending: false });
+      }
+      
+      // Execute the query
+      const { data, error } = await query;
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Process the documents to get signed URLs
+      const processedDocuments: Document[] = await Promise.all(
+        data.map(async (doc) => {
+          let url = '';
+          if (doc.storage_path) {
+            try {
+              const { data: urlData, error: urlError } = await supabase.storage
+                .from('construction_documents')
+                .createSignedUrl(doc.storage_path, 300, {
+                  transform: {
+                    width: 400,
+                    height: 400,
+                    quality: 80
+                  }
+                });
+              
+              if (!urlError) {
+                url = urlData.signedUrl;
+              }
+            } catch (error) {
+              console.error('Error generating URL:', error);
+            }
+          }
+          
+          return {
+            ...doc,
+            url
+          };
+        })
+      );
+      
+      setDocuments(processedDocuments);
+    } catch (error: any) {
+      console.error('Error fetching documents:', error);
+      setError(error.message);
       toast({
-        title: "Error deleting documents",
-        description: err.message || "An unexpected error occurred",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load documents',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
-      refreshDocuments();
     }
-  }, [toast, refreshDocuments]);
-
-  // Auto-fetch documents when options change or refresh is triggered
+  }, [filters]);
+  
+  // Fetch documents when filters change
   useEffect(() => {
-    if (options.autoFetch !== false) {
-      fetchDocuments();
-    }
-  }, [fetchDocuments, refreshTrigger, options.autoFetch]);
-
+    fetchDocuments();
+  }, [fetchDocuments]);
+  
+  // Handle filter changes
+  const handleFilterChange = (newFilters: DocumentFilters) => {
+    setFilters(newFilters);
+  };
+  
+  // Reset filters
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      category: undefined,
+      entityType: undefined,
+      dateRange: undefined,
+      isExpense: undefined,
+      sortBy: 'newest'
+    });
+  };
+  
   return {
     documents,
     loading,
     error,
-    fetchDocuments,
-    refreshDocuments,
-    deleteDocument,
-    batchDeleteDocuments
+    filters,
+    activeFiltersCount,
+    handleFilterChange,
+    handleResetFilters,
+    fetchDocuments
   };
-}
+};

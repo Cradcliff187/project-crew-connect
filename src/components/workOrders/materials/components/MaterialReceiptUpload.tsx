@@ -2,43 +2,40 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { WorkOrderMaterial } from '@/types/workOrder';
 import { toast } from '@/hooks/use-toast';
-import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface MaterialReceiptUploadProps {
   workOrderId: string;
-  materialId: string;
-  materialName: string;
-  vendorId?: string;
-  vendorName?: string;
-  amount?: number;
+  material: WorkOrderMaterial;
+  vendorName: string;
   onSuccess: (documentId: string) => void;
   onCancel: () => void;
 }
 
 const MaterialReceiptUpload: React.FC<MaterialReceiptUploadProps> = ({
   workOrderId,
-  materialId,
-  materialName,
-  vendorId,
+  material,
   vendorName,
-  amount,
   onSuccess,
   onCancel
 }) => {
-  // Prepare prefill data for the document upload
+  // Prefill data for receipt upload
   const prefillData = {
-    amount: amount,
-    vendorId: vendorId,
-    materialName: materialName,
-    category: 'receipt',
-    notes: `Receipt for ${materialName}${vendorName ? ` from ${vendorName}` : ''}`,
-    tags: ['receipt', 'material', 'work_order_material'],
-    budgetItemId: materialId
+    amount: material.total_price,
+    vendorId: material.vendor_id || undefined,
+    materialName: material.material_name
   };
+
+  console.log("MaterialReceiptUpload component rendering with:", { 
+    workOrderId, 
+    materialId: material.id,
+    prefillData 
+  });
 
   // Handle successful upload
   const handleSuccess = (documentId?: string) => {
+    console.log("Document upload success, got ID:", documentId);
     if (documentId) {
       onSuccess(documentId);
     } else {
@@ -54,7 +51,7 @@ const MaterialReceiptUpload: React.FC<MaterialReceiptUploadProps> = ({
     <Card className="shadow-none border-0 p-0">
       <CardContent className="p-0">
         <EnhancedDocumentUpload
-          entityType={EntityType.WORK_ORDER}
+          entityType="WORK_ORDER"
           entityId={workOrderId}
           onSuccess={handleSuccess}
           onCancel={onCancel}

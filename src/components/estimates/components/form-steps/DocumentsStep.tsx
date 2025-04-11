@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -9,22 +10,26 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 const DocumentsStep = () => {
   const form = useFormContext<EstimateFormValues>();
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   
+  // Get the temporary ID from the form context or create one if it doesn't exist
   const [tempEstimateId, setTempEstimateId] = useState<string>("");
   
+  // Use useCallback to create stable function references
   useEffect(() => {
+    // Check if we already have a temp ID stored in the form
     const storedTempId = form.getValues('temp_id');
     
     if (storedTempId) {
       setTempEstimateId(storedTempId);
     } else {
+      // Create a new temp ID if we don't have one
       const newTempId = "temp-" + Math.random().toString(36).substr(2, 9);
       setTempEstimateId(newTempId);
+      // Store it in the form for future reference
       form.setValue('temp_id', newTempId);
     }
   }, [form]);
@@ -36,10 +41,12 @@ const DocumentsStep = () => {
     refetchDocuments 
   } = useEstimateDocuments(tempEstimateId);
 
+  // Make this a stable function with useCallback to prevent recreating on every render
   const handleDocumentUploadSuccess = useCallback((documentId?: string) => {
     setIsDocumentUploadOpen(false);
     
     if (documentId) {
+      // Add the document ID to the form values
       const currentDocuments = form.getValues('estimate_documents') || [];
       form.setValue('estimate_documents', [...currentDocuments, documentId]);
       
@@ -48,11 +55,14 @@ const DocumentsStep = () => {
         description: 'Document has been attached to the estimate',
       });
       
+      // Refresh the document list
       refetchDocuments();
     }
   }, [form, refetchDocuments]);
 
+  // Stable callback for document deletion
   const handleDocumentDelete = useCallback((document: any) => {
+    // Remove the document ID from the form values
     const currentDocuments = form.getValues('estimate_documents') || [];
     form.setValue(
       'estimate_documents', 
@@ -64,17 +74,21 @@ const DocumentsStep = () => {
       description: 'Document has been removed from the estimate',
     });
     
+    // Refresh the document list
     refetchDocuments();
   }, [form, refetchDocuments]);
 
+  // Handle button click - prevent propagation to parent form with useCallback
   const handleAddDocumentClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); // Prevent default behavior
+    e.stopPropagation(); // Stop event bubbling
     setIsDocumentUploadOpen(true);
   }, []);
 
+  // Handle sheet open state change with useCallback for stability
   const handleSheetOpenChange = useCallback((open: boolean) => {
     if (!open) {
+      // Add a small delay before closing to prevent accidental form submissions
       setTimeout(() => {
         setIsDocumentUploadOpen(false);
       }, 50);
@@ -91,7 +105,7 @@ const DocumentsStep = () => {
           <Button 
             onClick={handleAddDocumentClick}
             className="bg-[#0485ea] hover:bg-[#0373ce]"
-            type="button"
+            type="button" // Explicitly set as button type, not submit
           >
             <UploadIcon className="h-4 w-4 mr-2" />
             Add Document
@@ -100,8 +114,8 @@ const DocumentsStep = () => {
           <SheetContent 
             className="w-[90vw] sm:max-w-[600px] p-0" 
             aria-describedby="document-upload-description"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()} // Prevent click propagation
+            onSubmit={(e) => e.stopPropagation()} // Also prevent submit propagation
           >
             <SheetHeader className="p-6 pb-2">
               <SheetTitle>Add Document to Estimate</SheetTitle>
@@ -112,11 +126,11 @@ const DocumentsStep = () => {
             
             {tempEstimateId && (
               <EnhancedDocumentUpload 
-                entityType={EntityType.ESTIMATE}
+                entityType="ESTIMATE"
                 entityId={tempEstimateId}
                 onSuccess={handleDocumentUploadSuccess}
                 onCancel={() => setIsDocumentUploadOpen(false)}
-                preventFormPropagation={true}
+                preventFormPropagation={true} // Enable explicit form propagation prevention
               />
             )}
           </SheetContent>
@@ -127,9 +141,11 @@ const DocumentsStep = () => {
         <DocumentList
           documents={documents}
           loading={loading}
-          onViewDocument={(doc) => window.open(doc.url, '_blank')}
+          onUploadClick={() => setIsDocumentUploadOpen(true)}
           onDocumentDelete={handleDocumentDelete}
           emptyMessage="No documents attached yet. Add supporting documents like contracts, specifications, or reference materials."
+          showEntityInfo={false}
+          showCategories={true}
         />
         
         {error && (
