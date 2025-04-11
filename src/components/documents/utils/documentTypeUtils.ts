@@ -1,4 +1,3 @@
-
 import { Document } from '../schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -44,7 +43,16 @@ export const downloadDocument = async (document: Document): Promise<void> => {
 
     // Create an invisible link and trigger the download
     const link = document.document_id ? document.document_id : 'download';
-    const a = document.createElement ? document.createElement('a') : document.doc document.createElement('a'); 
+    const a = document.createElement
+      ? document.createElement('a')
+      : (document.doc ? document.doc.createElement('a') : null);
+    
+    // Check if we successfully created an anchor element
+    if (!a) {
+      console.error('Cannot create download link');
+      return;
+    }
+
     a.href = data?.publicUrl || '';
     a.download = document.file_name || 'document';
     
