@@ -43,12 +43,14 @@ export const downloadDocument = async (document: Document): Promise<void> => {
       .getPublicUrl(document.storage_path);
 
     // Create an invisible link and trigger the download
-    const link = document.document_id ? document.document_id : 'download';
+    const url = data?.publicUrl || '';
+    const linkId = document.document_id ? document.document_id : 'download';
     
-    // Check if we're in a browser environment and create an anchor element
-    if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-      const a = document.createElement('a');
-      a.href = data?.publicUrl || '';
+    // Check if we're in a browser environment before manipulating the DOM
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      // Create a temporary anchor element for download
+      const a = window.document.createElement('a');
+      a.href = url;
       a.download = document.file_name || 'document';
       
       // Append to body, click and remove

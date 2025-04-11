@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { documentUploadSchema, DocumentUploadFormValues, EntityType } from './schemas/documentSchema';
 import { documentService } from '@/services/documentService';
-import useFormInitialization from './hooks/useFormInitialization';
+import { useFormInitialization } from './hooks/useFormInitialization';
 
 // Import components
 import FileUploadField from './components/FileUploadField';
@@ -203,7 +203,6 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               <DocumentCategorySelector
                 control={form.control}
                 isReceiptUpload={isReceiptUpload}
-                entityType={entityType}
               />
 
               <div className="space-y-4">

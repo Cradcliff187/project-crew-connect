@@ -13,11 +13,11 @@ interface UseFormInitializationProps {
     vendorId?: string;
     materialName?: string;
     expenseName?: string;
+    budgetItemId?: string;
+    parentEntityType?: string;
+    parentEntityId?: string;
+    tags?: string[];
   };
-  isFormInitialized: boolean;
-  setIsFormInitialized: React.Dispatch<React.SetStateAction<boolean>>;
-  previewURL: string | null;
-  onCancel?: () => void;
 }
 
 export const useFormInitialization = ({
@@ -26,16 +26,10 @@ export const useFormInitialization = ({
   entityId,
   isReceiptUpload,
   prefillData,
-  isFormInitialized,
-  setIsFormInitialized,
-  previewURL,
-  onCancel
 }: UseFormInitializationProps) => {
   // Initialize form values only once - memoized to prevent unnecessary re-renders
   const initializeForm = useCallback(() => {
-    if (isFormInitialized) return;
-
-    // Only update these fields once to avoid re-rendering loops
+    // Update these fields once to avoid re-rendering loops
     form.setValue('metadata.entityType', entityType);
     form.setValue('metadata.entityId', entityId || '');
     
@@ -60,29 +54,17 @@ export const useFormInitialization = ({
         form.setValue('metadata.tags', [itemName]);
         form.setValue('metadata.notes', `Receipt for: ${itemName}`);
       }
+      
+      if (prefillData.tags && prefillData.tags.length > 0) {
+        form.setValue('metadata.tags', prefillData.tags);
+      }
     }
-    
-    setIsFormInitialized(true);
-  }, [entityId, entityType, form, isFormInitialized, isReceiptUpload, prefillData, setIsFormInitialized]);
-
-  // Create stable cancel handler
-  const handleCancel = useCallback(() => {
-    // Clean up before cancelling
-    if (previewURL) {
-      URL.revokeObjectURL(previewURL);
-    }
-    
-    // Reset form
-    form.reset();
-    
-    // Call parent cancel handler
-    if (onCancel) {
-      onCancel();
-    }
-  }, [form, onCancel, previewURL]);
+  }, [entityId, entityType, form, isReceiptUpload, prefillData]);
 
   return {
     initializeForm,
-    handleCancel
   };
 };
+
+// Export the hook as the default export for backward compatibility
+export default useFormInitialization;

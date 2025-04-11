@@ -11,7 +11,7 @@ import {
 import { Document } from './schemas/documentSchema';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
-import { Eye, Trash2, File, FileText, FileImage, FilePdf } from 'lucide-react';
+import { Eye, Trash2, File, FileText, FileImage } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface DocumentTableProps {
@@ -64,7 +64,7 @@ const DocumentTable: React.FC<DocumentTableProps> = ({
     if (fileType.includes('image')) {
       return <FileImage className="h-4 w-4" />;
     } else if (fileType.includes('pdf')) {
-      return <FilePdf className="h-4 w-4" />;
+      return <FileText className="h-4 w-4" />;
     } else if (fileType.includes('doc')) {
       return <FileText className="h-4 w-4" />;
     } else {
