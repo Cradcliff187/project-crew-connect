@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -102,10 +103,11 @@ export const useDocumentRelationships = (documentId?: string) => {
       
       // Process relationships safely with proper type handling
       const typedSourceRelationships = sourceRelationships ? sourceRelationships.map(rel => {
-        // Convert generic JSON metadata to the expected format
-        const typedMetadata: { description?: string; created_by?: string } = {
-          description: rel.relationship_metadata?.description as string | undefined,
-          created_by: rel.relationship_metadata?.created_by as string | undefined
+        // Safely extract metadata fields with proper type checking
+        const metadata = rel.relationship_metadata as Record<string, unknown> || {};
+        const typedMetadata = {
+          description: typeof metadata.description === 'string' ? metadata.description : undefined,
+          created_by: typeof metadata.created_by === 'string' ? metadata.created_by : undefined
         };
         
         return {
@@ -117,10 +119,11 @@ export const useDocumentRelationships = (documentId?: string) => {
       }) : [];
       
       const typedTargetRelationships = targetRelationships ? targetRelationships.map(rel => {
-        // Convert generic JSON metadata to the expected format
-        const typedMetadata: { description?: string; created_by?: string } = {
-          description: rel.relationship_metadata?.description as string | undefined,
-          created_by: rel.relationship_metadata?.created_by as string | undefined
+        // Safely extract metadata fields with proper type checking
+        const metadata = rel.relationship_metadata as Record<string, unknown> || {};
+        const typedMetadata = {
+          description: typeof metadata.description === 'string' ? metadata.description : undefined,
+          created_by: typeof metadata.created_by === 'string' ? metadata.created_by : undefined
         };
         
         return {
