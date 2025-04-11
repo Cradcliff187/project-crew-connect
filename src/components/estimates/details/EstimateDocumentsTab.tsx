@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, FileText, Share2 } from 'lucide-react';
 import { Document } from '@/components/documents/schemas/documentSchema';
-import DocumentUploadDialog from '@/components/documents/DocumentUpload';
+import DocumentUpload from '@/components/documents/DocumentUpload';
 import { useEstimateDocuments } from '@/components/documents/hooks/useEstimateDocuments';
 import DocumentViewerDialog from '@/components/documents/DocumentViewerDialog';
 import DocumentShareDialog from '@/components/estimates/detail/dialogs/DocumentShareDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
@@ -145,15 +147,20 @@ const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
         </div>
       )}
       
-      {uploadDialogOpen && (
-        <DocumentUploadDialog
-          projectId={estimateId}
-          entityType="ESTIMATE"
-          entityId={estimateId}
-          onSuccess={handleUploadComplete}
-          onCancel={() => setUploadDialogOpen(false)}
-        />
-      )}
+      {/* Document Upload Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+          </DialogHeader>
+          <DocumentUpload
+            entityType={"ESTIMATE" as EntityType}
+            entityId={estimateId}
+            onSuccess={handleUploadComplete}
+            onCancel={() => setUploadDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Document Viewer Dialog */}
       {selectedDocument && (

@@ -10,10 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Upload, X, Loader2 } from 'lucide-react';
-import { DocumentUploadSchema, DocumentUploadFormValues } from './schemas/documentSchema';
+import { DocumentUploadSchema, DocumentUploadFormValues, DocumentUploadMetadata, EntityType, documentCategories } from './schemas/documentSchema';
 import DropzoneUploader from './components/DropzoneUploader';
-import { documentService, EntityType } from '@/services/documentService';
 import { toast } from '@/hooks/use-toast';
+import { uploadDocument } from '@/utils/documentUploader';
 
 interface DocumentUploadProps {
   entityType: EntityType;
@@ -24,11 +24,12 @@ interface DocumentUploadProps {
   prefillData?: {
     amount?: number;
     vendorId?: string;
-    materialName?: string;
-    expenseName?: string;
+    vendorType?: string;
+    expenseType?: string;
     category?: string;
     notes?: string;
     tags?: string[];
+    version?: number;
   };
 }
 
@@ -56,7 +57,10 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         notes: prefillData?.notes || '',
         tags: prefillData?.tags || [],
         amount: prefillData?.amount,
-        vendorId: prefillData?.vendorId
+        vendorId: prefillData?.vendorId,
+        vendorType: prefillData?.vendorType,
+        expenseType: prefillData?.expenseType,
+        version: prefillData?.version || 1
       }
     }
   });
@@ -101,7 +105,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         isExpense: isExpense || false
       });
       
-      const result = await documentService.uploadDocument(data.files[0], data.metadata);
+      const result = await uploadDocument(data.files[0], data.metadata);
       
       if (!result.success) {
         throw result.error || new Error('Upload failed');
@@ -183,14 +187,11 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="receipt">Receipt</SelectItem>
-                        <SelectItem value="invoice">Invoice</SelectItem>
-                        <SelectItem value="contract">Contract</SelectItem>
-                        <SelectItem value="photo">Photo</SelectItem>
-                        <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="specifications">Specifications</SelectItem>
-                        <SelectItem value="permit">Permit</SelectItem>
-                        <SelectItem value="certificate">Certificate</SelectItem>
+                        {documentCategories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -198,7 +199,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                 )}
               />
               
-              {(isReceiptUpload || form.watch('metadata.category') === 'receipt' || form.watch('metadata.category') === 'invoice') && (
+              {(isReceiptUpload || form.watch('metadata.category') === 'receipt') && (
                 <FormField
                   control={form.control}
                   name="metadata.amount"
@@ -206,13 +207,12 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     <FormItem>
                       <FormLabel>Amount</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00"
+                        <Input
+                          type="number"
                           step="0.01"
+                          placeholder="Enter amount"
                           {...field}
-                          value={field.value === null || field.value === undefined ? '' : field.value}
-                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber || null)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -229,11 +229,9 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder={isReceiptUpload 
-                        ? `Receipt for ${prefillData?.materialName || prefillData?.expenseName || 'purchase'}`
-                        : "Add notes about this document"
-                      }
+                    <Textarea
+                      placeholder="Add notes about this document"
+                      className="resize-none"
                       {...field}
                     />
                   </FormControl>
@@ -242,26 +240,21 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               )}
             />
             
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end space-x-2 pt-4">
               {onCancel && (
-                <Button 
-                  type="button" 
-                  variant="outline"
+                <Button
+                  type="button"
+                  variant="ghost"
                   onClick={onCancel}
                   disabled={isUploading}
                 >
-                  <X className="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
               )}
-              
-              <Button 
-                type="submit" 
-                disabled={watchFiles.length === 0 || isUploading}
-                className={isReceiptUpload 
-                  ? "bg-[#0485ea] hover:bg-[#0375d1]" 
-                  : undefined
-                }
+              <Button
+                type="submit"
+                disabled={isUploading}
+                className="bg-[#0485ea] hover:bg-[#0375d1]"
               >
                 {isUploading ? (
                   <>
@@ -271,7 +264,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                 ) : (
                   <>
                     <Upload className="mr-2 h-4 w-4" />
-                    {isReceiptUpload ? 'Upload Receipt' : 'Upload Document'}
+                    Upload
                   </>
                 )}
               </Button>

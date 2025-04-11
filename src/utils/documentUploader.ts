@@ -1,10 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DocumentMetadata, DocumentCategory } from '@/components/documents/schemas/documentSchema';
+import { DocumentUploadMetadata, DocumentCategory, EntityType } from '@/components/documents/schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
 
 // Function to upload a document to Supabase storage and create a document record
-export const uploadDocument = async (file: File, metadata: DocumentMetadata) => {
+export const uploadDocument = async (file: File, metadata: DocumentUploadMetadata) => {
   try {
     // Create a unique file name based on timestamp and original name
     const timestamp = new Date().getTime();
@@ -27,6 +27,13 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
       return { success: false, error: 'Error uploading file: ' + uploadError.message };
     }
     
+    // Format expense date correctly
+    const expenseDate = metadata.expenseDate 
+      ? (metadata.expenseDate instanceof Date 
+          ? metadata.expenseDate.toISOString() 
+          : metadata.expenseDate)
+      : null;
+    
     // Prepare document data for database
     const docData = {
       file_name: file.name,
@@ -37,7 +44,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
       entity_id: metadata.entityId,
       category: metadata.category as DocumentCategory,
       amount: metadata.amount,
-      expense_date: metadata.expenseDate ? metadata.expenseDate.toISOString() : null,
+      expense_date: expenseDate,
       version: metadata.version || 1,
       tags: metadata.tags || [],
       notes: metadata.notes,
@@ -45,6 +52,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
       vendor_id: metadata.vendorId,
       vendor_type: metadata.vendorType,
       expense_type: metadata.expenseType,
+      budget_item_id: metadata.budgetItemId
     };
     
     // Insert document record into database
@@ -85,7 +93,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
 // Function to upload multiple documents
 export const uploadMultipleDocuments = async (
   files: File[], 
-  metadata: DocumentMetadata
+  metadata: DocumentUploadMetadata
 ) => {
   try {
     const results = [];

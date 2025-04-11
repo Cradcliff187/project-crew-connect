@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Clock, FileClock } from 'lucide-react';
-import { Document, documentService } from '@/services/documentService';
+import { Document } from './schemas/documentSchema';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentVersionHistoryCardProps {
   documentId: string;
@@ -22,15 +23,28 @@ const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
     const fetchVersions = async () => {
       setLoading(true);
       try {
-        const versionDocs = await documentService.getDocumentVersions(documentId);
-        setVersions(versionDocs);
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .or(`document_id.eq.${documentId},parent_document_id.eq.${documentId}`)
+          .order('version', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Convert DB results to Documents
+        const documentVersions = data.map(doc => ({
+          ...doc,
+          entity_type: doc.entity_type as any // TODO: Fix typing in the long term
+        })) as Document[];
+        
+        setVersions(documentVersions);
         
         // Set current version to the latest version by default
-        const latestVersion = versionDocs.find(doc => doc.is_latest_version);
+        const latestVersion = documentVersions.find(doc => doc.is_latest_version);
         if (latestVersion) {
           setCurrentVersionId(latestVersion.document_id);
-        } else if (versionDocs.length > 0) {
-          setCurrentVersionId(versionDocs[0].document_id);
+        } else if (documentVersions.length > 0) {
+          setCurrentVersionId(documentVersions[0].document_id);
         }
       } catch (error) {
         console.error('Error fetching document versions:', error);
@@ -98,7 +112,7 @@ const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
       <CardContent>
         <div className="space-y-2">
           {versions
-            .sort((a, b) => (b.version || 1) - (a.version || 1))
+            .sort((a, b) => ((b.version || 1) - (a.version || 1)))
             .map((version) => (
               <div key={version.document_id} className="flex flex-col">
                 <Button

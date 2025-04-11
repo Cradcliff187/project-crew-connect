@@ -141,11 +141,9 @@ const DocumentsStep = () => {
         <DocumentList
           documents={documents}
           loading={loading}
-          onUploadClick={() => setIsDocumentUploadOpen(true)}
+          onViewDocument={(doc) => window.open(doc.url, '_blank')}
           onDocumentDelete={handleDocumentDelete}
           emptyMessage="No documents attached yet. Add supporting documents like contracts, specifications, or reference materials."
-          showEntityInfo={false}
-          showCategories={true}
         />
         
         {error && (

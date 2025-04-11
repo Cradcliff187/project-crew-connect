@@ -1,47 +1,36 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Loader2 } from 'lucide-react';
-import { Document, formatFileSize } from '@/services/documentService';
+import { Download, FileText, Image, File as FileIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Document } from './schemas/documentSchema';
 
 interface DocumentViewerProps {
   document: Document | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDownload?: () => void;
+  documentList?: Document[];
+  onNext?: () => void;
+  onPrevious?: () => void;
+  showNavigation?: boolean;
 }
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
   document,
   open,
   onOpenChange,
-  onDownload
+  documentList,
+  onNext,
+  onPrevious,
+  showNavigation = false
 }) => {
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  if (!document) return null;
-
-  const isImage = document.file_type?.includes('image');
-  const isPdf = document.file_type?.includes('pdf');
-  const documentUrl = document.url;
+  const [loading, setLoading] = useState(false);
   
-  const handleOpenInNewTab = () => {
-    if (documentUrl) {
-      window.open(documentUrl, '_blank');
-    }
-  };
-  
+  // Handle document download
   const handleDownload = () => {
-    if (onDownload) {
-      onDownload();
-      return;
-    }
-    
-    if (documentUrl) {
+    if (document?.url) {
       const link = document.createElement('a');
-      link.href = documentUrl;
+      link.href = document.url;
       link.download = document.file_name;
       document.body.appendChild(link);
       link.click();
@@ -49,97 +38,131 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     }
   };
   
+  // Determine if navigation buttons should be visible
+  const showNavigationButtons = showNavigation && documentList && documentList.length > 1;
+  
+  // Determine content type for rendering
+  const getContentByType = () => {
+    if (!document) return null;
+    
+    const fileType = document.file_type || '';
+    
+    if (fileType.includes('image')) {
+      return (
+        <div className="flex justify-center">
+          <img 
+            src={document.url} 
+            alt={document.file_name} 
+            className="max-h-[70vh] object-contain"
+            onLoad={() => setLoading(false)}
+          />
+        </div>
+      );
+    }
+    
+    if (fileType.includes('pdf')) {
+      return (
+        <iframe 
+          src={document.url} 
+          className="w-full h-[70vh]"
+          title={document.file_name}
+          onLoad={() => setLoading(false)}
+        />
+      );
+    }
+    
+    // For other file types
+    return (
+      <div className="flex flex-col items-center justify-center p-10">
+        <FileIcon className="h-20 w-20 text-gray-400 mb-4" />
+        <p className="text-lg font-medium">{document.file_name}</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          This file preview is not available.
+        </p>
+        <Button 
+          variant="default" 
+          size="sm"
+          onClick={() => {
+            if (document.url) {
+              window.open(document.url, '_blank');
+            }
+          }}
+        >
+          Open in New Tab
+        </Button>
+      </div>
+    );
+  };
+  
+  if (!document) return null;
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex justify-between items-center">
-            <span className="truncate max-w-[600px]">{document.file_name}</span>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleOpenInNewTab} size="sm">
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open in New Tab
-              </Button>
-              <Button variant="secondary" onClick={handleDownload} size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-            </div>
-          </DialogTitle>
-          <DialogDescription>
-            {document.file_type && `${document.file_type} • `}
-            {document.file_size && formatFileSize(document.file_size)}
-            {document.created_at && ` • Uploaded on ${new Date(document.created_at).toLocaleDateString()}`}
-          </DialogDescription>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden">
+        <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
+          <DialogTitle className="mr-8 truncate">{document.file_name}</DialogTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (document.url) {
+                  window.open(document.url, '_blank');
+                }
+              }}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Download
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => onOpenChange(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
         
-        <div className="flex-1 min-h-[400px] overflow-auto bg-gray-100 rounded-md">
+        <div className="relative">
           {loading && (
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+              <div className="animate-spin h-8 w-8 border-2 border-[#0485ea] border-t-transparent rounded-full"></div>
             </div>
           )}
           
-          {error && (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-destructive text-center">
-                Failed to load document: {error}
-                <br />
-                <Button 
-                  variant="outline" 
-                  className="mt-2" 
-                  onClick={handleOpenInNewTab}
-                >
-                  Try opening in a new tab
-                </Button>
-              </p>
-            </div>
-          )}
+          <div className="p-4">
+            {getContentByType()}
+          </div>
           
-          {isImage && documentUrl && (
-            <img
-              src={documentUrl}
-              alt={document.file_name}
-              className="w-full h-auto object-contain"
-              onLoad={() => setLoading(false)}
-              onError={() => {
-                setLoading(false);
-                setError('Failed to load image');
-              }}
-              style={{ display: loading ? 'none' : 'block' }}
-            />
-          )}
-          
-          {isPdf && documentUrl && (
-            <iframe
-              src={`${documentUrl}#toolbar=0`}
-              className="w-full h-full border-0"
-              onLoad={() => setLoading(false)}
-              onError={() => {
-                setLoading(false);
-                setError('Failed to load PDF');
-              }}
-              style={{ display: loading ? 'none' : 'block' }}
-            />
-          )}
-          
-          {!isImage && !isPdf && !loading && !error && (
-            <div className="flex flex-col items-center justify-center h-full p-4">
-              <p className="text-center">
-                This file type cannot be previewed.
-                <br />
-                Please download the file to view it.
-              </p>
+          {showNavigationButtons && (
+            <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-4 pointer-events-none">
               <Button 
-                className="mt-4 bg-[#0485ea] hover:bg-[#0375d1]" 
-                onClick={handleDownload}
+                variant="outline" 
+                size="icon"
+                className="bg-white/80 hover:bg-white pointer-events-auto"
+                onClick={onPrevious}
               >
-                <Download className="h-4 w-4 mr-2" />
-                Download File
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="bg-white/80 hover:bg-white pointer-events-auto"
+                onClick={onNext}
+              >
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           )}
         </div>
+        
+        {document.notes && (
+          <div className="p-4 border-t bg-gray-50">
+            <h4 className="text-sm font-medium mb-1">Notes:</h4>
+            <p className="text-sm text-muted-foreground">{document.notes}</p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

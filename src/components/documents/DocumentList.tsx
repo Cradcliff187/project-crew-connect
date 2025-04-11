@@ -2,26 +2,36 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Download, FileText, FileImage, File, FilePdf } from 'lucide-react';
-import { Document, formatFileSize } from '@/services/documentService';
+import { Eye, Download, FileText, FileImage, File as FileIcon, FileX } from 'lucide-react';
+import { Document } from './schemas/documentSchema';
 
 interface DocumentListProps {
   documents: Document[];
   loading?: boolean;
   onViewDocument: (document: Document) => void;
+  onDocumentDelete?: (document: Document) => void;
+  emptyMessage?: string;
+  showEntityInfo?: boolean;
+  showCategories?: boolean;
+  showNavigationButtons?: boolean;
 }
 
 const DocumentList: React.FC<DocumentListProps> = ({
   documents,
   loading = false,
-  onViewDocument
+  onViewDocument,
+  onDocumentDelete,
+  emptyMessage = "No documents found",
+  showEntityInfo = false,
+  showCategories = false,
+  showNavigationButtons = false
 }) => {
   // Helper function to determine the correct icon based on file type
-  const getFileIcon = (fileType: string | null) => {
-    if (!fileType) return <File className="h-4 w-4" />;
+  const getFileIcon = (fileType: string | undefined) => {
+    if (!fileType) return <FileIcon className="h-4 w-4" />;
     
     if (fileType.includes('image')) return <FileImage className="h-4 w-4 text-blue-500" />;
-    if (fileType.includes('pdf')) return <FilePdf className="h-4 w-4 text-red-500" />;
+    if (fileType.includes('pdf')) return <FileX className="h-4 w-4 text-red-500" />;
     
     return <FileText className="h-4 w-4 text-gray-500" />;
   };
@@ -70,12 +80,21 @@ const DocumentList: React.FC<DocumentListProps> = ({
         <CardContent className="p-4">
           <div className="flex flex-col items-center justify-center h-40">
             <FileText className="h-12 w-12 text-gray-300 mb-2" />
-            <p className="text-muted-foreground">No documents found</p>
+            <p className="text-muted-foreground">{emptyMessage}</p>
           </div>
         </CardContent>
       </Card>
     );
   }
+  
+  // Format file size for display
+  const formatFileSize = (sizeInBytes: number | undefined): string => {
+    if (!sizeInBytes) return '';
+    
+    if (sizeInBytes < 1024) return `${sizeInBytes} B`;
+    else if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+    else return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
   
   return (
     <Card>
@@ -111,11 +130,26 @@ const DocumentList: React.FC<DocumentListProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => handleDownload(document)}
+                  onClick={() => {
+                    if (document.url) {
+                      window.open(document.url, '_blank');
+                    }
+                  }}
                 >
                   <Download className="h-4 w-4 mr-1" />
                   Download
                 </Button>
+                {onDocumentDelete && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => onDocumentDelete(document)}
+                  >
+                    <FileX className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                )}
               </div>
             </div>
           ))}
