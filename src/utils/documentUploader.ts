@@ -6,6 +6,8 @@ import { toast } from '@/hooks/use-toast';
 // Function to upload a document to Supabase storage and create a document record
 export const uploadDocument = async (file: File, metadata: DocumentMetadata) => {
   try {
+    console.log('Starting document upload with metadata:', metadata);
+    
     // Create a unique file name based on timestamp and original name
     const timestamp = new Date().getTime();
     const randomString = Math.random().toString(36).substring(2, 10);
@@ -17,9 +19,11 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     const entityIdPath = metadata.entityId || 'general';
     const filePath = `${entityTypePath}/${entityIdPath}/${fileName}`;
     
+    console.log(`Uploading file to path: ${filePath}`);
+    
     // Upload file to Supabase storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('construction_documents') // Changed from 'documents' to 'construction_documents'
+      .from('construction_documents')
       .upload(filePath, file);
     
     if (uploadError) {
@@ -47,6 +51,8 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
       expense_type: metadata.expenseType,
     };
     
+    console.log('Creating document record with data:', docData);
+    
     // Insert document record into database
     const { data: insertedDoc, error: documentError } = await supabase
       .from('documents')
@@ -58,7 +64,7 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
       console.error('Document insert error:', documentError);
       // Try to delete the uploaded file if database insert fails
       await supabase.storage
-        .from('construction_documents') // Changed from 'documents' to 'construction_documents'
+        .from('construction_documents')
         .remove([filePath]);
         
       return { success: false, error: 'Error creating document record: ' + documentError.message };

@@ -28,6 +28,8 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
     setError(null);
     
     try {
+      console.log(`Fetching receipts for time entry: ${timeEntryId}`);
+      
       // First get document IDs linked to this time entry
       const { data: links, error: linksError } = await supabase
         .from('time_entry_document_links')
@@ -35,6 +37,8 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
         .eq('time_entry_id', timeEntryId);
         
       if (linksError) throw linksError;
+      
+      console.log(`Found ${links?.length || 0} linked documents`);
       
       if (!links || links.length === 0) {
         setReceipts([]);
@@ -52,6 +56,7 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
         .in('document_id', documentIds);
         
       if (documentsError) throw documentsError;
+      console.log(`Retrieved ${documents?.length || 0} document records`);
       
       // Generate signed URLs for each document
       const receiptResults = await Promise.all(
@@ -59,10 +64,14 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
           let url = null;
           
           try {
-            const { data: signedUrl } = await supabase
+            const { data: signedUrl, error: urlError } = await supabase
               .storage
-              .from('construction_documents') // Changed from 'documents' to 'construction_documents'
+              .from('construction_documents')
               .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
+            
+            if (urlError) {
+              console.error('Error creating signed URL:', urlError);
+            }
             
             url = signedUrl?.signedUrl;
           } catch (urlError) {
