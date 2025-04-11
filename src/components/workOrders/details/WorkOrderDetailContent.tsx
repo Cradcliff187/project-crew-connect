@@ -15,7 +15,6 @@ import WorkOrderTimelogs from '../WorkOrderTimelogs';
 import WorkOrderExpenses from '../WorkOrderExpenses';
 import WorkOrderMaterials from '../WorkOrderMaterials';
 import ChangeOrdersList from '@/components/changeOrders/WorkOrderChangeOrdersList';
-import WorkOrderProjectLink from '../WorkOrderProjectLink';
 
 interface WorkOrderDetailContentProps {
   workOrder: WorkOrder;
@@ -107,12 +106,6 @@ const WorkOrderDetailContent = ({
               <WorkOrderCostSummary workOrder={workOrder} />
             </div>
           </div>
-          
-          {/* Add Project Link component */}
-          <WorkOrderProjectLink 
-            workOrderId={workOrder.work_order_id} 
-            onLinkComplete={onStatusChange}
-          />
         </TabsContent>
         
         <TabsContent value="documents">
