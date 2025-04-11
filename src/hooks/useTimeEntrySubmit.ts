@@ -4,7 +4,7 @@ import { TimeEntryFormValues, ReceiptMetadata } from '@/types/timeTracking';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { v4 as uuidv4 } from 'uuid';
+import { uploadReceiptFile } from '@/components/timeTracking/utils/receiptUtils';
 
 export function useTimeEntrySubmit(onSuccess?: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,7 +22,7 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
       
       // Get employee rate if available
       let employeeRate = null;
-      if (data.employeeId) {
+      if (data.employeeId && data.employeeId !== 'none') {
         const { data: empData } = await supabase
           .from('employees')
           .select('hourly_rate')
@@ -40,7 +40,7 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
       const timeEntryData = {
         entity_type: data.entityType,
         entity_id: data.entityId,
-        employee_id: data.employeeId || null,
+        employee_id: data.employeeId === 'none' ? null : data.employeeId,
         hours_worked: data.hoursWorked,
         date_worked: formattedDate,
         start_time: data.startTime,
@@ -91,106 +91,15 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
         // Process each receipt file
         for (const file of receiptFiles) {
           try {
-            // Upload to storage
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${uuidv4()}.${fileExt}`;
-            const filePath = `time_entries/${timeEntry.id}/${fileName}`;
-            
-            console.log(`Uploading file to path: ${filePath}`);
-            
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('construction_documents')
-              .upload(filePath, file);
-              
-            if (uploadError) {
-              console.error('Error uploading file:', uploadError);
-              continue;
-            }
-            
-            // Create document record with proper schema fields
-            const documentData: any = {
-              entity_type: 'TIME_ENTRY',
-              entity_id: timeEntry.id,
-              file_name: file.name,
-              file_type: file.type,
-              file_size: file.size,
-              storage_path: filePath,
-              category: 'receipt',
-              is_expense: true,
-              tags: ['time-entry', 'receipt'],
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-            
-            // Add receipt metadata if available
-            if (receiptMetadata) {
-              if (receiptMetadata.vendorId) {
-                documentData.vendor_id = receiptMetadata.vendorId;
-              }
-              if (receiptMetadata.amount) {
-                documentData.amount = receiptMetadata.amount;
-              }
-              if (receiptMetadata.expenseType) {
-                documentData.expense_type = receiptMetadata.expenseType;
-              }
-            }
-            
-            console.log('Creating document record with data:', documentData);
-            
-            const { data: document, error: docError } = await supabase
-              .from('documents')
-              .insert(documentData)
-              .select('document_id')
-              .single();
-              
-            if (docError) {
-              console.error('Error creating document record:', docError);
-              continue;
-            }
-            
-            // Create link between time entry and document
-            if (document?.document_id) {
-              console.log(`Creating link between time entry ${timeEntry.id} and document ${document.document_id}`);
-              
-              const linkData = {
-                time_entry_id: timeEntry.id,
-                document_id: document.document_id
-              };
-              
-              const { error: linkError } = await supabase
-                .from('time_entry_document_links')
-                .insert(linkData);
-                
-              if (linkError) {
-                console.error('Error creating document link:', linkError);
-              }
-                
-              // Create expense record from receipt with correct schema
-              if (receiptMetadata?.amount) {
-                // Add correct fields for the expenses table
-                const expenseData = {
-                  entity_type: data.entityType.toUpperCase(),
-                  entity_id: data.entityId,
-                  description: `Receipt: ${file.name}`,
-                  expense_type: receiptMetadata.expenseType || 'OTHER',
-                  amount: receiptMetadata.amount,
-                  vendor_id: receiptMetadata.vendorId,
-                  document_id: document.document_id,
-                  time_entry_id: timeEntry.id,
-                  is_receipt: true,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                  quantity: 1,  // Required field
-                  unit_price: receiptMetadata.amount  // Required field
-                };
-                
-                await supabase
-                  .from('expenses')
-                  .insert(expenseData);
-              }
-            }
+            await uploadReceiptFile(file, timeEntry.id, {
+              vendorId: receiptMetadata?.vendorId,
+              amount: receiptMetadata?.amount,
+              expenseType: receiptMetadata?.expenseType || 'OTHER',
+              notes: data.notes
+            });
           } catch (fileError) {
             console.error('Error processing receipt file:', fileError);
+            // Continue with other files even if one fails
           }
         }
       }

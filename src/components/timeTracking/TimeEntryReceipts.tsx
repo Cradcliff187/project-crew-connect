@@ -1,119 +1,56 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2, AlertCircle, FileText, ExternalLink } from 'lucide-react';
+import { Loader2, AlertCircle, FileText, ExternalLink, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TimeEntryReceipt } from '@/types/timeTracking';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { fetchTimeEntryReceipts, deleteReceipt } from './utils/receiptUtils';
 
 interface TimeEntryReceiptsProps {
   timeEntryId?: string;
+  onReceiptsChange?: () => void;
 }
 
-const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) => {
+const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ 
+  timeEntryId,
+  onReceiptsChange 
+}) => {
   const [loading, setLoading] = useState(true);
   const [receipts, setReceipts] = useState<TimeEntryReceipt[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [receiptToDelete, setReceiptToDelete] = useState<string | null>(null);
   
   useEffect(() => {
     if (timeEntryId) {
-      fetchReceipts();
+      loadReceipts();
     } else {
       setReceipts([]);
       setLoading(false);
     }
   }, [timeEntryId]);
   
-  const fetchReceipts = async () => {
+  const loadReceipts = async () => {
     if (!timeEntryId) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      console.log(`Fetching receipts for time entry: ${timeEntryId}`);
-      
-      // First get document IDs linked to this time entry
-      const { data: links, error: linksError } = await supabase
-        .from('time_entry_document_links')
-        .select('document_id')
-        .eq('time_entry_id', timeEntryId);
-        
-      if (linksError) {
-        console.error('Error fetching document links:', linksError);
-        throw linksError;
-      }
-      
-      console.log(`Found ${links?.length || 0} linked documents`);
-      
-      if (!links || links.length === 0) {
-        setReceipts([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Extract document IDs
-      const documentIds = links.map(link => link.document_id);
-      
-      // Get document details
-      const { data: documents, error: documentsError } = await supabase
-        .from('documents')
-        .select('*')
-        .in('document_id', documentIds);
-        
-      if (documentsError) {
-        console.error('Error fetching documents:', documentsError);
-        throw documentsError;
-      }
-      console.log(`Retrieved ${documents?.length || 0} document records`);
-      
-      if (!documents || documents.length === 0) {
-        setReceipts([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Generate signed URLs for each document
-      const receiptResults = await Promise.all(
-        (documents || []).map(async (doc) => {
-          let url = null;
-          
-          try {
-            const { data: signedUrl, error: urlError } = await supabase
-              .storage
-              .from('construction_documents')
-              .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
-            
-            if (urlError) {
-              console.error('Error creating signed URL:', urlError);
-            } else {
-              url = signedUrl?.signedUrl;
-            }
-          } catch (urlError) {
-            console.error('Error generating signed URL:', urlError);
-          }
-          
-          return {
-            id: doc.document_id,
-            time_entry_id: timeEntryId,
-            file_name: doc.file_name,
-            file_type: doc.file_type,
-            file_size: doc.file_size,
-            storage_path: doc.storage_path,
-            uploaded_at: doc.created_at,
-            document_id: doc.document_id,
-            url: url,
-            expense_type: doc.expense_type,
-            vendor_id: doc.vendor_id,
-            amount: doc.amount
-          };
-        })
-      );
-      
-      setReceipts(receiptResults);
+      const loadedReceipts = await fetchTimeEntryReceipts(timeEntryId);
+      setReceipts(loadedReceipts);
     } catch (err: any) {
-      console.error('Error fetching receipts:', err);
+      console.error('Error loading receipts:', err);
       setError(err.message || 'Failed to fetch receipts');
     } finally {
       setLoading(false);
@@ -130,6 +67,24 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
         variant: "destructive"
       });
     }
+  };
+  
+  const handleDeleteReceipt = async (documentId: string) => {
+    if (!timeEntryId) return;
+    
+    const success = await deleteReceipt(timeEntryId, documentId);
+    
+    if (success) {
+      // Refresh the receipts list
+      loadReceipts();
+      
+      // Notify parent component if provided
+      if (onReceiptsChange) {
+        onReceiptsChange();
+      }
+    }
+    
+    setReceiptToDelete(null);
   };
   
   if (loading) {
@@ -164,7 +119,7 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
     <div className="space-y-4">
       {receipts.map((receipt) => (
         <div 
-          key={receipt.id} 
+          key={receipt.document_id || receipt.id} 
           className="border rounded-md p-4 flex justify-between items-center"
         >
           <div>
@@ -179,17 +134,49 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId }) =>
             </div>
           </div>
           
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleOpenReceipt(receipt.url)}
-            disabled={!receipt.url}
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleOpenReceipt(receipt.url)}
+              disabled={!receipt.url}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              onClick={() => setReceiptToDelete(receipt.document_id || receipt.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       ))}
+      
+      {/* Confirmation dialog for deleting receipts */}
+      <AlertDialog open={!!receiptToDelete} onOpenChange={() => setReceiptToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Receipt</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this receipt? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => receiptToDelete && handleDeleteReceipt(receiptToDelete)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
