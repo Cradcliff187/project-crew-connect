@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import TimeRangeSelector from "@/components/timeTracking/form/TimeRangeSelector"
 import { calculateHours } from "@/components/timeTracking/utils/timeUtils";
 import EmployeeSelect from "@/components/timeTracking/form/EmployeeSelect";
 import { useForm } from 'react-hook-form';
+import TimeEntryConfirmationDialog from "@/components/timeTracking/dialogs/TimeEntryConfirmationDialog";
 
 interface ProjectTimelogAddSheetProps {
   open: boolean;
@@ -37,6 +38,8 @@ export const ProjectTimelogAddSheet = ({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [timeError, setTimeError] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [submittedEntry, setSubmittedEntry] = useState<any>({});
   
   // Create a form control for the components that need it
   const form = useForm({
@@ -181,9 +184,15 @@ export const ProjectTimelogAddSheet = ({
         description: `${hours} hours have been logged successfully.`,
       });
       
-      // Reset form and close sheet
-      resetForm();
-      onSuccess();
+      // Store submitted entry for confirmation dialog
+      setSubmittedEntry({
+        ...timelogEntry,
+        id: insertedEntry?.id
+      });
+      
+      // Show confirmation dialog
+      setShowConfirmation(true);
+      
     } catch (error: any) {
       console.error('Error adding time entry:', error);
       toast({
@@ -191,74 +200,90 @@ export const ProjectTimelogAddSheet = ({
         description: error.message || 'Failed to add time entry.',
         variant: 'destructive',
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
   
+  const handleConfirmationClosed = () => {
+    setShowConfirmation(false);
+    resetForm();
+    onSuccess();
+    onOpenChange(false);
+  };
+  
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Log Project Time</SheetTitle>
-        </SheetHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <DatePicker 
-              date={selectedDate} 
-              setDate={(date) => date && setSelectedDate(date)} 
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Log Project Time</SheetTitle>
+          </SheetHeader>
+          
+          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="date">Date</Label>
+              <DatePicker 
+                date={selectedDate} 
+                setDate={(date) => date && setSelectedDate(date)} 
+              />
+            </div>
+            
+            <TimeRangeSelector
+              control={form.control}
+              startTime={startTime}
+              endTime={endTime}
+              onStartTimeChange={handleStartTimeChange}
+              onEndTimeChange={handleEndTimeChange}
+              error={timeError}
+              hoursWorked={hours}
             />
-          </div>
-          
-          <TimeRangeSelector
-            control={form.control}
-            startTime={startTime}
-            endTime={endTime}
-            onStartTimeChange={handleStartTimeChange}
-            onEndTimeChange={handleEndTimeChange}
-            error={timeError}
-            hoursWorked={hours}
-          />
-          
-          <EmployeeSelect
-            value={employeeId}
-            onChange={setEmployeeId}
-            employees={employees}
-            label="Employee"
-          />
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Add notes about work performed..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={4}
+            
+            <EmployeeSelect
+              value={employeeId}
+              onChange={setEmployeeId}
+              employees={employees}
+              label="Employee"
             />
-          </div>
-          
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || hours <= 0}
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-            >
-              {isSubmitting ? 'Saving...' : 'Log Time'}
-            </Button>
-          </div>
-        </form>
-      </SheetContent>
-    </Sheet>
+            
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add notes about work performed..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || hours <= 0}
+                className="bg-[#0485ea] hover:bg-[#0375d1]"
+              >
+                {isSubmitting ? 'Saving...' : 'Log Time'}
+              </Button>
+            </div>
+          </form>
+        </SheetContent>
+      </Sheet>
+      
+      <TimeEntryConfirmationDialog
+        open={showConfirmation}
+        onOpenChange={handleConfirmationClosed}
+        timeEntry={submittedEntry}
+        receipts={{ count: 0, totalAmount: 0 }}
+        entityName="Project Time"
+      />
+    </>
   );
 };

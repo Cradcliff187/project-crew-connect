@@ -132,13 +132,13 @@ export function useTimeEntryForm(onSuccess: () => void) {
     return true;
   };
   
-  const handleSubmit = (data: TimeEntryFormValues) => {
+  const handleSubmit = async (data: TimeEntryFormValues) => {
     if (!validateReceiptData()) {
-      return;
+      return null;
     }
     
-    // Submit with enhanced receipt metadata
-    submitTimeEntry(data, selectedFiles, receiptMetadata);
+    // Submit with enhanced receipt metadata and return the result
+    return await submitTimeEntry(data, selectedFiles, receiptMetadata);
   };
   
   return {

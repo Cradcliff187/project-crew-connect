@@ -16,6 +16,7 @@ import NotesField from './form/NotesField';
 import EntitySelector from './form/EntitySelector';
 import ReceiptPromptDialog from './dialogs/ReceiptPromptDialog';
 import DocumentUploadDirectSheet from './DocumentUploadDirectSheet';
+import TimeEntryConfirmationDialog from './dialogs/TimeEntryConfirmationDialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MobileQuickLogSheetProps {
@@ -48,6 +49,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [showReceiptPrompt, setShowReceiptPrompt] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   const [formData, setFormData] = useState<QuickLogFormValues | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [submittedEntry, setSubmittedEntry] = useState<any>({});
+  const [submittedReceipts, setSubmittedReceipts] = useState({ count: 0, totalAmount: 0 });
+  const [entityName, setEntityName] = useState('');
   
   const form = useForm<QuickLogFormValues>({
     resolver: zodResolver(quickLogSchema),
@@ -61,13 +66,20 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     }
   });
   
-  const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit(() => {
-    if (onSuccess) onSuccess();
-    onOpenChange(false);
-  });
+  const { isSubmitting, submitTimeEntry } = useTimeEntrySubmit();
   
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
+  const watchEntityType = form.watch('entityType');
+  const watchEntityId = form.watch('entityId');
+  
+  // Update entity name when selection changes
+  useEffect(() => {
+    if (watchEntityType && watchEntityId) {
+      const name = getEntityName();
+      setEntityName(name);
+    }
+  }, [watchEntityType, watchEntityId, workOrders, projects]);
   
   // Update hours when times change
   useEffect(() => {
@@ -81,6 +93,13 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     }
   }, [startTime, endTime, form]);
   
+  const getEntityName = () => {
+    if (watchEntityType === 'work_order') {
+      return workOrders.find(wo => wo.id === watchEntityId)?.title || '';
+    }
+    return projects.find(p => p.id === watchEntityId)?.title || '';
+  };
+  
   const handleSubmit = (data: QuickLogFormValues) => {
     setFormData(data);
     setShowReceiptPrompt(true);
@@ -91,7 +110,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setShowDocumentUpload(true);
   };
   
-  const handleReceiptSkip = () => {
+  const handleReceiptSkip = async () => {
     setShowReceiptPrompt(false);
     if (formData) {
       // Create a time entry object with the workDate set to the provided date
@@ -102,12 +121,26 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         hasReceipts: false,
       };
       
-      submitTimeEntry(timeEntryData, [], { category: 'receipt', expenseType: null, tags: ['time-entry'] });
+      const result = await submitTimeEntry(timeEntryData, [], { category: 'receipt', expenseType: null, tags: ['time-entry'] });
+      
+      if (result) {
+        setSubmittedEntry(result.timeEntry);
+        setSubmittedReceipts(result.receipts);
+        setShowSuccessDialog(true);
+      } else {
+        if (onSuccess) onSuccess();
+        onOpenChange(false);
+      }
     }
   };
   
   const handleDocumentUploadSuccess = () => {
     setShowDocumentUpload(false);
+    setShowSuccessDialog(true);
+  };
+  
+  const handleSuccessDialogClose = () => {
+    setShowSuccessDialog(false);
     if (onSuccess) onSuccess();
     onOpenChange(false);
   };
@@ -177,6 +210,15 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
           allowEntityTypeSelection={false}
         />
       )}
+      
+      {/* Success Confirmation Dialog */}
+      <TimeEntryConfirmationDialog
+        open={showSuccessDialog}
+        onOpenChange={handleSuccessDialogClose}
+        timeEntry={submittedEntry}
+        receipts={submittedReceipts}
+        entityName={entityName}
+      />
     </>
   );
 };

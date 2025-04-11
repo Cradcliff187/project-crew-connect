@@ -84,6 +84,12 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
           .insert(laborExpenseData);
       }
       
+      // Receipt processing data
+      let receiptsData = {
+        count: 0,
+        totalAmount: 0
+      };
+      
       // Upload receipts if available
       if (receiptFiles.length > 0 && timeEntry?.id) {
         console.log(`Uploading ${receiptFiles.length} receipt files for time entry ${timeEntry.id}`);
@@ -100,6 +106,12 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
               expenseType: expenseType,
               notes: data.notes
             });
+            
+            // Count successful uploads and track amount
+            receiptsData.count++;
+            if (receiptMetadata?.amount) {
+              receiptsData.totalAmount += receiptMetadata.amount;
+            }
           } catch (fileError) {
             console.error('Error processing receipt file:', fileError);
             // Continue with other files even if one fails
@@ -115,6 +127,16 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
       if (onSuccess) {
         onSuccess();
       }
+      
+      // Return the created time entry with receipts data for confirmation dialog
+      return {
+        timeEntry: { 
+          ...timeEntryData, 
+          id: timeEntry?.id 
+        },
+        receipts: receiptsData
+      };
+      
     } catch (error: any) {
       console.error('Error submitting time entry:', error);
       toast({
@@ -122,6 +144,7 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
         description: error.message || "Failed to submit time entry.",
         variant: "destructive"
       });
+      return null;
     } finally {
       setIsSubmitting(false);
     }

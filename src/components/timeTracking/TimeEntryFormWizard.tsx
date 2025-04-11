@@ -15,6 +15,8 @@ import { Separator } from '@/components/ui/separator';
 import { useEntityData } from './hooks/useEntityData';
 import { Card, CardContent } from '@/components/ui/card';
 import ReceiptPromptDialog from './dialogs/ReceiptPromptDialog';
+import TimeEntryConfirmationDialog from './dialogs/TimeEntryConfirmationDialog';
+import { TimeEntry } from '@/types/timeTracking';
 
 interface TimeEntryFormWizardProps {
   onSuccess: () => void;
@@ -32,6 +34,10 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   const [showReceiptPrompt, setShowReceiptPrompt] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [submittedEntry, setSubmittedEntry] = useState<Partial<TimeEntry>>({});
+  const [submittedReceipts, setSubmittedReceipts] = useState({ count: 0, totalAmount: 0 });
+  const [entityName, setEntityName] = useState('');
   
   const {
     form,
@@ -42,7 +48,9 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     handleFileClear,
     updateReceiptMetadata,
     handleSubmit
-  } = useTimeEntryForm(onSuccess);
+  } = useTimeEntryForm(() => {
+    // Don't call onSuccess directly - we'll call it when dialog is closed
+  });
   
   const { workOrders, projects, employees, isLoadingEntities } = useEntityData();
   
@@ -68,6 +76,14 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       form.setValue('employeeId', 'none');
     }
   }, [form, date, defaultEntityType, defaultEntityId]);
+  
+  // Update entity name when selection changes
+  React.useEffect(() => {
+    if (watchEntityType && watchEntityId) {
+      const name = getEntityName();
+      setEntityName(name);
+    }
+  }, [watchEntityType, watchEntityId, workOrders, projects]);
   
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +111,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
     setShowConfirmation(true);
   };
   
-  const handleConfirmSubmit = () => {
+  const handleConfirmSubmit = async () => {
     setShowConfirmation(false);
     const data = form.getValues();
     
@@ -104,7 +120,12 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
       data.employeeId = undefined;
     }
     
-    handleSubmit(data);
+    const result = await handleSubmit(data);
+    if (result) {
+      setSubmittedEntry(result.timeEntry);
+      setSubmittedReceipts(result.receipts);
+      setShowSuccessDialog(true);
+    }
   };
   
   const getEntityName = () => {
@@ -118,6 +139,11 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
   const handleReceiptUploadComplete = () => {
     setShowReceiptUpload(false);
     setShowConfirmation(true);
+  };
+  
+  const handleSuccessDialogClose = () => {
+    setShowSuccessDialog(false);
+    onSuccess();
   };
   
   return (
@@ -217,6 +243,14 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
         selectedFiles={selectedFiles}
         isLoading={isLoading}
         onConfirm={handleConfirmSubmit}
+      />
+      
+      <TimeEntryConfirmationDialog
+        open={showSuccessDialog}
+        onOpenChange={handleSuccessDialogClose}
+        timeEntry={submittedEntry}
+        receipts={submittedReceipts}
+        entityName={entityName}
       />
     </>
   );
