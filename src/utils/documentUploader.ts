@@ -65,7 +65,8 @@ export const uploadDocument = async (
       console.error('Error uploading file:', storageError);
       return {
         success: false,
-        error: storageError.message,
+        error: storageError,
+        message: storageError.message
       };
     }
     
@@ -121,7 +122,8 @@ export const uploadDocument = async (
       
       return {
         success: false,
-        error: dbError.message,
+        error: dbError,
+        message: dbError.message
       };
     }
     
@@ -144,7 +146,8 @@ export const uploadDocument = async (
     console.error('Document upload failed:', error);
     return {
       success: false,
-      error: error.message || 'Failed to upload document',
+      error: error,
+      message: error.message || 'Failed to upload document',
     };
   }
 };

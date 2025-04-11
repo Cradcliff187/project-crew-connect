@@ -1,45 +1,38 @@
 
 import React from 'react';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { DocumentUploadFormValues } from '../schemas/documentSchema';
 
 interface ExpenseDatePickerProps {
-  control: Control<DocumentUploadFormValues>;
-  defaultDate?: Date;
+  control: Control<any>;
 }
 
-const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({
-  control,
-  defaultDate = new Date()
-}) => {
+const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({ control }) => {
   return (
     <FormField
       control={control}
       name="metadata.expenseDate"
       render={({ field }) => (
-        <FormItem className="flex flex-col w-full">
-          <FormLabel className="font-medium text-slate-700">Date</FormLabel>
+        <FormItem className="flex flex-col">
+          <FormLabel>Date</FormLabel>
           <Popover>
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
                   variant="outline"
                   className={cn(
-                    "pl-3 text-left font-normal",
-                    !field.value && "text-muted-foreground"
+                    'w-full pl-3 text-left font-normal',
+                    !field.value && 'text-muted-foreground'
                   )}
                 >
                   {field.value ? (
-                    field.value instanceof Date ?
-                      format(field.value, "PPP") :
-                      format(new Date(field.value), "PPP")
+                    format(new Date(field.value), 'PPP')
                   ) : (
                     <span>Pick a date</span>
                   )}
@@ -50,8 +43,8 @@ const ExpenseDatePicker: React.FC<ExpenseDatePickerProps> = ({
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={field.value instanceof Date ? field.value : new Date(field.value || defaultDate)}
-                onSelect={field.onChange}
+                selected={field.value ? new Date(field.value) : undefined}
+                onSelect={(date) => field.onChange(date)}
                 initialFocus
               />
             </PopoverContent>

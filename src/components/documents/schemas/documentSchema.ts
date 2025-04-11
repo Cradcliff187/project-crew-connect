@@ -1,189 +1,189 @@
 
-import { z } from 'zod';
+import { z } from "zod";
 
-// Define the EntityType enum that will be used application-wide
+// Update the EntityType enum to match project requirements
 export enum EntityType {
-  PROJECT = 'PROJECT',
-  WORK_ORDER = 'WORK_ORDER',
-  ESTIMATE = 'ESTIMATE',
-  ESTIMATE_ITEM = 'ESTIMATE_ITEM',
-  CUSTOMER = 'CUSTOMER',
-  VENDOR = 'VENDOR',
-  CONTACT = 'CONTACT',
-  SUBCONTRACTOR = 'SUBCONTRACTOR',
-  EXPENSE = 'EXPENSE',
-  TIME_ENTRY = 'TIME_ENTRY',
-  EMPLOYEE = 'EMPLOYEE',
-  BUDGET_ITEM = 'BUDGET_ITEM',
-  CHANGE_ORDER = 'CHANGE_ORDER'
+  PROJECT = "PROJECT",
+  ESTIMATE = "ESTIMATE",
+  ESTIMATE_ITEM = "ESTIMATE_ITEM",
+  WORK_ORDER = "WORK_ORDER",
+  SUBCONTRACTOR = "SUBCONTRACTOR",
+  VENDOR = "VENDOR",
+  CUSTOMER = "CUSTOMER",
+  CONTACT = "CONTACT",
+  EMPLOYEE = "EMPLOYEE",
+  SITE_LOCATION = "SITE_LOCATION",
+  CHANGE_ORDER = "CHANGE_ORDER",
+  MATERIAL = "MATERIAL",
+  EQUIPMENT = "EQUIPMENT",
+  TIME_ENTRY = "TIME_ENTRY",
+  RECEIPT = "RECEIPT"
 }
 
-// Define document categories
+// Document category types
 export enum DocumentCategory {
-  RECEIPT = 'receipt',
-  INVOICE = 'invoice',
-  CONTRACT = 'contract',
-  PHOTO = 'photo',
-  GENERAL = 'general',
-  SPECIFICATIONS = 'specifications',
-  PERMIT = 'permit',
-  CERTIFICATE = 'certificate',
-  OTHER = 'other',
-  THIRD_PARTY_ESTIMATE = '3rd_party_estimate',
-  INSURANCE = 'insurance',
-  CERTIFICATION = 'certification'
+  GENERAL = "general",
+  RECEIPT = "receipt",
+  INVOICE = "invoice",
+  CONTRACT = "contract",
+  SPECIFICATION = "specification",
+  PHOTO = "photo",
+  PERMIT = "permit",
+  CERTIFICATE = "certificate",
+  INSURANCE = "insurance",
+  WARRANTY = "warranty",
+  CHANGE_ORDER = "change_order",
+  ESTIMATE = "estimate",
+  THIRD_PARTY_ESTIMATE = "3rd_party_estimate",
+  PROPOSAL = "proposal",
+  AGREEMENT = "agreement",
+  CERTIFICATION = "certification",
+  OTHER = "other"
 }
 
-// Export an array of document categories for dropdowns
-export const documentCategories = Object.values(DocumentCategory);
-
-// Define expense types
-export enum ExpenseType {
-  MATERIAL = 'material',
-  LABOR = 'labor',
-  EQUIPMENT = 'equipment',
-  SUBCONTRACTOR = 'subcontractor',
-  PERMIT = 'permit',
-  GENERAL = 'general',
-  OTHER = 'other'
-}
-
-// Export an array of expense types for dropdowns
-export const expenseTypes = Object.values(ExpenseType);
-
-// Define vendor types
-export enum VendorType {
-  SUPPLIER = 'supplier',
-  MANUFACTURER = 'manufacturer',
-  DISTRIBUTOR = 'distributor',
-  OTHER = 'other'
-}
-
-// Export an array of vendor types for dropdowns
-export const vendorTypes = Object.values(VendorType);
-
-// Define entity types array for dropdowns
-export const entityTypes = Object.values(EntityType);
-
-// Entity category mapping
+// Map entity types to their relevant document categories
 export const entityCategoryMap: Record<EntityType, DocumentCategory[]> = {
   [EntityType.PROJECT]: [
-    DocumentCategory.CONTRACT, 
-    DocumentCategory.PHOTO, 
-    DocumentCategory.SPECIFICATIONS,
-    DocumentCategory.PERMIT,
-    DocumentCategory.GENERAL
-  ],
-  [EntityType.WORK_ORDER]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.CONTRACT,
+    DocumentCategory.SPECIFICATION,
     DocumentCategory.PHOTO,
-    DocumentCategory.RECEIPT,
-    DocumentCategory.INVOICE,
-    DocumentCategory.GENERAL
+    DocumentCategory.PERMIT,
+    DocumentCategory.CERTIFICATE,
+    DocumentCategory.INSURANCE,
+    DocumentCategory.WARRANTY,
+    DocumentCategory.CHANGE_ORDER,
+    DocumentCategory.OTHER
   ],
   [EntityType.ESTIMATE]: [
-    DocumentCategory.CONTRACT,
-    DocumentCategory.SPECIFICATIONS,
-    DocumentCategory.GENERAL
-  ],
-  [EntityType.CUSTOMER]: [
-    DocumentCategory.CONTRACT,
-    DocumentCategory.INVOICE,
-    DocumentCategory.GENERAL
-  ],
-  [EntityType.VENDOR]: [
-    DocumentCategory.INVOICE,
-    DocumentCategory.RECEIPT,
-    DocumentCategory.CONTRACT,
-    DocumentCategory.GENERAL
-  ],
-  [EntityType.CONTACT]: [
-    DocumentCategory.CONTRACT,
-    DocumentCategory.GENERAL
-  ],
-  [EntityType.SUBCONTRACTOR]: [
-    DocumentCategory.CONTRACT,
-    DocumentCategory.INVOICE,
-    DocumentCategory.CERTIFICATE,
-    DocumentCategory.PERMIT,
-    DocumentCategory.GENERAL
-  ],
-  [EntityType.EXPENSE]: [
-    DocumentCategory.RECEIPT,
-    DocumentCategory.INVOICE,
-    DocumentCategory.GENERAL
-  ],
-  [EntityType.TIME_ENTRY]: [
-    DocumentCategory.PHOTO,
-    DocumentCategory.RECEIPT,
-    DocumentCategory.GENERAL
-  ],
-  [EntityType.EMPLOYEE]: [
-    DocumentCategory.CONTRACT,
-    DocumentCategory.CERTIFICATE,
-    DocumentCategory.GENERAL
+    DocumentCategory.GENERAL,
+    DocumentCategory.ESTIMATE,
+    DocumentCategory.PROPOSAL,
+    DocumentCategory.THIRD_PARTY_ESTIMATE,
+    DocumentCategory.AGREEMENT,
+    DocumentCategory.OTHER
   ],
   [EntityType.ESTIMATE_ITEM]: [
-    DocumentCategory.SPECIFICATIONS,
+    DocumentCategory.GENERAL,
+    DocumentCategory.SPECIFICATION,
     DocumentCategory.PHOTO,
-    DocumentCategory.GENERAL
+    DocumentCategory.OTHER
   ],
-  [EntityType.BUDGET_ITEM]: [
+  [EntityType.WORK_ORDER]: [
+    DocumentCategory.GENERAL,
     DocumentCategory.RECEIPT,
     DocumentCategory.INVOICE,
-    DocumentCategory.GENERAL
+    DocumentCategory.PHOTO,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.SUBCONTRACTOR]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.CONTRACT,
+    DocumentCategory.INSURANCE,
+    DocumentCategory.CERTIFICATION,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.VENDOR]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.INVOICE,
+    DocumentCategory.RECEIPT,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.CUSTOMER]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.CONTRACT,
+    DocumentCategory.AGREEMENT,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.CONTACT]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.CONTRACT,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.EMPLOYEE]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.CERTIFICATION,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.SITE_LOCATION]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.PHOTO,
+    DocumentCategory.PERMIT,
+    DocumentCategory.OTHER
   ],
   [EntityType.CHANGE_ORDER]: [
-    DocumentCategory.CONTRACT,
-    DocumentCategory.SPECIFICATIONS,
-    DocumentCategory.GENERAL
+    DocumentCategory.GENERAL,
+    DocumentCategory.CHANGE_ORDER,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.MATERIAL]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.RECEIPT,
+    DocumentCategory.INVOICE,
+    DocumentCategory.SPECIFICATION,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.EQUIPMENT]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.RECEIPT,
+    DocumentCategory.INVOICE,
+    DocumentCategory.WARRANTY,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.TIME_ENTRY]: [
+    DocumentCategory.GENERAL,
+    DocumentCategory.RECEIPT,
+    DocumentCategory.OTHER
+  ],
+  [EntityType.RECEIPT]: [
+    DocumentCategory.RECEIPT,
+    DocumentCategory.INVOICE,
+    DocumentCategory.OTHER
   ]
 };
 
-// Helper function to get relevant categories for an entity type
+// Get available categories for a given entity type
 export function getEntityCategories(entityType: EntityType): DocumentCategory[] {
-  return entityCategoryMap[entityType] || Object.values(DocumentCategory);
+  return entityCategoryMap[entityType] || [DocumentCategory.GENERAL, DocumentCategory.OTHER];
 }
 
-// Define relationship types
-export enum RelationshipType {
-  PARENT_CHILD = 'PARENT_CHILD',
-  VERSION = 'VERSION',
-  REFERENCE = 'REFERENCE',
-  RELATED = 'RELATED'
-}
-
-// Document interface
+// Document interface that matches database schema
 export interface Document {
   document_id: string;
   file_name: string;
   file_type?: string;
   file_size?: number;
   storage_path: string;
-  entity_type: EntityType;
+  url?: string;
   entity_id: string;
-  category?: DocumentCategory | string;
-  tags?: string[];
-  notes?: string;
+  entity_type: EntityType;
   created_at: string;
   updated_at?: string;
-  url?: string;
-  amount?: number | null;
-  expense_date?: string | null;
+  category?: string;
   is_expense?: boolean;
-  version?: number;
-  parent_document_id?: string | null;
-  is_latest_version?: boolean;
+  tags?: string[];
+  notes?: string;
+  amount?: number;
+  expense_date?: string;
   uploaded_by?: string;
   vendor_id?: string;
   vendor_type?: string;
   expense_type?: string;
-  budget_item_id?: string;
-  parent_entity_type?: EntityType;
-  parent_entity_id?: string;
-  mime_type?: string;
-  // Add item reference fields for estimate items
-  item_id?: string;
-  item_reference?: string;
+  version?: number;
+  is_latest_version?: boolean;
+  parent_document_id?: string;
+}
+
+// All document categories in a flat array
+export const documentCategories: DocumentCategory[] = Object.values(DocumentCategory);
+
+// Document relationship types
+export enum RelationshipType {
+  RELATED = "RELATED",
+  VERSION_OF = "VERSION_OF",
+  ATTACHMENT_TO = "ATTACHMENT_TO",
+  RECEIPT_FOR = "RECEIPT_FOR",
+  INVOICE_FOR = "INVOICE_FOR"
 }
 
 // Document relationship interface
@@ -192,85 +192,52 @@ export interface DocumentRelationship {
   source_document_id: string;
   target_document_id: string;
   relationship_type: RelationshipType;
-  relationship_metadata?: Record<string, any>;
   created_at: string;
   source_document?: Document;
   target_document?: Document;
 }
 
-// Export a type for document with relationships
 export interface DocumentWithRelation extends Document {
   relationships?: DocumentRelationship[];
 }
 
-// Export params type for creating relationships
+// Parameters for creating a relationship between documents
 export interface CreateRelationshipParams {
   sourceDocumentId: string;
   targetDocumentId: string;
   relationshipType: RelationshipType;
-  metadata?: Record<string, any>;
 }
 
-// Document upload metadata schema
-export interface DocumentUploadMetadata {
-  entityType: EntityType;
-  entityId: string;
-  category?: DocumentCategory | string;
-  isExpense?: boolean;
-  amount?: number | null;
-  expenseDate?: string | Date | null;
-  vendorId?: string | null;
-  vendorType?: string | null;
-  expenseType?: string | null;
-  budgetItemId?: string | null;
-  parentEntityType?: EntityType;
-  parentEntityId?: string;
-  tags?: string[];
-  notes?: string;
-  version?: number;
-}
-
-// Document upload result type
+// Result of document upload operation
 export interface DocumentUploadResult {
   success: boolean;
   documentId?: string;
-  error?: Error | any;
   document?: Document;
+  error?: any;
+  message?: string;
 }
 
-// Document file validation schema
-export const DocumentFileSchema = z.instanceof(File).refine(
-  file => file.size <= 15 * 1024 * 1024, // 15 MB max size
-  {
-    message: 'File is too large. Maximum size is 15MB.',
-  }
-);
-
-// Document metadata schema
-export const DocumentMetadataSchema = z.object({
-  entityType: z.nativeEnum(EntityType),
-  entityId: z.string(),
-  category: z.string().optional(),
-  isExpense: z.boolean().optional(),
-  amount: z.number().nullable().optional(),
-  expenseDate: z.union([z.date(), z.string()]).optional().nullable(),
-  vendorId: z.string().optional().nullable(),
-  vendorType: z.string().optional().nullable(),
-  expenseType: z.string().optional().nullable(),
-  budgetItemId: z.string().optional().nullable(),
-  parentEntityType: z.nativeEnum(EntityType).optional(),
-  parentEntityId: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  notes: z.string().optional(),
-  version: z.number().optional()
-});
-
-// Main document upload form schema
+// Form values schema for document upload
 export const DocumentUploadSchema = z.object({
-  files: z.array(DocumentFileSchema).min(1, "At least one file is required"),
-  metadata: DocumentMetadataSchema,
+  files: z.array(z.instanceof(File)).min(1, "At least one file is required"),
+  metadata: z.object({
+    entityType: z.nativeEnum(EntityType).optional(),
+    entityId: z.string().optional(),
+    category: z.string().optional(),
+    isExpense: z.boolean().optional(),
+    notes: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    amount: z.number().nullish(),
+    expenseDate: z.union([z.string(), z.date()]).optional(),
+    vendorId: z.string().optional().nullable(),
+    vendorType: z.string().optional().nullable(),
+    expenseType: z.string().optional().nullable(),
+    budgetItemId: z.string().optional().nullable(),
+    version: z.number().optional(),
+    parentEntityType: z.nativeEnum(EntityType).optional(),
+    parentEntityId: z.string().optional()
+  }).optional()
 });
 
-// Export with correct TypeScript syntax for types
+// Document upload form values type
 export type DocumentUploadFormValues = z.infer<typeof DocumentUploadSchema>;
-export type DocumentMetadata = z.infer<typeof DocumentMetadataSchema>;

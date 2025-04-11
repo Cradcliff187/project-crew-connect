@@ -1,4 +1,3 @@
-
 import { WorkOrderMaterial } from '@/types/workOrder';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import MaterialReceiptUpload from '../components/MaterialReceiptUpload';
@@ -38,8 +37,11 @@ export const ReceiptUploadDialog = ({
     >
       <MaterialReceiptUpload
         workOrderId={workOrderId}
-        material={material}
+        materialId={material.id}
+        materialName={material.expense_name || 'Material'}
+        vendorId={material.vendor_id}
         vendorName={vendorName}
+        amount={material.total_price}
         onSuccess={(documentId) => documentId && onSuccess(material.id, documentId)}
         onCancel={onCancel}
       />

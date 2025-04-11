@@ -1,43 +1,32 @@
 
-import React, { useMemo } from 'react';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React from 'react';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues, EntityType, DocumentCategory, getEntityCategories } from '../schemas/documentSchema';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { EntityType, DocumentCategory, getEntityCategories } from '../schemas/documentSchema';
 
 interface DocumentCategorySelectorProps {
-  control: Control<DocumentUploadFormValues>;
+  control: Control<any>;
   isReceiptUpload?: boolean;
-  entityType?: EntityType;
+  entityType: EntityType;
 }
 
-/**
- * Component to select document categories based on entity type
- */
+// This component handles category selection based on entity type
 const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
   control,
   isReceiptUpload = false,
   entityType
 }) => {
-  // Get categories based on entity type or use default ones
-  const availableCategories = useMemo(() => {
-    if (isReceiptUpload) {
-      return [DocumentCategory.RECEIPT];
-    }
-    
-    if (entityType) {
-      return getEntityCategories(entityType);
-    }
-    
-    // Default categories for fallback
-    return [
-      DocumentCategory.GENERAL,
-      DocumentCategory.CONTRACT,
-      DocumentCategory.INVOICE,
-      DocumentCategory.PHOTO,
-      DocumentCategory.OTHER
-    ];
-  }, [entityType, isReceiptUpload]);
+  // Get categories for the given entity type
+  const availableCategories = getEntityCategories(entityType);
 
   return (
     <FormField
@@ -45,27 +34,26 @@ const DocumentCategorySelector: React.FC<DocumentCategorySelectorProps> = ({
       name="metadata.category"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="font-medium text-slate-700">Document Category</FormLabel>
+          <FormLabel>Category</FormLabel>
           <Select
             onValueChange={field.onChange}
-            value={field.value?.toString() || ''}
-            disabled={isReceiptUpload}
+            value={field.value || ''}
+            disabled={isReceiptUpload} // When it's a receipt upload, the category is fixed
           >
             <FormControl>
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select document category" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {availableCategories.map((category) => (
-                <SelectItem 
-                  key={category} 
-                  value={category}
-                  className="capitalize"
-                >
-                  {category.replace(/_/g, ' ')}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                <SelectLabel>Document Categories</SelectLabel>
+                {availableCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ')}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
           <FormMessage />
