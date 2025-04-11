@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Document } from '@/components/documents/schemas/documentSchema';
-import { DocumentUpload } from '@/components/documents/DocumentUpload';
+import DocumentUpload from '@/components/documents/DocumentUpload';
 
 interface DocumentUploadDirectSheetProps {
   open: boolean;
