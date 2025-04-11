@@ -1,205 +1,123 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Document, EntityType, documentService } from '@/services/documentService';
 import { toast } from '@/hooks/use-toast';
-import { Document } from '@/components/documents/schemas/documentSchema';
 
-export type RelationshipType = 'REFERENCE' | 'VERSION' | 'ATTACHMENT' | 'RELATED' | 'SUPPLEMENT';
-
-export type DocumentRelationship = {
+interface DocumentRelationship {
   id: string;
   source_document_id: string;
   target_document_id: string;
-  relationship_type: RelationshipType;
-  relationship_metadata?: {
-    description?: string;
-    created_by?: string;
-  };
+  relationship_type: string;
+  relationship_metadata?: any;
   created_at: string;
   updated_at: string;
-  source_document?: Document;
-  target_document?: Document;
-};
-
-export interface CreateRelationshipParams {
-  sourceDocumentId: string;
-  targetDocumentId: string;
-  relationshipType: RelationshipType;
-  metadata?: {
-    description?: string;
-    created_by?: string;
-  };
 }
 
-export const useDocumentRelationships = (documentId?: string) => {
+export const useDocumentRelationships = (documentId: string) => {
   const [relationships, setRelationships] = useState<DocumentRelationship[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [relatedDocuments, setRelatedDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchRelationships = useCallback(async () => {
+  
+  // Fetch document relationships
+  useEffect(() => {
     if (!documentId) return;
     
-    setLoading(true);
-    setError(null);
+    const fetchRelationships = async () => {
+      setLoading(true);
+      try {
+        // Fetch relationships where this document is either source or target
+        const { data, error } = await supabase
+          .from('document_relationships')
+          .select('*')
+          .or(`source_document_id.eq.${documentId},target_document_id.eq.${documentId}`);
+        
+        if (error) throw error;
+        
+        setRelationships(data || []);
+        
+        // Fetch related document details
+        if (data && data.length > 0) {
+          const relatedDocIds = data.map(rel => 
+            rel.source_document_id === documentId ? 
+              rel.target_document_id : rel.source_document_id
+          ).filter(id => id !== null);
+          
+          const relatedDocs: Document[] = [];
+          
+          for (const id of relatedDocIds) {
+            const result = await documentService.getDocumentById(id);
+            if (result.success && result.document) {
+              relatedDocs.push(result.document);
+            }
+          }
+          
+          setRelatedDocuments(relatedDocs);
+        }
+        
+      } catch (err: any) {
+        console.error('Error fetching document relationships:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    try {
-      // Fetch relationships where this document is the source
-      const { data: sourceRelationships, error: sourceError } = await supabase
-        .from('document_relationships')
-        .select(`
-          id,
-          source_document_id,
-          target_document_id,
-          relationship_type,
-          relationship_metadata,
-          created_at,
-          updated_at,
-          target_document:documents!target_document_id(
-            document_id, 
-            file_name, 
-            file_type, 
-            entity_type, 
-            entity_id, 
-            category,
-            created_at
-          )
-        `)
-        .eq('source_document_id', documentId);
-      
-      if (sourceError) throw sourceError;
-      
-      // Fetch relationships where this document is the target
-      const { data: targetRelationships, error: targetError } = await supabase
-        .from('document_relationships')
-        .select(`
-          id,
-          source_document_id,
-          target_document_id,
-          relationship_type,
-          relationship_metadata,
-          created_at,
-          updated_at,
-          source_document:documents!source_document_id(
-            document_id, 
-            file_name, 
-            file_type, 
-            entity_type, 
-            entity_id, 
-            category,
-            created_at
-          )
-        `)
-        .eq('target_document_id', documentId);
-      
-      if (targetError) throw targetError;
-      
-      // Type validation and casting for relationship_type
-      const validateRelationshipType = (type: string): RelationshipType => {
-        const validTypes: RelationshipType[] = ['REFERENCE', 'VERSION', 'ATTACHMENT', 'RELATED', 'SUPPLEMENT'];
-        return validTypes.includes(type as RelationshipType) 
-          ? (type as RelationshipType) 
-          : 'RELATED'; // Default to RELATED if type is invalid
-      };
-      
-      // Process source relationships with proper type casting
-      const typedSourceRelationships = sourceRelationships?.map(rel => ({
-        ...rel,
-        relationship_type: validateRelationshipType(rel.relationship_type)
-      })) || [];
-      
-      // Process target relationships with proper type casting
-      const typedTargetRelationships = targetRelationships?.map(rel => ({
-        ...rel,
-        relationship_type: validateRelationshipType(rel.relationship_type)
-      })) || [];
-      
-      // Combine and set relationships with proper typing
-      setRelationships([
-        ...typedSourceRelationships,
-        ...typedTargetRelationships
-      ] as DocumentRelationship[]);
-    } catch (err: any) {
-      console.error('Error fetching document relationships:', err);
-      setError(err.message);
-      toast({
-        title: 'Error fetching relationships',
-        description: err.message,
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
+    fetchRelationships();
   }, [documentId]);
   
-  const createRelationship = useCallback(async ({
-    sourceDocumentId,
-    targetDocumentId,
-    relationshipType,
-    metadata
-  }: CreateRelationshipParams) => {
-    setLoading(true);
-    setError(null);
-    
+  // Create a relationship between documents
+  const createRelationship = async (
+    targetDocumentId: string,
+    relationshipType: string,
+    metadata?: any
+  ): Promise<boolean> => {
     try {
-      // Check for existing relationship
-      const { data: existingRelationship, error: checkError } = await supabase
-        .from('document_relationships')
-        .select('id')
-        .match({
-          source_document_id: sourceDocumentId,
-          target_document_id: targetDocumentId
-        })
-        .single();
-      
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
-      
-      if (existingRelationship) {
-        throw new Error('A relationship already exists between these documents');
-      }
-      
-      // Create the new relationship
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('document_relationships')
         .insert({
-          source_document_id: sourceDocumentId,
+          source_document_id: documentId,
           target_document_id: targetDocumentId,
           relationship_type: relationshipType,
           relationship_metadata: metadata
-        })
-        .select()
-        .single();
+        });
       
       if (error) throw error;
       
-      toast({
-        title: 'Relationship created',
-        description: 'Documents have been linked successfully',
-      });
-      
       // Refresh relationships
-      await fetchRelationships();
+      const { data } = await supabase
+        .from('document_relationships')
+        .select('*')
+        .or(`source_document_id.eq.${documentId},target_document_id.eq.${documentId}`);
       
-      return data;
-    } catch (err: any) {
-      console.error('Error creating relationship:', err);
-      setError(err.message);
+      setRelationships(data || []);
+      
+      // Fetch the newly related document
+      const result = await documentService.getDocumentById(targetDocumentId);
+      if (result.success && result.document) {
+        setRelatedDocuments([...relatedDocuments, result.document]);
+      }
+      
       toast({
-        title: 'Error creating relationship',
-        description: err.message,
-        variant: 'destructive'
+        title: 'Success',
+        description: 'Document relationship created successfully',
       });
-      return null;
-    } finally {
-      setLoading(false);
+      
+      return true;
+    } catch (err: any) {
+      console.error('Error creating document relationship:', err);
+      toast({
+        title: 'Error',
+        description: `Failed to create relationship: ${err.message}`,
+        variant: 'destructive',
+      });
+      return false;
     }
-  }, [fetchRelationships]);
+  };
   
-  const deleteRelationship = useCallback(async (relationshipId: string) => {
-    setLoading(true);
-    setError(null);
-    
+  // Remove a relationship
+  const deleteRelationship = async (relationshipId: string): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('document_relationships')
@@ -208,39 +126,32 @@ export const useDocumentRelationships = (documentId?: string) => {
       
       if (error) throw error;
       
+      // Update local state
+      setRelationships(relationships.filter(rel => rel.id !== relationshipId));
+      
       toast({
-        title: 'Relationship deleted',
-        description: 'Document link has been removed',
+        title: 'Success',
+        description: 'Document relationship removed successfully',
       });
       
-      // Update state to remove the deleted relationship
-      setRelationships(prev => prev.filter(r => r.id !== relationshipId));
+      return true;
     } catch (err: any) {
-      console.error('Error deleting relationship:', err);
-      setError(err.message);
+      console.error('Error deleting document relationship:', err);
       toast({
-        title: 'Error deleting relationship',
-        description: err.message,
-        variant: 'destructive'
+        title: 'Error',
+        description: `Failed to remove relationship: ${err.message}`,
+        variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
+      return false;
     }
-  }, []);
-  
-  // Initial fetch when component mounts
-  useEffect(() => {
-    if (documentId) {
-      fetchRelationships();
-    }
-  }, [documentId, fetchRelationships]);
+  };
   
   return {
     relationships,
+    relatedDocuments,
     loading,
     error,
-    fetchRelationships,
     createRelationship,
-    deleteRelationship,
+    deleteRelationship
   };
 };

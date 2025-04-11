@@ -1,185 +1,133 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate, formatFileSize } from '@/lib/utils';
-import { 
-  Clock, 
-  FileIcon, 
-  ChevronDown, 
-  ChevronUp, 
-  ChevronRight,
-  Check
-} from 'lucide-react';
-import { Document } from './schemas/documentSchema';
-import { supabase } from '@/integrations/supabase/client';
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from '@/hooks/use-toast';
+import { Loader2, Clock, FileClock } from 'lucide-react';
+import { Document, documentService } from '@/services/documentService';
 
 interface DocumentVersionHistoryCardProps {
   documentId: string;
   onVersionChange?: (document: Document) => void;
 }
 
-const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({ 
+const DocumentVersionHistoryCard: React.FC<DocumentVersionHistoryCardProps> = ({
   documentId,
-  onVersionChange 
+  onVersionChange
 }) => {
   const [versions, setVersions] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(true);
-
+  const [currentVersionId, setCurrentVersionId] = useState<string>(documentId);
+  
   useEffect(() => {
+    const fetchVersions = async () => {
+      setLoading(true);
+      try {
+        const versionDocs = await documentService.getDocumentVersions(documentId);
+        setVersions(versionDocs);
+        
+        // Set current version to the latest version by default
+        const latestVersion = versionDocs.find(doc => doc.is_latest_version);
+        if (latestVersion) {
+          setCurrentVersionId(latestVersion.document_id);
+        } else if (versionDocs.length > 0) {
+          setCurrentVersionId(versionDocs[0].document_id);
+        }
+      } catch (error) {
+        console.error('Error fetching document versions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     if (documentId) {
-      fetchVersionHistory();
+      fetchVersions();
     }
   }, [documentId]);
-
-  const fetchVersionHistory = async () => {
-    try {
-      setLoading(true);
-      
-      // First, find the original document to get its parent_document_id
-      const { data: currentDoc, error: currentError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('document_id', documentId)
-        .single();
-        
-      if (currentError) throw currentError;
-      
-      const rootId = currentDoc.parent_document_id || currentDoc.document_id;
-      
-      // Then fetch all versions related to either this ID or the parent ID
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .or(`document_id.eq.${rootId},parent_document_id.eq.${rootId}`)
-        .order('version', { ascending: false });
-        
-      if (error) throw error;
-      
-      // Get signed URLs for each document
-      const docsWithUrls = await Promise.all(
-        data.map(async (doc) => {
-          const { data: urlData } = await supabase
-            .storage
-            .from('construction_documents')
-            .getPublicUrl(doc.storage_path);
-            
-          return {
-            ...doc,
-            url: urlData.publicUrl
-          };
-        })
-      );
-      
-      setVersions(docsWithUrls);
-    } catch (error) {
-      console.error('Error fetching document versions:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load document versions.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVersionSelect = (document: Document) => {
+  
+  const handleVersionClick = (document: Document) => {
+    setCurrentVersionId(document.document_id);
     if (onVersionChange) {
       onVersionChange(document);
     }
   };
   
-  // Check if the current document is in our versions list
-  const currentVersion = versions.find(v => v.document_id === documentId)?.version || 1;
-
   if (loading) {
     return (
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center justify-between">
-            <span>Version History</span>
-            <Skeleton className="h-4 w-6" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileClock className="h-5 w-5" />
+            Version History
           </CardTitle>
         </CardHeader>
-        <CardContent className="pb-3 space-y-3">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
+        <CardContent className="flex justify-center p-6">
+          <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
         </CardContent>
       </Card>
     );
   }
-
+  
+  if (versions.length <= 1) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileClock className="h-5 w-5" />
+            Version History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-6 text-muted-foreground">
+            <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>No version history available.</p>
+            <p className="text-sm mt-1">This is the only version of this document.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center justify-between">
-          <span>Version History</span>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-6 w-6" 
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileClock className="h-5 w-5" />
+          Version History
         </CardTitle>
       </CardHeader>
-      {expanded && (
-        <CardContent className="pb-3 max-h-[350px] overflow-y-auto space-y-2">
-          {versions.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-3">
-              No version history available
-            </div>
-          ) : (
-            versions.map((version) => (
-              <div 
-                key={version.document_id}
-                className={`p-2 border rounded-md ${
-                  version.document_id === documentId 
-                    ? 'bg-accent/50 border-accent' 
-                    : 'hover:bg-accent/20 cursor-pointer'
-                }`}
-                onClick={() => version.document_id !== documentId && handleVersionSelect(version)}
-              >
-                <div className="flex items-center justify-between">
+      <CardContent>
+        <div className="space-y-2">
+          {versions
+            .sort((a, b) => (b.version || 1) - (a.version || 1))
+            .map((version) => (
+              <div key={version.document_id} className="flex flex-col">
+                <Button
+                  variant={version.document_id === currentVersionId ? "default" : "outline"}
+                  className={version.document_id === currentVersionId ? 
+                    "bg-[#0485ea] hover:bg-[#0375d1] justify-between" : 
+                    "justify-between"
+                  }
+                  onClick={() => handleVersionClick(version)}
+                >
                   <div className="flex items-center">
-                    <FileIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <div>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium">
-                          Version {version.version || 1}
-                        </span>
-                        {version.document_id === documentId && (
-                          <Badge variant="outline" className="ml-2 text-xs">Current</Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {formatDate(version.created_at)}
-                      </div>
-                    </div>
+                    <span>Version {version.version || 1}</span>
+                    {version.is_latest_version && (
+                      <span className="ml-2 text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded">
+                        Latest
+                      </span>
+                    )}
                   </div>
-                  
-                  {version.document_id === documentId ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-                
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {formatFileSize(version.file_size || 0)}
-                </div>
+                  <span className="text-xs">
+                    {version.updated_at ? 
+                      new Date(version.updated_at).toLocaleDateString() : 
+                      new Date(version.created_at || '').toLocaleDateString()
+                    }
+                  </span>
+                </Button>
               </div>
-            ))
-          )}
-        </CardContent>
-      )}
+            ))}
+        </div>
+      </CardContent>
     </Card>
   );
 };
