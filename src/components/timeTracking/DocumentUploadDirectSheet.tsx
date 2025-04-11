@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
 interface DocumentUploadDirectSheetProps {
   open: boolean;
@@ -46,6 +47,9 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
     onOpenChange(false);
   };
 
+  // Convert the string entityType to the EntityType enum type
+  const convertedEntityType = entityType as EntityType;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[90vh] sm:max-w-[600px] mx-auto">
@@ -63,7 +67,7 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
         
         <div className="pt-4 h-full overflow-auto">
           <EnhancedDocumentUpload
-            entityType={entityType}
+            entityType={convertedEntityType}
             entityId={entityId}
             onSuccess={handleSuccess}
             onCancel={handleCancel}
