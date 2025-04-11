@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
@@ -64,28 +63,22 @@ export const uploadReceiptFile = async (
       throw docError;
     }
     
-    // Create link between time entry and document
+    // Use the attach_document_to_time_entry function instead of direct insert
     if (document?.document_id) {
-      const linkData = {
-        time_entry_id: timeEntryId,
-        document_id: document.document_id
-      };
+      // Call the stored function to properly link document to time entry
+      const { data: linkResult, error: linkError } = await supabase.rpc(
+        'attach_document_to_time_entry',
+        { 
+          p_time_entry_id: timeEntryId,
+          p_document_id: document.document_id 
+        }
+      );
       
-      const { error: linkError } = await supabase
-        .from('time_entry_document_links')
-        .insert(linkData);
-        
       if (linkError) {
         console.error('Error creating document link:', linkError);
         throw linkError;
       }
       
-      // Update time entry has_receipts flag
-      await supabase
-        .from('time_entries')
-        .update({ has_receipts: true })
-        .eq('id', timeEntryId);
-        
       // Create expense record if amount is provided
       if (metadata.amount) {
         const expenseData = {
@@ -150,7 +143,7 @@ export const deleteReceipt = async (timeEntryId: string, documentId: string): Pr
       throw docError;
     }
     
-    // Remove the link between time entry and document
+    // Remove the link between time entry and document using delete operation
     const { error: unlinkError } = await supabase
       .from('time_entry_document_links')
       .delete()

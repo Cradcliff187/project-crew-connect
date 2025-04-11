@@ -30,12 +30,19 @@ export function useReceiptUpload() {
     setIsUploading(true);
     
     try {
+      // Ensure expense type is set
+      const expenseType = metadata?.expenseType || 'MATERIALS';
+      
       const documentId = await uploadReceiptFile(file, timeEntryId, {
         vendorId: metadata?.vendorId,
         amount: metadata?.amount,
-        expenseType: metadata?.expenseType || 'OTHER',
+        expenseType: expenseType,
         notes: metadata?.notes
       });
+      
+      if (!documentId) {
+        throw new Error('Failed to get document ID after upload');
+      }
       
       toast({
         title: 'Receipt uploaded',
@@ -46,9 +53,20 @@ export function useReceiptUpload() {
     } catch (error: any) {
       console.error('Receipt upload error:', error);
       
+      // Provide more specific error message based on the error
+      let errorMessage = 'Failed to upload receipt.';
+      
+      if (error.message?.includes('trigger functions')) {
+        errorMessage = 'System error: Please contact support.';
+      } else if (error.message?.includes('storage')) {
+        errorMessage = 'Error storing file: Please try a different file format or smaller file.';
+      } else if (error.message?.includes('permission')) { 
+        errorMessage = 'Permission error: You may not have access to upload receipts.';
+      }
+      
       toast({
         title: 'Upload failed',
-        description: error.message || 'Failed to upload receipt.',
+        description: error.message || errorMessage,
         variant: 'destructive'
       });
       

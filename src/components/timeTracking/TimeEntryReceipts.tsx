@@ -33,17 +33,33 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
   const handleDeleteReceipt = async (documentId: string) => {
     if (!timeEntryId) return;
     
-    const success = await deleteReceipt(documentId);
-    
-    if (success) {
-      // Notify parent component if provided
-      if (onReceiptsChange) {
-        onReceiptsChange();
+    try {
+      const success = await deleteReceipt(documentId);
+      
+      if (success) {
+        // Notify parent component if provided
+        if (onReceiptsChange) {
+          onReceiptsChange();
+        }
       }
+      
+      setReceiptToDelete(null);
+    } catch (err) {
+      console.error('Error in handleDeleteReceipt:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete receipt. Please try again.',
+        variant: 'destructive',
+      });
     }
-    
-    setReceiptToDelete(null);
   };
+  
+  // Refresh receipts when the timeEntryId changes
+  React.useEffect(() => {
+    if (timeEntryId) {
+      fetchReceipts();
+    }
+  }, [timeEntryId, fetchReceipts]);
   
   if (isLoading) {
     return (

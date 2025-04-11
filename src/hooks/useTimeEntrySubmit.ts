@@ -88,13 +88,16 @@ export function useTimeEntrySubmit(onSuccess?: () => void) {
       if (receiptFiles.length > 0 && timeEntry?.id) {
         console.log(`Uploading ${receiptFiles.length} receipt files for time entry ${timeEntry.id}`);
         
+        // Make sure we have a default expense type if not provided
+        const expenseType = receiptMetadata?.expenseType || 'MATERIALS';
+        
         // Process each receipt file
         for (const file of receiptFiles) {
           try {
             await uploadReceiptFile(file, timeEntry.id, {
               vendorId: receiptMetadata?.vendorId,
               amount: receiptMetadata?.amount,
-              expenseType: receiptMetadata?.expenseType || 'OTHER',
+              expenseType: expenseType,
               notes: data.notes
             });
           } catch (fileError) {

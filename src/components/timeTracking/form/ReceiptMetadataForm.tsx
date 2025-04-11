@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import VendorSelector from '@/components/documents/vendor-selector/VendorSelector';
 import { ReceiptMetadata } from '@/types/timeTracking';
@@ -20,9 +19,11 @@ export interface ReceiptMetadataFormProps {
   updateMetadata?: (data: Partial<ReceiptMetadata>) => void;
 }
 
+// Updated expense types to match what's used elsewhere in the application
 const EXPENSE_TYPES = [
   { value: 'MATERIALS', label: 'Materials' },
   { value: 'TOOLS', label: 'Tools & Equipment' },
+  { value: 'SUPPLIES', label: 'Supplies' },
   { value: 'FUEL', label: 'Fuel' },
   { value: 'MEALS', label: 'Meals & Entertainment' },
   { value: 'OTHER', label: 'Other' }
@@ -67,7 +68,7 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
   
   // Determine the actual values to use
   const actualVendor = metadata?.vendorId || vendor;
-  const actualExpenseType = metadata?.expenseType || expenseType;
+  const actualExpenseType = metadata?.expenseType || expenseType || 'MATERIALS';
   const actualAmount = metadata?.amount || amount;
   
   return (

@@ -141,7 +141,19 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
     try {
       console.log(`Deleting receipt: document ID ${documentId}, time entry ID ${timeEntryId}`);
       
-      // First remove the link between time entry and document
+      // First get the document details to delete the file from storage
+      const { data: document, error: docError } = await supabase
+        .from('documents')
+        .select('storage_path')
+        .eq('document_id', documentId)
+        .single();
+        
+      if (docError) {
+        console.error('Error fetching document details:', docError);
+        throw docError;
+      }
+      
+      // Remove the link between time entry and document
       const { error: unlinkError } = await supabase
         .from('time_entry_document_links')
         .delete()
@@ -153,16 +165,15 @@ export function useTimeEntryReceipts(timeEntryId?: string) {
         throw unlinkError;
       }
       
-      // Get the document details to delete the file from storage
-      const { data: document, error: docError } = await supabase
-        .from('documents')
-        .select('storage_path')
-        .eq('document_id', documentId)
-        .single();
+      // Delete any expense records associated with this document
+      const { error: expenseError } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('document_id', documentId);
         
-      if (docError) {
-        console.error('Error fetching document details:', docError);
-        throw docError;
+      if (expenseError) {
+        console.error('Error deleting expense record:', expenseError);
+        // Continue even if expense deletion fails
       }
       
       // Delete the document record
