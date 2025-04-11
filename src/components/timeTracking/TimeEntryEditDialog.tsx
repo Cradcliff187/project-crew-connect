@@ -23,16 +23,10 @@ const TimeEntryEditDialog: React.FC<TimeEntryEditDialogProps> = ({
 
   const handleSave = async (values: Partial<TimeEntry>) => {
     if (!timeEntry) return;
-    
-    // Handle the special "none" value for employee_id
-    const updatedValues = {...values};
-    if (updatedValues.employee_id === 'none') {
-      updatedValues.employee_id = null;
-    }
 
     await onSave({
       ...timeEntry,
-      ...updatedValues
+      ...values
     });
   };
 
@@ -44,11 +38,7 @@ const TimeEntryEditDialog: React.FC<TimeEntryEditDialogProps> = ({
         </DialogHeader>
 
         <TimeEntryForm
-          initialValues={{
-            ...timeEntry,
-            // Convert null employee_id to the special "none" value for the form
-            employee_id: timeEntry.employee_id || 'none'
-          }}
+          initialValues={timeEntry}
           onSubmit={handleSave}
           onCancel={() => onOpenChange(false)}
           isSubmitting={isSaving}

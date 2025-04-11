@@ -38,11 +38,12 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [entityType, setEntityType] = useState<'work_order' | 'project'>('work_order');
   const [entityId, setEntityId] = useState('');
   const [entityOptions, setEntityOptions] = useState<Array<{ id: string; name: string }>>([]);
-  const [employeeId, setEmployeeId] = useState('none'); // Default to 'none' instead of empty string
+  const [employeeId, setEmployeeId] = useState('');
   const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
   
   const { toast } = useToast();
   
+  // Update hours when times change
   useEffect(() => {
     if (startTime && endTime) {
       try {
@@ -59,6 +60,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     }
   }, [startTime, endTime]);
   
+  // Fetch recent work orders and projects for quick selection
   useEffect(() => {
     const fetchRecentEntities = async () => {
       if (entityType === 'work_order') {
@@ -93,6 +95,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     fetchRecentEntities();
   }, [entityType]);
 
+  // Fetch employees for employee selection
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
@@ -142,24 +145,26 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setIsSubmitting(true);
     
     try {
+      // Format date for the API
       const formattedDate = format(date, 'yyyy-MM-dd');
       
       let hourlyRate = null;
-      const actualEmployeeId = employeeId === 'none' ? null : employeeId;
-      
-      if (actualEmployeeId) {
+      if (employeeId) {
+        // Get employee rate if available
         const { data: empData } = await supabase
           .from('employees')
           .select('hourly_rate')
-          .eq('employee_id', actualEmployeeId)
+          .eq('employee_id', employeeId)
           .maybeSingle();
         
         hourlyRate = empData?.hourly_rate;
       }
       
-      const rate = hourlyRate || 75;
+      // Calculate total cost
+      const rate = hourlyRate || 75; // Default rate
       const totalCost = hoursWorked * rate;
       
+      // Create the time entry
       const timeEntry = {
         entity_type: entityType,
         entity_id: entityId,
@@ -168,7 +173,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         end_time: endTime,
         hours_worked: hoursWorked,
         notes: notes || null,
-        employee_id: actualEmployeeId,
+        employee_id: employeeId || null,
         employee_rate: rate,
         total_cost: totalCost,
         created_at: new Date().toISOString(),
@@ -183,6 +188,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         
       if (error) throw error;
       
+      // Create expense entry for labor time
       await supabase
         .from('expenses')
         .insert({
@@ -224,8 +230,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setHoursWorked(8);
     setNotes('');
     setTimeError('');
-    setEmployeeId('none'); // Reset to 'none' not empty string
-    setEntityId('');
+    setEmployeeId('');
   };
   
   return (

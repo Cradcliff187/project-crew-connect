@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +11,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { DatePicker } from "@/components/ui/date-picker";
 import TimeRangeSelector from "@/components/timeTracking/form/TimeRangeSelector";
 import { calculateHours } from "@/components/timeTracking/utils/timeUtils";
-import EmployeeSelect from "@/components/timeTracking/form/EmployeeSelect";
 
 interface ProjectTimelogAddSheetProps {
   open: boolean;
@@ -30,7 +30,7 @@ export const ProjectTimelogAddSheet = ({
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hours, setHours] = useState(0);
-  const [employeeId, setEmployeeId] = useState('none');
+  const [employeeId, setEmployeeId] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [startTime, setStartTime] = useState('09:00');
@@ -66,7 +66,7 @@ export const ProjectTimelogAddSheet = ({
   // Reset form
   const resetForm = () => {
     setHours(0);
-    setEmployeeId('none');
+    setEmployeeId('');
     setNotes('');
     setSelectedDate(new Date());
     setStartTime('09:00');
@@ -101,16 +101,13 @@ export const ProjectTimelogAddSheet = ({
       // Format date
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      // Check for "none" special value that means no employee is selected
-      const actualEmployeeId = employeeId === 'none' ? null : employeeId;
-      
       let employeeRate = null;
-      if (actualEmployeeId) {
+      if (employeeId) {
         // Get employee rate if available
         const { data: empData } = await supabase
           .from('employees')
           .select('hourly_rate')
-          .eq('employee_id', actualEmployeeId)
+          .eq('employee_id', employeeId)
           .maybeSingle();
         
         employeeRate = empData?.hourly_rate;
@@ -123,7 +120,7 @@ export const ProjectTimelogAddSheet = ({
       const timelogEntry = {
         entity_type: 'project',
         entity_id: projectId,
-        employee_id: actualEmployeeId,
+        employee_id: employeeId || null,
         hours_worked: hours,
         date_worked: formattedDate,
         start_time: startTime,
@@ -209,12 +206,22 @@ export const ProjectTimelogAddSheet = ({
             hoursWorked={hours}
           />
           
-          <EmployeeSelect
-            value={employeeId}
-            onChange={setEmployeeId}
-            employees={employees}
-            label="Employee"
-          />
+          <div className="space-y-2">
+            <Label htmlFor="employee">Employee</Label>
+            <select
+              id="employee"
+              className="w-full border border-input bg-background px-3 py-2 rounded-md"
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+            >
+              <option value="">Select Employee</option>
+              {employees.map((employee) => (
+                <option key={employee.employee_id} value={employee.employee_id}>
+                  {employee.name}
+                </option>
+              ))}
+            </select>
+          </div>
           
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>

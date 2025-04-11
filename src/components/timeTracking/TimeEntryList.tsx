@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { TimeEntry } from '@/types/timeTracking';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -67,7 +68,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     fetchEmployeeNames();
   }, []);
 
-  const getEmployeeName = (employeeId: string | undefined | null): string => {
+  const getEmployeeName = (employeeId: string | undefined): string => {
     if (!employeeId) return "Unassigned";
     return employeeMap[employeeId] || "Unknown";
   };
