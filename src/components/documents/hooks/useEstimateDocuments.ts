@@ -6,16 +6,18 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 export const useEstimateDocuments = (estimateId: string) => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fetchCount, setFetchCount] = useState(0);
+  
   const hasFetched = useRef(false);
   const previousEstimateId = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const documentsCache = useRef<Record<string, Document[]>>({});
+  const isMountedRef = useRef(true);
   
   // Debounce the estimateId to prevent multiple rapid fetches
-  const debouncedEstimateId = useDebounce(estimateId, 300);
+  const debouncedEstimateId = useDebounce(estimateId, 500);
 
   // Reset fetched state when estimateId changes
   useEffect(() => {
@@ -23,12 +25,16 @@ export const useEstimateDocuments = (estimateId: string) => {
       hasFetched.current = false;
       previousEstimateId.current = debouncedEstimateId;
     }
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [debouncedEstimateId]);
 
   // Memoize the fetchDocuments function to prevent recreation on each render
   const fetchDocuments = useCallback(async () => {
     // Skip fetch if no estimateId, if we're already fetching, or if we've already fetched for this ID
-    if (!debouncedEstimateId || !debouncedEstimateId.trim()) {
+    if (!debouncedEstimateId || !debouncedEstimateId.trim() || !isMountedRef.current) {
       setLoading(false);
       return;
     }
@@ -66,8 +72,8 @@ export const useEstimateDocuments = (estimateId: string) => {
         .eq('entity_id', debouncedEstimateId)
         .order('created_at', { ascending: false });
       
-      // Check if the request was aborted
-      if (abortControllerRef.current?.signal.aborted) {
+      // Check if the request was aborted or component unmounted
+      if (abortControllerRef.current?.signal.aborted || !isMountedRef.current) {
         return;
       }
       
@@ -75,7 +81,7 @@ export const useEstimateDocuments = (estimateId: string) => {
         throw error;
       }
       
-      // Transform the data to include document URLs
+      // Transform the data to include document URLs efficiently
       const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
         let publicUrl = '';
         
@@ -99,31 +105,32 @@ export const useEstimateDocuments = (estimateId: string) => {
         
         return { 
           ...doc,
-          url: publicUrl,           // Add url property
-          file_url: publicUrl,      // Keep file_url for backward compatibility
+          url: publicUrl,
+          file_url: publicUrl,
           item_reference: itemDescription || null,
-          item_id: null, // Will be populated if this is a line item document
+          item_id: null,
           is_latest_version: doc.is_latest_version ?? true,
-          // Use file_type if mime_type doesn't exist
           mime_type: doc.file_type || 'application/octet-stream'
         } as Document;
       }));
       
-      // Store in cache
-      documentsCache.current[debouncedEstimateId] = docsWithUrls;
-      
-      // Set flag that we've fetched documents for this ID
-      hasFetched.current = true;
-      setDocuments(docsWithUrls);
+      // Store in cache only if component is still mounted
+      if (isMountedRef.current) {
+        documentsCache.current[debouncedEstimateId] = docsWithUrls;
+        
+        // Set flag that we've fetched documents for this ID
+        hasFetched.current = true;
+        setDocuments(docsWithUrls);
+      }
     } catch (err: any) {
-      // Only set error if the request wasn't aborted
-      if (!abortControllerRef.current?.signal.aborted) {
+      // Only set error if the request wasn't aborted and component is mounted
+      if (!abortControllerRef.current?.signal.aborted && isMountedRef.current) {
         console.error('Error fetching estimate documents:', err);
         setError(err.message);
       }
     } finally {
-      // Only update loading state if the request wasn't aborted
-      if (!abortControllerRef.current?.signal.aborted) {
+      // Only update loading state if the request wasn't aborted and component is mounted
+      if (!abortControllerRef.current?.signal.aborted && isMountedRef.current) {
         setLoading(false);
       }
     }

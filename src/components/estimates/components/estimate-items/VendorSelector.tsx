@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -13,8 +13,17 @@ interface VendorSelectorProps {
   loading: boolean;
 }
 
-const VendorSelector: React.FC<VendorSelectorProps> = ({ index, vendors, loading }) => {
+// Use React.memo to prevent unnecessary re-renders
+const VendorSelector: React.FC<VendorSelectorProps> = memo(({ index, vendors, loading }) => {
   const form = useFormContext<EstimateFormValues>();
+  
+  // Function to handle value changes without causing re-renders
+  const handleVendorChange = (value: string) => {
+    form.setValue(`items.${index}.vendor_id`, value, {
+      shouldDirty: true,
+      shouldValidate: false
+    });
+  };
   
   return (
     <div className="col-span-12 md:col-span-3">
@@ -35,7 +44,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ index, vendors, loading
             <FormControl>
               <VendorSearchCombobox
                 value={field.value || ""}
-                onChange={(value) => field.onChange(value)}
+                onChange={handleVendorChange}
                 vendorType="vendor"
                 placeholder={loading ? "Loading vendors..." : "Select vendor"}
               />
@@ -46,6 +55,8 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ index, vendors, loading
       />
     </div>
   );
-};
+});
+
+VendorSelector.displayName = 'VendorSelector';
 
 export default VendorSelector;

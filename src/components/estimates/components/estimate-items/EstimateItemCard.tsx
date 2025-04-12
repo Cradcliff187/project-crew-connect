@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import ItemDescription from './ItemDescription';
 import ItemTypeSelector from './ItemTypeSelector';
-import VendorSelector from '@/components/documents/vendor-selector/VendorSelector';
+import VendorSelector from './VendorSelector';
 import SubcontractorSelector from './SubcontractorSelector';
 import TradeTypeSelector from './TradeTypeSelector';
 import ExpenseTypeSelector from './ExpenseTypeSelector';
@@ -89,43 +89,73 @@ const EstimateItemCard = memo(({
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   const form = useFormContext<EstimateFormValues>();
   
-  // Get form values directly to reduce re-renders
-  const values = form.getValues(`items.${index}`);
-  const itemType = values?.item_type || 'labor';
-  const cost = values?.cost || '0';
-  const markupPercentage = values?.markup_percentage || '0';
-  const quantity = values?.quantity || '1';
-  const unitPrice = values?.unit_price || '0';
-  const description = values?.description || '';
-  const documentId = values?.document_id || '';
-  const vendorId = values?.vendor_id || '';
-  const subcontractorId = values?.subcontractor_id || '';
-  
-  // Calculate these values once instead of using multiple useWatch hooks
-  const [calculatedValues, setCalculatedValues] = useState({
-    itemPrice: 0,
-    grossMargin: 0,
-    grossMarginPercentage: 0
+  // Use a single effect to extract all item values rather than multiple useWatch calls
+  const [itemValues, setItemValues] = useState({
+    itemType: 'labor',
+    cost: '0',
+    markupPercentage: '20',
+    quantity: '1',
+    unitPrice: '0',
+    description: '',
+    documentId: '',
+    vendorId: '',
+    subcontractorId: ''
   });
   
-  // Update calculated values when inputs change
+  // Single effect to extract form values and update local state
   useEffect(() => {
-    const costValue = parseFloat(cost) || 0;
-    const markupValue = parseFloat(markupPercentage) || 0;
-    const quantityValue = parseFloat(quantity) || 1;
-    const unitPriceValue = parseFloat(unitPrice) || 0;
+    // Read all values at once to minimize form interactions
+    const values = {
+      itemType: form.getValues(`items.${index}.item_type`) || 'labor',
+      cost: form.getValues(`items.${index}.cost`) || '0',
+      markupPercentage: form.getValues(`items.${index}.markup_percentage`) || '20',
+      quantity: form.getValues(`items.${index}.quantity`) || '1',
+      unitPrice: form.getValues(`items.${index}.unit_price`) || '0',
+      description: form.getValues(`items.${index}.description`) || '',
+      documentId: form.getValues(`items.${index}.document_id`) || '',
+      vendorId: form.getValues(`items.${index}.vendor_id`) || '',
+      subcontractorId: form.getValues(`items.${index}.subcontractor_id`) || ''
+    };
+    
+    // Only update state if values have changed
+    if (JSON.stringify(values) !== JSON.stringify(itemValues)) {
+      setItemValues(values);
+    }
+    
+    // Create a field subscription - more efficient than multiple useWatch calls
+    const subscription = form.watch((value, { name }) => {
+      if (name?.startsWith(`items.${index}.`)) {
+        const field = name.split('.').pop();
+        if (field && ['item_type', 'cost', 'markup_percentage', 'quantity', 'unit_price', 'description', 'document_id', 'vendor_id', 'subcontractor_id'].includes(field)) {
+          setItemValues(prev => ({
+            ...prev,
+            [field === 'item_type' ? 'itemType' : field === 'markup_percentage' ? 'markupPercentage' : field === 'unit_price' ? 'unitPrice' : field === 'document_id' ? 'documentId' : field === 'vendor_id' ? 'vendorId' : field === 'subcontractor_id' ? 'subcontractorId' : field]: value.items?.[index]?.[field] || prev[field === 'item_type' ? 'itemType' : field === 'markup_percentage' ? 'markupPercentage' : field === 'unit_price' ? 'unitPrice' : field === 'document_id' ? 'documentId' : field === 'vendor_id' ? 'vendorId' : field === 'subcontractor_id' ? 'subcontractorId' : field]
+          }));
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, index]);
+  
+  // Memoize calculations to prevent recalculating on every render
+  const calculatedValues = useMemo(() => {
+    const costValue = parseFloat(itemValues.cost) || 0;
+    const markupValue = parseFloat(itemValues.markupPercentage) || 0;
+    const quantityValue = parseFloat(itemValues.quantity) || 1;
+    const unitPriceValue = parseFloat(itemValues.unitPrice) || 0;
     
     const price = unitPriceValue * quantityValue;
     const totalCost = costValue * quantityValue;
     const margin = price - totalCost;
     const marginPercentage = price > 0 ? (margin / price) * 100 : 0;
     
-    setCalculatedValues({
+    return {
       itemPrice: price,
       grossMargin: margin,
       grossMarginPercentage: marginPercentage
-    });
-  }, [cost, markupPercentage, quantity, unitPrice]);
+    };
+  }, [itemValues.cost, itemValues.markupPercentage, itemValues.quantity, itemValues.unitPrice]);
 
   const handleDocumentUploadSuccess = useCallback((docId?: string) => {
     setIsDocumentUploadOpen(false);
@@ -141,21 +171,50 @@ const EstimateItemCard = memo(({
   const getEntityIdForDocument = useCallback(() => {
     const tempId = form.getValues('temp_id') || 'pending';
     
-    switch (itemType) {
+    switch (itemValues.itemType) {
       case 'vendor':
-        return vendorId || tempId;
+        return itemValues.vendorId || tempId;
       case 'subcontractor':
-        return subcontractorId || tempId;
+        return itemValues.subcontractorId || tempId;
       default:
         return tempId;
     }
-  }, [form, itemType, vendorId, subcontractorId]);
+  }, [form, itemValues.itemType, itemValues.vendorId, itemValues.subcontractorId]);
 
   const handleAttachClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDocumentUploadOpen(true);
   }, []);
+
+  // Memoize JSX components to prevent unnecessary re-renders
+  const documentAttachment = useMemo(() => {
+    if (!itemValues.documentId) return null;
+    return <AttachedDocument documentId={itemValues.documentId} />;
+  }, [itemValues.documentId]);
+
+  const documentBadge = useMemo(() => {
+    if (itemValues.documentId) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 cursor-pointer">
+                <PaperclipIcon className="h-3 w-3" />
+                <span className="hidden sm:inline-block">Document</span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="text-xs">
+                <div className="font-medium">Document attached</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    return null;
+  }, [itemValues.documentId]);
 
   return (
     <Collapsible
@@ -171,36 +230,20 @@ const EstimateItemCard = memo(({
         </CollapsibleTrigger>
         
         <div className="flex-1 font-medium truncate">
-          {description || 'Untitled Item'}
+          {itemValues.description || 'Untitled Item'}
         </div>
         
         <div className="flex items-center gap-4">
           <div className="text-sm text-muted-foreground">
             <span className="font-medium">${calculatedValues.itemPrice.toFixed(2)}</span>
-            {quantity !== '1' && <span> × {quantity}</span>}
+            {itemValues.quantity !== '1' && <span> × {itemValues.quantity}</span>}
           </div>
           
           <div className="text-sm text-muted-foreground hidden md:block">
             GM: {calculatedValues.grossMarginPercentage.toFixed(1)}%
           </div>
           
-          {documentId ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="outline" className="flex items-center gap-1 bg-blue-50 cursor-pointer">
-                    <PaperclipIcon className="h-3 w-3" />
-                    <span className="hidden sm:inline-block">Document</span>
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="text-xs">
-                    <div className="font-medium">Document attached</div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
+          {documentBadge || (
             <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
               <SheetTrigger asChild>
                 <Button 
@@ -213,10 +256,10 @@ const EstimateItemCard = memo(({
                   <span className="hidden sm:inline-block">Attach</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" aria-describedby="item-document-upload-description">
+              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
                 <SheetHeader className="p-6 pb-2">
                   <SheetTitle>Attach Document to Line Item</SheetTitle>
-                  <SheetDescription id="item-document-upload-description">
+                  <SheetDescription>
                     Upload a document to attach to this line item.
                   </SheetDescription>
                 </SheetHeader>
@@ -243,14 +286,14 @@ const EstimateItemCard = memo(({
             <ItemDescription index={index} />
             <ItemTypeSelector index={index} />
             
-            {itemType === 'vendor' && (
+            {itemValues.itemType === 'vendor' && (
               <>
                 <VendorSelector index={index} vendors={vendors} loading={loading} />
                 <ExpenseTypeSelector index={index} />
               </>
             )}
 
-            {itemType === 'subcontractor' && (
+            {itemValues.itemType === 'subcontractor' && (
               <>
                 <SubcontractorSelector index={index} subcontractors={subcontractors} loading={loading} />
                 <TradeTypeSelector index={index} />
@@ -266,7 +309,7 @@ const EstimateItemCard = memo(({
             />
           </div>
           
-          {documentId && <AttachedDocument documentId={documentId} />}
+          {documentAttachment}
         </div>
       </CollapsibleContent>
     </Collapsible>
