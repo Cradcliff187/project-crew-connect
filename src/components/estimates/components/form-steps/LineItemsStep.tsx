@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import EstimateItemFields from '../EstimateItemFields';
 import EstimateSummary from '../EstimateSummary';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -18,8 +18,10 @@ const LineItemsStep = memo(() => {
   const form = useFormContext<EstimateFormValues>();
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   
-  // Get temp ID only once
-  const tempEstimateId = form.getValues('temp_id') || '';
+  // Use useMemo to get temp ID only once and prevent re-renders
+  const tempEstimateId = useMemo(() => {
+    return form.getValues('temp_id') || '';
+  }, [form]);
   
   const { 
     documents, 

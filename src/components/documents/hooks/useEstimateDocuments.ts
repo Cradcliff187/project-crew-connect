@@ -11,6 +11,7 @@ export const useEstimateDocuments = (estimateId: string) => {
   const [fetchCount, setFetchCount] = useState(0);
   const hasFetched = useRef(false);
   const previousEstimateId = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
   // Debounce the estimateId to prevent multiple rapid fetches
   const debouncedEstimateId = useDebounce(estimateId, 300);
@@ -36,12 +37,18 @@ export const useEstimateDocuments = (estimateId: string) => {
       setLoading(false);
       return;
     }
+
+    // Cancel any in-progress fetch
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController for this fetch
+    abortControllerRef.current = new AbortController();
     
     try {
       setLoading(true);
       setError(null);
-      
-      console.log(`Fetching documents for estimate: ${debouncedEstimateId}`);
       
       // Fetch documents associated directly with this estimate
       const { data, error } = await supabase
@@ -50,6 +57,11 @@ export const useEstimateDocuments = (estimateId: string) => {
         .eq('entity_type', 'ESTIMATE')
         .eq('entity_id', debouncedEstimateId)
         .order('created_at', { ascending: false });
+      
+      // Check if the request was aborted
+      if (abortControllerRef.current?.signal.aborted) {
+        return;
+      }
       
       if (error) {
         throw error;
@@ -93,16 +105,29 @@ export const useEstimateDocuments = (estimateId: string) => {
       hasFetched.current = true;
       setDocuments(docsWithUrls);
     } catch (err: any) {
-      console.error('Error fetching estimate documents:', err);
-      setError(err.message);
+      // Only set error if the request wasn't aborted
+      if (!abortControllerRef.current?.signal.aborted) {
+        console.error('Error fetching estimate documents:', err);
+        setError(err.message);
+      }
     } finally {
-      setLoading(false);
+      // Only update loading state if the request wasn't aborted
+      if (!abortControllerRef.current?.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, [debouncedEstimateId, fetchCount]);
 
-  // Use effect to fetch documents when estimate ID changes or manual refetch is triggered
+  // Use effect with appropriate dependencies
   useEffect(() => {
     fetchDocuments();
+    
+    // Clean up function to abort any in-progress fetch when component unmounts or dependencies change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchDocuments]);
 
   // Create a function to force a refresh of the documents
