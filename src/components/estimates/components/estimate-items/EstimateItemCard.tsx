@@ -22,14 +22,23 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import useItemValues from './hooks/useItemValues';
 
-// New smaller component to handle document info and display
+// Document cache to prevent repeated fetches
+const documentCache: Record<string, {file_name?: string; file_type?: string}> = {};
+
+// New smaller component to handle document info and display with caching
 const AttachedDocument = memo(({ documentId }: { documentId: string }) => {
   const [docInfo, setDocInfo] = useState<{file_name?: string; file_type?: string} | null>(null);
   
-  // Single effect to fetch document info when needed
+  // Check cache first and only fetch if needed
   React.useEffect(() => {
     if (!documentId) {
       setDocInfo(null);
+      return;
+    }
+    
+    // Return from cache if available
+    if (documentCache[documentId]) {
+      setDocInfo(documentCache[documentId]);
       return;
     }
     
@@ -45,6 +54,11 @@ const AttachedDocument = memo(({ documentId }: { documentId: string }) => {
         if (error) {
           console.error('Error fetching document:', error);
           return;
+        }
+        
+        // Save to cache
+        if (data) {
+          documentCache[documentId] = data;
         }
         
         setDocInfo(data);
@@ -90,7 +104,7 @@ const EstimateItemCard = memo(({
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   const form = useFormContext<EstimateFormValues>();
   
-  // Use our custom hook to efficiently manage item values
+  // Use our custom hook to efficiently manage item values with minimal rerenders
   const { 
     itemValues, 
     calculatedValues 
@@ -99,8 +113,11 @@ const EstimateItemCard = memo(({
   const handleDocumentUploadSuccess = useCallback((docId?: string) => {
     setIsDocumentUploadOpen(false);
     if (docId) {
+      // Set the value with minimal form impact
       form.setValue(`items.${index}.document_id`, docId, {
         shouldDirty: true,
+        shouldTouch: false,
+        shouldValidate: false
       });
     }
   }, [form, index]);
@@ -149,6 +166,51 @@ const EstimateItemCard = memo(({
     return null;
   }, [itemValues.documentId]);
 
+  // Memoized selectors for minimizing renders
+  const vendorSelector = useMemo(() => (
+    itemValues.itemType === 'vendor' ? (
+      <>
+        <VendorSelector index={index} vendors={vendors} loading={loading} />
+        <ExpenseTypeSelector index={index} />
+      </>
+    ) : null
+  ), [itemValues.itemType, index, vendors, loading]);
+
+  const subcontractorSelector = useMemo(() => (
+    itemValues.itemType === 'subcontractor' ? (
+      <>
+        <SubcontractorSelector index={index} subcontractors={subcontractors} loading={loading} />
+        <TradeTypeSelector index={index} />
+      </>
+    ) : null
+  ), [itemValues.itemType, index, subcontractors, loading]);
+
+  // Prevent entire collapsible content re-renders when closed
+  const collapsibleContent = useMemo(() => (
+    <CollapsibleContent>
+      <div className="border-t p-3 bg-gray-50">
+        <div className="grid grid-cols-12 gap-2 items-start">
+          <ItemDescription index={index} />
+          <ItemTypeSelector index={index} />
+          
+          {vendorSelector}
+          {subcontractorSelector}
+
+          <CostInput index={index} />
+          <MarkupInput index={index} />
+          <PriceDisplay index={index} price={calculatedValues.itemPrice} />
+          <MarginDisplay 
+            grossMargin={calculatedValues.grossMargin} 
+            grossMarginPercentage={calculatedValues.grossMarginPercentage} 
+          />
+        </div>
+        
+        {documentAttachment}
+      </div>
+    </CollapsibleContent>
+  ), [index, vendorSelector, subcontractorSelector, documentAttachment, 
+      calculatedValues.itemPrice, calculatedValues.grossMargin, calculatedValues.grossMarginPercentage]);
+
   return (
     <Collapsible
       open={isOpen}
@@ -157,7 +219,12 @@ const EstimateItemCard = memo(({
     >
       <div className="p-3 bg-white flex items-center gap-2">
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="p-1 h-8 w-8 flex-shrink-0">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="p-1 h-8 w-8 flex-shrink-0"
+            type="button" // Explicitly set button type to prevent form submission
+          >
             {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </CollapsibleTrigger>
@@ -177,19 +244,28 @@ const EstimateItemCard = memo(({
           </div>
           
           {documentBadge || (
-            <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
+            <Sheet 
+              open={isDocumentUploadOpen} 
+              onOpenChange={setIsDocumentUploadOpen}
+            >
               <SheetTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8"
                   onClick={handleAttachClick}
+                  type="button" // Explicitly set button type to prevent form submission
                 >
                   <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
                   <span className="hidden sm:inline-block">Attach</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[90vw] sm:max-w-[600px] p-0">
+              <SheetContent 
+                className="w-[90vw] sm:max-w-[600px] p-0"
+                // Prevent event bubbling
+                onClick={(e) => e.stopPropagation()}
+                onPointerDownCapture={(e) => e.stopPropagation()}
+              >
                 <SheetHeader className="p-6 pb-2">
                   <SheetTitle>Attach Document to Line Item</SheetTitle>
                   <SheetDescription>
@@ -202,6 +278,7 @@ const EstimateItemCard = memo(({
                   entityId={getEntityIdForDocument()}
                   onSuccess={handleDocumentUploadSuccess}
                   onCancel={() => setIsDocumentUploadOpen(false)}
+                  preventFormPropagation={true}
                 />
               </SheetContent>
             </Sheet>
@@ -213,38 +290,7 @@ const EstimateItemCard = memo(({
         </div>
       </div>
       
-      <CollapsibleContent>
-        <div className="border-t p-3 bg-gray-50">
-          <div className="grid grid-cols-12 gap-2 items-start">
-            <ItemDescription index={index} />
-            <ItemTypeSelector index={index} />
-            
-            {itemValues.itemType === 'vendor' && (
-              <>
-                <VendorSelector index={index} vendors={vendors} loading={loading} />
-                <ExpenseTypeSelector index={index} />
-              </>
-            )}
-
-            {itemValues.itemType === 'subcontractor' && (
-              <>
-                <SubcontractorSelector index={index} subcontractors={subcontractors} loading={loading} />
-                <TradeTypeSelector index={index} />
-              </>
-            )}
-
-            <CostInput index={index} />
-            <MarkupInput index={index} />
-            <PriceDisplay index={index} price={calculatedValues.itemPrice} />
-            <MarginDisplay 
-              grossMargin={calculatedValues.grossMargin} 
-              grossMarginPercentage={calculatedValues.grossMarginPercentage} 
-            />
-          </div>
-          
-          {documentAttachment}
-        </div>
-      </CollapsibleContent>
+      {isOpen && collapsibleContent}
     </Collapsible>
   );
 });

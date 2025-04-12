@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { EstimateFormValues } from '../../../schemas/estimateFormSchema';
 
@@ -35,7 +35,17 @@ const useItemValues = (index: number, form: UseFormReturn<EstimateFormValues>) =
     subcontractorId: ''
   });
   
-  // Get the field values once at the beginning
+  // Cache calculation results to prevent unnecessary re-renders
+  const [calculatedValues, setCalculatedValues] = useState<CalculatedValues>({
+    itemPrice: 0,
+    grossMargin: 0,
+    grossMarginPercentage: 0
+  });
+  
+  // Use ref to track if values have changed to prevent recalculation
+  const prevValuesRef = useRef<string>('');
+  
+  // Get the field values once at the beginning and when specific fields change
   useEffect(() => {
     const values = {
       itemType: form.getValues(`items.${index}.item_type`) || 'labor',
@@ -51,65 +61,81 @@ const useItemValues = (index: number, form: UseFormReturn<EstimateFormValues>) =
     
     setItemValues(values);
     
-    // Subscribe to changes for this item only
-    const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith(`items.${index}.`)) {
-        const field = name.split('.').pop();
-        
-        if (field) {
-          let keyName: keyof ItemValues;
-          
-          switch(field) {
-            case 'item_type':
-              keyName = 'itemType';
-              break;
-            case 'markup_percentage':
-              keyName = 'markupPercentage';
-              break;
-            case 'unit_price':
-              keyName = 'unitPrice';
-              break;
-            case 'document_id':
-              keyName = 'documentId';
-              break;
-            case 'vendor_id':
-              keyName = 'vendorId';
-              break;
-            case 'subcontractor_id':
-              keyName = 'subcontractorId';
-              break;
-            default:
-              keyName = field as keyof ItemValues;
-          }
-          
-          // Update only the changed field
-          setItemValues(prev => ({
-            ...prev,
-            [keyName]: value.items?.[index]?.[field] ?? prev[keyName]
-          }));
-        }
+    // Subscribe to changes for this item only - with minimal resubscription
+    const unsubscribe = form.watch((value, { name }) => {
+      if (!name || !name.startsWith(`items.${index}.`)) return;
+      
+      const field = name.split('.').pop();
+      if (!field) return;
+      
+      let keyName: keyof ItemValues;
+      
+      switch(field) {
+        case 'item_type':
+          keyName = 'itemType';
+          break;
+        case 'markup_percentage':
+          keyName = 'markupPercentage';
+          break;
+        case 'unit_price':
+          keyName = 'unitPrice';
+          break;
+        case 'document_id':
+          keyName = 'documentId';
+          break;
+        case 'vendor_id':
+          keyName = 'vendorId';
+          break;
+        case 'subcontractor_id':
+          keyName = 'subcontractorId';
+          break;
+        default:
+          keyName = field as keyof ItemValues;
       }
+      
+      // Update only the changed field
+      setItemValues(prev => ({
+        ...prev,
+        [keyName]: value.items?.[index]?.[field] ?? prev[keyName]
+      }));
     });
     
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, [form, index]);
   
-  // Calculate derived values
-  const calculatedValues: CalculatedValues = {
-    itemPrice: parseFloat(itemValues.unitPrice) * parseFloat(itemValues.quantity || '1'),
-    grossMargin: 0,
-    grossMarginPercentage: 0
-  };
-  
-  // Calculate margin values
-  const costValue = parseFloat(itemValues.cost) || 0;
-  const quantityValue = parseFloat(itemValues.quantity) || 1;
-  const totalCost = costValue * quantityValue;
-  
-  calculatedValues.grossMargin = calculatedValues.itemPrice - totalCost;
-  calculatedValues.grossMarginPercentage = calculatedValues.itemPrice > 0 
-    ? (calculatedValues.grossMargin / calculatedValues.itemPrice) * 100 
-    : 0;
+  // Calculate derived values - but only when relevant values change
+  useEffect(() => {
+    // Create a string representation of the values that affect calculations
+    const currentValues = `${itemValues.cost}-${itemValues.quantity}-${itemValues.unitPrice}`;
+    
+    // Skip calculation if values haven't changed
+    if (currentValues === prevValuesRef.current) return;
+    
+    // Cache the new values
+    prevValuesRef.current = currentValues;
+    
+    // Get numeric values
+    const unitPrice = parseFloat(itemValues.unitPrice) || 0;
+    const quantity = parseFloat(itemValues.quantity) || 1;
+    const cost = parseFloat(itemValues.cost) || 0;
+    
+    // Calculate item price
+    const itemPrice = unitPrice * quantity;
+    
+    // Calculate margin values
+    const totalCost = cost * quantity;
+    const grossMargin = itemPrice - totalCost;
+    const grossMarginPercentage = itemPrice > 0 
+      ? (grossMargin / itemPrice) * 100 
+      : 0;
+    
+    // Update calculated values in a single state update
+    setCalculatedValues({
+      itemPrice,
+      grossMargin,
+      grossMarginPercentage
+    });
+  }, [itemValues.cost, itemValues.quantity, itemValues.unitPrice]);
   
   return { itemValues, calculatedValues };
 };

@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -13,16 +13,32 @@ interface VendorSelectorProps {
   loading: boolean;
 }
 
-// Optimized vendor selector with memoization
-const VendorSelector: React.FC<VendorSelectorProps> = memo(({ index, vendors, loading }) => {
+// Optimized vendor selector with memoization and lazy loading
+const VendorSelector = memo(({ index, vendors, loading }: VendorSelectorProps) => {
   const form = useFormContext<EstimateFormValues>();
+  const currentValue = form.watch(`items.${index}.vendor_id`);
+  const previousValueRef = useRef(currentValue);
+  const [isDirty, setIsDirty] = useState(false);
   
-  // Function to handle value changes efficiently
+  // Only update the ref when the value actually changes
+  useEffect(() => {
+    if (currentValue !== previousValueRef.current) {
+      previousValueRef.current = currentValue;
+      setIsDirty(true);
+    }
+  }, [currentValue]);
+  
+  // Function to handle value changes efficiently with minimal form updates
   const handleVendorChange = (value: string) => {
+    if (value === form.getValues(`items.${index}.vendor_id`)) return;
+    
     form.setValue(`items.${index}.vendor_id`, value, {
       shouldDirty: true,
-      shouldValidate: false
+      shouldValidate: false, // Prevent validation on each change
+      shouldTouch: false // Don't mark as touched to reduce rerenders
     });
+    
+    setIsDirty(true);
   };
   
   return (

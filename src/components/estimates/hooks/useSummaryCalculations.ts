@@ -1,6 +1,6 @@
 
 import { useFormContext, useWatch } from 'react-hook-form';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useRef, useCallback, useEffect, useState } from 'react';
 import { 
   calculateSubtotal, 
   calculateContingencyAmount, 
@@ -18,14 +18,40 @@ interface EstimateFormValues {
   // ... other form fields
 }
 
+interface CalculationResults {
+  totalCost: number;
+  totalMarkup: number;
+  subtotal: number;
+  totalGrossMargin: number;
+  overallMarginPercentage: number;
+  contingencyAmount: number;
+  grandTotal: number;
+  hasError: boolean;
+  errorMessage: string;
+}
+
 export const useSummaryCalculations = () => {
   const form = useFormContext<EstimateFormValues>();
+  const calculationLockRef = useRef(false);
+  const lastCalculationTimeRef = useRef(0);
+  const [calculationResults, setCalculationResults] = useState<CalculationResults>({
+    totalCost: 0,
+    totalMarkup: 0,
+    subtotal: 0,
+    totalGrossMargin: 0,
+    overallMarginPercentage: 0,
+    contingencyAmount: 0,
+    grandTotal: 0,
+    hasError: false,
+    errorMessage: ""
+  });
   
-  // Use useWatch for more efficient watching of form values
+  // Use useWatch with selective dependencies instead of watching the entire form
   const items = useWatch({
     control: form.control,
     name: 'items',
-  }) || [];
+    defaultValue: []
+  });
 
   const contingencyPercentage = useWatch({
     control: form.control,
@@ -34,10 +60,10 @@ export const useSummaryCalculations = () => {
   });
 
   // Increase debounce time to reduce calculation frequency
-  const debouncedItems = useDebounce(items, 600);
-  const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 600);
-
-  // Memoized function to normalize items for calculation
+  const debouncedItems = useDebounce(items, 800);
+  const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 800);
+  
+  // Normalize calculation items - memoized to prevent recreation
   const normalizeCalculationItems = useCallback((formItems: any[]): any[] => {
     if (!Array.isArray(formItems)) return [];
     
@@ -55,19 +81,39 @@ export const useSummaryCalculations = () => {
       custom_type: item?.custom_type
     }));
   }, []);
-
-  // Use memoization for calculation items to prevent recreation on each render
-  const calculationItems = useMemo(() => 
-    normalizeCalculationItems(debouncedItems), 
-    [debouncedItems, normalizeCalculationItems]
-  );
-
-  // Cache the last calculated values to prevent recalculations when inputs haven't changed
-  const calculations = useMemo(() => {
-    // Add performance tracking for development
-    const perfStart = performance.now();
+  
+  // Effect for calculation with rate limiting
+  useEffect(() => {
+    // Skip calculation if we're in a lock period
+    if (calculationLockRef.current) return;
     
+    // Rate limit to max one calculation per 500ms
+    const now = Date.now();
+    if (now - lastCalculationTimeRef.current < 500) {
+      const timeToWait = 500 - (now - lastCalculationTimeRef.current);
+      const timeout = setTimeout(() => {
+        // Set lock during calculation to prevent recursive updates
+        calculationLockRef.current = true;
+        performCalculation();
+        calculationLockRef.current = false;
+      }, timeToWait);
+      return () => clearTimeout(timeout);
+    }
+    
+    // Set lock during calculation to prevent recursive updates
+    calculationLockRef.current = true;
+    performCalculation();
+    calculationLockRef.current = false;
+  }, [debouncedItems, debouncedContingencyPercentage]);
+  
+  const performCalculation = () => {
     try {
+      // Record calculation time
+      lastCalculationTimeRef.current = Date.now();
+      
+      // Use normalized items
+      const calculationItems = normalizeCalculationItems(debouncedItems);
+      
       // Calculate all the totals
       const totalCost = calculateTotalCost(calculationItems);
       const totalMarkup = calculateTotalMarkup(calculationItems);
@@ -76,16 +122,9 @@ export const useSummaryCalculations = () => {
       const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
       const contingencyAmount = calculateContingencyAmount(calculationItems, debouncedContingencyPercentage);
       const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
-  
-      // Log performance in development only
-      if (process.env.NODE_ENV === 'development') {
-        const perfEnd = performance.now();
-        if (perfEnd - perfStart > 50) {  // Only log if calculations take more than 50ms
-          console.debug(`Summary calculations took ${(perfEnd - perfStart).toFixed(2)}ms`);
-        }
-      }
-  
-      return {
+      
+      // Update state with new values
+      setCalculationResults({
         totalCost,
         totalMarkup,
         subtotal,
@@ -95,24 +134,18 @@ export const useSummaryCalculations = () => {
         grandTotal,
         hasError: false,
         errorMessage: ""
-      };
+      });
     } catch (error: any) {
       console.error("Error in estimate calculations:", error);
-      return {
-        totalCost: 0,
-        totalMarkup: 0,
-        subtotal: 0, 
-        totalGrossMargin: 0,
-        overallMarginPercentage: 0,
-        contingencyAmount: 0,
-        grandTotal: 0,
+      setCalculationResults(prev => ({
+        ...prev,
         hasError: true,
         errorMessage: error.message || "Error calculating totals"
-      };
+      }));
     }
-  }, [calculationItems, debouncedContingencyPercentage]);
+  };
 
-  return calculations;
+  return calculationResults;
 };
 
 export default useSummaryCalculations;
