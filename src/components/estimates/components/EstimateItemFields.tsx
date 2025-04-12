@@ -1,5 +1,5 @@
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Plus } from 'lucide-react';
@@ -8,13 +8,14 @@ import EstimateItemCard from './estimate-items/EstimateItemCard';
 import { useEstimateItemData } from './estimate-items/useEstimateItemData';
 
 const EstimateItemFields = memo(() => {
-  console.log("EstimateItemFields rendering");
   const form = useFormContext<EstimateFormValues>();
   const { vendors, subcontractors, loading } = useEstimateItemData();
   
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items",
+    // This is critical - don't rerender on every form change
+    shouldUnregister: false,
   });
 
   // Function to add a new item with default values
@@ -39,6 +40,10 @@ const EstimateItemFields = memo(() => {
   const handleRemoveItem = useCallback((index: number) => {
     remove(index);
   }, [remove]);
+
+  // Memoize vendors and subcontractors since they're passed to each item card
+  const memoizedVendors = useMemo(() => vendors, [vendors]);
+  const memoizedSubcontractors = useMemo(() => subcontractors, [subcontractors]);
 
   return (
     <div className="space-y-4">
@@ -68,8 +73,8 @@ const EstimateItemFields = memo(() => {
             <EstimateItemCard 
               key={field.id}
               index={index}
-              vendors={vendors}
-              subcontractors={subcontractors}
+              vendors={memoizedVendors}
+              subcontractors={memoizedSubcontractors}
               loading={loading}
               onRemove={() => handleRemoveItem(index)}
               showRemoveButton={fields.length > 1}

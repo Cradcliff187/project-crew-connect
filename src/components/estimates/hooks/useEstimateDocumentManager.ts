@@ -30,8 +30,10 @@ export function useEstimateDocumentManager(options: UseEstimateDocumentManagerOp
   const [fetchTrigger, setFetchTrigger] = useState(0);
   
   const form = useFormContext<EstimateFormValues>();
+  // Use debounce to prevent too many renders when document IDs change
   const documentIds = useDebounce(form.watch('estimate_documents') || [], 300);
-  const tempId = form.watch('temp_id');
+  // Get tempId only once to avoid re-renders
+  const tempId = form.getValues('temp_id');
 
   // Memoized fetch function
   const fetchDocuments = useCallback(async () => {
@@ -127,6 +129,7 @@ export function useEstimateDocumentManager(options: UseEstimateDocumentManagerOp
   }, []);
   
   // Process documents for the UI - memoized to prevent unnecessary re-processing
+  // These are computed values that don't need reactive updates, so we can calculate them once
   const filteredDocuments = filterDocumentsByType(attachedDocuments, showLineItemDocuments);
   const documentsByCategory = categorizeDocuments(filteredDocuments);
   

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import EstimateItemFields from '../EstimateItemFields';
 import EstimateSummary from '../EstimateSummary';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -8,15 +8,17 @@ import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { PaperclipIcon, UploadIcon } from 'lucide-react';
-import { useState } from 'react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { toast } from '@/hooks/use-toast';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
 import ContingencyInput from '../summary/ContingencyInput';
 
-const LineItemsStep = () => {
+// Memoize the component to prevent unnecessary re-renders
+const LineItemsStep = memo(() => {
   const form = useFormContext<EstimateFormValues>();
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
+  
+  // Get temp ID only once
   const tempEstimateId = form.getValues('temp_id') || '';
   
   const { 
@@ -24,13 +26,19 @@ const LineItemsStep = () => {
     refetchDocuments 
   } = useEstimateDocuments(tempEstimateId);
 
-  const handleDocumentUploadSuccess = (documentId?: string) => {
+  // Memoize handlers to prevent re-creation on each render
+  const handleDocumentUploadSuccess = useCallback((documentId?: string) => {
     setIsDocumentUploadOpen(false);
     
     if (documentId) {
       // Add the document ID to the form values
       const currentDocuments = form.getValues('estimate_documents') || [];
-      form.setValue('estimate_documents', [...currentDocuments, documentId]);
+      form.setValue('estimate_documents', [...currentDocuments, documentId], {
+        // Only mark as dirty, don't trigger validation or rerender
+        shouldDirty: true,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
       
       toast({
         title: 'Document attached',
@@ -40,7 +48,13 @@ const LineItemsStep = () => {
       // Refresh the document list
       refetchDocuments();
     }
-  };
+  }, [form, refetchDocuments]);
+
+  const handleOpenDocumentUpload = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDocumentUploadOpen(true);
+  }, []);
   
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -71,13 +85,18 @@ const LineItemsStep = () => {
                     size="sm"
                     className="bg-[#0485ea] hover:bg-[#0373ce]"
                     type="button"
+                    onClick={handleOpenDocumentUpload}
                   >
                     <UploadIcon className="h-3.5 w-3.5 mr-1" />
                     Add
                   </Button>
                 </SheetTrigger>
                 
-                <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" aria-describedby="document-upload-description">
+                <SheetContent 
+                  className="w-[90vw] sm:max-w-[600px] p-0" 
+                  aria-describedby="document-upload-description"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <SheetHeader className="p-6 pb-2">
                     <SheetTitle>Add Document to Estimate</SheetTitle>
                     <SheetDescription id="document-upload-description">
@@ -91,6 +110,7 @@ const LineItemsStep = () => {
                       entityId={tempEstimateId}
                       onSuccess={handleDocumentUploadSuccess}
                       onCancel={() => setIsDocumentUploadOpen(false)}
+                      preventFormPropagation={true}
                     />
                   )}
                 </SheetContent>
@@ -112,6 +132,8 @@ const LineItemsStep = () => {
       </div>
     </div>
   );
-};
+});
+
+LineItemsStep.displayName = 'LineItemsStep';
 
 export default LineItemsStep;

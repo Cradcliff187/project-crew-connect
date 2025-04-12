@@ -10,14 +10,29 @@ export const useEstimateDocuments = (estimateId: string) => {
   const [error, setError] = useState<string | null>(null);
   const [fetchCount, setFetchCount] = useState(0);
   const hasFetched = useRef(false);
+  const previousEstimateId = useRef<string | null>(null);
   
   // Debounce the estimateId to prevent multiple rapid fetches
   const debouncedEstimateId = useDebounce(estimateId, 300);
 
+  // Reset fetched state when estimateId changes
+  useEffect(() => {
+    if (debouncedEstimateId !== previousEstimateId.current) {
+      hasFetched.current = false;
+      previousEstimateId.current = debouncedEstimateId;
+    }
+  }, [debouncedEstimateId]);
+
   // Memoize the fetchDocuments function to prevent recreation on each render
   const fetchDocuments = useCallback(async () => {
     // Skip fetch if no estimateId, if we're already fetching, or if we've already fetched for this ID
-    if (!debouncedEstimateId || !debouncedEstimateId.trim() || hasFetched.current) {
+    if (!debouncedEstimateId || !debouncedEstimateId.trim()) {
+      setLoading(false);
+      return;
+    }
+    
+    // Skip if we've already fetched documents for this ID (but allow manual refetches)
+    if (hasFetched.current && fetchCount === 0) {
       setLoading(false);
       return;
     }
@@ -83,34 +98,18 @@ export const useEstimateDocuments = (estimateId: string) => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedEstimateId]);
+  }, [debouncedEstimateId, fetchCount]);
 
-  // Use effect to fetch documents when estimate ID changes
+  // Use effect to fetch documents when estimate ID changes or manual refetch is triggered
   useEffect(() => {
-    if (debouncedEstimateId) {
-      // Reset the fetched flag when the ID changes
-      if (debouncedEstimateId !== estimateId) {
-        hasFetched.current = false;
-      }
-      fetchDocuments();
-    } else {
-      setDocuments([]);
-      setLoading(false);
-    }
-  }, [debouncedEstimateId, fetchDocuments]);
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   // Create a function to force a refresh of the documents
   const refetchDocuments = useCallback(() => {
     hasFetched.current = false;
     setFetchCount(prev => prev + 1);
   }, []);
-
-  // Only actually fetch when the fetchCount changes
-  useEffect(() => {
-    if (fetchCount > 0) {
-      fetchDocuments();
-    }
-  }, [fetchCount, fetchDocuments]);
 
   return {
     documents,

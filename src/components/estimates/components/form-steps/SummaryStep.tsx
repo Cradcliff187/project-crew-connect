@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { useSummaryCalculations } from '../../hooks/useSummaryCalculations';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
-import { PaperclipIcon, FileIcon, ExternalLinkIcon } from 'lucide-react';
+import { PaperclipIcon, FileIcon } from 'lucide-react';
 import DocumentList from '@/components/documents/DocumentList';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
@@ -14,7 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const SummaryStep = () => {
+const SummaryStep = memo(() => {
   const form = useFormContext<EstimateFormValues>();
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   const [attachedItemDocuments, setAttachedItemDocuments] = useState<Record<string, {file_name?: string, file_type?: string}>>({});
@@ -29,20 +30,26 @@ const SummaryStep = () => {
     grandTotal
   } = useSummaryCalculations();
 
+  // Get tempId only once, don't watch it
   const tempEstimateId = form.getValues('temp_id') || '';
+  
+  // Get items only when needed, don't watch the entire form
+  const items = form.getValues('items') || [];
+  const estimateDocuments = form.getValues('estimate_documents') || [];
   
   const { 
     documents, 
     loading, 
-    error, 
     refetchDocuments 
   } = useEstimateDocuments(tempEstimateId);
 
+  // Load document info for items that have attached documents
   useEffect(() => {
-    const items = form.getValues('items') || [];
     const itemsWithDocs = items.filter(item => item.document_id);
 
     const fetchDocumentInfo = async () => {
+      if (itemsWithDocs.length === 0) return;
+      
       const docInfo: Record<string, {file_name?: string, file_type?: string}> = {};
       
       for (const item of itemsWithDocs) {
@@ -69,17 +76,20 @@ const SummaryStep = () => {
       setAttachedItemDocuments(docInfo);
     };
     
-    if (itemsWithDocs.length > 0) {
-      fetchDocumentInfo();
-    }
-  }, [form]);
+    fetchDocumentInfo();
+  }, [items]);
 
-  const handleDocumentUploadSuccess = (documentId?: string) => {
+  const handleDocumentUploadSuccess = useCallback((documentId?: string) => {
     setIsDocumentUploadOpen(false);
     
     if (documentId) {
       const currentDocuments = form.getValues('estimate_documents') || [];
-      form.setValue('estimate_documents', [...currentDocuments, documentId]);
+      // Use setValue with options to minimize re-renders
+      form.setValue('estimate_documents', [...currentDocuments, documentId], {
+        shouldDirty: true,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
       
       toast({
         title: 'Document attached',
@@ -88,11 +98,34 @@ const SummaryStep = () => {
       
       refetchDocuments();
     }
-  };
+  }, [form, refetchDocuments]);
 
-  const items = form.watch('items') || [];
-  const estimateDocuments = form.watch('estimate_documents') || [];
-  
+  const handleDocumentDelete = useCallback((document: any) => {
+    const currentDocuments = form.getValues('estimate_documents') || [];
+    form.setValue(
+      'estimate_documents', 
+      currentDocuments.filter(id => id !== document.document_id),
+      {
+        shouldDirty: true,
+        shouldTouch: false,
+        shouldValidate: false,
+      }
+    );
+    
+    toast({
+      title: 'Document removed',
+      description: 'Document has been removed from the estimate',
+    });
+    
+    refetchDocuments();
+  }, [form, refetchDocuments]);
+
+  const handleOpenUpload = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDocumentUploadOpen(true);
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -166,7 +199,7 @@ const SummaryStep = () => {
                   <td className="py-2 text-right">{overallMarginPercentage.toFixed(1)}%</td>
                 </tr>
                 <tr>
-                  <td className="py-2">Contingency ({form.watch('contingency_percentage')}%)</td>
+                  <td className="py-2">Contingency ({form.getValues('contingency_percentage')}%)</td>
                   <td colSpan={3} className="py-2 text-right">${contingencyAmount.toFixed(2)}</td>
                   <td></td>
                 </tr>
@@ -194,13 +227,18 @@ const SummaryStep = () => {
               <Button 
                 className="bg-[#0485ea] hover:bg-[#0373ce]"
                 type="button"
+                onClick={handleOpenUpload}
               >
                 <PaperclipIcon className="h-4 w-4 mr-2" />
                 Add Document
               </Button>
             </SheetTrigger>
             
-            <SheetContent className="w-[90vw] sm:max-w-[600px] p-0" aria-describedby="document-upload-description">
+            <SheetContent 
+              className="w-[90vw] sm:max-w-[600px] p-0" 
+              aria-describedby="document-upload-description"
+              onClick={(e) => e.stopPropagation()}
+            >
               <SheetHeader className="p-6 pb-2">
                 <SheetTitle>Add Document to Estimate</SheetTitle>
                 <SheetDescription id="document-upload-description">
@@ -214,6 +252,7 @@ const SummaryStep = () => {
                   entityId={tempEstimateId}
                   onSuccess={handleDocumentUploadSuccess}
                   onCancel={() => setIsDocumentUploadOpen(false)}
+                  preventFormPropagation={true}
                 />
               )}
             </SheetContent>
@@ -225,20 +264,7 @@ const SummaryStep = () => {
             documents={documents}
             loading={loading}
             onUploadClick={() => setIsDocumentUploadOpen(true)}
-            onDocumentDelete={(document) => {
-              const currentDocuments = form.getValues('estimate_documents') || [];
-              form.setValue(
-                'estimate_documents', 
-                currentDocuments.filter(id => id !== document.document_id)
-              );
-              
-              toast({
-                title: 'Document removed',
-                description: 'Document has been removed from the estimate',
-              });
-              
-              refetchDocuments();
-            }}
+            onDocumentDelete={handleDocumentDelete}
             emptyMessage="No documents attached yet. Add supporting documents like contracts, specifications, or reference materials."
             showEntityInfo={false}
             showCategories={true}
@@ -268,16 +294,12 @@ const SummaryStep = () => {
               </div>
             </div>
           )}
-          
-          {error && (
-            <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800 text-sm mt-4">
-              Error loading documents: {error}
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
   );
-};
+});
+
+SummaryStep.displayName = 'SummaryStep';
 
 export default SummaryStep;

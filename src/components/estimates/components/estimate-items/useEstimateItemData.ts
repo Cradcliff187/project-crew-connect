@@ -1,16 +1,18 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useEstimateItemData = () => {
   const [vendors, setVendors] = useState<{ vendorid: string; vendorname: string }[]>([]);
   const [subcontractors, setSubcontractors] = useState<{ subid: string; subname: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dataFetched, setDataFetched] = useState(false);
+  const dataFetchedRef = useRef(false);
 
   // Memoize the loadData function to prevent recreation on each render
   const loadData = useCallback(async () => {
     // Skip if data has already been fetched
-    if (dataFetched) return;
+    if (dataFetchedRef.current) {
+      return;
+    }
     
     try {
       setLoading(true);
@@ -36,18 +38,18 @@ export const useEstimateItemData = () => {
       }
       
       // Mark data as fetched so we don't fetch it again
-      setDataFetched(true);
+      dataFetchedRef.current = true;
     } catch (error) {
       console.error('Error loading estimate item data:', error);
     } finally {
       setLoading(false);
     }
-  }, [dataFetched]);
+  }, []);
 
+  // Use useEffect with an empty dependency array to ensure we only load data once
   useEffect(() => {
     loadData();
-    // We only want to load this data once when the component mounts
-  }, [loadData]);
+  }, []);
 
   return { vendors, subcontractors, loading };
 };
