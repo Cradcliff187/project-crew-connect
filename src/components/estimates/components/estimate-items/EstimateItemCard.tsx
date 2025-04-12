@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useCallback, memo } from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
-import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon, FileTextIcon } from 'lucide-react';
+import { useFormContext } from 'react-hook-form';
+import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import ItemDescription from './ItemDescription';
 import ItemTypeSelector from './ItemTypeSelector';
-import VendorSelector from './VendorSelector';
+import VendorSelector from '@/components/documents/vendor-selector/VendorSelector';
 import SubcontractorSelector from './SubcontractorSelector';
 import TradeTypeSelector from './TradeTypeSelector';
 import ExpenseTypeSelector from './ExpenseTypeSelector';
@@ -14,16 +14,10 @@ import MarkupInput from './MarkupInput';
 import PriceDisplay from './PriceDisplay';
 import MarginDisplay from './MarginDisplay';
 import RemoveItemButton from './RemoveItemButton';
-import { 
-  calculateItemPrice, 
-  calculateItemGrossMargin, 
-  calculateItemGrossMarginPercentage 
-} from '../../utils/estimateCalculations';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -36,6 +30,53 @@ interface EstimateItemCardProps {
   showRemoveButton: boolean;
 }
 
+// This allows us to lazily fetch document info only when needed
+const AttachedDocument = memo(({ documentId }: { documentId: string }) => {
+  const [docInfo, setDocInfo] = useState<{file_name?: string; file_type?: string} | null>(null);
+  
+  useEffect(() => {
+    // Only fetch if we have a document ID
+    if (!documentId) {
+      setDocInfo(null);
+      return;
+    }
+    
+    const fetchDocumentInfo = async () => {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data, error } = await supabase
+          .from('documents')
+          .select('file_name, file_type')
+          .eq('document_id', documentId)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching document:', error);
+          return;
+        }
+        
+        setDocInfo(data);
+      } catch (error) {
+        console.error('Error in document info fetch:', error);
+      }
+    };
+    
+    fetchDocumentInfo();
+  }, [documentId]);
+  
+  return (
+    <div className="mt-4 p-2 border rounded bg-blue-50 flex items-center">
+      <FileIcon className="h-4 w-4 text-blue-500 mr-2" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{docInfo?.file_name || 'Document attached'}</p>
+        <p className="text-xs text-muted-foreground">{docInfo?.file_type}</p>
+      </div>
+    </div>
+  );
+});
+
+AttachedDocument.displayName = 'AttachedDocument';
+
 const EstimateItemCard = memo(({ 
   index, 
   vendors, 
@@ -46,95 +87,45 @@ const EstimateItemCard = memo(({
 }: EstimateItemCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
-  const [attachedDocument, setAttachedDocument] = useState<{file_name?: string; file_type?: string} | null>(null);
   const form = useFormContext<EstimateFormValues>();
   
-  const itemType = useWatch({
-    control: form.control,
-    name: `items.${index}.item_type`,
-    defaultValue: 'labor'
+  // Get form values directly to reduce re-renders
+  const values = form.getValues(`items.${index}`);
+  const itemType = values?.item_type || 'labor';
+  const cost = values?.cost || '0';
+  const markupPercentage = values?.markup_percentage || '0';
+  const quantity = values?.quantity || '1';
+  const unitPrice = values?.unit_price || '0';
+  const description = values?.description || '';
+  const documentId = values?.document_id || '';
+  const vendorId = values?.vendor_id || '';
+  const subcontractorId = values?.subcontractor_id || '';
+  
+  // Calculate these values once instead of using multiple useWatch hooks
+  const [calculatedValues, setCalculatedValues] = useState({
+    itemPrice: 0,
+    grossMargin: 0,
+    grossMarginPercentage: 0
   });
   
-  const cost = useWatch({
-    control: form.control,
-    name: `items.${index}.cost`,
-    defaultValue: '0'
-  });
-
-  const markupPercentage = useWatch({
-    control: form.control,
-    name: `items.${index}.markup_percentage`,
-    defaultValue: '0'
-  });
-  
-  const quantity = useWatch({
-    control: form.control,
-    name: `items.${index}.quantity`,
-    defaultValue: '1'
-  });
-
-  const unit_price = useWatch({
-    control: form.control,
-    name: `items.${index}.unit_price`,
-    defaultValue: '0'
-  });
-
-  const description = useWatch({
-    control: form.control,
-    name: `items.${index}.description`,
-    defaultValue: ''
-  });
-
-  const vendorId = useWatch({
-    control: form.control,
-    name: `items.${index}.vendor_id`,
-    defaultValue: ''
-  });
-  
-  const subcontractorId = useWatch({
-    control: form.control,
-    name: `items.${index}.subcontractor_id`,
-    defaultValue: ''
-  });
-  
-  const documentId = useWatch({
-    control: form.control,
-    name: `items.${index}.document_id`,
-    defaultValue: ''
-  });
-
-  const { itemPrice, grossMargin, grossMarginPercentage } = React.useMemo(() => {
-    const item = { cost, markup_percentage: markupPercentage, quantity, unit_price };
-    return {
-      itemPrice: calculateItemPrice(item),
-      grossMargin: calculateItemGrossMargin(item),
-      grossMarginPercentage: calculateItemGrossMarginPercentage(item)
-    };
-  }, [cost, markupPercentage, quantity, unit_price]);
-
-  const fetchDocumentInfo = useCallback(async () => {
-    if (!documentId) {
-      setAttachedDocument(null);
-      return;
-    }
-    
-    const { data, error } = await supabase
-      .from('documents')
-      .select('file_name, file_type')
-      .eq('document_id', documentId)
-      .single();
-      
-    if (error) {
-      console.error('Error fetching document:', error);
-      return;
-    }
-    
-    setAttachedDocument(data);
-  }, [documentId]);
-
+  // Update calculated values when inputs change
   useEffect(() => {
-    fetchDocumentInfo();
-  }, [fetchDocumentInfo]);
+    const costValue = parseFloat(cost) || 0;
+    const markupValue = parseFloat(markupPercentage) || 0;
+    const quantityValue = parseFloat(quantity) || 1;
+    const unitPriceValue = parseFloat(unitPrice) || 0;
+    
+    const price = unitPriceValue * quantityValue;
+    const totalCost = costValue * quantityValue;
+    const margin = price - totalCost;
+    const marginPercentage = price > 0 ? (margin / price) * 100 : 0;
+    
+    setCalculatedValues({
+      itemPrice: price,
+      grossMargin: margin,
+      grossMarginPercentage: marginPercentage
+    });
+  }, [cost, markupPercentage, quantity, unitPrice]);
 
   const handleDocumentUploadSuccess = useCallback((docId?: string) => {
     setIsDocumentUploadOpen(false);
@@ -185,12 +176,12 @@ const EstimateItemCard = memo(({
         
         <div className="flex items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            <span className="font-medium">${itemPrice.toFixed(2)}</span>
+            <span className="font-medium">${calculatedValues.itemPrice.toFixed(2)}</span>
             {quantity !== '1' && <span> × {quantity}</span>}
           </div>
           
           <div className="text-sm text-muted-foreground hidden md:block">
-            GM: {grossMarginPercentage.toFixed(1)}%
+            GM: {calculatedValues.grossMarginPercentage.toFixed(1)}%
           </div>
           
           {documentId ? (
@@ -204,8 +195,7 @@ const EstimateItemCard = memo(({
                 </TooltipTrigger>
                 <TooltipContent>
                   <div className="text-xs">
-                    <div className="font-medium">{attachedDocument?.file_name || 'Document attached'}</div>
-                    <div className="text-muted-foreground">{attachedDocument?.file_type}</div>
+                    <div className="font-medium">Document attached</div>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -269,27 +259,14 @@ const EstimateItemCard = memo(({
 
             <CostInput index={index} />
             <MarkupInput index={index} />
-            <PriceDisplay index={index} price={itemPrice} />
-            <MarginDisplay grossMargin={grossMargin} grossMarginPercentage={grossMarginPercentage} />
+            <PriceDisplay index={index} price={calculatedValues.itemPrice} />
+            <MarginDisplay 
+              grossMargin={calculatedValues.grossMargin} 
+              grossMarginPercentage={calculatedValues.grossMarginPercentage} 
+            />
           </div>
           
-          {documentId && (
-            <div className="mt-4 p-2 border rounded bg-blue-50 flex items-center">
-              <FileIcon className="h-4 w-4 text-blue-500 mr-2" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{attachedDocument?.file_name || 'Document attached'}</p>
-                <p className="text-xs text-muted-foreground">{attachedDocument?.file_type}</p>
-              </div>
-              <Button
-                variant="ghost" 
-                size="sm"
-                className="text-red-500 h-8 hover:text-red-700 hover:bg-red-50"
-                onClick={() => form.setValue(`items.${index}.document_id`, '')}
-              >
-                Remove
-              </Button>
-            </div>
-          )}
+          {documentId && <AttachedDocument documentId={documentId} />}
         </div>
       </CollapsibleContent>
     </Collapsible>

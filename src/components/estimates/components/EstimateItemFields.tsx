@@ -1,4 +1,5 @@
 
+import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Plus } from 'lucide-react';
@@ -6,7 +7,8 @@ import { EstimateFormValues } from '../schemas/estimateFormSchema';
 import EstimateItemCard from './estimate-items/EstimateItemCard';
 import { useEstimateItemData } from './estimate-items/useEstimateItemData';
 
-const EstimateItemFields = () => {
+const EstimateItemFields = memo(() => {
+  console.log("EstimateItemFields rendering");
   const form = useFormContext<EstimateFormValues>();
   const { vendors, subcontractors, loading } = useEstimateItemData();
   
@@ -16,7 +18,7 @@ const EstimateItemFields = () => {
   });
 
   // Function to add a new item with default values
-  const addNewItem = () => {
+  const addNewItem = React.useCallback(() => {
     append({ 
       description: '', 
       item_type: 'labor', 
@@ -31,7 +33,7 @@ const EstimateItemFields = () => {
       expense_type: undefined,
       custom_type: ''
     });
-  };
+  }, [append]);
 
   return (
     <div className="space-y-4">
@@ -72,6 +74,8 @@ const EstimateItemFields = () => {
       )}
     </div>
   );
-};
+});
+
+EstimateItemFields.displayName = 'EstimateItemFields';
 
 export default EstimateItemFields;

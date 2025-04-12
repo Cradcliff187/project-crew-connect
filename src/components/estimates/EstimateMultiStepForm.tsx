@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback, memo } from 'react';
 import { Form } from '@/components/ui/form';
 import { Dialog } from '@/components/ui/dialog';
 import CustomDialogContent from './components/form-steps/DialogContent';
@@ -10,12 +10,16 @@ import { ESTIMATE_STEPS } from './components/form-steps/EstimateStepConstants';
 import EstimateStepContent from './components/form-steps/EstimateStepContent';
 import FormActions from './components/form-steps/FormActions';
 import { useEstimateFormData } from './hooks/useEstimateFormData';
-import { useEstimateForm } from './hooks/useEstimateForm';
+import { useEstimateForm } from '@/hooks/useEstimateForm';
 
 interface EstimateMultiStepFormProps {
   open: boolean;
   onClose: () => void;
 }
+
+// Use memo to prevent unnecessary re-renders of child components
+const MemoizedEstimateStepContent = memo(EstimateStepContent);
+const MemoizedFormActions = memo(FormActions);
 
 const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) => {
   const { isSubmitting, submitEstimate } = useEstimateSubmit();
@@ -53,26 +57,26 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   }, [open, form, resetForm]);
 
-  // Handle form submission
-  const onSubmit = async (data: any) => {
+  // Handle form submission - use useCallback to prevent recreation on each render
+  const onSubmit = useCallback(async (data: any) => {
     await submitEstimate(data, customers, onClose);
-  };
+  }, [submitEstimate, customers, onClose]);
 
-  const goToNextStep = () => {
+  const goToNextStep = useCallback(() => {
     const currentIndex = ESTIMATE_STEPS.findIndex(step => step.id === currentStep);
     if (currentIndex < ESTIMATE_STEPS.length - 1) {
       setCurrentStep(ESTIMATE_STEPS[currentIndex + 1].id);
     }
-  };
+  }, [currentStep, setCurrentStep]);
 
-  const goToPreviousStep = () => {
+  const goToPreviousStep = useCallback(() => {
     const currentIndex = ESTIMATE_STEPS.findIndex(step => step.id === currentStep);
     if (currentIndex > 0) {
       setCurrentStep(ESTIMATE_STEPS[currentIndex - 1].id);
     }
-  };
+  }, [currentStep, setCurrentStep]);
 
-  const handleNext = async (e?: React.MouseEvent) => {
+  const handleNext = useCallback(async (e?: React.MouseEvent) => {
     // Prevent event propagation to avoid form submission
     if (e) {
       e.preventDefault();
@@ -83,10 +87,10 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     if (isValid) {
       goToNextStep();
     }
-  };
+  }, [validateCurrentStep, goToNextStep]);
 
   // Handle the final submit with proper type
-  const handleFinalSubmit = (e?: React.FormEvent) => {
+  const handleFinalSubmit = useCallback((e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -95,12 +99,29 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     if (isLastStep) {
       form.handleSubmit(onSubmit)(e as any);
     }
-  };
+  }, [isLastStep, form, onSubmit]);
+
+  // Optimize form submission handling
+  const handleFormSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isLastStep) {
+      form.handleSubmit(onSubmit)(e);
+    }
+  }, [isLastStep, form, onSubmit]);
+
+  // Optimize dialog open change handling
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+  }, [onClose]);
 
   return (
     <Dialog 
       open={open} 
-      onOpenChange={(open) => !open && onClose()}
+      onOpenChange={handleOpenChange}
     >
       <CustomDialogContent 
         currentStep={currentStep}
@@ -112,18 +133,10 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
         <div className="flex-1 overflow-y-auto px-6">
           <Form {...form}>
             <form 
-              onSubmit={(e) => {
-                // Prevent default submit behavior when not on last step
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (isLastStep) {
-                  form.handleSubmit(onSubmit)(e);
-                }
-              }} 
+              onSubmit={handleFormSubmit} 
               className="space-y-6"
             >
-              <EstimateStepContent 
+              <MemoizedEstimateStepContent 
                 currentStep={currentStep}
                 customerTab={customerTab}
                 onNewCustomer={handleNewCustomer}
@@ -139,7 +152,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
         </div>
 
         <div className="px-6 pb-6">
-          <FormActions 
+          <MemoizedFormActions 
             onCancel={onClose}
             onPrevious={isFirstStep ? undefined : goToPreviousStep}
             onNext={isLastStep ? undefined : handleNext}

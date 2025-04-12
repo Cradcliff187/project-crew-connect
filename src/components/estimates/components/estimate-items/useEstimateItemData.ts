@@ -1,46 +1,45 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useEstimateItemData = () => {
   const [vendors, setVendors] = useState<{ vendorid: string; vendorname: string }[]>([]);
   const [subcontractors, setSubcontractors] = useState<{ subid: string; subname: string }[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      
+    const loadData = async () => {
       try {
-        // Fetch vendors
-        const { data: vendorData, error: vendorError } = await supabase
-          .from('vendors')
-          .select('vendorid, vendorname')
-          .order('vendorname');
-          
-        if (vendorError) throw vendorError;
+        setLoading(true);
+        // Dynamically import supabase to reduce initial load time
+        const { supabase } = await import('@/integrations/supabase/client');
         
-        // Fetch subcontractors
-        const { data: subData, error: subError } = await supabase
-          .from('subcontractors')
-          .select('subid, subname')
-          .order('subname');
-          
-        if (subError) throw subError;
-        
-        setVendors(vendorData || []);
-        setSubcontractors(subData || []);
-      } catch (err: any) {
-        console.error('Error fetching estimate item data:', err);
-        setError(err.message);
+        // Use Promise.all to fetch data in parallel
+        const [vendorsResult, subcontractorsResult] = await Promise.all([
+          supabase.from('vendors').select('vendorid, vendorname').order('vendorname'),
+          supabase.from('subcontractors').select('subid, subname').order('subname')
+        ]);
+
+        if (vendorsResult.error) {
+          console.error('Error fetching vendors:', vendorsResult.error);
+        } else {
+          setVendors(vendorsResult.data || []);
+        }
+
+        if (subcontractorsResult.error) {
+          console.error('Error fetching subcontractors:', subcontractorsResult.error);
+        } else {
+          setSubcontractors(subcontractorsResult.data || []);
+        }
+      } catch (error) {
+        console.error('Error loading estimate item data:', error);
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchData();
+
+    loadData();
+    // We only want to load this data once when the component mounts
   }, []);
-  
-  return { vendors, subcontractors, loading, error };
+
+  return { vendors, subcontractors, loading };
 };
