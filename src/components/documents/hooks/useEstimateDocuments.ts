@@ -12,6 +12,7 @@ export const useEstimateDocuments = (estimateId: string) => {
   const hasFetched = useRef(false);
   const previousEstimateId = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const documentsCache = useRef<Record<string, Document[]>>({});
   
   // Debounce the estimateId to prevent multiple rapid fetches
   const debouncedEstimateId = useDebounce(estimateId, 300);
@@ -28,6 +29,13 @@ export const useEstimateDocuments = (estimateId: string) => {
   const fetchDocuments = useCallback(async () => {
     // Skip fetch if no estimateId, if we're already fetching, or if we've already fetched for this ID
     if (!debouncedEstimateId || !debouncedEstimateId.trim()) {
+      setLoading(false);
+      return;
+    }
+    
+    // Check cache first - if we have documents cached and this isn't a manual refetch
+    if (documentsCache.current[debouncedEstimateId] && fetchCount === 0) {
+      setDocuments(documentsCache.current[debouncedEstimateId]);
       setLoading(false);
       return;
     }
@@ -101,6 +109,9 @@ export const useEstimateDocuments = (estimateId: string) => {
         } as Document;
       }));
       
+      // Store in cache
+      documentsCache.current[debouncedEstimateId] = docsWithUrls;
+      
       // Set flag that we've fetched documents for this ID
       hasFetched.current = true;
       setDocuments(docsWithUrls);
@@ -132,9 +143,13 @@ export const useEstimateDocuments = (estimateId: string) => {
 
   // Create a function to force a refresh of the documents
   const refetchDocuments = useCallback(() => {
+    // Clear cache for this ID to force a fresh fetch
+    if (documentsCache.current[debouncedEstimateId]) {
+      delete documentsCache.current[debouncedEstimateId];
+    }
     hasFetched.current = false;
     setFetchCount(prev => prev + 1);
-  }, []);
+  }, [debouncedEstimateId]);
 
   return {
     documents,

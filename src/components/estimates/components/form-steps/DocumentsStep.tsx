@@ -14,11 +14,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 const DocumentsStep = () => {
   const form = useFormContext<EstimateFormValues>();
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
-  
-  // Get the temporary ID from the form context or create one if it doesn't exist
   const [tempEstimateId, setTempEstimateId] = useState<string>("");
   
-  // Use useCallback to create stable function references
+  // Use useEffect to get the temp ID only once
   useEffect(() => {
     // Check if we already have a temp ID stored in the form
     const storedTempId = form.getValues('temp_id');
@@ -30,7 +28,11 @@ const DocumentsStep = () => {
       const newTempId = "temp-" + Math.random().toString(36).substr(2, 9);
       setTempEstimateId(newTempId);
       // Store it in the form for future reference
-      form.setValue('temp_id', newTempId);
+      form.setValue('temp_id', newTempId, {
+        shouldDirty: true,
+        shouldTouch: false,
+        shouldValidate: false
+      });
     }
   }, [form]);
   
@@ -48,7 +50,12 @@ const DocumentsStep = () => {
     if (documentId) {
       // Add the document ID to the form values
       const currentDocuments = form.getValues('estimate_documents') || [];
-      form.setValue('estimate_documents', [...currentDocuments, documentId]);
+      form.setValue('estimate_documents', [...currentDocuments, documentId], {
+        // Only mark as dirty, don't trigger validation or rerender
+        shouldDirty: true,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
       
       toast({
         title: 'Document attached',
@@ -66,7 +73,12 @@ const DocumentsStep = () => {
     const currentDocuments = form.getValues('estimate_documents') || [];
     form.setValue(
       'estimate_documents', 
-      currentDocuments.filter(id => id !== document.document_id)
+      currentDocuments.filter(id => id !== document.document_id),
+      {
+        shouldDirty: true,
+        shouldTouch: false,
+        shouldValidate: false,
+      }
     );
     
     toast({
@@ -87,14 +99,7 @@ const DocumentsStep = () => {
 
   // Handle sheet open state change with useCallback for stability
   const handleSheetOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      // Add a small delay before closing to prevent accidental form submissions
-      setTimeout(() => {
-        setIsDocumentUploadOpen(false);
-      }, 50);
-    } else {
-      setIsDocumentUploadOpen(true);
-    }
+    setIsDocumentUploadOpen(open);
   }, []);
 
   return (
@@ -106,6 +111,7 @@ const DocumentsStep = () => {
             onClick={handleAddDocumentClick}
             className="bg-[#0485ea] hover:bg-[#0373ce]"
             type="button" // Explicitly set as button type, not submit
+            tabIndex={0} // Make sure it's in the tab order
           >
             <UploadIcon className="h-4 w-4 mr-2" />
             Add Document
@@ -115,7 +121,6 @@ const DocumentsStep = () => {
             className="w-[90vw] sm:max-w-[600px] p-0" 
             aria-describedby="document-upload-description"
             onClick={(e) => e.stopPropagation()} // Prevent click propagation
-            onSubmit={(e) => e.stopPropagation()} // Also prevent submit propagation
           >
             <SheetHeader className="p-6 pb-2">
               <SheetTitle>Add Document to Estimate</SheetTitle>

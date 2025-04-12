@@ -13,16 +13,17 @@ export const useFormSubmitHandler = (
   previewURL: string | null = null
 ) => {
   // Memoize the submit handler to prevent recreation on each render
-  const onSubmit = useCallback(async (data: DocumentUploadFormValues) => {
+  const onSubmit = useCallback(async (data: DocumentUploadFormValues, event?: React.FormEvent) => {
+    // If event is provided, prevent default behavior to avoid propagation
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
     if (isUploading) return; // Prevent multiple simultaneous submissions
     
     try {
       setIsUploading(true);
-      
-      // Only log in development environment
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Submitting document upload form', data);
-      }
       
       // Get relevant form data for easier tracking in logs
       const {
@@ -35,17 +36,6 @@ export const useFormSubmitHandler = (
         parentEntityType,
         parentEntityId
       } = data.metadata;
-      
-      console.log('Document upload metadata:', {
-        entityType,
-        entityId,
-        category,
-        isExpense,
-        vendorId: vendorId || 'none',
-        budgetItemId: budgetItemId || 'none',
-        parentEntityType: parentEntityType || 'none',
-        parentEntityId: parentEntityId || 'none'
-      });
       
       const result = await uploadDocument(data);
       
@@ -69,8 +59,6 @@ export const useFormSubmitHandler = (
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
       }
-      
-      console.log('Document upload successful, documentId:', result.documentId);
       
       // Call success callback with documentId
       if (onSuccess) {

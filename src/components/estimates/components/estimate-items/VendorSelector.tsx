@@ -1,16 +1,15 @@
 
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
-import { Vendor } from '@/components/documents/vendor-selector/hooks/useVendorOptions';
 import { Badge } from '@/components/ui/badge';
 import { StoreIcon } from 'lucide-react';
+import VendorSearchCombobox from '@/components/documents/vendor-selector/VendorSearchCombobox';
 
 interface VendorSelectorProps {
   index: number;
-  vendors: Vendor[];
+  vendors: { vendorid: string; vendorname: string }[];
   loading: boolean;
 }
 
@@ -33,23 +32,14 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({ index, vendors, loading
                 </Badge>
               )}
             </FormLabel>
-            <Select value={field.value || "none"} onValueChange={(value) => {
-              field.onChange(value === "none" ? "" : value);
-            }}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading..." : "Select vendor"} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="none">Select vendor</SelectItem>
-                {vendors.map(vendor => (
-                  <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                    {vendor.vendorname}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <VendorSearchCombobox
+                value={field.value || ""}
+                onChange={(value) => field.onChange(value)}
+                vendorType="vendor"
+                placeholder={loading ? "Loading vendors..." : "Select vendor"}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
