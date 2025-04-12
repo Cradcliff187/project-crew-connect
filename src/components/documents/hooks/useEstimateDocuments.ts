@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -9,15 +9,15 @@ export const useEstimateDocuments = (estimateId: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fetchCount, setFetchCount] = useState(0);
+  const hasFetched = useRef(false);
   
   // Debounce the estimateId to prevent multiple rapid fetches
   const debouncedEstimateId = useDebounce(estimateId, 300);
 
   // Memoize the fetchDocuments function to prevent recreation on each render
   const fetchDocuments = useCallback(async () => {
-    // Skip fetch if no estimateId or if we're already fetching
-    if (!debouncedEstimateId || !debouncedEstimateId.trim()) {
-      setDocuments([]);
+    // Skip fetch if no estimateId, if we're already fetching, or if we've already fetched for this ID
+    if (!debouncedEstimateId || !debouncedEstimateId.trim() || hasFetched.current) {
       setLoading(false);
       return;
     }
@@ -74,87 +74,9 @@ export const useEstimateDocuments = (estimateId: string) => {
         } as Document;
       }));
       
-      // Fetch all revisions for this estimate, not just the current one
-      const { data: allRevisions, error: revisionsError } = await supabase
-        .from('estimate_revisions')
-        .select('id')
-        .eq('estimate_id', debouncedEstimateId);
-        
-      if (revisionsError) {
-        console.error('Error fetching estimate revisions:', revisionsError);
-      }
-      
-      let itemDocuments: Document[] = [];
-      
-      // If we have revisions, fetch documents for items in each revision
-      if (allRevisions && allRevisions.length > 0) {
-        const revisionIds = allRevisions.map(rev => rev.id);
-        
-        // Fetch all items that have document associations for all revisions
-        const { data: items, error: itemsError } = await supabase
-          .from('estimate_items')
-          .select('id, description, document_id, revision_id')
-          .eq('estimate_id', debouncedEstimateId)
-          .in('revision_id', revisionIds)
-          .not('document_id', 'is', null);
-          
-        if (!itemsError && items && items.length > 0) {
-          // Get the unique document IDs
-          const documentIds = items.map(item => item.document_id).filter(Boolean);
-          
-          if (documentIds.length > 0) {
-            const { data: itemDocData, error: itemDocsError } = await supabase
-              .from('documents')
-              .select('*')
-              .in('document_id', documentIds);
-              
-            if (!itemDocsError && itemDocData) {
-              // Process these documents and add them to our array
-              const itemDocsWithUrls = await Promise.all(itemDocData.map(async (doc) => {
-                let publicUrl = '';
-                
-                try {
-                  const { data: urlData } = supabase.storage
-                    .from('construction_documents')
-                    .getPublicUrl(doc.storage_path);
-                  
-                  publicUrl = urlData.publicUrl;
-                } catch (err) {
-                  console.error('Error getting public URL:', err);
-                  publicUrl = ''; // Set default empty URL on error
-                }
-                
-                // Find the related item for this document
-                const relatedItem = items.find(item => item.document_id === doc.document_id);
-                
-                return { 
-                  ...doc,
-                  url: publicUrl,           // Add url property
-                  file_url: publicUrl,      // Keep file_url for backward compatibility  
-                  item_reference: relatedItem ? `Item: ${relatedItem.description}` : null,
-                  item_id: relatedItem ? relatedItem.id : null,
-                  revision_id: relatedItem?.revision_id,
-                  is_latest_version: doc.is_latest_version ?? true,
-                  // Use file_type if mime_type doesn't exist
-                  mime_type: doc.file_type || 'application/octet-stream'
-                } as Document;
-              }));
-              
-              itemDocuments = itemDocsWithUrls;
-            }
-          }
-        }
-      }
-      
-      // Add item documents to our collection
-      docsWithUrls.push(...itemDocuments);
-      
-      // Remove any duplicate documents (by document_id)
-      const uniqueDocs = Array.from(
-        new Map(docsWithUrls.map(doc => [doc.document_id, doc])).values()
-      );
-      
-      setDocuments(uniqueDocs);
+      // Set flag that we've fetched documents for this ID
+      hasFetched.current = true;
+      setDocuments(docsWithUrls);
     } catch (err: any) {
       console.error('Error fetching estimate documents:', err);
       setError(err.message);
@@ -166,6 +88,10 @@ export const useEstimateDocuments = (estimateId: string) => {
   // Use effect to fetch documents when estimate ID changes
   useEffect(() => {
     if (debouncedEstimateId) {
+      // Reset the fetched flag when the ID changes
+      if (debouncedEstimateId !== estimateId) {
+        hasFetched.current = false;
+      }
       fetchDocuments();
     } else {
       setDocuments([]);
@@ -173,8 +99,9 @@ export const useEstimateDocuments = (estimateId: string) => {
     }
   }, [debouncedEstimateId, fetchDocuments]);
 
-  // Create a debounced refetch function to prevent multiple rapid refetches
+  // Create a function to force a refresh of the documents
   const refetchDocuments = useCallback(() => {
+    hasFetched.current = false;
     setFetchCount(prev => prev + 1);
   }, []);
 

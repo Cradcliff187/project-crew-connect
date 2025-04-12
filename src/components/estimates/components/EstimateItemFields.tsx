@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Plus } from 'lucide-react';
@@ -18,7 +18,7 @@ const EstimateItemFields = memo(() => {
   });
 
   // Function to add a new item with default values
-  const addNewItem = React.useCallback(() => {
+  const addNewItem = useCallback(() => {
     append({ 
       description: '', 
       item_type: 'labor', 
@@ -34,6 +34,11 @@ const EstimateItemFields = memo(() => {
       custom_type: ''
     });
   }, [append]);
+
+  // Memoize the remove function to prevent recreating it for each item
+  const handleRemoveItem = useCallback((index: number) => {
+    remove(index);
+  }, [remove]);
 
   return (
     <div className="space-y-4">
@@ -66,7 +71,7 @@ const EstimateItemFields = memo(() => {
               vendors={vendors}
               subcontractors={subcontractors}
               loading={loading}
-              onRemove={() => remove(index)}
+              onRemove={() => handleRemoveItem(index)}
               showRemoveButton={fields.length > 1}
             />
           ))}

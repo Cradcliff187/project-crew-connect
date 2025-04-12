@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { estimateFormSchema, EstimateFormValues } from '@/components/estimates/schemas/estimateFormSchema';
@@ -15,6 +15,7 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
   // Always use the multi-step form
   const [currentStep, setCurrentStep] = useState(ESTIMATE_STEPS[0].id);
   const [customerTab, setCustomerTab] = useState<'existing' | 'new'>('existing');
+  const resetRequested = useRef(false);
   
   const form = useForm<EstimateFormValues>({
     resolver: zodResolver(estimateFormSchema),
@@ -31,6 +32,9 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
   });
   
   const resetForm = useCallback(() => {
+    // Set a flag that the reset was requested
+    resetRequested.current = true;
+    
     form.reset({
       project: '',
       customer: '',
@@ -45,19 +49,21 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
     setCustomerTab('existing');
   }, [form, initialValues]);
   
+  // Use a separate effect to handle reset when dialog closes
   useEffect(() => {
-    if (!open) {
-      resetForm();
+    if (!open && resetRequested.current) {
+      // Clear the reset request flag
+      resetRequested.current = false;
     }
-  }, [open, resetForm]);
+  }, [open]);
   
-  const handleNewCustomer = () => {
+  const handleNewCustomer = useCallback(() => {
     setCustomerTab('new');
     form.setValue('isNewCustomer', true);
     form.setValue('customer', '');
-  };
+  }, [form]);
   
-  const handleExistingCustomer = () => {
+  const handleExistingCustomer = useCallback(() => {
     setCustomerTab('existing');
     form.setValue('isNewCustomer', false);
     // Clear the nested newCustomer fields instead of using top-level fields
@@ -65,9 +71,9 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
     form.setValue('newCustomer.email', '');
     form.setValue('newCustomer.address', '');
     form.setValue('newCustomer.phone', '');
-  };
+  }, [form]);
   
-  const validateCurrentStep = async () => {
+  const validateCurrentStep = useCallback(async () => {
     let fieldsToValidate: string[] = [];
     
     switch (currentStep) {
@@ -91,7 +97,7 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
     
     const result = await form.trigger(fieldsToValidate as any);
     return result;
-  };
+  }, [currentStep, customerTab, form]);
   
   const isFirstStep = currentStep === ESTIMATE_STEPS[0].id;
   const isLastStep = currentStep === ESTIMATE_STEPS[ESTIMATE_STEPS.length - 1].id;

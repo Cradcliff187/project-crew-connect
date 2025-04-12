@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import StepNavigation from './StepNavigation';
 import EstimateStepTabs from './EstimateStepTabs';
 import { EstimateStep } from './EstimateStepConstants';
@@ -36,9 +36,9 @@ const DialogContent = ({
             currentStep={currentStep}
           />
         </DialogTitle>
-        <p id="estimate-form-description" className="text-sm text-muted-foreground">
+        <DialogDescription id="estimate-form-description">
           Create and manage estimates for your customers
-        </p>
+        </DialogDescription>
       </DialogHeader>
 
       <div className="px-6 py-4">
