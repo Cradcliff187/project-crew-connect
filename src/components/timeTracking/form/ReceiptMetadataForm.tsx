@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import VendorSelector from '@/components/documents/vendor-selector/VendorSelector';
+import VendorSearchCombobox from '@/components/documents/vendor-selector/VendorSearchCombobox';
 import { ReceiptMetadata } from '@/types/timeTracking';
 
 export interface ReceiptMetadataFormProps {
@@ -72,14 +72,15 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
   
   return (
     <div className="space-y-4">
-      <VendorSelector
-        vendorType="vendor"
-        value={actualVendor}
-        onChange={handleVendorChange}
-        label="Vendor"
-        entityType={entityType}
-        entityId={entityId}
-      />
+      <div className="space-y-2">
+        <Label>Vendor</Label>
+        <VendorSearchCombobox 
+          value={actualVendor}
+          onChange={handleVendorChange}
+          vendorType="vendor"
+          placeholder="Select a vendor"
+        />
+      </div>
       
       <div className="space-y-2">
         <Label>Expense Type</Label>
