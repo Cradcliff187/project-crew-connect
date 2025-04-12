@@ -14,7 +14,7 @@ const EstimateItemFields = memo(() => {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items",
-    // This is critical - don't rerender on every form change
+    // Prevent unnecessary re-renders
     shouldUnregister: false,
   });
 
@@ -36,12 +36,12 @@ const EstimateItemFields = memo(() => {
     });
   }, [append]);
 
-  // Memoize the remove function to prevent recreating it for each item
+  // Memoize the remove function
   const handleRemoveItem = useCallback((index: number) => {
     remove(index);
   }, [remove]);
 
-  // Memoize vendors and subcontractors since they're passed to each item card
+  // Memoize vendors and subcontractors
   const memoizedVendors = useMemo(() => vendors, [vendors]);
   const memoizedSubcontractors = useMemo(() => subcontractors, [subcontractors]);
 

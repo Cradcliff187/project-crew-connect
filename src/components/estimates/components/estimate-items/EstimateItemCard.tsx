@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { ChevronDown, ChevronUp, PaperclipIcon, FileIcon } from 'lucide-react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -20,22 +20,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescri
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import useItemValues from './hooks/useItemValues';
 
-interface EstimateItemCardProps {
-  index: number;
-  vendors: { vendorid: string; vendorname: string }[];
-  subcontractors: { subid: string; subname: string }[];
-  loading: boolean;
-  onRemove: () => void;
-  showRemoveButton: boolean;
-}
-
-// This allows us to lazily fetch document info only when needed
+// New smaller component to handle document info and display
 const AttachedDocument = memo(({ documentId }: { documentId: string }) => {
   const [docInfo, setDocInfo] = useState<{file_name?: string; file_type?: string} | null>(null);
   
-  useEffect(() => {
-    // Only fetch if we have a document ID
+  // Single effect to fetch document info when needed
+  React.useEffect(() => {
     if (!documentId) {
       setDocInfo(null);
       return;
@@ -48,7 +40,7 @@ const AttachedDocument = memo(({ documentId }: { documentId: string }) => {
           .from('documents')
           .select('file_name, file_type')
           .eq('document_id', documentId)
-          .single();
+          .maybeSingle();
           
         if (error) {
           console.error('Error fetching document:', error);
@@ -77,6 +69,15 @@ const AttachedDocument = memo(({ documentId }: { documentId: string }) => {
 
 AttachedDocument.displayName = 'AttachedDocument';
 
+interface EstimateItemCardProps {
+  index: number;
+  vendors: { vendorid: string; vendorname: string }[];
+  subcontractors: { subid: string; subname: string }[];
+  loading: boolean;
+  onRemove: () => void;
+  showRemoveButton: boolean;
+}
+
 const EstimateItemCard = memo(({ 
   index, 
   vendors, 
@@ -89,78 +90,18 @@ const EstimateItemCard = memo(({
   const [isDocumentUploadOpen, setIsDocumentUploadOpen] = useState(false);
   const form = useFormContext<EstimateFormValues>();
   
-  // Use a single effect to extract all item values rather than multiple useWatch calls
-  const [itemValues, setItemValues] = useState({
-    itemType: 'labor',
-    cost: '0',
-    markupPercentage: '20',
-    quantity: '1',
-    unitPrice: '0',
-    description: '',
-    documentId: '',
-    vendorId: '',
-    subcontractorId: ''
-  });
-  
-  // Single effect to extract form values and update local state
-  useEffect(() => {
-    // Read all values at once to minimize form interactions
-    const values = {
-      itemType: form.getValues(`items.${index}.item_type`) || 'labor',
-      cost: form.getValues(`items.${index}.cost`) || '0',
-      markupPercentage: form.getValues(`items.${index}.markup_percentage`) || '20',
-      quantity: form.getValues(`items.${index}.quantity`) || '1',
-      unitPrice: form.getValues(`items.${index}.unit_price`) || '0',
-      description: form.getValues(`items.${index}.description`) || '',
-      documentId: form.getValues(`items.${index}.document_id`) || '',
-      vendorId: form.getValues(`items.${index}.vendor_id`) || '',
-      subcontractorId: form.getValues(`items.${index}.subcontractor_id`) || ''
-    };
-    
-    // Only update state if values have changed
-    if (JSON.stringify(values) !== JSON.stringify(itemValues)) {
-      setItemValues(values);
-    }
-    
-    // Create a field subscription - more efficient than multiple useWatch calls
-    const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith(`items.${index}.`)) {
-        const field = name.split('.').pop();
-        if (field && ['item_type', 'cost', 'markup_percentage', 'quantity', 'unit_price', 'description', 'document_id', 'vendor_id', 'subcontractor_id'].includes(field)) {
-          setItemValues(prev => ({
-            ...prev,
-            [field === 'item_type' ? 'itemType' : field === 'markup_percentage' ? 'markupPercentage' : field === 'unit_price' ? 'unitPrice' : field === 'document_id' ? 'documentId' : field === 'vendor_id' ? 'vendorId' : field === 'subcontractor_id' ? 'subcontractorId' : field]: value.items?.[index]?.[field] || prev[field === 'item_type' ? 'itemType' : field === 'markup_percentage' ? 'markupPercentage' : field === 'unit_price' ? 'unitPrice' : field === 'document_id' ? 'documentId' : field === 'vendor_id' ? 'vendorId' : field === 'subcontractor_id' ? 'subcontractorId' : field]
-          }));
-        }
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [form, index]);
-  
-  // Memoize calculations to prevent recalculating on every render
-  const calculatedValues = useMemo(() => {
-    const costValue = parseFloat(itemValues.cost) || 0;
-    const markupValue = parseFloat(itemValues.markupPercentage) || 0;
-    const quantityValue = parseFloat(itemValues.quantity) || 1;
-    const unitPriceValue = parseFloat(itemValues.unitPrice) || 0;
-    
-    const price = unitPriceValue * quantityValue;
-    const totalCost = costValue * quantityValue;
-    const margin = price - totalCost;
-    const marginPercentage = price > 0 ? (margin / price) * 100 : 0;
-    
-    return {
-      itemPrice: price,
-      grossMargin: margin,
-      grossMarginPercentage: marginPercentage
-    };
-  }, [itemValues.cost, itemValues.markupPercentage, itemValues.quantity, itemValues.unitPrice]);
+  // Use our custom hook to efficiently manage item values
+  const { 
+    itemValues, 
+    calculatedValues 
+  } = useItemValues(index, form);
 
   const handleDocumentUploadSuccess = useCallback((docId?: string) => {
     setIsDocumentUploadOpen(false);
     if (docId) {
-      form.setValue(`items.${index}.document_id`, docId);
+      form.setValue(`items.${index}.document_id`, docId, {
+        shouldDirty: true,
+      });
     }
   }, [form, index]);
 
@@ -170,16 +111,8 @@ const EstimateItemCard = memo(({
 
   const getEntityIdForDocument = useCallback(() => {
     const tempId = form.getValues('temp_id') || 'pending';
-    
-    switch (itemValues.itemType) {
-      case 'vendor':
-        return itemValues.vendorId || tempId;
-      case 'subcontractor':
-        return itemValues.subcontractorId || tempId;
-      default:
-        return tempId;
-    }
-  }, [form, itemValues.itemType, itemValues.vendorId, itemValues.subcontractorId]);
+    return tempId;
+  }, [form]);
 
   const handleAttachClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -224,7 +157,7 @@ const EstimateItemCard = memo(({
     >
       <div className="p-3 bg-white flex items-center gap-2">
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="p-1 h-8 w-8">
+          <Button variant="ghost" size="sm" className="p-1 h-8 w-8 flex-shrink-0">
             {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </CollapsibleTrigger>

@@ -20,11 +20,12 @@ interface EstimateMultiStepFormProps {
 // Use memo to prevent unnecessary re-renders of child components
 const MemoizedEstimateStepContent = memo(EstimateStepContent);
 const MemoizedFormActions = memo(FormActions);
+const MemoizedDialogContent = memo(CustomDialogContent);
 
 const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) => {
   const { isSubmitting, submitEstimate } = useEstimateSubmit();
   
-  // Create a stable customerId value for useEstimateFormData
+  // Create a stable customerId value
   const stableCustomerId = useMemo(() => "", []);
   
   const { 
@@ -47,10 +48,10 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     isLastStep
   } = useEstimateForm({ open, onClose });
 
-  // Determine the selected customer ID from the form values - use useMemo to stabilize
+  // Determine the selected customer ID - use memo to stabilize
   const selectedCustomerId = useMemo(() => form.watch('customer') || null, [form]);
 
-  // Reset form when dialog opens/closes
+  // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       // Generate a new temporary ID when form opens
@@ -59,7 +60,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   }, [open, form]);
 
-  // Handle form submission - use useCallback to prevent recreation on each render
+  // Handle form submission - use callback
   const onSubmit = useCallback(async (data: any) => {
     await submitEstimate(data, customers, onClose);
   }, [submitEstimate, customers, onClose]);
@@ -79,7 +80,6 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
   }, [currentStep, setCurrentStep]);
 
   const handleNext = useCallback(async (e?: React.MouseEvent) => {
-    // Prevent event propagation to avoid form submission
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -91,7 +91,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   }, [validateCurrentStep, goToNextStep]);
 
-  // Handle the final submit with proper type
+  // Handle the final submit
   const handleFinalSubmit = useCallback((e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
@@ -103,7 +103,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   }, [isLastStep, form, onSubmit]);
 
-  // Optimize form submission handling
+  // Optimize form submission
   const handleFormSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -113,16 +113,70 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   }, [isLastStep, form, onSubmit]);
 
-  // Optimize dialog open change handling
+  // Optimize dialog open change
   const handleOpenChange = useCallback((open: boolean) => {
     if (!open) {
       onClose();
     }
   }, [onClose]);
 
-  // Memoize the Dialog component to prevent unnecessary re-renders
+  // Memoize content to reduce renders
+  const formContent = useMemo(() => (
+    <Form {...form}>
+      <form 
+        onSubmit={handleFormSubmit} 
+        className="space-y-6"
+      >
+        <MemoizedEstimateStepContent 
+          currentStep={currentStep}
+          customerTab={customerTab}
+          onNewCustomer={handleNewCustomer}
+          onExistingCustomer={handleExistingCustomer}
+          selectedCustomerAddress={selectedCustomerAddress}
+          selectedCustomerName={selectedCustomerName}
+          selectedCustomerId={selectedCustomerId}
+          customers={customers}
+          loading={dataLoading}
+        />
+      </form>
+    </Form>
+  ), [
+    form, 
+    handleFormSubmit, 
+    currentStep, 
+    customerTab, 
+    handleNewCustomer, 
+    handleExistingCustomer,
+    selectedCustomerAddress, 
+    selectedCustomerName, 
+    selectedCustomerId,
+    customers, 
+    dataLoading
+  ]);
+
+  const actionsContent = useMemo(() => (
+    <MemoizedFormActions 
+      onCancel={onClose}
+      onPrevious={isFirstStep ? undefined : goToPreviousStep}
+      onNext={isLastStep ? undefined : handleNext}
+      isLastStep={isLastStep}
+      currentStep={currentStep}
+      onSubmit={isLastStep ? handleFinalSubmit : undefined}
+      isSubmitting={isSubmitting}
+    />
+  ), [
+    onClose,
+    isFirstStep,
+    goToPreviousStep,
+    isLastStep,
+    handleNext,
+    currentStep,
+    handleFinalSubmit,
+    isSubmitting
+  ]);
+
   const dialogContent = useMemo(() => (
-    <CustomDialogContent 
+    <MemoizedDialogContent 
       currentStep={currentStep}
       isFirstStep={isFirstStep}
       onPreviousStep={goToPreviousStep}
@@ -130,58 +184,20 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
       setCurrentStep={setCurrentStep}
     >
       <div className="flex-1 overflow-y-auto px-6">
-        <Form {...form}>
-          <form 
-            onSubmit={handleFormSubmit} 
-            className="space-y-6"
-          >
-            <MemoizedEstimateStepContent 
-              currentStep={currentStep}
-              customerTab={customerTab}
-              onNewCustomer={handleNewCustomer}
-              onExistingCustomer={handleExistingCustomer}
-              selectedCustomerAddress={selectedCustomerAddress}
-              selectedCustomerName={selectedCustomerName}
-              selectedCustomerId={selectedCustomerId}
-              customers={customers}
-              loading={dataLoading}
-            />
-          </form>
-        </Form>
+        {formContent}
       </div>
 
       <div className="px-6 pb-6">
-        <MemoizedFormActions 
-          onCancel={onClose}
-          onPrevious={isFirstStep ? undefined : goToPreviousStep}
-          onNext={isLastStep ? undefined : handleNext}
-          isLastStep={isLastStep}
-          currentStep={currentStep}
-          onSubmit={isLastStep ? handleFinalSubmit : undefined}
-          isSubmitting={isSubmitting}
-        />
+        {actionsContent}
       </div>
-    </CustomDialogContent>
+    </MemoizedDialogContent>
   ), [
     currentStep,
     isFirstStep,
     goToPreviousStep,
     setCurrentStep,
-    form,
-    handleFormSubmit,
-    customerTab,
-    handleNewCustomer,
-    handleExistingCustomer,
-    selectedCustomerAddress,
-    selectedCustomerName,
-    selectedCustomerId,
-    customers,
-    dataLoading,
-    onClose,
-    isLastStep,
-    handleNext,
-    handleFinalSubmit,
-    isSubmitting
+    formContent,
+    actionsContent
   ]);
 
   return (

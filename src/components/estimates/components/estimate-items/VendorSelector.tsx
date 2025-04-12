@@ -5,7 +5,7 @@ import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { Badge } from '@/components/ui/badge';
 import { StoreIcon } from 'lucide-react';
-import VendorSearchCombobox from '@/components/documents/vendor-selector/VendorSearchCombobox';
+import VendorSearchCombobox from './VendorSearchCombobox'; 
 
 interface VendorSelectorProps {
   index: number;
@@ -13,11 +13,11 @@ interface VendorSelectorProps {
   loading: boolean;
 }
 
-// Use React.memo to prevent unnecessary re-renders
+// Optimized vendor selector with memoization
 const VendorSelector: React.FC<VendorSelectorProps> = memo(({ index, vendors, loading }) => {
   const form = useFormContext<EstimateFormValues>();
   
-  // Function to handle value changes without causing re-renders
+  // Function to handle value changes efficiently
   const handleVendorChange = (value: string) => {
     form.setValue(`items.${index}.vendor_id`, value, {
       shouldDirty: true,

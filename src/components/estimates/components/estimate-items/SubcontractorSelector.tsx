@@ -1,21 +1,29 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
-import { SubcontractorBasic } from '@/components/documents/vendor-selector/hooks/useVendorOptions';
 import { Badge } from '@/components/ui/badge';
 import { HardHatIcon } from 'lucide-react';
+import VendorSearchCombobox from './VendorSearchCombobox';
 
 interface SubcontractorSelectorProps {
   index: number;
-  subcontractors: SubcontractorBasic[];
+  subcontractors: { subid: string; subname: string }[];
   loading: boolean;
 }
 
-const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, subcontractors, loading }) => {
+// Optimized subcontractor selector with memoization
+const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = memo(({ index, subcontractors, loading }) => {
   const form = useFormContext<EstimateFormValues>();
+  
+  // Function to handle value changes efficiently
+  const handleSubcontractorChange = (value: string) => {
+    form.setValue(`items.${index}.subcontractor_id`, value, {
+      shouldDirty: true,
+      shouldValidate: false
+    });
+  };
   
   return (
     <div className="col-span-12 md:col-span-3">
@@ -33,29 +41,22 @@ const SubcontractorSelector: React.FC<SubcontractorSelectorProps> = ({ index, su
                 </Badge>
               )}
             </FormLabel>
-            <Select value={field.value || "none"} onValueChange={(value) => {
-              field.onChange(value === "none" ? "" : value);
-            }}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading..." : "Select subcontractor"} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="none">Select subcontractor</SelectItem>
-                {subcontractors.map(sub => (
-                  <SelectItem key={sub.subid} value={sub.subid}>
-                    {sub.subname}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <VendorSearchCombobox
+                value={field.value || ""}
+                onChange={handleSubcontractorChange}
+                vendorType="subcontractor"
+                placeholder={loading ? "Loading subcontractors..." : "Select subcontractor"}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
     </div>
   );
-};
+});
+
+SubcontractorSelector.displayName = 'SubcontractorSelector';
 
 export default SubcontractorSelector;
