@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form';
 import { useWorkOrderForm } from './hooks/useWorkOrderForm';
 import { useWorkOrderData } from './hooks/useWorkOrderData';
@@ -84,14 +84,14 @@ const WorkOrderMultiStepDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[650px] md:max-w-[700px] max-h-[90vh] flex flex-col overflow-hidden bg-white shadow-lg border-2 border-gray-100" aria-describedby="work-order-form-description">
+      <DialogContent className="sm:max-w-[650px] md:max-w-[700px] max-h-[90vh] flex flex-col overflow-hidden bg-white shadow-lg border-2 border-gray-100">
         <DialogHeader className="border-b pb-4">
           <DialogTitle className="text-xl font-semibold text-[#0485ea]">
             Create New Work Order
           </DialogTitle>
-          <p id="work-order-form-description" className="sr-only">
+          <DialogDescription id="work-order-form-description">
             Form to create a new work order
-          </p>
+          </DialogDescription>
         </DialogHeader>
         
         <div className="mt-2 mb-6">

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
@@ -152,6 +152,11 @@ const ChangeOrderDialog = ({
           <DialogTitle className="text-[#0485ea]">
             {isEditing ? 'Edit Change Order' : 'New Change Order'}
           </DialogTitle>
+          <DialogDescription>
+            {isEditing 
+              ? 'Update the details of this change order' 
+              : 'Create a new change order for your project or work order'}
+          </DialogDescription>
         </DialogHeader>
         
         <FormProvider {...form}>
