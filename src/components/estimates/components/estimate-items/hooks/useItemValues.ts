@@ -62,7 +62,8 @@ const useItemValues = (index: number, form: UseFormReturn<EstimateFormValues>) =
     setItemValues(values);
     
     // Subscribe to changes for this item only - with minimal resubscription
-    const unsubscribe = form.watch((value, { name }) => {
+    // Fix: Correctly handle the subscription returned by watch
+    const subscription = form.watch((value, { name }) => {
       if (!name || !name.startsWith(`items.${index}.`)) return;
       
       const field = name.split('.').pop();
@@ -100,7 +101,8 @@ const useItemValues = (index: number, form: UseFormReturn<EstimateFormValues>) =
       }));
     });
     
-    return () => unsubscribe();
+    // Properly cleanup the subscription
+    return () => subscription.unsubscribe();
   }, [form, index]);
   
   // Calculate derived values - but only when relevant values change
