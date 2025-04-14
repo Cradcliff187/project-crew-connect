@@ -4,6 +4,23 @@
 
 **URL**: https://lovable.dev/projects/af57cde4-ad57-433e-815c-c17780578b75
 
+## Recent Changes
+
+### Vendor/Subcontractor Selection Fix - April 25, 2025
+
+We've resolved an issue with the vendor and subcontractor selection dropdowns in document upload forms. The fix addresses:
+
+- Selection not registering properly when clicking on items in the dropdown
+- Event propagation issues causing form submission or mishandled selections
+- Missing explicit button types causing unintended form submissions
+- Added event stopPropagation to prevent clicks from bubbling up to parent elements
+
+Components affected:
+
+- `VendorSearchCombobox.tsx`
+- `VendorSelectDialog.tsx`
+- `StandardizedDocumentUpload.tsx`
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
