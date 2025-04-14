@@ -1,4 +1,3 @@
-
 import { Progress } from '@/components/ui/progress';
 
 interface ProgressDisplayProps {
@@ -13,7 +12,7 @@ const ProgressDisplay = ({ progressValue }: ProgressDisplayProps) => {
     if (progressValue < 75) return 'bg-blue-500';
     return 'bg-green-500';
   };
-  
+
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm text-muted-foreground">
@@ -24,10 +23,7 @@ const ProgressDisplay = ({ progressValue }: ProgressDisplayProps) => {
           {progressValue === 100 && 'Complete'}
         </span>
       </div>
-      <Progress 
-        value={progressValue} 
-        className={`h-2 ${getProgressColor()}`}
-      />
+      <Progress value={progressValue} className={`h-2 ${getProgressColor()}`} />
     </div>
   );
 };

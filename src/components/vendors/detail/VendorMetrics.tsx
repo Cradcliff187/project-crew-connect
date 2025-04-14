@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BriefcaseBusiness } from 'lucide-react';
@@ -12,12 +11,8 @@ interface VendorMetricsProps {
 }
 
 const VendorMetrics: React.FC<VendorMetricsProps> = ({ vendorId }) => {
-  const { 
-    projects, 
-    workOrders, 
-    loadingAssociations, 
-    fetchAssociatedData 
-  } = useVendorAssociatedData();
+  const { projects, workOrders, loadingAssociations, fetchAssociatedData } =
+    useVendorAssociatedData();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,20 +47,18 @@ const VendorMetrics: React.FC<VendorMetricsProps> = ({ vendorId }) => {
           <div className="space-y-6">
             <div className="flex flex-col">
               <span className="text-3xl font-bold">{projects.length + workOrders.length}</span>
-              <span className="text-sm text-muted-foreground">
-                Total Associated Items
-              </span>
+              <span className="text-sm text-muted-foreground">Total Associated Items</span>
             </div>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex-1 border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea] hover:text-white"
                 onClick={navigateToProjects}
               >
                 Projects ({projects.length})
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex-1 border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea] hover:text-white"
                 onClick={navigateToWorkOrders}
               >

@@ -1,4 +1,3 @@
-
 import { Search, Filter, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +17,7 @@ const WorkOrdersHeader = ({
   setSearchQuery,
   onWorkOrderAdded,
   showAddDialog,
-  setShowAddDialog
+  setShowAddDialog,
 }: WorkOrdersHeaderProps) => {
   return (
     <>
@@ -33,10 +32,10 @@ const WorkOrdersHeader = ({
             placeholder="Search work orders..."
             className="pl-9 subtle-input rounded-md"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-        
+
         <div className="flex items-center gap-2 w-full md:w-auto">
           <Button variant="outline" size="sm" className="flex items-center gap-1">
             <Filter className="h-4 w-4 mr-1" />

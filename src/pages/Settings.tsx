@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +18,7 @@ const Settings = () => {
     reply_to: '',
     bcc_email: '',
     signature: '',
-    auto_bcc: false
+    auto_bcc: false,
   });
   const [saving, setSaving] = useState(false);
 
@@ -30,16 +29,16 @@ const Settings = () => {
   const fetchEmailConfig = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from('estimate_email_config')
         .select('*')
         .maybeSingle();
-      
+
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching email config:', error);
       }
-      
+
       if (data) {
         setEmailConfig(data);
       }
@@ -53,22 +52,22 @@ const Settings = () => {
   const handleSaveEmailConfig = async () => {
     try {
       setSaving(true);
-      
+
       const { data, error } = await supabase
         .from('estimate_email_config')
         .upsert({
           ...emailConfig,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single();
-      
+
       if (error) {
         throw error;
       }
-      
+
       setEmailConfig(data);
-      
+
       toast({
         title: 'Settings Saved',
         description: 'Email configuration has been updated',
@@ -76,7 +75,7 @@ const Settings = () => {
       });
     } catch (error: any) {
       console.error('Error saving email config:', error);
-      
+
       toast({
         title: 'Error Saving Settings',
         description: error.message || 'An error occurred while saving settings',
@@ -91,13 +90,13 @@ const Settings = () => {
     <PageTransition>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Settings</h1>
-        
+
         <Tabs defaultValue="email" className="w-full">
           <TabsList>
             <TabsTrigger value="email">Email Settings</TabsTrigger>
             <TabsTrigger value="company">Company Information</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="email" className="mt-6">
             <Card>
               <CardHeader>
@@ -116,60 +115,70 @@ const Settings = () => {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="fromName">From Name</Label>
-                        <Input 
-                          id="fromName" 
-                          value={emailConfig.from_name} 
-                          onChange={(e) => setEmailConfig({...emailConfig, from_name: e.target.value})}
+                        <Input
+                          id="fromName"
+                          value={emailConfig.from_name}
+                          onChange={e =>
+                            setEmailConfig({ ...emailConfig, from_name: e.target.value })
+                          }
                           placeholder="Company Name"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="fromEmail">From Email</Label>
-                        <Input 
-                          id="fromEmail" 
-                          type="email" 
-                          value={emailConfig.from_email} 
-                          onChange={(e) => setEmailConfig({...emailConfig, from_email: e.target.value})}
+                        <Input
+                          id="fromEmail"
+                          type="email"
+                          value={emailConfig.from_email}
+                          onChange={e =>
+                            setEmailConfig({ ...emailConfig, from_email: e.target.value })
+                          }
                           placeholder="estimates@yourcompany.com"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="replyTo">Reply-To Email</Label>
-                        <Input 
-                          id="replyTo" 
-                          type="email" 
-                          value={emailConfig.reply_to || ''} 
-                          onChange={(e) => setEmailConfig({...emailConfig, reply_to: e.target.value})}
+                        <Input
+                          id="replyTo"
+                          type="email"
+                          value={emailConfig.reply_to || ''}
+                          onChange={e =>
+                            setEmailConfig({ ...emailConfig, reply_to: e.target.value })
+                          }
                           placeholder="Optional"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="bccEmail">BCC Email</Label>
-                        <Input 
-                          id="bccEmail" 
-                          type="email" 
-                          value={emailConfig.bcc_email || ''} 
-                          onChange={(e) => setEmailConfig({...emailConfig, bcc_email: e.target.value})}
+                        <Input
+                          id="bccEmail"
+                          type="email"
+                          value={emailConfig.bcc_email || ''}
+                          onChange={e =>
+                            setEmailConfig({ ...emailConfig, bcc_email: e.target.value })
+                          }
                           placeholder="Optional"
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="signature">Email Signature</Label>
-                      <textarea 
-                        id="signature" 
+                      <textarea
+                        id="signature"
                         className="w-full h-32 p-2 border rounded-md"
-                        value={emailConfig.signature || ''} 
-                        onChange={(e) => setEmailConfig({...emailConfig, signature: e.target.value})}
+                        value={emailConfig.signature || ''}
+                        onChange={e =>
+                          setEmailConfig({ ...emailConfig, signature: e.target.value })
+                        }
                         placeholder="Your email signature"
                       />
                     </div>
-                    
-                    <Button 
+
+                    <Button
                       onClick={handleSaveEmailConfig}
                       className="bg-[#0485ea] hover:bg-[#0373ce]"
                       disabled={saving}
@@ -191,7 +200,7 @@ const Settings = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="company" className="mt-6">
             <Card>
               <CardHeader>

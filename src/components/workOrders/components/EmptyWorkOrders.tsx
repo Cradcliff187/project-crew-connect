@@ -1,5 +1,4 @@
-
-import { TableRow, TableCell } from "@/components/ui/table";
+import { TableRow, TableCell } from '@/components/ui/table';
 
 const EmptyWorkOrders = () => {
   return (

@@ -1,4 +1,3 @@
-
 /**
  * Utility function to get the appropriate color class for a status badge
  * @param status The status string to map to a color class
@@ -24,7 +23,7 @@ export const getStatusColor = (status: string): string => {
  */
 export const getStatusDisplay = (status: string): string => {
   if (!status) return 'Unknown';
-  
+
   // Default: capitalize first letter of each word
   return status
     .split('_')

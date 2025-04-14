@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useExpenseOperations(workOrderId: string, fetchExpenses: () => Promise<void>) {
   const [submitting, setSubmitting] = useState(false);
-  
+
   const handleAddExpense = async (expense: {
     expenseName: string;
     quantity: number;
@@ -21,7 +20,7 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
       });
       return null;
     }
-    
+
     if (expense.quantity <= 0 || expense.unitPrice <= 0) {
       toast({
         title: 'Invalid Values',
@@ -30,11 +29,11 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
       });
       return null;
     }
-    
+
     const totalPrice = expense.quantity * expense.unitPrice;
-    
+
     setSubmitting(true);
-    
+
     try {
       console.log('Adding expense with payload:', {
         entity_id: workOrderId,
@@ -46,12 +45,15 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
         amount: totalPrice,
         vendor_id: expense.vendorId,
       });
-      
+
       // Validate that workOrderId is a valid UUID
-      if (!workOrderId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workOrderId)) {
+      if (
+        !workOrderId ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workOrderId)
+      ) {
         throw new Error(`Invalid work order ID format: ${workOrderId}`);
       }
-      
+
       // Insert into the expenses table
       const { data, error } = await supabase
         .from('expenses')
@@ -66,19 +68,19 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
           vendor_id: expense.vendorId,
         })
         .select();
-      
+
       if (error) {
         console.error('Supabase error details:', error);
         throw error;
       }
-      
+
       console.log('Expense added successfully:', data);
-      
+
       toast({
         title: 'Expense Added',
         description: 'Expense has been added successfully.',
       });
-      
+
       return { success: true, data };
     } catch (error: any) {
       console.error('Error adding expense:', error);
@@ -92,28 +94,25 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
       setSubmitting(false);
     }
   };
-  
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this expense?')) {
       return;
     }
-    
+
     try {
       // Delete the expense record from the database
-      const { error } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', id);
-      
+      const { error } = await supabase.from('expenses').delete().eq('id', id);
+
       if (error) {
         throw error;
       }
-      
+
       toast({
         title: 'Expense Deleted',
         description: 'The expense has been deleted successfully.',
       });
-      
+
       // Refresh expenses list
       fetchExpenses();
     } catch (error: any) {
@@ -129,6 +128,6 @@ export function useExpenseOperations(workOrderId: string, fetchExpenses: () => P
   return {
     submitting,
     handleAddExpense,
-    handleDelete
+    handleDelete,
   };
 }

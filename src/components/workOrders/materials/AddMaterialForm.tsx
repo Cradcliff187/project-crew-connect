@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,7 @@ import TotalPriceDisplay from './components/TotalPriceDisplay';
 
 interface AddMaterialFormProps {
   workOrderId: string; // The work order ID is required
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   submitting: boolean;
   onMaterialPrompt: (material: {
     materialName: string;
@@ -21,13 +20,13 @@ interface AddMaterialFormProps {
   onSuccess?: () => void; // Optional callback for when form submission succeeds
 }
 
-const AddMaterialForm = ({ 
+const AddMaterialForm = ({
   workOrderId,
-  vendors, 
+  vendors,
   submitting,
   onMaterialPrompt,
   onVendorAdded,
-  onSuccess
+  onSuccess,
 }: AddMaterialFormProps) => {
   // Form state
   const [materialName, setMaterialName] = useState('');
@@ -38,20 +37,20 @@ const AddMaterialForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const qtyValue = parseFloat(quantity);
     const priceValue = parseFloat(unitPrice);
-    
+
     const materialData = {
       materialName,
       quantity: qtyValue,
       unitPrice: priceValue,
-      vendorId: selectedVendor
+      vendorId: selectedVendor,
     };
-    
+
     // Submit the form data
     onMaterialPrompt(materialData);
-    
+
     // Call onSuccess if provided
     if (onSuccess) {
       onSuccess();
@@ -61,7 +60,7 @@ const AddMaterialForm = ({
   const handleVendorAdded = () => {
     // Close the dialog
     setShowVendorDialog(false);
-    
+
     // Notify parent to refresh vendors
     if (onVendorAdded) {
       onVendorAdded();
@@ -75,7 +74,7 @@ const AddMaterialForm = ({
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent>
-          <MaterialFormFields 
+          <MaterialFormFields
             materialName={materialName}
             setMaterialName={setMaterialName}
             quantity={quantity}
@@ -87,12 +86,12 @@ const AddMaterialForm = ({
             vendors={vendors}
             onAddVendorClick={() => setShowVendorDialog(true)}
           />
-          
+
           <TotalPriceDisplay unitPrice={unitPrice} quantity={quantity} />
         </CardContent>
         <CardFooter>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full md:w-auto bg-[#0485ea] hover:bg-[#0375d1]"
             disabled={submitting}
           >

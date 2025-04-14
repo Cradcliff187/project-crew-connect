@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
@@ -18,31 +17,31 @@ const MaterialReceiptUpload: React.FC<MaterialReceiptUploadProps> = ({
   material,
   vendorName,
   onSuccess,
-  onCancel
+  onCancel,
 }) => {
   // Prefill data for receipt upload
   const prefillData = {
     amount: material.total_price,
     vendorId: material.vendor_id || undefined,
-    materialName: material.material_name
+    materialName: material.material_name,
   };
 
-  console.log("MaterialReceiptUpload component rendering with:", { 
-    workOrderId, 
+  console.log('MaterialReceiptUpload component rendering with:', {
+    workOrderId,
     materialId: material.id,
-    prefillData 
+    prefillData,
   });
 
   // Handle successful upload
   const handleSuccess = (documentId?: string) => {
-    console.log("Document upload success, got ID:", documentId);
+    console.log('Document upload success, got ID:', documentId);
     if (documentId) {
       onSuccess(documentId);
     } else {
       toast({
-        title: "Error",
-        description: "Failed to get document ID after upload",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to get document ID after upload',
+        variant: 'destructive',
       });
     }
   };

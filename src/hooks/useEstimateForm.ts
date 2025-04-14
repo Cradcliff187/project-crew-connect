@@ -1,8 +1,10 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { estimateFormSchema, EstimateFormValues } from '@/components/estimates/schemas/estimateFormSchema';
+import {
+  estimateFormSchema,
+  EstimateFormValues,
+} from '@/components/estimates/schemas/estimateFormSchema';
 import { ESTIMATE_STEPS } from '@/components/estimates/components/form-steps/EstimateStepConstants';
 
 interface UseEstimateFormProps {
@@ -16,7 +18,7 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
   const [currentStep, setCurrentStep] = useState(ESTIMATE_STEPS[0].id);
   const [customerTab, setCustomerTab] = useState<'existing' | 'new'>('existing');
   const resetRequested = useRef(false);
-  
+
   const form = useForm<EstimateFormValues>({
     resolver: zodResolver(estimateFormSchema),
     defaultValues: {
@@ -27,14 +29,14 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
       items: [{ description: '', cost: '', markup_percentage: '30', quantity: '1' }],
       contingency_percentage: '10',
       estimate_documents: [],
-      ...initialValues
+      ...initialValues,
     },
   });
-  
+
   const resetForm = useCallback(() => {
     // Set a flag that the reset was requested
     resetRequested.current = true;
-    
+
     form.reset({
       project: '',
       customer: '',
@@ -43,12 +45,12 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
       items: [{ description: '', cost: '', markup_percentage: '30', quantity: '1' }],
       contingency_percentage: '10',
       estimate_documents: [],
-      ...initialValues
+      ...initialValues,
     });
     setCurrentStep(ESTIMATE_STEPS[0].id);
     setCustomerTab('existing');
   }, [form, initialValues]);
-  
+
   // Use a separate effect to handle reset when dialog closes
   useEffect(() => {
     if (!open && resetRequested.current) {
@@ -56,13 +58,13 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
       resetRequested.current = false;
     }
   }, [open]);
-  
+
   const handleNewCustomer = useCallback(() => {
     setCustomerTab('new');
     form.setValue('isNewCustomer', true);
     form.setValue('customer', '');
   }, [form]);
-  
+
   const handleExistingCustomer = useCallback(() => {
     setCustomerTab('existing');
     form.setValue('isNewCustomer', false);
@@ -72,13 +74,16 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
     form.setValue('newCustomer.address', '');
     form.setValue('newCustomer.phone', '');
   }, [form]);
-  
+
   const validateCurrentStep = useCallback(async () => {
     let fieldsToValidate: string[] = [];
-    
+
     switch (currentStep) {
       case 'basic-info':
-        fieldsToValidate = ['project', customerTab === 'existing' ? 'customer' : 'newCustomer.name'];
+        fieldsToValidate = [
+          'project',
+          customerTab === 'existing' ? 'customer' : 'newCustomer.name',
+        ];
         break;
       case 'line-items':
         // Add the contingency_percentage to the validation for line-items step
@@ -94,14 +99,14 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
       default:
         fieldsToValidate = [];
     }
-    
+
     const result = await form.trigger(fieldsToValidate as any);
     return result;
   }, [currentStep, customerTab, form]);
-  
+
   const isFirstStep = currentStep === ESTIMATE_STEPS[0].id;
   const isLastStep = currentStep === ESTIMATE_STEPS[ESTIMATE_STEPS.length - 1].id;
-  
+
   return {
     form,
     currentStep,
@@ -112,6 +117,6 @@ export const useEstimateForm = ({ open, onClose, initialValues = {} }: UseEstima
     handleExistingCustomer,
     validateCurrentStep,
     isFirstStep,
-    isLastStep
+    isLastStep,
   };
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -31,12 +30,15 @@ export const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
   itemId,
   onSuccess,
   onCancel,
-  children
+  children,
 }) => {
   return (
-    <Dialog open={open} onOpenChange={(openState) => {
-      if (!openState) onCancel();
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={openState => {
+        if (!openState) onCancel();
+      }}
+    >
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <div className="flex justify-between items-center">
@@ -49,10 +51,11 @@ export const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Upload a receipt or invoice for this {itemName.toLowerCase()} from {vendorName || 'the vendor'}.
+            Upload a receipt or invoice for this {itemName.toLowerCase()} from{' '}
+            {vendorName || 'the vendor'}.
           </p>
         </DialogHeader>
-        
+
         {children}
       </DialogContent>
     </Dialog>
@@ -68,10 +71,10 @@ interface ReceiptViewerDialogProps {
 export const ReceiptViewerDialog: React.FC<ReceiptViewerDialogProps> = ({
   open,
   onOpenChange,
-  receiptDocument
+  receiptDocument,
 }) => {
   if (!receiptDocument) return null;
-  
+
   // Convert Document type to WorkOrderDocument type for the viewer
   const documentForViewer = {
     ...receiptDocument,
@@ -84,14 +87,10 @@ export const ReceiptViewerDialog: React.FC<ReceiptViewerDialogProps> = ({
     entity_type: receiptDocument.entity_type,
     created_at: receiptDocument.created_at,
     updated_at: receiptDocument.updated_at,
-    is_receipt: true
+    is_receipt: true,
   };
-  
+
   return (
-    <DocumentViewer
-      document={documentForViewer as any}
-      open={open}
-      onOpenChange={onOpenChange}
-    />
+    <DocumentViewer document={documentForViewer as any} open={open} onOpenChange={onOpenChange} />
   );
 };

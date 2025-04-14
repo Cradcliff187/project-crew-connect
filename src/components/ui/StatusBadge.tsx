@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { StatusType } from '@/types/common';
@@ -11,11 +10,11 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ 
-  status, 
+const StatusBadge: React.FC<StatusBadgeProps> = ({
+  status,
   label,
   size = 'default',
-  className = '' 
+  className = '',
 }) => {
   // Get status icon
   const getStatusIcon = () => {
@@ -37,26 +36,26 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
         return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
     }
   };
-  
+
   // Generate a display label from the status if none provided
   const getDisplayLabel = () => {
     if (label) return label;
-    
+
     // Convert status to readable format
     let displayLabel = status.toString();
-    
+
     // Handle special cases
     if (displayLabel.includes('_')) {
       displayLabel = displayLabel.replace(/_/g, ' ');
     }
-    
+
     // Capitalize first letter of each word
     return displayLabel
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   };
-  
+
   // Get status class based on status type
   const getStatusClass = () => {
     switch (status) {
@@ -89,12 +88,12 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
-  
+
   const sizeClasses = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2.5 py-0.5 text-xs';
-  
+
   return (
-    <Badge 
-      variant="outline" 
+    <Badge
+      variant="outline"
       className={`font-medium flex items-center ${getStatusClass()} ${sizeClasses} ${className}`}
     >
       {getStatusIcon()}

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
 import { User, Building2 } from 'lucide-react';
@@ -10,18 +9,16 @@ export interface WorkOrderContactCardProps {
   assignee: { name: string } | null;
 }
 
-export const WorkOrderContactCard = ({ 
-  workOrder, 
+export const WorkOrderContactCard = ({
+  workOrder,
   customer,
   location,
-  assignee
+  assignee,
 }: WorkOrderContactCardProps) => {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          Contacts
-        </CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">Contacts</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {customer && (

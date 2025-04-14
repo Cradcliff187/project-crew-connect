@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,7 +16,7 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
   filters,
   onFilterChange,
   onReset,
-  activeFiltersCount
+  activeFiltersCount,
 }) => {
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange({ ...filters, search: event.target.value });
@@ -41,22 +40,15 @@ const DocumentFilters: React.FC<DocumentFiltersProps> = ({
                 onChange={handleSearchChange}
               />
             </div>
-            
+
             {activeFiltersCount > 0 && (
-              <Button 
-                variant="ghost" 
-                onClick={onReset}
-                className="h-10 px-3"
-              >
+              <Button variant="ghost" onClick={onReset} className="h-10 px-3">
                 Clear Filters ({activeFiltersCount})
               </Button>
             )}
           </div>
-          
-          <DocumentFilter 
-            value={filters}
-            onChange={handleFilterChange}
-          />
+
+          <DocumentFilter value={filters} onChange={handleFilterChange} />
         </div>
       </CardContent>
     </Card>

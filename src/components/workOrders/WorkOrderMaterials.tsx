@@ -1,4 +1,3 @@
-
 import React from 'react';
 import MaterialsInterface from './materials/MaterialsInterface';
 
@@ -7,16 +6,13 @@ interface WorkOrderMaterialsProps {
   onMaterialAdded?: () => void;
 }
 
-const WorkOrderMaterials: React.FC<WorkOrderMaterialsProps> = ({ 
+const WorkOrderMaterials: React.FC<WorkOrderMaterialsProps> = ({
   workOrderId,
-  onMaterialAdded 
+  onMaterialAdded,
 }) => {
   return (
     <div className="space-y-6">
-      <MaterialsInterface 
-        workOrderId={workOrderId} 
-        onMaterialAdded={onMaterialAdded} 
-      />
+      <MaterialsInterface workOrderId={workOrderId} onMaterialAdded={onMaterialAdded} />
     </div>
   );
 };

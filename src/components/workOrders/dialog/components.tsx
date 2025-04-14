@@ -1,4 +1,3 @@
-
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -6,18 +5,14 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -36,25 +31,26 @@ export const WORK_ORDER_STEPS = [
 ];
 
 // Step tabs component
-export const WorkOrderStepTabs = ({ 
-  currentStep, 
-  setCurrentStep, 
-  isDisabled 
-}: { 
-  currentStep: string; 
+export const WorkOrderStepTabs = ({
+  currentStep,
+  setCurrentStep,
+  isDisabled,
+}: {
+  currentStep: string;
   setCurrentStep: (step: string) => void;
   isDisabled: boolean;
 }) => {
   return (
     <Tabs value={currentStep} className="w-full">
       <TabsList className="grid grid-cols-5 h-auto">
-        {WORK_ORDER_STEPS.map((step) => (
+        {WORK_ORDER_STEPS.map(step => (
           <TabsTrigger
             key={step.id}
             value={step.id}
             className={cn(
-              "py-2 text-xs",
-              currentStep === step.id && "bg-[#0485ea] text-white data-[state=active]:bg-[#0485ea] data-[state=active]:text-white"
+              'py-2 text-xs',
+              currentStep === step.id &&
+                'bg-[#0485ea] text-white data-[state=active]:bg-[#0485ea] data-[state=active]:text-white'
             )}
             onClick={() => !isDisabled && setCurrentStep(step.id)}
             disabled={isDisabled}
@@ -88,11 +84,7 @@ export const WorkOrderLoadingState = () => {
 };
 
 // Basic Info Fields component
-export const BasicInfoFields = ({ 
-  form 
-}: { 
-  form: UseFormReturn<WorkOrderFormValues>; 
-}) => {
+export const BasicInfoFields = ({ form }: { form: UseFormReturn<WorkOrderFormValues> }) => {
   return (
     <>
       <FormField
@@ -108,13 +100,15 @@ export const BasicInfoFields = ({
           </FormItem>
         )}
       />
-      
+
       <FormField
         control={form.control}
         name="work_order_number"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Work Order Number <span className="text-muted-foreground">(Optional)</span></FormLabel>
+            <FormLabel>
+              Work Order Number <span className="text-muted-foreground">(Optional)</span>
+            </FormLabel>
             <FormControl>
               <Input placeholder="WO-00001" {...field} />
             </FormControl>
@@ -122,25 +116,27 @@ export const BasicInfoFields = ({
           </FormItem>
         )}
       />
-      
+
       <FormField
         control={form.control}
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description <span className="text-muted-foreground">(Optional)</span></FormLabel>
+            <FormLabel>
+              Description <span className="text-muted-foreground">(Optional)</span>
+            </FormLabel>
             <FormControl>
-              <Textarea 
+              <Textarea
                 placeholder="Describe the work to be done"
                 className="min-h-[100px]"
-                {...field} 
+                {...field}
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
@@ -148,10 +144,7 @@ export const BasicInfoFields = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Priority</FormLabel>
-              <Select 
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
@@ -167,13 +160,15 @@ export const BasicInfoFields = ({
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="po_number"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>PO Number <span className="text-muted-foreground">(Optional)</span></FormLabel>
+              <FormLabel>
+                PO Number <span className="text-muted-foreground">(Optional)</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Purchase Order Number" {...field} />
               </FormControl>
@@ -187,11 +182,7 @@ export const BasicInfoFields = ({
 };
 
 // Schedule Fields component
-export const ScheduleFields = ({ 
-  form 
-}: { 
-  form: UseFormReturn<WorkOrderFormValues>; 
-}) => {
+export const ScheduleFields = ({ form }: { form: UseFormReturn<WorkOrderFormValues> }) => {
   return (
     <>
       <FormField
@@ -199,11 +190,13 @@ export const ScheduleFields = ({
         name="time_estimate"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Time Estimate (Hours) <span className="text-muted-foreground">(Optional)</span></FormLabel>
+            <FormLabel>
+              Time Estimate (Hours) <span className="text-muted-foreground">(Optional)</span>
+            </FormLabel>
             <FormControl>
-              <Input 
-                type="number" 
-                placeholder="Estimated hours to complete" 
+              <Input
+                type="number"
+                placeholder="Estimated hours to complete"
                 {...field}
                 value={field.value === undefined ? '' : field.value}
                 onChange={e => {
@@ -216,26 +209,28 @@ export const ScheduleFields = ({
           </FormItem>
         )}
       />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="scheduled_date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Scheduled Date <span className="text-muted-foreground">(Optional)</span></FormLabel>
+              <FormLabel>
+                Scheduled Date <span className="text-muted-foreground">(Optional)</span>
+              </FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
+                        'w-full pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
                       )}
                     >
                       {field.value ? (
-                        format(new Date(field.value), "PPP")
+                        format(new Date(field.value), 'PPP')
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -247,8 +242,8 @@ export const ScheduleFields = ({
                   <Calendar
                     mode="single"
                     selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date)}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    onSelect={date => field.onChange(date)}
+                    disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
                     initialFocus
                   />
                 </PopoverContent>
@@ -257,25 +252,27 @@ export const ScheduleFields = ({
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="due_by_date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Due By <span className="text-muted-foreground">(Optional)</span></FormLabel>
+              <FormLabel>
+                Due By <span className="text-muted-foreground">(Optional)</span>
+              </FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
+                        'w-full pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
                       )}
                     >
                       {field.value ? (
-                        format(new Date(field.value), "PPP")
+                        format(new Date(field.value), 'PPP')
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -287,8 +284,8 @@ export const ScheduleFields = ({
                   <Calendar
                     mode="single"
                     selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date)}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    onSelect={date => field.onChange(date)}
+                    disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
                     initialFocus
                   />
                 </PopoverContent>
@@ -303,12 +300,12 @@ export const ScheduleFields = ({
 };
 
 // Location Fields component
-export const LocationFields = ({ 
-  form, 
-  formData, 
-  useCustomAddress 
-}: { 
-  form: UseFormReturn<WorkOrderFormValues>; 
+export const LocationFields = ({
+  form,
+  formData,
+  useCustomAddress,
+}: {
+  form: UseFormReturn<WorkOrderFormValues>;
   formData: FormData;
   useCustomAddress: boolean;
 }) => {
@@ -319,11 +316,10 @@ export const LocationFields = ({
         name="customer_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Customer <span className="text-muted-foreground">(Optional)</span></FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-            >
+            <FormLabel>
+              Customer <span className="text-muted-foreground">(Optional)</span>
+            </FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select customer" />
@@ -331,7 +327,7 @@ export const LocationFields = ({
               </FormControl>
               <SelectContent>
                 <SelectItem value="">None</SelectItem>
-                {formData.customers.map((customer) => (
+                {formData.customers.map(customer => (
                   <SelectItem key={customer.customerid} value={customer.customerid}>
                     {customer.customername}
                   </SelectItem>
@@ -342,20 +338,19 @@ export const LocationFields = ({
           </FormItem>
         )}
       />
-      
+
       <CreateLocationToggle form={form} />
-      
+
       {!useCustomAddress ? (
         <FormField
           control={form.control}
           name="location_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Location <span className="text-muted-foreground">(Optional)</span></FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
+              <FormLabel>
+                Location <span className="text-muted-foreground">(Optional)</span>
+              </FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select location" />
@@ -363,7 +358,7 @@ export const LocationFields = ({
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="">None</SelectItem>
-                  {formData.locations.map((location) => (
+                  {formData.locations.map(location => (
                     <SelectItem key={location.location_id} value={location.location_id}>
                       {location.location_name || location.address}
                     </SelectItem>
@@ -389,7 +384,7 @@ export const LocationFields = ({
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-3 gap-4">
             <FormField
               control={form.control}
@@ -404,7 +399,7 @@ export const LocationFields = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="state"
@@ -418,7 +413,7 @@ export const LocationFields = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="zip"
@@ -440,10 +435,10 @@ export const LocationFields = ({
 };
 
 // Assignment Fields component
-export const AssignmentFields = ({ 
-  form, 
-  formData 
-}: { 
+export const AssignmentFields = ({
+  form,
+  formData,
+}: {
   form: UseFormReturn<WorkOrderFormValues>;
   formData: FormData;
 }) => {
@@ -453,11 +448,10 @@ export const AssignmentFields = ({
       name="assigned_to"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Assign To <span className="text-muted-foreground">(Optional)</span></FormLabel>
-          <Select
-            onValueChange={field.onChange}
-            defaultValue={field.value}
-          >
+          <FormLabel>
+            Assign To <span className="text-muted-foreground">(Optional)</span>
+          </FormLabel>
+          <Select onValueChange={field.onChange} defaultValue={field.value}>
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Select assignee" />
@@ -465,7 +459,7 @@ export const AssignmentFields = ({
             </FormControl>
             <SelectContent>
               <SelectItem value="">Unassigned</SelectItem>
-              {formData.employees.map((employee) => (
+              {formData.employees.map(employee => (
                 <SelectItem key={employee.employee_id} value={employee.employee_id}>
                   {`${employee.first_name} ${employee.last_name}`}
                 </SelectItem>
@@ -480,13 +474,9 @@ export const AssignmentFields = ({
 };
 
 // Review Summary component
-export const ReviewSummary = ({
-  form
-}: {
-  form: UseFormReturn<WorkOrderFormValues>;
-}) => {
+export const ReviewSummary = ({ form }: { form: UseFormReturn<WorkOrderFormValues> }) => {
   const values = form.getValues();
-  
+
   return (
     <div className="space-y-6">
       <div>
@@ -495,7 +485,7 @@ export const ReviewSummary = ({
           Please review the details below before creating this work order.
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
         <div>
           <h4 className="text-sm font-semibold">Basic Information</h4>
@@ -518,13 +508,15 @@ export const ReviewSummary = ({
             </div>
           </dl>
         </div>
-        
+
         <div>
           <h4 className="text-sm font-semibold">Schedule</h4>
           <dl className="mt-2 space-y-1">
             <div className="flex justify-between">
               <dt className="text-sm text-muted-foreground">Estimated Hours:</dt>
-              <dd className="text-sm">{values.time_estimate ? `${values.time_estimate} hrs` : '—'}</dd>
+              <dd className="text-sm">
+                {values.time_estimate ? `${values.time_estimate} hrs` : '—'}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-sm text-muted-foreground">Scheduled Date:</dt>
@@ -541,13 +533,11 @@ export const ReviewSummary = ({
           </dl>
         </div>
       </div>
-      
+
       {values.description && (
         <div>
           <h4 className="text-sm font-semibold">Description</h4>
-          <p className="text-sm mt-1 bg-muted p-2 rounded">
-            {values.description}
-          </p>
+          <p className="text-sm mt-1 bg-muted p-2 rounded">{values.description}</p>
         </div>
       )}
     </div>
@@ -555,14 +545,14 @@ export const ReviewSummary = ({
 };
 
 // Component to render the correct step content
-export const WorkOrderStepContent = ({ 
+export const WorkOrderStepContent = ({
   currentStep,
   form,
   useCustomAddress,
   formData,
   dataLoaded,
-  setCurrentStep
-}: { 
+  setCurrentStep,
+}: {
   currentStep: string;
   form: UseFormReturn<WorkOrderFormValues>;
   useCustomAddress: boolean;
@@ -570,15 +560,23 @@ export const WorkOrderStepContent = ({
   dataLoaded: boolean;
   setCurrentStep: (step: string) => void;
 }) => {
-  switch(currentStep) {
+  switch (currentStep) {
     case 'basic-info':
       return <BasicInfoFields form={form} />;
     case 'schedule':
       return <ScheduleFields form={form} />;
     case 'location':
-      return dataLoaded ? <LocationFields form={form} formData={formData} useCustomAddress={useCustomAddress} /> : <WorkOrderLoadingState />;
+      return dataLoaded ? (
+        <LocationFields form={form} formData={formData} useCustomAddress={useCustomAddress} />
+      ) : (
+        <WorkOrderLoadingState />
+      );
     case 'assignment':
-      return dataLoaded ? <AssignmentFields form={form} formData={formData} /> : <WorkOrderLoadingState />;
+      return dataLoaded ? (
+        <AssignmentFields form={form} formData={formData} />
+      ) : (
+        <WorkOrderLoadingState />
+      );
     case 'review':
       return <ReviewSummary form={form} />;
     default:
@@ -595,7 +593,7 @@ export const WorkOrderDialogFooter = ({
   onPrevious,
   onNext,
   onCancel,
-  onSubmit
+  onSubmit,
 }: {
   currentStep: string;
   isSubmitting: boolean;
@@ -609,32 +607,23 @@ export const WorkOrderDialogFooter = ({
   const isFirstStep = currentStep === WORK_ORDER_STEPS[0].id;
   const isLastStep = currentStep === WORK_ORDER_STEPS[WORK_ORDER_STEPS.length - 1].id;
   const isButtonDisabled = isLoading || isSubmitting || !dataLoaded;
-  
+
   return (
     <div className="flex justify-between pt-4 border-t">
-      <Button 
-        type="button" 
-        variant="outline" 
-        onClick={onCancel}
-      >
+      <Button type="button" variant="outline" onClick={onCancel}>
         Cancel
       </Button>
-      
+
       <div className="flex space-x-2">
         {!isFirstStep && (
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onPrevious}
-            disabled={isButtonDisabled}
-          >
+          <Button type="button" variant="outline" onClick={onPrevious} disabled={isButtonDisabled}>
             Previous
           </Button>
         )}
-        
+
         {!isLastStep ? (
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={onNext}
             disabled={isButtonDisabled}
             className="bg-[#0485ea] hover:bg-[#0375d1]"
@@ -642,7 +631,7 @@ export const WorkOrderDialogFooter = ({
             Next
           </Button>
         ) : (
-          <Button 
+          <Button
             type="button"
             onClick={onSubmit}
             disabled={isButtonDisabled}

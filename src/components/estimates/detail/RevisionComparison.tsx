@@ -3,12 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight, DollarSign, CalendarDays, CheckCircle2, XCircle, PlusCircle, MinusCircle } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  DollarSign,
+  CalendarDays,
+  CheckCircle2,
+  XCircle,
+  PlusCircle,
+  MinusCircle,
+} from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EstimateRevision } from '../types/estimateTypes';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -20,11 +34,11 @@ interface RevisionComparisonProps {
   onRevisionSelect: (id: string) => void;
 }
 
-const RevisionComparison: React.FC<RevisionComparisonProps> = ({ 
-  estimateId, 
+const RevisionComparison: React.FC<RevisionComparisonProps> = ({
+  estimateId,
   currentRevisionId,
   revisions,
-  onRevisionSelect
+  onRevisionSelect,
 }) => {
   const [loading, setLoading] = useState(false);
   const [compareRevisionId, setCompareRevisionId] = useState<string | null>(null);
@@ -60,25 +74,24 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
         .select('*')
         .eq('revision_id', currentRevisionId)
         .order('created_at', { ascending: true });
-        
+
       if (currentError) throw currentError;
       setCurrentRevisionItems(currentItems || []);
-      
+
       const { data: compareItems, error: compareError } = await supabase
         .from('estimate_items')
         .select('*')
         .eq('revision_id', compareRevisionId)
         .order('created_at', { ascending: true });
-        
+
       if (compareError) throw compareError;
       setCompareRevisionItems(compareItems || []);
-      
     } catch (error) {
       console.error('Error fetching revision items:', error);
       toast({
         title: 'Error',
         description: 'Failed to load revision data for comparison',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -91,39 +104,43 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
 
   const calculateDifference = () => {
     if (!currentRevision || !compareRevision) return { amount: 0, percentage: 0 };
-    
+
     const currentAmount = currentRevision.amount || 0;
     const compareAmount = compareRevision.amount || 0;
     const difference = currentAmount - compareAmount;
-    const percentage = compareAmount !== 0 
-      ? Math.round((difference / compareAmount) * 1000) / 10
-      : 0;
-      
+    const percentage =
+      compareAmount !== 0 ? Math.round((difference / compareAmount) * 1000) / 10 : 0;
+
     return {
       amount: difference,
-      percentage: percentage
+      percentage: percentage,
     };
   };
 
   const difference = calculateDifference();
-  const isNewer = currentRevision && compareRevision 
-    ? currentRevision.version > compareRevision.version 
-    : false;
+  const isNewer =
+    currentRevision && compareRevision ? currentRevision.version > compareRevision.version : false;
 
   const getItemChanges = () => {
-    const current = currentRevisionItems.map(item => ({ id: item.description, total: item.total_price }));
-    const compare = compareRevisionItems.map(item => ({ id: item.description, total: item.total_price }));
-    
+    const current = currentRevisionItems.map(item => ({
+      id: item.description,
+      total: item.total_price,
+    }));
+    const compare = compareRevisionItems.map(item => ({
+      id: item.description,
+      total: item.total_price,
+    }));
+
     const added = current.filter(item => !compare.some(c => c.id === item.id)).length;
     const removed = compare.filter(item => !current.some(c => c.id === item.id)).length;
     const changed = current.filter(item => {
       const compareItem = compare.find(c => c.id === item.id);
       return compareItem && compareItem.total !== item.total;
     }).length;
-    
+
     return { added, removed, changed };
   };
-  
+
   const changes = getItemChanges();
 
   if (!currentRevision) {
@@ -155,7 +172,7 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
           </Select>
         </div>
       </CardHeader>
-      
+
       <CardContent className="p-4">
         {loading ? (
           <div className="space-y-2">
@@ -167,7 +184,7 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
             <div className="mb-3">
               <Tabs
                 value={comparisonMode}
-                onValueChange={(value) => setComparisonMode(value as 'items' | 'summary')}
+                onValueChange={value => setComparisonMode(value as 'items' | 'summary')}
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2">
@@ -176,36 +193,44 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                 </TabsList>
               </Tabs>
             </div>
-            
+
             <TabsContent value="summary" className="m-0 mt-2">
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="p-3 bg-slate-50 rounded-md">
                   <div className="text-xs text-muted-foreground mb-1">Current Version</div>
-                  <div className="text-lg font-semibold">{formatCurrency(currentRevision.amount || 0)}</div>
+                  <div className="text-lg font-semibold">
+                    {formatCurrency(currentRevision.amount || 0)}
+                  </div>
                   <div className="text-xs mt-1">Version {currentRevision.version}</div>
                 </div>
-                
+
                 <div className="p-3 bg-slate-50 rounded-md">
                   <div className="text-xs text-muted-foreground mb-1">Compared Version</div>
-                  <div className="text-lg font-semibold">{formatCurrency(compareRevision.amount || 0)}</div>
+                  <div className="text-lg font-semibold">
+                    {formatCurrency(compareRevision.amount || 0)}
+                  </div>
                   <div className="text-xs mt-1">Version {compareRevision.version}</div>
                 </div>
               </div>
-              
+
               <div className="p-3 mb-3 border rounded-md bg-blue-50/30 border-blue-100">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     <ArrowLeftRight className="h-4 w-4 mr-2 text-[#0485ea]" />
                     <span className="font-medium text-sm">Difference</span>
                   </div>
-                  <span className={`text-sm font-medium ${difference.amount > 0 ? 'text-green-600' : difference.amount < 0 ? 'text-red-600' : ''}`}>
-                    {difference.amount > 0 ? '+' : ''}{formatCurrency(difference.amount)}
+                  <span
+                    className={`text-sm font-medium ${difference.amount > 0 ? 'text-green-600' : difference.amount < 0 ? 'text-red-600' : ''}`}
+                  >
+                    {difference.amount > 0 ? '+' : ''}
+                    {formatCurrency(difference.amount)}
                     <span className="ml-1 text-xs">
-                      ({difference.percentage > 0 ? '+' : ''}{difference.percentage}%)
+                      ({difference.percentage > 0 ? '+' : ''}
+                      {difference.percentage}%)
                     </span>
                   </span>
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-2 mt-3 text-center">
                   <div>
                     <div className="text-xs text-green-600 font-medium">{changes.added}</div>
@@ -221,7 +246,7 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 border rounded-md">
                   <div className="flex items-center text-xs text-muted-foreground mb-2">
@@ -233,7 +258,7 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                     <div>{formatDate(compareRevision.revision_date)}</div>
                   </div>
                 </div>
-                
+
                 <div className="p-3 border rounded-md">
                   <div className="flex items-center text-xs text-muted-foreground mb-2">
                     <DollarSign className="h-3.5 w-3.5 mr-1.5" />
@@ -245,7 +270,7 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               {isNewer && compareRevision && (
                 <div className="mt-3 flex justify-end">
                   <Button
@@ -259,16 +284,16 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="items" className="m-0 mt-2">
               <div className="border rounded-md overflow-hidden">
                 <div className="grid grid-cols-2 text-xs font-medium bg-slate-50 p-2">
                   <div>Current (v{currentRevision.version})</div>
                   <div>Compared (v{compareRevision.version})</div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="max-h-[400px] overflow-y-auto">
                   {currentRevisionItems.length === 0 && compareRevisionItems.length === 0 ? (
                     <div className="p-4 text-center text-sm text-muted-foreground">
@@ -277,24 +302,46 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                   ) : (
                     <div>
                       {currentRevisionItems.map((item, index) => {
-                        const matchingItem = compareRevisionItems.find(ci => 
-                          ci.description === item.description || 
-                          (item.original_item_id && ci.id === item.original_item_id));
-                        
-                        const isChanged = matchingItem && matchingItem.total_price !== item.total_price;
+                        const matchingItem = compareRevisionItems.find(
+                          ci =>
+                            ci.description === item.description ||
+                            (item.original_item_id && ci.id === item.original_item_id)
+                        );
+
+                        const isChanged =
+                          matchingItem && matchingItem.total_price !== item.total_price;
                         const isNew = !matchingItem;
-                        
+
                         return (
-                          <div key={item.id} className={`grid grid-cols-2 p-3 text-sm ${index % 2 === 0 ? 'bg-slate-50/50' : ''}`}>
+                          <div
+                            key={item.id}
+                            className={`grid grid-cols-2 p-3 text-sm ${index % 2 === 0 ? 'bg-slate-50/50' : ''}`}
+                          >
                             <div className="pr-3">
                               <div className="flex justify-between mb-1.5">
                                 <div className="font-medium flex items-center">
-                                  {isNew && <PlusCircle className="h-3.5 w-3.5 mr-1.5 text-green-500" />}
+                                  {isNew && (
+                                    <PlusCircle className="h-3.5 w-3.5 mr-1.5 text-green-500" />
+                                  )}
                                   {item.description}
                                 </div>
                                 <div>
-                                  {isNew && <Badge variant="outline" className="bg-green-100 text-green-800 text-[10px]">NEW</Badge>}
-                                  {isChanged && <Badge variant="outline" className="bg-blue-100 text-blue-800 text-[10px]">CHANGED</Badge>}
+                                  {isNew && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-green-100 text-green-800 text-[10px]"
+                                    >
+                                      NEW
+                                    </Badge>
+                                  )}
+                                  {isChanged && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-blue-100 text-blue-800 text-[10px]"
+                                    >
+                                      CHANGED
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex justify-between">
@@ -304,19 +351,35 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <div className={`font-medium ${isChanged ? 'text-blue-700' : ''}`}>
+                                      <div
+                                        className={`font-medium ${isChanged ? 'text-blue-700' : ''}`}
+                                      >
                                         ${item.total_price?.toFixed(2)}
                                       </div>
                                     </TooltipTrigger>
                                     {isChanged && matchingItem && (
                                       <TooltipContent side="top">
                                         <div className="text-xs">
-                                          <div className={item.total_price > matchingItem.total_price ? 'text-green-600' : 'text-red-600'}>
+                                          <div
+                                            className={
+                                              item.total_price > matchingItem.total_price
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                            }
+                                          >
                                             {item.total_price > matchingItem.total_price ? '+' : ''}
-                                            ${(item.total_price - matchingItem.total_price).toFixed(2)}
+                                            $
+                                            {(item.total_price - matchingItem.total_price).toFixed(
+                                              2
+                                            )}
                                           </div>
                                           <div className="text-muted-foreground">
-                                            {((item.total_price - matchingItem.total_price) / matchingItem.total_price * 100).toFixed(1)}%
+                                            {(
+                                              ((item.total_price - matchingItem.total_price) /
+                                                matchingItem.total_price) *
+                                              100
+                                            ).toFixed(1)}
+                                            %
                                           </div>
                                         </div>
                                       </TooltipContent>
@@ -325,7 +388,7 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                                 </TooltipProvider>
                               </div>
                             </div>
-                            
+
                             <div className="pl-3 border-l">
                               {matchingItem ? (
                                 <>
@@ -334,9 +397,12 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                                   </div>
                                   <div className="flex justify-between">
                                     <div className="text-muted-foreground">
-                                      {matchingItem.quantity} × ${matchingItem.unit_price?.toFixed(2)}
+                                      {matchingItem.quantity} × $
+                                      {matchingItem.unit_price?.toFixed(2)}
                                     </div>
-                                    <div className="font-medium">${matchingItem.total_price?.toFixed(2)}</div>
+                                    <div className="font-medium">
+                                      ${matchingItem.total_price?.toFixed(2)}
+                                    </div>
                                   </div>
                                 </>
                               ) : (
@@ -348,26 +414,39 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                           </div>
                         );
                       })}
-                      
+
                       {compareRevisionItems
-                        .filter(item => !currentRevisionItems.some(ci => 
-                          ci.description === item.description || 
-                          ci.original_item_id === item.id))
+                        .filter(
+                          item =>
+                            !currentRevisionItems.some(
+                              ci =>
+                                ci.description === item.description ||
+                                ci.original_item_id === item.id
+                            )
+                        )
                         .map((item, index) => (
-                          <div key={item.id} className={`grid grid-cols-2 p-3 text-sm ${(currentRevisionItems.length + index) % 2 === 0 ? 'bg-slate-50/50' : ''}`}>
+                          <div
+                            key={item.id}
+                            className={`grid grid-cols-2 p-3 text-sm ${(currentRevisionItems.length + index) % 2 === 0 ? 'bg-slate-50/50' : ''}`}
+                          >
                             <div className="pr-3">
                               <div className="flex items-center h-full text-muted-foreground italic">
                                 Not present in this revision
                               </div>
                             </div>
-                            
+
                             <div className="pl-3 border-l">
                               <div className="flex justify-between mb-1.5">
                                 <div className="font-medium flex items-center">
                                   <MinusCircle className="h-3.5 w-3.5 mr-1.5 text-red-500" />
                                   {item.description}
                                 </div>
-                                <Badge variant="outline" className="bg-red-100 text-red-800 text-[10px]">REMOVED</Badge>
+                                <Badge
+                                  variant="outline"
+                                  className="bg-red-100 text-red-800 text-[10px]"
+                                >
+                                  REMOVED
+                                </Badge>
                               </div>
                               <div className="flex justify-between">
                                 <div className="text-muted-foreground">
@@ -382,20 +461,28 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
                   )}
                 </div>
               </div>
-              
+
               <div className="mt-4 p-3 bg-slate-50 rounded-md">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">Current Total</div>
-                    <div className="text-base font-semibold">{formatCurrency(currentRevisionItems.reduce((sum, item) => sum + (item.total_price || 0), 0))}</div>
+                    <div className="text-base font-semibold">
+                      {formatCurrency(
+                        currentRevisionItems.reduce((sum, item) => sum + (item.total_price || 0), 0)
+                      )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-muted-foreground mb-1">Compared Total</div>
-                    <div className="text-base font-semibold">{formatCurrency(compareRevisionItems.reduce((sum, item) => sum + (item.total_price || 0), 0))}</div>
+                    <div className="text-base font-semibold">
+                      {formatCurrency(
+                        compareRevisionItems.reduce((sum, item) => sum + (item.total_price || 0), 0)
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-              
+
               {isNewer && compareRevision && (
                 <div className="mt-3 flex justify-end">
                   <Button
@@ -411,8 +498,12 @@ const RevisionComparison: React.FC<RevisionComparisonProps> = ({
           </>
         ) : (
           <div className="p-4 flex flex-col items-center justify-center text-center">
-            <p className="text-muted-foreground mb-2">No other revisions available for comparison</p>
-            <p className="text-xs text-muted-foreground">Create a new revision to enable comparison</p>
+            <p className="text-muted-foreground mb-2">
+              No other revisions available for comparison
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Create a new revision to enable comparison
+            </p>
           </div>
         )}
       </CardContent>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Subcontractor } from '../utils/types';
 
@@ -10,7 +9,9 @@ const SubcontractorLocation = ({ subcontractor }: SubcontractorLocationProps) =>
   return (
     <>
       {subcontractor.city && subcontractor.state ? (
-        <div>{subcontractor.city}, {subcontractor.state}</div>
+        <div>
+          {subcontractor.city}, {subcontractor.state}
+        </div>
       ) : (
         <div className="text-muted-foreground">No Location</div>
       )}

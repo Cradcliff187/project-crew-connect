@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,11 +8,7 @@ import {
   CommandInput,
   CommandItem,
 } from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,7 +87,7 @@ const SpecialtyMultiSelect = ({ selectedSpecialties, onChange }: SpecialtyMultiS
                 {selectedSpecialties.map(specialtyId => (
                   <Badge key={specialtyId} variant="secondary" className="mr-1 mb-1">
                     {getSpecialtyName(specialtyId)}
-                    <button onClick={(e) => removeSpecialty(e, specialtyId)} className="ml-1">
+                    <button onClick={e => removeSpecialty(e, specialtyId)} className="ml-1">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -107,11 +102,9 @@ const SpecialtyMultiSelect = ({ selectedSpecialties, onChange }: SpecialtyMultiS
         <PopoverContent className="w-full p-0">
           <Command>
             <CommandInput placeholder="Search specialties..." />
-            <CommandEmpty>
-              {loading ? 'Loading...' : 'No specialty found.'}
-            </CommandEmpty>
+            <CommandEmpty>{loading ? 'Loading...' : 'No specialty found.'}</CommandEmpty>
             <CommandGroup>
-              {specialties.map((specialty) => (
+              {specialties.map(specialty => (
                 <CommandItem
                   key={specialty.id}
                   value={specialty.specialty}
@@ -119,8 +112,8 @@ const SpecialtyMultiSelect = ({ selectedSpecialties, onChange }: SpecialtyMultiS
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedSpecialties.includes(specialty.id) ? "opacity-100" : "opacity-0"
+                      'mr-2 h-4 w-4',
+                      selectedSpecialties.includes(specialty.id) ? 'opacity-100' : 'opacity-0'
                     )}
                   />
                   <div className="flex flex-col">

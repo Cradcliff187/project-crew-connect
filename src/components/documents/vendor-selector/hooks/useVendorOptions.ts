@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,7 +25,7 @@ export const useVendorOptions = (): VendorOptionsHookResult => {
 
   const fetchData = async () => {
     setIsLoading(true);
-    
+
     try {
       // Fetch vendors
       const { data: vendors, error: vendorError } = await supabase
@@ -73,6 +72,6 @@ export const useVendorOptions = (): VendorOptionsHookResult => {
     vendorOptions,
     subcontractorOptions,
     isLoading,
-    refreshVendors
+    refreshVendors,
   };
 };

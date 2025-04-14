@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -9,36 +8,36 @@ import { Helmet } from 'react-helmet-async';
 
 const TimeTracking = () => {
   // Fetch time entries for the current week (hook handles the date range)
-  const { 
-    entries, 
-    loading, 
-    refreshEntries, 
-    dateRange, 
+  const {
+    entries,
+    loading,
+    refreshEntries,
+    dateRange,
     setDateRange,
     goToNextWeek,
     goToPrevWeek,
-    goToCurrentWeek
+    goToCurrentWeek,
   } = useTimeEntries();
-  
+
   // State for add form
   const [showAddForm, setShowAddForm] = React.useState(false);
-  
+
   // Detect if we're on a mobile device
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
   // Trigger initial data loading when component mounts
   useEffect(() => {
     refreshEntries();
   }, [refreshEntries]);
-  
+
   // Calculate total hours for the selected week
   const totalHours = entries?.reduce((sum, entry) => sum + entry.hours_worked, 0) || 0;
-  
+
   const handleAddSuccess = () => {
     setShowAddForm(false);
     refreshEntries();
   };
-  
+
   // If on mobile, show a simplified view
   if (isMobile) {
     return (
@@ -46,7 +45,7 @@ const TimeTracking = () => {
         <Helmet>
           <title>Time Tracking | AKC LLC</title>
         </Helmet>
-        <MobileTimeEntryView 
+        <MobileTimeEntryView
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           onNextWeek={goToNextWeek}
@@ -62,7 +61,7 @@ const TimeTracking = () => {
       </PageTransition>
     );
   }
-  
+
   // Otherwise show the desktop view
   return (
     <PageTransition>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Bell, Menu } from 'lucide-react';
@@ -8,12 +7,16 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 
 const Header = () => {
   const location = useLocation();
-  
+
   // Extract the page title from the pathname
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/') return 'Dashboard';
-    return path.substring(1).split('/')[0].replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase());
+    return path
+      .substring(1)
+      .split('/')[0]
+      .replace(/-/g, ' ')
+      .replace(/^\w/, c => c.toUpperCase());
   };
 
   return (

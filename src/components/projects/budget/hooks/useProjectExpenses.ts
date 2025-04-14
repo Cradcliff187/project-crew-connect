@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -33,16 +32,18 @@ export const useProjectExpenses = (projectId: string) => {
       // Get all expenses in a single query with budget item information
       const { data: expenses, error } = await supabase
         .from('expenses')
-        .select(`
+        .select(
+          `
           *,
           budget_item:budget_item_id(category)
-        `)
+        `
+        )
         .eq('entity_type', 'PROJECT')
         .eq('entity_id', projectId)
         .order('expense_date', { ascending: false });
-        
+
       if (error) throw error;
-      
+
       // Create a Set of unique vendor IDs for batch fetching
       const vendorIds = new Set<string>();
       expenses.forEach(expense => {
@@ -50,7 +51,7 @@ export const useProjectExpenses = (projectId: string) => {
           vendorIds.add(expense.vendor_id);
         }
       });
-      
+
       // Fetch all vendors in a single query if there are any vendor IDs
       let vendorMap = new Map<string, string>();
       if (vendorIds.size > 0) {
@@ -58,7 +59,7 @@ export const useProjectExpenses = (projectId: string) => {
           .from('vendors')
           .select('vendorid, vendorname')
           .in('vendorid', Array.from(vendorIds));
-          
+
         if (vendorError) {
           console.error('Error fetching vendors:', vendorError);
           // Continue with execution instead of throwing to maintain partial functionality
@@ -67,7 +68,7 @@ export const useProjectExpenses = (projectId: string) => {
           vendorMap = new Map(vendors.map(v => [v.vendorid, v.vendorname]));
         }
       }
-      
+
       // Map the expenses with vendor names and budget categories
       return expenses.map(expense => ({
         id: expense.id,
@@ -80,7 +81,7 @@ export const useProjectExpenses = (projectId: string) => {
         document_id: expense.document_id,
         created_at: expense.created_at,
         budget_item_category: getBudgetItemCategory(expense.budget_item),
-        vendor_name: expense.vendor_id ? vendorMap.get(expense.vendor_id) || null : null
+        vendor_name: expense.vendor_id ? vendorMap.get(expense.vendor_id) || null : null,
       }));
     } catch (error) {
       console.error('Error in fetchExpenses:', error);
@@ -88,11 +89,11 @@ export const useProjectExpenses = (projectId: string) => {
     }
   };
 
-  const { 
-    data: expenses = [], 
-    isLoading, 
+  const {
+    data: expenses = [],
+    isLoading,
     error,
-    refetch 
+    refetch,
   } = useQuery({
     queryKey: ['project-expenses', projectId],
     queryFn: fetchExpenses,
@@ -103,31 +104,28 @@ export const useProjectExpenses = (projectId: string) => {
         toast({
           title: 'Error loading expenses',
           description: error.message || 'Failed to load expense data',
-          variant: 'destructive'
+          variant: 'destructive',
         });
-      }
-    }
+      },
+    },
   });
 
   const handleDeleteExpense = async (expense: Expense) => {
     if (!confirm(`Are you sure you want to delete this expense?`)) {
       return false;
     }
-    
+
     try {
-      const { error } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', expense.id);
-        
+      const { error } = await supabase.from('expenses').delete().eq('id', expense.id);
+
       if (error) throw error;
-      
+
       await refetch();
-      
+
       toast({
         title: 'Expense deleted',
         description: 'Expense has been deleted successfully.',
-        variant: 'success' // Changed to success for better user feedback
+        variant: 'success', // Changed to success for better user feedback
       });
 
       return true;
@@ -136,7 +134,7 @@ export const useProjectExpenses = (projectId: string) => {
       toast({
         title: 'Error deleting expense',
         description: error.message || 'An unknown error occurred',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return false;
     }
@@ -150,16 +148,15 @@ export const useProjectExpenses = (projectId: string) => {
         .select('document_id, file_name, storage_path')
         .eq('document_id', documentId)
         .single();
-        
+
       if (error) throw error;
       if (!data) throw new Error('Document not found');
-      
+
       // Fixed: The createSignedUrl method returns { data: { publicUrl: string } } without an error property
-      const { data: urlData } = supabase
-        .storage
+      const { data: urlData } = supabase.storage
         .from('construction_documents')
         .getPublicUrl(data.storage_path);
-      
+
       // No need to check for storageError since getPublicUrl doesn't have an error return
       window.open(urlData.publicUrl, '_blank');
       return true;
@@ -168,7 +165,7 @@ export const useProjectExpenses = (projectId: string) => {
       toast({
         title: 'Error accessing document',
         description: error.message || 'Could not access the document',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return false;
     }
@@ -180,6 +177,6 @@ export const useProjectExpenses = (projectId: string) => {
     error,
     refetch,
     handleDeleteExpense,
-    handleViewDocument
+    handleViewDocument,
   };
 };

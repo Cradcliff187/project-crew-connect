@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,18 +22,15 @@ import { Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from './schemas/documentSchema';
-import { 
-  CreateRelationshipParams,
-  RelationshipType 
-} from '@/hooks/useDocumentRelationships';
+import { CreateRelationshipParams, RelationshipType } from '@/hooks/useDocumentRelationships';
 
 // Form validation schema
 const formSchema = z.object({
   targetDocumentId: z.string({
-    required_error: "Please select a document to link",
+    required_error: 'Please select a document to link',
   }),
   relationshipType: z.string({
-    required_error: "Please select a relationship type",
+    required_error: 'Please select a relationship type',
   }),
 });
 
@@ -49,12 +45,12 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
   sourceDocumentId,
   onSuccess,
   onCancel,
-  excludeDocumentIds = []
+  excludeDocumentIds = [],
 }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -71,13 +67,13 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
       try {
         // Get all documents except the source and excluded ones
         const excludeIds = [sourceDocumentId, ...excludeDocumentIds];
-        
+
         const { data, error } = await supabase
           .from('documents')
           .select('*')
           .not('document_id', 'in', `(${excludeIds.join(',')})`)
           .order('created_at', { ascending: false });
-        
+
         if (error) throw error;
         setDocuments(data || []);
       } catch (err: any) {
@@ -91,14 +87,14 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
         setLoading(false);
       }
     };
-    
+
     fetchDocuments();
   }, [sourceDocumentId, excludeDocumentIds]);
 
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitting(true);
-    
+
     try {
       // Create relationship parameters
       const relationshipParams: CreateRelationshipParams = {
@@ -107,10 +103,10 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
         relationshipType: values.relationshipType as RelationshipType,
         metadata: {
           created_by: 'system',
-          description: 'Document relationship'
-        }
+          description: 'Document relationship',
+        },
       };
-      
+
       // Insert the relationship into the database
       const { data, error } = await supabase
         .from('document_relationships')
@@ -118,11 +114,11 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
           source_document_id: relationshipParams.sourceDocumentId,
           target_document_id: relationshipParams.targetDocumentId,
           relationship_type: relationshipParams.relationshipType,
-          relationship_metadata: relationshipParams.metadata
+          relationship_metadata: relationshipParams.metadata,
         })
         .select()
         .single();
-      
+
       if (error) {
         if (error.code === '23505') {
           // Unique constraint error
@@ -130,12 +126,12 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
         }
         throw error;
       }
-      
+
       toast({
         title: 'Relationship created',
         description: 'Documents have been linked successfully',
       });
-      
+
       onSuccess();
     } catch (err: any) {
       console.error('Error creating relationship:', err);
@@ -174,10 +170,7 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Document to Link</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a document" />
@@ -189,14 +182,10 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
                       No documents available to link
                     </div>
                   ) : (
-                    documents.map((doc) => (
-                      <SelectItem 
-                        key={doc.document_id} 
-                        value={doc.document_id}
-                        className="text-sm"
-                      >
+                    documents.map(doc => (
+                      <SelectItem key={doc.document_id} value={doc.document_id} className="text-sm">
                         <div className="truncate">
-                          {doc.file_name} 
+                          {doc.file_name}
                           <span className="ml-1 text-xs text-muted-foreground">
                             ({formatDate(doc.created_at)})
                           </span>
@@ -210,28 +199,22 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="relationshipType"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Relationship Type</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select relationship type" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {getRelationshipOptions().map((option) => (
-                    <SelectItem 
-                      key={option.value} 
-                      value={option.value}
-                    >
+                  {getRelationshipOptions().map(option => (
+                    <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
                   ))}
@@ -241,17 +224,12 @@ const DocumentRelationshipForm: React.FC<DocumentRelationshipFormProps> = ({
             </FormItem>
           )}
         />
-        
+
         <div className="flex justify-end gap-2 pt-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={submitting}
-          >
+          <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
             Cancel
           </Button>
-          <Button 
+          <Button
             type="submit"
             disabled={submitting || documents.length === 0}
             className="bg-[#0485ea] hover:bg-[#0375d1]"

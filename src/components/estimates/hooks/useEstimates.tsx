@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { StatusType } from '@/types/common';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,16 +8,17 @@ export const useEstimates = () => {
   const [estimates, setEstimates] = useState<EstimateType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const fetchEstimates = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Get all estimates with their current revision version
       const { data, error } = await supabase
         .from('estimates')
-        .select(`
+        .select(
+          `
           estimateid,
           customerid,
           customername,
@@ -35,30 +35,31 @@ export const useEstimates = () => {
           sitelocationcity,
           sitelocationstate,
           sitelocationzip
-        `)
+        `
+        )
         .order('datecreated', { ascending: false });
-      
+
       if (error) {
         throw error;
       }
-      
+
       // Get revision counts for each estimate
-      const revisionsPromises = data.map(async (estimate) => {
+      const revisionsPromises = data.map(async estimate => {
         const { count, error: countError } = await supabase
           .from('estimate_revisions')
           .select('id', { count: 'exact', head: true })
           .eq('estimate_id', estimate.estimateid);
-          
+
         if (countError) {
           console.error('Error fetching revision count:', countError);
           return 0;
         }
-        
+
         return count || 0;
       });
-      
+
       const revisionCounts = await Promise.all(revisionsPromises);
-      
+
       // Format the data for the UI, preserving both ID and name separately
       const formattedEstimates: EstimateType[] = data.map((estimate, index) => ({
         id: estimate.estimateid,
@@ -67,17 +68,17 @@ export const useEstimates = () => {
         project: estimate.projectname || `Estimate ${estimate.estimateid}`,
         date: estimate.datecreated || new Date().toISOString(),
         amount: estimate.estimateamount || 0,
-        status: estimate.status as StatusType || 'draft',
+        status: (estimate.status as StatusType) || 'draft',
         versions: revisionCounts[index],
-        description: estimate["job description"],
+        description: estimate['job description'],
         location: {
           address: estimate.sitelocationaddress,
           city: estimate.sitelocationcity,
           state: estimate.sitelocationstate,
-          zip: estimate.sitelocationzip
-        }
+          zip: estimate.sitelocationzip,
+        },
       }));
-      
+
       setEstimates(formattedEstimates);
     } catch (error: any) {
       console.error('Error fetching estimates:', error);
@@ -91,10 +92,10 @@ export const useEstimates = () => {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchEstimates();
   }, []);
-  
+
   return { estimates, loading, error, fetchEstimates };
 };

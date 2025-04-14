@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { EstimateRevision } from '../types/estimateTypes';
@@ -25,23 +24,23 @@ const CompactEstimateSidebar: React.FC<CompactEstimateSidebarProps> = ({
   estimate,
   revisions,
   currentRevisionId,
-  onRevisionSelect
+  onRevisionSelect,
 }) => {
   const currentRevision = revisions.find(rev => rev.id === currentRevisionId);
-  
+
   // Get previous revision for comparison
   const getPreviousRevision = () => {
     if (!currentRevision) return null;
-    
+
     const sortedRevisions = [...revisions].sort((a, b) => a.version - b.version);
     const currentIndex = sortedRevisions.findIndex(r => r.id === currentRevisionId);
-    
+
     if (currentIndex <= 0) return null;
     return sortedRevisions[currentIndex - 1];
   };
-  
+
   const previousRevision = getPreviousRevision();
-  
+
   return (
     <div className="space-y-4">
       {/* Current Revision Summary */}
@@ -50,15 +49,15 @@ const CompactEstimateSidebar: React.FC<CompactEstimateSidebarProps> = ({
           <CardContent className="p-4">
             <div className="space-y-3">
               <h3 className="text-sm font-medium">Current Revision</h3>
-              <EstimateRevisionSummary 
-                revision={currentRevision} 
-                previousRevision={previousRevision} 
+              <EstimateRevisionSummary
+                revision={currentRevision}
+                previousRevision={previousRevision}
               />
             </div>
           </CardContent>
         </Card>
       )}
-      
+
       {/* Timeline */}
       <Card>
         <CardContent className="p-4">

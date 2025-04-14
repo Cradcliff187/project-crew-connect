@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LayoutList } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -22,7 +21,7 @@ interface AssociatedWorkOrdersProps {
 
 const AssociatedWorkOrders = ({ workOrders, loading }: AssociatedWorkOrdersProps) => {
   const navigate = useNavigate();
-  
+
   if (workOrders.length === 0 && !loading) {
     return (
       <div className="space-y-4">
@@ -39,7 +38,7 @@ const AssociatedWorkOrders = ({ workOrders, loading }: AssociatedWorkOrdersProps
         {loading ? (
           <Skeleton className="h-16 w-full" />
         ) : (
-          workOrders.map((workOrder) => (
+          workOrders.map(workOrder => (
             <Card key={workOrder.work_order_id} className="p-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-2">
@@ -47,14 +46,17 @@ const AssociatedWorkOrders = ({ workOrders, loading }: AssociatedWorkOrdersProps
                   <div>
                     <div className="font-medium">{workOrder.title}</div>
                     <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="text-xs bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]">
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]"
+                      >
                         {workOrder.status}
                       </Badge>
                     </div>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => navigate(`/work-orders/${workOrder.work_order_id}`)}
                 >

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Mail, MapPin, Phone, Edit, Trash2, Eye } from 'lucide-react';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
@@ -14,10 +13,10 @@ interface SubcontractorActionsMenuProps {
 const SubcontractorActionsMenu = ({
   subcontractor,
   onViewDetails,
-  onEditSubcontractor
+  onEditSubcontractor,
 }: SubcontractorActionsMenuProps) => {
   const navigate = useNavigate();
-  
+
   const handleViewClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onViewDetails(subcontractor);
@@ -57,14 +56,14 @@ const SubcontractorActionsMenu = ({
           {
             label: 'View details',
             icon: <Eye className="h-4 w-4" />,
-            onClick: handleViewClick
+            onClick: handleViewClick,
           },
           {
             label: 'Edit subcontractor',
             icon: <Edit className="h-4 w-4" />,
-            onClick: handleEditClick
-          }
-        ]
+            onClick: handleEditClick,
+          },
+        ],
       },
       {
         items: [
@@ -72,15 +71,15 @@ const SubcontractorActionsMenu = ({
             label: 'Call subcontractor',
             icon: <Phone className="h-4 w-4" />,
             onClick: handleCallClick,
-            disabled: !subcontractor.phone
+            disabled: !subcontractor.phone,
           },
           {
             label: 'Email subcontractor',
             icon: <Mail className="h-4 w-4" />,
             onClick: handleEmailClick,
-            disabled: !subcontractor.contactemail
-          }
-        ]
+            disabled: !subcontractor.contactemail,
+          },
+        ],
       },
       {
         items: [
@@ -88,10 +87,10 @@ const SubcontractorActionsMenu = ({
             label: 'Delete subcontractor',
             icon: <Trash2 className="h-4 w-4" />,
             onClick: handleDeleteClick,
-            className: 'text-red-600'
-          }
-        ]
-      }
+            className: 'text-red-600',
+          },
+        ],
+      },
     ];
   };
 

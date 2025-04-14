@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { UseFormReturn, Control } from 'react-hook-form';
 import { DocumentUploadFormValues, EntityType, entityTypes } from '../schemas/documentSchema';
@@ -13,7 +12,13 @@ import VendorSelector from './VendorSelector';
 import NotesField from './NotesField';
 import BudgetItemSelector from './BudgetItemSelector';
 import { FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface MetadataFormProps {
   form: UseFormReturn<DocumentUploadFormValues>;
@@ -49,27 +54,27 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   isReceiptUpload = false,
   showVendorSelector,
   prefillData,
-  allowEntityTypeSelection = false
+  allowEntityTypeSelection = false,
 }) => {
   // Helper to determine if we should show expense fields
-  const showExpenseFields = isReceiptUpload || watchIsExpense || 
-                          watchCategory === 'receipt' || watchCategory === 'invoice';
-                          
+  const showExpenseFields =
+    isReceiptUpload || watchIsExpense || watchCategory === 'receipt' || watchCategory === 'invoice';
+
   // Helper to determine if we should show budget selector
-  const showBudgetSelector = (watchEntityType === 'PROJECT' || watchEntityType === 'WORK_ORDER') && 
-                           showExpenseFields;
-  
+  const showBudgetSelector =
+    (watchEntityType === 'PROJECT' || watchEntityType === 'WORK_ORDER') && showExpenseFields;
+
   // Handle entity type changes
   const handleEntityTypeChange = (value: string) => {
     const newEntityType = value as EntityType;
     form.setValue('metadata.entityType', newEntityType);
-    
+
     // Reset entity ID when changing entity type
     form.setValue('metadata.entityId', '');
-    
+
     // Update category if necessary
     const currentCategory = form.getValues('metadata.category');
-    
+
     // Set default category based on entity type
     if (newEntityType === 'VENDOR' || newEntityType === 'SUBCONTRACTOR') {
       // For vendor/subcontractor, default to certification if not already receipt/invoice
@@ -88,7 +93,7 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
       }
     }
   };
-  
+
   // Effect to handle category changes
   useEffect(() => {
     if (watchCategory === 'receipt' || watchCategory === 'invoice') {
@@ -104,14 +109,14 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
       form.setValue('metadata.parentEntityId', prefillData.parentEntityId);
     }
   }, [prefillData, form, showExpenseFields]);
-  
+
   // Set budget item ID if provided
   useEffect(() => {
     if (prefillData?.budgetItemId && showExpenseFields) {
       form.setValue('metadata.budgetItemId', prefillData.budgetItemId);
     }
   }, [prefillData, form, showExpenseFields]);
-  
+
   return (
     <div className="space-y-4">
       {allowEntityTypeSelection && (
@@ -121,93 +126,86 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Document Type</FormLabel>
-              <Select
-                value={field.value}
-                onValueChange={handleEntityTypeChange}
-              >
+              <Select value={field.value} onValueChange={handleEntityTypeChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select document type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {entityTypes.map((type) => (
+                  {entityTypes.map(type => (
                     <SelectItem key={type} value={type}>
                       {type.replace(/_/g, ' ')}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription>
-                Select the type of entity this document relates to
-              </FormDescription>
+              <FormDescription>Select the type of entity this document relates to</FormDescription>
             </FormItem>
           )}
         />
       )}
 
       {!isReceiptUpload && (
-        <DocumentCategorySelector 
-          control={control} 
-          isReceiptUpload={isReceiptUpload} 
+        <DocumentCategorySelector
+          control={control}
+          isReceiptUpload={isReceiptUpload}
           entityType={watchEntityType}
         />
       )}
-      
-      <EntitySelector 
-        control={control} 
-        isReceiptUpload={isReceiptUpload} 
+
+      <EntitySelector
+        control={control}
+        isReceiptUpload={isReceiptUpload}
         entityType={watchEntityType}
       />
-      
-      {!isReceiptUpload && showExpenseFields && (
-        <VendorTypeSelector control={control} />
-      )}
-      
+
+      {!isReceiptUpload && showExpenseFields && <VendorTypeSelector control={control} />}
+
       {showVendorSelector && watchVendorType && (
-        <VendorSelector 
-          control={control} 
-          vendorType={watchVendorType} 
-          prefillVendorId={prefillData?.vendorId} 
+        <VendorSelector
+          control={control}
+          vendorType={watchVendorType}
+          prefillVendorId={prefillData?.vendorId}
         />
       )}
-      
+
       {showExpenseFields && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <AmountField 
+            <AmountField
               control={control}
               isReceiptUpload={isReceiptUpload}
               prefillAmount={prefillData?.amount}
             />
             <ExpenseDatePicker control={control} />
           </div>
-          
+
           <ExpenseTypeSelector control={control} />
-          
+
           {showBudgetSelector && (
-            <BudgetItemSelector 
-              control={control} 
-              entityType={watchEntityType} 
+            <BudgetItemSelector
+              control={control}
+              entityType={watchEntityType}
               entityId={form.watch('metadata.entityId')}
               prefillBudgetItemId={prefillData?.budgetItemId}
             />
           )}
         </>
       )}
-      
-      <TagsInput
+
+      <TagsInput control={control} name="metadata.tags" prefillTags={prefillData?.tags} />
+
+      <NotesField
         control={control}
-        name="metadata.tags"
-        prefillTags={prefillData?.tags}
+        prefillText={
+          prefillData?.notes ||
+          (prefillData?.materialName ? `Receipt for: ${prefillData.materialName}` : undefined)
+        }
       />
-      
-      <NotesField 
-        control={control} 
-        prefillText={prefillData?.notes || (prefillData?.materialName ? `Receipt for: ${prefillData.materialName}` : undefined)} 
-      />
-      
+
       {watchEntityType && (
         <FormDescription>
-          This document will be associated with {watchEntityType.replace(/_/g, ' ').toLowerCase()} records.
+          This document will be associated with {watchEntityType.replace(/_/g, ' ').toLowerCase()}{' '}
+          records.
         </FormDescription>
       )}
     </div>

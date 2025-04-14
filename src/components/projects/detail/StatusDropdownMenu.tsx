@@ -1,4 +1,3 @@
-
 import { Check, AlertCircle, Pause, X, Play, Clock, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,10 +18,10 @@ interface StatusDropdownMenuProps {
   onStatusChange: (newStatus: string) => void;
 }
 
-const StatusDropdownMenu = ({ 
-  availableStatuses, 
-  updating, 
-  onStatusChange 
+const StatusDropdownMenu = ({
+  availableStatuses,
+  updating,
+  onStatusChange,
 }: StatusDropdownMenuProps) => {
   // Get the appropriate icon for each status
   const getStatusIcon = (status: string) => {
@@ -47,18 +46,18 @@ const StatusDropdownMenu = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          disabled={updating} 
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={updating}
           className="ml-2 border-[#0485ea]/30 hover:border-[#0485ea] hover:bg-[#0485ea]/10"
         >
           {updating ? 'Updating...' : 'Change Status'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {availableStatuses.map((statusOption) => (
-          <DropdownMenuItem 
+        {availableStatuses.map(statusOption => (
+          <DropdownMenuItem
             key={statusOption.status}
             onClick={() => onStatusChange(statusOption.status)}
             className="cursor-pointer flex items-center"

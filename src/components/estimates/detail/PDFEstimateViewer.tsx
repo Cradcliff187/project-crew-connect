@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ interface PDFEstimateViewerProps {
 const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
   estimateId,
   revisionId,
-  onDownload
+  onDownload,
 }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +38,7 @@ const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
         .single();
 
       if (revisionError) throw revisionError;
-      
+
       if (!revision.pdf_document_id) {
         setPdfUrl(null);
         return;
@@ -61,21 +60,20 @@ const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
           .select('storage_path')
           .eq('document_id', revision.pdf_document_id)
           .single();
-        
+
         if (docError) throw docError;
-        
+
         if (!docData.storage_path) {
           throw new Error('Document storage path not found');
         }
-        
+
         // Get a signed URL for the document
-        const { data: signedUrlData, error: signedUrlError } = await supabase
-          .storage
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
           .from('construction_documents')
           .createSignedUrl(docData.storage_path, 3600); // 1 hour expiry
-        
+
         if (signedUrlError) throw signedUrlError;
-        
+
         setPdfUrl(signedUrlData.signedUrl);
       } else {
         setPdfUrl(document.url);
@@ -118,7 +116,7 @@ const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       if (onDownload) {
         onDownload();
       }
@@ -162,20 +160,13 @@ const PDFEstimateViewer: React.FC<PDFEstimateViewerProps> = ({
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : pdfUrl ? (
-          <iframe 
-            src={pdfUrl} 
-            className="w-full h-[600px] border-0"
-            title="Estimate PDF Preview"
-          />
+          <iframe src={pdfUrl} className="w-full h-[600px] border-0" title="Estimate PDF Preview" />
         ) : (
           <div className="flex flex-col items-center justify-center p-16 bg-slate-50 border-t space-y-2">
-            <p className="text-muted-foreground text-center">No PDF document available for this estimate revision</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              className="mt-2"
-            >
+            <p className="text-muted-foreground text-center">
+              No PDF document available for this estimate revision
+            </p>
+            <Button variant="outline" size="sm" onClick={handleRefresh} className="mt-2">
               <RefreshCw className="h-4 w-4 mr-1" />
               Refresh
             </Button>

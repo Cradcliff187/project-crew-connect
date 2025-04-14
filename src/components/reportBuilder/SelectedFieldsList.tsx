@@ -1,12 +1,18 @@
-
 import { useState } from 'react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
   arrayMove,
-  SortableContext, 
-  sortableKeyboardCoordinates, 
+  SortableContext,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
+  useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -22,19 +28,13 @@ interface SortableItemProps {
 }
 
 function SortableItem({ id, children }: SortableItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
-  
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       {children}
@@ -51,7 +51,7 @@ interface SelectedFieldsListProps {
 const SelectedFieldsList = ({
   fields,
   onRemoveField,
-  onReorderFields
+  onReorderFields,
 }: SelectedFieldsListProps) => {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -59,23 +59,21 @@ const SelectedFieldsList = ({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-  
+
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    
-    const oldIndex = fields.findIndex(field => 
-      `${field.entity || ''}-${field.field}` === active.id
+
+    const oldIndex = fields.findIndex(
+      field => `${field.entity || ''}-${field.field}` === active.id
     );
-    const newIndex = fields.findIndex(field => 
-      `${field.entity || ''}-${field.field}` === over.id
-    );
-    
+    const newIndex = fields.findIndex(field => `${field.entity || ''}-${field.field}` === over.id);
+
     if (oldIndex !== -1 && newIndex !== -1) {
       onReorderFields(arrayMove(fields, oldIndex, newIndex));
     }
   };
-  
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -102,8 +100,8 @@ const SelectedFieldsList = ({
             >
               <div className="space-y-2">
                 {fields.map((field, index) => (
-                  <SortableItem 
-                    key={`${field.entity || ''}-${field.field}`} 
+                  <SortableItem
+                    key={`${field.entity || ''}-${field.field}`}
                     id={`${field.entity || ''}-${field.field}`}
                   >
                     <div className="flex items-center justify-between p-2 border rounded-md bg-background">
@@ -111,11 +109,7 @@ const SelectedFieldsList = ({
                         <ArrowDown className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span>{field.label}</span>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onRemoveField(index)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => onRemoveField(index)}>
                         <Trash2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </div>

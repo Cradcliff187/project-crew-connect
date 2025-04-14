@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback, memo, useMemo } from 'react';
 import { Form } from '@/components/ui/form';
 import { Dialog } from '@/components/ui/dialog';
@@ -24,20 +23,20 @@ const MemoizedDialogContent = memo(CustomDialogContent);
 
 const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) => {
   const { isSubmitting, submitEstimate } = useEstimateSubmit();
-  
+
   // Create a stable customerId value
-  const stableCustomerId = useMemo(() => "", []);
-  
-  const { 
-    customers, 
-    loading: dataLoading, 
+  const stableCustomerId = useMemo(() => '', []);
+
+  const {
+    customers,
+    loading: dataLoading,
     selectedCustomerAddress,
     selectedCustomerName,
   } = useEstimateFormData({ open, customerId: stableCustomerId });
 
-  const { 
-    form, 
-    currentStep, 
+  const {
+    form,
+    currentStep,
     setCurrentStep,
     customerTab,
     resetForm,
@@ -45,7 +44,7 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     handleExistingCustomer,
     validateCurrentStep,
     isFirstStep,
-    isLastStep
+    isLastStep,
   } = useEstimateForm({ open, onClose });
 
   // Determine the selected customer ID - use memo to stabilize
@@ -55,15 +54,18 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
   useEffect(() => {
     if (open) {
       // Generate a new temporary ID when form opens
-      const newTempId = "temp-" + Math.random().toString(36).substr(2, 9);
+      const newTempId = 'temp-' + Math.random().toString(36).substr(2, 9);
       form.setValue('temp_id', newTempId);
     }
   }, [open, form]);
 
   // Handle form submission - use callback
-  const onSubmit = useCallback(async (data: any) => {
-    await submitEstimate(data, customers, onClose);
-  }, [submitEstimate, customers, onClose]);
+  const onSubmit = useCallback(
+    async (data: any) => {
+      await submitEstimate(data, customers, onClose);
+    },
+    [submitEstimate, customers, onClose]
+  );
 
   const goToNextStep = useCallback(() => {
     const currentIndex = ESTIMATE_STEPS.findIndex(step => step.id === currentStep);
@@ -79,132 +81,136 @@ const EstimateMultiStepForm = ({ open, onClose }: EstimateMultiStepFormProps) =>
     }
   }, [currentStep, setCurrentStep]);
 
-  const handleNext = useCallback(async (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    const isValid = await validateCurrentStep();
-    if (isValid) {
-      goToNextStep();
-    }
-  }, [validateCurrentStep, goToNextStep]);
+  const handleNext = useCallback(
+    async (e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      const isValid = await validateCurrentStep();
+      if (isValid) {
+        goToNextStep();
+      }
+    },
+    [validateCurrentStep, goToNextStep]
+  );
 
   // Handle the final submit
-  const handleFinalSubmit = useCallback((e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    if (isLastStep) {
-      form.handleSubmit(onSubmit)(e as any);
-    }
-  }, [isLastStep, form, onSubmit]);
+  const handleFinalSubmit = useCallback(
+    (e?: React.FormEvent) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      if (isLastStep) {
+        form.handleSubmit(onSubmit)(e as any);
+      }
+    },
+    [isLastStep, form, onSubmit]
+  );
 
   // Optimize form submission
-  const handleFormSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (isLastStep) {
-      form.handleSubmit(onSubmit)(e);
-    }
-  }, [isLastStep, form, onSubmit]);
+  const handleFormSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (isLastStep) {
+        form.handleSubmit(onSubmit)(e);
+      }
+    },
+    [isLastStep, form, onSubmit]
+  );
 
   // Optimize dialog open change
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      onClose();
-    }
-  }, [onClose]);
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   // Memoize content to reduce renders
-  const formContent = useMemo(() => (
-    <Form {...form}>
-      <form 
-        onSubmit={handleFormSubmit} 
-        className="space-y-6"
+  const formContent = useMemo(
+    () => (
+      <Form {...form}>
+        <form onSubmit={handleFormSubmit} className="space-y-6">
+          <MemoizedEstimateStepContent
+            currentStep={currentStep}
+            customerTab={customerTab}
+            onNewCustomer={handleNewCustomer}
+            onExistingCustomer={handleExistingCustomer}
+            selectedCustomerAddress={selectedCustomerAddress}
+            selectedCustomerName={selectedCustomerName}
+            selectedCustomerId={selectedCustomerId}
+            customers={customers}
+            loading={dataLoading}
+          />
+        </form>
+      </Form>
+    ),
+    [
+      form,
+      handleFormSubmit,
+      currentStep,
+      customerTab,
+      handleNewCustomer,
+      handleExistingCustomer,
+      selectedCustomerAddress,
+      selectedCustomerName,
+      selectedCustomerId,
+      customers,
+      dataLoading,
+    ]
+  );
+
+  const actionsContent = useMemo(
+    () => (
+      <MemoizedFormActions
+        onCancel={onClose}
+        onPrevious={isFirstStep ? undefined : goToPreviousStep}
+        onNext={isLastStep ? undefined : handleNext}
+        isLastStep={isLastStep}
+        currentStep={currentStep}
+        onSubmit={isLastStep ? handleFinalSubmit : undefined}
+        isSubmitting={isSubmitting}
+      />
+    ),
+    [
+      onClose,
+      isFirstStep,
+      goToPreviousStep,
+      isLastStep,
+      handleNext,
+      currentStep,
+      handleFinalSubmit,
+      isSubmitting,
+    ]
+  );
+
+  const dialogContent = useMemo(
+    () => (
+      <MemoizedDialogContent
+        currentStep={currentStep}
+        isFirstStep={isFirstStep}
+        onPreviousStep={goToPreviousStep}
+        steps={ESTIMATE_STEPS}
+        setCurrentStep={setCurrentStep}
       >
-        <MemoizedEstimateStepContent 
-          currentStep={currentStep}
-          customerTab={customerTab}
-          onNewCustomer={handleNewCustomer}
-          onExistingCustomer={handleExistingCustomer}
-          selectedCustomerAddress={selectedCustomerAddress}
-          selectedCustomerName={selectedCustomerName}
-          selectedCustomerId={selectedCustomerId}
-          customers={customers}
-          loading={dataLoading}
-        />
-      </form>
-    </Form>
-  ), [
-    form, 
-    handleFormSubmit, 
-    currentStep, 
-    customerTab, 
-    handleNewCustomer, 
-    handleExistingCustomer,
-    selectedCustomerAddress, 
-    selectedCustomerName, 
-    selectedCustomerId,
-    customers, 
-    dataLoading
-  ]);
+        <div className="flex-1 overflow-y-auto px-6">{formContent}</div>
 
-  const actionsContent = useMemo(() => (
-    <MemoizedFormActions 
-      onCancel={onClose}
-      onPrevious={isFirstStep ? undefined : goToPreviousStep}
-      onNext={isLastStep ? undefined : handleNext}
-      isLastStep={isLastStep}
-      currentStep={currentStep}
-      onSubmit={isLastStep ? handleFinalSubmit : undefined}
-      isSubmitting={isSubmitting}
-    />
-  ), [
-    onClose,
-    isFirstStep,
-    goToPreviousStep,
-    isLastStep,
-    handleNext,
-    currentStep,
-    handleFinalSubmit,
-    isSubmitting
-  ]);
-
-  const dialogContent = useMemo(() => (
-    <MemoizedDialogContent 
-      currentStep={currentStep}
-      isFirstStep={isFirstStep}
-      onPreviousStep={goToPreviousStep}
-      steps={ESTIMATE_STEPS}
-      setCurrentStep={setCurrentStep}
-    >
-      <div className="flex-1 overflow-y-auto px-6">
-        {formContent}
-      </div>
-
-      <div className="px-6 pb-6">
-        {actionsContent}
-      </div>
-    </MemoizedDialogContent>
-  ), [
-    currentStep,
-    isFirstStep,
-    goToPreviousStep,
-    setCurrentStep,
-    formContent,
-    actionsContent
-  ]);
+        <div className="px-6 pb-6">{actionsContent}</div>
+      </MemoizedDialogContent>
+    ),
+    [currentStep, isFirstStep, goToPreviousStep, setCurrentStep, formContent, actionsContent]
+  );
 
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={handleOpenChange}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       {dialogContent}
     </Dialog>
   );

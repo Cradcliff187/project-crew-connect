@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Calendar, Upload } from 'lucide-react';
@@ -10,34 +9,36 @@ interface DocumentMetricsCardProps {
   loading: boolean;
 }
 
-const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({ 
-  documents,
-  loading 
-}) => {
+const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({ documents, loading }) => {
   // Calculate metrics
   const totalDocuments = documents.length;
-  const documentsByType = documents.reduce((acc, doc) => {
-    const category = doc.category || 'other';
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  
+  const documentsByType = documents.reduce(
+    (acc, doc) => {
+      const category = doc.category || 'other';
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
   // Get the most recent document
-  const mostRecentDocument = documents.length > 0 
-    ? documents.reduce((latest, doc) => 
-        new Date(doc.created_at) > new Date(latest.created_at) ? doc : latest, 
-        documents[0]
-      ) 
-    : null;
-  
+  const mostRecentDocument =
+    documents.length > 0
+      ? documents.reduce(
+          (latest, doc) => (new Date(doc.created_at) > new Date(latest.created_at) ? doc : latest),
+          documents[0]
+        )
+      : null;
+
   // Get the date of the oldest document
-  const oldestDocumentDate = documents.length > 0
-    ? documents.reduce((oldest, doc) => 
-        new Date(doc.created_at) < new Date(oldest.created_at) ? doc : oldest,
-        documents[0]
-      ).created_at
-    : null;
-  
+  const oldestDocumentDate =
+    documents.length > 0
+      ? documents.reduce(
+          (oldest, doc) => (new Date(doc.created_at) < new Date(oldest.created_at) ? doc : oldest),
+          documents[0]
+        ).created_at
+      : null;
+
   if (loading) {
     return (
       <Card>
@@ -54,7 +55,7 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
       </Card>
     );
   }
-  
+
   return (
     <Card>
       <CardHeader>
@@ -68,7 +69,7 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
           </div>
           <span className="text-sm font-medium">{totalDocuments}</span>
         </div>
-        
+
         {mostRecentDocument && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -78,7 +79,7 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
             <span className="text-sm">{formatDate(mostRecentDocument.created_at)}</span>
           </div>
         )}
-        
+
         {oldestDocumentDate && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -88,7 +89,7 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
             <span className="text-sm">{formatDate(oldestDocumentDate)}</span>
           </div>
         )}
-        
+
         {/* Document categories breakdown */}
         {Object.keys(documentsByType).length > 0 && (
           <div className="pt-2">

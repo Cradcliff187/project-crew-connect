@@ -1,4 +1,3 @@
-
 import { Clock, AlertCircle, Calendar, DollarSign, Hash, CalendarClock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
@@ -18,13 +17,11 @@ const WorkOrderInfoCard = ({ workOrder }: WorkOrderInfoCardProps) => {
               <Hash className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
               <div>
                 <p className="font-medium">Work Order Number</p>
-                <p className="text-sm text-muted-foreground">
-                  {workOrder.work_order_number}
-                </p>
+                <p className="text-sm text-muted-foreground">{workOrder.work_order_number}</p>
               </div>
             </div>
           )}
-          
+
           <div className="flex items-start">
             <AlertCircle className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
             <div>
@@ -34,7 +31,7 @@ const WorkOrderInfoCard = ({ workOrder }: WorkOrderInfoCardProps) => {
               </p>
             </div>
           </div>
-          
+
           {workOrder.scheduled_date && (
             <div className="flex items-start">
               <Calendar className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
@@ -46,36 +43,38 @@ const WorkOrderInfoCard = ({ workOrder }: WorkOrderInfoCardProps) => {
               </div>
             </div>
           )}
-          
+
           {workOrder.due_by_date && (
             <div className="flex items-start">
               <CalendarClock className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
               <div>
                 <p className="font-medium">Due By Date</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatDate(workOrder.due_by_date)}
-                </p>
+                <p className="text-sm text-muted-foreground">{formatDate(workOrder.due_by_date)}</p>
               </div>
             </div>
           )}
-          
+
           <div className="flex items-start">
             <Clock className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
             <div>
               <p className="font-medium">Time</p>
               <p className="text-sm text-muted-foreground">
-                {workOrder.time_estimate ? `Estimated: ${workOrder.time_estimate} hours` : 'No estimate'} 
+                {workOrder.time_estimate
+                  ? `Estimated: ${workOrder.time_estimate} hours`
+                  : 'No estimate'}
                 {workOrder.actual_hours ? ` • Actual: ${workOrder.actual_hours} hours` : ''}
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-start">
             <DollarSign className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
             <div>
               <p className="font-medium">Costs</p>
               <p className="text-sm text-muted-foreground">
-                {workOrder.expenses_cost ? `Expenses: ${formatCurrency(workOrder.expenses_cost)}` : 'No expenses'} 
+                {workOrder.expenses_cost
+                  ? `Expenses: ${formatCurrency(workOrder.expenses_cost)}`
+                  : 'No expenses'}
                 {workOrder.total_cost ? ` • Total: ${formatCurrency(workOrder.total_cost)}` : ''}
               </p>
             </div>

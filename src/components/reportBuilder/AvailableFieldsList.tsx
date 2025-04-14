@@ -1,4 +1,3 @@
-
 import { Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ const AvailableFieldsList = ({ fields, onAddField }: AvailableFieldsListProps) =
       </CardHeader>
       <CardContent>
         <div className="space-y-2 max-h-72 overflow-y-auto">
-          {fields.map((field) => (
+          {fields.map(field => (
             <Button
               key={field.field}
               variant="outline"

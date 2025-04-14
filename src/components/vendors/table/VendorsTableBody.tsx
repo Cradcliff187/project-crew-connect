@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableBody } from '@/components/ui/table';
 import VendorTableRow from './VendorTableRow';
@@ -10,15 +9,15 @@ interface VendorsTableBodyProps {
   onEditVendor: (vendor: Vendor) => void;
 }
 
-const VendorsTableBody: React.FC<VendorsTableBodyProps> = ({ 
-  vendors, 
-  onViewDetails, 
-  onEditVendor 
+const VendorsTableBody: React.FC<VendorsTableBodyProps> = ({
+  vendors,
+  onViewDetails,
+  onEditVendor,
 }) => {
   return (
     <>
-      {vendors.map((vendor) => (
-        <VendorTableRow 
+      {vendors.map(vendor => (
+        <VendorTableRow
           key={vendor.vendorid}
           vendor={vendor}
           onViewDetails={onViewDetails}

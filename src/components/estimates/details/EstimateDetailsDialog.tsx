@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Dialog, 
+import {
+  Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,13 +27,13 @@ import EstimateActions from '../EstimateActions';
  * EstimateDetailsDialog displays a dialog with tabs for viewing estimate details
  * This is used within the estimates listing page when clicking on an estimate
  */
-const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({ 
-  estimate, 
-  items = [], 
-  revisions = [], 
-  open, 
+const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
+  estimate,
+  items = [],
+  revisions = [],
+  open,
   onClose,
-  onStatusChange
+  onStatusChange,
 }) => {
   const [activeTab, setActiveTab] = useState('revisions'); // Default to revisions tab
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
@@ -43,27 +42,27 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | undefined>(undefined);
-  
+
   const contentRef = useRef<HTMLDivElement>(null);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return "—";
-    
+    if (!dateString) return '—';
+
     try {
       const date = new Date(dateString);
-      
+
       if (isNaN(date.getTime())) {
-        return "Invalid date";
+        return 'Invalid date';
       }
-      
-      return new Intl.DateTimeFormat('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
       }).format(date);
     } catch (error) {
-      console.error("Error formatting date:", error);
-      return "Date error";
+      console.error('Error formatting date:', error);
+      return 'Date error';
     }
   };
 
@@ -74,7 +73,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
       setSelectedRevisionId(currentRevision.id);
     }
   }, [revisions]);
-  
+
   useEffect(() => {
     const fetchClientEmail = async () => {
       if (open) {
@@ -86,26 +85,26 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               .select('contactemail')
               .eq('customerid', estimate.customerId)
               .maybeSingle();
-              
+
             if (customerData && !customerError) {
               if (customerData.contactemail) {
                 setClientEmail(customerData.contactemail);
                 return;
               }
             }
-            
+
             const { data: contactData, error: contactError } = await supabase
               .from('contacts')
               .select('email')
               .eq('id', estimate.customerId)
               .maybeSingle();
-              
+
             if (contactData && !contactError && contactData.email) {
               setClientEmail(contactData.email);
               return;
             }
           }
-          
+
           if (!estimate.customerId && estimate.client) {
             console.log('Falling back to client name lookup:', estimate.client);
             const { data: nameContactData, error: nameContactError } = await supabase
@@ -113,33 +112,33 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               .select('email')
               .eq('name', estimate.client)
               .maybeSingle();
-            
+
             if (nameContactData && !nameContactError && nameContactData.email) {
               setClientEmail(nameContactData.email);
               return;
             }
-            
+
             const { data: nameCustomerData, error: nameCustomerError } = await supabase
               .from('customers')
               .select('contactemail')
               .eq('customername', estimate.client)
               .maybeSingle();
-            
+
             if (nameCustomerData && !nameCustomerError && nameCustomerData.contactemail) {
               setClientEmail(nameCustomerData.contactemail);
               return;
             }
           }
-          
+
           console.log('No client email found for:', estimate.customerId || estimate.client);
           setClientEmail(undefined);
         } catch (err) {
-          console.error("Error fetching client email:", err);
+          console.error('Error fetching client email:', err);
           setClientEmail(undefined);
         }
       }
     };
-    
+
     fetchClientEmail();
   }, [estimate.customerId, estimate.client, open]);
 
@@ -157,7 +156,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     setSelectedDocument(document);
     setShareDialogOpen(true);
   };
-  
+
   const handleRevisionSelect = (revisionId: string) => {
     setSelectedRevisionId(revisionId);
     console.log('Selected revision:', revisionId);
@@ -180,7 +179,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     amount: estimate.total || 0,
     versions: revisions.length,
   };
-  
+
   // Get current revision
   const currentRevision = revisions.find(rev => rev.is_current);
 
@@ -198,34 +197,33 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
                   {estimate.description || `View and manage estimate details`}
                 </span>
                 {currentRevision && (
-                  <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-800 border-blue-200">
+                  <Badge
+                    variant="outline"
+                    className="ml-2 bg-blue-50 text-blue-800 border-blue-200"
+                  >
                     Version {currentRevision.version}
                   </Badge>
                 )}
               </DialogDescription>
             </div>
-            
+
             {/* Streamlined action buttons */}
             <div className="flex items-center gap-2">
               {currentRevision && (
-                <PDFExportButton 
+                <PDFExportButton
                   estimateId={estimate.id}
                   revisionId={currentRevision?.id || ''}
                   contentRef={contentRef}
                   className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
                 />
               )}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCreateRevision}
-              >
+
+              <Button variant="outline" size="sm" onClick={handleCreateRevision}>
                 <FileUp className="h-4 w-4 mr-1" />
                 New Revision
               </Button>
-              
-              <EstimateActions 
+
+              <EstimateActions
                 status={estimate.status}
                 onShare={() => setShareDialogOpen(true)}
                 currentRevision={currentRevision}
@@ -234,7 +232,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
             </div>
           </div>
         </DialogHeader>
-        
+
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="px-6 py-2 border-b">
             <div className="flex-1">
@@ -248,29 +246,29 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               </Tabs>
             </div>
           </div>
-          
+
           <div ref={contentRef} className="flex-1 overflow-auto p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsContent value="details" className="m-0 mt-2">
                 <EstimateDetailsTab estimate={detailsEstimate} />
               </TabsContent>
-              
+
               <TabsContent value="items" className="m-0 mt-2">
                 <EstimateItemsTab items={mappedItems} />
               </TabsContent>
-              
+
               <TabsContent value="revisions" className="m-0 mt-2">
-                <EstimateRevisionsTab 
-                  revisions={mappedRevisions} 
+                <EstimateRevisionsTab
+                  revisions={mappedRevisions}
                   estimateId={estimate.id}
                   currentRevisionId={revisions.find(rev => rev.is_current)?.id}
                   onRevisionSelect={handleRevisionSelect}
                 />
               </TabsContent>
-              
+
               <TabsContent value="documents" className="m-0 mt-2">
-                <EstimateDocumentsTab 
-                  estimateId={estimate.id} 
+                <EstimateDocumentsTab
+                  estimateId={estimate.id}
                   onShareDocument={handleShareDocument}
                 />
               </TabsContent>
@@ -278,7 +276,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
           </div>
         </div>
       </DialogContent>
-      
+
       <EstimateRevisionDialog
         open={revisionDialogOpen}
         onOpenChange={setRevisionDialogOpen}

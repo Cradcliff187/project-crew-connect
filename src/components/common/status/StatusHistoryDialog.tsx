@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,7 @@ const StatusHistoryDialog: React.FC<StatusHistoryDialogProps> = ({
   tableName,
   idField,
   currentStatus,
-  statusOptions
+  statusOptions,
 }) => {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,18 +44,19 @@ const StatusHistoryDialog: React.FC<StatusHistoryDialogProps> = ({
         .eq('referenceid', entityId)
         .eq('moduletype', entityType)
         .order('timestamp', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       // Transform the data to match our expected format
-      const formattedHistory = data?.map(item => ({
-        status: item.status,
-        previous_status: item.previousstatus,
-        changed_date: item.timestamp,
-        changed_by: item.useremail,
-        notes: item.detailsjson ? JSON.parse(item.detailsjson)?.notes : item.action
-      })) || [];
-      
+      const formattedHistory =
+        data?.map(item => ({
+          status: item.status,
+          previous_status: item.previousstatus,
+          changed_date: item.timestamp,
+          changed_by: item.useremail,
+          notes: item.detailsjson ? JSON.parse(item.detailsjson)?.notes : item.action,
+        })) || [];
+
       setHistory(formattedHistory);
     } catch (error: any) {
       console.error('Error fetching status history:', error);
@@ -72,12 +72,12 @@ const StatusHistoryDialog: React.FC<StatusHistoryDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Status History</DialogTitle>
         </DialogHeader>
-        
+
         <div className="py-4">
           {loading ? (
             <div className="text-center py-4">Loading history...</div>
           ) : (
-            <StatusHistoryView 
+            <StatusHistoryView
               history={history}
               statusOptions={statusOptions}
               currentStatus={currentStatus}

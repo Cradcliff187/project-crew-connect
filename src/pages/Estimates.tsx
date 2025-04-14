@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
@@ -16,24 +15,24 @@ import { useQuery } from '@tanstack/react-query';
 const Estimates = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-  
+
   const { estimates, loading, error, fetchEstimates } = useEstimates();
-  
+
   const handleViewEstimate = (estimate: EstimateType) => {
     navigate(`/estimates/${estimate.id}`);
   };
-  
+
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <EstimatesHeader 
+        <EstimatesHeader
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onEstimateAdded={fetchEstimates}
         />
-        
+
         <div className="mt-6">
-          <EstimatesTable 
+          <EstimatesTable
             estimates={estimates}
             loading={loading}
             error={error}

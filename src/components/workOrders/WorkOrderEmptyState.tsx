@@ -1,4 +1,3 @@
-
 import { ClipboardList, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { Card } from '@/components/ui/card';
 
 const WorkOrderEmptyState = () => {
   const navigate = useNavigate();
-  
+
   const handleCreateWorkOrder = () => {
     // Navigate to work orders page and trigger the work order dialog
     // We'll add a query parameter that can be detected by the WorkOrders page
@@ -21,12 +20,10 @@ const WorkOrderEmptyState = () => {
         </div>
         <h3 className="mt-4 text-lg font-semibold">No work orders yet</h3>
         <p className="mt-2 text-muted-foreground">
-          Create your first maintenance work order to start tracking service requests and maintenance tasks.
+          Create your first maintenance work order to start tracking service requests and
+          maintenance tasks.
         </p>
-        <Button 
-          className="mt-4"
-          onClick={handleCreateWorkOrder}
-        >
+        <Button className="mt-4" onClick={handleCreateWorkOrder}>
           <Plus className="h-4 w-4 mr-1" /> Create Work Order
         </Button>
       </div>

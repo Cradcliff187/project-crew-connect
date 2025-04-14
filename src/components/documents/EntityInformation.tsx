@@ -1,19 +1,18 @@
-
 import React from 'react';
 import { Document } from './schemas/documentSchema';
 import { Button } from '@/components/ui/button';
-import { 
-  ExternalLink, 
-  Briefcase, 
-  Wrench, 
-  Landmark, 
-  Receipt, 
-  Clock, 
-  User, 
+import {
+  ExternalLink,
+  Briefcase,
+  Wrench,
+  Landmark,
+  Receipt,
+  Clock,
+  User,
   FileText,
   Building,
   Hammer,
-  FileCheck 
+  FileCheck,
 } from 'lucide-react';
 import { useDocumentNavigation } from './hooks/useDocumentNavigation';
 
@@ -91,7 +90,7 @@ const EntityInformation: React.FC<EntityInformationProps> = ({ document }) => {
         {getEntityIcon()}
         <span className="text-sm ml-1">{getEntityName()}</span>
       </div>
-      
+
       <Button
         variant="ghost"
         size="sm"

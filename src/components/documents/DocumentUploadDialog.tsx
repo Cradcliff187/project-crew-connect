@@ -1,11 +1,10 @@
-
 import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from './EnhancedDocumentUpload';
 import { EntityType } from './schemas/documentSchema';
@@ -27,7 +26,7 @@ const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
   entityId,
   onSuccess,
   title = 'Upload Document',
-  description = 'Upload a document and associate it with the appropriate entity.'
+  description = 'Upload a document and associate it with the appropriate entity.',
 }) => {
   const handleSuccess = (documentId?: string) => {
     if (onSuccess) {
@@ -46,8 +45,8 @@ const DocumentUploadDialog: React.FC<DocumentUploadDialogProps> = ({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        
-        <EnhancedDocumentUpload 
+
+        <EnhancedDocumentUpload
           entityType={entityType}
           entityId={entityId}
           onSuccess={handleSuccess}

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import PageTransition from '@/components/layout/PageTransition';
 import SubcontractorsHeader from '@/components/subcontractors/SubcontractorsHeader';
@@ -11,10 +10,10 @@ const Subcontractors = () => {
   const [specialtiesUpdated, setSpecialtiesUpdated] = useState(0);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [selectedSubcontractor, setSelectedSubcontractor] = useState<any | null>(null);
-  
+
   // Use our custom hook with real Supabase data
   const { subcontractors, loading, error, refetch } = useSubcontractors();
-  
+
   const handleSubcontractorAdded = () => {
     refetch();
   };
@@ -37,15 +36,15 @@ const Subcontractors = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <SubcontractorsHeader 
-          searchQuery={searchQuery} 
-          setSearchQuery={setSearchQuery} 
+        <SubcontractorsHeader
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           onSubcontractorAdded={handleSubcontractorAdded}
           onSpecialtyAdded={handleSpecialtyAdded}
         />
-        
+
         <div className="mt-6">
-          <SubcontractorsTable 
+          <SubcontractorsTable
             subcontractors={subcontractors}
             loading={loading}
             error={error}

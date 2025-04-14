@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,14 +20,10 @@ const VendorDetail = () => {
   const [vendor, setVendor] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
-  
+
   // Fetch associated data
-  const { 
-    projects, 
-    workOrders, 
-    loadingAssociations, 
-    fetchAssociatedData 
-  } = useVendorAssociatedData();
+  const { projects, workOrders, loadingAssociations, fetchAssociatedData } =
+    useVendorAssociatedData();
 
   // Create a stable fetch vendor function that doesn't recreate itself on every render
   const fetchVendor = useCallback(async () => {
@@ -156,21 +151,21 @@ const VendorDetail = () => {
                 <p className="text-sm font-medium">Vendor ID</p>
                 <p>{vendor.vendorid}</p>
               </div>
-              
+
               {vendor.tax_id && (
                 <div>
                   <p className="text-sm font-medium">Tax ID</p>
                   <p>{vendor.tax_id}</p>
                 </div>
               )}
-              
+
               {vendor.payment_terms && (
                 <div>
                   <p className="text-sm font-medium">Payment Terms</p>
                   <p>{getPaymentTermsLabel(vendor.payment_terms)}</p>
                 </div>
               )}
-              
+
               {vendor.notes && (
                 <>
                   <Separator />
@@ -196,11 +191,7 @@ const VendorDetail = () => {
                 <div>
                   <p className="text-sm font-medium">Address</p>
                   <p>{vendor.address}</p>
-                  <p>
-                    {[vendor.city, vendor.state, vendor.zip]
-                      .filter(Boolean)
-                      .join(', ')}
-                  </p>
+                  <p>{[vendor.city, vendor.state, vendor.zip].filter(Boolean).join(', ')}</p>
                 </div>
               )}
 
@@ -229,15 +220,9 @@ const VendorDetail = () => {
 
         {/* Associated Projects & Work Orders */}
         <div className="mt-6 grid gap-6 md:grid-cols-2">
-          <AssociatedProjects 
-            projects={projects} 
-            loading={loadingAssociations} 
-          />
-          
-          <AssociatedWorkOrders 
-            workOrders={workOrders} 
-            loading={loadingAssociations} 
-          />
+          <AssociatedProjects projects={projects} loading={loadingAssociations} />
+
+          <AssociatedWorkOrders workOrders={workOrders} loading={loadingAssociations} />
         </div>
 
         <div className="mt-6">

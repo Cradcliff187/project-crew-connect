@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,21 +24,23 @@ export const useRecentDocuments = () => {
       }
 
       // Process the documents to get URLs
-      const docsWithUrls = await Promise.all(data.map(async (doc) => {
-        const { data: { publicUrl } } = supabase.storage
-          .from('construction_documents')
-          .getPublicUrl(doc.storage_path);
-        
-        return { ...doc, url: publicUrl };
-      }));
+      const docsWithUrls = await Promise.all(
+        data.map(async doc => {
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('construction_documents').getPublicUrl(doc.storage_path);
+
+          return { ...doc, url: publicUrl };
+        })
+      );
 
       setRecentDocuments(docsWithUrls);
     } catch (error: any) {
       console.error('Error fetching recent documents:', error);
       toast({
-        title: "Failed to load recent documents",
+        title: 'Failed to load recent documents',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive',
       });
       setRecentDocuments([]);
     } finally {
@@ -60,6 +61,6 @@ export const useRecentDocuments = () => {
   return {
     recentDocuments,
     recentDocumentsLoading,
-    refreshRecentDocuments
+    refreshRecentDocuments,
   };
 };

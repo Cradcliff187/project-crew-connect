@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +24,7 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
   estimateId,
   currentStatus,
   onStatusChange,
-  className = ''
+  className = '',
 }) => {
   const [updating, setUpdating] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -45,7 +44,7 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
           status: newStatus,
           updated_at: new Date().toISOString(),
           ...(newStatus === 'approved' ? { approveddate: new Date().toISOString() } : {}),
-          ...(newStatus === 'sent' ? { sentdate: new Date().toISOString() } : {})
+          ...(newStatus === 'sent' ? { sentdate: new Date().toISOString() } : {}),
         })
         .eq('estimateid', estimateId);
 
@@ -55,7 +54,7 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
         .from('estimate_revisions')
         .update({
           status: newStatus,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('estimate_id', estimateId)
         .eq('is_current', true);
@@ -63,18 +62,18 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
       if (revisionError) throw revisionError;
 
       toast({
-        title: "Status Updated",
+        title: 'Status Updated',
         description: `Estimate status changed to ${newStatus}.`,
-        className: "bg-[#0485ea]",
+        className: 'bg-[#0485ea]',
       });
 
       onStatusChange();
     } catch (error: any) {
       console.error('Error updating status:', error);
       toast({
-        title: "Error Updating Status",
+        title: 'Error Updating Status',
         description: error.message || 'Failed to update status. Please try again.',
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setUpdating(false);
@@ -85,13 +84,13 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
     switch (currentStatus) {
       case 'draft':
         return [
-          { value: 'sent', label: 'Send to Client', icon: <SendIcon className="h-4 w-4 mr-2" /> }
+          { value: 'sent', label: 'Send to Client', icon: <SendIcon className="h-4 w-4 mr-2" /> },
         ];
       case 'sent':
       case 'pending':
         return [
           { value: 'approved', label: 'Approve', icon: <CheckIcon className="h-4 w-4 mr-2" /> },
-          { value: 'rejected', label: 'Reject', icon: <XIcon className="h-4 w-4 mr-2" /> }
+          { value: 'rejected', label: 'Reject', icon: <XIcon className="h-4 w-4 mr-2" /> },
         ];
       case 'approved':
         return [];
@@ -110,13 +109,13 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
   return (
     <div className={`flex items-center ${className}`}>
       <StatusBadge status={safeStatus} />
-      
+
       {options.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               disabled={updating || options.length === 0}
               className="ml-2 border-[#0485ea]/30 hover:border-[#0485ea] hover:bg-[#0485ea]/10"
             >
@@ -125,8 +124,8 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-[180px]">
-            {options.map((option) => (
-              <DropdownMenuItem 
+            {options.map(option => (
+              <DropdownMenuItem
                 key={option.value}
                 onClick={() => handleStatusChange(option.value)}
                 className="cursor-pointer flex items-center"
@@ -138,7 +137,7 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-      
+
       <EstimateRejectDialog
         open={rejectDialogOpen}
         onOpenChange={setRejectDialogOpen}

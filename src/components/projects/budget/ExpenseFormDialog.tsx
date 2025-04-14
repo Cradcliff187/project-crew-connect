@@ -1,6 +1,11 @@
-
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
@@ -14,11 +19,11 @@ interface ExpenseFormDialogProps {
   onCancel: () => void;
 }
 
-const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({ 
-  projectId, 
-  expense, 
-  onSave, 
-  onCancel 
+const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
+  projectId,
+  expense,
+  onSave,
+  onCancel,
 }) => {
   const {
     form,
@@ -28,7 +33,7 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
     setShowDocumentUpload,
     onSubmit,
     handleDocumentUploaded,
-    isEditing
+    isEditing,
   } = useExpenseForm({ projectId, expense, onSave });
 
   return (
@@ -37,14 +42,14 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
         </DialogHeader>
-        
+
         {showDocumentUpload ? (
           <div className="mt-4">
-            <EnhancedDocumentUpload 
+            <EnhancedDocumentUpload
               entityType="PROJECT"
               entityId={projectId}
               isReceiptUpload={true}
-              onSuccess={(documentId) => documentId && handleDocumentUploaded(documentId)}
+              onSuccess={documentId => documentId && handleDocumentUploaded(documentId)}
               onCancel={() => setShowDocumentUpload(false)}
             />
           </div>
@@ -58,7 +63,7 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
                 onAttachReceipt={() => setShowDocumentUpload(true)}
                 hasAttachedReceipt={!!form.watch('document_id')}
               />
-              
+
               <DialogFooter className="mt-6">
                 <Button type="button" variant="outline" onClick={onCancel}>
                   Cancel

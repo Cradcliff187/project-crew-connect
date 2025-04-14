@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from './schemas/documentSchema';
@@ -9,10 +8,7 @@ interface RelatedDocumentsProps {
   onDocumentSelect?: (document: Document) => void;
 }
 
-const RelatedDocuments: React.FC<RelatedDocumentsProps> = ({ 
-  documentId,
-  onDocumentSelect
-}) => {
+const RelatedDocuments: React.FC<RelatedDocumentsProps> = ({ documentId, onDocumentSelect }) => {
   const [relatedDocuments, setRelatedDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -52,9 +48,8 @@ const RelatedDocuments: React.FC<RelatedDocumentsProps> = ({
 
           // For each document, get the public URL
           const docsWithUrls = await Promise.all(
-            (relatedDocs || []).map(async (doc) => {
-              const { data: urlData } = await supabase
-                .storage
+            (relatedDocs || []).map(async doc => {
+              const { data: urlData } = await supabase.storage
                 .from('construction_documents')
                 .getPublicUrl(doc.storage_path);
 
@@ -96,8 +91,8 @@ const RelatedDocuments: React.FC<RelatedDocumentsProps> = ({
     <div className="mt-2">
       <h3 className="text-sm font-medium mb-2">Related Documents</h3>
       <div className="space-y-1">
-        {relatedDocuments.map((doc) => (
-          <div 
+        {relatedDocuments.map(doc => (
+          <div
             key={doc.document_id}
             onClick={() => onDocumentSelect && onDocumentSelect(doc)}
             className="flex items-center p-2 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"

@@ -1,4 +1,3 @@
-
 import { StatusType } from './common';
 
 export interface WorkItem {
@@ -33,6 +32,6 @@ export const projectToWorkItem = (project: any): WorkItem => {
     href: `/projects/${project.projectid}`,
     budget: project.budget || 0,
     spent: project.spent || 0,
-    createdAt: project.createdon
+    createdAt: project.createdon,
   };
 };

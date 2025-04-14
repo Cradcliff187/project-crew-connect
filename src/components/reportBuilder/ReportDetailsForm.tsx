@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +13,7 @@ const ReportDetailsForm = ({
   name,
   description,
   onNameChange,
-  onDescriptionChange
+  onDescriptionChange,
 }: ReportDetailsFormProps) => {
   return (
     <Card>
@@ -24,18 +23,14 @@ const ReportDetailsForm = ({
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="report-name">Report Name</Label>
-          <Input 
-            id="report-name" 
-            value={name} 
-            onChange={(e) => onNameChange(e.target.value)}
-          />
+          <Input id="report-name" value={name} onChange={e => onNameChange(e.target.value)} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="report-description">Description</Label>
-          <Input 
-            id="report-description" 
-            value={description} 
-            onChange={(e) => onDescriptionChange(e.target.value)}
+          <Input
+            id="report-description"
+            value={description}
+            onChange={e => onDescriptionChange(e.target.value)}
           />
         </div>
       </CardContent>

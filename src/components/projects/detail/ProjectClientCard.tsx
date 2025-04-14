@@ -1,4 +1,3 @@
-
 import { User } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectDetails } from '../ProjectDetails';
@@ -18,13 +17,9 @@ const ProjectClientCard = ({ project, customerName, customerId }: ProjectClientC
             <User className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
             <div>
               <p className="font-medium">Client</p>
-              <p className="text-sm font-medium">
-                {customerName || 'No Client Assigned'}
-              </p>
+              <p className="text-sm font-medium">{customerName || 'No Client Assigned'}</p>
               {customerId && (
-                <p className="text-xs text-muted-foreground">
-                  Client ID: {customerId}
-                </p>
+                <p className="text-xs text-muted-foreground">Client ID: {customerId}</p>
               )}
             </div>
           </div>

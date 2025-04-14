@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -36,11 +35,11 @@ export const useDocumentUpload = (
       const timestamp = new Date().getTime();
       const fileExt = file.name.split('.').pop();
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      
+
       // Use the provided entityId or generate a temp one if autoGenerateId is true
       const id = entityId || (options?.autoGenerateId ? uuidv4() : '');
       const finalEntityId = id || 'general';
-      
+
       // Format entity type for storage path (lowercase with hyphens)
       const formattedEntityType = entityType.toLowerCase().replace(/_/g, '-');
       const filePath = `${formattedEntityType}/${finalEntityId}/${fileName}`;
@@ -92,7 +91,7 @@ export const useDocumentUpload = (
       }
 
       toast({
-        title: "Document uploaded successfully",
+        title: 'Document uploaded successfully',
         description: `${file.name} has been uploaded.`,
       });
 
@@ -104,13 +103,13 @@ export const useDocumentUpload = (
     } catch (err: any) {
       console.error('Error uploading document:', err);
       setError(err.message || 'Failed to upload document');
-      
+
       toast({
-        title: "Upload failed",
+        title: 'Upload failed',
         description: err.message || 'Something went wrong while uploading the document',
-        variant: "destructive",
+        variant: 'destructive',
       });
-      
+
       return null;
     } finally {
       setLoading(false);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
@@ -27,58 +26,58 @@ import SubcontractorDocuments from './SubcontractorDocuments';
 const SubcontractorDetailPage = () => {
   const { subcontractorId } = useParams<{ subcontractorId: string }>();
   const [editSheetOpen, setEditSheetOpen] = useState(false);
-  
+
   // Use the custom hook to fetch subcontractor data
-  const { 
-    subcontractor, 
-    loading, 
-    specialtyIds, 
-    projects, 
-    workOrders, 
+  const {
+    subcontractor,
+    loading,
+    specialtyIds,
+    projects,
+    workOrders,
     loadingAssociations,
-    fetchSubcontractor 
+    fetchSubcontractor,
   } = useSubcontractorData(subcontractorId);
-  
+
   const handleEdit = () => {
     if (subcontractor) {
       console.log('Opening edit sheet with data:', subcontractor);
       setEditSheetOpen(true);
     } else {
       toast({
-        title: "Error",
-        description: "Cannot edit - Subcontractor not found",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Cannot edit - Subcontractor not found',
+        variant: 'destructive',
       });
     }
   };
-  
+
   const handleSubcontractorUpdated = () => {
     console.log('Subcontractor updated, refreshing data...');
     fetchSubcontractor();
-    
+
     toast({
-      title: "Subcontractor Updated",
-      description: "Subcontractor details have been updated successfully."
+      title: 'Subcontractor Updated',
+      description: 'Subcontractor details have been updated successfully.',
     });
   };
-  
+
   if (loading) {
     return <SubcontractorLoadingView />;
   }
-  
+
   if (!subcontractor) {
     return <SubcontractorNotFoundView />;
   }
-  
+
   return (
     <PageTransition>
       <div className="container py-6 text-foreground">
-        <SubcontractorDetailHeader 
-          subcontractor={subcontractor} 
-          loading={loading} 
-          onEdit={handleEdit} 
+        <SubcontractorDetailHeader
+          subcontractor={subcontractor}
+          loading={loading}
+          onEdit={handleEdit}
         />
-        
+
         <div className="grid gap-6 md:grid-cols-2">
           {/* Main Info Card */}
           <Card>
@@ -91,14 +90,14 @@ const SubcontractorDetailPage = () => {
                     <p>{subcontractor.tax_id}</p>
                   </div>
                 )}
-                
+
                 {subcontractor.payment_terms && (
                   <div>
                     <p className="text-sm font-medium">Payment Terms</p>
                     <p>{getPaymentTermsLabel(subcontractor.payment_terms)}</p>
                   </div>
                 )}
-                
+
                 {subcontractor.notes && (
                   <>
                     <Separator />
@@ -119,7 +118,7 @@ const SubcontractorDetailPage = () => {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Compliance Information */}
         <div className="mt-6">
           <Card>
@@ -128,42 +127,33 @@ const SubcontractorDetailPage = () => {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Associated Projects & Work Orders */}
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <Card>
             <CardContent className="pt-6">
-              <AssociatedProjects 
-                projects={projects} 
-                loading={loadingAssociations} 
-              />
+              <AssociatedProjects projects={projects} loading={loadingAssociations} />
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
-              <AssociatedWorkOrders 
-                workOrders={workOrders} 
-                loading={loadingAssociations} 
-              />
+              <AssociatedWorkOrders workOrders={workOrders} loading={loadingAssociations} />
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Specialties */}
         {subcontractor.specialty_ids && subcontractor.specialty_ids.length > 0 && (
           <div className="mt-6">
             <Card>
               <CardContent className="pt-6">
-                <SpecialtiesSection 
-                  subcontractor={subcontractor} 
-                  specialtyIds={specialtyIds} 
-                />
+                <SpecialtiesSection subcontractor={subcontractor} specialtyIds={specialtyIds} />
               </CardContent>
             </Card>
           </div>
         )}
-        
+
         {/* Documents Section */}
         <div className="mt-6">
           <Card>
@@ -172,7 +162,7 @@ const SubcontractorDetailPage = () => {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Edit Subcontractor Sheet */}
         {subcontractor && (
           <SubcontractorSheet

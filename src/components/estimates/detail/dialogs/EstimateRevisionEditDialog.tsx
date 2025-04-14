@@ -1,11 +1,22 @@
-
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { EstimateRevision } from '../../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +33,7 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
   open,
   onOpenChange,
   revision,
-  onSuccess
+  onSuccess,
 }) => {
   const [status, setStatus] = useState<string>(revision?.status || 'draft');
   const [notes, setNotes] = useState<string>(revision?.notes || '');
@@ -31,37 +42,37 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!revision) return;
-    
+
     setIsSubmitting(true);
     try {
       const updateData: any = {
         status,
         notes,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
-      
+
       if (amount && !isNaN(parseFloat(amount))) {
         updateData.amount = parseFloat(amount);
       }
-      
+
       const { error } = await supabase
         .from('estimate_revisions')
         .update(updateData)
         .eq('id', revision.id);
-        
+
       if (error) throw error;
-      
+
       toast({
         title: 'Revision Updated',
         description: 'The revision has been updated successfully.',
       });
-      
+
       if (onSuccess) {
         onSuccess();
       }
-      
+
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error updating revision:', error);
@@ -74,7 +85,7 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
       setIsSubmitting(false);
     }
   };
-  
+
   // Reset form when revision changes
   React.useEffect(() => {
     if (revision) {
@@ -90,18 +101,14 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Edit Revision</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="status" className="text-right">
                 Status
               </Label>
-              <Select 
-                value={status} 
-                onValueChange={setStatus}
-                disabled={isSubmitting}
-              >
+              <Select value={status} onValueChange={setStatus} disabled={isSubmitting}>
                 <SelectTrigger id="status" className="col-span-3">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -114,7 +121,7 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="amount" className="text-right">
                 Amount
@@ -124,12 +131,12 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
                 type="number"
                 step="0.01"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={e => setAmount(e.target.value)}
                 disabled={isSubmitting}
                 className="col-span-3"
               />
             </div>
-            
+
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="notes" className="text-right pt-2">
                 Notes
@@ -137,19 +144,28 @@ const EstimateRevisionEditDialog: React.FC<EstimateRevisionEditDialogProps> = ({
               <Textarea
                 id="notes"
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={e => setNotes(e.target.value)}
                 disabled={isSubmitting}
                 className="col-span-3"
                 rows={3}
               />
             </div>
           </div>
-          
+
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-[#0485ea] hover:bg-[#0375d1]">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

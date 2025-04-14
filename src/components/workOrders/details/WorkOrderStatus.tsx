@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { WorkOrder } from '@/types/workOrder';
@@ -9,13 +8,10 @@ interface WorkOrderStatusProps {
   onStatusChange?: (newStatus: string) => void;
 }
 
-const WorkOrderStatus: React.FC<WorkOrderStatusProps> = ({ 
-  workOrder, 
-  onStatusChange 
-}) => {
+const WorkOrderStatus: React.FC<WorkOrderStatusProps> = ({ workOrder, onStatusChange }) => {
   const getStatusIcon = () => {
     const status = workOrder.status.toLowerCase();
-    
+
     switch (status) {
       case 'completed':
         return <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />;
@@ -27,7 +23,7 @@ const WorkOrderStatus: React.FC<WorkOrderStatusProps> = ({
         return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
     }
   };
-  
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -49,7 +45,9 @@ const WorkOrderStatus: React.FC<WorkOrderStatusProps> = ({
   };
 
   return (
-    <Badge className={`text-xs px-2 py-1 flex items-center font-opensans ${getStatusColor(workOrder.status)}`}>
+    <Badge
+      className={`text-xs px-2 py-1 flex items-center font-opensans ${getStatusColor(workOrder.status)}`}
+    >
       {getStatusIcon()}
       <span className="capitalize">{getDisplayLabel()}</span>
     </Badge>

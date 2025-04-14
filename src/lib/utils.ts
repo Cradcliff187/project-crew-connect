@@ -1,6 +1,5 @@
-
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -11,12 +10,12 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatDate(dateString: string | undefined | null): string {
   if (!dateString) return 'N/A';
-  
+
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   }).format(date);
 }
 
@@ -25,12 +24,12 @@ export function formatDate(dateString: string | undefined | null): string {
  */
 export function formatCurrency(amount: number | undefined | null): string {
   if (amount === undefined || amount === null) return '$0.00';
-  
+
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 
@@ -39,7 +38,7 @@ export function formatCurrency(amount: number | undefined | null): string {
  */
 export function formatHours(hours: number | undefined | null): string {
   if (hours === undefined || hours === null) return '0h';
-  
+
   return `${Number(hours).toFixed(1)}h`;
 }
 
@@ -48,11 +47,11 @@ export function formatHours(hours: number | undefined | null): string {
  */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
@@ -61,17 +60,17 @@ export function formatFileSize(bytes: number): string {
  */
 export function calculateDaysUntilDue(dueDate: string | null): number | null {
   if (!dueDate) return null;
-  
+
   const today = new Date();
   const due = new Date(dueDate);
-  
+
   // Reset time part for accurate day calculation
   today.setHours(0, 0, 0, 0);
   due.setHours(0, 0, 0, 0);
-  
+
   const diffTime = due.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   return diffDays;
 }
 
@@ -81,19 +80,19 @@ export function calculateDaysUntilDue(dueDate: string | null): number | null {
 export function formatTimeRange(startTime: string, endTime: string): string {
   const start = new Date(startTime);
   const end = new Date(endTime);
-  
-  const startFormat = new Intl.DateTimeFormat('en-US', { 
-    hour: 'numeric', 
+
+  const startFormat = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
   }).format(start);
-  
-  const endFormat = new Intl.DateTimeFormat('en-US', { 
-    hour: 'numeric', 
+
+  const endFormat = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
   }).format(end);
-  
+
   return `${startFormat} - ${endFormat}`;
 }
 
@@ -102,7 +101,7 @@ export function formatTimeRange(startTime: string, endTime: string): string {
  */
 export function getEntityColor(entityType: string): string {
   const type = entityType?.toUpperCase() || '';
-  
+
   switch (type) {
     case 'PROJECT':
       return 'blue';

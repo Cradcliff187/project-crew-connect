@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -15,9 +14,7 @@ const EstimateDescriptionContent: React.FC<EstimateDescriptionContentProps> = ({
             <p>{description}</p>
           </div>
         ) : (
-          <div className="text-gray-500 italic">
-            No description provided for this estimate.
-          </div>
+          <div className="text-gray-500 italic">No description provided for this estimate.</div>
         )}
       </CardContent>
     </Card>

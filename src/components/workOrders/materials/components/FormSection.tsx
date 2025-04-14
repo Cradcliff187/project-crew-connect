@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 
 interface FormSectionProps {
@@ -8,12 +7,7 @@ interface FormSectionProps {
   rightElement?: ReactNode;
 }
 
-const FormSection = ({ 
-  label, 
-  children, 
-  optional = false,
-  rightElement 
-}: FormSectionProps) => {
+const FormSection = ({ label, children, optional = false, rightElement }: FormSectionProps) => {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between h-6">

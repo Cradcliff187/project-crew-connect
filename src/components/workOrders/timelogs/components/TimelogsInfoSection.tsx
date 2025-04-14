@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { formatDate, formatCurrency } from "@/lib/utils";
-import { TimelogAddSheet } from "./TimelogAddSheet";
-import { Button } from "@/components/ui/button";
-import { formatTime, formatHoursToDuration } from "@/components/timeTracking/utils/timeUtils";
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { formatDate, formatCurrency } from '@/lib/utils';
+import { TimelogAddSheet } from './TimelogAddSheet';
+import { Button } from '@/components/ui/button';
+import { formatTime, formatHoursToDuration } from '@/components/timeTracking/utils/timeUtils';
 
 interface TimelogsInfoSectionProps {
   timelogs: any[];
@@ -34,8 +33,8 @@ export const TimelogsInfoSection = ({
     <Card>
       <div className="flex justify-between items-center p-4 border-b">
         <h3 className="text-lg font-medium">Time Entries</h3>
-        <Button 
-          size="sm" 
+        <Button
+          size="sm"
           onClick={() => setShowAddSheet(true)}
           className="bg-[#0485ea] hover:bg-[#0375d1]"
         >
@@ -56,44 +55,34 @@ export const TimelogsInfoSection = ({
             <div className="grid grid-cols-2 gap-4 mb-2">
               <div className="rounded-md bg-muted p-3">
                 <div className="text-sm text-muted-foreground">Total Hours</div>
-                <div className="text-lg font-semibold">
-                  {totalHours.toFixed(1)}
-                </div>
+                <div className="text-lg font-semibold">{totalHours.toFixed(1)}</div>
               </div>
               <div className="rounded-md bg-muted p-3">
-                <div className="text-sm text-muted-foreground">
-                  Total Labor Cost
-                </div>
-                <div className="text-lg font-semibold">
-                  {formatCurrency(totalLaborCost)}
-                </div>
+                <div className="text-sm text-muted-foreground">Total Labor Cost</div>
+                <div className="text-lg font-semibold">{formatCurrency(totalLaborCost)}</div>
               </div>
             </div>
 
             <div className="space-y-3">
-              {timelogs.map((timelog) => (
+              {timelogs.map(timelog => (
                 <div
                   key={timelog.id}
                   className="flex justify-between items-center border-b pb-2 last:border-0"
                 >
                   <div>
                     <div className="font-medium">
-                      {timelog.employee_name || "Unassigned"} •{" "}
+                      {timelog.employee_name || 'Unassigned'} •{' '}
                       {formatHoursToDuration(timelog.hours_worked)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(timelog.date_worked)} •{" "}
-                      {formatTime(timelog.start_time)} - {formatTime(timelog.end_time)}
+                      {formatDate(timelog.date_worked)} • {formatTime(timelog.start_time)} -{' '}
+                      {formatTime(timelog.end_time)}
                     </div>
-                    {timelog.notes && (
-                      <div className="text-sm mt-1">{timelog.notes}</div>
-                    )}
+                    {timelog.notes && <div className="text-sm mt-1">{timelog.notes}</div>}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <div className="font-medium">
-                        {formatCurrency(timelog.total_cost)}
-                      </div>
+                      <div className="font-medium">{formatCurrency(timelog.total_cost)}</div>
                       <div className="text-xs text-muted-foreground">
                         @{formatCurrency(timelog.employee_rate)}/hr
                       </div>
@@ -111,7 +100,7 @@ export const TimelogsInfoSection = ({
           </div>
         )}
       </CardContent>
-      
+
       <TimelogAddSheet
         open={showAddSheet}
         onOpenChange={setShowAddSheet}

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -16,7 +15,7 @@ interface MaterialsInterfaceProps {
 
 const MaterialsInterface: React.FC<MaterialsInterfaceProps> = ({
   workOrderId,
-  onMaterialAdded
+  onMaterialAdded,
 }) => {
   const {
     materials,
@@ -27,7 +26,7 @@ const MaterialsInterface: React.FC<MaterialsInterfaceProps> = ({
     handleAddMaterial,
     handleDelete,
     handleReceiptUploaded,
-    fetchMaterials
+    fetchMaterials,
   } = useMaterials(workOrderId);
 
   // Handle material added
@@ -36,7 +35,7 @@ const MaterialsInterface: React.FC<MaterialsInterfaceProps> = ({
       materialName: materialData.materialName,
       quantity: materialData.quantity,
       unitPrice: materialData.unitPrice,
-      vendorId: materialData.vendorId
+      vendorId: materialData.vendorId,
     });
 
     // Refresh materials and notify parent

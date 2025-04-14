@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Upload } from 'lucide-react';
@@ -12,7 +11,7 @@ interface ReceiptButtonProps {
 const ReceiptButton: React.FC<ReceiptButtonProps> = ({ material, onClick }) => {
   // Determine if material has a receipt
   const hasReceipt = Boolean(material.receipt_document_id);
-  
+
   return (
     <Button
       variant="outline"
@@ -20,8 +19,8 @@ const ReceiptButton: React.FC<ReceiptButtonProps> = ({ material, onClick }) => {
       onClick={() => onClick(material)}
       className={
         hasReceipt
-          ? "text-green-600 hover:text-green-800 hover:bg-green-50 border-green-200"
-          : "text-[#0485ea] hover:text-[#0485ea]/80 hover:bg-[#0485ea]/10 border-[#0485ea]/20"
+          ? 'text-green-600 hover:text-green-800 hover:bg-green-50 border-green-200'
+          : 'text-[#0485ea] hover:text-[#0485ea]/80 hover:bg-[#0485ea]/10 border-[#0485ea]/20'
       }
     >
       {hasReceipt ? (

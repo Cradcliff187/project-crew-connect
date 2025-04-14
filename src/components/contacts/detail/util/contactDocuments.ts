@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
@@ -22,24 +21,24 @@ export const fetchContactDocuments = async (contactId: string): Promise<Document
       .select('*')
       .eq('entity_type', 'CONTACT')
       .eq('entity_id', contactId);
-      
+
     if (directError) throw directError;
-    
+
     // Get documents where the contact is referenced
     const { data: referencedDocuments, error: refError } = await supabase
       .from('documents')
       .select('*')
       .eq('vendor_type', 'contact')
       .eq('vendor_id', contactId);
-    
+
     if (refError) throw refError;
-    
+
     // Combine all documents and remove duplicates
     const allDocuments = [...(directDocuments || []), ...(referencedDocuments || [])];
-    
+
     // Generate signed URLs for each document
     const documentsWithUrls = await Promise.all(
-      allDocuments.map(async (doc) => {
+      allDocuments.map(async doc => {
         let url = '';
         if (doc.storage_path) {
           const { data, error } = await supabase.storage
@@ -49,31 +48,31 @@ export const fetchContactDocuments = async (contactId: string): Promise<Document
               transform: {
                 width: 800,
                 height: 800,
-                quality: 80
-              }
+                quality: 80,
+              },
             });
-            
+
           if (error) {
             console.error('Error generating signed URL:', error);
           } else {
             url = data.signedUrl;
           }
         }
-        
+
         return {
           ...doc,
-          url
+          url,
         };
       })
     );
-    
+
     return documentsWithUrls;
   } catch (error: any) {
-    console.error("Error fetching contact documents:", error);
+    console.error('Error fetching contact documents:', error);
     toast({
-      title: "Error",
-      description: "Failed to load contact documents.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to load contact documents.',
+      variant: 'destructive',
     });
     return [];
   }
@@ -92,58 +91,56 @@ export const attachDocumentToContact = async (
       .update({
         entity_type: 'CONTACT',
         entity_id: contactId,
-        notes: notes || null
+        notes: notes || null,
       })
       .eq('document_id', documentId);
-      
+
     if (error) throw error;
-    
+
     toast({
-      title: "Document Attached",
-      description: "Document has been attached to the contact.",
+      title: 'Document Attached',
+      description: 'Document has been attached to the contact.',
       className: 'bg-[#0485ea]',
     });
-    
+
     return true;
   } catch (error: any) {
-    console.error("Error attaching document:", error);
+    console.error('Error attaching document:', error);
     toast({
-      title: "Error",
-      description: "Failed to attach document to contact.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to attach document to contact.',
+      variant: 'destructive',
     });
     return false;
   }
 };
 
 // Detach a document from a contact
-export const detachDocumentFromContact = async (
-  documentId: string
-): Promise<boolean> => {
+export const detachDocumentFromContact = async (documentId: string): Promise<boolean> => {
   try {
     // Update the document to remove the contact entity reference
     const { error } = await supabase
       .from('documents')
       .update({
         entity_type: 'DETACHED',
-        entity_id: 'detached'
+        entity_id: 'detached',
       })
       .eq('document_id', documentId);
-      
+
     if (error) throw error;
-    
+
     toast({
-      title: "Document Detached",
-      description: "Document has been detached from the contact.",
+      title: 'Document Detached',
+      description: 'Document has been detached from the contact.',
     });
-    
+
     return true;
   } catch (error: any) {
-    console.error("Error detaching document:", error);
+    console.error('Error detaching document:', error);
     toast({
-      title: "Error",
-      description: "Failed to detach document from contact.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to detach document from contact.',
+      variant: 'destructive',
     });
     return false;
   }
@@ -156,5 +153,5 @@ export const getDocumentRelationshipTypeOptions = () => [
   { value: 'INSURANCE', label: 'Insurance' },
   { value: 'CERTIFICATION', label: 'Certification' },
   { value: 'RECEIPT', label: 'Receipt' },
-  { value: 'OTHER', label: 'Other' }
+  { value: 'OTHER', label: 'Other' },
 ];

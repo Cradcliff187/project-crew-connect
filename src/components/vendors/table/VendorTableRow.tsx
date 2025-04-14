@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { useNavigate } from 'react-router-dom';
@@ -15,11 +14,7 @@ interface VendorTableRowProps {
   onEditVendor: (vendor: Vendor) => void;
 }
 
-const VendorTableRow: React.FC<VendorTableRowProps> = ({ 
-  vendor, 
-  onViewDetails, 
-  onEditVendor 
-}) => {
+const VendorTableRow: React.FC<VendorTableRowProps> = ({ vendor, onViewDetails, onEditVendor }) => {
   const navigate = useNavigate();
 
   // Handle row click
@@ -30,7 +25,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
   // Get vendor status color
   const getStatusColor = (status: string | undefined): string => {
     if (!status) return 'neutral';
-    
+
     switch (status.toLowerCase()) {
       case 'active':
         return 'success';
@@ -46,7 +41,10 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
   };
 
   return (
-    <TableRow onClick={handleRowClick} className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors">
+    <TableRow
+      onClick={handleRowClick}
+      className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors"
+    >
       <TableCell className="font-medium py-3">
         <VendorInfo vendor={vendor} />
       </TableCell>
@@ -58,15 +56,15 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({
       </TableCell>
       <TableCell className="py-3 text-center">
         <div className="flex justify-center">
-          <StatusBadge 
-            color={getStatusColor(vendor.status)} 
-            label={vendor.status || 'Unknown'} 
+          <StatusBadge
+            color={getStatusColor(vendor.status)}
+            label={vendor.status || 'Unknown'}
             showIcon={true}
           />
         </div>
       </TableCell>
-      <TableCell className="py-3 text-right" onClick={(e) => e.stopPropagation()}>
-        <VendorActionsMenu 
+      <TableCell className="py-3 text-right" onClick={e => e.stopPropagation()}>
+        <VendorActionsMenu
           vendor={vendor}
           onViewDetails={onViewDetails}
           onEditVendor={onEditVendor}

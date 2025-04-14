@@ -1,4 +1,3 @@
-
 import { TableHead } from '@/components/ui/table';
 import { Tag } from 'lucide-react';
 
@@ -15,7 +14,9 @@ const SubcontractorsTableHeader = () => {
       <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
       <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
       <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-      <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
+      <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
+        Actions
+      </TableHead>
     </>
   );
 };

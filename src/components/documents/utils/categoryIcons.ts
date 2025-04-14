@@ -1,15 +1,23 @@
-
-import { FileText, Receipt, LucideIcon, FileImage, FileBadge, Shield, Award, File } from 'lucide-react';
+import {
+  FileText,
+  Receipt,
+  LucideIcon,
+  FileImage,
+  FileBadge,
+  Shield,
+  Award,
+  File,
+} from 'lucide-react';
 import React from 'react';
 
-export type DocumentCategoryType = 
-  | 'invoice' 
-  | 'receipt' 
-  | '3rd_party_estimate' 
-  | 'contract' 
-  | 'insurance' 
-  | 'certification' 
-  | 'photo' 
+export type DocumentCategoryType =
+  | 'invoice'
+  | 'receipt'
+  | '3rd_party_estimate'
+  | 'contract'
+  | 'insurance'
+  | 'certification'
+  | 'photo'
   | 'other';
 
 export interface CategoryIconConfig {
@@ -24,54 +32,54 @@ export interface CategoryIconConfig {
  * including icons, colors, and display labels
  */
 export const categoryIcons: Record<DocumentCategoryType, CategoryIconConfig> = {
-  'invoice': {
+  invoice: {
     icon: FileText,
     color: '#0485ea',
     bgColor: '#e6f2ff',
-    label: 'Invoice'
+    label: 'Invoice',
   },
-  'receipt': {
+  receipt: {
     icon: Receipt,
     color: '#16a34a',
     bgColor: '#dcfce7',
-    label: 'Receipt'
+    label: 'Receipt',
   },
   '3rd_party_estimate': {
     icon: FileBadge,
     color: '#9333ea',
     bgColor: '#f3e8ff',
-    label: 'Third Party Estimate'
+    label: 'Third Party Estimate',
   },
-  'contract': {
+  contract: {
     icon: FileText,
     color: '#ea580c',
     bgColor: '#fff1e6',
-    label: 'Contract'
+    label: 'Contract',
   },
-  'insurance': {
+  insurance: {
     icon: Shield,
     color: '#0891b2',
     bgColor: '#e0f2fe',
-    label: 'Insurance'
+    label: 'Insurance',
   },
-  'certification': {
+  certification: {
     icon: Award,
     color: '#ca8a04',
     bgColor: '#fef9c3',
-    label: 'Certification'
+    label: 'Certification',
   },
-  'photo': {
+  photo: {
     icon: FileImage,
     color: '#db2777',
     bgColor: '#fce7f3',
-    label: 'Photo'
+    label: 'Photo',
   },
-  'other': {
+  other: {
     icon: File,
     color: '#64748b',
     bgColor: '#f1f5f9',
-    label: 'Other'
-  }
+    label: 'Other',
+  },
 };
 
 /**
@@ -80,7 +88,7 @@ export const categoryIcons: Record<DocumentCategoryType, CategoryIconConfig> = {
  */
 export const getCategoryConfig = (category?: string): CategoryIconConfig => {
   if (!category) return categoryIcons.other;
-  
+
   return categoryIcons[category as DocumentCategoryType] || categoryIcons.other;
 };
 
@@ -91,15 +99,15 @@ export const getCategoryConfig = (category?: string): CategoryIconConfig => {
 export const DocumentCategoryBadge = ({ category }: { category?: string }) => {
   const config = getCategoryConfig(category);
   const Icon = config.icon;
-  
+
   // Using React.createElement instead of JSX
   return React.createElement(
     'div',
     {
-      className: "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-      style: { backgroundColor: config.bgColor, color: config.color }
+      className: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
+      style: { backgroundColor: config.bgColor, color: config.color },
     },
-    React.createElement(Icon, { className: "h-3 w-3 mr-1" }),
+    React.createElement(Icon, { className: 'h-3 w-3 mr-1' }),
     config.label
   );
 };

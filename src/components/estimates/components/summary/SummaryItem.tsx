@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface SummaryItemProps {
@@ -8,20 +7,18 @@ interface SummaryItemProps {
   hasBorderTop?: boolean;
 }
 
-const SummaryItem: React.FC<SummaryItemProps> = ({ 
-  label, 
-  value, 
+const SummaryItem: React.FC<SummaryItemProps> = ({
+  label,
+  value,
   isBold = false,
-  hasBorderTop = false 
+  hasBorderTop = false,
 }) => {
   return (
     <div className={`flex justify-between ${hasBorderTop ? 'pt-2 border-t' : ''}`}>
       <span className={`${isBold ? 'text-md font-semibold' : 'text-sm text-gray-600'}`}>
         {label}:
       </span>
-      <span className={isBold ? 'font-semibold' : 'font-medium'}>
-        {value}
-      </span>
+      <span className={isBold ? 'font-semibold' : 'font-medium'}>{value}</span>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { EstimateType } from './EstimatesTable';
 import { StatusType } from '@/types/common';
@@ -32,7 +31,7 @@ export interface EstimateDetailsProps {
  * EstimateDetails component serves as a wrapper for EstimateDetailsDialog
  * It's used primarily on the Estimates listing page to show details in a dialog
  */
-const EstimateDetails: React.FC<EstimateDetailsProps> = (props) => {
+const EstimateDetails: React.FC<EstimateDetailsProps> = props => {
   return <EstimateDetailsDialog {...props} />;
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,15 +16,9 @@ interface ProjectExpensesProps {
 const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh }) => {
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<any | null>(null);
-  
-  const {
-    expenses,
-    isLoading,
-    error,
-    refetch,
-    handleDeleteExpense,
-    handleViewDocument
-  } = useProjectExpenses(projectId);
+
+  const { expenses, isLoading, error, refetch, handleDeleteExpense, handleViewDocument } =
+    useProjectExpenses(projectId);
 
   const handleExpenseSaved = () => {
     refetch();
@@ -65,9 +58,12 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-md font-medium">Project Expenses</CardTitle>
-        <Button 
-          size="sm" 
-          onClick={() => { setSelectedExpense(null); setShowFormDialog(true); }}
+        <Button
+          size="sm"
+          onClick={() => {
+            setSelectedExpense(null);
+            setShowFormDialog(true);
+          }}
           className="bg-[#0485ea] hover:bg-[#0375d1]"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -75,19 +71,22 @@ const ProjectExpenses: React.FC<ProjectExpensesProps> = ({ projectId, onRefresh 
         </Button>
       </CardHeader>
       <CardContent>
-        <ExpensesTable 
+        <ExpensesTable
           expenses={expenses}
           onEditExpense={handleEditExpense}
           onDeleteExpense={handleDeleteWithRefresh}
           onViewDocument={handleViewDocument}
         />
-        
+
         {showFormDialog && (
           <ExpenseFormDialog
             projectId={projectId}
             expense={selectedExpense}
             onSave={handleExpenseSaved}
-            onCancel={() => { setShowFormDialog(false); setSelectedExpense(null); }}
+            onCancel={() => {
+              setShowFormDialog(false);
+              setSelectedExpense(null);
+            }}
           />
         )}
       </CardContent>

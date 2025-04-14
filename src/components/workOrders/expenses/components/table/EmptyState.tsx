@@ -1,4 +1,3 @@
-
 import { TableCell, TableRow } from '@/components/ui/table';
 import { DollarSign } from 'lucide-react';
 
@@ -12,7 +11,8 @@ const EmptyState = () => {
           </div>
           <h3 className="text-lg font-medium mb-2">No expenses yet</h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Add your first expense by clicking the 'Add Expense' button above. You can track materials, supplies, and other costs.
+            Add your first expense by clicking the 'Add Expense' button above. You can track
+            materials, supplies, and other costs.
           </p>
         </div>
       </TableCell>

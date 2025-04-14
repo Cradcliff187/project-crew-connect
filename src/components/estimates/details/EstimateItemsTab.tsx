@@ -1,8 +1,14 @@
-
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { formatCurrency } from "@/lib/utils";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
+import { formatCurrency } from '@/lib/utils';
 import { EstimateItem } from '../types/estimateTypes';
 
 type EstimateItemsTabProps = {
@@ -10,14 +16,20 @@ type EstimateItemsTabProps = {
   showFinancialDetails?: boolean;
 };
 
-const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items, showFinancialDetails = true }) => {
+const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({
+  items,
+  showFinancialDetails = true,
+}) => {
   const calculateTotal = () => {
     return items.reduce((sum, item) => sum + Number(item.total_price || 0), 0);
   };
 
   // Calculate the total cost and gross margin
   const calculateTotalCost = () => {
-    return items.reduce((sum, item) => sum + Number(item.cost || 0) * Number(item.quantity || 1), 0);
+    return items.reduce(
+      (sum, item) => sum + Number(item.cost || 0) * Number(item.quantity || 1),
+      0
+    );
   };
 
   const calculateTotalMargin = () => {
@@ -55,38 +67,58 @@ const EstimateItemsTab: React.FC<EstimateItemsTabProps> = ({ items, showFinancia
           <TableBody>
             {items.length > 0 ? (
               <>
-                {items.map((item) => (
+                {items.map(item => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.description}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>{formatCurrency(item.unit_price)}</TableCell>
                     {showFinancialDetails && (
                       <>
-                        <TableCell className="text-right">{formatCurrency(item.cost || 0)}</TableCell>
-                        <TableCell className="text-right">{item.markup_percentage?.toFixed(1) || 0}%</TableCell>
-                        <TableCell className="text-right">{item.gross_margin_percentage?.toFixed(1) || 0}%</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.cost || 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.markup_percentage?.toFixed(1) || 0}%
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.gross_margin_percentage?.toFixed(1) || 0}%
+                        </TableCell>
                       </>
                     )}
                     <TableCell className="text-right">{formatCurrency(item.total_price)}</TableCell>
                   </TableRow>
                 ))}
-                
+
                 {/* Summary row */}
                 <TableRow className="border-t-2">
-                  <TableCell colSpan={showFinancialDetails ? 3 : 3} className="text-right font-bold">Totals:</TableCell>
+                  <TableCell
+                    colSpan={showFinancialDetails ? 3 : 3}
+                    className="text-right font-bold"
+                  >
+                    Totals:
+                  </TableCell>
                   {showFinancialDetails && (
                     <>
-                      <TableCell className="text-right font-bold">{formatCurrency(calculateTotalCost())}</TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(calculateTotalCost())}
+                      </TableCell>
                       <TableCell className="text-right"></TableCell>
-                      <TableCell className="text-right font-bold">{calculateTotalMarginPercentage().toFixed(1)}%</TableCell>
+                      <TableCell className="text-right font-bold">
+                        {calculateTotalMarginPercentage().toFixed(1)}%
+                      </TableCell>
                     </>
                   )}
-                  <TableCell className="text-right font-bold">{formatCurrency(calculateTotal())}</TableCell>
+                  <TableCell className="text-right font-bold">
+                    {formatCurrency(calculateTotal())}
+                  </TableCell>
                 </TableRow>
               </>
             ) : (
               <TableRow>
-                <TableCell colSpan={showFinancialDetails ? 7 : 4} className="text-center py-4 text-muted-foreground">
+                <TableCell
+                  colSpan={showFinancialDetails ? 7 : 4}
+                  className="text-center py-4 text-muted-foreground"
+                >
                   No line items found for this estimate.
                 </TableCell>
               </TableRow>

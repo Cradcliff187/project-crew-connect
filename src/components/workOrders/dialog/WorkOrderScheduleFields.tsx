@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,12 +15,12 @@ interface WorkOrderScheduleFieldsProps {
 
 const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
   const [date, setDate] = useState<Date>();
-  
+
   // Define a disable dates function to prevent past dates
   const isDateDisabled = (date: Date) => {
     return date < new Date(new Date().setHours(0, 0, 0, 0));
   };
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Scheduled Date */}
@@ -63,7 +62,7 @@ const WorkOrderScheduleFields = ({ form }: WorkOrderScheduleFieldsProps) => {
           </FormItem>
         )}
       />
-      
+
       {/* Due By Date */}
       <FormField
         control={form.control}

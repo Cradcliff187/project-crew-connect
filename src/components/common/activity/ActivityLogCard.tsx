@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,19 +17,19 @@ const ActivityLogCard: React.FC<ActivityLogCardProps> = ({
   entityId,
   entityType,
   limit = 10,
-  title = "Recent Activity",
-  className = ''
+  title = 'Recent Activity',
+  className = '',
 }) => {
   const { activities, loading, error } = useActivityLog({
     entityId,
     entityType,
-    limit
+    limit,
   });
-  
+
   // Get an appropriate icon for the activity type
   const getActivityIcon = (activity: any) => {
     const action = activity.action?.toLowerCase() || '';
-    
+
     if (action.includes('create') || action.includes('add')) {
       return <FileText className="h-4 w-4 text-blue-500" />;
     } else if (action.includes('update') || action.includes('edit') || action.includes('change')) {
@@ -43,7 +42,7 @@ const ActivityLogCard: React.FC<ActivityLogCardProps> = ({
       return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
-  
+
   // Format the timestamp
   const formatTimestamp = (timestamp: string) => {
     try {
@@ -52,7 +51,7 @@ const ActivityLogCard: React.FC<ActivityLogCardProps> = ({
       return 'Unknown date';
     }
   };
-  
+
   return (
     <Card className={className}>
       <CardHeader>
@@ -72,7 +71,7 @@ const ActivityLogCard: React.FC<ActivityLogCardProps> = ({
         ) : (
           <div className="space-y-4">
             {activities.map((activity, index) => (
-              <div 
+              <div
                 key={activity.logid || activity.id || index}
                 className="flex items-start space-x-3 border-b border-gray-100 pb-3 last:border-0"
               >
@@ -81,9 +80,7 @@ const ActivityLogCard: React.FC<ActivityLogCardProps> = ({
                   <div className="text-sm font-medium">
                     {activity.action || 'Activity recorded'}
                     {activity.status && (
-                      <span className="ml-1 text-muted-foreground">
-                        - {activity.status}
-                      </span>
+                      <span className="ml-1 text-muted-foreground">- {activity.status}</span>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
@@ -94,8 +91,8 @@ const ActivityLogCard: React.FC<ActivityLogCardProps> = ({
                   </div>
                   {activity.detailsjson && (
                     <div className="mt-1 text-xs bg-muted/30 p-1.5 rounded">
-                      {typeof activity.detailsjson === 'string' 
-                        ? activity.detailsjson 
+                      {typeof activity.detailsjson === 'string'
+                        ? activity.detailsjson
                         : JSON.stringify(activity.detailsjson)}
                     </div>
                   )}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import BasicInfoStep from './BasicInfoStep';
@@ -37,7 +36,7 @@ const EstimateStepContent: React.FC<EstimateStepContentProps> = ({
   onExistingCustomer,
   selectedCustomerAddress,
   selectedCustomerName,
-  selectedCustomerId, 
+  selectedCustomerId,
   customers,
   loading,
 }) => {

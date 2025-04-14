@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 /**
@@ -11,13 +10,13 @@ export function useIsMobile() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     // Initial check
     checkMobile();
-    
+
     // Listen for resize events
     window.addEventListener('resize', checkMobile);
-    
+
     // Cleanup
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
@@ -41,7 +40,7 @@ export function useDeviceCapabilities() {
         setHasCamera(false);
         return;
       }
-      
+
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const hasVideoInput = devices.some(device => device.kind === 'videoinput');
@@ -51,15 +50,15 @@ export function useDeviceCapabilities() {
         setHasCamera(false);
       }
     };
-    
+
     // Check if device has GPS
     const checkGPS = () => {
       setHasGPS('geolocation' in navigator);
     };
-    
+
     checkCamera();
     checkGPS();
   }, []);
-  
+
   return { hasCamera, hasGPS, isMobile };
 }

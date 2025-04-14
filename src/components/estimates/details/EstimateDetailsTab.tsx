@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from '@/components/ui/card';
 
 type EstimateDetailsTabProps = {
   estimate: {
@@ -25,10 +24,10 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return new Intl.DateTimeFormat('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
       }).format(date);
     } catch (e) {
       return dateString;
@@ -43,9 +42,12 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
   };
 
   // Check if we have valid location data to display
-  const hasLocationData = estimate.location && 
-    (estimate.location.address || estimate.location.city || 
-     estimate.location.state || estimate.location.zip);
+  const hasLocationData =
+    estimate.location &&
+    (estimate.location.address ||
+      estimate.location.city ||
+      estimate.location.state ||
+      estimate.location.zip);
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -76,7 +78,7 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardContent className="p-6">
           <h3 className="text-lg font-medium mb-4">Client & Project Details</h3>
@@ -94,7 +96,9 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
                 <span className="text-muted-foreground">Location:</span>
                 <div className="font-medium">
                   {estimate.location?.address && <div>{estimate.location.address}</div>}
-                  {(estimate.location?.city || estimate.location?.state || estimate.location?.zip) && (
+                  {(estimate.location?.city ||
+                    estimate.location?.state ||
+                    estimate.location?.zip) && (
                     <div>
                       {estimate.location?.city && `${estimate.location.city}, `}
                       {estimate.location?.state && `${estimate.location.state} `}
@@ -107,7 +111,7 @@ const EstimateDetailsTab: React.FC<EstimateDetailsTabProps> = ({ estimate }) => 
           </div>
         </CardContent>
       </Card>
-      
+
       {estimate.description && (
         <Card className="md:col-span-2">
           <CardContent className="p-6">

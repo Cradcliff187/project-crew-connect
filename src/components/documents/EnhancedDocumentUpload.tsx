@@ -1,8 +1,14 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
 import { EntityType } from './schemas/documentSchema';
@@ -45,7 +51,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
   prefillData,
   preventFormPropagation = false,
   allowEntityTypeSelection = false,
-  onEntityTypeChange
+  onEntityTypeChange,
 }) => {
   const [showMobileCapture, setShowMobileCapture] = useState(false);
   const { isMobile, hasCamera } = useDeviceCapabilities();
@@ -68,7 +74,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     watchFiles,
     watchCategory,
     watchExpenseType,
-    watchEntityType
+    watchEntityType,
   } = useDocumentUploadForm({
     entityType,
     entityId,
@@ -78,69 +84,75 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
     prefillData,
     allowEntityTypeSelection,
     preventFormPropagation,
-    onEntityTypeChange
+    onEntityTypeChange,
   });
 
   // Handle capture from mobile device
-  const handleMobileCapture = useCallback((file: File) => {
-    handleFileSelect([file]);
-    setShowMobileCapture(false);
-  }, [handleFileSelect]);
+  const handleMobileCapture = useCallback(
+    (file: File) => {
+      handleFileSelect([file]);
+      setShowMobileCapture(false);
+    },
+    [handleFileSelect]
+  );
 
   // If prefill data is available and it's a receipt upload, simplify the UI
   const simplifiedUpload = isReceiptUpload && prefillData;
 
   // Click handler for buttons to prevent event bubbling
-  const handleButtonClick = useCallback((e: React.MouseEvent) => {
-    if (preventFormPropagation) {
-      e.stopPropagation();
-    }
-  }, [preventFormPropagation]);
+  const handleButtonClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (preventFormPropagation) {
+        e.stopPropagation();
+      }
+    },
+    [preventFormPropagation]
+  );
 
   // Get the proper title based on context
   const getTitle = () => {
-    if (isReceiptUpload) return "Upload Receipt";
-    
+    if (isReceiptUpload) return 'Upload Receipt';
+
     if (watchEntityType === 'VENDOR' || watchEntityType === 'SUBCONTRACTOR') {
       return `Upload ${watchEntityType === 'VENDOR' ? 'Vendor' : 'Subcontractor'} Document`;
     }
-    
-    return "Upload Document";
+
+    return 'Upload Document';
   };
 
   // Get the proper description based on context
   const getDescription = () => {
     if (isReceiptUpload) {
-      return "Upload receipts for expenses related to this work order or project.";
+      return 'Upload receipts for expenses related to this work order or project.';
     }
-    
+
     if (watchEntityType === 'VENDOR') {
-      return "Upload documents related to this vendor such as certifications or contracts.";
+      return 'Upload documents related to this vendor such as certifications or contracts.';
     }
-    
+
     if (watchEntityType === 'SUBCONTRACTOR') {
-      return "Upload documents related to this subcontractor such as insurance, certifications or contracts.";
+      return 'Upload documents related to this subcontractor such as insurance, certifications or contracts.';
     }
-    
+
     if (watchEntityType === 'PROJECT') {
-      return "Upload documents for this project such as photos, contracts or specifications.";
+      return 'Upload documents for this project such as photos, contracts or specifications.';
     }
-    
+
     if (watchEntityType === 'WORK_ORDER') {
-      return "Upload documents for this work order such as receipts, photos or contracts.";
+      return 'Upload documents for this work order such as receipts, photos or contracts.';
     }
-    
+
     if (watchEntityType === 'ESTIMATE') {
-      return "Upload documents for this estimate such as contracts, specifications or reference materials.";
+      return 'Upload documents for this estimate such as contracts, specifications or reference materials.';
     }
-    
-    return "Upload and categorize documents for your projects, invoices, and more.";
+
+    return 'Upload and categorize documents for your projects, invoices, and more.';
   };
 
   return (
-    <Card 
+    <Card
       className="w-full"
-      onClick={preventFormPropagation ? (e) => e.stopPropagation() : undefined}
+      onClick={preventFormPropagation ? e => e.stopPropagation() : undefined}
     >
       {!simplifiedUpload && (
         <CardHeader>
@@ -148,21 +160,21 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
           <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
       )}
-      
+
       <Form {...form}>
         <form onSubmit={handleFormSubmit}>
           <CardContent className="p-0">
             <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
               <div className="space-y-6">
                 {/* File Uploader Component */}
-                <DropzoneUploader 
+                <DropzoneUploader
                   control={form.control}
                   onFileSelect={handleFileSelect}
                   previewURL={previewURL}
                   watchFiles={watchFiles}
                   label={getTitle()}
                 />
-                
+
                 {/* Mobile Capture Component */}
                 <MobileCaptureWrapper
                   onCapture={handleMobileCapture}
@@ -171,7 +183,7 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
                   showMobileCapture={showMobileCapture}
                   setShowMobileCapture={setShowMobileCapture}
                 />
-                
+
                 {/* Metadata Form Component */}
                 <MetadataForm
                   form={form}
@@ -188,13 +200,13 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               </div>
             </ScrollArea>
           </CardContent>
-          
+
           <CardFooter className="flex justify-between mt-4">
             {onCancel && (
               <Button
                 type="button"
                 variant="outline"
-                onClick={(e) => {
+                onClick={e => {
                   e.preventDefault();
                   e.stopPropagation();
                   handleCancel();
@@ -204,14 +216,16 @@ const EnhancedDocumentUpload: React.FC<EnhancedDocumentUploadProps> = ({
               </Button>
             )}
             <Button
-              type="submit" 
+              type="submit"
               className="bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isUploading || watchFiles.length === 0}
               onClick={handleButtonClick}
             >
-              {isUploading ? "Uploading..." : (
-                isReceiptUpload ? "Upload Receipt" : `Upload ${watchCategory || 'Document'}`
-              )}
+              {isUploading
+                ? 'Uploading...'
+                : isReceiptUpload
+                  ? 'Upload Receipt'
+                  : `Upload ${watchCategory || 'Document'}`}
             </Button>
           </CardFooter>
         </form>

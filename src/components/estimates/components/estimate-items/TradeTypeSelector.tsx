@@ -1,7 +1,12 @@
-
 import React, { useEffect, useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -15,9 +20,9 @@ const TradeTypeSelector: React.FC<TradeTypeSelectorProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   const { specialties, loading } = useSpecialties();
   const [showCustomInput, setShowCustomInput] = useState(false);
-  
+
   const tradeType = form.watch(`items.${index}.trade_type`);
-  
+
   // Handle specialty selection
   useEffect(() => {
     if (tradeType === 'other') {
@@ -28,7 +33,7 @@ const TradeTypeSelector: React.FC<TradeTypeSelectorProps> = ({ index }) => {
       form.setValue(`items.${index}.custom_type`, '');
     }
   }, [tradeType, form, index]);
-  
+
   return (
     <div className="col-span-12 md:col-span-3">
       <FormField
@@ -40,7 +45,7 @@ const TradeTypeSelector: React.FC<TradeTypeSelectorProps> = ({ index }) => {
             <Select value={field.value || 'none'} onValueChange={field.onChange}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Loading..." : "Select trade"} />
+                  <SelectValue placeholder={loading ? 'Loading...' : 'Select trade'} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -57,7 +62,7 @@ const TradeTypeSelector: React.FC<TradeTypeSelectorProps> = ({ index }) => {
           </FormItem>
         )}
       />
-      
+
       {showCustomInput && (
         <FormField
           control={form.control}

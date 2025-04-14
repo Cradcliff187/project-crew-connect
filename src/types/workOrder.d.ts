@@ -1,4 +1,3 @@
-
 import { StatusType } from './common';
 
 export interface WorkOrder {

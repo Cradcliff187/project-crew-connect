@@ -1,4 +1,3 @@
-
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -14,13 +13,7 @@ const EstimateFormHeader = ({ step, onBackToEdit }: EstimateFormHeaderProps) => 
       <DialogTitle className="text-2xl font-semibold text-[#0485ea]">
         {step === 'edit' ? 'Create New Estimate' : 'Review Estimate'}
         {step === 'preview' && (
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="sm" 
-            onClick={onBackToEdit} 
-            className="ml-2"
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={onBackToEdit} className="ml-2">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Edit
           </Button>

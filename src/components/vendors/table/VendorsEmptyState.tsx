@@ -1,6 +1,5 @@
-
-import { Button } from "@/components/ui/button";
-import { FileX2, Plus } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { FileX2, Plus } from 'lucide-react';
 
 interface VendorsEmptyStateProps {
   searchQuery: string;

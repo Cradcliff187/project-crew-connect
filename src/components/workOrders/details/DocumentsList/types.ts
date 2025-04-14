@@ -1,4 +1,3 @@
-
 export interface BaseDocument {
   document_id: string;
   file_name: string;

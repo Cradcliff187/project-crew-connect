@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 import { Upload } from 'lucide-react';
 
 interface DropzoneProps {
@@ -16,12 +15,12 @@ export const Dropzone: React.FC<DropzoneProps> = ({
   dropzoneText,
   acceptedFileTypes,
   maxFileSize,
-  onClick
+  onClick,
 }) => {
   // Format accepted file types for display
   const formatAcceptedTypes = () => {
     if (!acceptedFileTypes) return '';
-    
+
     const types = acceptedFileTypes
       .split(',')
       .map(type => type.trim())
@@ -33,15 +32,15 @@ export const Dropzone: React.FC<DropzoneProps> = ({
         if (type.includes('excel')) return 'Excel files';
         return type.replace('application/', '').replace('*', 'all');
       });
-    
+
     return types.length > 0 ? `Accepts: ${types.join(', ')}` : '';
   };
 
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-md border border-dashed p-8 text-center transition-colors hover:bg-muted/50 cursor-pointer",
-        isDragging && "border-primary bg-muted/50"
+        'flex flex-col items-center justify-center rounded-md border border-dashed p-8 text-center transition-colors hover:bg-muted/50 cursor-pointer',
+        isDragging && 'border-primary bg-muted/50'
       )}
       onClick={onClick}
     >
@@ -49,9 +48,7 @@ export const Dropzone: React.FC<DropzoneProps> = ({
         <div className="rounded-full bg-muted p-2">
           <Upload className="h-6 w-6" />
         </div>
-        <div className="text-sm font-medium">
-          {dropzoneText}
-        </div>
+        <div className="text-sm font-medium">{dropzoneText}</div>
         <div className="text-xs text-muted-foreground">
           {formatAcceptedTypes()}
           {maxFileSize && <span>{maxFileSize}MB max</span>}

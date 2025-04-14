@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { formatTimeRange } from '@/lib/utils';
@@ -31,7 +30,7 @@ interface ConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   confirmationData: TimeEntryFormValues | null;
-  employees: { employee_id: string; name: string; }[];
+  employees: { employee_id: string; name: string }[];
   entityType: 'work_order' | 'project';
   workOrders: WorkOrderOrProject[];
   projects: WorkOrderOrProject[];
@@ -50,7 +49,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   projects,
   selectedFiles,
   isLoading,
-  onConfirm
+  onConfirm,
 }) => {
   if (!confirmationData) return null;
 
@@ -59,38 +58,34 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Confirm Time Entry</DialogTitle>
-          <DialogDescription>
-            Please review the details before submitting
-          </DialogDescription>
+          <DialogDescription>Please review the details before submitting</DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="text-muted-foreground">Type:</div>
-            <div className="font-medium capitalize">{confirmationData.entityType.replace('_', ' ')}</div>
-            
+            <div className="font-medium capitalize">
+              {confirmationData.entityType.replace('_', ' ')}
+            </div>
+
             <div className="text-muted-foreground">Name:</div>
             <div className="font-medium">
-              {entityType === 'work_order' 
+              {entityType === 'work_order'
                 ? workOrders.find(wo => wo.id === confirmationData.entityId)?.title
                 : projects.find(p => p.id === confirmationData.entityId)?.title}
             </div>
-            
+
             <div className="text-muted-foreground">Date:</div>
-            <div className="font-medium">
-              {format(confirmationData.workDate, "MMMM d, yyyy")}
-            </div>
-            
+            <div className="font-medium">{format(confirmationData.workDate, 'MMMM d, yyyy')}</div>
+
             <div className="text-muted-foreground">Time:</div>
             <div className="font-medium">
               {formatTimeRange(confirmationData.startTime, confirmationData.endTime)}
             </div>
-            
+
             <div className="text-muted-foreground">Duration:</div>
-            <div className="font-medium">
-              {confirmationData.hoursWorked} hours
-            </div>
-            
+            <div className="font-medium">{confirmationData.hoursWorked} hours</div>
+
             {confirmationData.employeeId && employees.length > 0 && (
               <>
                 <div className="text-muted-foreground">Employee:</div>
@@ -99,14 +94,14 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                 </div>
               </>
             )}
-            
+
             {confirmationData.notes && (
               <>
                 <div className="text-muted-foreground">Notes:</div>
                 <div className="font-medium">{confirmationData.notes}</div>
               </>
             )}
-            
+
             {selectedFiles.length > 0 && (
               <>
                 <div className="text-muted-foreground">Receipts:</div>
@@ -114,13 +109,13 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
               </>
             )}
           </div>
-          
+
           <DialogFooter className="pt-4">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={onConfirm} 
+            <Button
+              onClick={onConfirm}
               className="bg-[#0485ea] hover:bg-[#0375d1]"
               disabled={isLoading}
             >

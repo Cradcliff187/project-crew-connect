@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X, FileIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,12 +7,9 @@ interface SelectedFilesProps {
   onRemoveFile: (index: number) => void;
 }
 
-export const SelectedFiles: React.FC<SelectedFilesProps> = ({
-  files,
-  onRemoveFile
-}) => {
+export const SelectedFiles: React.FC<SelectedFilesProps> = ({ files, onRemoveFile }) => {
   if (!files.length) return null;
-  
+
   // Format file size for display
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -37,12 +33,8 @@ export const SelectedFiles: React.FC<SelectedFilesProps> = ({
                 <FileIcon className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {file.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(file.size)}
-                </p>
+                <p className="truncate text-sm font-medium">{file.name}</p>
+                <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
               </div>
             </div>
             <Button

@@ -1,10 +1,16 @@
-
-import React, { useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useFieldArray, UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Plus, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { EstimateItem } from '@/components/estimates/types/estimateTypes';
@@ -16,94 +22,160 @@ interface EstimateLineItemsEditorProps {
   onSubtotalChange?: (subtotal: number) => void;
 }
 
-const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({ 
-  form, 
-  name, 
+const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
+  form,
+  name,
   estimateId,
-  onSubtotalChange
+  onSubtotalChange,
 }) => {
+  console.log('EstimateLineItemsEditor render', { estimateId });
+
   const { fields, append, remove, update } = useFieldArray({
     control: form.control,
-    name: name
+    name: name,
   });
-  
-  // Calculate item total and margin when values change
-  const calculateItemValues = (index: number) => {
-    const item = fields[index];
-    const quantity = parseFloat(form.getValues(`${name}.${index}.quantity`) as string) || 0;
-    const unitPrice = parseFloat(form.getValues(`${name}.${index}.unit_price`) as string) || 0;
-    const cost = parseFloat(form.getValues(`${name}.${index}.cost`) as string) || 0;
-    const markupPercentage = parseFloat(form.getValues(`${name}.${index}.markup_percentage`) as string) || 0;
-    
-    // Calculate totals
-    const totalPrice = quantity * unitPrice;
-    const totalCost = quantity * cost;
-    const grossMargin = totalPrice - totalCost;
-    const grossMarginPercentage = totalPrice > 0 ? (grossMargin / totalPrice) * 100 : 0;
-    
-    // Update the item
-    update(index, {
-      ...item,
-      total_price: totalPrice,
-      gross_margin: grossMargin,
-      gross_margin_percentage: grossMarginPercentage
-    });
-    
-    // Calculate and notify parent of updated subtotal
-    calculateAndNotifySubtotal();
-  };
 
-  // Recalculate unit price when cost or markup changes
-  const updateUnitPriceFromMarkup = (index: number) => {
-    const cost = parseFloat(form.getValues(`${name}.${index}.cost`) as string) || 0;
-    const markupPercentage = parseFloat(form.getValues(`${name}.${index}.markup_percentage`) as string) || 0;
-    
-    // Calculate unit price from cost and markup
-    const markupAmount = cost * (markupPercentage / 100);
-    const unitPrice = cost + markupAmount;
-    
-    // Update the unit price field
-    form.setValue(`${name}.${index}.unit_price`, unitPrice);
-    
-    // Then recalculate all values
-    calculateItemValues(index);
-  };
-  
-  // Add a new empty item
+  useEffect(() => {
+    console.log('Fields updated:', fields.length, 'items');
+  }, [fields]);
+
+  const [activeRow, setActiveRow] = useState<number | null>(null);
+
+  // Calculate item values when input changes
+  const calculateItemValues = useCallback(
+    (index: number) => {
+      console.time(`calculateItemValues-${index}`);
+
+      const item = fields[index];
+      const quantity = Number(form.getValues(`${name}.${index}.quantity`)) || 0;
+      const unitPrice = Number(form.getValues(`${name}.${index}.unit_price`)) || 0;
+      const cost = Number(form.getValues(`${name}.${index}.cost`)) || 0;
+      const markupPercentage = Number(form.getValues(`${name}.${index}.markup_percentage`)) || 0;
+
+      console.log('Calculating values for row', index, {
+        quantity,
+        unitPrice,
+        cost,
+        markupPercentage,
+      });
+
+      // Calculate totals
+      const totalPrice = quantity * unitPrice;
+      const totalCost = quantity * cost;
+      const grossMargin = totalPrice - totalCost;
+      const grossMarginPercentage = totalPrice > 0 ? (grossMargin / totalPrice) * 100 : 0;
+
+      // Update the item
+      update(index, {
+        ...item,
+        total_price: totalPrice,
+        gross_margin: grossMargin,
+        gross_margin_percentage: grossMarginPercentage,
+      });
+
+      console.log('Updated values:', {
+        totalPrice,
+        grossMargin,
+        grossMarginPercentage,
+      });
+
+      // Notify parent of updated subtotal
+      if (onSubtotalChange) {
+        const subtotal = fields.reduce((sum, item: any) => sum + (item.total_price || 0), 0);
+        onSubtotalChange(subtotal);
+        console.log('Notified parent of new subtotal:', subtotal);
+      }
+
+      console.timeEnd(`calculateItemValues-${index}`);
+    },
+    [fields, form, name, update, onSubtotalChange]
+  );
+
+  // Update unit price when cost or markup changes
+  const updateUnitPriceFromMarkup = useCallback(
+    (index: number) => {
+      console.time(`updateUnitPriceFromMarkup-${index}`);
+
+      const cost = Number(form.getValues(`${name}.${index}.cost`)) || 0;
+      const markupPercentage = Number(form.getValues(`${name}.${index}.markup_percentage`)) || 0;
+
+      console.log('Updating unit price for row', index, {
+        cost,
+        markupPercentage,
+      });
+
+      const markupAmount = cost * (markupPercentage / 100);
+      const unitPrice = cost + markupAmount;
+
+      form.setValue(`${name}.${index}.unit_price`, unitPrice);
+      calculateItemValues(index);
+
+      console.log('New unit price calculated:', unitPrice);
+      console.timeEnd(`updateUnitPriceFromMarkup-${index}`);
+    },
+    [form, name, calculateItemValues]
+  );
+
   const handleAddItem = () => {
-    append({
+    console.time('handleAddItem');
+    const newItem = {
       id: `new-${Date.now()}`,
       description: '',
       quantity: 1,
       unit_price: 0,
       cost: 0,
-      markup_percentage: 20, // Default markup
+      markup_percentage: 20,
       total_price: 0,
       gross_margin: 0,
       gross_margin_percentage: 0,
-      estimate_id: estimateId
-    });
+      estimate_id: estimateId,
+    };
+
+    console.log('Adding new item:', newItem);
+    append(newItem);
+    console.timeEnd('handleAddItem');
   };
-  
-  // Calculate subtotal and notify parent component
-  const calculateAndNotifySubtotal = () => {
-    if (onSubtotalChange) {
-      const subtotal = fields.reduce((sum, item: any) => sum + (item.total_price || 0), 0);
-      onSubtotalChange(subtotal);
-    }
+
+  // Calculate financial summary
+  const financialSummary = {
+    totalCost: fields.reduce((sum, item: any) => {
+      const cost = Number(form.getValues(`${name}.${fields.indexOf(item)}.cost`)) || 0;
+      const quantity = Number(form.getValues(`${name}.${fields.indexOf(item)}.quantity`)) || 0;
+      return sum + cost * quantity;
+    }, 0),
+    totalRevenue: fields.reduce((sum, item: any) => sum + (item.total_price || 0), 0),
   };
-  
-  // Call calculateAndNotifySubtotal when fields change
+
+  const grossMargin = financialSummary.totalRevenue - financialSummary.totalCost;
+  const grossMarginPercentage =
+    financialSummary.totalRevenue > 0 ? (grossMargin / financialSummary.totalRevenue) * 100 : 0;
+
   useEffect(() => {
-    calculateAndNotifySubtotal();
-  }, [fields]); 
-  
+    console.log('Financial summary updated:', {
+      totalCost: financialSummary.totalCost,
+      totalRevenue: financialSummary.totalRevenue,
+      grossMargin,
+      grossMarginPercentage,
+    });
+  }, [financialSummary, grossMargin, grossMarginPercentage]);
+
+  const handleRowClick = (index: number) => {
+    console.log('Row clicked:', index);
+    setActiveRow(index);
+  };
+
+  const handleRemoveItem = (e: React.MouseEvent, index: number) => {
+    console.log('Removing item at index:', index);
+    e.stopPropagation();
+    remove(index);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Line Items</h3>
-        <Button 
-          type="button" 
+        <Button
+          type="button"
           onClick={handleAddItem}
           variant="outline"
           className="flex items-center"
@@ -112,7 +184,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
           Add Item
         </Button>
       </div>
-      
+
       <div className="border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
@@ -129,7 +201,11 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
           <TableBody>
             {fields.length > 0 ? (
               fields.map((field, index) => (
-                <TableRow key={field.id}>
+                <TableRow
+                  key={field.id}
+                  className={activeRow === index ? 'bg-muted/50' : ''}
+                  onClick={() => handleRowClick(index)}
+                >
                   <TableCell>
                     <div className="space-y-1">
                       <Textarea
@@ -147,7 +223,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
                       min="1"
                       step="1"
                       className="text-right"
-                      onChange={() => calculateItemValues(index)}
+                      onBlur={() => calculateItemValues(index)}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -157,7 +233,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
                       min="0"
                       step="0.01"
                       className="text-right"
-                      onChange={() => updateUnitPriceFromMarkup(index)}
+                      onBlur={() => updateUnitPriceFromMarkup(index)}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -167,7 +243,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
                       min="0"
                       step="0.1"
                       className="text-right"
-                      onChange={() => updateUnitPriceFromMarkup(index)}
+                      onBlur={() => updateUnitPriceFromMarkup(index)}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -177,7 +253,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
                       min="0"
                       step="0.01"
                       className="text-right"
-                      onChange={() => calculateItemValues(index)}
+                      onBlur={() => calculateItemValues(index)}
                     />
                   </TableCell>
                   <TableCell className="text-right font-medium">
@@ -189,7 +265,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0"
-                      onClick={() => remove(index)}
+                      onClick={e => handleRemoveItem(e, index)}
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Remove item</span>
@@ -202,12 +278,7 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
                 <TableCell colSpan={7} className="h-24 text-center">
                   No items
                   <div className="mt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAddItem}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
                       Add your first item
                     </Button>
                   </div>
@@ -217,36 +288,31 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
           </TableBody>
         </Table>
       </div>
-      
+
       {fields.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2 bg-slate-50 p-3 border rounded-md">
             <h4 className="text-sm font-medium text-[#0485ea] mb-2">Financial Summary</h4>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <div className="text-xs text-muted-foreground">Total Cost</div>
                 <div className="text-sm font-medium">
-                  {formatCurrency(
-                    fields.reduce((sum, item: any) => sum + ((parseFloat(form.getValues(`${name}.${fields.indexOf(item)}.cost`)) || 0) * (parseFloat(form.getValues(`${name}.${fields.indexOf(item)}.quantity`)) || 0)), 0)
-                  )}
+                  {formatCurrency(financialSummary.totalCost)}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Total Revenue</div>
                 <div className="text-sm font-medium">
-                  {formatCurrency(
-                    fields.reduce((sum, item: any) => sum + (item.total_price || 0), 0)
-                  )}
+                  {formatCurrency(financialSummary.totalRevenue)}
                 </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Gross Margin</div>
-                <div className="text-sm font-medium">
-                  {formatCurrency(
-                    fields.reduce((sum, item: any) => sum + (item.total_price || 0), 0) - 
-                    fields.reduce((sum, item: any) => sum + ((parseFloat(form.getValues(`${name}.${fields.indexOf(item)}.cost`)) || 0) * (parseFloat(form.getValues(`${name}.${fields.indexOf(item)}.quantity`)) || 0)), 0)
-                  )}
-                </div>
+                <div className="text-sm font-medium">{formatCurrency(grossMargin)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Margin %</div>
+                <div className="text-sm font-medium">{grossMarginPercentage.toFixed(1)}%</div>
               </div>
             </div>
           </div>

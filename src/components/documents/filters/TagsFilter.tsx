@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,10 +9,7 @@ interface TagsFilterProps {
   onTagsChange: (tags: string[]) => void;
 }
 
-const TagsFilter: React.FC<TagsFilterProps> = ({
-  selectedTags,
-  onTagsChange
-}) => {
+const TagsFilter: React.FC<TagsFilterProps> = ({ selectedTags, onTagsChange }) => {
   const [newTag, setNewTag] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
@@ -49,7 +45,7 @@ const TagsFilter: React.FC<TagsFilterProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Filter by Tags</h3>
         {selectedTags.length > 0 && (
-          <button 
+          <button
             className="text-xs text-muted-foreground hover:text-foreground flex items-center"
             onClick={clearTags}
           >
@@ -58,9 +54,9 @@ const TagsFilter: React.FC<TagsFilterProps> = ({
           </button>
         )}
       </div>
-      
+
       <div className="flex flex-wrap gap-2">
-        {selectedTags.map((tag) => (
+        {selectedTags.map(tag => (
           <Badge
             key={tag}
             variant="default"
@@ -71,28 +67,23 @@ const TagsFilter: React.FC<TagsFilterProps> = ({
             {tag}
           </Badge>
         ))}
-        
+
         {isAdding ? (
           <div className="flex items-center gap-1">
             <Input
               value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
+              onChange={e => setNewTag(e.target.value)}
               onKeyDown={handleKeyDown}
               className="h-7 min-w-[120px] max-w-[200px]"
               autoFocus
               placeholder="Enter tag..."
             />
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7"
-              onClick={addNewTag}
-            >
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={addNewTag}>
               <Check className="h-3 w-3" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-7 w-7"
               onClick={() => setIsAdding(false)}
             >

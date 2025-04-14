@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -25,15 +24,21 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="vendor" id="vendor-type" />
-                <label htmlFor="vendor-type" className="text-sm font-normal cursor-pointer">Supplier</label>
+                <label htmlFor="vendor-type" className="text-sm font-normal cursor-pointer">
+                  Vendor
+                </label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="subcontractor" id="subcontractor-type" />
-                <label htmlFor="subcontractor-type" className="text-sm font-normal cursor-pointer">Subcontractor</label>
+                <label htmlFor="subcontractor-type" className="text-sm font-normal cursor-pointer">
+                  Subcontractor
+                </label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="other" id="other-type" />
-                <label htmlFor="other-type" className="text-sm font-normal cursor-pointer">Other</label>
+                <label htmlFor="other-type" className="text-sm font-normal cursor-pointer">
+                  Other
+                </label>
               </div>
             </RadioGroup>
           </FormControl>

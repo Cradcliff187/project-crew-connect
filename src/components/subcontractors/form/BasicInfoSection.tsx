@@ -1,13 +1,6 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import SpecialtyMultiSelect from '../SpecialtyMultiSelect';
 import { FormSectionProps } from '../types/formTypes';
 
@@ -27,7 +20,7 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
           </FormItem>
         )}
       />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={control}
@@ -42,7 +35,7 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={control}
           name="phone"
@@ -57,7 +50,7 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
           )}
         />
       </div>
-      
+
       <FormField
         control={control}
         name="address"
@@ -71,7 +64,7 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
           </FormItem>
         )}
       />
-      
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <FormField
           control={control}
@@ -86,7 +79,7 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={control}
           name="state"
@@ -100,7 +93,7 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={control}
           name="zip"
@@ -123,10 +116,7 @@ const BasicInfoSection: React.FC<FormSectionProps> = ({ control }) => {
           <FormItem>
             <FormLabel>Specialties</FormLabel>
             <FormControl>
-              <SpecialtyMultiSelect
-                selectedSpecialties={field.value}
-                onChange={field.onChange}
-              />
+              <SpecialtyMultiSelect selectedSpecialties={field.value} onChange={field.onChange} />
             </FormControl>
             <FormMessage />
           </FormItem>

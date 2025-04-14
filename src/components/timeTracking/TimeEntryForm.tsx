@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,17 +22,17 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   onSubmit,
   onCancel,
   isSubmitting,
-  title = "Time Entry"
+  title = 'Time Entry',
 }) => {
   const [startTime, setStartTime] = useState(initialValues?.start_time || '09:00');
   const [endTime, setEndTime] = useState(initialValues?.end_time || '17:00');
   const [hoursWorked, setHoursWorked] = useState(initialValues?.hours_worked || 0);
   const [notes, setNotes] = useState(initialValues?.notes || '');
   const [employeeId, setEmployeeId] = useState<string>(initialValues?.employee_id || 'none');
-  const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
+  const [employees, setEmployees] = useState<{ employee_id: string; name: string }[]>([]);
   const [workDate, setWorkDate] = useState<Date>(
-    initialValues?.date_worked 
-      ? parse(initialValues.date_worked, 'yyyy-MM-dd', new Date()) 
+    initialValues?.date_worked
+      ? parse(initialValues.date_worked, 'yyyy-MM-dd', new Date())
       : new Date()
   );
   const [timeError, setTimeError] = useState('');
@@ -46,17 +45,17 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
           .from('employees')
           .select('employee_id, first_name, last_name')
           .order('last_name');
-          
+
         if (error) {
           console.error('Error fetching employees:', error);
           return;
         }
-        
+
         if (data) {
           // Map the employees data to include a full name field
           const formattedEmployees = data.map(emp => ({
             employee_id: emp.employee_id,
-            name: `${emp.first_name} ${emp.last_name}`
+            name: `${emp.first_name} ${emp.last_name}`,
           }));
           setEmployees(formattedEmployees);
         }
@@ -64,7 +63,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         console.error('Exception when fetching employees:', error);
       }
     };
-    
+
     fetchEmployees();
   }, []);
 
@@ -87,18 +86,18 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (timeError) return;
-    
+
     const formattedDate = format(workDate, 'yyyy-MM-dd');
-    
+
     await onSubmit({
       start_time: startTime,
       end_time: endTime,
       hours_worked: hoursWorked,
       notes,
       employee_id: employeeId === 'none' ? null : employeeId,
-      date_worked: formattedDate
+      date_worked: formattedDate,
     });
   };
 
@@ -106,12 +105,9 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium">Work Date</label>
-        <DatePicker
-          date={workDate}
-          setDate={(date) => date && setWorkDate(date)}
-        />
+        <DatePicker date={workDate} setDate={date => date && setWorkDate(date)} />
       </div>
-      
+
       <TimeRangeSelector
         startTime={startTime}
         endTime={endTime}
@@ -120,31 +116,24 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         error={timeError}
         hoursWorked={hoursWorked}
       />
-      
-      <EmployeeSelect
-        value={employeeId}
-        onChange={setEmployeeId}
-        employees={employees}
-      />
-      
+
+      <EmployeeSelect value={employeeId} onChange={setEmployeeId} employees={employees} />
+
       <div className="space-y-2">
-        <label htmlFor="notes" className="text-sm font-medium">Notes</label>
+        <label htmlFor="notes" className="text-sm font-medium">
+          Notes
+        </label>
         <Textarea
           id="notes"
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={e => setNotes(e.target.value)}
           placeholder="Add any notes about this time entry"
           className="h-24"
         />
       </div>
-      
+
       <div className="flex justify-end space-x-2 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
         <Button

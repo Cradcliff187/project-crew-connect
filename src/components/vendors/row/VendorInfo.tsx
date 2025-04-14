@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Vendor } from '../types/vendorTypes';
 

@@ -1,20 +1,19 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
 import { ChangeOrder } from '@/types/changeOrders';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
 } from 'recharts';
 
 interface ScheduleImpactVisualizationProps {
@@ -28,15 +27,17 @@ interface MilestoneData {
   is_completed: boolean;
 }
 
-const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = ({ changeOrder }) => {
+const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = ({
+  changeOrder,
+}) => {
   const [milestones, setMilestones] = useState<MilestoneData[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectDueDate, setProjectDueDate] = useState<string | null>(null);
-  
+
   useEffect(() => {
     const fetchMilestones = async () => {
       if (changeOrder.entity_type !== 'PROJECT') return;
-      
+
       setLoading(true);
       try {
         // Fetch project due date
@@ -45,18 +46,18 @@ const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = 
           .select('due_date')
           .eq('projectid', changeOrder.entity_id)
           .single();
-          
+
         if (!projectError && projectData) {
           setProjectDueDate(projectData.due_date);
         }
-        
+
         // Fetch project milestones
         const { data, error } = await supabase
           .from('project_milestones')
           .select('id, title, due_date, is_completed')
           .eq('projectid', changeOrder.entity_id)
           .order('due_date', { ascending: true });
-          
+
         if (error) throw error;
         setMilestones(data || []);
       } catch (error) {
@@ -65,65 +66,65 @@ const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = 
         setLoading(false);
       }
     };
-    
+
     fetchMilestones();
   }, [changeOrder]);
-  
+
   // Format milestone data for the chart
   const getChartData = () => {
     if (!milestones.length) return [];
-    
+
     // Calculate impact
     const impactDays = changeOrder.impact_days;
-    
+
     return milestones.map(milestone => {
       const originalDate = new Date(milestone.due_date);
       const impactedDate = new Date(originalDate);
       impactedDate.setDate(originalDate.getDate() + impactDays);
-      
+
       return {
         name: milestone.title,
         originalDate: originalDate.getTime(),
         impactedDate: impactedDate.getTime(),
-        completed: milestone.is_completed
+        completed: milestone.is_completed,
       };
     });
   };
-  
+
   const chartData = getChartData();
-  
+
   // Format date for display
   const formatDate = (date: string | null) => {
     if (!date) return 'Not set';
     return new Date(date).toLocaleDateString();
   };
-  
+
   // Calculate new completion date
   const getNewCompletionDate = () => {
     if (!projectDueDate) return 'Not set';
-    
+
     const dueDate = new Date(projectDueDate);
     const newDate = new Date(dueDate);
     newDate.setDate(dueDate.getDate() + changeOrder.impact_days);
-    
+
     return newDate.toLocaleDateString();
   };
-  
+
   // Custom tooltip for the chart
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const originalDate = new Date(payload[0].value);
       const impactedDate = new Date(payload[1].value);
-      
+
       return (
         <div className="bg-white p-3 border rounded shadow-sm">
           <p className="font-medium mb-1">{label}</p>
           <p className="text-sm flex items-center mb-1">
-            <Calendar className="h-4 w-4 mr-1" /> 
+            <Calendar className="h-4 w-4 mr-1" />
             Original: {originalDate.toLocaleDateString()}
           </p>
           <p className="text-sm flex items-center">
-            <Calendar className="h-4 w-4 mr-1 text-amber-500" /> 
+            <Calendar className="h-4 w-4 mr-1 text-amber-500" />
             With Impact: {impactedDate.toLocaleDateString()}
           </p>
         </div>
@@ -131,12 +132,12 @@ const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = 
     }
     return null;
   };
-  
+
   // Date formatter for X axis
   const dateFormatter = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString();
   };
-  
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2">
@@ -157,7 +158,7 @@ const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = 
                   <p className="text-lg font-semibold">{changeOrder.impact_days} days</p>
                 </div>
               </div>
-              
+
               {changeOrder.entity_type === 'PROJECT' && projectDueDate && (
                 <div className="flex items-center">
                   <div className="flex items-center">
@@ -174,7 +175,7 @@ const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = 
                 </div>
               )}
             </div>
-            
+
             {changeOrder.impact_days > 0 && milestones.length > 0 ? (
               <div className="h-72 mt-4">
                 <ResponsiveContainer width="100%" height="100%">
@@ -193,17 +194,13 @@ const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = 
                     <YAxis type="category" dataKey="name" />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    <Bar 
-                      dataKey="originalDate" 
-                      name="Original Date" 
-                      fill="#0485ea" 
-                      background={{ fill: '#eee' }} 
+                    <Bar
+                      dataKey="originalDate"
+                      name="Original Date"
+                      fill="#0485ea"
+                      background={{ fill: '#eee' }}
                     />
-                    <Bar 
-                      dataKey="impactedDate" 
-                      name="Impacted Date" 
-                      fill="#f59e0b" 
-                    />
+                    <Bar dataKey="impactedDate" name="Impacted Date" fill="#f59e0b" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -212,8 +209,8 @@ const ScheduleImpactVisualization: React.FC<ScheduleImpactVisualizationProps> = 
                 <div className="flex items-center text-amber-600">
                   <AlertTriangle className="h-5 w-5 mr-2" />
                   <p className="font-medium">
-                    {changeOrder.impact_days === 0 
-                      ? 'No schedule impact for this change order.' 
+                    {changeOrder.impact_days === 0
+                      ? 'No schedule impact for this change order.'
                       : 'No milestone data available to visualize impact.'}
                   </p>
                 </div>

@@ -1,4 +1,3 @@
-
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import EnhancedAddMaterialForm from '../../EnhancedAddMaterialForm';
 
@@ -6,7 +5,7 @@ interface AddMaterialSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   submitting: boolean;
   onMaterialPrompt: (materialData: any) => void;
   onVendorAdded: () => void;
@@ -21,7 +20,7 @@ const AddMaterialSheet = ({
   submitting,
   onMaterialPrompt,
   onVendorAdded,
-  onSuccess
+  onSuccess,
 }: AddMaterialSheetProps) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

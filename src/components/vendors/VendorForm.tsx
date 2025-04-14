@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import {
@@ -9,12 +8,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -51,13 +50,9 @@ interface VendorFormProps {
   initialData?: Partial<VendorFormData>;
 }
 
-const VendorForm = ({ 
-  onSubmit, 
-  isSubmitting, 
-  initialData 
-}: VendorFormProps) => {
+const VendorForm = ({ onSubmit, isSubmitting, initialData }: VendorFormProps) => {
   const isMobile = useIsMobile();
-  
+
   const form = useForm<VendorFormData>({
     defaultValues: {
       vendorid: initialData?.vendorid || undefined,
@@ -72,7 +67,7 @@ const VendorForm = ({
       payment_terms: initialData?.payment_terms || 'NET30',
       tax_id: initialData?.tax_id || '',
       notes: initialData?.notes || '',
-    }
+    },
   });
 
   return (
@@ -84,7 +79,9 @@ const VendorForm = ({
           name="vendorname"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Vendor Name <span className="text-red-500">*</span></FormLabel>
+              <FormLabel>
+                Vendor Name <span className="text-red-500">*</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Enter vendor name" {...field} required />
               </FormControl>
@@ -92,7 +89,7 @@ const VendorForm = ({
             </FormItem>
           )}
         />
-        
+
         <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4`}>
           <FormField
             control={form.control}
@@ -107,7 +104,7 @@ const VendorForm = ({
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="phone"
@@ -122,7 +119,7 @@ const VendorForm = ({
             )}
           />
         </div>
-        
+
         <FormField
           control={form.control}
           name="address"
@@ -136,13 +133,15 @@ const VendorForm = ({
             </FormItem>
           )}
         />
-        
-        <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-2 md:grid-cols-4 gap-4'}`}>
+
+        <div
+          className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-2 md:grid-cols-4 gap-4'}`}
+        >
           <FormField
             control={form.control}
             name="city"
             render={({ field }) => (
-              <FormItem className={isMobile ? "col-span-2" : "col-span-2"}>
+              <FormItem className={isMobile ? 'col-span-2' : 'col-span-2'}>
                 <FormLabel>City</FormLabel>
                 <FormControl>
                   <Input placeholder="City" {...field} />
@@ -151,7 +150,7 @@ const VendorForm = ({
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="state"
@@ -165,7 +164,7 @@ const VendorForm = ({
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="zip"
@@ -180,11 +179,11 @@ const VendorForm = ({
             )}
           />
         </div>
-        
+
         {/* Financial Information */}
         <div className="pt-4 border-t">
           <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Financial Information</h3>
-          
+
           <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4`}>
             <FormField
               control={form.control}
@@ -192,17 +191,14 @@ const VendorForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Payment Terms</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value || 'NET30'}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value || 'NET30'}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select payment terms" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {paymentTermsOptions.map((option) => (
+                      {paymentTermsOptions.map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -213,7 +209,7 @@ const VendorForm = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="tax_id"
@@ -221,7 +217,11 @@ const VendorForm = ({
                 <FormItem>
                   <FormLabel>Tax ID / EIN</FormLabel>
                   <FormControl>
-                    <Input placeholder="Tax identification number" {...field} value={field.value || ''} />
+                    <Input
+                      placeholder="Tax identification number"
+                      {...field}
+                      value={field.value || ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -229,7 +229,7 @@ const VendorForm = ({
             />
           </div>
         </div>
-        
+
         {/* Status */}
         <div className="pt-4 border-t">
           <FormField
@@ -237,11 +237,10 @@ const VendorForm = ({
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status <span className="text-red-500">*</span></FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                >
+                <FormLabel>
+                  Status <span className="text-red-500">*</span>
+                </FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
@@ -257,7 +256,7 @@ const VendorForm = ({
             )}
           />
         </div>
-        
+
         {/* Notes */}
         <FormField
           control={form.control}
@@ -266,7 +265,7 @@ const VendorForm = ({
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <textarea 
+                <textarea
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Additional notes about this vendor"
                   {...field}

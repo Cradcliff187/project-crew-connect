@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogTitle, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader 
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,7 +25,7 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
   open,
   onOpenChange,
   estimateId,
-  onSuccess
+  onSuccess,
 }) => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [createRevision, setCreateRevision] = useState(true);
@@ -36,9 +35,9 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
       toast({
-        title: "Rejection reason required",
-        description: "Please provide a reason for rejecting this estimate.",
-        variant: "destructive",
+        title: 'Rejection reason required',
+        description: 'Please provide a reason for rejecting this estimate.',
+        variant: 'destructive',
       });
       return;
     }
@@ -48,28 +47,26 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
       // 1. Update the estimate status to "rejected"
       const { error: updateError } = await supabase
         .from('estimates')
-        .update({ 
+        .update({
           status: 'rejected',
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('estimateid', estimateId);
 
       if (updateError) throw updateError;
 
       // 2. Record the rejection reason in the activity log
-      const { error: logError } = await supabase
-        .from('activitylog')
-        .insert({
-          action: 'Rejection',
-          moduletype: 'ESTIMATES',
-          referenceid: estimateId,
-          status: 'rejected',
-          previousstatus: 'pending',
-          timestamp: new Date().toISOString(),
-          detailsjson: JSON.stringify({ reason: rejectionReason }),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
+      const { error: logError } = await supabase.from('activitylog').insert({
+        action: 'Rejection',
+        moduletype: 'ESTIMATES',
+        referenceid: estimateId,
+        status: 'rejected',
+        previousstatus: 'pending',
+        timestamp: new Date().toISOString(),
+        detailsjson: JSON.stringify({ reason: rejectionReason }),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
       if (logError) throw logError;
 
@@ -89,18 +86,16 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
 
         // Create a new revision with incremented version number
         const currentVersion = currentRevision?.version || 1;
-        const { error: newRevisionError } = await supabase
-          .from('estimate_revisions')
-          .insert({
-            estimate_id: estimateId,
-            version: currentVersion + 1,
-            is_current: true,
-            status: 'draft',
-            notes: `Revision created after rejection. Reason: ${rejectionReason}`,
-            revision_date: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+        const { error: newRevisionError } = await supabase.from('estimate_revisions').insert({
+          estimate_id: estimateId,
+          version: currentVersion + 1,
+          is_current: true,
+          status: 'draft',
+          notes: `Revision created after rejection. Reason: ${rejectionReason}`,
+          revision_date: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         if (newRevisionError) throw newRevisionError;
 
@@ -109,7 +104,7 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
           .from('estimates')
           .update({
             status: 'draft',
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('estimateid', estimateId);
 
@@ -117,21 +112,21 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
       }
 
       toast({
-        title: "Estimate rejected",
+        title: 'Estimate rejected',
         description: createRevision
-          ? "Estimate was rejected and a new draft revision was created."
-          : "Estimate was rejected.",
-        className: "bg-[#0485ea]",
+          ? 'Estimate was rejected and a new draft revision was created.'
+          : 'Estimate was rejected.',
+        className: 'bg-[#0485ea]',
       });
 
       onOpenChange(false);
       if (onSuccess) onSuccess();
     } catch (error: any) {
-      console.error("Error rejecting estimate:", error);
+      console.error('Error rejecting estimate:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to reject estimate. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to reject estimate. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -144,7 +139,8 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Reject Estimate</DialogTitle>
           <DialogDescription>
-            Provide a reason for rejecting this estimate. This information will be stored in the activity log.
+            Provide a reason for rejecting this estimate. This information will be stored in the
+            activity log.
           </DialogDescription>
         </DialogHeader>
 
@@ -155,7 +151,7 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
               id="rejectionReason"
               placeholder="Enter the reason for rejection..."
               value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
+              onChange={e => setRejectionReason(e.target.value)}
               className="min-h-[100px]"
             />
           </div>
@@ -164,7 +160,7 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
             <Checkbox
               id="createRevision"
               checked={createRevision}
-              onCheckedChange={(checked) => setCreateRevision(checked as boolean)}
+              onCheckedChange={checked => setCreateRevision(checked as boolean)}
             />
             <Label htmlFor="createRevision" className="cursor-pointer">
               Create a new draft revision
@@ -173,19 +169,11 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleReject}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Rejecting..." : "Reject Estimate"}
+          <Button variant="destructive" onClick={handleReject} disabled={isSubmitting}>
+            {isSubmitting ? 'Rejecting...' : 'Reject Estimate'}
           </Button>
         </DialogFooter>
       </DialogContent>

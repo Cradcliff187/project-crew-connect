@@ -2,15 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { 
-  FileText, CheckCircle, Clock, AlertCircle, XCircle, 
-  ArrowRightCircle, ChevronDown, ChevronUp, LineChart, 
-  FileUp, Download
+import {
+  FileText,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  XCircle,
+  ArrowRightCircle,
+  ChevronDown,
+  ChevronUp,
+  LineChart,
+  FileUp,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { EstimateRevision } from '../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,7 +43,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   estimateId,
   revisions,
   currentRevisionId,
-  onRevisionSelect
+  onRevisionSelect,
 }) => {
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('timeline');
@@ -40,7 +52,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   const { toast } = useToast();
 
   const sortedRevisions = [...revisions].sort((a, b) => b.version - a.version);
-  
+
   useEffect(() => {
     if (currentRevisionId) {
       setExpandedRevision(currentRevisionId);
@@ -50,7 +62,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
 
   const fetchRevisionItems = async (revisionId: string) => {
     if (revisionItems[revisionId]) return; // Already fetched
-    
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -58,19 +70,19 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
         .select('*')
         .eq('revision_id', revisionId)
         .order('created_at', { ascending: true });
-        
+
       if (error) throw error;
-      
+
       setRevisionItems(prev => ({
         ...prev,
-        [revisionId]: data || []
+        [revisionId]: data || [],
       }));
     } catch (error) {
       console.error('Error fetching revision items:', error);
       toast({
         title: 'Error',
         description: 'Failed to load revision items',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -78,7 +90,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   };
 
   const getStatusIcon = (status: string | undefined) => {
-    switch(status?.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'approved':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'sent':
@@ -89,9 +101,9 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
         return <AlertCircle className="h-4 w-4 text-gray-500" />;
     }
   };
-  
+
   const getStatusColor = (status: string | undefined) => {
-    switch(status?.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'approved':
         return 'bg-green-100 text-green-800 border-green-300';
       case 'sent':
@@ -102,7 +114,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
-  
+
   const handleRevisionClick = (revision: EstimateRevision) => {
     if (expandedRevision === revision.id) {
       setExpandedRevision(null);
@@ -111,18 +123,16 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
       fetchRevisionItems(revision.id);
     }
   };
-  
+
   const handleSetAsCurrent = (revisionId: string) => {
     onRevisionSelect(revisionId);
   };
-  
+
   const renderEmptyState = () => (
     <div className="text-center p-4 border rounded-md bg-slate-50 mb-4">
       <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
       <h3 className="text-base font-medium mb-1">No Revisions Available</h3>
-      <p className="text-sm text-muted-foreground">
-        This estimate doesn't have any revisions yet.
-      </p>
+      <p className="text-sm text-muted-foreground">This estimate doesn't have any revisions yet.</p>
     </div>
   );
 
@@ -133,19 +143,19 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
 
     return (
       <div className="space-y-4">
-        {sortedRevisions.map((revision) => {
+        {sortedRevisions.map(revision => {
           const isCurrent = revision.id === currentRevisionId;
           const isExpanded = revision.id === expandedRevision;
           const items = revisionItems[revision.id] || [];
-          
+
           return (
-            <Card 
-              key={revision.id} 
+            <Card
+              key={revision.id}
               className={`${isCurrent ? 'border-[#0485ea]/30 shadow-sm' : ''}`}
             >
               <Collapsible
                 open={isExpanded}
-                onOpenChange={(open) => {
+                onOpenChange={open => {
                   if (open) {
                     setExpandedRevision(revision.id);
                     fetchRevisionItems(revision.id);
@@ -155,7 +165,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                 }}
               >
                 <CollapsibleTrigger className="w-full">
-                  <div 
+                  <div
                     className={`p-4 flex items-center justify-between w-full hover:bg-slate-50 cursor-pointer
                       ${isCurrent ? 'bg-[#0485ea]/5' : ''}`}
                   >
@@ -169,29 +179,38 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                           <FileText className="h-4 w-4" />
                         </div>
                       )}
-                      
+
                       <div>
                         <div className="flex items-center">
                           <span className="font-medium">Version {revision.version}</span>
                           {isCurrent && (
-                            <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-800 border-blue-200">
+                            <Badge
+                              variant="outline"
+                              className="ml-2 bg-blue-50 text-blue-800 border-blue-200"
+                            >
                               Current
                             </Badge>
                           )}
-                          
-                          <Badge variant="outline" className={`ml-2 ${getStatusColor(revision.status)}`}>
+
+                          <Badge
+                            variant="outline"
+                            className={`ml-2 ${getStatusColor(revision.status)}`}
+                          >
                             <span className="flex items-center">
                               {getStatusIcon(revision.status)}
-                              <span className="ml-1 uppercase text-xs">{revision.status || 'Draft'}</span>
+                              <span className="ml-1 uppercase text-xs">
+                                {revision.status || 'Draft'}
+                              </span>
                             </span>
                           </Badge>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {formatDate(revision.revision_date)} • {formatCurrency(revision.amount || 0)}
+                          {formatDate(revision.revision_date)} •{' '}
+                          {formatCurrency(revision.amount || 0)}
                         </div>
                       </div>
                     </div>
-                    
+
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4 text-muted-foreground" />
                     ) : (
@@ -199,20 +218,16 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                     )}
                   </div>
                 </CollapsibleTrigger>
-                
+
                 <CollapsibleContent>
                   <CardContent className="pt-0 pb-4">
                     {revision.notes && (
                       <div className="mb-4 p-3 bg-slate-50 rounded-md text-sm">
-                        <div className="text-xs text-muted-foreground mb-1">
-                          Revision Notes
-                        </div>
-                        <div>
-                          {revision.notes}
-                        </div>
+                        <div className="text-xs text-muted-foreground mb-1">Revision Notes</div>
+                        <div>{revision.notes}</div>
                       </div>
                     )}
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <div className="text-xs text-muted-foreground mb-1">Created On</div>
@@ -235,11 +250,9 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                         </>
                       )}
                     </div>
-                    
-                    {revision.pdf_document_id && (
-                      <RevisionPDFViewer revision={revision} />
-                    )}
-                    
+
+                    {revision.pdf_document_id && <RevisionPDFViewer revision={revision} />}
+
                     {!revision.pdf_document_id && (
                       <div className="mb-4">
                         <PDFExportButton
@@ -253,7 +266,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                         </PDFExportButton>
                       </div>
                     )}
-                    
+
                     <div className="mb-4">
                       <h4 className="text-sm font-medium mb-2">Items Summary</h4>
                       {loading ? (
@@ -274,11 +287,15 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                               {items.slice(0, 5).map(item => (
                                 <TableRow key={item.id}>
                                   <TableCell className="text-sm">{item.description}</TableCell>
-                                  <TableCell className="text-sm text-right">{item.quantity}</TableCell>
-                                  <TableCell className="text-sm text-right">{formatCurrency(item.total_price)}</TableCell>
+                                  <TableCell className="text-sm text-right">
+                                    {item.quantity}
+                                  </TableCell>
+                                  <TableCell className="text-sm text-right">
+                                    {formatCurrency(item.total_price)}
+                                  </TableCell>
                                 </TableRow>
                               ))}
-                              
+
                               {items.length > 5 && (
                                 <TableRow>
                                   <TableCell colSpan={3} className="text-center py-2">
@@ -297,10 +314,10 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex justify-end">
                       {!isCurrent ? (
-                        <Button 
+                        <Button
                           size="sm"
                           onClick={() => handleSetAsCurrent(revision.id)}
                           className="bg-[#0485ea] hover:bg-[#0373d1] text-sm"
@@ -309,7 +326,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                           Set as Current Version
                         </Button>
                       ) : (
-                        <Button 
+                        <Button
                           size="sm"
                           variant="outline"
                           className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-300"
@@ -334,7 +351,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
     if (sortedRevisions.length === 0) {
       return renderEmptyState();
     }
-    
+
     return (
       <div className="border rounded-md overflow-hidden">
         <Table>
@@ -350,17 +367,17 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
           <TableBody>
             {sortedRevisions.map(revision => {
               const isCurrent = revision.id === currentRevisionId;
-              
+
               return (
-                <TableRow 
-                  key={revision.id}
-                  className={isCurrent ? 'bg-[#0485ea]/5' : ''}
-                >
+                <TableRow key={revision.id} className={isCurrent ? 'bg-[#0485ea]/5' : ''}>
                   <TableCell>
                     <div className="flex items-center">
                       <span className="font-medium mr-2">V{revision.version}</span>
                       {isCurrent && (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-50 text-blue-800 border-blue-200"
+                        >
                           Current
                         </Badge>
                       )}
@@ -379,8 +396,8 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       {revision.pdf_document_id && (
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => {
                             // Open PDF in new tab (basic implementation)
@@ -392,9 +409,9 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                           PDF
                         </Button>
                       )}
-                      
+
                       {!isCurrent && (
-                        <Button 
+                        <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleSetAsCurrent(revision.id)}
@@ -404,7 +421,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                           Set Current
                         </Button>
                       )}
-                      
+
                       <Button
                         variant="ghost"
                         size="sm"
@@ -437,7 +454,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="table">Table</TabsTrigger>
           </TabsList>
-          
+
           <div>
             <PDFExportButton
               estimateId={estimateId}
@@ -450,11 +467,11 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
             </PDFExportButton>
           </div>
         </div>
-        
+
         <TabsContent value="timeline" className="mt-0">
           {renderTimelineView()}
         </TabsContent>
-        
+
         <TabsContent value="table" className="mt-0">
           {renderCompactTableView()}
         </TabsContent>

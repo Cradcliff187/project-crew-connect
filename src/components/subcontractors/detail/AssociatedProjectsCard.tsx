@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Briefcase } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -18,7 +17,7 @@ interface AssociatedProjectsCardProps {
 
 const AssociatedProjectsCard = ({ projects, loading }: AssociatedProjectsCardProps) => {
   const navigate = useNavigate();
-  
+
   if (projects.length === 0) return null;
 
   return (
@@ -28,7 +27,7 @@ const AssociatedProjectsCard = ({ projects, loading }: AssociatedProjectsCardPro
         {loading ? (
           <Skeleton className="h-16 w-full" />
         ) : (
-          projects.map((project) => (
+          projects.map(project => (
             <Card key={project.projectid} className="p-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-2">
@@ -38,8 +37,8 @@ const AssociatedProjectsCard = ({ projects, loading }: AssociatedProjectsCardPro
                     <div className="text-xs text-muted-foreground">{project.projectid}</div>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => navigate(`/projects/${project.projectid}`)}
                 >

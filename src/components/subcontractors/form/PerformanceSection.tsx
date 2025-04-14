@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   FormControl,
@@ -14,11 +13,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const PerformanceSection: React.FC<FormSectionProps> = ({ control }) => {
   const isMobile = useIsMobile();
-  
+
   return (
     <div className="pt-4 border-t">
       <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Performance & Evaluation</h3>
-      
+
       <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-4`}>
         <FormField
           control={control}
@@ -26,16 +25,11 @@ const PerformanceSection: React.FC<FormSectionProps> = ({ control }) => {
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
               <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel>Preferred Vendor</FormLabel>
-                <FormDescription>
-                  Mark as a preferred subcontractor
-                </FormDescription>
+                <FormDescription>Mark as a preferred subcontractor</FormDescription>
               </div>
             </FormItem>
           )}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +28,7 @@ const MaterialsForm = ({
   submitting,
   onMaterialPrompt,
   onVendorAdded,
-  onCancel
+  onCancel,
 }: MaterialsFormProps) => {
   // Form state
   const [materialName, setMaterialName] = useState('');
@@ -52,18 +51,18 @@ const MaterialsForm = ({
     // Validate the form
     if (!materialName.trim()) {
       toast({
-        title: "Missing Information",
-        description: "Please enter a material name",
-        variant: "destructive"
+        title: 'Missing Information',
+        description: 'Please enter a material name',
+        variant: 'destructive',
       });
       return;
     }
 
     if (!unitPrice || parseFloat(unitPrice) <= 0) {
       toast({
-        title: "Invalid Price",
-        description: "Please enter a valid unit price",
-        variant: "destructive"
+        title: 'Invalid Price',
+        description: 'Please enter a valid unit price',
+        variant: 'destructive',
       });
       return;
     }
@@ -73,7 +72,7 @@ const MaterialsForm = ({
       materialName,
       quantity: parseFloat(quantity) || 1,
       unitPrice: parseFloat(unitPrice) || 0,
-      vendorId: selectedVendor
+      vendorId: selectedVendor,
     });
 
     // Reset form fields
@@ -103,7 +102,7 @@ const MaterialsForm = ({
               id="material-name"
               placeholder="Enter material name"
               value={materialName}
-              onChange={(e) => setMaterialName(e.target.value)}
+              onChange={e => setMaterialName(e.target.value)}
               disabled={submitting}
             />
           </div>
@@ -118,7 +117,7 @@ const MaterialsForm = ({
                 min="1"
                 step="1"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={e => setQuantity(e.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -131,7 +130,7 @@ const MaterialsForm = ({
                 min="0.01"
                 step="0.01"
                 value={unitPrice}
-                onChange={(e) => setUnitPrice(e.target.value)}
+                onChange={e => setUnitPrice(e.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -144,11 +143,11 @@ const MaterialsForm = ({
                 id="vendor"
                 className="flex-1 w-full border border-input bg-background px-3 py-2 rounded-md"
                 value={selectedVendor || ''}
-                onChange={(e) => setSelectedVendor(e.target.value || null)}
+                onChange={e => setSelectedVendor(e.target.value || null)}
                 disabled={submitting}
               >
                 <option value="">Select Vendor</option>
-                {vendors.map((vendor) => (
+                {vendors.map(vendor => (
                   <option key={vendor.vendorid} value={vendor.vendorid}>
                     {vendor.vendorname}
                   </option>
@@ -176,12 +175,7 @@ const MaterialsForm = ({
         </CardContent>
         <CardFooter className="flex justify-between space-x-2">
           {onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={submitting}
-            >
+            <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>

@@ -1,4 +1,3 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { UseFormReturn } from 'react-hook-form';
@@ -17,11 +16,7 @@ const DescriptionField = ({ form }: DescriptionFieldProps) => {
         <FormItem>
           <FormLabel className="font-medium">Description</FormLabel>
           <FormControl>
-            <Textarea 
-              {...field}
-              placeholder="Enter work order description" 
-              rows={3}
-            />
+            <Textarea {...field} placeholder="Enter work order description" rows={3} />
           </FormControl>
           <FormMessage />
         </FormItem>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   subtitle,
   backLink,
   backText,
-  actions
+  actions,
 }) => {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
@@ -35,11 +34,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
         </div>
       </div>
-      {actions && (
-        <div className="mt-4 md:mt-0 flex flex-wrap gap-2 justify-end">
-          {actions}
-        </div>
-      )}
+      {actions && <div className="mt-4 md:mt-0 flex flex-wrap gap-2 justify-end">{actions}</div>}
     </div>
   );
 };

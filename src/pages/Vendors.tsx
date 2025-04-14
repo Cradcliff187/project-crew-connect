@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,14 +13,16 @@ const fetchVendors = async () => {
   try {
     const { data, error } = await supabase
       .from('vendors')
-      .select('vendorid, vendorname, email, phone, address, city, state, zip, status, createdon, payment_terms, tax_id, notes')
+      .select(
+        'vendorid, vendorname, email, phone, address, city, state, zip, status, createdon, payment_terms, tax_id, notes'
+      )
       .order('createdon', { ascending: false });
-    
+
     if (error) {
       console.error('Supabase error:', error);
       throw error;
     }
-    
+
     return data || [];
   } catch (error) {
     console.error('Error fetching vendors:', error);
@@ -34,20 +35,20 @@ const Vendors = () => {
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const navigate = useNavigate();
-  
-  const { 
-    data: vendors = [], 
-    isLoading: loading, 
+
+  const {
+    data: vendors = [],
+    isLoading: loading,
     error: queryError,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: ['vendors'],
     queryFn: fetchVendors,
     meta: {
       onError: (error: any) => {
         console.error('Error fetching vendors:', error);
-      }
-    }
+      },
+    },
   });
 
   // Setup real-time subscription for vendor changes
@@ -59,9 +60,9 @@ const Vendors = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'vendors'
+          table: 'vendors',
         },
-        (payload) => {
+        payload => {
           console.log('Real-time vendor change:', payload);
           refetch(); // Refetch vendors when changes are detected
         }
@@ -80,13 +81,13 @@ const Vendors = () => {
       toast({
         title: 'Error fetching vendors',
         description: (queryError as Error).message,
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   }, [queryError]);
 
   const error = queryError ? (queryError as Error).message : null;
-  
+
   const handleVendorAdded = () => {
     refetch();
   };
@@ -108,14 +109,14 @@ const Vendors = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <VendorsHeader 
-          searchQuery={searchQuery} 
-          setSearchQuery={setSearchQuery} 
+        <VendorsHeader
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           onVendorAdded={handleVendorAdded}
         />
-        
+
         <div className="mt-6">
-          <VendorsTable 
+          <VendorsTable
             vendors={vendors as Vendor[]}
             loading={loading}
             error={error}

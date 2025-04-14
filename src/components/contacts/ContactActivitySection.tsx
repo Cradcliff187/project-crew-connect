@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -25,11 +24,11 @@ interface ContactActivitySectionProps {
 const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contactId }) => {
   const [activities, setActivities] = useState<ContactActivity[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     const fetchActivities = async () => {
       if (!contactId) return;
-      
+
       setLoading(true);
       try {
         const { data, error } = await supabase
@@ -37,9 +36,9 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
           .select('*')
           .eq('contact_id', contactId)
           .order('interaction_date', { ascending: false });
-        
+
         if (error) throw error;
-        
+
         setActivities(data || []);
       } catch (err) {
         console.error('Error fetching contact activities:', err);
@@ -47,10 +46,10 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
         setLoading(false);
       }
     };
-    
+
     fetchActivities();
   }, [contactId]);
-  
+
   // Get icon based on interaction type
   const getInteractionIcon = (type: string) => {
     switch (type.toUpperCase()) {
@@ -66,7 +65,7 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
         return <Clock className="h-5 w-5 text-gray-500" />;
     }
   };
-  
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -87,7 +86,7 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
       </div>
     );
   }
-  
+
   if (activities.length === 0) {
     return (
       <Card>
@@ -105,7 +104,7 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
       </Card>
     );
   }
-  
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -115,7 +114,7 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
           Add Interaction
         </Button>
       </div>
-      
+
       <div className="space-y-4">
         {activities.map(activity => (
           <Card key={activity.id}>
@@ -123,15 +122,11 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
                   {getInteractionIcon(activity.interaction_type)}
-                  <span className="font-medium ml-2 text-lg">
-                    {activity.subject}
-                  </span>
+                  <span className="font-medium ml-2 text-lg">{activity.subject}</span>
                 </div>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <CalendarDays className="h-4 w-4 mr-1" />
-                  <span>
-                    {format(new Date(activity.interaction_date), 'MMM d, yyyy')}
-                  </span>
+                  <span>{format(new Date(activity.interaction_date), 'MMM d, yyyy')}</span>
                   {activity.duration_minutes > 0 && (
                     <>
                       <span className="mx-1">•</span>
@@ -142,10 +137,10 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent>
               <p className="whitespace-pre-line text-muted-foreground">
-                {activity.notes || "No notes provided."}
+                {activity.notes || 'No notes provided.'}
               </p>
               {activity.created_by && (
                 <div className="mt-4 pt-2 border-t text-xs text-muted-foreground">
@@ -162,14 +157,14 @@ const ContactActivitySection: React.FC<ContactActivitySectionProps> = ({ contact
 
 // Import these at the top
 const Phone = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     className={className}
   >
     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
@@ -177,14 +172,14 @@ const Phone = ({ className }: { className?: string }) => (
 );
 
 const Mail = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     className={className}
   >
     <rect x="2" y="4" width="20" height="16" rx="2"></rect>
@@ -193,14 +188,14 @@ const Mail = ({ className }: { className?: string }) => (
 );
 
 const Users = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
     className={className}
   >
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>

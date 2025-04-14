@@ -1,4 +1,3 @@
-
 import { Table, TableBody } from '@/components/ui/table';
 import { StatusType } from '@/types/common';
 import EstimateTableHeader from './components/EstimateTableHeader';
@@ -36,34 +35,33 @@ interface EstimatesTableProps {
   onRefreshEstimates?: () => void;
 }
 
-const EstimatesTable = ({ 
-  estimates, 
-  loading, 
+const EstimatesTable = ({
+  estimates,
+  loading,
   error,
-  searchQuery, 
+  searchQuery,
   onViewEstimate,
   formatDate,
-  onRefreshEstimates
+  onRefreshEstimates,
 }: EstimatesTableProps) => {
-  const filteredEstimates = estimates.filter(estimate => 
-    estimate.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    estimate.project.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    estimate.id.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEstimates = estimates.filter(
+    estimate =>
+      estimate.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      estimate.project.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      estimate.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
+
   // Handle error state
   if (error) {
     return (
       <Alert variant="destructive" className="mb-6">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          Failed to load estimates: {error}
-        </AlertDescription>
+        <AlertDescription>Failed to load estimates: {error}</AlertDescription>
       </Alert>
     );
   }
-  
+
   return (
     <div className="bg-white border rounded-lg shadow-sm animate-in">
       <Table>
@@ -72,8 +70,8 @@ const EstimatesTable = ({
           {loading ? (
             <EstimateLoadingState />
           ) : filteredEstimates.length > 0 ? (
-            filteredEstimates.map((estimate) => (
-              <EstimateRow 
+            filteredEstimates.map(estimate => (
+              <EstimateRow
                 key={estimate.id}
                 estimate={estimate}
                 onViewEstimate={onViewEstimate}

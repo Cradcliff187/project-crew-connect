@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Control } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -23,21 +22,21 @@ interface ReceiptWorkflowProps {
   prefillMaterialName?: string;
 }
 
-const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({ 
+const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
   control,
   prefillAmount,
   prefillVendorId,
   prefillNotes,
-  prefillMaterialName
+  prefillMaterialName,
 }) => {
   const [hasRecognizedData, setHasRecognizedData] = useState(false);
   const [notes, setNotes] = useState<string | undefined>(prefillNotes);
-  
+
   // Effect to handle prefill data detection
   useEffect(() => {
     const hasData = !!prefillAmount || !!prefillVendorId || !!prefillMaterialName;
     setHasRecognizedData(hasData);
-    
+
     // If we have material name but no notes, set the notes
     if (prefillMaterialName && !prefillNotes) {
       const materialNote = `Receipt for: ${prefillMaterialName}`;
@@ -46,7 +45,7 @@ const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
       setNotes(prefillNotes);
     }
   }, [prefillAmount, prefillVendorId, prefillMaterialName, prefillNotes]);
-  
+
   // Effect to update form with notes when they change
   useEffect(() => {
     if (notes) {
@@ -54,19 +53,19 @@ const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
       // A better approach would be to manage this in the parent component
     }
   }, [notes]);
-  
+
   return (
     <div className="space-y-4">
       {hasRecognizedData && (
         <Alert className="bg-blue-50 border-blue-200">
           <AlertTitle className="text-blue-800">Receipt data detected!</AlertTitle>
           <AlertDescription className="text-blue-700">
-            We've automatically filled in some information based on the receipt image.
-            Please verify and adjust if needed.
+            We've automatically filled in some information based on the receipt image. Please verify
+            and adjust if needed.
           </AlertDescription>
         </Alert>
       )}
-      
+
       {/* Amount field */}
       <FormField
         control={control}
@@ -81,14 +80,14 @@ const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
                 placeholder="0.00"
                 {...field}
                 value={field.value || ''}
-                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
               />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-      
+
       {/* Date picker */}
       <FormField
         control={control}
@@ -100,17 +99,13 @@ const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
-                    variant={"outline"}
+                    variant={'outline'}
                     className={cn(
-                      "w-full pl-3 text-left font-normal",
-                      !field.value && "text-muted-foreground"
+                      'w-full pl-3 text-left font-normal',
+                      !field.value && 'text-muted-foreground'
                     )}
                   >
-                    {field.value ? (
-                      format(new Date(field.value), "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
+                    {field.value ? format(new Date(field.value), 'PPP') : <span>Pick a date</span>}
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                   </Button>
                 </FormControl>
@@ -119,8 +114,8 @@ const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
                 <Calendar
                   mode="single"
                   selected={field.value ? new Date(field.value) : undefined}
-                  onSelect={(date) => field.onChange(date)}
-                  disabled={(date) => date > new Date()}
+                  onSelect={date => field.onChange(date)}
+                  disabled={date => date > new Date()}
                   initialFocus
                 />
               </PopoverContent>
@@ -129,7 +124,7 @@ const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
           </FormItem>
         )}
       />
-      
+
       {/* Vendor selection */}
       <VendorSelector
         control={control}
@@ -140,10 +135,10 @@ const ReceiptWorkflow: React.FC<ReceiptWorkflowProps> = ({
           console.log('Add vendor clicked');
         }}
       />
-      
+
       {/* Expense type */}
       <ExpenseTypeSelector control={control} />
-      
+
       {/* Notes field */}
       <FormField
         control={control}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatDate, calculateDaysUntilDue } from '@/lib/utils';
@@ -25,48 +24,48 @@ const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
     {
       items: [
         {
-          label: "View Details",
+          label: 'View Details',
           icon: <Eye className="h-4 w-4" />,
           onClick: handleViewDetails,
-          className: "text-[#0485ea] hover:text-[#0375d1]"
+          className: 'text-[#0485ea] hover:text-[#0375d1]',
         },
         {
-          label: "Edit",
+          label: 'Edit',
           icon: <Pencil className="h-4 w-4" />,
           onClick: handleViewDetails,
-          className: "text-gray-600 hover:text-gray-800"
-        }
-      ]
+          className: 'text-gray-600 hover:text-gray-800',
+        },
+      ],
     },
     {
       items: [
         {
-          label: "Schedule",
+          label: 'Schedule',
           icon: <CalendarClock className="h-4 w-4" />,
-          onClick: () => console.log("Schedule:", workOrder.work_order_id),
-          className: "text-gray-600 hover:text-gray-800"
+          onClick: () => console.log('Schedule:', workOrder.work_order_id),
+          className: 'text-gray-600 hover:text-gray-800',
         },
         {
-          label: "Messages",
+          label: 'Messages',
           icon: <MessageSquare className="h-4 w-4" />,
-          onClick: () => console.log("Messages:", workOrder.work_order_id),
-          className: "text-gray-600 hover:text-gray-800"
-        }
-      ]
-    }
+          onClick: () => console.log('Messages:', workOrder.work_order_id),
+          className: 'text-gray-600 hover:text-gray-800',
+        },
+      ],
+    },
   ];
 
   return (
-    <TableRow 
-      key={workOrder.work_order_id} 
+    <TableRow
+      key={workOrder.work_order_id}
       className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
       onClick={handleViewDetails}
     >
       <TableCell className="font-medium">
-        <Link 
-          to={`/work-orders/${workOrder.work_order_id}`} 
+        <Link
+          to={`/work-orders/${workOrder.work_order_id}`}
           className="text-[#0485ea] hover:underline"
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
         >
           {workOrder.work_order_number || '-'}
         </Link>
@@ -83,24 +82,23 @@ const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
         <DueStatusBadge daysUntilDue={daysUntilDue} />
       </TableCell>
       <TableCell>
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-          workOrder.priority === 'HIGH' ? 'bg-red-100 text-red-800' : 
-          workOrder.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-800' : 
-          'bg-blue-100 text-blue-800'
-        }`}>
+        <span
+          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+            workOrder.priority === 'HIGH'
+              ? 'bg-red-100 text-red-800'
+              : workOrder.priority === 'MEDIUM'
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-blue-100 text-blue-800'
+          }`}
+        >
           {workOrder.priority || 'MEDIUM'}
         </span>
       </TableCell>
       <TableCell>
         <StatusBadge status={workOrder.status} />
       </TableCell>
-      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-        <ActionMenu 
-          groups={actionGroups} 
-          size="sm" 
-          align="end"
-          triggerClassName="ml-auto"
-        />
+      <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+        <ActionMenu groups={actionGroups} size="sm" align="end" triggerClassName="ml-auto" />
       </TableCell>
     </TableRow>
   );

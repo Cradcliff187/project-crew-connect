@@ -1,4 +1,3 @@
-
 import { Clock } from 'lucide-react';
 
 interface TotalHoursDisplayProps {
@@ -7,7 +6,7 @@ interface TotalHoursDisplayProps {
 
 const TotalHoursDisplay = ({ totalHours }: TotalHoursDisplayProps) => {
   console.log('Displaying total hours:', totalHours);
-  
+
   return (
     <div className="flex justify-between items-center bg-gray-50 p-4 border rounded-md mt-4">
       <div className="flex items-center gap-2 text-gray-600">

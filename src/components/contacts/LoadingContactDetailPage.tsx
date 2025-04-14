@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -21,20 +20,20 @@ const LoadingContactDetailPage = () => {
             </Button>
             <Skeleton className="h-8 w-64" />
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Skeleton className="h-10 w-32" />
             <Skeleton className="h-10 w-10 rounded-full" />
           </div>
         </div>
-        
+
         <Tabs defaultValue="details" className="space-y-4">
           <TabsList>
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="details" className="space-y-4">
             <Card>
               <CardHeader>
@@ -52,7 +51,7 @@ const LoadingContactDetailPage = () => {
                     </div>
                   ))}
                 </div>
-                
+
                 <div>
                   <Skeleton className="h-6 w-40 mb-4" />
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -67,7 +66,7 @@ const LoadingContactDetailPage = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 <div>
                   <Skeleton className="h-6 w-20 mb-2" />
                   <Skeleton className="h-32 w-full" />
@@ -75,11 +74,11 @@ const LoadingContactDetailPage = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="documents">
             <Skeleton className="h-[400px] w-full" />
           </TabsContent>
-          
+
           <TabsContent value="activity">
             <Skeleton className="h-[400px] w-full" />
           </TabsContent>

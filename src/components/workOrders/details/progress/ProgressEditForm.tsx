@@ -1,4 +1,3 @@
-
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { SliderProps } from '@radix-ui/react-slider';
@@ -10,22 +9,18 @@ interface ProgressEditFormProps {
   loading: boolean;
 }
 
-const ProgressEditForm = ({ 
-  progressValue, 
-  onProgressChange,
-  loading
-}: ProgressEditFormProps) => {
+const ProgressEditForm = ({ progressValue, onProgressChange, loading }: ProgressEditFormProps) => {
   const handleSliderChange = (value: number[]) => {
     onProgressChange(value[0]);
   };
-  
+
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     if (!isNaN(value) && value >= 0 && value <= 100) {
       onProgressChange(value);
     }
   };
-  
+
   return (
     <div className="mt-4 space-y-4">
       <div className="flex items-center gap-2">

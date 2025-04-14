@@ -1,7 +1,12 @@
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { PlusCircle } from 'lucide-react';
 import FormSection from './FormSection';
 
@@ -14,7 +19,7 @@ interface MaterialFormFieldsProps {
   setUnitPrice: (value: string) => void;
   selectedVendor: string | null;
   setSelectedVendor: (value: string | null) => void;
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   onAddVendorClick: () => void;
 }
 
@@ -28,7 +33,7 @@ const MaterialFormFields = ({
   selectedVendor,
   setSelectedVendor,
   vendors,
-  onAddVendorClick
+  onAddVendorClick,
 }: MaterialFormFieldsProps) => {
   return (
     <>
@@ -38,19 +43,19 @@ const MaterialFormFields = ({
             id="materialName"
             placeholder="Enter material name"
             value={materialName}
-            onChange={(e) => setMaterialName(e.target.value)}
+            onChange={e => setMaterialName(e.target.value)}
             required
           />
         </FormSection>
-        
-        <FormSection 
-          label="Vendor" 
+
+        <FormSection
+          label="Vendor"
           optional={true}
           rightElement={
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               className="text-xs text-[#0485ea] hover:text-[#0375d1]"
               onClick={onAddVendorClick}
             >
@@ -59,16 +64,16 @@ const MaterialFormFields = ({
             </Button>
           }
         >
-          <Select 
-            value={selectedVendor || ""} 
-            onValueChange={(value) => setSelectedVendor(value === "no-vendor" ? null : value)}
+          <Select
+            value={selectedVendor || ''}
+            onValueChange={value => setSelectedVendor(value === 'no-vendor' ? null : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select vendor" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="no-vendor">None</SelectItem>
-              {vendors.map((vendor) => (
+              {vendors.map(vendor => (
                 <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
                   {vendor.vendorname}
                 </SelectItem>
@@ -77,7 +82,7 @@ const MaterialFormFields = ({
           </Select>
         </FormSection>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <FormSection label="Quantity">
           <Input
@@ -87,11 +92,11 @@ const MaterialFormFields = ({
             min="0.01"
             placeholder="1"
             value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
+            onChange={e => setQuantity(e.target.value)}
             required
           />
         </FormSection>
-        
+
         <FormSection label="Unit Price ($)">
           <Input
             id="unitPrice"
@@ -100,7 +105,7 @@ const MaterialFormFields = ({
             min="0.01"
             placeholder="0.00"
             value={unitPrice}
-            onChange={(e) => setUnitPrice(e.target.value)}
+            onChange={e => setUnitPrice(e.target.value)}
             required
           />
         </FormSection>

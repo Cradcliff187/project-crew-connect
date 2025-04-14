@@ -18,10 +18,10 @@ interface ChangeOrderApprovalProps {
   onUpdated: () => void;
 }
 
-const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({ 
-  form, 
-  changeOrderId, 
-  onUpdated 
+const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
+  form,
+  changeOrderId,
+  onUpdated,
 }) => {
   const [notes, setNotes] = useState('');
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -29,8 +29,8 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
   const [statusOptions, setStatusOptions] = useState<any[]>([]);
 
   // Safely access form fields
-  const currentStatus = form?.watch ? form.watch('status') as ChangeOrderStatus : 'DRAFT';
-  
+  const currentStatus = form?.watch ? (form.watch('status') as ChangeOrderStatus) : 'DRAFT';
+
   useEffect(() => {
     if (changeOrderId) {
       fetchHistory();
@@ -40,16 +40,16 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
 
   const fetchApprovalNotes = async () => {
     if (!changeOrderId) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('change_orders')
         .select('approval_notes')
         .eq('id', changeOrderId)
         .single();
-      
+
       if (error) throw error;
-      
+
       if (data && data.approval_notes) {
         setNotes(data.approval_notes);
       }
@@ -60,22 +60,24 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
 
   const fetchHistory = async () => {
     if (!changeOrderId) return;
-    
+
     try {
       // First fetch status definitions for change orders
       const { data: statusDefs, error: statusError } = await supabase
         .from('status_definitions')
         .select('*')
         .eq('entity_type', 'CHANGE_ORDER' as any);
-        
+
       if (!statusError && statusDefs) {
-        setStatusOptions(statusDefs.map(def => ({
-          value: def.status_code,
-          label: def.label,
-          color: def.color
-        })));
+        setStatusOptions(
+          statusDefs.map(def => ({
+            value: def.status_code,
+            label: def.label,
+            color: def.color,
+          }))
+        );
       }
-    
+
       // Then fetch the history
       const { data, error } = await supabase
         .from('activitylog')
@@ -83,18 +85,19 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
         .eq('referenceid', changeOrderId)
         .eq('moduletype', 'CHANGE_ORDER')
         .order('timestamp', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       // Transform the data to match our expected format
-      const formattedHistory = data?.map(item => ({
-        status: item.status,
-        previous_status: item.previousstatus,
-        changed_date: item.timestamp,
-        changed_by: item.useremail,
-        notes: item.detailsjson ? JSON.parse(item.detailsjson).notes : undefined
-      })) || [];
-      
+      const formattedHistory =
+        data?.map(item => ({
+          status: item.status,
+          previous_status: item.previousstatus,
+          changed_date: item.timestamp,
+          changed_by: item.useremail,
+          notes: item.detailsjson ? JSON.parse(item.detailsjson).notes : undefined,
+        })) || [];
+
       setHistory(formattedHistory);
     } catch (error: any) {
       console.error('Error fetching status history:', error);
@@ -109,37 +112,37 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
   const handleSaveNotes = async () => {
     if (!changeOrderId) {
       toast({
-        title: "Error",
-        description: "Change order ID not found",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Change order ID not found',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     setIsSavingNotes(true);
     try {
       const { error } = await supabase
         .from('change_orders')
         .update({ approval_notes: notes })
         .eq('id', changeOrderId);
-      
+
       if (error) throw error;
-      
+
       // Update the form value if form is available
       if (form && form.setValue) {
         form.setValue('approval_notes', notes);
       }
-      
+
       toast({
-        title: "Notes saved",
-        description: "Approval notes updated successfully"
+        title: 'Notes saved',
+        description: 'Approval notes updated successfully',
       });
     } catch (error: any) {
       console.error('Error saving notes:', error);
       toast({
-        title: "Error",
-        description: "Failed to save notes: " + error.message,
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to save notes: ' + error.message,
+        variant: 'destructive',
       });
     } finally {
       setIsSavingNotes(false);
@@ -150,7 +153,7 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
     await fetchHistory();
     onUpdated();
   };
-  
+
   return (
     <div className="grid gap-6">
       <Card>
@@ -166,8 +169,8 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
               value={notes}
               onChange={handleNotesChange}
             />
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="mt-2 w-fit"
               onClick={handleSaveNotes}
               disabled={isSavingNotes}
@@ -178,26 +181,26 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
                   Saving...
                 </>
               ) : (
-                "Save Notes"
+                'Save Notes'
               )}
             </Button>
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Status History</CardTitle>
         </CardHeader>
         <CardContent>
-          <StatusHistoryView 
-            history={history} 
+          <StatusHistoryView
+            history={history}
             statusOptions={statusOptions}
             currentStatus={currentStatus}
           />
         </CardContent>
       </Card>
-      
+
       {changeOrderId && (
         <div className="flex justify-end mt-4">
           <ChangeOrderStatusControl

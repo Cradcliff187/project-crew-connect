@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DocumentViewer from '@/components/documents/DocumentViewer';
 
@@ -15,7 +14,7 @@ interface EstimateDocumentUploadProps {
 
 const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
   estimateItemId,
-  showLineItemDocuments = false
+  showLineItemDocuments = false,
 }) => {
   // Use our custom hook for all document management logic
   const {
@@ -33,10 +32,10 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
     closeViewer,
     handleOpenDocumentUpload,
     entityType,
-    itemId
+    itemId,
   } = useEstimateDocumentManager({
     estimateItemId,
-    showLineItemDocuments
+    showLineItemDocuments,
   });
 
   return (
@@ -55,21 +54,23 @@ const EstimateDocumentUpload: React.FC<EstimateDocumentUploadProps> = ({
           entityType={entityType}
           itemId={itemId}
           onSuccess={handleDocumentUploadSuccess}
-          title={showLineItemDocuments ? "Attach Document to Line Item" : "Attach Document to Estimate"}
+          title={
+            showLineItemDocuments ? 'Attach Document to Line Item' : 'Attach Document to Estimate'
+          }
         />
       </DocumentUploadHeader>
-      
+
       <DocumentUploadContent
         documentsByCategory={documentsByCategory}
         filteredDocuments={filteredDocuments}
         onViewDocument={handleViewDocument}
         onRemoveDocument={handleRemoveDocument}
       />
-      
+
       <DocumentViewer
         document={viewDocument}
         open={!!viewDocument}
-        onOpenChange={(open) => !open && closeViewer()}
+        onOpenChange={open => !open && closeViewer()}
       />
     </div>
   );

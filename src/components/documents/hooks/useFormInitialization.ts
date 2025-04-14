@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { DocumentUploadFormValues, EntityType } from '../schemas/documentSchema';
@@ -25,12 +24,15 @@ export const useFormInitialization = ({
   entityType = 'PROJECT',
   entityId,
   isReceiptUpload = false,
-  prefillData
+  prefillData,
 }: UseFormInitializationProps) => {
   const initializeForm = useCallback(() => {
-    const defaultCategory = isReceiptUpload ? 'receipt' : (prefillData?.category && isValidDocumentCategory(prefillData.category) ? 
-      toDocumentCategory(prefillData.category) : 'other');
-      
+    const defaultCategory = isReceiptUpload
+      ? 'receipt'
+      : prefillData?.category && isValidDocumentCategory(prefillData.category)
+        ? toDocumentCategory(prefillData.category)
+        : 'other';
+
     form.reset({
       files: [],
       metadata: {
@@ -42,14 +44,15 @@ export const useFormInitialization = ({
         version: 1,
         tags: prefillData?.tags || [],
         notes: prefillData?.notes || '',
-        isExpense: isReceiptUpload || defaultCategory === 'receipt' || defaultCategory === 'invoice',
+        isExpense:
+          isReceiptUpload || defaultCategory === 'receipt' || defaultCategory === 'invoice',
         vendorId: prefillData?.vendorId,
-      }
+      },
     });
   }, [form, entityType, entityId, isReceiptUpload, prefillData]);
 
   return {
-    initializeForm
+    initializeForm,
   };
 };
 

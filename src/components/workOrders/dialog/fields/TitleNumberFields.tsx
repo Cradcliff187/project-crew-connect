@@ -1,4 +1,3 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
@@ -20,29 +19,21 @@ const TitleNumberFields = ({ form }: TitleNumberFieldsProps) => {
               Title <span className="text-red-500">*</span>
             </FormLabel>
             <FormControl>
-              <Input 
-                {...field}
-                placeholder="Enter work order title"
-              />
+              <Input {...field} placeholder="Enter work order title" />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-      
+
       <FormField
         control={form.control}
         name="work_order_number"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="font-medium">
-              Work Order Number
-            </FormLabel>
+            <FormLabel className="font-medium">Work Order Number</FormLabel>
             <FormControl>
-              <Input 
-                {...field}
-                placeholder="Enter work order number"
-              />
+              <Input {...field} placeholder="Enter work order number" />
             </FormControl>
             <FormMessage />
           </FormItem>

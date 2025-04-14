@@ -1,7 +1,12 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FieldDefinition } from '@/types/reports';
 
 interface SortAndGroupFormProps {
@@ -32,13 +37,13 @@ const SortAndGroupForm = ({
         <div className="space-y-2">
           <Label>Sort By</Label>
           <Select
-            value={sortByField?.field || "none"}
-            onValueChange={(value) => {
-              if (value === "none") {
+            value={sortByField?.field || 'none'}
+            onValueChange={value => {
+              if (value === 'none') {
                 onSortFieldChange(undefined);
                 return;
               }
-              
+
               const field = selectedFields.find(f => f.field === value);
               onSortFieldChange(field);
             }}
@@ -48,7 +53,7 @@ const SortAndGroupForm = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">None</SelectItem>
-              {selectedFields.map((field) => (
+              {selectedFields.map(field => (
                 <SelectItem key={field.field} value={field.field}>
                   {field.label}
                 </SelectItem>
@@ -56,7 +61,7 @@ const SortAndGroupForm = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         {sortByField && (
           <div className="flex items-center space-x-2">
             <Label>Order</Label>
@@ -74,17 +79,17 @@ const SortAndGroupForm = ({
             </Select>
           </div>
         )}
-        
+
         <div className="space-y-2">
           <Label>Group By</Label>
           <Select
-            value={groupByField?.field || "none"}
-            onValueChange={(value) => {
-              if (value === "none") {
+            value={groupByField?.field || 'none'}
+            onValueChange={value => {
+              if (value === 'none') {
                 onGroupByFieldChange(undefined);
                 return;
               }
-              
+
               const field = selectedFields.find(f => f.field === value);
               onGroupByFieldChange(field);
             }}
@@ -94,7 +99,7 @@ const SortAndGroupForm = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">None</SelectItem>
-              {selectedFields.map((field) => (
+              {selectedFields.map(field => (
                 <SelectItem key={field.field} value={field.field}>
                   {field.label}
                 </SelectItem>

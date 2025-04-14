@@ -1,4 +1,3 @@
-
 import { useProjectTimelogs } from '../hooks/useProjectTimelogs';
 import { ProjectTimelogsInfoSection } from './components/ProjectTimelogsInfoSection';
 
@@ -15,15 +14,15 @@ const ProjectTimelogs = ({ projectId, onTimeLogAdded }: ProjectTimelogsProps) =>
     totalHours,
     totalLaborCost,
     fetchTimelogs,
-    handleDeleteTimelog
+    handleDeleteTimelog,
   } = useProjectTimelogs(projectId);
-  
+
   // Refresh data after adding a new time log
   const handleSuccessfulAdd = () => {
     fetchTimelogs();
     if (onTimeLogAdded) onTimeLogAdded();
   };
-  
+
   return (
     <ProjectTimelogsInfoSection
       timelogs={timelogs}

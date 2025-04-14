@@ -1,6 +1,12 @@
-
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { formatCurrency } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -11,30 +17,27 @@ interface EstimateLineItemsProps {
   showFinancials?: boolean;
 }
 
-const EstimateLineItems: React.FC<EstimateLineItemsProps> = ({ 
-  items,
-  showFinancials = true 
-}) => {
+const EstimateLineItems: React.FC<EstimateLineItemsProps> = ({ items, showFinancials = true }) => {
   // Calculate subtotal
   const subtotal = items.reduce((sum, item) => sum + (item.total_price || 0), 0);
-  
+
   // Calculate total cost if financial data is available and should be shown
-  const totalCost = showFinancials 
-    ? items.reduce((sum, item) => sum + ((item.cost || 0) * (item.quantity || 1)), 0) 
+  const totalCost = showFinancials
+    ? items.reduce((sum, item) => sum + (item.cost || 0) * (item.quantity || 1), 0)
     : 0;
-    
+
   // Calculate total markup if financial data is available
-  const totalMarkup = showFinancials 
+  const totalMarkup = showFinancials
     ? items.reduce((sum, item) => {
         const cost = (item.cost || 0) * (item.quantity || 1);
-        const markup = item.markup_amount || (cost * (item.markup_percentage || 0) / 100) || 0;
+        const markup = item.markup_amount || (cost * (item.markup_percentage || 0)) / 100 || 0;
         return sum + markup;
       }, 0)
     : 0;
-  
+
   // Calculate gross margin
   const grossMargin = subtotal - totalCost;
-  const grossMarginPercentage = subtotal > 0 ? (grossMargin / subtotal * 100) : 0;
+  const grossMarginPercentage = subtotal > 0 ? (grossMargin / subtotal) * 100 : 0;
 
   return (
     <div className="space-y-4">
@@ -57,12 +60,12 @@ const EstimateLineItems: React.FC<EstimateLineItemsProps> = ({
           </TableHeader>
           <TableBody>
             {items.length > 0 ? (
-              items.map((item) => {
+              items.map(item => {
                 const itemCost = (item.cost || 0) * (item.quantity || 1);
                 const itemTotal = item.total_price || 0;
                 const itemMargin = itemTotal - itemCost;
-                const itemMarginPercentage = itemTotal > 0 ? (itemMargin / itemTotal * 100) : 0;
-                
+                const itemMarginPercentage = itemTotal > 0 ? (itemMargin / itemTotal) * 100 : 0;
+
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
@@ -90,15 +93,19 @@ const EstimateLineItems: React.FC<EstimateLineItemsProps> = ({
                           {item.markup_percentage?.toFixed(1) || '0.0'}%
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className={`${itemMarginPercentage < 20 ? 'text-red-600' : itemMarginPercentage > 30 ? 'text-green-600' : ''}`}>
+                          <span
+                            className={`${itemMarginPercentage < 20 ? 'text-red-600' : itemMarginPercentage > 30 ? 'text-green-600' : ''}`}
+                          >
                             {itemMarginPercentage.toFixed(1)}%
                           </span>
                         </TableCell>
                       </>
                     )}
-                    <TableCell className="text-right font-medium">{formatCurrency(item.total_price)}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(item.total_price)}
+                    </TableCell>
                   </TableRow>
-                )
+                );
               })
             ) : (
               <TableRow>
@@ -107,17 +114,21 @@ const EstimateLineItems: React.FC<EstimateLineItemsProps> = ({
                 </TableCell>
               </TableRow>
             )}
-            
+
             {items.length > 0 && (
               <TableRow className="bg-gray-50 font-medium">
-                <TableCell colSpan={2} className="text-right">Totals:</TableCell>
+                <TableCell colSpan={2} className="text-right">
+                  Totals:
+                </TableCell>
                 <TableCell className="text-right">-</TableCell>
                 {showFinancials && (
                   <>
                     <TableCell className="text-right">{formatCurrency(totalCost)}</TableCell>
                     <TableCell className="text-right">-</TableCell>
                     <TableCell className="text-right">
-                      <span className={`${grossMarginPercentage < 20 ? 'text-red-600' : grossMarginPercentage > 30 ? 'text-green-600' : ''}`}>
+                      <span
+                        className={`${grossMarginPercentage < 20 ? 'text-red-600' : grossMarginPercentage > 30 ? 'text-green-600' : ''}`}
+                      >
                         {grossMarginPercentage.toFixed(1)}%
                       </span>
                     </TableCell>
@@ -129,7 +140,7 @@ const EstimateLineItems: React.FC<EstimateLineItemsProps> = ({
           </TableBody>
         </Table>
       </div>
-      
+
       {items.length > 0 && showFinancials && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="col-span-2 bg-[#f8fafc] border rounded-md p-4">

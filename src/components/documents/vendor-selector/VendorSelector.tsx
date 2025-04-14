@@ -1,7 +1,12 @@
-
 import React, { useState, useEffect, memo } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -21,7 +26,7 @@ const VendorSelector = memo(({ index, vendors, loading }: VendorSelectorProps) =
       setVendorOptions(
         vendors.map(vendor => ({
           value: vendor.vendorid,
-          label: vendor.vendorname
+          label: vendor.vendorname,
         }))
       );
     }

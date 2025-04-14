@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '../schemas/documentSchema';
@@ -32,32 +31,30 @@ export const useDocuments = (initialFilters: DocumentFilters) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Start building the query
-      let query = supabase
-        .from('documents')
-        .select('*');
-      
+      let query = supabase.from('documents').select('*');
+
       // Add filters
       if (filters.search?.trim()) {
         query = query.or(`file_name.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`);
       }
-      
+
       if (filters.category) {
         query = query.eq('category', filters.category);
       }
-      
+
       if (filters.entityType) {
         query = query.eq('entity_type', filters.entityType);
       }
-      
+
       if (filters.isExpense !== undefined) {
         query = query.eq('is_expense', filters.isExpense);
       }
-      
+
       if (filters.dateRange?.from) {
         query = query.gte('created_at', filters.dateRange.from.toISOString());
-        
+
         if (filters.dateRange.to) {
           // Add one day to the end date to include the whole day
           const endDate = new Date(filters.dateRange.to);
@@ -65,7 +62,7 @@ export const useDocuments = (initialFilters: DocumentFilters) => {
           query = query.lt('created_at', endDate.toISOString());
         }
       }
-      
+
       // Add sorting
       if (filters.sortBy) {
         switch (filters.sortBy) {
@@ -86,17 +83,17 @@ export const useDocuments = (initialFilters: DocumentFilters) => {
         // Default sort by newest
         query = query.order('created_at', { ascending: false });
       }
-      
+
       // Execute the query
       const { data, error } = await query;
-      
+
       if (error) {
         throw error;
       }
-      
+
       // Process the documents to get signed URLs
       const processedDocuments: Document[] = await Promise.all(
-        data.map(async (doc) => {
+        data.map(async doc => {
           let url = '';
           if (doc.storage_path) {
             try {
@@ -106,10 +103,10 @@ export const useDocuments = (initialFilters: DocumentFilters) => {
                   transform: {
                     width: 400,
                     height: 400,
-                    quality: 80
-                  }
+                    quality: 80,
+                  },
                 });
-              
+
               if (!urlError) {
                 url = urlData.signedUrl;
               }
@@ -117,14 +114,14 @@ export const useDocuments = (initialFilters: DocumentFilters) => {
               console.error('Error generating URL:', error);
             }
           }
-          
+
           return {
             ...doc,
-            url
+            url,
           };
         })
       );
-      
+
       setDocuments(processedDocuments);
     } catch (error: any) {
       console.error('Error fetching documents:', error);
@@ -138,17 +135,17 @@ export const useDocuments = (initialFilters: DocumentFilters) => {
       setLoading(false);
     }
   }, [filters]);
-  
+
   // Fetch documents when filters change
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
-  
+
   // Handle filter changes
   const handleFilterChange = (newFilters: DocumentFilters) => {
     setFilters(newFilters);
   };
-  
+
   // Reset filters
   const handleResetFilters = () => {
     setFilters({
@@ -157,10 +154,10 @@ export const useDocuments = (initialFilters: DocumentFilters) => {
       entityType: undefined,
       dateRange: undefined,
       isExpense: undefined,
-      sortBy: 'newest'
+      sortBy: 'newest',
     });
   };
-  
+
   return {
     documents,
     loading,
@@ -169,6 +166,6 @@ export const useDocuments = (initialFilters: DocumentFilters) => {
     activeFiltersCount,
     handleFilterChange,
     handleResetFilters,
-    fetchDocuments
+    fetchDocuments,
   };
 };

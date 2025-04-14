@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Pencil, Check, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +14,7 @@ interface ProjectProgressProps {
 
 const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const {
     loading,
     error,
@@ -23,26 +22,26 @@ const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
     progressValue,
     setProgressValue,
     saveProgress,
-    fetchProgress
+    fetchProgress,
   } = useProjectProgress(projectId);
-  
+
   const handleSaveProgress = async () => {
     const success = await saveProgress(progressValue);
     if (success) {
       toast({
         title: 'Progress Updated',
-        description: `Project progress has been updated to ${progressValue}%.`
+        description: `Project progress has been updated to ${progressValue}%.`,
       });
       setIsEditing(false);
     }
   };
-  
+
   const handleCancelEdit = () => {
     // Reset to original value by re-fetching from server
     fetchProgress();
     setIsEditing(false);
   };
-  
+
   if (loading) {
     return (
       <Card>
@@ -56,7 +55,7 @@ const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
       </Card>
     );
   }
-  
+
   if (error) {
     return (
       <Card>
@@ -68,7 +67,7 @@ const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
       </Card>
     );
   }
-  
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -84,7 +83,12 @@ const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
               <X className="h-4 w-4 mr-1" />
               Cancel
             </Button>
-            <Button variant="default" size="sm" onClick={handleSaveProgress} className="bg-[#0485ea] hover:bg-[#0375d1]">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleSaveProgress}
+              className="bg-[#0485ea] hover:bg-[#0375d1]"
+            >
               <Check className="h-4 w-4 mr-1" />
               Save
             </Button>
@@ -94,13 +98,10 @@ const ProjectProgress = ({ projectId }: ProjectProgressProps) => {
       <CardContent>
         <div className="mb-6">
           <ProgressDisplay progressValue={progressValue} />
-          
+
           {isEditing && (
             <div className="mt-4">
-              <ProgressEditForm 
-                onProgressChange={setProgressValue}
-                progressValue={progressValue}
-              />
+              <ProgressEditForm onProgressChange={setProgressValue} progressValue={progressValue} />
             </div>
           )}
         </div>

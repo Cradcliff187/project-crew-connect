@@ -1,4 +1,3 @@
-
 import { DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectDetails } from '../ProjectDetails';
@@ -26,9 +25,7 @@ const ProjectBudgetCard = ({ project }: ProjectBudgetCardProps) => {
               <DollarSign className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
               <div>
                 <p className="font-medium">Budget</p>
-                <p className="text-sm font-medium">
-                  {getBudgetAmount(project.total_budget)}
-                </p>
+                <p className="text-sm font-medium">{getBudgetAmount(project.total_budget)}</p>
                 {project.current_expenses ? (
                   <p className="text-xs text-muted-foreground">
                     Spent: {getBudgetAmount(project.current_expenses)}
@@ -36,11 +33,7 @@ const ProjectBudgetCard = ({ project }: ProjectBudgetCardProps) => {
                 ) : null}
               </div>
             </div>
-            {project.budget_status && (
-              <StatusBadge 
-                status={project.budget_status as StatusType} 
-              />
-            )}
+            {project.budget_status && <StatusBadge status={project.budget_status as StatusType} />}
           </div>
         </div>
       </CardContent>

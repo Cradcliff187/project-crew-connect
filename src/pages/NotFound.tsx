@@ -1,18 +1,14 @@
-
-import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Home } from "lucide-react";
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Home } from 'lucide-react';
 
 const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
+    console.error('404 Error: User attempted to access non-existent route:', location.pathname);
   }, [location.pathname]);
 
   return (
@@ -26,15 +22,15 @@ const NotFound = () => {
           The page you're looking for doesn't exist or has been moved. Let's get you back on track.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="flex items-center gap-2"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-4 w-4" />
             Go Back
           </Button>
-          <Button 
+          <Button
             className="bg-[#0485ea] hover:bg-[#0375d1] flex items-center gap-2"
             onClick={() => navigate('/')}
           >

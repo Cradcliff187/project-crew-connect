@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -13,9 +12,9 @@ const CopyTotalButton: React.FC<CopyTotalButtonProps> = ({ total }) => {
       <div className="flex justify-end">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               className="text-sm"
               onClick={() => {
                 navigator.clipboard.writeText(total.toFixed(2));

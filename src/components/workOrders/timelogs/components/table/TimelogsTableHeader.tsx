@@ -1,4 +1,3 @@
-
 import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 const TimelogsTableHeader = () => {
@@ -9,7 +8,9 @@ const TimelogsTableHeader = () => {
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Employee</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Hours</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Notes</TableHead>
-        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
+        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
+          Actions
+        </TableHead>
       </TableRow>
     </TableHeader>
   );

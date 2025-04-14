@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { CheckCircle2 } from 'lucide-react';
@@ -24,11 +23,11 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
   history,
   statusOptions = [], // Default to empty array if undefined
   currentStatus,
-  showEmpty = true
+  showEmpty = true,
 }) => {
   // Safeguard against undefined or null history
   const safeHistory = Array.isArray(history) ? history : [];
-  
+
   if (safeHistory.length === 0 && !showEmpty) {
     return null;
   }
@@ -39,17 +38,15 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
     if (!Array.isArray(statusOptions) || statusOptions.length === 0) {
       return status;
     }
-    
-    const option = statusOptions.find(opt => 
-      opt?.value?.toLowerCase() === status?.toLowerCase()
-    );
+
+    const option = statusOptions.find(opt => opt?.value?.toLowerCase() === status?.toLowerCase());
     return option?.label || status;
   };
 
   // Helper function to get the time period in readable format
   const getTimePeriod = (dateString: string): string => {
     if (!dateString) return 'Unknown time';
-    
+
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
     } catch (error) {
@@ -61,7 +58,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
   // Helper to safely parse JSON notes
   const getNotesText = (notesData: any): string | undefined => {
     if (!notesData) return undefined;
-    
+
     if (typeof notesData === 'string') {
       try {
         const parsed = JSON.parse(notesData);
@@ -70,7 +67,7 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
         return notesData;
       }
     }
-    
+
     return notesData.notes || JSON.stringify(notesData);
   };
 
@@ -93,7 +90,8 @@ const StatusHistoryView: React.FC<StatusHistoryViewProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium">
-                      Status changed to <span className="text-primary">{getStatusLabel(entry.status)}</span>
+                      Status changed to{' '}
+                      <span className="text-primary">{getStatusLabel(entry.status)}</span>
                     </p>
                     {entry.previous_status && (
                       <p className="text-sm text-muted-foreground">

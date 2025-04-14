@@ -1,6 +1,11 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderFormValues } from '../WorkOrderFormSchema';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +17,7 @@ interface LocationSelectProps {
 
 const LocationSelect = ({ form, locations }: LocationSelectProps) => {
   const hasLocations = locations && locations.length > 0;
-  
+
   return (
     <FormField
       control={form.control}
@@ -20,25 +25,17 @@ const LocationSelect = ({ form, locations }: LocationSelectProps) => {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Location</FormLabel>
-          <Select 
-            onValueChange={field.onChange}
-            value={field.value || ""}
-            disabled={!hasLocations}
-          >
+          <Select onValueChange={field.onChange} value={field.value || ''} disabled={!hasLocations}>
             <FormControl>
               <SelectTrigger className="bg-white">
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
             </FormControl>
-            <SelectContent 
-              className="bg-white z-[1000]" 
-              position="popper"
-              sideOffset={4}
-            >
+            <SelectContent className="bg-white z-[1000]" position="popper" sideOffset={4}>
               {hasLocations ? (
-                locations.map((location) => (
-                  <SelectItem 
-                    key={location.location_id} 
+                locations.map(location => (
+                  <SelectItem
+                    key={location.location_id}
                     value={location.location_id}
                     className="cursor-pointer hover:bg-gray-100 py-2 px-4"
                   >

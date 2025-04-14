@@ -1,6 +1,11 @@
-
 import React from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
@@ -31,7 +36,7 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
   description = 'Upload documents for this entity',
   isReceiptUploadOnly = false,
   showHelpText = true,
-  allowEntityTypeSelection = false
+  allowEntityTypeSelection = false,
 }) => {
   const handleSuccess = (documentId?: string) => {
     if (onSuccess) {
@@ -64,7 +69,7 @@ const DocumentUploadDirectSheet: React.FC<DocumentUploadDirectSheetProps> = ({
           <SheetTitle>{title}</SheetTitle>
           {showHelpText && <SheetDescription>{description}</SheetDescription>}
         </SheetHeader>
-        
+
         <div className="pt-4 h-full overflow-auto">
           <EnhancedDocumentUpload
             entityType={convertedEntityType}

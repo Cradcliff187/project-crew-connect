@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
@@ -8,7 +7,7 @@ import {
   WorkOrderContactCard,
   WorkOrderDescription,
   WorkOrderProgressCard,
-  WorkOrderCostSummary
+  WorkOrderCostSummary,
 } from '.';
 import WorkOrderDocuments from '../documents';
 import WorkOrderTimelogs from '../WorkOrderTimelogs';
@@ -25,79 +24,95 @@ interface WorkOrderDetailContentProps {
   onStatusChange: () => void;
 }
 
-const WorkOrderDetailContent = ({ 
-  workOrder, 
+const WorkOrderDetailContent = ({
+  workOrder,
   customer,
   location,
   assignee,
-  onStatusChange 
+  onStatusChange,
 }: WorkOrderDetailContentProps) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center">
         <div>
           <h3 className="text-lg font-semibold">{workOrder.title}</h3>
-          {workOrder.po_number && <p className="text-sm text-muted-foreground">PO #{workOrder.po_number}</p>}
+          {workOrder.po_number && (
+            <p className="text-sm text-muted-foreground">PO #{workOrder.po_number}</p>
+          )}
         </div>
-        
+
         <WorkOrderStatusControl workOrder={workOrder} onStatusChange={onStatusChange} />
       </div>
-      
+
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid grid-cols-6 mb-4">
-          <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
-          <TabsTrigger value="documents" className="text-sm">Documents</TabsTrigger>
-          <TabsTrigger value="time" className="text-sm">Time Tracking</TabsTrigger>
-          <TabsTrigger value="expenses" className="text-sm">Expenses</TabsTrigger>
-          <TabsTrigger value="materials" className="text-sm">Materials</TabsTrigger>
-          <TabsTrigger value="changes" className="text-sm">Change Orders</TabsTrigger>
+          <TabsTrigger value="overview" className="text-sm">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="text-sm">
+            Documents
+          </TabsTrigger>
+          <TabsTrigger value="time" className="text-sm">
+            Time Tracking
+          </TabsTrigger>
+          <TabsTrigger value="expenses" className="text-sm">
+            Expenses
+          </TabsTrigger>
+          <TabsTrigger value="materials" className="text-sm">
+            Materials
+          </TabsTrigger>
+          <TabsTrigger value="changes" className="text-sm">
+            Change Orders
+          </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <WorkOrderInfoCard workOrder={workOrder} />
-            <WorkOrderContactCard 
+            <WorkOrderContactCard
               workOrder={workOrder}
-              customer={customer} 
+              customer={customer}
               location={location}
               assignee={assignee}
             />
           </div>
-          
+
           <Card>
             <CardContent className="pt-6">
               <WorkOrderDescription description={workOrder.description} />
-              
+
               <div className="my-6 border-t pt-6">
-                <WorkOrderProgressCard 
-                  workOrder={workOrder} 
-                  onProgressUpdate={onStatusChange} 
-                />
+                <WorkOrderProgressCard workOrder={workOrder} onProgressUpdate={onStatusChange} />
               </div>
             </CardContent>
           </Card>
-          
+
           <div className="md:grid md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <Card>
                 <CardContent className="pt-6">
                   <h3 className="text-base font-medium mb-4">Summary</h3>
                   <p className="text-sm text-muted-foreground">
-                    This work order is currently <span className="font-medium">{workOrder.progress || 0}% complete</span>. 
-                    {workOrder.status === 'COMPLETED' ? 
-                      ' The work has been completed.' : 
-                      workOrder.progress && workOrder.progress > 0 ? ' Work is in progress.' : ' Work has not started yet.'}
+                    This work order is currently{' '}
+                    <span className="font-medium">{workOrder.progress || 0}% complete</span>.
+                    {workOrder.status === 'COMPLETED'
+                      ? ' The work has been completed.'
+                      : workOrder.progress && workOrder.progress > 0
+                        ? ' Work is in progress.'
+                        : ' Work has not started yet.'}
                   </p>
-                  
+
                   {workOrder.scheduled_date && (
                     <p className="text-sm text-muted-foreground mt-2">
-                      Scheduled for completion by {new Date(workOrder.scheduled_date).toLocaleDateString()}.
+                      Scheduled for completion by{' '}
+                      {new Date(workOrder.scheduled_date).toLocaleDateString()}.
                     </p>
                   )}
-                  
+
                   {workOrder.actual_hours > 0 && (
                     <p className="text-sm text-muted-foreground mt-2">
-                      Total hours worked: <span className="font-medium">{workOrder.actual_hours.toFixed(1)} hrs</span>
+                      Total hours worked:{' '}
+                      <span className="font-medium">{workOrder.actual_hours.toFixed(1)} hrs</span>
                     </p>
                   )}
                 </CardContent>
@@ -107,45 +122,42 @@ const WorkOrderDetailContent = ({
               <WorkOrderCostSummary workOrder={workOrder} />
             </div>
           </div>
-          
+
           {/* Add Project Link component */}
-          <WorkOrderProjectLink 
-            workOrderId={workOrder.work_order_id} 
+          <WorkOrderProjectLink
+            workOrderId={workOrder.work_order_id}
             onLinkComplete={onStatusChange}
           />
         </TabsContent>
-        
+
         <TabsContent value="documents">
-          <WorkOrderDocuments 
-            workOrderId={workOrder.work_order_id} 
-            entityType="WORK_ORDER"
-          />
+          <WorkOrderDocuments workOrderId={workOrder.work_order_id} entityType="WORK_ORDER" />
         </TabsContent>
-        
+
         <TabsContent value="time">
-          <WorkOrderTimelogs 
-            workOrderId={workOrder.work_order_id} 
+          <WorkOrderTimelogs
+            workOrderId={workOrder.work_order_id}
             onTimeLogAdded={onStatusChange}
           />
         </TabsContent>
-        
+
         <TabsContent value="expenses">
-          <WorkOrderExpenses 
-            workOrderId={workOrder.work_order_id} 
+          <WorkOrderExpenses
+            workOrderId={workOrder.work_order_id}
             onExpenseAdded={onStatusChange}
           />
         </TabsContent>
-        
+
         <TabsContent value="materials">
-          <WorkOrderMaterials 
-            workOrderId={workOrder.work_order_id} 
+          <WorkOrderMaterials
+            workOrderId={workOrder.work_order_id}
             onMaterialAdded={onStatusChange}
           />
         </TabsContent>
-        
+
         <TabsContent value="changes">
-          <ChangeOrdersList 
-            workOrderId={workOrder.work_order_id} 
+          <ChangeOrdersList
+            workOrderId={workOrder.work_order_id}
             onChangeOrderAdded={onStatusChange}
           />
         </TabsContent>

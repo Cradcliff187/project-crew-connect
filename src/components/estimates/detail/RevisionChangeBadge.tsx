@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Plus, Pencil } from 'lucide-react';
@@ -8,12 +7,12 @@ interface RevisionChangeBadgeProps {
   size?: 'sm' | 'default';
 }
 
-const RevisionChangeBadge: React.FC<RevisionChangeBadgeProps> = ({ 
+const RevisionChangeBadge: React.FC<RevisionChangeBadgeProps> = ({
   changeType,
-  size = 'default'
+  size = 'default',
 }) => {
   const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
-  
+
   switch (changeType) {
     case 'new':
       return (

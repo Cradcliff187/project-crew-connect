@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -20,10 +19,7 @@ const Login = () => {
         <h1 className="text-2xl font-bold text-center text-[#0485ea] mb-6">Login to AKC LLC</h1>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Button 
-              onClick={handleLogin} 
-              className="w-full bg-[#0485ea] hover:bg-[#0373ce]"
-            >
+            <Button onClick={handleLogin} className="w-full bg-[#0485ea] hover:bg-[#0373ce]">
               Login
             </Button>
           </div>

@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save } from 'lucide-react';
@@ -40,7 +39,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
   onOpenChange,
   estimateId,
   currentVersion,
-  onSuccess
+  onSuccess,
 }) => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
@@ -48,19 +47,19 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
   const [currentItems, setCurrentItems] = useState<any[]>([]);
   const [subtotal, setSubtotal] = useState(0);
   const { toast } = useToast();
-  
+
   const form = useForm<RevisionFormValues>({
     defaultValues: {
       notes: '',
       revisionItems: [],
-      contingencyPercentage: 0
-    }
+      contingencyPercentage: 0,
+    },
   });
-  
+
   const contingencyPercentage = form.watch('contingencyPercentage');
-  const contingencyAmount = (subtotal * (parseFloat(contingencyPercentage.toString()) / 100)) || 0;
+  const contingencyAmount = subtotal * (parseFloat(contingencyPercentage.toString()) / 100) || 0;
   const grandTotal = subtotal + contingencyAmount;
-  
+
   useEffect(() => {
     if (open && estimateId) {
       // Get current revision ID
@@ -73,7 +72,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
         .then(({ data: revData, error }) => {
           if (!error && revData) {
             setCurrentRevisionId(revData.id);
-            
+
             // Get current items for this revision
             supabase
               .from('estimate_items')
@@ -86,13 +85,13 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
                   form.reset({
                     notes: '',
                     revisionItems: itemsData,
-                    contingencyPercentage: 0
+                    contingencyPercentage: 0,
                   });
                 }
               });
           }
         });
-      
+
       // Get contingency percentage from estimate
       supabase
         .from('estimates')
@@ -109,13 +108,16 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
 
   const handleSubmit = async (values: RevisionFormValues) => {
     if (!estimateId) return;
-    
+
     try {
       setSaving(true);
-      
+
       // Calculate total amount for the revision from items
-      const totalAmount = values.revisionItems.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0);
-      
+      const totalAmount = values.revisionItems.reduce(
+        (sum, item) => sum + (Number(item.total_price) || 0),
+        0
+      );
+
       // 1. Create new revision record with the total amount included
       const newVersion = currentVersion + 1;
       const { data: revisionData, error: revisionError } = await supabase
@@ -131,9 +133,9 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
         })
         .select()
         .single();
-      
+
       if (revisionError) throw revisionError;
-      
+
       // 2. Update the previous revision to not be current
       if (currentRevisionId) {
         await supabase
@@ -141,7 +143,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
           .update({ is_current: false })
           .eq('id', currentRevisionId);
       }
-      
+
       // 3. Insert new items linked to this revision
       const items = values.revisionItems.map(item => ({
         ...item,
@@ -150,33 +152,31 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
         revision_id: revisionData.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        original_item_id: item.id // Keep reference to original item
+        original_item_id: item.id, // Keep reference to original item
       }));
-      
-      const { error: itemsError } = await supabase
-        .from('estimate_items')
-        .insert(items);
-      
+
+      const { error: itemsError } = await supabase.from('estimate_items').insert(items);
+
       if (itemsError) throw itemsError;
-      
+
       // 4. Update estimate with new total and contingency
       const contingencyAmount = totalAmount * (values.contingencyPercentage / 100);
-      
+
       await supabase
         .from('estimates')
         .update({
           estimateamount: totalAmount,
           contingencyamount: contingencyAmount,
           contingency_percentage: values.contingencyPercentage,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('estimateid', estimateId);
-      
+
       toast({
         title: 'Success',
         description: `Created revision ${newVersion}`,
       });
-      
+
       if (onSuccess) onSuccess();
       onOpenChange(false);
     } catch (error: any) {
@@ -195,7 +195,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
   const updateSubtotal = (total: number) => {
     setSubtotal(total);
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
@@ -205,7 +205,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
             Create a new revision of this estimate. The current version is {currentVersion}.
           </DialogDescription>
         </DialogHeader>
-        
+
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -213,65 +213,67 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
                 <TabsTrigger value="general">General</TabsTrigger>
                 <TabsTrigger value="items">Line Items</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="general" className="space-y-4">
                 <div>
                   <Label htmlFor="notes">Revision Notes</Label>
-                  <Textarea 
+                  <Textarea
                     id="notes"
-                    placeholder="Enter notes about the changes in this revision..." 
+                    placeholder="Enter notes about the changes in this revision..."
                     {...form.register('notes')}
                     rows={4}
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="contingencyPercentage">Contingency Percentage (%)</Label>
-                  <Input 
+                  <Input
                     id="contingencyPercentage"
-                    type="number" 
+                    type="number"
                     step="0.1"
-                    min="0" 
+                    min="0"
                     max="100"
                     {...form.register('contingencyPercentage', {
                       valueAsNumber: true,
                       min: 0,
-                      max: 100
+                      max: 100,
                     })}
                   />
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="items">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2">
-                    <EstimateLineItemsEditor 
+                    <EstimateLineItemsEditor
                       form={form}
                       name="revisionItems"
                       estimateId={estimateId}
                       onSubtotalChange={updateSubtotal}
                     />
                   </div>
-                  
+
                   <div className="space-y-4">
                     <Card className="bg-[#0485ea]/5">
                       <CardContent className="p-4">
                         <h3 className="font-medium text-sm mb-3">Revision Summary</h3>
-                        
+
                         <div className="space-y-2">
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Subtotal:</span>
                             <span className="font-medium">{formatCurrency(subtotal)}</span>
                           </div>
-                          
+
                           <div className="flex justify-between items-center text-sm">
                             <div className="flex items-center">
                               <span className="text-muted-foreground">Contingency:</span>
-                              <span className="text-muted-foreground ml-1 text-xs">({contingencyPercentage}%)</span>
+                              <span className="text-muted-foreground ml-1 text-xs">
+                                ({contingencyPercentage}%)
+                              </span>
                             </div>
                             <span className="font-medium">{formatCurrency(contingencyAmount)}</span>
                           </div>
-                          
+
                           <div className="border-t pt-2 mt-2">
                             <div className="flex justify-between items-center">
                               <span className="font-medium">Total:</span>
@@ -281,20 +283,20 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="mt-4">
                           <Label htmlFor="itemsContingencyPercentage">Contingency %</Label>
-                          <Input 
+                          <Input
                             id="itemsContingencyPercentage"
-                            type="number" 
+                            type="number"
                             step="0.1"
-                            min="0" 
+                            min="0"
                             max="100"
                             className="mt-1"
                             {...form.register('contingencyPercentage', {
                               valueAsNumber: true,
                               min: 0,
-                              max: 100
+                              max: 100,
                             })}
                           />
                         </div>
@@ -304,11 +306,11 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
                 </div>
               </TabsContent>
             </Tabs>
-            
+
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={saving}
               >

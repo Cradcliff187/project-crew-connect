@@ -1,16 +1,15 @@
-
 import { useState } from 'react';
 import * as budgetIntegrationService from '@/services/budgetIntegrationService';
 import { toast } from '@/hooks/use-toast';
 
 export const useBudgetIntegration = () => {
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const createBudgetFromEstimate = async (projectId: string, estimateId: string) => {
     setIsLoading(true);
     try {
       const result = await budgetIntegrationService.createBudgetFromEstimate(projectId, estimateId);
-      
+
       if (result.success) {
         toast({
           title: 'Budget Created',
@@ -21,7 +20,7 @@ export const useBudgetIntegration = () => {
         toast({
           title: 'Budget Creation Failed',
           description: result.message || 'Could not create budget items from the estimate.',
-          variant: 'destructive'
+          variant: 'destructive',
         });
         return false;
       }
@@ -30,23 +29,27 @@ export const useBudgetIntegration = () => {
       toast({
         title: 'Error',
         description: error.message || 'An error occurred while creating the budget.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return false;
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const linkWorkOrderToProject = async (workOrderId: string, projectId: string, budgetItemId?: string) => {
+
+  const linkWorkOrderToProject = async (
+    workOrderId: string,
+    projectId: string,
+    budgetItemId?: string
+  ) => {
     setIsLoading(true);
     try {
       const success = await budgetIntegrationService.linkWorkOrderToProject(
-        workOrderId, 
-        projectId, 
+        workOrderId,
+        projectId,
         budgetItemId
       );
-      
+
       if (success) {
         toast({
           title: 'Work Order Linked',
@@ -57,7 +60,7 @@ export const useBudgetIntegration = () => {
         toast({
           title: 'Link Failed',
           description: 'Could not link work order to the project budget.',
-          variant: 'destructive'
+          variant: 'destructive',
         });
         return false;
       }
@@ -66,19 +69,22 @@ export const useBudgetIntegration = () => {
       toast({
         title: 'Error',
         description: error.message || 'An error occurred while linking the work order.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return false;
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const importWorkOrderCosts = async (workOrderId: string, projectId: string) => {
     setIsLoading(true);
     try {
-      const result = await budgetIntegrationService.importWorkOrderCostsToProject(workOrderId, projectId);
-      
+      const result = await budgetIntegrationService.importWorkOrderCostsToProject(
+        workOrderId,
+        projectId
+      );
+
       if (result.success) {
         toast({
           title: 'Costs Imported',
@@ -89,7 +95,7 @@ export const useBudgetIntegration = () => {
         toast({
           title: 'Import Failed',
           description: result.message || 'Could not import work order costs to the project budget.',
-          variant: 'destructive'
+          variant: 'destructive',
         });
         return false;
       }
@@ -98,18 +104,18 @@ export const useBudgetIntegration = () => {
       toast({
         title: 'Error',
         description: error.message || 'An error occurred while importing costs.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return false;
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return {
     isLoading,
     createBudgetFromEstimate,
     linkWorkOrderToProject,
-    importWorkOrderCosts
+    importWorkOrderCosts,
   };
 };

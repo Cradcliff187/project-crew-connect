@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -8,15 +7,11 @@ import SubcontractorDetailHeader from './SubcontractorDetailHeader';
 
 const SubcontractorNotFoundView = () => {
   const navigate = useNavigate();
-  
+
   return (
     <PageTransition>
       <div className="container max-w-4xl mx-auto py-6">
-        <SubcontractorDetailHeader 
-          subcontractor={null} 
-          loading={false} 
-          onEdit={() => {}} 
-        />
+        <SubcontractorDetailHeader subcontractor={null} loading={false} onEdit={() => {}} />
         <Card>
           <CardHeader>
             <CardTitle>Subcontractor Not Found</CardTitle>
@@ -25,7 +20,7 @@ const SubcontractorNotFoundView = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button 
+            <Button
               className="bg-[#0485ea] hover:bg-[#0375d1] text-white"
               onClick={() => navigate('/subcontractors')}
             >

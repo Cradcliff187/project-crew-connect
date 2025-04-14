@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -10,17 +9,11 @@ interface DashboardCardProps {
   footer?: ReactNode;
 }
 
-const DashboardCard = ({ 
-  title, 
-  icon, 
-  children, 
-  className,
-  footer
-}: DashboardCardProps) => {
+const DashboardCard = ({ title, icon, children, className, footer }: DashboardCardProps) => {
   return (
-    <div 
+    <div
       className={cn(
-        "premium-card overflow-hidden transition-all duration-300 flex flex-col shadow-md", 
+        'premium-card overflow-hidden transition-all duration-300 flex flex-col shadow-md',
         className
       )}
     >
@@ -32,15 +25,11 @@ const DashboardCard = ({
           </div>
         )}
       </div>
-      
-      <div className="flex-1 p-5 relative z-10">
-        {children}
-      </div>
-      
+
+      <div className="flex-1 p-5 relative z-10">{children}</div>
+
       {footer && (
-        <div className="px-5 py-3 bg-warmgray-50/70 border-t border-border/50">
-          {footer}
-        </div>
+        <div className="px-5 py-3 bg-warmgray-50/70 border-t border-border/50">{footer}</div>
       )}
     </div>
   );

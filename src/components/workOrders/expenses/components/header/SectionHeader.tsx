@@ -1,4 +1,3 @@
-
 import { DollarSign } from 'lucide-react';
 import { AddExpenseButton } from './';
 

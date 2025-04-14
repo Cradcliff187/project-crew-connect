@@ -1,4 +1,3 @@
-
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { UseFormReturn } from 'react-hook-form';
@@ -19,10 +18,7 @@ const CreateLocationToggle = ({ form }: CreateLocationToggleProps) => {
             <FormLabel>Create new location</FormLabel>
           </div>
           <FormControl>
-            <Switch
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
+            <Switch checked={field.value} onCheckedChange={field.onChange} />
           </FormControl>
         </FormItem>
       )}

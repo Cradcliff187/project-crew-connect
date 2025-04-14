@@ -1,4 +1,3 @@
-
 import { TableHead } from '@/components/ui/table';
 import { Building2, Mail, MapPin, BarChart } from 'lucide-react';
 
@@ -29,7 +28,9 @@ const VendorsTableHeader = () => {
           <span>Status</span>
         </div>
       </TableHead>
-      <TableHead className="text-right font-montserrat font-semibold text-[#0485ea] w-1/8">Actions</TableHead>
+      <TableHead className="text-right font-montserrat font-semibold text-[#0485ea] w-1/8">
+        Actions
+      </TableHead>
     </>
   );
 };

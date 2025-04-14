@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,29 +19,29 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
   const { documents, loading, fetchDocuments } = useSubcontractorDocuments(subcontractorId);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [viewDocument, setViewDocument] = useState<SubcontractorDocument | null>(null);
-  
+
   const handleUploadSuccess = () => {
     setIsUploadOpen(false);
     fetchDocuments();
   };
-  
+
   const handleViewDocument = (doc: SubcontractorDocument) => {
     setViewDocument(doc);
   };
-  
+
   // Convert subcontractor document to work order document format for compatibility
   // All properties required by WorkOrderDocument are already present in SubcontractorDocument
   const convertToWorkOrderDocument = (doc: SubcontractorDocument): WorkOrderDocument => {
     return doc as unknown as WorkOrderDocument;
   };
-  
+
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">Documents</CardTitle>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="text-[#0485ea]"
             onClick={() => setIsUploadOpen(true)}
           >
@@ -51,7 +50,7 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
           </Button>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         {loading ? (
           <div className="space-y-4">
@@ -62,19 +61,21 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
         ) : documents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {documents.map(doc => (
-              <DocumentCard 
-                key={doc.document_id} 
-                document={convertToWorkOrderDocument(doc)} 
-                onViewDocument={() => handleViewDocument(doc)} 
+              <DocumentCard
+                key={doc.document_id}
+                document={convertToWorkOrderDocument(doc)}
+                onViewDocument={() => handleViewDocument(doc)}
               />
             ))}
           </div>
         ) : (
           <div className="text-center py-8 border rounded-md">
             <FileText className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
-            <p className="text-muted-foreground">No documents have been attached to this subcontractor</p>
-            <Button 
-              variant="outline" 
+            <p className="text-muted-foreground">
+              No documents have been attached to this subcontractor
+            </p>
+            <Button
+              variant="outline"
               className="mt-4 text-[#0485ea]"
               onClick={() => setIsUploadOpen(true)}
             >
@@ -84,31 +85,31 @@ const SubcontractorDocuments = ({ subcontractorId }: SubcontractorDocumentsProps
           </div>
         )}
       </CardContent>
-      
+
       <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
           </DialogHeader>
-          <EnhancedDocumentUpload 
-            entityType={"SUBCONTRACTOR" as EntityType}
+          <EnhancedDocumentUpload
+            entityType={'SUBCONTRACTOR' as EntityType}
             entityId={subcontractorId}
             onSuccess={handleUploadSuccess}
             onCancel={() => setIsUploadOpen(false)}
           />
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={!!viewDocument} onOpenChange={(open) => !open && setViewDocument(null)}>
+
+      <Dialog open={!!viewDocument} onOpenChange={open => !open && setViewDocument(null)}>
         <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>{viewDocument?.file_name}</DialogTitle>
           </DialogHeader>
           {viewDocument && (
-            <DocumentViewer 
+            <DocumentViewer
               document={convertToWorkOrderDocument(viewDocument)}
               open={!!viewDocument}
-              onOpenChange={(open) => !open && setViewDocument(null)}
+              onOpenChange={open => !open && setViewDocument(null)}
             />
           )}
         </DialogContent>

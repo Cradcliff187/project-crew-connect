@@ -1,18 +1,17 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { 
-  Plus, 
-  Calendar, 
-  Clock, 
-  MessageCircle, 
-  Mail, 
-  Phone, 
-  File, 
-  Check, 
-  RefreshCw
+import {
+  Plus,
+  Calendar,
+  Clock,
+  MessageCircle,
+  Mail,
+  Phone,
+  File,
+  Check,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,7 +43,7 @@ import {
   fetchContactInteractions,
   addContactInteraction,
   getInteractionTypeOptions,
-  getInteractionStatusOptions
+  getInteractionStatusOptions,
 } from './util/contactInteractions';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -54,15 +53,15 @@ import { Contact } from '@/pages/Contacts';
 
 const formSchema = z.object({
   interaction_type: z.string({
-    required_error: "Please select an interaction type",
+    required_error: 'Please select an interaction type',
   }),
-  subject: z.string().min(1, "Subject is required"),
+  subject: z.string().min(1, 'Subject is required'),
   notes: z.string().optional(),
   interaction_date: z.date({
-    required_error: "Date is required",
+    required_error: 'Date is required',
   }),
   status: z.string({
-    required_error: "Status is required",
+    required_error: 'Status is required',
   }),
   scheduled_date: z.date().optional(),
   scheduled_time: z.string().optional(),
@@ -102,12 +101,12 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
         const data = await fetchContactInteractions(contact.id);
         setInteractions(data);
       } catch (error) {
-        console.error("Error loading interactions:", error);
+        console.error('Error loading interactions:', error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadInteractions();
   }, [contact.id, refreshTrigger]);
 
@@ -132,30 +131,36 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
         scheduled_time: values.scheduled_time,
         duration_minutes: values.duration_minutes,
         status: values.status,
-        created_by: 'System'
+        created_by: 'System',
       };
-      
+
       await addContactInteraction(newInteraction);
       setShowAddDialog(false);
       form.reset();
       setRefreshTrigger(prev => prev + 1);
-      
+
       if (onInteractionAdded) {
         onInteractionAdded();
       }
     } catch (error) {
-      console.error("Error adding interaction:", error);
+      console.error('Error adding interaction:', error);
     }
   };
 
   const getInteractionIcon = (type: string) => {
     switch (type) {
-      case 'CALL': return <Phone className="h-4 w-4" />;
-      case 'EMAIL': return <Mail className="h-4 w-4" />;
-      case 'MEETING': return <Calendar className="h-4 w-4" />;
-      case 'NOTE': return <File className="h-4 w-4" />;
-      case 'TASK': return <Check className="h-4 w-4" />;
-      default: return <MessageCircle className="h-4 w-4" />;
+      case 'CALL':
+        return <Phone className="h-4 w-4" />;
+      case 'EMAIL':
+        return <Mail className="h-4 w-4" />;
+      case 'MEETING':
+        return <Calendar className="h-4 w-4" />;
+      case 'NOTE':
+        return <File className="h-4 w-4" />;
+      case 'TASK':
+        return <Check className="h-4 w-4" />;
+      default:
+        return <MessageCircle className="h-4 w-4" />;
     }
   };
 
@@ -180,18 +185,18 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Interactions & Communications</h3>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setRefreshTrigger(prev => prev + 1)}
             disabled={loading}
           >
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button 
-            size="sm" 
-            variant="default" 
+          <Button
+            size="sm"
+            variant="default"
             className="bg-[#0485ea] hover:bg-[#0375d1]"
             onClick={() => setShowAddDialog(true)}
           >
@@ -209,7 +214,10 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
         ) : (
           <div className="space-y-3">
             {interactions.map(interaction => (
-              <div key={interaction.id} className="flex gap-3 p-3 border rounded-md hover:bg-gray-50 transition-colors">
+              <div
+                key={interaction.id}
+                className="flex gap-3 p-3 border rounded-md hover:bg-gray-50 transition-colors"
+              >
                 <div className="mt-1">
                   <div className="p-2 bg-gray-100 rounded-full">
                     {getInteractionIcon(interaction.interaction_type)}
@@ -220,20 +228,23 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                     <h4 className="font-medium">{interaction.subject}</h4>
                     <div className="flex gap-2 items-center text-sm text-muted-foreground">
                       <span>{format(new Date(interaction.interaction_date), 'PP')}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(interaction.status)}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(interaction.status)}`}
+                      >
                         {interaction.status}
                       </span>
                     </div>
                   </div>
                   {interaction.notes && <p className="text-sm">{interaction.notes}</p>}
-                  
+
                   {interaction.scheduled_date && (
                     <div className="flex items-center mt-2 text-sm text-muted-foreground">
                       <Calendar className="h-3.5 w-3.5 mr-1" />
                       <span>
                         Scheduled: {format(new Date(interaction.scheduled_date), 'PP')}
                         {interaction.scheduled_time && ` at ${interaction.scheduled_time}`}
-                        {interaction.duration_minutes && ` (${interaction.duration_minutes} minutes)`}
+                        {interaction.duration_minutes &&
+                          ` (${interaction.duration_minutes} minutes)`}
                       </span>
                     </div>
                   )}
@@ -249,7 +260,7 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
           <DialogHeader>
             <DialogTitle>Add New Interaction</DialogTitle>
           </DialogHeader>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <FormField
@@ -258,11 +269,11 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Interaction Type</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
+                    <Select
+                      onValueChange={value => {
                         field.onChange(value);
                         setInteractionType(value);
-                      }} 
+                      }}
                       defaultValue={field.value}
                     >
                       <FormControl>
@@ -282,7 +293,7 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="subject"
@@ -296,7 +307,7 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -308,17 +319,13 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
+                              variant={'outline'}
                               className={cn(
-                                "pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
+                                'pl-3 text-left font-normal',
+                                !field.value && 'text-muted-foreground'
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
+                              {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                               <Calendar className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -336,17 +343,14 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="status"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select status" />
@@ -365,7 +369,7 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                   )}
                 />
               </div>
-              
+
               {(interactionType === 'MEETING' || interactionType === 'TASK') && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -378,14 +382,14 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
-                                variant={"outline"}
+                                variant={'outline'}
                                 className={cn(
-                                  "pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
+                                  'pl-3 text-left font-normal',
+                                  !field.value && 'text-muted-foreground'
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value, "PPP")
+                                  format(field.value, 'PPP')
                                 ) : (
                                   <span>Pick a date</span>
                                 )}
@@ -406,7 +410,7 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="grid grid-cols-2 gap-2">
                     <FormField
                       control={form.control}
@@ -421,7 +425,7 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="duration_minutes"
@@ -429,11 +433,11 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                         <FormItem>
                           <FormLabel>Duration (min)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="60" 
+                            <Input
+                              type="number"
+                              placeholder="60"
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              onChange={e => field.onChange(parseInt(e.target.value) || 0)}
                             />
                           </FormControl>
                           <FormMessage />
@@ -443,7 +447,7 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                   </div>
                 </div>
               )}
-              
+
               <FormField
                 control={form.control}
                 name="notes"
@@ -451,29 +455,22 @@ const InteractionsSection = ({ contact, onInteractionAdded }: InteractionsSectio
                   <FormItem>
                     <FormLabel>Notes</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Add any additional details about this interaction" 
+                      <Textarea
+                        placeholder="Add any additional details about this interaction"
                         className="resize-none h-20"
-                        {...field} 
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowAddDialog(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-[#0485ea] hover:bg-[#0375d1]"
-                >
+                <Button type="submit" className="bg-[#0485ea] hover:bg-[#0375d1]">
                   Add Interaction
                 </Button>
               </DialogFooter>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Subcontractor } from '../utils/types';
 import { Mail, Phone } from 'lucide-react';

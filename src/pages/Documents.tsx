@@ -1,4 +1,3 @@
-
 // src/pages/Documents.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -27,11 +26,11 @@ const DocumentsPage: React.FC = () => {
   const [viewDocument, setViewDocument] = useState<WorkOrderDocument | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const { 
-    data: recentDocuments, 
-    isLoading, 
-    refetch: refreshRecentDocuments 
+
+  const {
+    data: recentDocuments,
+    isLoading,
+    refetch: refreshRecentDocuments,
   } = useQuery({
     queryKey: ['recentDocuments'],
     queryFn: async () => {
@@ -40,71 +39,74 @@ const DocumentsPage: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(20);
-        
+
       if (error) {
-        console.error("Error fetching recent documents:", error);
+        console.error('Error fetching recent documents:', error);
         toast({
-          title: "Error",
-          description: "Failed to load recent documents.",
-          variant: "destructive"
+          title: 'Error',
+          description: 'Failed to load recent documents.',
+          variant: 'destructive',
         });
         return [];
       }
-      
+
       return data as Document[];
-    }
+    },
   });
-  
+
   const handleSearch = async () => {
     if (!searchTerm) return;
-    
+
     navigate(`/documents?search=${searchTerm}`);
   };
-  
+
   const handleDocumentUploadSuccess = (documentId?: string) => {
     refreshRecentDocuments();
     setIsUploadModalOpen(false);
-    
+
     if (documentId) {
       // Navigate to the document detail view
       navigate(`/documents/${documentId}`);
     }
   };
-  
+
   const handleViewDocument = (doc: Document) => {
     // Convert Document to WorkOrderDocument for viewer
     const workOrderDoc = convertToWorkOrderDocument(doc);
     setViewDocument(workOrderDoc);
   };
-  
+
   const handleCloseViewer = () => {
     setViewDocument(null);
   };
-  
+
   return (
     <div className="container max-w-7xl mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Documents</h1>
-        <Button onClick={() => setIsUploadModalOpen(true)} className="bg-[#0485ea] hover:bg-[#0375d1]">
+        <Button
+          onClick={() => setIsUploadModalOpen(true)}
+          className="bg-[#0485ea] hover:bg-[#0375d1]"
+        >
           <Upload className="h-4 w-4 mr-2" />
           Upload Document
         </Button>
       </div>
-      
+
       <div className="flex items-center space-x-2">
         <Input
           type="text"
           placeholder="Search documents..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          onChange={e => setSearchTerm(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSearch()}
         />
         <Button onClick={handleSearch}>
           <Search className="h-4 w-4 mr-2" />
           Search
         </Button>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           <Card>
@@ -119,7 +121,7 @@ const DocumentsPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                   {isLoading ? (
                     <>
-                      {[1, 2, 3, 4].map((i) => (
+                      {[1, 2, 3, 4].map(i => (
                         <div key={i} className="space-y-2">
                           <Skeleton className="h-4 w-32" />
                           <Skeleton className="h-24 w-full" />
@@ -127,11 +129,11 @@ const DocumentsPage: React.FC = () => {
                       ))}
                     </>
                   ) : recentDocuments && recentDocuments.length > 0 ? (
-                    recentDocuments.map((doc) => (
-                      <DocumentCard 
-                        key={doc.document_id} 
-                        document={convertToWorkOrderDocument(doc)} 
-                        onViewDocument={() => handleViewDocument(doc)} 
+                    recentDocuments.map(doc => (
+                      <DocumentCard
+                        key={doc.document_id}
+                        document={convertToWorkOrderDocument(doc)}
+                        onViewDocument={() => handleViewDocument(doc)}
                       />
                     ))
                   ) : (
@@ -144,21 +146,21 @@ const DocumentsPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-        
+
         {viewDocument && viewDocument.document_id && (
           <div className="md:col-span-1 space-y-4">
-            <DocumentVersionHistoryCard 
+            <DocumentVersionHistoryCard
               documentId={viewDocument.document_id}
-              onVersionChange={(document) => {
+              onVersionChange={document => {
                 // Convert Document to WorkOrderDocument
                 const workOrderDoc = convertToWorkOrderDocument(document);
                 setViewDocument(workOrderDoc);
               }}
             />
-            
-            <DocumentRelationshipsView 
+
+            <DocumentRelationshipsView
               document={viewDocument}
-              onViewDocument={(doc) => {
+              onViewDocument={doc => {
                 setViewDocument(convertToWorkOrderDocument(doc));
               }}
               showManagementButton={false}
@@ -166,7 +168,7 @@ const DocumentsPage: React.FC = () => {
           </div>
         )}
       </div>
-      
+
       <EnhancedDocumentUploadDialog
         open={isUploadModalOpen}
         onOpenChange={setIsUploadModalOpen}
@@ -176,12 +178,12 @@ const DocumentsPage: React.FC = () => {
         description="Upload and categorize your document for easy access later"
         allowEntityTypeSelection={true}
       />
-      
+
       {viewDocument && (
-        <DocumentViewer 
+        <DocumentViewer
           document={viewDocument}
           open={!!viewDocument}
-          onOpenChange={(open) => !open && handleCloseViewer()}
+          onOpenChange={open => !open && handleCloseViewer()}
         />
       )}
     </div>

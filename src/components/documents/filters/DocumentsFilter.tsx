@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -19,7 +18,7 @@ interface DocumentsFilterProps {
 const DocumentsFilter: React.FC<DocumentsFilterProps> = ({
   filters,
   onFiltersChange,
-  entityType
+  entityType,
 }) => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFiltersChange({ search: e.target.value });
@@ -43,7 +42,7 @@ const DocumentsFilter: React.FC<DocumentsFilterProps> = ({
       startDate: null,
       endDate: null,
       categories: [],
-      tags: []
+      tags: [],
     });
   };
 
@@ -86,12 +85,9 @@ const DocumentsFilter: React.FC<DocumentsFilterProps> = ({
           entityType={entityType}
         />
 
-        <TagsFilter 
-          selectedTags={filters.tags}
-          onTagsChange={handleTagsChange}
-        />
+        <TagsFilter selectedTags={filters.tags} onTagsChange={handleTagsChange} />
 
-        <DateRangeFilter 
+        <DateRangeFilter
           startDate={filters.startDate}
           endDate={filters.endDate}
           onDateRangeChange={handleDateRangeChange}

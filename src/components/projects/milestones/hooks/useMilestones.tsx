@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -27,7 +26,7 @@ export const useMilestones = (projectId: string) => {
         .select('*')
         .eq('projectid', projectId)
         .order('due_date', { ascending: true });
-      
+
       if (error) throw error;
       setMilestones(data as ProjectMilestone[]);
     } catch (error: any) {
@@ -51,25 +50,25 @@ export const useMilestones = (projectId: string) => {
           title,
           description: description || null,
           due_date: dueDate ? dueDate.toISOString() : null,
-          is_completed: false
+          is_completed: false,
         })
         .select();
-        
+
       if (error) throw error;
-      
+
       setMilestones([...milestones, data[0] as ProjectMilestone]);
-      
+
       toast({
         title: 'Milestone added',
         description: 'A new milestone has been added to the project.',
       });
-      
+
       return true;
     } catch (error: any) {
       toast({
         title: 'Error saving milestone',
         description: error.message,
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return false;
     }
@@ -90,31 +89,33 @@ export const useMilestones = (projectId: string) => {
           due_date: dueDate ? dueDate.toISOString() : null,
         })
         .eq('id', id);
-        
+
       if (error) throw error;
-      
-      setMilestones(milestones.map(m => 
-        m.id === id 
-          ? {
-              ...m, 
-              title, 
-              description: description || null, 
-              due_date: dueDate ? dueDate.toISOString() : null
-            } 
-          : m
-      ));
-      
+
+      setMilestones(
+        milestones.map(m =>
+          m.id === id
+            ? {
+                ...m,
+                title,
+                description: description || null,
+                due_date: dueDate ? dueDate.toISOString() : null,
+              }
+            : m
+        )
+      );
+
       toast({
         title: 'Milestone updated',
         description: 'The milestone has been updated successfully.',
       });
-      
+
       return true;
     } catch (error: any) {
       toast({
         title: 'Error updating milestone',
         description: error.message,
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return false;
     }
@@ -123,26 +124,23 @@ export const useMilestones = (projectId: string) => {
   const deleteMilestone = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this milestone?')) {
       try {
-        const { error } = await supabase
-          .from('project_milestones')
-          .delete()
-          .eq('id', id);
-          
+        const { error } = await supabase.from('project_milestones').delete().eq('id', id);
+
         if (error) throw error;
-        
+
         setMilestones(milestones.filter(m => m.id !== id));
-        
+
         toast({
           title: 'Milestone deleted',
           description: 'The milestone has been removed from the project.',
         });
-        
+
         return true;
       } catch (error: any) {
         toast({
           title: 'Error deleting milestone',
           description: error.message,
-          variant: 'destructive'
+          variant: 'destructive',
         });
         return false;
       }
@@ -156,19 +154,19 @@ export const useMilestones = (projectId: string) => {
         .from('project_milestones')
         .update({ is_completed: !currentStatus })
         .eq('id', id);
-        
+
       if (error) throw error;
-      
-      setMilestones(milestones.map(m => 
-        m.id === id ? { ...m, is_completed: !currentStatus } : m
-      ));
-      
+
+      setMilestones(
+        milestones.map(m => (m.id === id ? { ...m, is_completed: !currentStatus } : m))
+      );
+
       return true;
     } catch (error: any) {
       toast({
         title: 'Error updating milestone',
         description: error.message,
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return false;
     }
@@ -192,6 +190,6 @@ export const useMilestones = (projectId: string) => {
     addMilestone,
     updateMilestone,
     deleteMilestone,
-    toggleMilestoneComplete
+    toggleMilestoneComplete,
   };
 };

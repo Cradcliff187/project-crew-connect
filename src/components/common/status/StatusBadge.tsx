@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertCircle, CircleDashed, Clock } from 'lucide-react';
@@ -15,18 +14,18 @@ interface StatusBadgeProps {
 /**
  * Universal status badge component aligned with AKC LLC brand guidelines
  */
-const StatusBadge: React.FC<StatusBadgeProps> = ({ 
+const StatusBadge: React.FC<StatusBadgeProps> = ({
   status,
-  label, 
-  color = 'neutral', 
+  label,
+  color = 'neutral',
   size = 'default',
   className = '',
-  showIcon = true
+  showIcon = true,
 }) => {
   // Get status icon
   const getStatusIcon = () => {
     if (!showIcon) return null;
-    
+
     switch (color) {
       case 'green':
       case 'success':
@@ -45,7 +44,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
         return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
     }
   };
-  
+
   // Get status class based on status type
   const getStatusClass = () => {
     switch (color) {
@@ -69,12 +68,12 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
-  
+
   const sizeClasses = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2.5 py-0.5 text-xs';
-  
+
   return (
-    <Badge 
-      variant="outline" 
+    <Badge
+      variant="outline"
       className={`font-medium flex items-center ${getStatusClass()} ${sizeClasses} ${className}`}
     >
       {getStatusIcon()}

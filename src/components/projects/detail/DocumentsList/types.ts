@@ -1,4 +1,3 @@
-
 export interface ProjectDocument {
   id: string;
   project_id: string;

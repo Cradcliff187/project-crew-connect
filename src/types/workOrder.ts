@@ -1,4 +1,3 @@
-
 // Extending the types to include the fields we're using
 export interface WorkOrder {
   work_order_id: string;
@@ -37,7 +36,7 @@ export interface WorkOrderExpense {
   quantity: number;
   unit_price: number;
   total_price: number;
-  amount?: number; // For expenses table compatibility 
+  amount?: number; // For expenses table compatibility
   receipt_document_id?: string | null;
   document_id?: string | null; // For expenses table compatibility
   created_at: string;

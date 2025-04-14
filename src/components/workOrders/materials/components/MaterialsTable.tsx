@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   Table,
@@ -30,7 +29,7 @@ const MaterialsTable = ({
   workOrderId,
   vendors,
   onDelete,
-  onReceiptAttached
+  onReceiptAttached,
 }: MaterialsTableProps) => {
   const {
     showReceiptUpload,
@@ -41,7 +40,7 @@ const MaterialsTable = ({
     setViewingReceipt,
     receiptDocument,
     handleReceiptClick,
-    handleCloseReceiptViewer
+    handleCloseReceiptViewer,
   } = useReceiptManager();
 
   // Get vendor name based on vendor ID
@@ -86,7 +85,7 @@ const MaterialsTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {materials.map((material) => (
+          {materials.map(material => (
             <TableRow key={material.id}>
               <TableCell className="font-medium">{material.material_name}</TableCell>
               <TableCell>{material.quantity}</TableCell>
@@ -94,10 +93,7 @@ const MaterialsTable = ({
               <TableCell>{formatCurrency(material.total_price)}</TableCell>
               <TableCell>{getVendorName(material.vendor_id)}</TableCell>
               <TableCell>
-                <ReceiptButton
-                  material={material}
-                  onClick={handleReceiptClick}
-                />
+                <ReceiptButton material={material} onClick={handleReceiptClick} />
               </TableCell>
               <TableCell>
                 <Button

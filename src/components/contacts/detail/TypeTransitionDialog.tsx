@@ -44,10 +44,10 @@ interface TypeTransitionDialogProps {
 
 const formSchema = z.object({
   newType: z.enum(['client', 'customer', 'supplier', 'subcontractor', 'employee'], {
-    required_error: "Please select a contact type",
+    required_error: 'Please select a contact type',
   }),
   confirmation: z.boolean().refine(val => val === true, {
-    message: "You must confirm this action",
+    message: 'You must confirm this action',
   }),
 });
 
@@ -76,18 +76,18 @@ const getTypeDescription = (type: string) => {
   }
 };
 
-const TypeTransitionDialog = ({ 
-  open, 
+const TypeTransitionDialog = ({
+  open,
   onOpenChange,
   contact,
   currentType,
   onTypeChange,
-  onSuccess
+  onSuccess,
 }: TypeTransitionDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const contactType = contact?.type || currentType;
-  
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,77 +95,78 @@ const TypeTransitionDialog = ({
       confirmation: false,
     },
   });
-  
+
   const selectedType = form.watch('newType');
-  
+
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     if (values.newType === contactType) {
       toast({
-        title: "No Change",
-        description: "The selected type is the same as the current type.",
-        variant: "default"
+        title: 'No Change',
+        description: 'The selected type is the same as the current type.',
+        variant: 'default',
       });
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       if (contact) {
         const success = await transitionContactType(contact, values.newType);
-        
+
         if (success) {
           toast({
-            title: "Type Changed",
+            title: 'Type Changed',
             description: `Contact has been updated to ${values.newType}.`,
-            variant: "default"
+            variant: 'default',
           });
-          
+
           onOpenChange(false);
           form.reset();
-          
+
           if (onSuccess) {
             onSuccess();
           }
         }
       } else {
         await onTypeChange(values.newType);
-        
+
         toast({
-          title: "Type Changed",
+          title: 'Type Changed',
           description: `Contact has been updated to ${values.newType}.`,
-          variant: "default"
+          variant: 'default',
         });
-        
+
         onOpenChange(false);
         form.reset();
-        
+
         if (onSuccess) {
           onSuccess();
         }
       }
     } catch (error) {
-      console.error("Error transitioning contact type:", error);
+      console.error('Error transitioning contact type:', error);
       toast({
-        title: "Error",
-        description: "Failed to update contact type. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update contact type. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Change Contact Type</DialogTitle>
           <DialogDescription>
-            Change the type of contact from <strong>{contactType}</strong> to a new type. This may affect how the contact is managed in the system.
+            Change the type of contact from <strong>{contactType}</strong> to a new type. This may
+            affect how the contact is managed in the system.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <FormField
@@ -181,7 +182,7 @@ const TypeTransitionDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {contactTypeOptions.map((option) => (
+                      {contactTypeOptions.map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -189,25 +190,24 @@ const TypeTransitionDialog = ({
                     </SelectContent>
                   </Select>
                   {selectedType && (
-                    <FormDescription>
-                      {getTypeDescription(selectedType)}
-                    </FormDescription>
+                    <FormDescription>{getTypeDescription(selectedType)}</FormDescription>
                   )}
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             {selectedType && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Important</AlertTitle>
                 <AlertDescription>
-                  Changing a contact's type will reset its status to the default status for the new type and may affect related records.
+                  Changing a contact's type will reset its status to the default status for the new
+                  type and may affect related records.
                 </AlertDescription>
               </Alert>
             )}
-            
+
             <FormField
               control={form.control}
               name="confirmation"
@@ -222,25 +222,19 @@ const TypeTransitionDialog = ({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      I confirm this change and understand its implications
-                    </FormLabel>
+                    <FormLabel>I confirm this change and understand its implications</FormLabel>
                   </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="bg-[#0485ea] hover:bg-[#0375d1]"
                 disabled={isSubmitting}
               >

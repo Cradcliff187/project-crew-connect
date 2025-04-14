@@ -1,5 +1,4 @@
-
-import { TableHeader, TableRow, TableHead } from "@/components/ui/table";
+import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 const ProjectTableHeader = () => {
   return (
@@ -11,7 +10,9 @@ const ProjectTableHeader = () => {
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Budget</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Progress</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
+        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
+          Actions
+        </TableHead>
       </TableRow>
     </TableHeader>
   );

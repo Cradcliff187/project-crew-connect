@@ -1,4 +1,3 @@
-
 import { StatusOption } from '@/components/common/status/UniversalStatusControl';
 
 /**
@@ -55,6 +54,6 @@ export const getStatusOptions = (type: string, currentStatus: string): StatusOpt
         return [];
     }
   }
-  
+
   return [];
 };

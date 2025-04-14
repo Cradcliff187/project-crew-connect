@@ -1,7 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Wrench, Eye, Edit, Clock, FileText, Archive, CalendarClock, Plus } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Briefcase,
+  Wrench,
+  Eye,
+  Edit,
+  Clock,
+  FileText,
+  Archive,
+  CalendarClock,
+  Plus,
+} from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,17 +37,17 @@ interface ActiveWorkTableProps {
   onWorkOrderChange: () => void;
 }
 
-const ActiveWorkTable = ({ 
-  items, 
-  loading, 
-  projectsError, 
+const ActiveWorkTable = ({
+  items,
+  loading,
+  projectsError,
   workOrdersError,
-  onWorkOrderChange
+  onWorkOrderChange,
 }: ActiveWorkTableProps) => {
   const navigate = useNavigate();
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  
+
   if (loading) {
     return (
       <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
@@ -50,24 +67,36 @@ const ActiveWorkTable = ({
           <TableBody>
             {Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={`skeleton-${index}`}>
-                <TableCell><Skeleton className="h-6 w-6 rounded-full" /></TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                </TableCell>
                 <TableCell>
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-[120px]" />
                     <Skeleton className="h-3 w-[80px]" />
                   </div>
                 </TableCell>
-                <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-[150px]" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-[100px]" />
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <Skeleton className="h-2 w-[100px]" />
                     <Skeleton className="h-4 w-[30px]" />
                   </div>
                 </TableCell>
-                <TableCell><Skeleton className="h-6 w-[80px] rounded-full" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
-                <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                <TableCell>
+                  <Skeleton className="h-6 w-[80px] rounded-full" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-[100px]" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -75,7 +104,7 @@ const ActiveWorkTable = ({
       </div>
     );
   }
-  
+
   if (projectsError && workOrdersError) {
     return (
       <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
@@ -83,9 +112,9 @@ const ActiveWorkTable = ({
           <p>Error loading data:</p>
           <p>{projectsError}</p>
           <p>{workOrdersError}</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="mt-2"
             onClick={() => window.location.reload()}
           >
@@ -95,7 +124,7 @@ const ActiveWorkTable = ({
       </div>
     );
   }
-  
+
   if (items.length === 0) {
     return (
       <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
@@ -117,7 +146,7 @@ const ActiveWorkTable = ({
       const originalWorkOrder = items
         .filter(i => i.type === 'workOrder')
         .find(i => i.id === item.id);
-      
+
       if (originalWorkOrder) {
         const workOrder: any = {
           work_order_id: originalWorkOrder.id,
@@ -131,15 +160,15 @@ const ActiveWorkTable = ({
           created_at: originalWorkOrder.createdAt,
           po_number: originalWorkOrder.poNumber,
           assigned_to: originalWorkOrder.assignedTo,
-          progress: originalWorkOrder.progress
+          progress: originalWorkOrder.progress,
         };
-        
+
         setSelectedWorkOrder(workOrder as WorkOrder);
         setDetailOpen(true);
       }
     }
   };
-  
+
   const getItemActions = (item: WorkItem): ActionGroup[] => {
     if (item.type === 'project') {
       return [
@@ -148,53 +177,53 @@ const ActiveWorkTable = ({
             {
               label: 'View details',
               icon: <Eye className="w-4 h-4" />,
-              onClick: (e) => handleViewDetails(item)
+              onClick: e => handleViewDetails(item),
             },
             {
               label: 'Edit project',
               icon: <Edit className="w-4 h-4" />,
-              onClick: (e) => navigate(`/projects/${item.id}/edit`)
-            }
-          ]
+              onClick: e => navigate(`/projects/${item.id}/edit`),
+            },
+          ],
         },
         {
           items: [
             {
               label: 'Add time log',
               icon: <Clock className="w-4 h-4" />,
-              onClick: (e) => console.log('Add time log to project', item.id)
+              onClick: e => console.log('Add time log to project', item.id),
             },
             {
               label: 'Add document',
               icon: <FileText className="w-4 h-4" />,
-              onClick: (e) => console.log('Add document to project', item.id)
-            }
-          ]
+              onClick: e => console.log('Add document to project', item.id),
+            },
+          ],
         },
         {
           items: [
             {
               label: 'Update status',
               icon: <Edit className="w-4 h-4" />,
-              onClick: (e) => console.log('Update project status', item.id)
+              onClick: e => console.log('Update project status', item.id),
             },
             {
               label: 'Update progress',
               icon: <Edit className="w-4 h-4" />,
-              onClick: (e) => console.log('Update project progress', item.id)
-            }
-          ]
+              onClick: e => console.log('Update project progress', item.id),
+            },
+          ],
         },
         {
           items: [
             {
               label: 'Archive project',
               icon: <Archive className="w-4 h-4" />,
-              onClick: (e) => console.log('Archive project', item.id),
-              className: 'text-red-600'
-            }
-          ]
-        }
+              onClick: e => console.log('Archive project', item.id),
+              className: 'text-red-600',
+            },
+          ],
+        },
       ];
     } else {
       return [
@@ -203,57 +232,57 @@ const ActiveWorkTable = ({
             {
               label: 'View details',
               icon: <Eye className="w-4 h-4" />,
-              onClick: (e) => handleViewDetails(item)
+              onClick: e => handleViewDetails(item),
             },
             {
               label: 'Edit work order',
               icon: <Edit className="w-4 h-4" />,
-              onClick: (e) => console.log('Edit work order', item.id)
-            }
-          ]
+              onClick: e => console.log('Edit work order', item.id),
+            },
+          ],
         },
         {
           items: [
             {
               label: 'Add time log',
               icon: <Clock className="w-4 h-4" />,
-              onClick: (e) => console.log('Add time log to work order', item.id)
+              onClick: e => console.log('Add time log to work order', item.id),
             },
             {
               label: 'Add document',
               icon: <FileText className="w-4 h-4" />,
-              onClick: (e) => console.log('Add document to work order', item.id)
-            }
-          ]
+              onClick: e => console.log('Add document to work order', item.id),
+            },
+          ],
         },
         {
           items: [
             {
               label: 'Update status',
               icon: <Edit className="w-4 h-4" />,
-              onClick: (e) => console.log('Update work order status', item.id)
+              onClick: e => console.log('Update work order status', item.id),
             },
             {
               label: 'Update progress',
               icon: <Edit className="w-4 h-4" />,
-              onClick: (e) => console.log('Update work order progress', item.id)
-            }
-          ]
+              onClick: e => console.log('Update work order progress', item.id),
+            },
+          ],
         },
         {
           items: [
             {
               label: 'Archive work order',
               icon: <Archive className="w-4 h-4" />,
-              onClick: (e) => console.log('Archive work order', item.id),
-              className: 'text-red-600'
-            }
-          ]
-        }
+              onClick: e => console.log('Archive work order', item.id),
+              className: 'text-red-600',
+            },
+          ],
+        },
       ];
     }
   };
-  
+
   return (
     <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
@@ -270,8 +299,8 @@ const ActiveWorkTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item) => (
-            <TableRow 
+          {items.map(item => (
+            <TableRow
               key={`${item.type}-${item.id}`}
               className="cursor-pointer hover:bg-muted/50"
               onClick={() => handleViewDetails(item)}
@@ -317,7 +346,7 @@ const ActiveWorkTable = ({
                   {formatDate(item.createdAt)}
                 </div>
               </TableCell>
-              <TableCell onClick={(e) => e.stopPropagation()}>
+              <TableCell onClick={e => e.stopPropagation()}>
                 <ActionMenu groups={getItemActions(item)} size="sm" />
               </TableCell>
             </TableRow>

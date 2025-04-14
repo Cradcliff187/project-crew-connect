@@ -1,8 +1,13 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Briefcase, Building, Loader2, AlertCircle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Entity } from '@/types/timeTracking';
 
 interface EntitySelectorProps {
@@ -24,14 +29,14 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
   isLoading,
   onChange,
   error,
-  selectedEntity
+  selectedEntity,
 }) => {
   const entities = entityType === 'work_order' ? workOrders : projects;
-  
+
   return (
     <div className="space-y-2">
       <Label>{entityType === 'work_order' ? 'Work Order' : 'Project'}</Label>
-      
+
       {isLoading ? (
         <div className="flex items-center space-x-2 border rounded-md p-2 h-10">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -39,12 +44,11 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
         </div>
       ) : (
         <>
-          <Select
-            value={entityId}
-            onValueChange={onChange}
-          >
+          <Select value={entityId} onValueChange={onChange}>
             <SelectTrigger>
-              <SelectValue placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`} />
+              <SelectValue
+                placeholder={`Select ${entityType === 'work_order' ? 'work order' : 'project'}`}
+              />
             </SelectTrigger>
             <SelectContent>
               {entities.length > 0 ? (
@@ -60,16 +64,17 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
               )}
             </SelectContent>
           </Select>
-          
+
           {entities.length === 0 && (
             <div className="text-xs flex items-center text-amber-600 gap-1">
               <AlertCircle className="h-3 w-3" />
               <span>
-                No {entityType === 'work_order' ? 'work orders' : 'projects'} available in the database
+                No {entityType === 'work_order' ? 'work orders' : 'projects'} available in the
+                database
               </span>
             </div>
           )}
-          
+
           {entities.length > 0 && (
             <div className="text-xs text-gray-400">
               {entities.length} {entityType === 'work_order' ? 'work orders' : 'projects'} available
@@ -77,9 +82,9 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
           )}
         </>
       )}
-      
+
       {error && <p className="text-sm text-red-500">{error}</p>}
-      
+
       {selectedEntity && (
         <div className="mt-2 p-3 bg-muted rounded-md">
           <div className="flex items-center">
@@ -91,9 +96,7 @@ const EntitySelector: React.FC<EntitySelectorProps> = ({
             <span className="font-medium">{selectedEntity.name}</span>
           </div>
           {selectedEntity.location && (
-            <p className="text-xs text-muted-foreground mt-1 ml-6">
-              {selectedEntity.location}
-            </p>
+            <p className="text-xs text-muted-foreground mt-1 ml-6">{selectedEntity.location}</p>
           )}
         </div>
       )}

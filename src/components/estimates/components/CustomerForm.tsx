@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -23,7 +22,7 @@ const CustomerForm: React.FC = () => {
           </FormItem>
         )}
       />
-      
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField
           control={form.control}
@@ -38,7 +37,7 @@ const CustomerForm: React.FC = () => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="newCustomer.phone"
@@ -53,7 +52,7 @@ const CustomerForm: React.FC = () => {
           )}
         />
       </div>
-      
+
       <FormField
         control={form.control}
         name="newCustomer.address"
@@ -67,7 +66,7 @@ const CustomerForm: React.FC = () => {
           </FormItem>
         )}
       />
-      
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FormField
           control={form.control}
@@ -82,7 +81,7 @@ const CustomerForm: React.FC = () => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="newCustomer.state"
@@ -96,7 +95,7 @@ const CustomerForm: React.FC = () => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="newCustomer.zip"

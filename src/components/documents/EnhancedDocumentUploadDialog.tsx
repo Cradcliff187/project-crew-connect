@@ -1,11 +1,10 @@
-
 import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from './EnhancedDocumentUpload';
 import { EntityType } from './schemas/documentSchema';
@@ -48,10 +47,10 @@ const EnhancedDocumentUploadDialog: React.FC<EnhancedDocumentUploadDialogProps> 
   isReceiptUpload = false,
   prefillData,
   preventFormPropagation = false,
-  allowEntityTypeSelection = false
+  allowEntityTypeSelection = false,
 }) => {
   const isMobile = useMediaQuery('(max-width: 640px)');
-  
+
   const handleSuccess = (documentId?: string) => {
     if (onSuccess) {
       onSuccess(documentId);
@@ -68,17 +67,19 @@ const EnhancedDocumentUploadDialog: React.FC<EnhancedDocumentUploadDialogProps> 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        isMobile ? "sm:max-w-[100%] w-full p-4" : "sm:max-w-[600px] p-6", 
-        "max-h-[90vh] overflow-auto",
-        viewerAnimations.content
-      )}>
+      <DialogContent
+        className={cn(
+          isMobile ? 'sm:max-w-[100%] w-full p-4' : 'sm:max-w-[600px] p-6',
+          'max-h-[90vh] overflow-auto',
+          viewerAnimations.content
+        )}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        
-        <EnhancedDocumentUpload 
+
+        <EnhancedDocumentUpload
           entityType={entityType}
           entityId={entityId}
           onSuccess={handleSuccess}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DocumentsSection from '@/components/documents/DocumentsSection';
 import { EntityType } from '@/components/documents/schemas/documentSchema';

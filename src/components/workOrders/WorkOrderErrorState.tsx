@@ -1,4 +1,3 @@
-
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -13,11 +12,7 @@ const WorkOrderErrorState = ({ error }: WorkOrderErrorStateProps) => {
         <AlertTriangle className="h-8 w-8 text-red-500" />
         <h3 className="mt-2 text-lg font-medium text-red-800">Error Loading Work Orders</h3>
         <p className="mt-1 text-sm text-red-700">{error}</p>
-        <Button 
-          onClick={() => window.location.reload()}
-          variant="outline"
-          className="mt-4"
-        >
+        <Button onClick={() => window.location.reload()} variant="outline" className="mt-4">
           Try Again
         </Button>
       </div>

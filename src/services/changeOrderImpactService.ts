@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { ChangeOrder, ChangeOrderStatus, ChangeOrderEntityType } from '@/types/changeOrders';
 import { toast } from '@/hooks/use-toast';
@@ -19,14 +18,14 @@ export async function applyChangeOrderImpact(changeOrder: ChangeOrder): Promise<
     } else if (changeOrder.entity_type === 'WORK_ORDER') {
       return await applyWorkOrderChangeOrderImpact(changeOrder);
     }
-    
+
     return false;
   } catch (error: any) {
     console.error('Error applying change order impact:', error);
     toast({
       title: 'Error',
       description: 'Failed to apply change order impact: ' + error.message,
-      variant: 'destructive'
+      variant: 'destructive',
     });
     return false;
   }
@@ -50,7 +49,7 @@ async function applyProjectChangeOrderImpact(changeOrder: ChangeOrder): Promise<
 
   // Calculate new budget and due date
   const newBudget = Number(project.total_budget) + Number(changeOrder.total_amount);
-  
+
   let newDueDate = project.due_date;
   if (project.due_date && changeOrder.impact_days > 0) {
     // Add impact days to the current due date
@@ -65,7 +64,7 @@ async function applyProjectChangeOrderImpact(changeOrder: ChangeOrder): Promise<
     .update({
       total_budget: newBudget,
       due_date: newDueDate,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq('projectid', changeOrder.entity_id);
 
@@ -81,7 +80,7 @@ async function applyProjectChangeOrderImpact(changeOrder: ChangeOrder): Promise<
       category: `Change Order - ${item.item_type || 'General'}`,
       description: `${changeOrder.title}: ${item.description}`,
       estimated_amount: item.total_price,
-      actual_amount: 0
+      actual_amount: 0,
     }));
 
     const { error: budgetItemError } = await supabase
@@ -131,7 +130,7 @@ async function applyWorkOrderChangeOrderImpact(changeOrder: ChangeOrder): Promis
     .from('maintenance_work_orders')
     .update({
       due_by_date: newDueDate,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq('work_order_id', changeOrder.entity_id);
 
@@ -154,7 +153,7 @@ async function applyWorkOrderChangeOrderImpact(changeOrder: ChangeOrder): Promis
       entity_type: 'PROJECT',
       entity_id: linkData.project_id,
       title: `WO-Impact: ${changeOrder.title}`,
-      description: `Impact from Work Order change order: ${changeOrder.description || changeOrder.title}`
+      description: `Impact from Work Order change order: ${changeOrder.description || changeOrder.title}`,
     };
 
     // Apply impact to the parent project as well
@@ -182,12 +181,12 @@ export async function revertChangeOrderImpact(changeOrder: ChangeOrder): Promise
     // Implementation would be similar to apply but with opposite calculations
     // This is a simplified placeholder
     console.log('Reverting change order impact for', changeOrder.id);
-    
+
     toast({
       title: 'Change order impact reverted',
       description: `The effects of this change order have been removed.`,
     });
-    
+
     return true;
   } catch (error: any) {
     console.error('Error reverting change order impact:', error);

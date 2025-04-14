@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -9,7 +8,7 @@ import { formatCurrency } from '@/lib/utils';
 const DashboardBudgetChart = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     async function fetchBudgetData() {
       setLoading(true);
@@ -20,17 +19,19 @@ const DashboardBudgetChart = () => {
           .in('status', ['active', 'ACTIVE', 'in_progress', 'IN_PROGRESS'])
           .order('createdon', { ascending: false })
           .limit(5);
-          
+
         if (error) throw error;
-        
+
         const processedData = (data || []).map(project => ({
           name: project.projectname,
           id: project.projectid,
           budget: project.total_budget || 0,
           spent: project.current_expenses || 0,
-          percentage: project.total_budget ? Math.round((project.current_expenses / project.total_budget) * 100) : 0
+          percentage: project.total_budget
+            ? Math.round((project.current_expenses / project.total_budget) * 100)
+            : 0,
         }));
-        
+
         setChartData(processedData);
       } catch (err) {
         console.error('Error fetching budget data:', err);
@@ -38,10 +39,10 @@ const DashboardBudgetChart = () => {
         setLoading(false);
       }
     }
-    
+
     fetchBudgetData();
   }, []);
-  
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -55,7 +56,7 @@ const DashboardBudgetChart = () => {
     }
     return null;
   };
-  
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -79,21 +80,29 @@ const DashboardBudgetChart = () => {
                 margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
                 layout="vertical"
               >
-                <XAxis type="number" tickFormatter={(value) => `${value}%`} domain={[0, 100]} />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
+                <XAxis type="number" tickFormatter={value => `${value}%`} domain={[0, 100]} />
+                <YAxis
+                  type="category"
+                  dataKey="name"
                   width={100}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value} 
+                  tickFormatter={value =>
+                    value.length > 15 ? `${value.substring(0, 15)}...` : value
+                  }
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="percentage" fill="#0485ea" radius={[0, 4, 4, 0]} barSize={12}>
                   {chartData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.percentage > 90 ? '#ef4444' : entry.percentage > 75 ? '#f97316' : '#0485ea'} 
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={
+                        entry.percentage > 90
+                          ? '#ef4444'
+                          : entry.percentage > 75
+                            ? '#f97316'
+                            : '#0485ea'
+                      }
                     />
                   ))}
                 </Bar>

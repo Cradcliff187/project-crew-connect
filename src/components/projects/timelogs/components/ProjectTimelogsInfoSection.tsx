@@ -1,8 +1,7 @@
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { formatDate, formatHours, formatCurrency } from "@/lib/utils";
-import { ProjectTimelogAddHeader } from "./ProjectTimelogAddHeader";
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { formatDate, formatHours, formatCurrency } from '@/lib/utils';
+import { ProjectTimelogAddHeader } from './ProjectTimelogAddHeader';
 
 interface ProjectTimelogsInfoSectionProps {
   timelogs: any[];
@@ -46,45 +45,33 @@ export const ProjectTimelogsInfoSection = ({
             <div className="grid grid-cols-2 gap-4 mb-2">
               <div className="rounded-md bg-muted p-3">
                 <div className="text-sm text-muted-foreground">Total Hours</div>
-                <div className="text-lg font-semibold">
-                  {formatHours(totalHours)}
-                </div>
+                <div className="text-lg font-semibold">{formatHours(totalHours)}</div>
               </div>
               <div className="rounded-md bg-muted p-3">
-                <div className="text-sm text-muted-foreground">
-                  Total Labor Cost
-                </div>
-                <div className="text-lg font-semibold">
-                  {formatCurrency(totalLaborCost)}
-                </div>
+                <div className="text-sm text-muted-foreground">Total Labor Cost</div>
+                <div className="text-lg font-semibold">{formatCurrency(totalLaborCost)}</div>
               </div>
             </div>
 
             <div className="space-y-3">
-              {timelogs.map((timelog) => (
+              {timelogs.map(timelog => (
                 <div
                   key={timelog.id}
                   className="flex justify-between items-center border-b pb-2 last:border-0"
                 >
                   <div>
                     <div className="font-medium">
-                      {timelog.employee_name || "Unassigned"} •{" "}
-                      {formatHours(timelog.hours_worked)}
+                      {timelog.employee_name || 'Unassigned'} • {formatHours(timelog.hours_worked)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(timelog.date_worked)} •{" "}
-                      {timelog.start_time?.substring(0, 5)} -{" "}
+                      {formatDate(timelog.date_worked)} • {timelog.start_time?.substring(0, 5)} -{' '}
                       {timelog.end_time?.substring(0, 5)}
                     </div>
-                    {timelog.notes && (
-                      <div className="text-sm mt-1">{timelog.notes}</div>
-                    )}
+                    {timelog.notes && <div className="text-sm mt-1">{timelog.notes}</div>}
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <div className="font-medium">
-                        {formatCurrency(timelog.total_cost)}
-                      </div>
+                      <div className="font-medium">{formatCurrency(timelog.total_cost)}</div>
                       <div className="text-xs text-muted-foreground">
                         @{formatCurrency(timelog.employee_rate)}/hr
                       </div>

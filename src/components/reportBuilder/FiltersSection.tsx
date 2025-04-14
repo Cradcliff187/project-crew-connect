@@ -1,11 +1,16 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FieldDefinition, FilterDefinition } from '@/types/reports';
 import { Plus, Trash2 } from 'lucide-react';
 import { entityFields } from '@/data/reportEntities';
@@ -21,35 +26,35 @@ const FiltersSection = ({
   entityType,
   filters,
   onAddFilter,
-  onRemoveFilter
+  onRemoveFilter,
 }: FiltersSectionProps) => {
   const [currentFilter, setCurrentFilter] = useState<Partial<FilterDefinition>>({
     id: '',
     field: undefined,
     operator: 'equals',
-    value: ''
+    value: '',
   });
-  
+
   const handleAddFilter = () => {
     if (!currentFilter.field) return;
-    
+
     const newFilter: FilterDefinition = {
       id: `filter-${Date.now()}`,
       field: currentFilter.field as FieldDefinition,
       operator: currentFilter.operator || 'equals',
-      value: currentFilter.value || ''
+      value: currentFilter.value || '',
     };
-    
+
     onAddFilter(newFilter);
-    
+
     setCurrentFilter({
       id: '',
       field: undefined,
       operator: 'equals',
-      value: ''
+      value: '',
     });
   };
-  
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -65,11 +70,11 @@ const FiltersSection = ({
             <Label>Field</Label>
             <Select
               value={currentFilter.field?.field || ''}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 const field = (entityFields as any)[entityType].find((f: any) => f.field === value);
                 setCurrentFilter(prev => ({
                   ...prev,
-                  field
+                  field,
                 }));
               }}
             >
@@ -85,15 +90,15 @@ const FiltersSection = ({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <Label>Operator</Label>
             <Select
               value={currentFilter.operator || 'equals'}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 setCurrentFilter(prev => ({
                   ...prev,
-                  operator: value
+                  operator: value,
                 }));
               }}
             >
@@ -110,32 +115,35 @@ const FiltersSection = ({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <Label>Value</Label>
             <Input
               value={currentFilter.value || ''}
-              onChange={(e) => {
+              onChange={e => {
                 setCurrentFilter(prev => ({
                   ...prev,
-                  value: e.target.value
+                  value: e.target.value,
                 }));
               }}
             />
           </div>
-          
+
           <Button className="w-full" onClick={handleAddFilter}>
             <Plus className="h-4 w-4 mr-2" />
             Add Filter
           </Button>
         </div>
-        
+
         {filters.length > 0 && (
           <div className="space-y-2">
             <div className="text-sm font-medium">Active Filters</div>
             <div className="space-y-2">
               {filters.map(filter => (
-                <div key={filter.id} className="flex items-center justify-between p-2 border rounded-md bg-background">
+                <div
+                  key={filter.id}
+                  className="flex items-center justify-between p-2 border rounded-md bg-background"
+                >
                   <div className="text-sm">
                     <span className="font-medium">{filter.field.label}</span>
                     <span className="mx-1 text-muted-foreground">
@@ -148,11 +156,7 @@ const FiltersSection = ({
                     </span>
                     <span className="font-medium">{filter.value}</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onRemoveFilter(filter.id)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => onRemoveFilter(filter.id)}>
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>

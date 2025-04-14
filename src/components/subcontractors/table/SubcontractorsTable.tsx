@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableHeader, TableRow } from '@/components/ui/table';
 import { filterSubcontractors } from '../utils/filterUtils';
 import { Subcontractor } from '../utils/types';
@@ -16,28 +15,27 @@ interface SubcontractorsTableProps {
   onEditSubcontractor?: (subcontractor: Subcontractor) => void;
 }
 
-const SubcontractorsTable = ({ 
-  subcontractors, 
-  loading, 
-  error, 
+const SubcontractorsTable = ({
+  subcontractors,
+  loading,
+  error,
   searchQuery,
-  onEditSubcontractor
+  onEditSubcontractor,
 }: SubcontractorsTableProps) => {
-  
   const filteredSubcontractors = filterSubcontractors(subcontractors, searchQuery);
-  
+
   if (loading) {
     return <SubcontractorsLoadingState />;
   }
-  
+
   if (error) {
     return <SubcontractorsErrorState error={error} />;
   }
-  
+
   if (filteredSubcontractors.length === 0) {
     return <SubcontractorsEmptyState searchQuery={searchQuery} />;
   }
-  
+
   return (
     <div className="rounded-md border shadow-sm animate-fade-in">
       <div className="overflow-x-auto">
@@ -48,9 +46,9 @@ const SubcontractorsTable = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            <SubcontractorsTableBody 
-              subcontractors={filteredSubcontractors} 
-              onEditSubcontractor={onEditSubcontractor} 
+            <SubcontractorsTableBody
+              subcontractors={filteredSubcontractors}
+              onEditSubcontractor={onEditSubcontractor}
             />
           </TableBody>
         </Table>

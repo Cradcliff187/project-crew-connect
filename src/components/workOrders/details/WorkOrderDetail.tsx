@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,16 +9,9 @@ import WorkOrderDetailContent from './WorkOrderDetailContent';
 
 const WorkOrderDetail = () => {
   const { workOrderId } = useParams<{ workOrderId: string }>();
-  const {
-    workOrder,
-    loading,
-    customer,
-    location,
-    assignee,
-    fetchWorkOrder,
-    handleBackClick
-  } = useWorkOrderDetail(workOrderId);
-  
+  const { workOrder, loading, customer, location, assignee, fetchWorkOrder, handleBackClick } =
+    useWorkOrderDetail(workOrderId);
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -27,7 +19,7 @@ const WorkOrderDetail = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Work Orders
         </Button>
-        
+
         {loading ? (
           <div className="space-y-6">
             <Skeleton className="h-14 w-full" />
@@ -44,13 +36,14 @@ const WorkOrderDetail = () => {
               <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
               <h2 className="text-xl font-bold mb-2">Work Order Not Found</h2>
               <p className="text-muted-foreground mb-6">
-                The work order you're looking for doesn't exist or you don't have permission to view it.
+                The work order you're looking for doesn't exist or you don't have permission to view
+                it.
               </p>
               <Button onClick={handleBackClick}>Return to Work Orders</Button>
             </div>
           </Card>
         ) : (
-          <WorkOrderDetailContent 
+          <WorkOrderDetailContent
             workOrder={workOrder}
             customer={customer}
             location={location}

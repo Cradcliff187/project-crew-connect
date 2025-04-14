@@ -1,7 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
@@ -29,7 +34,7 @@ const ChangeOrderDialog = ({
   workOrderId,
   entityType = 'PROJECT',
   changeOrder,
-  onSaved
+  onSaved,
 }: ChangeOrderDialogProps) => {
   const [activeTab, setActiveTab] = useState('basic-info');
   const [saving, setSaving] = useState(false);
@@ -47,8 +52,8 @@ const ChangeOrderDialog = ({
       status: 'DRAFT' as ChangeOrderStatus,
       total_amount: 0,
       impact_days: 0,
-      items: []
-    }
+      items: [],
+    },
   });
 
   useEffect(() => {
@@ -67,7 +72,7 @@ const ChangeOrderDialog = ({
         status: 'DRAFT' as ChangeOrderStatus,
         total_amount: 0,
         impact_days: 0,
-        items: []
+        items: [],
       });
     }
   }, [changeOrder, entityType, entityId, form]);
@@ -75,9 +80,9 @@ const ChangeOrderDialog = ({
   const handleSubmit = async (data: ChangeOrder) => {
     if (!entityId) {
       toast({
-        title: "Error",
-        description: "Missing required entity ID",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Missing required entity ID',
+        variant: 'destructive',
       });
       return;
     }
@@ -88,11 +93,11 @@ const ChangeOrderDialog = ({
       const changeOrderData = {
         ...data,
         entity_type: entityType,
-        entity_id: entityId
+        entity_id: entityId,
       };
 
       let result;
-      
+
       if (isEditing && changeOrder?.id) {
         // Update existing change order
         const { data: updatedChangeOrder, error } = await supabase
@@ -101,13 +106,13 @@ const ChangeOrderDialog = ({
           .eq('id', changeOrder.id)
           .select()
           .single();
-        
+
         if (error) throw error;
         result = updatedChangeOrder;
-        
+
         toast({
-          title: "Change order updated",
-          description: "The change order has been updated successfully."
+          title: 'Change order updated',
+          description: 'The change order has been updated successfully.',
         });
       } else {
         // Create new change order
@@ -116,24 +121,24 @@ const ChangeOrderDialog = ({
           .insert(changeOrderData)
           .select()
           .single();
-        
+
         if (error) throw error;
         result = newChangeOrder;
-        
+
         toast({
-          title: "Change order created",
-          description: "The change order has been created successfully."
+          title: 'Change order created',
+          description: 'The change order has been created successfully.',
         });
       }
-      
+
       onSaved();
       onClose();
     } catch (error: any) {
       console.error('Error saving change order:', error);
       toast({
-        title: "Error saving change order",
+        title: 'Error saving change order',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive',
       });
     } finally {
       setSaving(false);
@@ -146,40 +151,44 @@ const ChangeOrderDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle className="text-[#0485ea]">
             {isEditing ? 'Edit Change Order' : 'New Change Order'}
           </DialogTitle>
           <DialogDescription>
-            {isEditing 
-              ? 'Update the details of this change order' 
+            {isEditing
+              ? 'Update the details of this change order'
               : 'Create a new change order for your project or work order'}
           </DialogDescription>
         </DialogHeader>
-        
+
         <FormProvider {...form}>
           <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="basic-info">
             <TabsList className="grid grid-cols-4">
               <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
               <TabsTrigger value="items">Items</TabsTrigger>
-              <TabsTrigger value="financial-analysis" 
-                disabled={!isEditing && !form.getValues().items?.length}>
+              <TabsTrigger
+                value="financial-analysis"
+                disabled={!isEditing && !form.getValues().items?.length}
+              >
                 Financial Impact
               </TabsTrigger>
-              <TabsTrigger value="approval" disabled={!isEditing}>Approval</TabsTrigger>
+              <TabsTrigger value="approval" disabled={!isEditing}>
+                Approval
+              </TabsTrigger>
             </TabsList>
-            
+
             <form onSubmit={form.handleSubmit(handleSubmit)}>
               <TabsContent value="basic-info" className="py-4">
                 <ChangeOrderBasicInfo form={form} isEditing={isEditing} />
-                
+
                 <div className="flex justify-end mt-6 space-x-2">
                   <Button type="button" variant="outline" onClick={onClose}>
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
                     className="bg-[#0485ea] hover:bg-[#0375d1]"
                     disabled={saving}
@@ -188,20 +197,20 @@ const ChangeOrderDialog = ({
                   </Button>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="items" className="py-4">
-                <ChangeOrderItems 
-                  form={form} 
-                  changeOrderId={changeOrder?.id} 
+                <ChangeOrderItems
+                  form={form}
+                  changeOrderId={changeOrder?.id}
                   isEditing={isEditing}
                   onUpdated={onSaved}
                 />
-                
+
                 <div className="flex justify-end mt-6 space-x-2">
                   <Button type="button" variant="outline" onClick={onClose}>
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
                     className="bg-[#0485ea] hover:bg-[#0375d1]"
                     disabled={saving}
@@ -210,21 +219,17 @@ const ChangeOrderDialog = ({
                   </Button>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="financial-analysis" className="py-4">
                 {entityId && (
-                  <FinancialAnalysisTab 
-                    form={form} 
-                    entityType={entityType}
-                    entityId={entityId}
-                  />
+                  <FinancialAnalysisTab form={form} entityType={entityType} entityId={entityId} />
                 )}
-                
+
                 <div className="flex justify-end mt-6 space-x-2">
                   <Button type="button" variant="outline" onClick={onClose}>
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
                     className="bg-[#0485ea] hover:bg-[#0375d1]"
                     disabled={saving}
@@ -233,19 +238,19 @@ const ChangeOrderDialog = ({
                   </Button>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="approval" className="py-4">
-                <ChangeOrderApproval 
-                  form={form} 
-                  changeOrderId={changeOrder?.id} 
+                <ChangeOrderApproval
+                  form={form}
+                  changeOrderId={changeOrder?.id}
                   onUpdated={onSaved}
                 />
-                
+
                 <div className="flex justify-end mt-6 space-x-2">
                   <Button type="button" variant="outline" onClick={onClose}>
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
                     className="bg-[#0485ea] hover:bg-[#0375d1]"
                     disabled={saving}

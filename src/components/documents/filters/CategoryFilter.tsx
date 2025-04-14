@@ -1,8 +1,11 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Check, X } from 'lucide-react';
-import { DocumentCategory, entityCategoryMap, getEntityCategories } from '../schemas/documentSchema';
+import {
+  DocumentCategory,
+  entityCategoryMap,
+  getEntityCategories,
+} from '../schemas/documentSchema';
 
 interface CategoryFilterProps {
   selectedCategories: string[];
@@ -13,13 +16,15 @@ interface CategoryFilterProps {
 const CategoryFilter: React.FC<CategoryFilterProps> = ({
   selectedCategories,
   onCategoryChange,
-  entityType
+  entityType,
 }) => {
-  const availableCategories = entityType 
+  const availableCategories = entityType
     ? getEntityCategories(entityType)
-    : Object.keys(entityCategoryMap).reduce((acc, key) => {
-        return [...acc, ...entityCategoryMap[key]];
-      }, [] as string[]).filter((value, index, self) => self.indexOf(value) === index);
+    : Object.keys(entityCategoryMap)
+        .reduce((acc, key) => {
+          return [...acc, ...entityCategoryMap[key]];
+        }, [] as string[])
+        .filter((value, index, self) => self.indexOf(value) === index);
 
   const toggleCategory = (category: string) => {
     if (selectedCategories.includes(category)) {
@@ -38,7 +43,7 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Filter by Category</h3>
         {selectedCategories.length > 0 && (
-          <button 
+          <button
             className="text-xs text-muted-foreground hover:text-foreground flex items-center"
             onClick={clearFilters}
           >
@@ -48,14 +53,14 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
         )}
       </div>
       <div className="flex flex-wrap gap-2">
-        {availableCategories.map((category) => (
+        {availableCategories.map(category => (
           <Badge
             key={category}
-            variant={selectedCategories.includes(category) ? "default" : "outline"}
+            variant={selectedCategories.includes(category) ? 'default' : 'outline'}
             className={`cursor-pointer capitalize ${
-              selectedCategories.includes(category) 
-                ? "bg-[#0485ea] hover:bg-[#0485ea]/90" 
-                : "hover:bg-muted"
+              selectedCategories.includes(category)
+                ? 'bg-[#0485ea] hover:bg-[#0485ea]/90'
+                : 'hover:bg-muted'
             }`}
             onClick={() => toggleCategory(category)}
           >

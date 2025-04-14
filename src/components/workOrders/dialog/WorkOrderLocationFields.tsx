@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -22,17 +21,17 @@ interface WorkOrderLocationFieldsProps {
   employees: { employee_id: string; first_name: string; last_name: string }[];
 }
 
-const WorkOrderLocationFields = ({ 
-  form, 
+const WorkOrderLocationFields = ({
+  form,
   useCustomAddress,
-  customers, 
-  locations, 
-  employees 
+  customers,
+  locations,
+  employees,
 }: WorkOrderLocationFieldsProps) => {
   const [selectedCustomerAddress, setSelectedCustomerAddress] = useState<string | null>(null);
   const [selectedCustomerName, setSelectedCustomerName] = useState<string | null>(null);
   const customerId = form.watch('customer_id');
-  
+
   // Fetch customer address when customer is selected
   useEffect(() => {
     if (customerId) {
@@ -42,19 +41,20 @@ const WorkOrderLocationFields = ({
           .select('customername, address, city, state, zip')
           .eq('customerid', customerId)
           .single();
-        
+
         if (!error && data) {
           setSelectedCustomerName(data.customername);
-          
+
           if (data.address && data.city && data.state) {
-            const formattedAddress = `${data.address}, ${data.city}, ${data.state} ${data.zip || ''}`.trim();
+            const formattedAddress =
+              `${data.address}, ${data.city}, ${data.state} ${data.zip || ''}`.trim();
             setSelectedCustomerAddress(formattedAddress);
           } else {
             setSelectedCustomerAddress(null);
           }
         }
       };
-      
+
       fetchCustomerDetails();
     } else {
       setSelectedCustomerAddress(null);
@@ -65,9 +65,9 @@ const WorkOrderLocationFields = ({
   return (
     <div className="space-y-4">
       <h3 className="text-md font-semibold text-gray-700">Location Information</h3>
-      
+
       <CustomerSelect form={form} customers={customers} />
-      
+
       {selectedCustomerAddress && !useCustomAddress && (
         <Card className="border-[#0485ea]/20 bg-[#0485ea]/5">
           <CardContent className="pt-4 pb-4">
@@ -77,23 +77,21 @@ const WorkOrderLocationFields = ({
                 <p className="text-sm font-medium text-[#0485ea]">
                   Customer address for {selectedCustomerName}:
                 </p>
-                <p className="text-sm text-gray-700">
-                  {selectedCustomerAddress}
-                </p>
+                <p className="text-sm text-gray-700">{selectedCustomerAddress}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
-      
+
       <CreateLocationToggle form={form} />
-      
+
       {!useCustomAddress ? (
         <LocationSelect form={form} locations={locations} />
       ) : (
         <CustomLocationFields form={form} />
       )}
-      
+
       <AssigneeSelect form={form} employees={employees} />
     </div>
   );

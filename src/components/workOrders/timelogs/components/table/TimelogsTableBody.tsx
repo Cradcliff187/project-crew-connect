@@ -1,4 +1,3 @@
-
 import { TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { formatDate } from '@/lib/utils';
 import { TimeEntry } from '@/types/timeTracking';
@@ -15,28 +14,28 @@ const TimelogsTableBody = ({ timelogs, employeeNameFn, onDelete }: TimelogsTable
   // The parent components will handle empty states, so we'll just render the rows here
   return (
     <TableBody>
-      {timelogs.map((log) => {
+      {timelogs.map(log => {
         const actionGroups: ActionGroup[] = [
           {
             items: [
               {
-                label: "View Details",
+                label: 'View Details',
                 icon: <Clock className="h-4 w-4" />,
-                onClick: () => console.log("View time log details:", log.id),
-                className: "text-[#0485ea] hover:text-[#0375d1]"
-              }
-            ]
+                onClick: () => console.log('View time log details:', log.id),
+                className: 'text-[#0485ea] hover:text-[#0375d1]',
+              },
+            ],
           },
           {
             items: [
               {
-                label: "Delete",
+                label: 'Delete',
                 icon: <Trash2 className="h-4 w-4" />,
                 onClick: () => onDelete(log.id),
-                className: "text-red-500 hover:text-red-700"
-              }
-            ]
-          }
+                className: 'text-red-500 hover:text-red-700',
+              },
+            ],
+          },
         ];
 
         return (
@@ -46,12 +45,7 @@ const TimelogsTableBody = ({ timelogs, employeeNameFn, onDelete }: TimelogsTable
             <TableCell className="font-medium">{log.hours_worked}</TableCell>
             <TableCell className="max-w-[200px] truncate">{log.notes || '-'}</TableCell>
             <TableCell className="text-right">
-              <ActionMenu 
-                groups={actionGroups}
-                size="sm" 
-                align="end"
-                triggerClassName="ml-auto"
-              />
+              <ActionMenu groups={actionGroups} size="sm" align="end" triggerClassName="ml-auto" />
             </TableCell>
           </TableRow>
         );

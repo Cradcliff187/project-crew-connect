@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Mail, MapPin, Phone, Edit, Trash2, Eye } from 'lucide-react';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
@@ -10,12 +9,7 @@ interface VendorActionsMenuProps {
   onEditVendor: (vendor: Vendor) => void;
 }
 
-const VendorActionsMenu = ({
-  vendor,
-  onViewDetails,
-  onEditVendor
-}: VendorActionsMenuProps) => {
-  
+const VendorActionsMenu = ({ vendor, onViewDetails, onEditVendor }: VendorActionsMenuProps) => {
   // Handle view vendor details
   const handleViewVendor = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -59,14 +53,14 @@ const VendorActionsMenu = ({
           {
             label: 'View details',
             icon: <Eye className="h-4 w-4" />,
-            onClick: handleViewVendor
+            onClick: handleViewVendor,
           },
           {
             label: 'Edit vendor',
             icon: <Edit className="h-4 w-4" />,
-            onClick: handleEditVendor
-          }
-        ]
+            onClick: handleEditVendor,
+          },
+        ],
       },
       {
         // Contact actions
@@ -75,15 +69,15 @@ const VendorActionsMenu = ({
             label: 'Call vendor',
             icon: <Phone className="h-4 w-4" />,
             onClick: handleCallVendor,
-            disabled: !vendor.phone
+            disabled: !vendor.phone,
           },
           {
             label: 'Email vendor',
             icon: <Mail className="h-4 w-4" />,
             onClick: handleEmailVendor,
-            disabled: !vendor.email
-          }
-        ]
+            disabled: !vendor.email,
+          },
+        ],
       },
       {
         // Destructive actions
@@ -92,10 +86,10 @@ const VendorActionsMenu = ({
             label: 'Delete vendor',
             icon: <Trash2 className="h-4 w-4" />,
             onClick: handleDeleteVendor,
-            className: 'text-red-600'
-          }
-        ]
-      }
+            className: 'text-red-600',
+          },
+        ],
+      },
     ];
   };
 

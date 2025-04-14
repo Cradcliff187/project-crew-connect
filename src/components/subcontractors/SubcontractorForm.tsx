@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { SubcontractorFormData } from './types/formTypes';
@@ -18,14 +17,14 @@ interface SubcontractorFormProps {
   isEditing?: boolean;
 }
 
-const SubcontractorForm = ({ 
-  onSubmit, 
-  isSubmitting, 
-  initialData, 
-  isEditing = false 
+const SubcontractorForm = ({
+  onSubmit,
+  isSubmitting,
+  initialData,
+  isEditing = false,
 }: SubcontractorFormProps) => {
   console.log('Form initialData:', initialData);
-  
+
   const form = useForm<SubcontractorFormData>({
     defaultValues: {
       subid: initialData?.subid || undefined,
@@ -49,14 +48,14 @@ const SubcontractorForm = ({
       contract_on_file: initialData?.contract_on_file || false,
       contract_expiration: initialData?.contract_expiration || null,
       preferred: initialData?.preferred || false,
-    }
+    },
   });
-  
+
   // Update form values when initialData changes
   useEffect(() => {
     if (initialData) {
       console.log('Updating form with initialData:', initialData);
-      
+
       // Reset the form with the new initial data
       form.reset({
         subid: initialData.subid,
@@ -90,19 +89,23 @@ const SubcontractorForm = ({
 
   return (
     <Form {...form}>
-      <form id="subcontractor-form" onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4">
+      <form
+        id="subcontractor-form"
+        onSubmit={form.handleSubmit(handleFormSubmit)}
+        className="space-y-4 py-4"
+      >
         {/* Basic Information */}
         <BasicInfoSection control={form.control} />
-        
+
         {/* Financial Information */}
         <FinancialSection control={form.control} />
-        
+
         {/* Compliance Information */}
         <ComplianceSection control={form.control} />
-        
+
         {/* Performance Information */}
         <PerformanceSection control={form.control} />
-        
+
         {/* Notes and Status */}
         <NotesAndStatusSection control={form.control} />
       </form>

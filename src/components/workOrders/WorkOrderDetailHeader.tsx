@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { WorkOrder } from '@/types/workOrder';
 import WorkOrderStatusControl from '@/components/workOrders/details/WorkOrderStatusControl';
@@ -10,7 +9,7 @@ interface WorkOrderDetailHeaderProps {
 
 const WorkOrderDetailHeader: React.FC<WorkOrderDetailHeaderProps> = ({
   workOrder,
-  onStatusChange
+  onStatusChange,
 }) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -20,11 +19,8 @@ const WorkOrderDetailHeader: React.FC<WorkOrderDetailHeaderProps> = ({
           Work Order #{workOrder.work_order_number || workOrder.work_order_id.substring(0, 8)}
         </p>
       </div>
-      
-      <WorkOrderStatusControl 
-        workOrder={workOrder}
-        onStatusChange={onStatusChange}
-      />
+
+      <WorkOrderStatusControl workOrder={workOrder} onStatusChange={onStatusChange} />
     </div>
   );
 };

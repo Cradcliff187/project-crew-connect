@@ -1,14 +1,13 @@
-
 import React from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  AlertDialog, 
-  AlertDialogContent, 
-  AlertDialogTitle, 
-  AlertDialogHeader, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogCancel 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogHeader,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { useEstimateToProject } from '../../hooks/useEstimateToProject';
@@ -35,12 +34,12 @@ interface EstimateConvertDialogProps {
   onRefresh?: () => void;
 }
 
-const EstimateConvertDialog: React.FC<EstimateConvertDialogProps> = ({ 
-  open, 
-  onOpenChange, 
+const EstimateConvertDialog: React.FC<EstimateConvertDialogProps> = ({
+  open,
+  onOpenChange,
   estimate,
   onStatusChange,
-  onRefresh
+  onRefresh,
 }) => {
   const { toast } = useToast();
   const { convertEstimateToProject, isConverting } = useEstimateToProject();
@@ -48,19 +47,19 @@ const EstimateConvertDialog: React.FC<EstimateConvertDialogProps> = ({
   const handleConvertToProject = async () => {
     try {
       const projectData = await convertEstimateToProject(estimate);
-      
+
       onOpenChange(false);
-      
+
       if (projectData) {
         toast({
           title: 'Success',
           description: `Estimate converted to project: ${projectData.projectname}`,
         });
-        
+
         if (onStatusChange) {
           onStatusChange(estimate.id, 'converted');
         }
-        
+
         if (onRefresh) {
           onRefresh();
         }
@@ -70,7 +69,7 @@ const EstimateConvertDialog: React.FC<EstimateConvertDialogProps> = ({
       toast({
         title: 'Error',
         description: 'Failed to convert estimate to project. Please try again.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -81,12 +80,13 @@ const EstimateConvertDialog: React.FC<EstimateConvertDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Convert to Project</AlertDialogTitle>
           <AlertDialogDescription>
-            This will create a new project based on this estimate. The estimate will be marked as converted and linked to the new project.
+            This will create a new project based on this estimate. The estimate will be marked as
+            converted and linked to the new project.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <Button 
+          <Button
             className="bg-[#0485ea] hover:bg-[#0375d1]"
             onClick={handleConvertToProject}
             disabled={isConverting}

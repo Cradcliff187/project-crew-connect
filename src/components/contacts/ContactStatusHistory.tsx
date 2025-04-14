@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Contact } from '@/pages/Contacts';
 import StatusHistoryView from '@/components/common/status/StatusHistoryView';
@@ -13,26 +12,23 @@ interface ContactStatusHistoryProps {
   className?: string;
 }
 
-const ContactStatusHistory: React.FC<ContactStatusHistoryProps> = ({
-  contact,
-  className = ''
-}) => {
+const ContactStatusHistory: React.FC<ContactStatusHistoryProps> = ({ contact, className = '' }) => {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Define status options for contacts
   const statusOptions: StatusOption[] = [
     { value: 'PROSPECT', label: 'Prospect', color: 'blue' },
     { value: 'ACTIVE', label: 'Active', color: 'green' },
-    { value: 'INACTIVE', label: 'Inactive', color: 'neutral' }
+    { value: 'INACTIVE', label: 'Inactive', color: 'neutral' },
   ];
-  
+
   useEffect(() => {
     if (contact.id) {
       fetchHistory();
     }
   }, [contact.id]);
-  
+
   const fetchHistory = async () => {
     try {
       const { data, error } = await supabase
@@ -41,18 +37,19 @@ const ContactStatusHistory: React.FC<ContactStatusHistoryProps> = ({
         .eq('referenceid', contact.id)
         .eq('moduletype', 'CONTACT')
         .order('timestamp', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       // Transform the data to match our expected format
-      const formattedHistory = data?.map(item => ({
-        status: item.status,
-        previous_status: item.previousstatus,
-        changed_date: item.timestamp,
-        changed_by: item.useremail,
-        notes: item.detailsjson ? JSON.parse(item.detailsjson)?.notes : item.action
-      })) || [];
-      
+      const formattedHistory =
+        data?.map(item => ({
+          status: item.status,
+          previous_status: item.previousstatus,
+          changed_date: item.timestamp,
+          changed_by: item.useremail,
+          notes: item.detailsjson ? JSON.parse(item.detailsjson)?.notes : item.action,
+        })) || [];
+
       setHistory(formattedHistory);
     } catch (error: any) {
       console.error('Error fetching contact status history:', error);
@@ -61,7 +58,7 @@ const ContactStatusHistory: React.FC<ContactStatusHistoryProps> = ({
       setLoading(false);
     }
   };
-  
+
   return (
     <Card className={className}>
       <CardHeader>

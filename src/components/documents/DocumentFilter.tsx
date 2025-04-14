@@ -1,18 +1,13 @@
-
 import React from 'react';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, X } from 'lucide-react';
@@ -35,12 +30,7 @@ interface DocumentFilterProps {
   className?: string;
 }
 
-const DocumentFilter: React.FC<DocumentFilterProps> = ({
-  value,
-  onChange,
-  label,
-  className
-}) => {
+const DocumentFilter: React.FC<DocumentFilterProps> = ({ value, onChange, label, className }) => {
   const handleCategoryChange = (category: string) => {
     onChange({ ...value, category: category || undefined });
   };
@@ -62,9 +52,9 @@ const DocumentFilter: React.FC<DocumentFilterProps> = ({
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {label && <Label>{label}</Label>}
-      
+
       <div className="flex flex-wrap gap-2">
         {/* Category Filter */}
         <Select value={value.category || 'all_categories'} onValueChange={handleCategoryChange}>
@@ -108,27 +98,27 @@ const DocumentFilter: React.FC<DocumentFilterProps> = ({
             <Button
               variant="outline"
               className={cn(
-                "w-[200px] justify-start text-left font-normal",
-                !value.dateRange && "text-muted-foreground"
+                'w-[200px] justify-start text-left font-normal',
+                !value.dateRange && 'text-muted-foreground'
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {value.dateRange?.from ? (
                 value.dateRange.to ? (
                   <>
-                    {format(value.dateRange.from, "MMM d, y")} -{" "}
-                    {format(value.dateRange.to, "MMM d, y")}
+                    {format(value.dateRange.from, 'MMM d, y')} -{' '}
+                    {format(value.dateRange.to, 'MMM d, y')}
                   </>
                 ) : (
-                  format(value.dateRange.from, "MMM d, y")
+                  format(value.dateRange.from, 'MMM d, y')
                 )
               ) : (
                 <span>Date Range</span>
               )}
               {value.dateRange && (
-                <X 
-                  className="ml-auto h-4 w-4 opacity-50 hover:opacity-100" 
-                  onClick={(e) => {
+                <X
+                  className="ml-auto h-4 w-4 opacity-50 hover:opacity-100"
+                  onClick={e => {
                     e.stopPropagation();
                     handleClearDateRange();
                   }}

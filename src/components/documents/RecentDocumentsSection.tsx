@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Document } from './schemas/documentSchema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +15,7 @@ const RecentDocumentsSection: React.FC<RecentDocumentsSectionProps> = ({
   documents,
   loading,
   onViewDocument,
-  showNavigationButtons = false
+  showNavigationButtons = false,
 }) => {
   if (loading) {
     return (
@@ -50,7 +49,7 @@ const RecentDocumentsSection: React.FC<RecentDocumentsSectionProps> = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documents.map((document) => (
+          {documents.map(document => (
             <DocumentPreviewCard
               key={document.document_id}
               document={document}

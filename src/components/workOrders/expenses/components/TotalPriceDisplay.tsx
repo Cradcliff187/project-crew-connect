@@ -1,4 +1,3 @@
-
 import { formatCurrency } from '@/lib/utils';
 
 interface TotalPriceDisplayProps {
@@ -12,9 +11,9 @@ const TotalPriceDisplay: React.FC<TotalPriceDisplayProps> = ({ unitPrice, quanti
     const qty = parseFloat(quantity) || 0;
     return price * qty;
   };
-  
+
   const total = calculateTotal();
-  
+
   return (
     <div className="mt-4 p-3 bg-gray-50 rounded-md border">
       <div className="flex justify-between items-center">

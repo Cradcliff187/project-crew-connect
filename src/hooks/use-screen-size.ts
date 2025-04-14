@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 interface ScreenSize {
@@ -15,7 +14,7 @@ export const useScreenSize = () => {
     height: typeof window !== 'undefined' ? window.innerHeight : 0,
     isMobile: false,
     isTablet: false,
-    isDesktop: false
+    isDesktop: false,
   });
 
   useEffect(() => {
@@ -29,7 +28,7 @@ export const useScreenSize = () => {
         height,
         isMobile: width < 640,
         isTablet: width >= 640 && width < 1024,
-        isDesktop: width >= 1024
+        isDesktop: width >= 1024,
       });
     };
 

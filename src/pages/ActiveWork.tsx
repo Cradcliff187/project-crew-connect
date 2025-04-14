@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,7 +39,7 @@ const ActiveWork = () => {
     workOrdersLoading,
     projectsError,
     workOrdersError,
-    handleWorkOrderChange
+    handleWorkOrderChange,
   } = useActiveWorkData();
 
   // Apply filters
@@ -49,23 +48,23 @@ const ActiveWork = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <ActiveWorkHeader 
+        <ActiveWorkHeader
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           viewMode={viewMode}
           setViewMode={setViewMode}
         />
-        
+
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
           <TabsList>
             <TabsTrigger value="all">All Work</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="workOrders">Work Orders</TabsTrigger>
           </TabsList>
-          
+
           {viewMode === 'table' ? (
             <TabsContent value={activeTab} className="space-y-6">
-              <ActiveWorkTable 
+              <ActiveWorkTable
                 items={filteredItems}
                 loading={projectsLoading || workOrdersLoading}
                 projectsError={projectsError ? (projectsError as Error).message : null}
@@ -75,7 +74,7 @@ const ActiveWork = () => {
             </TabsContent>
           ) : (
             <TabsContent value={activeTab} className="pt-4">
-              <ActiveWorkDashboard 
+              <ActiveWorkDashboard
                 items={filteredItems}
                 projectsLoading={projectsLoading}
                 workOrdersLoading={workOrdersLoading}

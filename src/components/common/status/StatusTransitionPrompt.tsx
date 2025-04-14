@@ -1,12 +1,11 @@
-
 import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -32,7 +31,7 @@ const StatusTransitionPrompt: React.FC<StatusTransitionPromptProps> = ({
   notes,
   onNotesChange,
   statusOptions,
-  pendingStatus
+  pendingStatus,
 }) => {
   const getStatusLabel = (status: string): string => {
     const option = statusOptions.find(opt => opt.value === status);
@@ -45,11 +44,11 @@ const StatusTransitionPrompt: React.FC<StatusTransitionPromptProps> = ({
         <DialogHeader>
           <DialogTitle>Confirm Status Change</DialogTitle>
           <DialogDescription>
-            You are about to change the status to <strong>{getStatusLabel(pendingStatus)}</strong>. 
+            You are about to change the status to <strong>{getStatusLabel(pendingStatus)}</strong>.
             Would you like to add any notes?
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="py-4">
           <Label htmlFor="transition-notes">Notes (optional)</Label>
           <Textarea
@@ -61,9 +60,11 @@ const StatusTransitionPrompt: React.FC<StatusTransitionPromptProps> = ({
             rows={4}
           />
         </div>
-        
+
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
           <Button onClick={onConfirm} className="bg-[#0485ea] hover:bg-[#0375d1]">
             Confirm Change
           </Button>

@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 
 interface ReportBuilderHeaderProps {
@@ -14,7 +13,7 @@ const ReportBuilderHeader = ({
   description,
   isPreviewMode,
   onTogglePreviewMode,
-  onSaveReport
+  onSaveReport,
 }: ReportBuilderHeaderProps) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -23,11 +22,8 @@ const ReportBuilderHeader = ({
         <p className="text-muted-foreground">{description}</p>
       </div>
       <div className="flex gap-2">
-        <Button 
-          variant={isPreviewMode ? "default" : "outline"} 
-          onClick={onTogglePreviewMode}
-        >
-          {isPreviewMode ? "Edit Report" : "Preview Report"}
+        <Button variant={isPreviewMode ? 'default' : 'outline'} onClick={onTogglePreviewMode}>
+          {isPreviewMode ? 'Edit Report' : 'Preview Report'}
         </Button>
         <Button className="bg-[#0485ea] hover:bg-[#0370c9]" onClick={onSaveReport}>
           Save Report

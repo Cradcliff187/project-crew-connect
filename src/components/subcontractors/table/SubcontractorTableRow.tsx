@@ -1,4 +1,3 @@
-
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Subcontractor } from '../utils/types';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -17,55 +16,49 @@ interface SubcontractorTableRowProps {
   onEditSubcontractor?: (subcontractor: Subcontractor) => void;
 }
 
-const SubcontractorTableRow = ({ 
-  subcontractor, 
-  onViewDetails, 
-  onEditSubcontractor 
+const SubcontractorTableRow = ({
+  subcontractor,
+  onViewDetails,
+  onEditSubcontractor,
 }: SubcontractorTableRowProps) => {
   const { specialties, loading } = useSpecialties();
   const { getStatusType } = useStatusMapping();
   const navigate = useNavigate();
-  
+
   const handleRowClick = () => {
     // Both call the callback and navigate programmatically
     onViewDetails(subcontractor);
     navigate(`/subcontractors/${subcontractor.subid}`);
   };
-  
+
   return (
-    <TableRow onClick={handleRowClick} className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors">
+    <TableRow
+      onClick={handleRowClick}
+      className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors"
+    >
       <TableCell>
-        <SubcontractorInfo 
-          name={subcontractor.subname}
-          id={subcontractor.subid}
-        />
+        <SubcontractorInfo name={subcontractor.subname} id={subcontractor.subid} />
       </TableCell>
       <TableCell>
-        <SpecialtiesBadges 
+        <SpecialtiesBadges
           specialtyIds={subcontractor.specialty_ids || []}
           specialties={specialties}
           loading={loading}
         />
       </TableCell>
       <TableCell>
-        <SubcontractorContact
-          email={subcontractor.contactemail}
-          phone={subcontractor.phone}
-        />
+        <SubcontractorContact email={subcontractor.contactemail} phone={subcontractor.phone} />
       </TableCell>
       <TableCell>
-        <SubcontractorLocation
-          city={subcontractor.city}
-          state={subcontractor.state}
-        />
+        <SubcontractorLocation city={subcontractor.city} state={subcontractor.state} />
       </TableCell>
       <TableCell>
-        <StatusBadge 
+        <StatusBadge
           status={getStatusType(subcontractor.status)}
           label={subcontractor.status || 'Unknown'}
         />
       </TableCell>
-      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+      <TableCell className="text-right" onClick={e => e.stopPropagation()}>
         <SubcontractorActionsMenu
           subcontractor={subcontractor}
           onViewDetails={onViewDetails}

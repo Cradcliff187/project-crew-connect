@@ -1,11 +1,10 @@
-
-export type ChangeOrderStatus = 
-  | 'DRAFT' 
-  | 'SUBMITTED' 
-  | 'REVIEW' 
-  | 'APPROVED' 
-  | 'REJECTED' 
-  | 'IMPLEMENTED' 
+export type ChangeOrderStatus =
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'IMPLEMENTED'
   | 'CANCELLED';
 
 export type ChangeOrderEntityType = 'PROJECT' | 'WORK_ORDER';

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Control } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -19,16 +18,16 @@ const TagsInput: React.FC<TagsInputProps> = ({ control, name, prefillTags }) => 
   // Add tag to tags array
   const addTag = (tag: string, onChange: (value: any) => void) => {
     if (!tag.trim()) return;
-    
+
     const normalizedTag = tag.trim().toLowerCase();
-    
+
     // Don't add duplicate tags
     if (!localTags.includes(normalizedTag)) {
       const newTags = [...localTags, normalizedTag];
       setLocalTags(newTags);
       onChange(newTags);
     }
-    
+
     setInputValue('');
   };
 
@@ -40,7 +39,10 @@ const TagsInput: React.FC<TagsInputProps> = ({ control, name, prefillTags }) => 
   };
 
   // Handle key down events (Enter to add tag)
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, onChange: (value: any) => void) => {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    onChange: (value: any) => void
+  ) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag(inputValue, onChange);
@@ -65,7 +67,7 @@ const TagsInput: React.FC<TagsInputProps> = ({ control, name, prefillTags }) => 
             setLocalTags(field.value);
           }
         }, [field.value]);
-        
+
         return (
           <FormItem>
             <FormLabel>Tags</FormLabel>
@@ -74,9 +76,9 @@ const TagsInput: React.FC<TagsInputProps> = ({ control, name, prefillTags }) => 
                 {localTags.map((tag, index) => (
                   <Badge key={index} className="bg-blue-100 text-blue-800 hover:bg-blue-200">
                     {tag}
-                    <button 
-                      type="button" 
-                      className="ml-1 hover:text-red-600" 
+                    <button
+                      type="button"
+                      className="ml-1 hover:text-red-600"
                       onClick={() => removeTag(tag, field.onChange)}
                     >
                       <X className="h-3 w-3" />
@@ -84,15 +86,15 @@ const TagsInput: React.FC<TagsInputProps> = ({ control, name, prefillTags }) => 
                   </Badge>
                 ))}
               </div>
-              
+
               <FormControl>
                 <Input
                   type="text"
                   placeholder="Type tag and press Enter or comma"
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, field.onChange)}
-                  onBlur={(e) => {
+                  onChange={e => setInputValue(e.target.value)}
+                  onKeyDown={e => handleKeyDown(e, field.onChange)}
+                  onBlur={e => {
                     if (inputValue) {
                       addTag(inputValue, field.onChange);
                     }

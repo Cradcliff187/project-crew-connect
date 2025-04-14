@@ -1,11 +1,23 @@
-
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -67,8 +79,8 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
         city: '',
         state: '',
         zip: '',
-      }
-    }
+      },
+    },
   });
 
   // Fetch customers when component mounts
@@ -79,7 +91,7 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
           .from('customers')
           .select('customerid, customername')
           .order('customername');
-        
+
         if (error) throw error;
         setCustomers(data?.map(c => ({ id: c.customerid, name: c.customername || '' })) || []);
       } catch (error) {
@@ -129,10 +141,10 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium">Customer Information</h3>
             {!showCustomerForm && customerTab === 'existing' && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={handleShowCustomerForm}
                 className="text-[#0485ea]"
               >
@@ -156,7 +168,7 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {customers.map((customer) => (
+                      {customers.map(customer => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}
                         </SelectItem>
@@ -168,9 +180,15 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
               )}
             />
           ) : (
-            <Tabs defaultValue="new" value={customerTab} onValueChange={(value) => setCustomerTab(value as 'existing' | 'new')}>
+            <Tabs
+              defaultValue="new"
+              value={customerTab}
+              onValueChange={value => setCustomerTab(value as 'existing' | 'new')}
+            >
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="existing" onClick={() => setShowCustomerForm(false)}>Existing Customer</TabsTrigger>
+                <TabsTrigger value="existing" onClick={() => setShowCustomerForm(false)}>
+                  Existing Customer
+                </TabsTrigger>
                 <TabsTrigger value="new">New Customer</TabsTrigger>
               </TabsList>
               <TabsContent value="new" className="space-y-4 pt-4">
@@ -192,10 +210,10 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
                     <FormControl>
                       <Button
                         variant="outline"
-                        className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                        className={`w-full pl-3 text-left font-normal ${!field.value && 'text-muted-foreground'}`}
                       >
                         {field.value ? (
-                          format(new Date(field.value), "PPP")
+                          format(new Date(field.value), 'PPP')
                         ) : (
                           <span>Select a date</span>
                         )}
@@ -207,7 +225,7 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
                     <CalendarComponent
                       mode="single"
                       selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date ? date.toISOString() : undefined)}
+                      onSelect={date => field.onChange(date ? date.toISOString() : undefined)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -230,7 +248,7 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {statusOptions.map((status) => (
+                    {statusOptions.map(status => (
                       <SelectItem key={status.value} value={status.value}>
                         {status.label}
                       </SelectItem>
@@ -250,10 +268,10 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
             <FormItem>
               <FormLabel>Job Description</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Enter job description" 
-                  className="min-h-[100px]" 
-                  {...field} 
+                <Textarea
+                  placeholder="Enter job description"
+                  className="min-h-[100px]"
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -262,10 +280,10 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
         />
 
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="different-site" 
+          <Checkbox
+            id="different-site"
             checked={useDifferentSiteLocation}
-            onCheckedChange={(checked) => setUseDifferentSiteLocation(checked as boolean)}
+            onCheckedChange={checked => setUseDifferentSiteLocation(checked as boolean)}
           />
           <label
             htmlFor="different-site"

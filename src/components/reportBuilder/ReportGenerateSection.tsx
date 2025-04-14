@@ -1,5 +1,11 @@
-
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CircleDollarSign, Download, ArrowRight, ListFilter } from 'lucide-react';
 import { entityNames } from '@/data/reportEntities';
@@ -11,10 +17,10 @@ interface ReportGenerateSectionProps {
   onGeneratePreview: () => void;
 }
 
-const ReportGenerateSection = ({ 
+const ReportGenerateSection = ({
   selectedEntityType,
   selectedFieldsCount,
-  onGeneratePreview 
+  onGeneratePreview,
 }: ReportGenerateSectionProps) => {
   return (
     <Card>
@@ -29,17 +35,14 @@ const ReportGenerateSection = ({
           <p className="text-sm text-muted-foreground max-w-xs mx-auto mt-1 mb-4">
             Add fields, apply filters, and configure visualization options.
           </p>
-          <Button 
-            onClick={onGeneratePreview} 
-            disabled={selectedFieldsCount === 0}
-          >
+          <Button onClick={onGeneratePreview} disabled={selectedFieldsCount === 0}>
             Generate Preview
           </Button>
           {selectedFieldsCount === 0 && (
             <p className="text-xs text-muted-foreground mt-2">Please select at least one field</p>
           )}
         </div>
-        
+
         <div className="space-y-2">
           <div className="text-sm font-medium">Selected Entity</div>
           <div className="p-3 bg-background border rounded-md">
@@ -49,7 +52,7 @@ const ReportGenerateSection = ({
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <div className="text-sm font-medium">Fields Selected</div>
           <div className="p-3 bg-background border rounded-md">
@@ -68,7 +71,7 @@ const ReportGenerateSection = ({
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
+        <Button
           className="w-full bg-[#0485ea] hover:bg-[#0370c9]"
           onClick={onGeneratePreview}
           disabled={selectedFieldsCount === 0}

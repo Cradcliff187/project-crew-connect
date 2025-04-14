@@ -13,80 +13,82 @@ export const validateStatusTransition = (
 ): boolean => {
   // Define allowed transitions for each entity type
   const allowedTransitions: Record<EntityType, Record<string, string[]>> = {
-    'PROJECT': {
-      'new': ['active', 'on_hold', 'cancelled', 'pending'],
-      'active': ['completed', 'on_hold', 'cancelled'],
-      'on_hold': ['active', 'cancelled'],
-      'completed': ['active'],
-      'cancelled': ['active'],
-      'pending': ['active', 'cancelled', 'on_hold']
+    PROJECT: {
+      new: ['active', 'on_hold', 'cancelled', 'pending'],
+      active: ['completed', 'on_hold', 'cancelled'],
+      on_hold: ['active', 'cancelled'],
+      completed: ['active'],
+      cancelled: ['active'],
+      pending: ['active', 'cancelled', 'on_hold'],
     },
-    'WORK_ORDER': {
-      'NEW': ['IN_PROGRESS', 'ON_HOLD', 'CANCELLED'],
-      'IN_PROGRESS': ['COMPLETED', 'ON_HOLD', 'CANCELLED'],
-      'ON_HOLD': ['IN_PROGRESS', 'CANCELLED'],
-      'COMPLETED': ['IN_PROGRESS'],
-      'CANCELLED': ['NEW', 'IN_PROGRESS']
+    WORK_ORDER: {
+      NEW: ['IN_PROGRESS', 'ON_HOLD', 'CANCELLED'],
+      IN_PROGRESS: ['COMPLETED', 'ON_HOLD', 'CANCELLED'],
+      ON_HOLD: ['IN_PROGRESS', 'CANCELLED'],
+      COMPLETED: ['IN_PROGRESS'],
+      CANCELLED: ['NEW', 'IN_PROGRESS'],
     },
-    'CHANGE_ORDER': {
-      'DRAFT': ['SUBMITTED', 'CANCELLED'],
-      'SUBMITTED': ['REVIEW', 'CANCELLED'],
-      'REVIEW': ['APPROVED', 'REJECTED', 'CANCELLED'],
-      'APPROVED': ['IMPLEMENTED', 'CANCELLED'],
-      'REJECTED': ['DRAFT', 'CANCELLED'],
-      'IMPLEMENTED': ['CANCELLED'],
-      'CANCELLED': ['DRAFT']
+    CHANGE_ORDER: {
+      DRAFT: ['SUBMITTED', 'CANCELLED'],
+      SUBMITTED: ['REVIEW', 'CANCELLED'],
+      REVIEW: ['APPROVED', 'REJECTED', 'CANCELLED'],
+      APPROVED: ['IMPLEMENTED', 'CANCELLED'],
+      REJECTED: ['DRAFT', 'CANCELLED'],
+      IMPLEMENTED: ['CANCELLED'],
+      CANCELLED: ['DRAFT'],
     },
-    'CONTACT': {
-      'PROSPECT': ['ACTIVE', 'INACTIVE'],
-      'ACTIVE': ['INACTIVE'],
-      'INACTIVE': ['ACTIVE']
+    CONTACT: {
+      PROSPECT: ['ACTIVE', 'INACTIVE'],
+      ACTIVE: ['INACTIVE'],
+      INACTIVE: ['ACTIVE'],
     },
-    'VENDOR': {
-      'POTENTIAL': ['APPROVED', 'ACTIVE', 'INACTIVE'],
-      'APPROVED': ['ACTIVE', 'INACTIVE'],
-      'ACTIVE': ['INACTIVE'],
-      'INACTIVE': ['ACTIVE']
+    VENDOR: {
+      POTENTIAL: ['APPROVED', 'ACTIVE', 'INACTIVE'],
+      APPROVED: ['ACTIVE', 'INACTIVE'],
+      ACTIVE: ['INACTIVE'],
+      INACTIVE: ['ACTIVE'],
     },
-    'ESTIMATE': {
-      'draft': ['sent'],
-      'sent': ['approved', 'rejected'],
-      'pending': ['approved', 'rejected'],
-      'approved': ['converted'],
-      'rejected': ['draft'],
-      'converted': []
+    ESTIMATE: {
+      draft: ['sent'],
+      sent: ['approved', 'rejected'],
+      pending: ['approved', 'rejected'],
+      approved: ['converted'],
+      rejected: ['draft'],
+      converted: [],
     },
-    'CUSTOMER': {
-      'PROSPECT': ['ACTIVE', 'INACTIVE'],
-      'ACTIVE': ['INACTIVE'],
-      'INACTIVE': ['ACTIVE']
+    CUSTOMER: {
+      PROSPECT: ['ACTIVE', 'INACTIVE'],
+      ACTIVE: ['INACTIVE'],
+      INACTIVE: ['ACTIVE'],
     },
-    'TIME_ENTRY': {
-      'DRAFT': ['SUBMITTED', 'CANCELLED'],
-      'SUBMITTED': ['APPROVED', 'REJECTED'],
-      'APPROVED': ['PAID', 'CANCELLED'],
-      'REJECTED': ['DRAFT'],
-      'PAID': [],
-      'CANCELLED': ['DRAFT']
+    TIME_ENTRY: {
+      DRAFT: ['SUBMITTED', 'CANCELLED'],
+      SUBMITTED: ['APPROVED', 'REJECTED'],
+      APPROVED: ['PAID', 'CANCELLED'],
+      REJECTED: ['DRAFT'],
+      PAID: [],
+      CANCELLED: ['DRAFT'],
     },
-    'EMPLOYEE': {
-      'ACTIVE': ['INACTIVE', 'TERMINATED'],
-      'INACTIVE': ['ACTIVE'],
-      'TERMINATED': [],
-      'NEW': ['ACTIVE', 'TERMINATED']
-    }
+    EMPLOYEE: {
+      ACTIVE: ['INACTIVE', 'TERMINATED'],
+      INACTIVE: ['ACTIVE'],
+      TERMINATED: [],
+      NEW: ['ACTIVE', 'TERMINATED'],
+    },
   };
 
   // Normalize status values for case-insensitive comparison
   const normalizedCurrentStatus = currentStatus.toUpperCase();
   const normalizedNewStatus = newStatus.toUpperCase();
-  
+
   // If current status doesn't exist in our mapping, allow any transition
   if (!allowedTransitions[entityType][normalizedCurrentStatus]) {
-    console.warn(`No transition rules defined for ${entityType} with status ${normalizedCurrentStatus}`);
+    console.warn(
+      `No transition rules defined for ${entityType} with status ${normalizedCurrentStatus}`
+    );
     return true;
   }
-  
+
   // Check if the transition is allowed
   return allowedTransitions[entityType][normalizedCurrentStatus]
     .map(s => s.toUpperCase())
@@ -110,41 +112,41 @@ export const updateEntityStatus = async (
     // Validate the transition
     if (!validateStatusTransition(entityType, currentStatus, newStatus)) {
       toast({
-        title: "Invalid Status Transition",
+        title: 'Invalid Status Transition',
         description: `Cannot transition ${entityType.toLowerCase()} from ${currentStatus} to ${newStatus}`,
-        variant: "destructive"
+        variant: 'destructive',
       });
       return false;
     }
-    
+
     // Update the entity status - using type assertion for tableName to satisfy TypeScript
     const updateData = {
       [statusField]: newStatus,
       updated_at: new Date().toISOString(),
-      ...additionalFields
+      ...additionalFields,
     };
-    
+
     const { error } = await supabase
       .from(tableName as any)
       .update(updateData)
       .eq(idField, entityId);
 
     if (error) throw error;
-    
+
     // Toast success message
     toast({
-      title: "Status Updated",
+      title: 'Status Updated',
       description: `Status changed to ${newStatus.toLowerCase()}.`,
       className: 'bg-[#0485ea]',
     });
-    
+
     return true;
   } catch (error: any) {
     console.error(`Error updating ${entityType} status:`, error);
     toast({
-      title: "Status Update Failed",
+      title: 'Status Update Failed',
       description: error.message,
-      variant: "destructive"
+      variant: 'destructive',
     });
     return false;
   }
@@ -153,13 +155,10 @@ export const updateEntityStatus = async (
 /**
  * Get formatted display name for a status value
  */
-export const getStatusDisplayName = (
-  entityType: EntityType, 
-  statusValue: string
-): string => {
+export const getStatusDisplayName = (entityType: EntityType, statusValue: string): string => {
   // Format the status value by converting underscores to spaces and capitalizing first letter of each word
   if (!statusValue) return 'Unknown';
-  
+
   return statusValue
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -169,12 +168,9 @@ export const getStatusDisplayName = (
 /**
  * Get CSS class for status color based on entity type and status value
  */
-export const getStatusColorClass = (
-  entityType: EntityType,
-  statusValue: string
-): string => {
+export const getStatusColorClass = (entityType: EntityType, statusValue: string): string => {
   const status = statusValue?.toLowerCase() || '';
-  
+
   if (status.includes('active') || status.includes('progress')) {
     return 'bg-emerald-100 text-emerald-800 border-emerald-200';
   } else if (status.includes('approved')) {

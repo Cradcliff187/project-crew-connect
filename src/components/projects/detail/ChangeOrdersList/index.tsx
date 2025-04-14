@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -21,10 +20,10 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedChangeOrder, setSelectedChangeOrder] = useState<ChangeOrder | null>(null);
 
-  const { 
-    data: changeOrders = [], 
+  const {
+    data: changeOrders = [],
     isLoading,
-    refetch 
+    refetch,
   } = useQuery({
     queryKey: ['project-change-orders', projectId],
     queryFn: async () => {
@@ -34,7 +33,7 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
         .eq('entity_type', 'PROJECT')
         .eq('entity_id', projectId)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data as ChangeOrder[];
     },
@@ -44,10 +43,10 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
         toast({
           title: 'Error loading change orders',
           description: error.message,
-          variant: 'destructive'
+          variant: 'destructive',
         });
-      }
-    }
+      },
+    },
   });
 
   const handleChangeOrderSaved = () => {
@@ -72,7 +71,7 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-md font-medium">Change Orders</CardTitle>
-          <Button 
+          <Button
             size="sm"
             className="bg-[#0485ea] hover:bg-[#0375d1]"
             onClick={() => setShowAddDialog(true)}
@@ -95,7 +94,7 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-md font-medium">Change Orders</CardTitle>
-        <Button 
+        <Button
           size="sm"
           className="bg-[#0485ea] hover:bg-[#0375d1]"
           onClick={() => {
@@ -112,18 +111,14 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
           <div className="text-center py-6">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
             <p className="text-muted-foreground">No change orders created yet</p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => setShowAddDialog(true)}
-            >
+            <Button variant="outline" className="mt-4" onClick={() => setShowAddDialog(true)}>
               Create First Change Order
             </Button>
           </div>
         ) : (
           <div className="space-y-3">
-            {changeOrders.map((changeOrder) => (
-              <div 
+            {changeOrders.map(changeOrder => (
+              <div
                 key={changeOrder.id}
                 className="border rounded-lg p-3 hover:bg-[#0485ea]/5 cursor-pointer transition-colors"
                 onClick={() => handleViewChangeOrder(changeOrder)}
@@ -131,7 +126,9 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="font-medium">{changeOrder.title}</h4>
-                    <p className="text-sm text-muted-foreground">{changeOrder.change_order_number}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {changeOrder.change_order_number}
+                    </p>
                   </div>
                   <ChangeOrderStatusBadge status={changeOrder.status} />
                 </div>

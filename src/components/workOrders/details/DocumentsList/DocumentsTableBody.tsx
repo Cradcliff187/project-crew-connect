@@ -1,4 +1,3 @@
-
 import { TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { FileText, Eye, Download, Trash2 } from 'lucide-react';
 import { formatDate, formatFileSize } from '@/lib/utils';
@@ -16,27 +15,27 @@ const DocumentsTableBody = ({ documents, onViewDocument }: DocumentsTableBodyPro
   if (!documents || documents.length === 0) {
     return null;
   }
-  
+
   return (
     <TableBody>
-      {documents.map((doc) => {
+      {documents.map(doc => {
         const actionGroups: ActionGroup[] = [
           {
             items: [
               {
-                label: "View Document",
+                label: 'View Document',
                 icon: <Eye className="h-4 w-4" />,
                 onClick: () => onViewDocument(doc),
-                className: "text-[#0485ea] hover:text-[#0375d1]"
+                className: 'text-[#0485ea] hover:text-[#0375d1]',
               },
               {
-                label: "Download",
+                label: 'Download',
                 icon: <Download className="h-4 w-4" />,
                 onClick: () => window.open(doc.url, '_blank'),
-                className: "text-[#0485ea] hover:text-[#0375d1]"
-              }
-            ]
-          }
+                className: 'text-[#0485ea] hover:text-[#0375d1]',
+              },
+            ],
+          },
         ];
 
         return (
@@ -55,12 +54,7 @@ const DocumentsTableBody = ({ documents, onViewDocument }: DocumentsTableBodyPro
             <TableCell>{formatDate(doc.created_at)}</TableCell>
             <TableCell>{formatFileSize(doc.file_size || 0)}</TableCell>
             <TableCell className="text-right">
-              <ActionMenu
-                groups={actionGroups}
-                size="sm" 
-                align="end"
-                triggerClassName="ml-auto"
-              />
+              <ActionMenu groups={actionGroups} size="sm" align="end" triggerClassName="ml-auto" />
             </TableCell>
           </TableRow>
         );

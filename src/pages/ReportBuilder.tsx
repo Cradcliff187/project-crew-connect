@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import PageTransition from '@/components/layout/PageTransition';
 import { useReportBuilder } from '@/hooks/useReportBuilder';
@@ -35,61 +34,52 @@ const ReportBuilder = () => {
     handleGroupByFieldChange,
     handleGeneratePreview,
     handleSaveReport,
-    setIsPreviewMode
+    setIsPreviewMode,
   } = useReportBuilder();
-  
+
   return (
     <PageTransition>
       <div className="container mx-auto py-6 space-y-6">
-        <ReportBuilderHeader 
+        <ReportBuilderHeader
           title="Report Builder"
           description="Create customized reports based on your data"
           isPreviewMode={isPreviewMode}
           onTogglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
           onSaveReport={handleSaveReport}
         />
-        
+
         {isPreviewMode ? (
-          <ReportBuilderPreview 
-            reportConfig={reportConfig}
-            previewData={previewData}
-          />
+          <ReportBuilderPreview reportConfig={reportConfig} previewData={previewData} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
-              <ReportDetailsForm 
+              <ReportDetailsForm
                 name={reportConfig.name}
                 description={reportConfig.description}
                 onNameChange={handleNameChange}
                 onDescriptionChange={handleDescriptionChange}
               />
-              
-              <EntitySelector 
-                value={reportConfig.primaryEntity}
-                onChange={handleEntityChange}
-              />
-              
-              <AvailableFieldsList 
+
+              <EntitySelector value={reportConfig.primaryEntity} onChange={handleEntityChange} />
+
+              <AvailableFieldsList
                 fields={entityFields[reportConfig.primaryEntity]}
                 onAddField={handleAddField}
               />
-              
-              <ChartTypeSelector 
-                value={reportConfig.chartType}
-                onChange={handleChartTypeChange}
-              />
+
+              <ChartTypeSelector value={reportConfig.chartType} onChange={handleChartTypeChange} />
             </div>
-            
+
             {/* Middle Column */}
             <div className="space-y-6">
-              <SelectedFieldsList 
+              <SelectedFieldsList
                 fields={reportConfig.selectedFields}
                 onRemoveField={handleRemoveField}
                 onReorderFields={handleReorderFields}
               />
-              
-              <SortAndGroupForm 
+
+              <SortAndGroupForm
                 selectedFields={reportConfig.selectedFields}
                 sortByField={reportConfig.sortByField}
                 sortDirection={reportConfig.sortDirection}
@@ -98,18 +88,18 @@ const ReportBuilder = () => {
                 onSortDirectionChange={handleSortDirectionChange}
                 onGroupByFieldChange={handleGroupByFieldChange}
               />
-              
-              <FiltersSection 
+
+              <FiltersSection
                 entityType={reportConfig.primaryEntity}
                 filters={reportConfig.filters}
                 onAddFilter={handleAddFilter}
                 onRemoveFilter={handleRemoveFilter}
               />
             </div>
-            
+
             {/* Right Column */}
             <div className="space-y-6">
-              <ReportGenerateSection 
+              <ReportGenerateSection
                 selectedEntityType={reportConfig.primaryEntity}
                 selectedFieldsCount={reportConfig.selectedFields.length}
                 onGeneratePreview={handleGeneratePreview}

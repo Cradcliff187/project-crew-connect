@@ -1,6 +1,10 @@
-
 import React, { memo } from 'react';
-import { DialogContent as ShadcnDialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  DialogContent as ShadcnDialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import StepNavigation from './StepNavigation';
 import EstimateStepTabs from './EstimateStepTabs';
 import { EstimateStep } from './EstimateStepConstants';
@@ -24,21 +28,24 @@ const DialogContent = ({
   isFirstStep,
   onPreviousStep,
   steps,
-  setCurrentStep
+  setCurrentStep,
 }: DialogContentProps) => {
   return (
-    <ShadcnDialogContent 
+    <ShadcnDialogContent
       className="max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[90vh] overflow-hidden p-0 flex flex-col"
       aria-labelledby="estimate-dialog-title"
       aria-describedby="estimate-dialog-description"
       // Prevent event bubbling to improve performance
-      onClick={(e) => e.stopPropagation()}
-      onPointerDownCapture={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
+      onPointerDownCapture={e => e.stopPropagation()}
     >
       <DialogHeader className="px-6 pt-6 pb-2">
-        <DialogTitle id="estimate-dialog-title" className="text-2xl font-semibold text-[#0485ea] flex items-center">
+        <DialogTitle
+          id="estimate-dialog-title"
+          className="text-2xl font-semibold text-[#0485ea] flex items-center"
+        >
           Create New Estimate
-          <MemoizedStepNavigation 
+          <MemoizedStepNavigation
             isFirstStep={isFirstStep}
             onPrevious={onPreviousStep}
             currentStep={currentStep}
@@ -50,10 +57,10 @@ const DialogContent = ({
       </DialogHeader>
 
       <div className="px-6 py-4" role="tablist" aria-label="Estimate creation steps">
-        <MemoizedEstimateStepTabs 
-          steps={steps} 
-          currentStep={currentStep} 
-          setCurrentStep={setCurrentStep} 
+        <MemoizedEstimateStepTabs
+          steps={steps}
+          currentStep={currentStep}
+          setCurrentStep={setCurrentStep}
         />
       </div>
 

@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,93 +17,100 @@ export interface ContactInteraction {
 }
 
 // Fetch interactions for a contact
-export const fetchContactInteractions = async (contactId: string): Promise<ContactInteraction[]> => {
+export const fetchContactInteractions = async (
+  contactId: string
+): Promise<ContactInteraction[]> => {
   try {
     const { data, error } = await supabase
       .from('contact_interactions')
       .select('*')
       .eq('contact_id', contactId)
       .order('interaction_date', { ascending: false });
-    
+
     if (error) throw error;
-    
+
     return data || [];
   } catch (error: any) {
-    console.error("Error fetching contact interactions:", error);
+    console.error('Error fetching contact interactions:', error);
     toast({
-      title: "Error",
-      description: "Failed to load contact interactions.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to load contact interactions.',
+      variant: 'destructive',
     });
     return [];
   }
 };
 
 // Add a new interaction
-export const addContactInteraction = async (interaction: Omit<ContactInteraction, 'id' | 'created_at'>): Promise<ContactInteraction | null> => {
+export const addContactInteraction = async (
+  interaction: Omit<ContactInteraction, 'id' | 'created_at'>
+): Promise<ContactInteraction | null> => {
   try {
     const { data, error } = await supabase
       .from('contact_interactions')
       .insert({
         ...interaction,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       })
       .select('*')
       .single();
-      
+
     if (error) throw error;
-    
+
     // Update the last_contact field in the contacts table
     await supabase
       .from('contacts')
       .update({
         last_contact: interaction.interaction_date,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', interaction.contact_id);
-    
+
     toast({
-      title: "Interaction Added",
-      description: "Contact interaction has been successfully added."
+      title: 'Interaction Added',
+      description: 'Contact interaction has been successfully added.',
     });
-    
+
     return data;
   } catch (error: any) {
-    console.error("Error adding contact interaction:", error);
+    console.error('Error adding contact interaction:', error);
     toast({
-      title: "Error",
-      description: "Failed to add contact interaction.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to add contact interaction.',
+      variant: 'destructive',
     });
     return null;
   }
 };
 
 // Update an interaction
-export const updateContactInteraction = async (id: string, updates: Partial<ContactInteraction>): Promise<boolean> => {
+export const updateContactInteraction = async (
+  id: string,
+  updates: Partial<ContactInteraction>
+): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('contact_interactions')
       .update({
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', id);
-      
+
     if (error) throw error;
-    
+
     toast({
-      title: "Interaction Updated",
-      description: "Contact interaction has been successfully updated."
+      title: 'Interaction Updated',
+      description: 'Contact interaction has been successfully updated.',
     });
-    
+
     return true;
   } catch (error: any) {
-    console.error("Error updating contact interaction:", error);
+    console.error('Error updating contact interaction:', error);
     toast({
-      title: "Error",
-      description: "Failed to update contact interaction.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to update contact interaction.',
+      variant: 'destructive',
     });
     return false;
   }
@@ -116,7 +122,7 @@ export const getInteractionTypeOptions = () => [
   { value: 'EMAIL', label: 'Email' },
   { value: 'MEETING', label: 'Meeting' },
   { value: 'NOTE', label: 'Note' },
-  { value: 'TASK', label: 'Task' }
+  { value: 'TASK', label: 'Task' },
 ];
 
 // Get status options for interactions
@@ -126,13 +132,13 @@ export const getInteractionStatusOptions = (type: string) => {
       { value: 'PLANNED', label: 'Planned' },
       { value: 'IN_PROGRESS', label: 'In Progress' },
       { value: 'COMPLETED', label: 'Completed' },
-      { value: 'CANCELLED', label: 'Cancelled' }
+      { value: 'CANCELLED', label: 'Cancelled' },
     ];
   }
-  
+
   return [
     { value: 'SCHEDULED', label: 'Scheduled' },
     { value: 'COMPLETED', label: 'Completed' },
-    { value: 'CANCELLED', label: 'Cancelled' }
+    { value: 'CANCELLED', label: 'Cancelled' },
   ];
 };

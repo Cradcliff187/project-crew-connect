@@ -1,6 +1,6 @@
-
 import React, { useCallback, memo } from 'react';
-import { Upload, FolderOpen } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
+import { Upload, FolderOpen, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
@@ -20,24 +20,40 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
   onFileSelect,
   previewURL,
   watchFiles,
-  label = 'Upload Document'
+  label = 'Upload Document',
 }) => {
-  // Create a memoized file change handler
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      // Ensure we're passing proper File objects
-      const fileArray = Array.from(files);
-      onFileSelect(fileArray);
-    }
-  }, [onFileSelect]);
-  
-  // Create a memoized click handler
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    document.getElementById('dropzone-file')?.click();
-  }, []);
-  
+  // Set up react-dropzone
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles && acceptedFiles.length > 0) {
+        onFileSelect(acceptedFiles);
+      }
+    },
+    [onFileSelect]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpg', '.jpeg', '.png', '.gif'],
+      'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'text/plain': ['.txt'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+    },
+    multiple: false,
+    maxSize: 10485760, // 10MB max
+  });
+
+  // Format file size for display
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' bytes';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  };
+
   return (
     <FormField
       control={control}
@@ -48,12 +64,24 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
           <FormControl>
             <div className="flex flex-col items-center justify-center w-full">
               <div
+                {...getRootProps()}
                 className={cn(
-                  "flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100",
-                  watchFiles.length > 0 ? "border-[#0485ea]" : "border-gray-300"
+                  'flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg cursor-pointer',
+                  isDragActive ? 'bg-gray-100 border-[#0485ea]' : 'bg-gray-50 hover:bg-gray-100',
+                  watchFiles.length > 0 ? 'border-[#0485ea]' : 'border-gray-300'
                 )}
-                onClick={handleClick}
               >
+                <input
+                  {...getInputProps()}
+                  onChange={e => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      const fileArray = Array.from(e.target.files) as File[];
+                      field.onChange(fileArray);
+                      onFileSelect(fileArray);
+                    }
+                  }}
+                />
+
                 {previewURL ? (
                   <div className="w-full h-full p-2 flex flex-col items-center justify-center">
                     <img
@@ -61,58 +89,56 @@ const DropzoneUploader: React.FC<DropzoneUploaderProps> = ({
                       alt="Preview"
                       className="max-h-36 max-w-full object-contain mb-2"
                     />
-                    <p className="text-sm text-[#0485ea] font-medium">
-                      {watchFiles[0]?.name}
+                    <p className="text-sm text-[#0485ea] font-medium">{watchFiles[0]?.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatFileSize(watchFiles[0]?.size || 0)}
                     </p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-10 h-10 mb-3 text-[#0485ea]" />
-                    <p className="mb-2 text-sm">
-                      <span className="font-semibold text-[#0485ea]">Drag and drop</span> your file here
-                    </p>
-                    <Button 
-                      type="button"
-                      variant="outline" 
-                      size="sm"
-                      className="mt-2 border-[#0485ea] text-[#0485ea]"
-                      onClick={handleClick}
-                    >
-                      <FolderOpen className="h-4 w-4 mr-2" />
-                      Browse Files
-                    </Button>
-                    {watchFiles.length > 0 && (
-                      <p className="mt-2 text-sm text-[#0485ea] font-medium">
-                        {watchFiles.length > 1 
-                          ? `${watchFiles.length} files selected` 
-                          : watchFiles[0].name}
-                      </p>
+                    {isDragActive ? (
+                      <>
+                        <Upload className="w-10 h-10 mb-3 text-[#0485ea]" />
+                        <p className="mb-2 text-sm font-semibold text-[#0485ea]">
+                          Drop your file here
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-10 h-10 mb-3 text-[#0485ea]" />
+                        <p className="mb-2 text-sm">
+                          <span className="font-semibold text-[#0485ea]">Drag and drop</span> your
+                          file here
+                        </p>
+                        <p className="text-xs text-gray-500 mb-2">
+                          PDF, Word, Excel, Images and text files accepted
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 border-[#0485ea] text-[#0485ea]"
+                        >
+                          <FolderOpen className="h-4 w-4 mr-2" />
+                          Browse Files
+                        </Button>
+                      </>
+                    )}
+
+                    {watchFiles.length > 0 && !previewURL && (
+                      <div className="mt-4 flex items-center">
+                        <File className="h-5 w-5 mr-2 text-[#0485ea]" />
+                        <div>
+                          <p className="text-sm text-[#0485ea] font-medium">{watchFiles[0].name}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatFileSize(watchFiles[0].size)}
+                          </p>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
-                <input
-                  id="dropzone-file"
-                  type="file"
-                  className="hidden"
-                  multiple={false}
-                  accept="image/*,application/pdf"
-                  onChange={(e) => {
-                    handleFileChange(e);
-                    // Make sure field.onChange is still called for React Hook Form
-                    if (e.target.files && e.target.files.length > 0) {
-                      field.onChange(Array.from(e.target.files));
-                    }
-                  }}
-                />
               </div>
-              
-              {watchFiles.length > 0 && (
-                <div className="w-full mt-2">
-                  <p className="text-sm text-[#0485ea] font-medium text-center">
-                    {watchFiles.length} file(s) selected
-                  </p>
-                </div>
-              )}
             </div>
           </FormControl>
           <FormMessage />

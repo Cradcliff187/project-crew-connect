@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
@@ -11,10 +10,10 @@ interface AmountFieldProps {
   prefillAmount?: number;
 }
 
-const AmountField: React.FC<AmountFieldProps> = ({ 
-  control, 
+const AmountField: React.FC<AmountFieldProps> = ({
+  control,
   isReceiptUpload = false,
-  prefillAmount
+  prefillAmount,
 }) => {
   return (
     <FormField
@@ -26,14 +25,14 @@ const AmountField: React.FC<AmountFieldProps> = ({
           const value = e.target.value;
           field.onChange(value === '' ? undefined : parseFloat(value));
         };
-        
+
         // Use the prefillAmount if provided and not already set
         useEffect(() => {
           if (prefillAmount !== undefined && !field.value) {
             field.onChange(prefillAmount);
           }
         }, [prefillAmount]);
-        
+
         return (
           <FormItem>
             <FormLabel>Amount ($)</FormLabel>

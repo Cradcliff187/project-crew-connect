@@ -1,4 +1,3 @@
-
 export const statusOptions = [
   { value: 'new', label: 'New' },
   { value: 'active', label: 'Active' },

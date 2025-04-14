@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -10,16 +9,16 @@ export function useReceiptOperations(fetchMaterials: () => Promise<void>) {
         .from('expenses')
         .update({ document_id: documentId })
         .eq('id', materialId);
-        
+
       if (error) {
         throw error;
       }
-      
+
       toast({
         title: 'Receipt Attached',
         description: 'Receipt has been attached to the material successfully.',
       });
-      
+
       // Refresh materials list
       fetchMaterials();
     } catch (error: any) {
@@ -31,8 +30,8 @@ export function useReceiptOperations(fetchMaterials: () => Promise<void>) {
       });
     }
   };
-  
+
   return {
-    handleReceiptUploaded
+    handleReceiptUploaded,
   };
 }

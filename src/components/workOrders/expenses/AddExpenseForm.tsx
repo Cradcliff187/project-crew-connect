@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 
 interface AddExpenseFormProps {
   workOrderId: string; // The work order ID is required
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   submitting: boolean;
   onExpensePrompt: (expense: {
     expenseName: string;
@@ -24,14 +23,14 @@ interface AddExpenseFormProps {
   onCancel?: () => void; // Optional callback for when the user cancels
 }
 
-const AddExpenseForm = ({ 
+const AddExpenseForm = ({
   workOrderId,
-  vendors, 
+  vendors,
   submitting,
   onExpensePrompt,
   onVendorAdded,
   onSuccess,
-  onCancel
+  onCancel,
 }: AddExpenseFormProps) => {
   // Form state
   const [expenseName, setExpenseName] = useState('');
@@ -43,49 +42,49 @@ const AddExpenseForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate the form
     if (!expenseName.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter an expense name",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Please enter an expense name',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     if (!selectedVendor) {
       toast({
-        title: "Error",
-        description: "Please select a vendor",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Please select a vendor',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     if (!unitPrice || parseFloat(unitPrice) <= 0) {
       toast({
-        title: "Error",
-        description: "Please enter a valid unit price",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Please enter a valid unit price',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     const qtyValue = parseFloat(quantity);
     const priceValue = parseFloat(unitPrice);
-    
+
     const expenseData = {
       expenseName,
       quantity: qtyValue,
       unitPrice: priceValue,
       vendorId: selectedVendor,
-      expenseType
+      expenseType,
     };
-    
+
     // Submit the form data
     onExpensePrompt(expenseData);
-    
+
     // Call onSuccess if provided
     if (onSuccess) {
       onSuccess();
@@ -95,7 +94,7 @@ const AddExpenseForm = ({
   const handleVendorAdded = () => {
     // Close the dialog
     setShowVendorDialog(false);
-    
+
     // Notify parent to refresh vendors
     if (onVendorAdded) {
       onVendorAdded();
@@ -115,7 +114,7 @@ const AddExpenseForm = ({
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent>
-          <ExpenseFormFields 
+          <ExpenseFormFields
             expenseName={expenseName}
             setExpenseName={setExpenseName}
             quantity={quantity}
@@ -129,24 +128,15 @@ const AddExpenseForm = ({
             vendors={vendors}
             onAddVendorClick={() => setShowVendorDialog(true)}
           />
-          
+
           <TotalPriceDisplay unitPrice={unitPrice} quantity={quantity} />
         </CardContent>
         <CardFooter className="flex justify-between space-x-2">
-          <Button 
-            type="button" 
-            variant="outline"
-            onClick={handleCancel}
-            disabled={submitting}
-          >
+          <Button type="button" variant="outline" onClick={handleCancel} disabled={submitting}>
             <X className="h-4 w-4 mr-2" />
             Cancel
           </Button>
-          <Button 
-            type="submit" 
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
-            disabled={submitting}
-          >
+          <Button type="submit" className="bg-[#0485ea] hover:bg-[#0375d1]" disabled={submitting}>
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

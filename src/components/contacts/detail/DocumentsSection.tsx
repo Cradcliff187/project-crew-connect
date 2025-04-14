@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,23 +18,20 @@ interface DocumentsSectionProps {
   onDocumentAdded?: () => void;
 }
 
-const DocumentsSection: React.FC<DocumentsSectionProps> = ({ 
-  contact,
-  onDocumentAdded
-}) => {
+const DocumentsSection: React.FC<DocumentsSectionProps> = ({ contact, onDocumentAdded }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [viewDocument, setViewDocument] = useState<Document | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
 
   // Load documents on component mount
   useEffect(() => {
     const loadDocuments = async () => {
       if (!contact?.id) return;
-      
+
       setLoading(true);
       try {
         const docs = await fetchContactDocuments(contact.id);
@@ -46,34 +42,34 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
         setLoading(false);
       }
     };
-    
+
     loadDocuments();
   }, [contact?.id]);
-  
+
   // Handle document upload
   const handleUploadSuccess = () => {
     setUploadOpen(false);
-    
+
     // Refresh documents
     fetchContactDocuments(contact.id).then(docs => {
       setDocuments(docs);
     });
-    
+
     // Notify parent component
     if (onDocumentAdded) {
       onDocumentAdded();
     }
-    
+
     // Refresh contacts data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
-  
+
   // Handle viewing a document
   const handleViewDocument = (doc: Document) => {
     setViewDocument(doc);
     setIsViewerOpen(true);
   };
-  
+
   // Render loading state
   if (loading && documents.length === 0) {
     return (
@@ -88,21 +84,18 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
       </Card>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Metrics card at the top */}
       <DocumentMetricsCard documents={documents} loading={loading} />
-      
+
       {/* Main documents card */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg">Contact Documents</CardTitle>
-            <Button
-              onClick={() => setUploadOpen(true)}
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-            >
+            <Button onClick={() => setUploadOpen(true)} className="bg-[#0485ea] hover:bg-[#0375d1]">
               <Upload className="h-4 w-4 mr-1" />
               Upload Document
             </Button>
@@ -114,9 +107,10 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
               <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
               <h3 className="font-medium mb-2">No documents found</h3>
               <p className="text-muted-foreground mb-4">
-                Upload documents related to this contact to keep track of contracts, certifications, and more.
+                Upload documents related to this contact to keep track of contracts, certifications,
+                and more.
               </p>
-              <Button 
+              <Button
                 onClick={() => setUploadOpen(true)}
                 className="mt-2 bg-[#0485ea] hover:bg-[#0375d1]"
               >
@@ -125,7 +119,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
               </Button>
             </div>
           ) : (
-            <DocumentList 
+            <DocumentList
               documents={documents}
               loading={loading}
               onView={handleViewDocument}
@@ -135,28 +129,28 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
           )}
         </CardContent>
       </Card>
-      
+
       {/* Document Upload Dialog */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Upload Document for {contact.name}</DialogTitle>
           </DialogHeader>
-          <EnhancedDocumentUpload 
-            entityType={"CONTACT" as EntityType}
+          <EnhancedDocumentUpload
+            entityType={'CONTACT' as EntityType}
             entityId={contact.id}
             onSuccess={handleUploadSuccess}
             onCancel={() => setUploadOpen(false)}
           />
         </DialogContent>
       </Dialog>
-      
+
       {/* Document Viewer Dialog */}
       {viewDocument && (
-        <DocumentViewer 
+        <DocumentViewer
           document={viewDocument}
           open={isViewerOpen}
-          onOpenChange={(open) => {
+          onOpenChange={open => {
             setIsViewerOpen(open);
             if (!open) setViewDocument(null);
           }}

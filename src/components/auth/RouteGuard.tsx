@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
@@ -8,7 +7,7 @@ interface RouteGuardProps {
 
 const RouteGuard: React.FC<RouteGuardProps> = ({ children }) => {
   const location = useLocation();
-  
+
   // Placeholder authentication check - always returns true for now
   const isAuthenticated = true;
 

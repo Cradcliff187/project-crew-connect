@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Vendor } from '../types/vendorTypes';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
@@ -11,16 +10,16 @@ interface VendorStatusControlProps {
   showBadge?: boolean;
 }
 
-const VendorStatusControl: React.FC<VendorStatusControlProps> = ({ 
-  vendor, 
+const VendorStatusControl: React.FC<VendorStatusControlProps> = ({
+  vendor,
   onStatusChange,
   size = 'md',
-  showBadge = true
+  showBadge = true,
 }) => {
   const { statusOptions } = useStatusOptions('VENDOR', vendor.status);
-  
+
   return (
-    <UniversalStatusControl 
+    <UniversalStatusControl
       entityId={vendor.vendorid}
       entityType="VENDOR"
       currentStatus={vendor.status || 'POTENTIAL'}

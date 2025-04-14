@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Mail, Phone, Building2, Calendar } from 'lucide-react';
@@ -26,7 +25,7 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ contact }) => {
               </div>
             </div>
           )}
-          
+
           {contact.phone && (
             <div className="flex items-start">
               <Phone className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
@@ -36,7 +35,7 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ contact }) => {
               </div>
             </div>
           )}
-          
+
           {contact.company && (
             <div className="flex items-start">
               <Building2 className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
@@ -46,7 +45,7 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ contact }) => {
               </div>
             </div>
           )}
-          
+
           {contact.role && (
             <div className="flex items-start">
               <Building2 className="h-5 w-5 mr-2 text-muted-foreground mt-0.5" />
@@ -57,7 +56,7 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ contact }) => {
             </div>
           )}
         </div>
-        
+
         {(contact.address || contact.city || contact.state || contact.zip) && (
           <div className="pt-2">
             <div className="flex items-start">
@@ -78,7 +77,7 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ contact }) => {
             </div>
           </div>
         )}
-        
+
         {contact.lastContact && (
           <div className="pt-2">
             <div className="flex items-start">
@@ -92,13 +91,11 @@ const ContactInfoSection: React.FC<ContactInfoSectionProps> = ({ contact }) => {
             </div>
           </div>
         )}
-        
+
         {contact.notes && (
           <div className="border-t pt-4 mt-4">
             <p className="text-sm font-medium mb-1">Notes</p>
-            <p className="text-sm text-muted-foreground whitespace-pre-line">
-              {contact.notes}
-            </p>
+            <p className="text-sm text-muted-foreground whitespace-pre-line">{contact.notes}</p>
           </div>
         )}
       </CardContent>

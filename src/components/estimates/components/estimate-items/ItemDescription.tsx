@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ interface ItemDescriptionProps {
 
 const ItemDescription: React.FC<ItemDescriptionProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
-  
+
   return (
     <div className="col-span-12 mb-2">
       <FormField

@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +19,7 @@ import { Loader2, SaveIcon, InfoIcon } from 'lucide-react';
 const TEMPLATE_VARIABLES = [
   { key: 'clientName', description: 'Client/customer name' },
   { key: 'revisionNumber', description: 'Revision number' },
-  { key: 'estimateId', description: 'Estimate ID' }
+  { key: 'estimateId', description: 'Estimate ID' },
 ];
 
 interface EmailTemplateFormDialogProps {
@@ -34,7 +33,7 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
   open,
   onOpenChange,
   templateId,
-  onSuccess
+  onSuccess,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +50,9 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
       // Reset form for new template
       setTemplateName('');
       setSubject('Your Estimate from AKC LLC');
-      setBody('Dear {{clientName}},\n\nThank you for the opportunity to provide this estimate for your project. Please find attached Revision {{revisionNumber}} of your estimate.\n\nPlease review the details and let us know if you have any questions or would like to proceed.\n\nBest regards,\nAKC LLC Team');
+      setBody(
+        'Dear {{clientName}},\n\nThank you for the opportunity to provide this estimate for your project. Please find attached Revision {{revisionNumber}} of your estimate.\n\nPlease review the details and let us know if you have any questions or would like to proceed.\n\nBest regards,\nAKC LLC Team'
+      );
       setIsDefault(false);
       setIsLoading(false);
     }
@@ -65,9 +66,9 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error) throw error;
-      
+
       if (data) {
         setTemplateName(data.template_name);
         setSubject(data.subject_template);
@@ -79,7 +80,7 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
       toast({
         title: 'Error',
         description: 'Failed to load email template data',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -91,7 +92,7 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
       toast({
         title: 'Missing Fields',
         description: 'Please fill in all required fields',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -111,41 +112,39 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
         template_name: templateName,
         subject_template: subject,
         body_template: body,
-        is_default: isDefault
+        is_default: isDefault,
       };
-      
+
       let response;
-      
+
       if (templateId) {
         response = await supabase
           .from('estimate_email_settings')
           .update(templateData)
           .eq('id', templateId);
       } else {
-        response = await supabase
-          .from('estimate_email_settings')
-          .insert(templateData);
+        response = await supabase.from('estimate_email_settings').insert(templateData);
       }
-      
+
       if (response.error) throw response.error;
-      
+
       toast({
         title: 'Success',
         description: `Email template ${templateId ? 'updated' : 'created'} successfully`,
-        className: 'bg-[#0485ea] text-white'
+        className: 'bg-[#0485ea] text-white',
       });
-      
+
       if (onSuccess) {
         onSuccess();
       }
-      
+
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error saving template:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to save template',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -161,11 +160,9 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {templateId ? 'Edit Email Template' : 'Create Email Template'}
-          </DialogTitle>
+          <DialogTitle>{templateId ? 'Edit Email Template' : 'Create Email Template'}</DialogTitle>
         </DialogHeader>
-        
+
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -177,23 +174,23 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
               <Input
                 id="templateName"
                 value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
+                onChange={e => setTemplateName(e.target.value)}
                 placeholder="e.g., Standard Estimate Email"
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="subject">Email Subject</Label>
               <Input
                 id="subject"
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                onChange={e => setSubject(e.target.value)}
                 placeholder="e.g., Your Estimate from AKC LLC"
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor="body">Email Body</Label>
@@ -205,21 +202,21 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
               <Textarea
                 id="body"
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
+                onChange={e => setBody(e.target.value)}
                 placeholder="Enter email body content..."
                 required
                 className="min-h-[200px]"
               />
             </div>
-            
+
             <div className="border bg-gray-50 rounded-md p-3">
               <div className="text-sm font-medium mb-2">Available Template Variables:</div>
               <div className="flex flex-wrap gap-2">
-                {TEMPLATE_VARIABLES.map((variable) => (
-                  <Button 
+                {TEMPLATE_VARIABLES.map(variable => (
+                  <Button
                     key={variable.key}
-                    type="button" 
-                    variant="outline" 
+                    type="button"
+                    variant="outline"
                     size="sm"
                     onClick={() => insertVariable(variable.key)}
                     className="text-xs"
@@ -232,14 +229,14 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
                 Click on a variable to insert it at the current cursor position in the email body.
               </p>
             </div>
-            
+
             <div className="flex items-center space-x-2 pt-4">
               <Checkbox
                 id="isDefault"
                 checked={isDefault}
-                onCheckedChange={(checked) => setIsDefault(!!checked)}
+                onCheckedChange={checked => setIsDefault(!!checked)}
               />
-              <Label 
+              <Label
                 htmlFor="isDefault"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
               >
@@ -248,13 +245,9 @@ const EmailTemplateFormDialog: React.FC<EmailTemplateFormDialogProps> = ({
             </div>
           </div>
         )}
-        
+
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button

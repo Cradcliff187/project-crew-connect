@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Briefcase } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -18,11 +17,13 @@ interface AssociatedProjectsProps {
 
 const AssociatedProjects = ({ projects, loading }: AssociatedProjectsProps) => {
   const navigate = useNavigate();
-  
+
   if (projects.length === 0 && !loading) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Associated Projects</h3>
+        <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">
+          Associated Projects
+        </h3>
         <div className="text-muted-foreground italic">No associated projects</div>
       </div>
     );
@@ -35,7 +36,7 @@ const AssociatedProjects = ({ projects, loading }: AssociatedProjectsProps) => {
         {loading ? (
           <Skeleton className="h-16 w-full" />
         ) : (
-          projects.map((project) => (
+          projects.map(project => (
             <Card key={project.projectid} className="p-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-2">
@@ -45,8 +46,8 @@ const AssociatedProjects = ({ projects, loading }: AssociatedProjectsProps) => {
                     <div className="text-xs text-muted-foreground">{project.projectid}</div>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => navigate(`/projects/${project.projectid}`)}
                 >

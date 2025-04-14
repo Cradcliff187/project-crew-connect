@@ -1,4 +1,3 @@
-
 import { WorkItem } from '@/types/activeWork';
 
 /**
@@ -11,7 +10,7 @@ export function filterWorkItems(
 ): WorkItem[] {
   // First filter by tab selection
   let filteredItems: WorkItem[] = [];
-  
+
   if (activeTab === 'all') {
     filteredItems = [...items];
   } else if (activeTab === 'projects') {
@@ -19,7 +18,7 @@ export function filterWorkItems(
   } else if (activeTab === 'workOrders') {
     filteredItems = items.filter(item => item.type === 'workOrder');
   }
-  
+
   // Then apply search filter if a query exists
   if (searchQuery) {
     const query = searchQuery.toLowerCase();
@@ -28,10 +27,10 @@ export function filterWorkItems(
       const customerMatch = item.customerName?.toLowerCase().includes(query) || false;
       const idMatch = item.id.toLowerCase().includes(query);
       const poMatch = item.poNumber && item.poNumber.toLowerCase().includes(query);
-      
+
       return titleMatch || customerMatch || idMatch || poMatch;
     });
   }
-  
+
   return filteredItems;
 }

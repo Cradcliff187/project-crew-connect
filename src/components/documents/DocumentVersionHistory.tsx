@@ -1,13 +1,12 @@
-
 import React from 'react';
 import DocumentVersionHistoryCard from './DocumentVersionHistoryCard';
 import { Document } from './schemas/documentSchema';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { History } from 'lucide-react';
@@ -21,7 +20,7 @@ interface DocumentVersionHistoryProps {
 const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
   documentId,
   onVersionChange,
-  trigger
+  trigger,
 }) => {
   const [open, setOpen] = React.useState(false);
 
@@ -38,11 +37,7 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center"
-          >
+          <Button variant="outline" size="sm" className="flex items-center">
             <History className="h-4 w-4 mr-2" />
             Version History
           </Button>
@@ -53,8 +48,8 @@ const DocumentVersionHistory: React.FC<DocumentVersionHistoryProps> = ({
           <DialogTitle>Document Version History</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
-          <DocumentVersionHistoryCard 
-            documentId={documentId} 
+          <DocumentVersionHistoryCard
+            documentId={documentId}
             onVersionChange={handleVersionChange}
           />
         </div>

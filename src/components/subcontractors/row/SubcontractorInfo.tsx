@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Subcontractor } from '../utils/types';
 import { Badge } from '@/components/ui/badge';
@@ -12,19 +11,22 @@ interface SubcontractorInfoProps {
 
 const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
   const { count, loading } = useDocumentCount('SUBCONTRACTOR', subcontractor.subid);
-  
+
   // Render compliance status indicators
   const renderComplianceIndicators = () => {
     return (
       <div className="flex gap-1 items-center">
         {/* Document Count */}
         {count > 0 && (
-          <Badge variant="outline" className="text-xs flex items-center gap-1 h-5 whitespace-nowrap bg-white text-[#0485ea] border-[#0485ea]/20">
+          <Badge
+            variant="outline"
+            className="text-xs flex items-center gap-1 h-5 whitespace-nowrap bg-white text-[#0485ea] border-[#0485ea]/20"
+          >
             <FileText className="h-3 w-3" />
             {loading ? '...' : count} docs
           </Badge>
         )}
-        
+
         {/* Contract Status */}
         {subcontractor.contract_on_file && (
           <TooltipProvider>
@@ -40,7 +42,7 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
             </Tooltip>
           </TooltipProvider>
         )}
-        
+
         {/* Preferred Vendor Status */}
         {subcontractor.preferred && (
           <TooltipProvider>
@@ -62,7 +64,9 @@ const SubcontractorInfo = ({ subcontractor }: SubcontractorInfoProps) => {
 
   return (
     <div className="flex flex-col">
-      <div className="font-medium text-[#0485ea]">{subcontractor.subname || 'Unnamed Subcontractor'}</div>
+      <div className="font-medium text-[#0485ea]">
+        {subcontractor.subname || 'Unnamed Subcontractor'}
+      </div>
       <div className="flex items-center gap-2">
         <div className="text-xs text-muted-foreground">{subcontractor.subid}</div>
         {renderComplianceIndicators()}

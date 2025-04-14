@@ -1,8 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { FileUp, Download, Check, Eye, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +28,7 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
   estimateId,
   revisions: initialRevisions,
   onRefresh,
-  clientName
+  clientName,
 }) => {
   const [revisions, setRevisions] = useState<EstimateRevision[]>(initialRevisions);
   const [loading, setLoading] = useState(true);
@@ -48,7 +54,7 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
       }
 
       setRevisions(data || []);
-      
+
       // Find current version
       const currentRevision = data?.find(rev => rev.is_current);
       if (currentRevision) {
@@ -121,10 +127,7 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Revisions History</CardTitle>
-          <Button 
-            onClick={handleCreateRevision}
-            className="bg-[#0485ea] hover:bg-[#0373ce]"
-          >
+          <Button onClick={handleCreateRevision} className="bg-[#0485ea] hover:bg-[#0373ce]">
             <FileUp className="h-4 w-4 mr-2" />
             Create Revision
           </Button>
@@ -156,7 +159,7 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                revisions.map((revision) => (
+                revisions.map(revision => (
                   <TableRow key={revision.id}>
                     <TableCell className="font-medium">Version {revision.version}</TableCell>
                     <TableCell>{formatDate(revision.revision_date)}</TableCell>
@@ -174,9 +177,9 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
                           Current
                         </Badge>
                       ) : (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleSetAsCurrent(revision.id)}
                         >
                           <Star className="h-4 w-4 text-gray-400" />

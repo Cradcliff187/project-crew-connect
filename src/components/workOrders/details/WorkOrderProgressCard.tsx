@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,9 +19,9 @@ const WorkOrderProgressCard = ({ workOrder, onProgressUpdate }: WorkOrderProgres
     loading,
     startEditing,
     handleSaveProgress,
-    handleCancelEdit
+    handleCancelEdit,
   } = useWorkOrderProgress(workOrder, onProgressUpdate);
-  
+
   return (
     <div className="space-y-4">
       <div className="flex flex-row items-center justify-between w-full">
@@ -38,11 +37,11 @@ const WorkOrderProgressCard = ({ workOrder, onProgressUpdate }: WorkOrderProgres
               <X className="h-4 w-4 mr-1" />
               Cancel
             </Button>
-            <Button 
-              variant="default" 
-              size="sm" 
-              onClick={handleSaveProgress} 
-              disabled={loading} 
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleSaveProgress}
+              disabled={loading}
               className="bg-[#0485ea] hover:bg-[#0375d1]"
             >
               <Check className="h-4 w-4 mr-1" />
@@ -51,12 +50,12 @@ const WorkOrderProgressCard = ({ workOrder, onProgressUpdate }: WorkOrderProgres
           </div>
         )}
       </div>
-      
+
       <div>
         <ProgressDisplay progressValue={progressValue} />
-        
+
         {isEditing && (
-          <ProgressEditForm 
+          <ProgressEditForm
             progressValue={progressValue}
             onProgressChange={setProgressValue}
             loading={loading}

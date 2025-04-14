@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
@@ -18,7 +17,7 @@ const ExpenseReceiptUpload: React.FC<ExpenseReceiptUploadProps> = ({
   expense,
   vendorName,
   onSuccess,
-  onCancel
+  onCancel,
 }) => {
   // Prefill data for receipt upload with more context
   const prefillData = {
@@ -27,25 +26,25 @@ const ExpenseReceiptUpload: React.FC<ExpenseReceiptUploadProps> = ({
     expenseName: expense.expense_name,
     category: 'receipt',
     notes: `Receipt for ${expense.expense_name} (${vendorName})`,
-    tags: ['receipt', 'work_order_expense', expense.expense_type?.toLowerCase() || 'material']
+    tags: ['receipt', 'work_order_expense', expense.expense_type?.toLowerCase() || 'material'],
   };
 
-  console.log("ExpenseReceiptUpload component rendering with:", { 
-    workOrderId, 
+  console.log('ExpenseReceiptUpload component rendering with:', {
+    workOrderId,
     expenseId: expense.id,
-    prefillData 
+    prefillData,
   });
 
   // Handle successful upload
   const handleSuccess = (documentId?: string) => {
-    console.log("Document upload success, got ID:", documentId);
+    console.log('Document upload success, got ID:', documentId);
     if (documentId) {
       onSuccess(documentId);
     } else {
       toast({
-        title: "Error",
-        description: "Failed to get document ID after upload",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to get document ID after upload',
+        variant: 'destructive',
       });
     }
   };

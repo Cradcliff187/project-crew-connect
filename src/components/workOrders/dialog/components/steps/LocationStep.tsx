@@ -1,8 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useFormContext } from 'react-hook-form';
@@ -25,7 +30,7 @@ const LocationStep: React.FC<LocationStepProps> = ({
 }) => {
   const form = useFormContext<WorkOrderFormValues>();
   const [isExistingLocation, setIsExistingLocation] = useState(!useCustomAddress);
-  
+
   // Set default state to California if none is provided
   useEffect(() => {
     if (useCustomAddress) {
@@ -41,7 +46,7 @@ const LocationStep: React.FC<LocationStepProps> = ({
     const isExisting = value === 'existing';
     setIsExistingLocation(isExisting);
     setUseCustomAddress(!isExisting);
-    
+
     // Clear irrelevant fields based on selection
     if (isExisting) {
       form.setValue('address', '');
@@ -64,19 +69,23 @@ const LocationStep: React.FC<LocationStepProps> = ({
         </p>
       </div>
 
-      <RadioGroup 
+      <RadioGroup
         defaultValue={isExistingLocation ? 'existing' : 'custom'}
         onValueChange={handleLocationTypeChange}
         className="grid grid-cols-2 gap-4"
       >
         <div className="flex items-center space-x-2 border rounded-md p-4 cursor-pointer hover:bg-slate-50">
           <RadioGroupItem value="existing" id="existing" />
-          <Label htmlFor="existing" className="cursor-pointer">Use existing location</Label>
+          <Label htmlFor="existing" className="cursor-pointer">
+            Use existing location
+          </Label>
         </div>
-        
+
         <div className="flex items-center space-x-2 border rounded-md p-4 cursor-pointer hover:bg-slate-50">
           <RadioGroupItem value="custom" id="custom" />
-          <Label htmlFor="custom" className="cursor-pointer">Enter custom address</Label>
+          <Label htmlFor="custom" className="cursor-pointer">
+            Enter custom address
+          </Label>
         </div>
       </RadioGroup>
 
@@ -87,8 +96,8 @@ const LocationStep: React.FC<LocationStepProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Select Location</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
+              <Select
+                onValueChange={field.onChange}
                 defaultValue={field.value}
                 disabled={locationsLoading}
               >
@@ -98,7 +107,7 @@ const LocationStep: React.FC<LocationStepProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {locations.map((location) => (
+                  {locations.map(location => (
                     <SelectItem key={location.location_id} value={location.location_id}>
                       {location.location_name || location.address}
                     </SelectItem>
@@ -124,7 +133,7 @@ const LocationStep: React.FC<LocationStepProps> = ({
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -139,7 +148,7 @@ const LocationStep: React.FC<LocationStepProps> = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="state"
@@ -154,7 +163,7 @@ const LocationStep: React.FC<LocationStepProps> = ({
               )}
             />
           </div>
-          
+
           <FormField
             control={form.control}
             name="zip"

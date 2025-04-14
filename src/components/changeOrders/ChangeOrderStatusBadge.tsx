@@ -1,4 +1,3 @@
-
 import { Badge } from '@/components/ui/badge';
 import { ChangeOrderStatus } from '@/types/changeOrders';
 
@@ -36,10 +35,7 @@ const ChangeOrderStatusBadge = ({ status, className = '' }: ChangeOrderStatusBad
   };
 
   return (
-    <Badge 
-      variant="outline" 
-      className={`${getStatusClasses()} ${className}`}
-    >
+    <Badge variant="outline" className={`${getStatusClasses()} ${className}`}>
       {getLabel()}
     </Badge>
   );

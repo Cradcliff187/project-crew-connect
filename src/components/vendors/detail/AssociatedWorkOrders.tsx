@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, FileText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,7 +27,7 @@ const AssociatedWorkOrders: React.FC<AssociatedWorkOrdersProps> = ({ workOrders,
           <FileText className="h-5 w-5" />
           Associated Work Orders
         </h3>
-        {[1, 2, 3].map((i) => (
+        {[1, 2, 3].map(i => (
           <div key={i} className="flex justify-between items-center pb-4 border-b">
             <div className="space-y-1">
               <Skeleton className="h-5 w-40" />
@@ -63,9 +62,9 @@ const AssociatedWorkOrders: React.FC<AssociatedWorkOrdersProps> = ({ workOrders,
         Associated Work Orders
       </h3>
       <div className="space-y-4">
-        {workOrders.map((workOrder) => (
-          <div 
-            key={workOrder.work_order_id} 
+        {workOrders.map(workOrder => (
+          <div
+            key={workOrder.work_order_id}
             className="flex justify-between items-center pb-4 border-b last:border-b-0 last:pb-0"
           >
             <div className="space-y-1">
@@ -76,10 +75,13 @@ const AssociatedWorkOrders: React.FC<AssociatedWorkOrdersProps> = ({ workOrders,
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <StatusBadge status={(workOrder.status?.toLowerCase() || 'unknown') as StatusType} size="sm" />
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <StatusBadge
+                status={(workOrder.status?.toLowerCase() || 'unknown') as StatusType}
+                size="sm"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-xs h-8"
                 onClick={() => handleWorkOrderClick(workOrder.work_order_id)}
               >

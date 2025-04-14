@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Vendor } from '../types/vendorTypes';
@@ -14,14 +13,11 @@ interface VendorDetailStatusProps {
   onStatusChange: () => void;
 }
 
-const VendorDetailStatus: React.FC<VendorDetailStatusProps> = ({ 
-  vendor, 
-  onStatusChange 
-}) => {
+const VendorDetailStatus: React.FC<VendorDetailStatusProps> = ({ vendor, onStatusChange }) => {
   const [history, setHistory] = useState<any[]>([]);
   const currentStatus = vendor.status || 'POTENTIAL';
   const { statusOptions } = useStatusOptions('VENDOR', currentStatus);
-  
+
   useEffect(() => {
     if (vendor.vendorid) {
       fetchHistory();
@@ -36,52 +32,63 @@ const VendorDetailStatus: React.FC<VendorDetailStatusProps> = ({
         .eq('referenceid', vendor.vendorid)
         .eq('moduletype', 'VENDOR')
         .order('timestamp', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       // Transform the data to match our expected format
-      const formattedHistory = data?.map(item => ({
-        status: item.status,
-        previous_status: item.previousstatus,
-        changed_date: item.timestamp,
-        changed_by: item.useremail,
-        notes: item.detailsjson || item.action
-      })) || [];
-      
+      const formattedHistory =
+        data?.map(item => ({
+          status: item.status,
+          previous_status: item.previousstatus,
+          changed_date: item.timestamp,
+          changed_by: item.useremail,
+          notes: item.detailsjson || item.action,
+        })) || [];
+
       setHistory(formattedHistory);
     } catch (error: any) {
       console.error('Error fetching status history:', error);
       setHistory([]);
     }
   };
-  
-  // Status descriptions for each vendor status
-  const getStatusDescription = (status: string): string => {
+
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'POTENTIAL':
-        return "This vendor is a potential supplier and needs to be approved before active use.";
-      case 'APPROVED':
-        return "This vendor has been approved and can be assigned to projects.";
-      case 'ACTIVE':
-        return "This vendor is currently active and available for new orders.";
-      case 'INACTIVE':
-        return "This vendor is currently inactive and not available for new orders.";
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'inactive':
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return "Status information not available.";
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-  
+
+  const getStatusDescription = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'This vendor is currently approved and can be used for purchases and expenses.';
+      case 'pending':
+        return 'This vendor is being evaluated as a potential vendor for your company.';
+      case 'inactive':
+        return 'This vendor is no longer approved for use.';
+      default:
+        return 'Status unknown';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row justify-between items-center">
           <CardTitle className="text-lg">Vendor Status</CardTitle>
-          <VendorStatusControl 
-            vendor={vendor} 
+          <VendorStatusControl
+            vendor={vendor}
             onStatusChange={() => {
               onStatusChange();
               fetchHistory();
-            }} 
+            }}
           />
         </CardHeader>
         <CardContent>
@@ -89,21 +96,21 @@ const VendorDetailStatus: React.FC<VendorDetailStatusProps> = ({
             <Badge className={getStatusColorClass('VENDOR', currentStatus)}>
               {getStatusDisplayName('VENDOR', currentStatus)}
             </Badge>
-            
+
             <div className="text-sm text-muted-foreground">
               {getStatusDescription(currentStatus)}
             </div>
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Status History</CardTitle>
         </CardHeader>
         <CardContent>
-          <StatusHistoryView 
-            history={history} 
+          <StatusHistoryView
+            history={history}
             statusOptions={statusOptions}
             currentStatus={currentStatus}
           />

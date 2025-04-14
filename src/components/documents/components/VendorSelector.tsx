@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Control } from 'react-hook-form';
@@ -18,16 +17,16 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
   control,
   vendorType,
   prefillVendorId,
-  onAddVendorClick
+  onAddVendorClick,
 }) => {
   const [showAddVendor, setShowAddVendor] = useState(false);
-  
+
   // Handle vendor type to set the right field and label
   const getFieldName = () => {
     // Always return "metadata.vendorId" as the field name since that's the expected field in the schema
-    return "metadata.vendorId" as const;
+    return 'metadata.vendorId' as const;
   };
-  
+
   const getLabel = () => {
     switch (vendorType) {
       case 'vendor':
@@ -38,12 +37,12 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
         return 'Service Provider';
     }
   };
-  
+
   // Don't render for other vendor types
   if (vendorType === 'other') {
     return null;
   }
-  
+
   return (
     <FormField
       control={control}

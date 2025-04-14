@@ -1,10 +1,16 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -29,13 +35,13 @@ interface BudgetItemsProps {
 const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState<BudgetItem | null>(null);
-  
+
   // Fetch budget items
-  const { 
-    data: budgetItems = [], 
-    isLoading, 
+  const {
+    data: budgetItems = [],
+    isLoading,
     error,
-    refetch 
+    refetch,
   } = useQuery({
     queryKey: ['budget-items', projectId],
     queryFn: async () => {
@@ -44,7 +50,7 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
         .select('*')
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
-        
+
       if (error) throw error;
       return data as BudgetItem[];
     },
@@ -54,10 +60,10 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
         toast({
           title: 'Error loading budget items',
           description: error.message,
-          variant: 'destructive'
+          variant: 'destructive',
         });
-      }
-    }
+      },
+    },
   });
 
   const handleItemSaved = () => {
@@ -79,16 +85,13 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
   const handleDeleteItem = async (item: BudgetItem) => {
     if (confirm(`Are you sure you want to delete the budget item "${item.category}"?`)) {
       try {
-        const { error } = await supabase
-          .from('project_budget_items')
-          .delete()
-          .eq('id', item.id);
-          
+        const { error } = await supabase.from('project_budget_items').delete().eq('id', item.id);
+
         if (error) throw error;
-        
+
         refetch();
         if (onRefresh) onRefresh();
-        
+
         toast({
           title: 'Budget item deleted',
           description: 'Budget item has been deleted successfully.',
@@ -97,7 +100,7 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
         toast({
           title: 'Error deleting budget item',
           description: error.message,
-          variant: 'destructive'
+          variant: 'destructive',
         });
       }
     }
@@ -130,9 +133,12 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-md font-medium">Budget Line Items</CardTitle>
-        <Button 
-          size="sm" 
-          onClick={() => { setSelectedItem(null); setShowFormDialog(true); }}
+        <Button
+          size="sm"
+          onClick={() => {
+            setSelectedItem(null);
+            setShowFormDialog(true);
+          }}
           className="bg-[#0485ea] hover:bg-[#0375d1]"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -158,26 +164,32 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {budgetItems.map((item) => {
+              {budgetItems.map(item => {
                 const variance = item.estimated_amount - item.actual_amount;
-                const percentUsed = item.estimated_amount > 0 
-                  ? Math.round((item.actual_amount / item.estimated_amount) * 100) 
-                  : 0;
+                const percentUsed =
+                  item.estimated_amount > 0
+                    ? Math.round((item.actual_amount / item.estimated_amount) * 100)
+                    : 0;
                 const isOverBudget = item.actual_amount > item.estimated_amount;
-                  
+
                 return (
                   <TableRow key={item.id}>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.description}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.estimated_amount)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.actual_amount)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.estimated_amount)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(item.actual_amount)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <span className={isOverBudget ? 'text-red-500' : 'text-green-500'}>
-                        {isOverBudget ? '-' : ''}{formatCurrency(Math.abs(variance))}
+                        {isOverBudget ? '-' : ''}
+                        {formatCurrency(Math.abs(variance))}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Badge variant={isOverBudget ? "destructive" : "outline"}>
+                      <Badge variant={isOverBudget ? 'destructive' : 'outline'}>
                         {percentUsed}%
                       </Badge>
                     </TableCell>
@@ -197,13 +209,16 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
             </TableBody>
           </Table>
         )}
-        
+
         {showFormDialog && (
           <BudgetItemFormDialog
             projectId={projectId}
             item={selectedItem}
             onSave={handleItemSaved}
-            onCancel={() => { setShowFormDialog(false); setSelectedItem(null); }}
+            onCancel={() => {
+              setShowFormDialog(false);
+              setSelectedItem(null);
+            }}
           />
         )}
       </CardContent>

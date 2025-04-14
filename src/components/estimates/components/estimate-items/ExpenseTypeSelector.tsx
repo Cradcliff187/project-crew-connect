@@ -1,7 +1,12 @@
-
 import React, { useEffect, useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
@@ -13,9 +18,9 @@ interface ExpenseTypeSelectorProps {
 const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
   const [showCustomInput, setShowCustomInput] = useState(false);
-  
+
   const expenseType = form.watch(`items.${index}.expense_type`);
-  
+
   // Show custom input for "other" expense type
   useEffect(() => {
     if (expenseType === 'other') {
@@ -26,7 +31,7 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
       form.setValue(`items.${index}.custom_type`, '');
     }
   }, [expenseType, form, index]);
-  
+
   return (
     <div className="col-span-12 md:col-span-3">
       <FormField
@@ -53,7 +58,7 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ index }) => {
           </FormItem>
         )}
       />
-      
+
       {showCustomInput && (
         <FormField
           control={form.control}

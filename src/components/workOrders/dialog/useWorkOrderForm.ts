@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,10 +22,10 @@ export const useWorkOrderForm = () => {
       state: '',
       zip: '',
       assigned_to: '',
-      useCustomAddress: false // Use the correct property name from schema
-    }
+      useCustomAddress: false, // Use the correct property name from schema
+    },
   });
-  
+
   const resetForm = () => {
     form.reset({
       title: '',
@@ -44,17 +43,17 @@ export const useWorkOrderForm = () => {
       state: '',
       zip: '',
       assigned_to: '',
-      useCustomAddress: false // Use the correct property name from schema
+      useCustomAddress: false, // Use the correct property name from schema
     });
   };
-  
+
   // Use correct field name when watching form changes
   const useCustomAddress = form.watch('useCustomAddress');
-  
+
   return {
     form,
     resetForm,
-    useCustomAddress
+    useCustomAddress,
   };
 };
 

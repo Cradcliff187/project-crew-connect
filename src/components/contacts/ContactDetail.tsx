@@ -1,14 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  MessageSquare, 
-  Calendar, 
-  ClipboardList, 
-  Users, 
+import {
+  MessageSquare,
+  Calendar,
+  ClipboardList,
+  Users,
   BarChart4,
   Info,
-  FileText
+  FileText,
 } from 'lucide-react';
 
 // Import refactored components
@@ -40,9 +39,10 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
       id: '1',
       date: new Date('2024-06-12T14:30:00'),
       subject: 'Project Requirements',
-      message: 'Discussed the requirements for the new commercial building project. Client is interested in sustainable materials.',
+      message:
+        'Discussed the requirements for the new commercial building project. Client is interested in sustainable materials.',
       type: 'meeting',
-      from: 'You'
+      from: 'You',
     },
     {
       id: '2',
@@ -50,10 +50,10 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
       subject: 'Initial Contact',
       message: 'Called to introduce our services and schedule an initial consultation.',
       type: 'call',
-      from: 'You'
-    }
+      from: 'You',
+    },
   ]);
-  
+
   const [appointments, setAppointments] = useState<Appointment[]>([
     {
       id: '1',
@@ -62,38 +62,38 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
       duration: 60,
       location: 'Client Office',
       notes: 'Bring latest project drawings',
-      contactId: contact.id
-    }
+      contactId: contact.id,
+    },
   ]);
 
   const queryClient = useQueryClient();
-  
+
   // Handler for explicit status changes that need to notify parent
   const handleStatusChange = async (newStatus: string): Promise<void> => {
     const success = await updateContactStatus(contact.id, newStatus);
-    
+
     if (success) {
       // Update contact locally
       contact.status = newStatus;
-      
+
       // Notify parent component
       if (onStatusChange) {
         onStatusChange(contact, newStatus);
       }
-      
+
       // Refresh contacts data
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      
+
       toast({
-        title: "Status Updated",
-        description: `Contact status has been updated to ${newStatus}.`
+        title: 'Status Updated',
+        description: `Contact status has been updated to ${newStatus}.`,
       });
     }
   };
 
   // Handler for generic data refreshes - wrapper function with no parameters
   const handleDataRefresh = () => {
-    console.log("Refreshing contact data after status or data changes");
+    console.log('Refreshing contact data after status or data changes');
     // Refresh data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
@@ -102,25 +102,21 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
     // Refresh the contact data
     queryClient.invalidateQueries({ queryKey: ['contacts'] });
   };
-  
+
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col overflow-hidden">
-      <ContactDetailHeader 
-        name={contact.name} 
-        company={contact.company} 
-        onClose={onClose} 
-      />
-      
-      <ContactActionButtons 
-        contact={contact} 
-        onStatusChange={handleDataRefresh} 
+      <ContactDetailHeader name={contact.name} company={contact.company} onClose={onClose} />
+
+      <ContactActionButtons
+        contact={contact}
+        onStatusChange={handleDataRefresh}
         onSchedule={() => {
           setActiveTab('schedule');
-        }} 
+        }}
       />
-      
-      <Tabs 
-        defaultValue="interactions" 
+
+      <Tabs
+        defaultValue="interactions"
         className="flex-1 flex flex-col overflow-hidden"
         value={activeTab}
         onValueChange={setActiveTab}
@@ -153,45 +149,36 @@ const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps)
             </TabsTrigger>
           </TabsList>
         </div>
-        
+
         <TabsContent value="interactions" className="flex-1 overflow-y-auto p-4">
-          <InteractionsSection 
-            contact={contact}
-            onInteractionAdded={handleInteractionAdded}
-          />
+          <InteractionsSection contact={contact} onInteractionAdded={handleInteractionAdded} />
         </TabsContent>
-        
+
         <TabsContent value="schedule" className="flex-1 overflow-y-auto p-4">
-          <ScheduleSection 
-            appointments={appointments} 
-            setAppointments={setAppointments} 
-            contactId={contact.id} 
+          <ScheduleSection
+            appointments={appointments}
+            setAppointments={setAppointments}
+            contactId={contact.id}
           />
         </TabsContent>
-        
+
         <TabsContent value="documents" className="flex-1 overflow-y-auto p-4">
-          <DocumentsSection 
-            contact={contact}
-            onDocumentAdded={handleDataRefresh}
-          />
+          <DocumentsSection contact={contact} onDocumentAdded={handleDataRefresh} />
         </TabsContent>
-        
+
         <TabsContent value="relationships" className="flex-1 overflow-y-auto p-4">
           <RelationshipsSection contact={contact} />
         </TabsContent>
-        
+
         <TabsContent value="performance" className="flex-1 overflow-y-auto p-4">
-          <PerformanceSection 
+          <PerformanceSection
             contact={contact}
             onMetricAdded={() => queryClient.invalidateQueries({ queryKey: ['contacts'] })}
           />
         </TabsContent>
-        
+
         <TabsContent value="details" className="flex-1 overflow-y-auto p-4">
-          <ContactDetailInformation 
-            contact={contact} 
-            onStatusChange={handleDataRefresh}
-          />
+          <ContactDetailInformation contact={contact} onStatusChange={handleDataRefresh} />
         </TabsContent>
       </Tabs>
     </div>

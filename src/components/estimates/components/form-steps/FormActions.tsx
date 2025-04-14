@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { X, Save, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -20,46 +19,32 @@ const FormActions: React.FC<FormActionsProps> = ({
   isLastStep = false,
   currentStep,
   onSubmit,
-  isSubmitting = false
+  isSubmitting = false,
 }) => {
   return (
     <div className="flex justify-between mt-6">
       <div>
         {onPrevious && (
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onPrevious}
-            disabled={isSubmitting}
-          >
+          <Button type="button" variant="outline" onClick={onPrevious} disabled={isSubmitting}>
             <ChevronLeft className="h-4 w-4 mr-2" />
             Previous
           </Button>
         )}
       </div>
-      
+
       <div className="flex space-x-2">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           <X className="h-4 w-4 mr-2" />
           Cancel
         </Button>
-        
+
         {onNext && !isLastStep && (
-          <Button 
-            type="button" 
-            onClick={onNext}
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
-          >
+          <Button type="button" onClick={onNext} className="bg-[#0485ea] hover:bg-[#0375d1]">
             Next
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         )}
-        
+
         {isLastStep && onSubmit && (
           <Button
             type="button"

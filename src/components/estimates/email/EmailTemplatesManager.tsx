@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -127,10 +126,7 @@ const EmailTemplatesManager: React.FC = () => {
             <Mail className="mr-2 h-5 w-5 text-[#0485ea]" />
             Email Templates
           </CardTitle>
-          <Button
-            onClick={handleCreateTemplate}
-            className="bg-[#0485ea] hover:bg-[#0373ce]"
-          >
+          <Button onClick={handleCreateTemplate} className="bg-[#0485ea] hover:bg-[#0373ce]">
             <PlusCircle className="h-4 w-4 mr-1.5" />
             New Template
           </Button>
@@ -144,18 +140,14 @@ const EmailTemplatesManager: React.FC = () => {
             <div className="text-center py-8">
               <Mail className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-3" />
               <p className="text-muted-foreground">No email templates found</p>
-              <Button
-                variant="outline"
-                onClick={handleCreateTemplate}
-                className="mt-4"
-              >
+              <Button variant="outline" onClick={handleCreateTemplate} className="mt-4">
                 <PlusCircle className="h-4 w-4 mr-1.5" />
                 Create First Template
               </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              {templates.map((template) => (
+              {templates.map(template => (
                 <div
                   key={template.id}
                   className="border rounded-lg p-4 flex justify-between items-start"
@@ -164,7 +156,10 @@ const EmailTemplatesManager: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium">{template.template_name}</h3>
                       {template.is_default && (
-                        <Badge variant="secondary" className="bg-[#0485ea]/10 text-[#0485ea] hover:bg-[#0485ea]/20">
+                        <Badge
+                          variant="secondary"
+                          className="bg-[#0485ea]/10 text-[#0485ea] hover:bg-[#0485ea]/20"
+                        >
                           Default
                         </Badge>
                       )}
@@ -215,9 +210,7 @@ const EmailTemplatesManager: React.FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteInProgress}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteInProgress}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteTemplate}
               disabled={deleteInProgress}

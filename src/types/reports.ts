@@ -1,11 +1,27 @@
-
 import { ReactNode } from 'react';
 
 // Define the types of entities we can report on
-export type EntityType = 'projects' | 'customers' | 'vendors' | 'subcontractors' | 'work_orders' | 'estimates' | 'expenses' | 'time_entries' | 'change_orders' | 'employees';
+export type EntityType =
+  | 'projects'
+  | 'customers'
+  | 'vendors'
+  | 'subcontractors'
+  | 'work_orders'
+  | 'estimates'
+  | 'expenses'
+  | 'time_entries'
+  | 'change_orders'
+  | 'employees';
 
 // Define field type
-export type FieldType = 'text' | 'date' | 'number' | 'currency' | 'status' | 'percentage' | 'boolean';
+export type FieldType =
+  | 'text'
+  | 'date'
+  | 'number'
+  | 'currency'
+  | 'status'
+  | 'percentage'
+  | 'boolean';
 
 // Define field structure
 export interface FieldDefinition {

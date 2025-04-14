@@ -1,4 +1,3 @@
-
 import { useWorkOrderTimelogs } from './hooks/useWorkOrderTimelogs';
 import { TimelogsInfoSection } from './timelogs/components';
 
@@ -15,15 +14,15 @@ const WorkOrderTimelogs = ({ workOrderId, onTimeLogAdded }: WorkOrderTimelogsPro
     totalHours,
     totalLaborCost,
     fetchTimelogs,
-    handleDeleteTimelog
+    handleDeleteTimelog,
   } = useWorkOrderTimelogs(workOrderId);
-  
+
   // Refresh data after adding a new time log
   const handleSuccessfulAdd = () => {
     fetchTimelogs();
     if (onTimeLogAdded) onTimeLogAdded();
   };
-  
+
   return (
     <TimelogsInfoSection
       timelogs={timelogs}

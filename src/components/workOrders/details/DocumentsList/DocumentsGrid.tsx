@@ -1,4 +1,3 @@
-
 import { WorkOrderDocument } from './types';
 import DocumentCard from './DocumentCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,11 +11,11 @@ interface DocumentsGridProps {
   onToggleUploadForm: () => void;
 }
 
-const DocumentsGrid = ({ 
-  documents, 
-  loading, 
-  onViewDocument, 
-  onToggleUploadForm 
+const DocumentsGrid = ({
+  documents,
+  loading,
+  onViewDocument,
+  onToggleUploadForm,
 }: DocumentsGridProps) => {
   if (loading) {
     return (
@@ -26,7 +25,7 @@ const DocumentsGrid = ({
       </div>
     );
   }
-  
+
   if (documents.length === 0) {
     return (
       <div className="text-center py-8">
@@ -35,25 +34,18 @@ const DocumentsGrid = ({
         <p className="text-sm text-muted-foreground mb-4">
           There are no documents attached to this work order yet.
         </p>
-        <Button 
-          onClick={onToggleUploadForm}
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-        >
+        <Button onClick={onToggleUploadForm} className="bg-[#0485ea] hover:bg-[#0375d1]">
           <Plus className="h-4 w-4 mr-1" />
           Add Document
         </Button>
       </div>
     );
   }
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {documents.map((doc) => (
-        <DocumentCard 
-          key={doc.document_id} 
-          document={doc} 
-          onViewDocument={onViewDocument} 
-        />
+      {documents.map(doc => (
+        <DocumentCard key={doc.document_id} document={doc} onViewDocument={onViewDocument} />
       ))}
     </div>
   );

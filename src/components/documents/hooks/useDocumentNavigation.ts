@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Document } from '../schemas/documentSchema';
@@ -12,111 +11,122 @@ export const useDocumentNavigation = () => {
   const navigate = useNavigate();
 
   // Navigate to the entity associated with the document
-  const navigateToEntity = useCallback((document: Document) => {
-    if (!document || !document.entity_type || !document.entity_id) {
-      toast({
-        title: "Navigation error",
-        description: "Unable to navigate to associated entity. Missing information.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsNavigating(true);
-
-    try {
-      // Navigate based on entity type
-      switch (document.entity_type.toUpperCase()) {
-        case 'PROJECT':
-          navigate(`/projects/${document.entity_id}`);
-          break;
-        case 'WORK_ORDER':
-          navigate(`/work-orders/${document.entity_id}`);
-          break;
-        case 'ESTIMATE':
-          navigate(`/estimates/${document.entity_id}`);
-          break;
-        case 'CUSTOMER':
-          navigate(`/customers/${document.entity_id}`);
-          break;
-        case 'VENDOR':
-          navigate(`/vendors/${document.entity_id}`);
-          break;
-        case 'SUBCONTRACTOR':
-          navigate(`/subcontractors/${document.entity_id}`);
-          break;
-        case 'EXPENSE':
-          // Check if the expense has a parent entity
-          if (document.parent_entity_type && document.parent_entity_id) {
-            // Navigate to the parent entity with a query parameter to highlight this expense
-            navigate(`/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=expense&expenseId=${document.entity_id}`);
-          } else {
-            toast({
-              title: "Navigation limited",
-              description: "This expense is not linked to a parent entity. Navigate to the associated project or work order.",
-            });
-          }
-          break;
-        case 'TIME_ENTRY':
-          // Check if the time entry has a parent entity
-          if (document.parent_entity_type && document.parent_entity_id) {
-            // Navigate to the parent entity with a query parameter to highlight this time entry
-            navigate(`/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=timeEntry&timeEntryId=${document.entity_id}`);
-          } else {
-            toast({
-              title: "Navigation limited",
-              description: "Time entries are viewed within their parent entities.",
-            });
-          }
-          break;
-        default:
-          toast({
-            title: "Navigation unavailable",
-            description: `Navigation to ${document.entity_type} is not supported.`,
-            variant: "destructive"
-          });
+  const navigateToEntity = useCallback(
+    (document: Document) => {
+      if (!document || !document.entity_type || !document.entity_id) {
+        toast({
+          title: 'Navigation error',
+          description: 'Unable to navigate to associated entity. Missing information.',
+          variant: 'destructive',
+        });
+        return;
       }
-    } catch (error) {
-      console.error('Navigation error:', error);
-      toast({
-        title: "Navigation failed",
-        description: "An error occurred while trying to navigate to the associated entity.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsNavigating(false);
-    }
-  }, [navigate]);
+
+      setIsNavigating(true);
+
+      try {
+        // Navigate based on entity type
+        switch (document.entity_type.toUpperCase()) {
+          case 'PROJECT':
+            navigate(`/projects/${document.entity_id}`);
+            break;
+          case 'WORK_ORDER':
+            navigate(`/work-orders/${document.entity_id}`);
+            break;
+          case 'ESTIMATE':
+            navigate(`/estimates/${document.entity_id}`);
+            break;
+          case 'CUSTOMER':
+            navigate(`/customers/${document.entity_id}`);
+            break;
+          case 'VENDOR':
+            navigate(`/vendors/${document.entity_id}`);
+            break;
+          case 'SUBCONTRACTOR':
+            navigate(`/subcontractors/${document.entity_id}`);
+            break;
+          case 'EXPENSE':
+            // Check if the expense has a parent entity
+            if (document.parent_entity_type && document.parent_entity_id) {
+              // Navigate to the parent entity with a query parameter to highlight this expense
+              navigate(
+                `/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=expense&expenseId=${document.entity_id}`
+              );
+            } else {
+              toast({
+                title: 'Navigation limited',
+                description:
+                  'This expense is not linked to a parent entity. Navigate to the associated project or work order.',
+              });
+            }
+            break;
+          case 'TIME_ENTRY':
+            // Check if the time entry has a parent entity
+            if (document.parent_entity_type && document.parent_entity_id) {
+              // Navigate to the parent entity with a query parameter to highlight this time entry
+              navigate(
+                `/${document.parent_entity_type.toLowerCase()}s/${document.parent_entity_id}?highlight=timeEntry&timeEntryId=${document.entity_id}`
+              );
+            } else {
+              toast({
+                title: 'Navigation limited',
+                description: 'Time entries are viewed within their parent entities.',
+              });
+            }
+            break;
+          default:
+            toast({
+              title: 'Navigation unavailable',
+              description: `Navigation to ${document.entity_type} is not supported.`,
+              variant: 'destructive',
+            });
+        }
+      } catch (error) {
+        console.error('Navigation error:', error);
+        toast({
+          title: 'Navigation failed',
+          description: 'An error occurred while trying to navigate to the associated entity.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsNavigating(false);
+      }
+    },
+    [navigate]
+  );
 
   // Navigate directly to the document details page
-  const navigateToDocument = useCallback((documentId: string) => {
-    if (!documentId) {
-      toast({
-        title: "Navigation error",
-        description: "Document ID is required to navigate to document.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const navigateToDocument = useCallback(
+    (documentId: string) => {
+      if (!documentId) {
+        toast({
+          title: 'Navigation error',
+          description: 'Document ID is required to navigate to document.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
-    setIsNavigating(true);
-    try {
-      navigate(`/documents/${documentId}`);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      toast({
-        title: "Navigation failed",
-        description: "An error occurred while trying to navigate to the document.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsNavigating(false);
-    }
-  }, [navigate]);
+      setIsNavigating(true);
+      try {
+        navigate(`/documents/${documentId}`);
+      } catch (error) {
+        console.error('Navigation error:', error);
+        toast({
+          title: 'Navigation failed',
+          description: 'An error occurred while trying to navigate to the document.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsNavigating(false);
+      }
+    },
+    [navigate]
+  );
 
   return {
     navigateToEntity,
     navigateToDocument,
-    isNavigating
+    isNavigating,
   };
 };

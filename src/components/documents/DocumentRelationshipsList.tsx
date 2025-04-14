@@ -1,35 +1,18 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent,
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import {
-  FileText,
-  Loader2,
-  Trash2,
-  Link2,
-  Calendar,
-  File,
-} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText, Loader2, Trash2, Link2, Calendar, File } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { 
-  DocumentRelationship, 
-  RelationshipType 
-} from '@/hooks/useDocumentRelationships';
+import { DocumentRelationship, RelationshipType } from '@/hooks/useDocumentRelationships';
 import { Document } from './schemas/documentSchema';
 import { DocumentCategoryBadge } from './utils/categoryIcons';
 
 const relationshipLabels: Record<RelationshipType, string> = {
-  'REFERENCE': 'References',
-  'VERSION': 'Version of',
-  'ATTACHMENT': 'Attached to',
-  'RELATED': 'Related to',
-  'SUPPLEMENT': 'Supplements'
+  REFERENCE: 'References',
+  VERSION: 'Version of',
+  ATTACHMENT: 'Attached to',
+  RELATED: 'Related to',
+  SUPPLEMENT: 'Supplements',
 };
 
 interface DocumentRelationshipsListProps {
@@ -45,7 +28,7 @@ const DocumentRelationshipsList: React.FC<DocumentRelationshipsListProps> = ({
   loading,
   onViewDocument,
   onDeleteRelationship,
-  isCurrentDocument
+  isCurrentDocument,
 }) => {
   if (loading) {
     return (
@@ -65,15 +48,15 @@ const DocumentRelationshipsList: React.FC<DocumentRelationshipsListProps> = ({
 
   return (
     <div className="space-y-3">
-      {relationships.map((relationship) => {
+      {relationships.map(relationship => {
         // Determine which document to show (the one that's not the current document)
-        const relatedDoc = relationship.source_document && 
-          isCurrentDocument(relationship.source_document_id) 
-            ? relationship.target_document 
+        const relatedDoc =
+          relationship.source_document && isCurrentDocument(relationship.source_document_id)
+            ? relationship.target_document
             : relationship.source_document;
-            
+
         if (!relatedDoc) return null;
-        
+
         return (
           <Card key={relationship.id} className="overflow-hidden">
             <CardHeader className="p-3 pb-2">
@@ -96,7 +79,8 @@ const DocumentRelationshipsList: React.FC<DocumentRelationshipsListProps> = ({
               <CardDescription className="text-xs">
                 <span className="flex items-center gap-1">
                   <Link2 className="h-3 w-3" />
-                  {relationship.relationship_type === 'REFERENCE' && !isCurrentDocument(relationship.source_document_id) 
+                  {relationship.relationship_type === 'REFERENCE' &&
+                  !isCurrentDocument(relationship.source_document_id)
                     ? 'Referenced by this document'
                     : `${relationshipLabels[relationship.relationship_type]} this document`}
                 </span>
@@ -112,12 +96,10 @@ const DocumentRelationshipsList: React.FC<DocumentRelationshipsListProps> = ({
                   <File className="h-3 w-3" />
                   {relatedDoc.file_type || 'Unknown'}
                 </div>
-                {relatedDoc.category && (
-                  <DocumentCategoryBadge category={relatedDoc.category} />
-                )}
+                {relatedDoc.category && <DocumentCategoryBadge category={relatedDoc.category} />}
               </div>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="w-full mt-2 h-8 text-xs bg-blue-50 hover:bg-blue-100 text-[#0485ea]"
                 onClick={() => onViewDocument(relatedDoc as Document)}
               >

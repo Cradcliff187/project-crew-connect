@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,13 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { DocumentCategory, EntityType, entityTypes } from './schemas/documentSchema';
 import { toast } from '@/components/ui/use-toast';
 import { useDocumentUpload } from './hooks/useDocumentUpload';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface DocumentUploadProps {
   projectId?: string;
@@ -24,48 +29,48 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   entityType,
   entityId,
   onSuccess,
-  onCancel
+  onCancel,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [notes, setNotes] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('other');
   const [currentEntityType, setCurrentEntityType] = useState<EntityType>(entityType || 'PROJECT');
   const [currentEntityId, setCurrentEntityId] = useState(entityId || projectId || '');
-  
+
   const { uploadDocument, loading } = useDocumentUpload(currentEntityType, currentEntityId, {
     onSuccess,
   });
-  
+
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
   };
-  
+
   const handleClearFiles = () => {
     setSelectedFiles([]);
   };
-  
+
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNotes(e.target.value);
   };
-  
+
   const handleCategoryChange = (value: string) => {
     setCategory(value as DocumentCategory);
   };
-  
+
   const handleEntityTypeChange = (value: string) => {
     setCurrentEntityType(value as EntityType);
   };
-  
+
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
       toast({
-        title: "No files selected",
-        description: "Please select at least one file to upload",
-        variant: "destructive",
+        title: 'No files selected',
+        description: 'Please select at least one file to upload',
+        variant: 'destructive',
       });
       return;
     }
-    
+
     try {
       // Upload each file individually
       for (const file of selectedFiles) {
@@ -74,30 +79,30 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           notes,
         });
       }
-      
+
       toast({
-        title: "Upload successful",
-        description: "Documents have been uploaded successfully",
+        title: 'Upload successful',
+        description: 'Documents have been uploaded successfully',
       });
-      
+
       // Reset form
       setSelectedFiles([]);
       setNotes('');
       setCategory('other');
-      
+
       // Call success callback
       if (onSuccess) {
         onSuccess();
       }
     } catch (error: any) {
       toast({
-        title: "Upload failed",
-        description: error.message || "There was an error uploading the documents",
-        variant: "destructive",
+        title: 'Upload failed',
+        description: error.message || 'There was an error uploading the documents',
+        variant: 'destructive',
       });
     }
   };
-  
+
   return (
     <Card>
       <CardHeader>
@@ -106,10 +111,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <Select
-            value={category}
-            onValueChange={handleCategoryChange}
-          >
+          <Select value={category} onValueChange={handleCategoryChange}>
             <SelectTrigger id="category">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
@@ -125,7 +127,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="entity-type">Entity Type</Label>
           <Select
@@ -137,7 +139,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               <SelectValue placeholder="Select entity type" />
             </SelectTrigger>
             <SelectContent>
-              {entityTypes.map((type) => (
+              {entityTypes.map(type => (
                 <SelectItem key={type} value={type}>
                   {type.replace('_', ' ')}
                 </SelectItem>
@@ -145,17 +147,17 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="entity-id">Entity ID</Label>
           <Input
             id="entity-id"
             value={currentEntityId}
-            onChange={(e) => setCurrentEntityId(e.target.value)}
+            onChange={e => setCurrentEntityId(e.target.value)}
             disabled={!!entityId || !!projectId}
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="notes">Notes</Label>
           <Textarea
@@ -165,7 +167,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             onChange={handleNotesChange}
           />
         </div>
-        
+
         <div>
           <Label>Files</Label>
           <FileUpload

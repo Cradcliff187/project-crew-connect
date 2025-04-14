@@ -1,12 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, Grid2X2, List } from 'lucide-react';
@@ -38,10 +31,10 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  
-  const { 
-    documents, 
-    loading, 
+
+  const {
+    documents,
+    loading,
     currentDocument,
     isDetailViewOpen,
     handleViewDocument,
@@ -49,15 +42,10 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
     handleDeleteDocument,
     handleDocumentUploaded,
     selectRelatedDocument,
-    fetchDocuments
+    fetchDocuments,
   } = useDocumentManager(entityType, entityId);
-  
-  const {
-    filters,
-    updateFilters,
-    resetFilters,
-    filteredDocuments
-  } = useDocumentFilters(documents);
+
+  const { filters, updateFilters, resetFilters, filteredDocuments } = useDocumentFilters(documents);
 
   // Reset filters when entity changes
   useEffect(() => {
@@ -76,24 +64,20 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                     <FileText className="h-5 w-5 mr-2 text-[#0485ea]" />
                     {title}
                   </CardTitle>
-                  {description && (
-                    <CardDescription className="mt-1">{description}</CardDescription>
-                  )}
+                  {description && <CardDescription className="mt-1">{description}</CardDescription>}
                 </div>
                 <div className="flex gap-2">
-                  <DocumentUploadButton 
-                    onUploadClick={() => setUploadDialogOpen(true)} 
-                  />
+                  <DocumentUploadButton onUploadClick={() => setUploadDialogOpen(true)} />
                 </div>
               </div>
             </CardHeader>
-            
+
             {showMetrics && documents.length > 0 && (
               <CardContent className="pt-0 pb-2">
                 <DocumentMetrics documents={documents} />
               </CardContent>
             )}
-            
+
             <CardHeader className="py-2">
               <div className="flex flex-col sm:flex-row justify-between gap-2 sm:items-center">
                 <Tabs defaultValue="all" className="w-full sm:w-auto">
@@ -102,7 +86,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                     <TabsTrigger value="recent">Recent</TabsTrigger>
                   </TabsList>
                 </Tabs>
-                
+
                 <div className="flex items-center gap-2">
                   <Button
                     variant={viewMode === 'grid' ? 'default' : 'outline'}
@@ -126,35 +110,35 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
 
             <CardContent>
               {viewMode === 'list' ? (
-                <DocumentsTable 
+                <DocumentsTable
                   documents={filteredDocuments}
                   loading={loading}
                   onViewDocument={handleViewDocument}
                   onDeleteDocument={handleDeleteDocument}
                 />
               ) : (
-                <DocumentGrid 
+                <DocumentGrid
                   documents={filteredDocuments}
                   loading={loading}
                   onViewDocument={handleViewDocument}
                   onDeleteDocument={handleDeleteDocument}
                 />
               )}
-              
+
               {filteredDocuments.length === 0 && !loading && (
                 <div className="text-center py-10">
                   <FileText className="mx-auto h-12 w-12 text-muted-foreground opacity-20" />
                   <h3 className="mt-4 text-lg font-medium">No documents found</h3>
                   <p className="text-muted-foreground mt-2">
-                    {filters.search || filters.categories.length > 0 || filters.tags.length > 0 || filters.startDate || filters.endDate
-                      ? "Try adjusting your filters or upload a new document."
-                      : "Upload documents to get started."
-                    }
+                    {filters.search ||
+                    filters.categories.length > 0 ||
+                    filters.tags.length > 0 ||
+                    filters.startDate ||
+                    filters.endDate
+                      ? 'Try adjusting your filters or upload a new document.'
+                      : 'Upload documents to get started.'}
                   </p>
-                  <Button
-                    className="mt-4 bg-[#0485ea]"
-                    onClick={() => setUploadDialogOpen(true)}
-                  >
+                  <Button className="mt-4 bg-[#0485ea]" onClick={() => setUploadDialogOpen(true)}>
                     <Upload className="h-4 w-4 mr-2" />
                     Upload Document
                   </Button>
@@ -163,9 +147,9 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="w-full md:w-72 space-y-4">
-          <DocumentsFilter 
+          <DocumentsFilter
             filters={filters}
             onFiltersChange={updateFilters}
             entityType={entityType}
@@ -181,7 +165,7 @@ const DocumentsSection: React.FC<DocumentsSectionProps> = ({
         entityId={entityId}
         onSuccess={handleDocumentUploaded}
       />
-      
+
       {/* Document Detail View */}
       <DocumentDetailView
         document={currentDocument}

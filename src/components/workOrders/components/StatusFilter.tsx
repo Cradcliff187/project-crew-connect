@@ -1,8 +1,19 @@
-
 import { useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-export type WorkOrderStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'ALL';
+export type WorkOrderStatus =
+  | 'NOT_STARTED'
+  | 'IN_PROGRESS'
+  | 'ON_HOLD'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'ALL';
 
 interface StatusFilterProps {
   onStatusChange: (status: WorkOrderStatus) => void;
@@ -11,8 +22,8 @@ interface StatusFilterProps {
 
 const StatusFilter = ({ onStatusChange, defaultValue = 'ALL' }: StatusFilterProps) => {
   return (
-    <Select 
-      onValueChange={(value) => onStatusChange(value as WorkOrderStatus)}
+    <Select
+      onValueChange={value => onStatusChange(value as WorkOrderStatus)}
       defaultValue={defaultValue}
     >
       <SelectTrigger className="w-[180px]">

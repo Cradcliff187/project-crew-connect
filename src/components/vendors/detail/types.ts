@@ -1,4 +1,3 @@
-
 export interface VendorDetail {
   vendorid: string;
   vendorname: string;

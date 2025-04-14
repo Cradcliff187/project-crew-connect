@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
@@ -19,19 +18,19 @@ export const TimelogAddSheet = ({
   onOpenChange,
   workOrderId,
   employees,
-  onSuccess
+  onSuccess,
 }: TimelogAddSheetProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const handleSubmit = async (values: Partial<TimeEntry>) => {
     setIsSubmitting(true);
-    
+
     try {
       let employeeRate = null;
       // Check for "none" special value that means no employee is selected
       const actualEmployeeId = values.employee_id === 'none' ? null : values.employee_id;
-      
+
       if (actualEmployeeId) {
         // Get employee rate if available
         const { data: empData } = await supabase
@@ -39,14 +38,14 @@ export const TimelogAddSheet = ({
           .select('hourly_rate')
           .eq('employee_id', actualEmployeeId)
           .maybeSingle();
-        
+
         employeeRate = empData?.hourly_rate;
       }
-      
+
       // Calculate total cost
       const hourlyRate = employeeRate || 75; // Default rate
       const totalCost = values.hours_worked! * hourlyRate;
-      
+
       // Create time entry
       const timelogEntry = {
         entity_type: 'work_order',
@@ -62,15 +61,15 @@ export const TimelogAddSheet = ({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      
+
       const { data: insertedEntry, error } = await supabase
         .from('time_entries')
         .insert(timelogEntry)
         .select('id')
         .single();
-        
+
       if (error) throw error;
-      
+
       // Create expense entry for labor time
       if (insertedEntry?.id) {
         const laborExpenseData = {
@@ -84,19 +83,17 @@ export const TimelogAddSheet = ({
           updated_at: new Date().toISOString(),
           quantity: values.hours_worked,
           unit_price: hourlyRate,
-          vendor_id: null
+          vendor_id: null,
         };
-        
-        await supabase
-          .from('expenses')
-          .insert(laborExpenseData);
+
+        await supabase.from('expenses').insert(laborExpenseData);
       }
-      
+
       toast({
         title: 'Time entry added',
         description: `${values.hours_worked} hours have been logged successfully.`,
       });
-      
+
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
@@ -117,11 +114,11 @@ export const TimelogAddSheet = ({
         <SheetHeader>
           <SheetTitle>Log Time</SheetTitle>
         </SheetHeader>
-        
+
         <div className="mt-4">
           <TimeEntryForm
             initialValues={{
-              employee_id: 'none'
+              employee_id: 'none',
             }}
             onSubmit={handleSubmit}
             onCancel={() => onOpenChange(false)}

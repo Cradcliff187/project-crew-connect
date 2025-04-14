@@ -46,17 +46,19 @@ export const useDocumentVersions = (documentId?: string) => {
       if (versionsError) throw versionsError;
 
       // Process versions to get public URLs
-      const versionsWithUrls = await Promise.all((versionsData || []).map(async (version) => {
-        // Get the public URL for the document
-        const { data: urlData } = supabase.storage
-          .from('construction_documents')
-          .getPublicUrl(version.storage_path);
+      const versionsWithUrls = await Promise.all(
+        (versionsData || []).map(async version => {
+          // Get the public URL for the document
+          const { data: urlData } = supabase.storage
+            .from('construction_documents')
+            .getPublicUrl(version.storage_path);
 
-        return {
-          ...version,
-          file_url: urlData.publicUrl,
-        } as Document;
-      }));
+          return {
+            ...version,
+            file_url: urlData.publicUrl,
+          } as Document;
+        })
+      );
 
       setVersions(versionsWithUrls);
     } catch (err: any) {
@@ -78,24 +80,24 @@ export const useDocumentVersions = (documentId?: string) => {
       const timestamp = new Date().getTime();
       const fileExt = file.name.split('.').pop();
       const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      
+
       // Keep the same path structure as the original
       const entityTypePath = currentVersion.entity_type.toLowerCase().replace('_', '-');
       const entityId = currentVersion.entity_id || 'general';
       const filePath = `${entityTypePath}/${entityId}/${fileName}`;
-      
+
       // Upload the file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file);
-        
+
       if (uploadError) throw uploadError;
-      
+
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('construction_documents')
-        .getPublicUrl(filePath);
-        
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('construction_documents').getPublicUrl(filePath);
+
       // Create document record with parent_document_id reference
       const documentData = {
         file_name: file.name,
@@ -111,33 +113,33 @@ export const useDocumentVersions = (documentId?: string) => {
         is_latest_version: true,
         notes: metadata.notes || `Updated version of ${currentVersion.file_name}`,
       };
-      
+
       // Insert the new version
       const { data: newVersion, error: insertError } = await supabase
         .from('documents')
         .insert(documentData)
         .select()
         .single();
-        
+
       if (insertError) throw insertError;
-      
+
       // The trigger will automatically set is_latest_version=false for older versions
-      
+
       // Refresh the versions
       await fetchVersions();
-      
+
       return {
         success: true,
         document: {
           ...newVersion,
-          file_url: publicUrl
-        } as Document
+          file_url: publicUrl,
+        } as Document,
       };
     } catch (error: any) {
       console.error('Error uploading new version:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   };
@@ -153,6 +155,6 @@ export const useDocumentVersions = (documentId?: string) => {
     loading,
     error,
     refetchVersions: fetchVersions,
-    uploadNewVersion
+    uploadNewVersion,
   };
 };

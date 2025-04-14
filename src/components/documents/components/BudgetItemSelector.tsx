@@ -1,7 +1,12 @@
-
 import React, { useEffect, useState } from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Control } from 'react-hook-form';
 import { DocumentUploadFormValues, EntityType } from '../schemas/documentSchema';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,19 +28,19 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
   control,
   entityType,
   entityId,
-  prefillBudgetItemId
+  prefillBudgetItemId,
 }) => {
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   useEffect(() => {
     const fetchBudgetItems = async () => {
       if (!entityId) return;
-      
+
       setLoading(true);
       try {
         let projectId = entityId;
-        
+
         // If this is a work order, get the linked project ID
         if (entityType === 'WORK_ORDER') {
           const { data: linkData } = await supabase
@@ -43,7 +48,7 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
             .select('project_id')
             .eq('work_order_id', entityId)
             .single();
-            
+
           if (linkData?.project_id) {
             projectId = linkData.project_id;
           } else {
@@ -53,18 +58,18 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
             return;
           }
         }
-        
+
         // Fetch budget items for the project
         const { data, error } = await supabase
           .from('project_budget_items')
           .select('id, description, category')
           .eq('project_id', projectId);
-          
+
         if (error) {
           console.error('Error fetching budget items:', error);
           return;
         }
-        
+
         setBudgetItems(data || []);
       } catch (error) {
         console.error('Error in budget item fetch:', error);
@@ -72,10 +77,10 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
         setLoading(false);
       }
     };
-    
+
     fetchBudgetItems();
   }, [entityId, entityType]);
-  
+
   // Set prefilled value when items load
   useEffect(() => {
     if (prefillBudgetItemId && budgetItems.length > 0) {
@@ -87,11 +92,11 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
       }
     }
   }, [budgetItems, prefillBudgetItemId, control._formValues]);
-  
+
   if (budgetItems.length === 0) {
     return null;
   }
-  
+
   return (
     <FormField
       control={control}
@@ -112,7 +117,7 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
             </FormControl>
             <SelectContent>
               <SelectItem value="">None</SelectItem>
-              {budgetItems.map((item) => (
+              {budgetItems.map(item => (
                 <SelectItem key={item.id} value={item.id}>
                   {item.description} ({item.category})
                 </SelectItem>

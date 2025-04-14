@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -13,7 +12,7 @@ import {
   ClipboardList,
   Briefcase,
   BarChart,
-} from "lucide-react";
+} from 'lucide-react';
 
 import {
   Sidebar,
@@ -23,77 +22,77 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+  SidebarSeparator,
+} from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
 // Site config
 const siteConfig = {
-  name: "AKC LLC"
+  name: 'AKC LLC',
 };
 
 const mainNav = [
   {
-    title: "Dashboard",
-    href: "/",
+    title: 'Dashboard',
+    href: '/',
     icon: <LayoutDashboard className="h-5 w-5" />,
   },
   {
-    title: "Active Work",
-    href: "/active-work",
+    title: 'Active Work',
+    href: '/active-work',
     icon: <Briefcase className="h-5 w-5" />,
   },
   {
-    title: "Projects",
-    href: "/projects",
+    title: 'Projects',
+    href: '/projects',
     icon: <FolderKanban className="h-5 w-5" />,
   },
   {
-    title: "Estimates",
-    href: "/estimates",
+    title: 'Estimates',
+    href: '/estimates',
     icon: <FileSpreadsheet className="h-5 w-5" />,
   },
   {
-    title: "Work Orders",
-    href: "/work-orders",
+    title: 'Work Orders',
+    href: '/work-orders',
     icon: <ClipboardList className="h-5 w-5" />,
   },
   {
-    title: "Contacts",
-    href: "/contacts",
+    title: 'Contacts',
+    href: '/contacts',
     icon: <Users className="h-5 w-5" />,
   },
   {
-    title: "Vendors",
-    href: "/vendors",
+    title: 'Vendors',
+    href: '/vendors',
     icon: <Store className="h-5 w-5" />,
   },
   {
-    title: "Subcontractors",
-    href: "/subcontractors",
+    title: 'Subcontractors',
+    href: '/subcontractors',
     icon: <HardHat className="h-5 w-5" />,
   },
   {
-    title: "Time Tracking",
-    href: "/time-tracking",
+    title: 'Time Tracking',
+    href: '/time-tracking',
     icon: <Clock className="h-5 w-5" />,
   },
   {
-    title: "Documents",
-    href: "/documents",
+    title: 'Documents',
+    href: '/documents',
     icon: <FileText className="h-5 w-5" />,
   },
   {
-    title: "Reports",
-    href: "/reports",
+    title: 'Reports',
+    href: '/reports',
     icon: <BarChart className="h-5 w-5" />,
   },
 ];
@@ -103,7 +102,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const [mounted, setMounted] = React.useState(false);
   const [logoError, setLogoError] = React.useState(false);
-  
+
   // Mock session for now - in a real app, you'd use your authentication context
   const session = null;
 
@@ -122,9 +121,9 @@ export function AppSidebar() {
                 <span className="font-bold text-md">AKC</span>
               </div>
             ) : (
-              <img 
-                src="/lovable-uploads/bf868b68-9712-4cb9-a4f1-8f5b284a2521.png" 
-                alt="AKC LLC Logo" 
+              <img
+                src="/lovable-uploads/bf868b68-9712-4cb9-a4f1-8f5b284a2521.png"
+                alt="AKC LLC Logo"
                 className="h-10 w-auto"
                 onError={() => setLogoError(true)}
               />
@@ -136,14 +135,17 @@ export function AppSidebar() {
       <SidebarSeparator />
       <SidebarContent>
         <SidebarMenu>
-          {mainNav.map((item) => (
+          {mainNav.map(item => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton 
+              <SidebarMenuButton
                 asChild
                 isActive={location.pathname === item.href}
                 tooltip={item.title}
               >
-                <Link to={item.href} className="text-sidebar-foreground hover:text-sidebar-accent-foreground">
+                <Link
+                  to={item.href}
+                  className="text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                >
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>
@@ -158,10 +160,13 @@ export function AppSidebar() {
           {mounted && session ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex h-8 w-full items-center justify-between rounded-md">
+                <Button
+                  variant="ghost"
+                  className="flex h-8 w-full items-center justify-between rounded-md"
+                >
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={session?.user?.image ?? ""} />
+                      <AvatarImage src={session?.user?.image ?? ''} />
                       <AvatarFallback>{session?.user?.name?.[0]}</AvatarFallback>
                     </Avatar>
                     <span className="text-left">{session?.user?.name}</span>

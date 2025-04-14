@@ -1,13 +1,6 @@
-
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -84,10 +77,7 @@ const ContactFormFields = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Contact Type</FormLabel>
-              <Select 
-                onValueChange={(value) => handleTypeChange(value)} 
-                defaultValue={field.value}
-              >
+              <Select onValueChange={value => handleTypeChange(value)} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select contact type" />
@@ -112,19 +102,13 @@ const ContactFormFields = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status">
                       {field.value && (
                         <div className="flex items-center">
-                          <StatusBadge 
-                            status={field.value.toLowerCase() as any} 
-                            size="sm" 
-                          />
+                          <StatusBadge status={field.value.toLowerCase() as any} size="sm" />
                         </div>
                       )}
                     </SelectValue>
@@ -134,10 +118,7 @@ const ContactFormFields = ({
                   {getStatusOptions().map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       <div className="flex items-center">
-                        <StatusBadge 
-                          status={option.value.toLowerCase() as any} 
-                          size="sm" 
-                        />
+                        <StatusBadge status={option.value.toLowerCase() as any} size="sm" />
                         <span className="ml-2">{option.label}</span>
                       </div>
                     </SelectItem>
@@ -187,13 +168,7 @@ const ContactFormFields = ({
               <FormItem>
                 <FormLabel>Hourly Rate ($)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="0.00" 
-                    step="0.01" 
-                    min="0"
-                    {...field} 
-                  />
+                  <Input type="number" placeholder="0.00" step="0.01" min="0" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -207,17 +182,15 @@ const ContactFormFields = ({
             name="specialty"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  {contactType === 'supplier' ? 'Supply Type' : 'Specialty'}
-                </FormLabel>
+                <FormLabel>{contactType === 'supplier' ? 'Supply Type' : 'Specialty'}</FormLabel>
                 <FormControl>
-                  <Input 
+                  <Input
                     placeholder={
-                      contactType === 'supplier' 
-                        ? "e.g., Lumber, Electrical, Plumbing" 
-                        : "e.g., Framing, Electrical, Plumbing"
-                    } 
-                    {...field} 
+                      contactType === 'supplier'
+                        ? 'e.g., Lumber, Electrical, Plumbing'
+                        : 'e.g., Framing, Electrical, Plumbing'
+                    }
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
@@ -234,7 +207,7 @@ const ContactFormFields = ({
               <FormLabel>Rating (1-5)</FormLabel>
               <FormControl>
                 <Select
-                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  onValueChange={value => field.onChange(parseInt(value))}
                   defaultValue={field.value?.toString()}
                 >
                   <SelectTrigger>
@@ -277,10 +250,10 @@ const ContactFormFields = ({
             <FormItem>
               <FormLabel>Materials/Products</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="List materials or products this supplier provides" 
+                <Textarea
+                  placeholder="List materials or products this supplier provides"
                   className="resize-none h-24"
-                  {...field} 
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -296,10 +269,10 @@ const ContactFormFields = ({
           <FormItem>
             <FormLabel>Notes</FormLabel>
             <FormControl>
-              <Textarea 
-                placeholder="Additional information about this contact" 
+              <Textarea
+                placeholder="Additional information about this contact"
                 className="resize-none h-24"
-                {...field} 
+                {...field}
               />
             </FormControl>
             <FormMessage />

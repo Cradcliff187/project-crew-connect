@@ -1,4 +1,3 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
@@ -114,10 +113,10 @@ const CustomerFormFields = ({ onCancelNewCustomer }: CustomerFormFieldsProps) =>
           )}
         />
       </div>
-      
+
       {onCancelNewCustomer && (
         <div className="flex justify-end">
-          <button 
+          <button
             type="button"
             onClick={onCancelNewCustomer}
             className="text-sm text-gray-500 hover:text-[#0485ea]"

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TimeEntry } from '@/types/timeTracking';
 import {
@@ -10,7 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 import { formatTime } from './utils/timeUtils';
 import { formatDate } from '@/lib/utils'; // Import formatDate from lib/utils instead
 import { Loader2 } from 'lucide-react';
@@ -28,7 +27,7 @@ const TimeEntryDeleteDialog: React.FC<TimeEntryDeleteDialogProps> = ({
   open,
   onOpenChange,
   onConfirm,
-  isDeleting
+  isDeleting,
 }) => {
   if (!timeEntry) return null;
 
@@ -45,22 +44,25 @@ const TimeEntryDeleteDialog: React.FC<TimeEntryDeleteDialogProps> = ({
             Are you sure you want to delete this time entry from {timeEntry.date_worked}?
             {timeEntry.employee_name && (
               <>
-                <br/>
+                <br />
                 Employee: <strong>{timeEntry.employee_name}</strong>
               </>
             )}
-            <br/>
-            Time: <strong>{formatTime(timeEntry.start_time)} - {formatTime(timeEntry.end_time)}</strong>
-            <br/>
+            <br />
+            Time:{' '}
+            <strong>
+              {formatTime(timeEntry.start_time)} - {formatTime(timeEntry.end_time)}
+            </strong>
+            <br />
             Hours: <strong>{timeEntry.hours_worked?.toFixed(1)}</strong>
-            <br/>
+            <br />
             This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={(e) => {
+          <AlertDialogAction
+            onClick={e => {
               e.preventDefault();
               handleDelete();
             }}

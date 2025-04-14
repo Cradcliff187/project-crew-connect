@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import EstimateActions from '../EstimateActions';
@@ -22,45 +21,45 @@ interface EstimateDetailHeaderProps {
   onStatusChange: () => void;
 }
 
-const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({ 
-  data, 
+const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({
+  data,
   currentVersion = 1,
-  onEdit, 
+  onEdit,
   onDelete,
   onConvert,
-  onStatusChange
+  onStatusChange,
 }) => {
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
-  
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Not set';
-    
+
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
-  const canCreateRevision = ['draft', 'sent', 'pending', 'approved', 'rejected'].includes(data.status);
+  const canCreateRevision = ['draft', 'sent', 'pending', 'approved', 'rejected'].includes(
+    data.status
+  );
 
   return (
     <div className="flex justify-between items-start">
       <div>
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">Estimate #{data.estimateid.substring(4, 10)}</h1>
-          <EstimateStatusControl 
+          <EstimateStatusControl
             estimateId={data.estimateid}
             currentStatus={data.status}
             onStatusChange={onStatusChange}
           />
         </div>
-        <p className="text-gray-500 mt-1">
-          Created on {formatDate(data.datecreated)}
-        </p>
+        <p className="text-gray-500 mt-1">Created on {formatDate(data.datecreated)}</p>
       </div>
-      
+
       <div className="flex items-center gap-2">
         {canCreateRevision && (
           <Button
@@ -73,15 +72,15 @@ const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({
             Create Revision
           </Button>
         )}
-        
-        <EstimateActions 
+
+        <EstimateActions
           status={data.status as StatusType}
           onEdit={onEdit}
           onDelete={onDelete}
           onConvert={onConvert}
         />
       </div>
-      
+
       <EstimateRevisionDialog
         open={revisionDialogOpen}
         onOpenChange={setRevisionDialogOpen}

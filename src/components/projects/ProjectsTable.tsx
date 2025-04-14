@@ -1,4 +1,3 @@
-
 import { Briefcase } from 'lucide-react';
 import { Table, TableBody } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -33,54 +32,53 @@ interface ProjectsTableProps {
 // Map database status to StatusBadge component status
 export const mapStatusToStatusBadge = (status: string | null): StatusType => {
   const statusMap: Record<string, StatusType> = {
-    "active": "active",
-    "pending": "pending",
-    "completed": "completed",
-    "cancelled": "cancelled",
-    "unknown": "unknown",
-    "new": "pending",
-    "in_progress": "active",
-    "on_hold": "on-hold",
-    "archived": "inactive"
+    active: 'active',
+    pending: 'pending',
+    completed: 'completed',
+    cancelled: 'cancelled',
+    unknown: 'unknown',
+    new: 'pending',
+    in_progress: 'active',
+    on_hold: 'on-hold',
+    archived: 'inactive',
   };
-  
-  if (!status) return "unknown";
-  
+
+  if (!status) return 'unknown';
+
   const lowercaseStatus = status.toLowerCase();
-  return statusMap[lowercaseStatus] || "unknown";
+  return statusMap[lowercaseStatus] || 'unknown';
 };
 
 export const formatDate = (dateString: string | null) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   }).format(date);
 };
 
 const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableProps) => {
   // Filter projects based on search query
-  const filteredProjects = projects.filter(project => 
-    (project.projectname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (project.customername?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (project.projectid?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+  const filteredProjects = projects.filter(
+    project =>
+      (project.projectname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (project.customername?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (project.projectid?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
-  
+
   // Handle error state
   if (error) {
     return (
       <Alert variant="destructive" className="mb-6">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          Failed to load projects: {error}
-        </AlertDescription>
+        <AlertDescription>Failed to load projects: {error}</AlertDescription>
       </Alert>
     );
   }
-  
+
   // Handle loading state
   if (loading) {
     return (
@@ -93,7 +91,7 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
       </div>
     );
   }
-  
+
   // Empty state when no projects found
   if (filteredProjects.length === 0) {
     return (
@@ -111,11 +109,8 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
     <Table className="border rounded-md">
       <ProjectTableHeader />
       <TableBody>
-        {filteredProjects.map((project) => (
-          <ProjectRow 
-            key={project.projectid} 
-            project={project}
-          />
+        {filteredProjects.map(project => (
+          <ProjectRow key={project.projectid} project={project} />
         ))}
       </TableBody>
     </Table>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,9 +42,9 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
       data.sitelocationaddress,
       data.sitelocationcity,
       data.sitelocationstate,
-      data.sitelocationzip
+      data.sitelocationzip,
     ].filter(Boolean);
-    
+
     return parts.length > 0 ? parts.join(', ') : 'Not specified';
   };
 
@@ -100,12 +99,14 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Description:</span>
-                  <p className="whitespace-pre-wrap">{data.job_description || 'No description provided'}</p>
+                  <p className="whitespace-pre-wrap">
+                    {data.job_description || 'No description provided'}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-          
+
           {/* Financial Summary */}
           <div className="mt-6 border-t pt-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Financial Summary</h3>
@@ -126,7 +127,7 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Line Items</CardTitle>
@@ -154,20 +155,26 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
                       <td className="p-2 text-right">{formatCurrency(item.total_price)}</td>
                     </tr>
                   ))}
-                  
+
                   {/* Summary rows */}
                   <tr className="border-t">
-                    <td colSpan={3} className="p-2 text-right font-medium">Subtotal:</td>
+                    <td colSpan={3} className="p-2 text-right font-medium">
+                      Subtotal:
+                    </td>
                     <td className="p-2 text-right">{formatCurrency(subtotal)}</td>
                   </tr>
                   <tr>
                     <td colSpan={3} className="p-2 text-right text-muted-foreground">
                       Contingency ({data.contingency_percentage || 0}%):
                     </td>
-                    <td className="p-2 text-right text-muted-foreground">{formatCurrency(contingencyAmount)}</td>
+                    <td className="p-2 text-right text-muted-foreground">
+                      {formatCurrency(contingencyAmount)}
+                    </td>
                   </tr>
                   <tr className="bg-muted/50">
-                    <td colSpan={3} className="p-2 text-right font-medium">Total:</td>
+                    <td colSpan={3} className="p-2 text-right font-medium">
+                      Total:
+                    </td>
                     <td className="p-2 text-right font-medium">{formatCurrency(total)}</td>
                   </tr>
                 </tbody>

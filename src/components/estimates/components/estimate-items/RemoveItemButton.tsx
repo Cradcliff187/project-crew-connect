@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash } from 'lucide-react';
@@ -10,13 +9,13 @@ interface RemoveItemButtonProps {
 
 const RemoveItemButton: React.FC<RemoveItemButtonProps> = ({ onRemove, showButton }) => {
   if (!showButton) return null;
-  
+
   return (
     <Button
       type="button"
       variant="ghost"
       size="sm"
-      onClick={(e) => {
+      onClick={e => {
         e.stopPropagation(); // Prevent collapsible from toggling
         onRemove();
       }}

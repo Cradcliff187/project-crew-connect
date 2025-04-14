@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 
 interface EstimateFormButtonsProps {
@@ -8,7 +7,12 @@ interface EstimateFormButtonsProps {
   isPreviewing?: boolean;
 }
 
-const EstimateFormButtons = ({ onCancel, isSubmitting, onPreview, isPreviewing }: EstimateFormButtonsProps) => {
+const EstimateFormButtons = ({
+  onCancel,
+  isSubmitting,
+  onPreview,
+  isPreviewing,
+}: EstimateFormButtonsProps) => {
   return (
     <div className="flex justify-end gap-2 pt-4 border-t">
       <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
@@ -16,20 +20,20 @@ const EstimateFormButtons = ({ onCancel, isSubmitting, onPreview, isPreviewing }
       </Button>
       {isPreviewing ? (
         <Button type="submit" className="bg-[#0485ea] hover:bg-[#0373ce]" disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : "Create Estimate"}
+          {isSubmitting ? 'Creating...' : 'Create Estimate'}
         </Button>
       ) : onPreview ? (
-        <Button 
-          type="button" 
-          onClick={onPreview} 
+        <Button
+          type="button"
+          onClick={onPreview}
           className="bg-[#0485ea] hover:bg-[#0373ce]"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Loading..." : "Preview"}
+          {isSubmitting ? 'Loading...' : 'Preview'}
         </Button>
       ) : (
         <Button type="submit" className="bg-[#0485ea] hover:bg-[#0373ce]" disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : "Create Estimate"}
+          {isSubmitting ? 'Creating...' : 'Create Estimate'}
         </Button>
       )}
     </div>

@@ -1,21 +1,33 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 
 interface CustomerSelectorProps {
-  customers: { id: string; name: string; address?: string; city?: string; state?: string; zip?: string; }[];
+  customers: {
+    id: string;
+    name: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  }[];
   selectedCustomerAddress?: string | null;
 }
 
-const CustomerSelector: React.FC<CustomerSelectorProps> = ({ 
+const CustomerSelector: React.FC<CustomerSelectorProps> = ({
   customers,
-  selectedCustomerAddress
+  selectedCustomerAddress,
 }) => {
   const form = useFormContext<EstimateFormValues>();
-  
+
   return (
     <div className="space-y-4">
       <FormField
@@ -24,10 +36,7 @@ const CustomerSelector: React.FC<CustomerSelectorProps> = ({
         render={({ field }) => (
           <FormItem>
             <FormControl>
-              <Select
-                value={field.value}
-                onValueChange={field.onChange}
-              >
+              <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a customer" />
                 </SelectTrigger>
@@ -45,11 +54,9 @@ const CustomerSelector: React.FC<CustomerSelectorProps> = ({
           </FormItem>
         )}
       />
-      
+
       {selectedCustomerAddress && (
-        <div className="text-sm text-muted-foreground">
-          {selectedCustomerAddress}
-        </div>
+        <div className="text-sm text-muted-foreground">{selectedCustomerAddress}</div>
       )}
     </div>
   );

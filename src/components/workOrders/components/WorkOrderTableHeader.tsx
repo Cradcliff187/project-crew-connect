@@ -1,5 +1,4 @@
-
-import { TableHeader, TableRow, TableHead } from "@/components/ui/table";
+import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 const WorkOrderTableHeader = () => {
   return (
@@ -8,10 +7,14 @@ const WorkOrderTableHeader = () => {
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">WO Number</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">PO Number</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Due Date</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Days Until Due</TableHead>
+        <TableHead className="font-montserrat font-semibold text-[#0485ea]">
+          Days Until Due
+        </TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Priority</TableHead>
         <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
+        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
+          Actions
+        </TableHead>
       </TableRow>
     </TableHeader>
   );

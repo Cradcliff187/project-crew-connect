@@ -1,4 +1,3 @@
-
 export interface Subcontractor {
   subid: string;
   subname: string;

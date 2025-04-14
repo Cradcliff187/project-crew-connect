@@ -1,7 +1,12 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderFormValues } from '../WorkOrderFormSchema';
 import { Flag } from 'lucide-react';
@@ -19,7 +24,7 @@ const PriorityPoFields = ({ form }: PriorityPoFieldsProps) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel className="font-montserrat font-medium">Priority</FormLabel>
-            <Select 
+            <Select
               onValueChange={field.onChange}
               defaultValue={field.value || 'MEDIUM'}
               value={field.value}
@@ -33,17 +38,25 @@ const PriorityPoFields = ({ form }: PriorityPoFieldsProps) => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="LOW" className="font-opensans">Low</SelectItem>
-                <SelectItem value="MEDIUM" className="font-opensans">Medium</SelectItem>
-                <SelectItem value="HIGH" className="font-opensans">High</SelectItem>
-                <SelectItem value="URGENT" className="font-opensans">Urgent</SelectItem>
+                <SelectItem value="LOW" className="font-opensans">
+                  Low
+                </SelectItem>
+                <SelectItem value="MEDIUM" className="font-opensans">
+                  Medium
+                </SelectItem>
+                <SelectItem value="HIGH" className="font-opensans">
+                  High
+                </SelectItem>
+                <SelectItem value="URGENT" className="font-opensans">
+                  Urgent
+                </SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
           </FormItem>
         )}
       />
-      
+
       <FormField
         control={form.control}
         name="po_number"
@@ -51,11 +64,7 @@ const PriorityPoFields = ({ form }: PriorityPoFieldsProps) => {
           <FormItem>
             <FormLabel className="font-montserrat font-medium">PO Number</FormLabel>
             <FormControl>
-              <Input 
-                {...field}
-                placeholder="Enter PO number"
-                className="font-opensans"
-              />
+              <Input {...field} placeholder="Enter PO number" className="font-opensans" />
             </FormControl>
             <FormMessage />
           </FormItem>

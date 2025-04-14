@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,13 +20,15 @@ export const useEstimateFormState = (open: boolean) => {
         state: '',
         zip: '',
       },
-      items: [{ 
-        description: '', 
-        quantity: '1', 
-        unit_price: '0', 
-        cost: '0', 
-        markup_percentage: '0' 
-      }],
+      items: [
+        {
+          description: '',
+          quantity: '1',
+          unit_price: '0',
+          cost: '0',
+          markup_percentage: '0',
+        },
+      ],
       showSiteLocation: false,
       isNewCustomer: false,
       newCustomer: {
@@ -40,7 +41,7 @@ export const useEstimateFormState = (open: boolean) => {
         zip: '',
       },
       // Generate a temporary ID for document handling
-      temp_id: "temp-" + Math.random().toString(36).substr(2, 9)
+      temp_id: 'temp-' + Math.random().toString(36).substr(2, 9),
     },
   });
 
@@ -58,13 +59,15 @@ export const useEstimateFormState = (open: boolean) => {
           state: '',
           zip: '',
         },
-        items: [{ 
-          description: '', 
-          quantity: '1', 
-          unit_price: '0', 
-          cost: '0', 
-          markup_percentage: '0' 
-        }],
+        items: [
+          {
+            description: '',
+            quantity: '1',
+            unit_price: '0',
+            cost: '0',
+            markup_percentage: '0',
+          },
+        ],
         showSiteLocation: false,
         isNewCustomer: false,
         newCustomer: {
@@ -77,7 +80,7 @@ export const useEstimateFormState = (open: boolean) => {
           zip: '',
         },
         // Generate a new temporary ID
-        temp_id: "temp-" + Math.random().toString(36).substr(2, 9)
+        temp_id: 'temp-' + Math.random().toString(36).substr(2, 9),
       });
     }
   }, [form, open]);
@@ -98,6 +101,6 @@ export const useEstimateFormState = (open: boolean) => {
     customerTab,
     resetForm,
     handleNewCustomer,
-    handleExistingCustomer
+    handleExistingCustomer,
   };
 };

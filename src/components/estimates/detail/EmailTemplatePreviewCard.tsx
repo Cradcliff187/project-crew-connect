@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Mail } from 'lucide-react';
@@ -12,7 +11,7 @@ interface EmailTemplatePreviewCardProps {
 const EmailTemplatePreviewCard: React.FC<EmailTemplatePreviewCardProps> = ({
   subject,
   body,
-  recipientEmail
+  recipientEmail,
 }) => {
   return (
     <Card className="border border-gray-200 shadow-sm">
@@ -31,11 +30,13 @@ const EmailTemplatePreviewCard: React.FC<EmailTemplatePreviewCardProps> = ({
             <span className="font-medium">Subject:</span> {subject}
           </div>
         </div>
-        
+
         <div className="border-t pt-3 mt-3">
           <div className="prose prose-sm max-w-none">
             {body.split('\n').map((paragraph, i) => (
-              <p key={i} className="my-2">{paragraph}</p>
+              <p key={i} className="my-2">
+                {paragraph}
+              </p>
             ))}
           </div>
         </div>

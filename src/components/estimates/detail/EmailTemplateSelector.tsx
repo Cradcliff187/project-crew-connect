@@ -1,7 +1,12 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2 } from 'lucide-react';
@@ -28,7 +33,7 @@ const EmailTemplateSelector: React.FC<EmailTemplateSelectorProps> = ({
   onCreateClick,
   revision,
   clientName = 'Client',
-  disabled = false
+  disabled = false,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
@@ -50,7 +55,7 @@ const EmailTemplateSelector: React.FC<EmailTemplateSelectorProps> = ({
 
       if (data && data.length > 0) {
         setTemplates(data);
-        
+
         const defaultTemplate = data.find(t => t.is_default);
         if (defaultTemplate) {
           setSelectedTemplateId(defaultTemplate.id);
@@ -70,23 +75,23 @@ const EmailTemplateSelector: React.FC<EmailTemplateSelectorProps> = ({
   const applyTemplate = (template: EmailTemplate) => {
     let processedSubject = template.subject_template;
     let processedBody = template.body_template;
-    
+
     const variables: Record<string, string> = {
       clientName: clientName,
       revisionNumber: revision?.version.toString() || '1',
-      estimateId: revision?.estimate_id || ''
+      estimateId: revision?.estimate_id || '',
     };
-    
+
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`{{${key}}}`, 'g');
       processedSubject = processedSubject.replace(regex, value);
       processedBody = processedBody.replace(regex, value);
     });
-    
+
     onTemplateSelect({
       ...template,
       subject_template: processedSubject,
-      body_template: processedBody
+      body_template: processedBody,
     });
   };
 
@@ -103,9 +108,9 @@ const EmailTemplateSelector: React.FC<EmailTemplateSelectorProps> = ({
       <div className="flex items-center justify-between">
         <Label htmlFor="emailTemplate">Email Template</Label>
         {onCreateClick && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onCreateClick}
             type="button"
             className="h-8 px-2 text-[#0485ea]"
@@ -115,7 +120,7 @@ const EmailTemplateSelector: React.FC<EmailTemplateSelectorProps> = ({
           </Button>
         )}
       </div>
-      
+
       {isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -128,12 +133,14 @@ const EmailTemplateSelector: React.FC<EmailTemplateSelectorProps> = ({
           disabled={disabled || templates.length === 0}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder={templates.length === 0 ? "No templates available" : "Select a template"} />
+            <SelectValue
+              placeholder={templates.length === 0 ? 'No templates available' : 'Select a template'}
+            />
           </SelectTrigger>
           <SelectContent>
             {templates.map(template => (
               <SelectItem key={template.id} value={template.id}>
-                {template.template_name} {template.is_default && "(Default)"}
+                {template.template_name} {template.is_default && '(Default)'}
               </SelectItem>
             ))}
           </SelectContent>

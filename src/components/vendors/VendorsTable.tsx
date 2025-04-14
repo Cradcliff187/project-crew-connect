@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableHeader, TableRow } from '@/components/ui/table';
 import VendorsTableHeader from './table/VendorsTableHeader';
 import VendorsTableBody from './table/VendorsTableBody';
@@ -16,22 +15,30 @@ interface VendorsTableProps {
   onEditVendor: (vendor: Vendor) => void;
 }
 
-const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onEditVendor }: VendorsTableProps) => {
+const VendorsTable = ({
+  vendors,
+  loading,
+  error,
+  searchQuery,
+  onViewDetails,
+  onEditVendor,
+}: VendorsTableProps) => {
   // Filter vendors based on search query
-  const filteredVendors = vendors.filter(vendor => 
-    (vendor.vendorname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (vendor.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (vendor.vendorid?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+  const filteredVendors = vendors.filter(
+    vendor =>
+      (vendor.vendorname?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (vendor.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (vendor.vendorid?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
-  
+
   if (loading) {
     return <VendorsLoadingState />;
   }
-  
+
   if (error) {
     return <VendorsErrorState error={error} />;
   }
-  
+
   if (filteredVendors.length === 0) {
     return <VendorsEmptyState searchQuery={searchQuery} />;
   }
@@ -46,7 +53,7 @@ const VendorsTable = ({ vendors, loading, error, searchQuery, onViewDetails, onE
             </TableRow>
           </TableHeader>
           <TableBody>
-            <VendorsTableBody 
+            <VendorsTableBody
               vendors={filteredVendors}
               onViewDetails={onViewDetails}
               onEditVendor={onEditVendor}

@@ -1,4 +1,3 @@
-
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderExpense } from '@/types/workOrder';
@@ -10,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface ExpensesTableProps {
   expenses: WorkOrderExpense[];
   loading: boolean;
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   onDelete: (id: string) => Promise<void>;
   onReceiptUploaded: (expenseId: string, documentId: string) => Promise<void>;
   totalCost: number;
@@ -18,15 +17,15 @@ interface ExpensesTableProps {
   onReceiptClick: (expense: WorkOrderExpense) => void;
 }
 
-const ExpensesTable = ({ 
-  expenses, 
-  loading, 
-  vendors, 
-  onDelete, 
-  onReceiptUploaded, 
+const ExpensesTable = ({
+  expenses,
+  loading,
+  vendors,
+  onDelete,
+  onReceiptUploaded,
   totalCost,
   workOrderId,
-  onReceiptClick
+  onReceiptClick,
 }: ExpensesTableProps) => {
   if (loading) {
     return (
@@ -36,21 +35,21 @@ const ExpensesTable = ({
       </div>
     );
   }
-  
+
   // Count expense types
   const materialExpenses = expenses.filter(e => e.source_type === 'material' || !e.source_type);
   const timeEntryExpenses = expenses.filter(e => e.source_type === 'time_entry');
-  
+
   return (
     <Card className="shadow-sm border-[#0485ea]/10">
       <CardContent className="p-0">
-        <ExpensesTableContent 
-          expenses={expenses} 
-          vendors={vendors} 
+        <ExpensesTableContent
+          expenses={expenses}
+          vendors={vendors}
           onDelete={onDelete}
           onReceiptClick={onReceiptClick}
         />
-        
+
         {expenses.length > 0 ? (
           <div className="flex justify-between items-center bg-gray-50 p-4 border-t">
             <div className="flex items-center gap-2 text-gray-600">

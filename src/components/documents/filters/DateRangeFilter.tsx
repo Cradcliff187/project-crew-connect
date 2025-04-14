@@ -1,15 +1,10 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface DateRangeFilterProps {
   startDate: Date | null;
@@ -58,7 +53,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Date Filter</h3>
         {hasDateFilter && (
-          <button 
+          <button
             className="text-xs text-muted-foreground hover:text-foreground flex items-center"
             onClick={handleClear}
           >
@@ -70,12 +65,12 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant={hasDateFilter ? "default" : "outline"}
+            variant={hasDateFilter ? 'default' : 'outline'}
             className={cn(
-              "w-full justify-start text-left font-normal",
-              hasDateFilter 
-                ? "bg-[#0485ea] text-white hover:bg-[#0485ea]/90" 
-                : "text-muted-foreground"
+              'w-full justify-start text-left font-normal',
+              hasDateFilter
+                ? 'bg-[#0485ea] text-white hover:bg-[#0485ea]/90'
+                : 'text-muted-foreground'
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -100,7 +95,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
                 selected={localEndDate || undefined}
                 onSelect={setLocalEndDate}
                 initialFocus
-                disabled={(date) => localStartDate ? date < localStartDate : false}
+                disabled={date => (localStartDate ? date < localStartDate : false)}
               />
             </div>
             <div className="flex justify-between">

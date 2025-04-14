@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MapPin } from 'lucide-react';
 import { Vendor } from '../types/vendorTypes';
@@ -10,12 +9,8 @@ interface VendorLocationProps {
 const VendorLocation = ({ vendor }: VendorLocationProps) => {
   // Format address for display
   const formatAddress = () => {
-    const parts = [
-      vendor.city,
-      vendor.state,
-      vendor.zip
-    ].filter(Boolean);
-    
+    const parts = [vendor.city, vendor.state, vendor.zip].filter(Boolean);
+
     return parts.length > 0 ? parts.join(', ') : 'No location information';
   };
 

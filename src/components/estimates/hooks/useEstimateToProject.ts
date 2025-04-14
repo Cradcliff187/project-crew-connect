@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +24,7 @@ export const useEstimateToProject = () => {
   }) => {
     try {
       setIsConverting(true);
-      console.log("Converting estimate to project:", estimate);
+      console.log('Converting estimate to project:', estimate);
 
       // Check if project already exists for this estimate
       const { data: existingProject, error: checkError } = await supabase
@@ -40,9 +39,9 @@ export const useEstimateToProject = () => {
 
       if (existingProject && existingProject.length > 0) {
         toast({
-          title: "Project Exists",
+          title: 'Project Exists',
           description: `A project with the name "${estimate.project}" already exists.`,
-          variant: "destructive"
+          variant: 'destructive',
         });
         return null;
       }
@@ -62,10 +61,10 @@ export const useEstimateToProject = () => {
         sitelocationstate: estimate.location?.state || '',
         sitelocationzip: estimate.location?.zip || '',
         createdon: new Date().toISOString(),
-        total_budget: estimate.amount // Set initial budget from estimate amount
+        total_budget: estimate.amount, // Set initial budget from estimate amount
       };
 
-      console.log("Creating new project with data:", projectData);
+      console.log('Creating new project with data:', projectData);
 
       // Insert the project data
       const { data: newProject, error: projectError } = await supabase
@@ -74,7 +73,7 @@ export const useEstimateToProject = () => {
         .select();
 
       if (projectError) {
-        console.error("Error creating project:", projectError);
+        console.error('Error creating project:', projectError);
         throw projectError;
       }
 
@@ -82,42 +81,42 @@ export const useEstimateToProject = () => {
         throw new Error('Failed to create project - no data returned');
       }
 
-      console.log("Project created successfully:", newProject[0]);
+      console.log('Project created successfully:', newProject[0]);
 
       // Check current estimate status and handle transitions properly
       const currentStatus = estimate.status || 'draft';
-      
+
       // We need to follow valid status transitions, so we'll check if we need to go through 'sent' first
       if (currentStatus === 'draft') {
         // First transition from draft to sent
-        console.log("Transitioning estimate from draft to sent");
+        console.log('Transitioning estimate from draft to sent');
         const { error: sentUpdateError } = await supabase
           .from('estimates')
           .update({ status: 'sent', sentdate: new Date().toISOString() })
           .eq('estimateid', estimate.id);
 
         if (sentUpdateError) {
-          console.error("Error transitioning estimate to sent status:", sentUpdateError);
+          console.error('Error transitioning estimate to sent status:', sentUpdateError);
           throw sentUpdateError;
         }
-        
+
         // Give the database a moment to process the first transition
         await new Promise(resolve => setTimeout(resolve, 100));
       }
-      
+
       // Now we can transition to approved and set the project ID
-      console.log("Transitioning estimate to approved and setting project ID");
+      console.log('Transitioning estimate to approved and setting project ID');
       const { error: updateError } = await supabase
         .from('estimates')
-        .update({ 
-          projectid: newProject[0].projectid, 
+        .update({
+          projectid: newProject[0].projectid,
           status: 'approved',
-          approveddate: new Date().toISOString()
+          approveddate: new Date().toISOString(),
         })
         .eq('estimateid', estimate.id);
 
       if (updateError) {
-        console.error("Error updating estimate with project ID:", updateError);
+        console.error('Error updating estimate with project ID:', updateError);
         throw updateError;
       }
 
@@ -128,15 +127,16 @@ export const useEstimateToProject = () => {
       return newProject[0];
     } catch (error) {
       console.error('Error converting estimate to project:', error);
-      
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Failed to convert estimate to project. Please try again.";
-        
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to convert estimate to project. Please try again.';
+
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive"
+        variant: 'destructive',
       });
       return null;
     } finally {
@@ -146,6 +146,6 @@ export const useEstimateToProject = () => {
 
   return {
     isConverting,
-    convertEstimateToProject
+    convertEstimateToProject,
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import TimePickerSelect from './TimePickerSelect';
 import { calculateHours } from '../utils/timeUtils';
@@ -22,7 +21,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   error,
   startTimeError,
   endTimeError,
-  hoursWorked
+  hoursWorked,
 }) => {
   return (
     <div className="space-y-4">
@@ -36,7 +35,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
           />
           {startTimeError && <p className="text-sm text-red-500">{startTimeError}</p>}
         </div>
-        
+
         <div className="space-y-2">
           <TimePickerSelect
             value={endTime}
@@ -47,9 +46,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
           {endTimeError && <p className="text-sm text-red-500">{endTimeError}</p>}
         </div>
       </div>
-      
+
       {error && <p className="text-sm text-red-500">{error}</p>}
-      
+
       {hoursWorked !== undefined && (
         <div className="text-sm text-muted-foreground">
           Total: <span className="font-medium">{hoursWorked.toFixed(1)} hours</span>

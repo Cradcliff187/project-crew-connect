@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckIcon, ChevronDown } from 'lucide-react';
-import UniversalStatusControl, { StatusOption } from '@/components/common/status/UniversalStatusControl';
+import UniversalStatusControl, {
+  StatusOption,
+} from '@/components/common/status/UniversalStatusControl';
 import { Contact } from '@/pages/Contacts';
 import { updateContactStatus } from './util/contactTransitions';
 
@@ -12,10 +13,10 @@ interface ContactsStatusDropdownProps {
   statusOptions?: StatusOption[];
 }
 
-const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({ 
-  contact, 
+const ContactsStatusDropdown: React.FC<ContactsStatusDropdownProps> = ({
+  contact,
   onStatusChange,
-  statusOptions: providedStatusOptions 
+  statusOptions: providedStatusOptions,
 }) => {
   // Use provided status options or fallback to defaults
   const statusOptions = providedStatusOptions || [

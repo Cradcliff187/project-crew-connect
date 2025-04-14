@@ -1,4 +1,3 @@
-
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderMaterial } from '@/types/workOrder';
@@ -9,7 +8,7 @@ import { Package2 } from 'lucide-react';
 interface MaterialsTableProps {
   materials: WorkOrderMaterial[];
   loading: boolean;
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   onDelete: (id: string) => Promise<void>;
   onReceiptUploaded: (materialId: string, documentId: string) => Promise<void>;
   totalCost: number;
@@ -17,15 +16,15 @@ interface MaterialsTableProps {
   onReceiptClick: (material: WorkOrderMaterial) => void;
 }
 
-const MaterialsTable = ({ 
-  materials, 
-  loading, 
-  vendors, 
-  onDelete, 
-  onReceiptUploaded, 
+const MaterialsTable = ({
+  materials,
+  loading,
+  vendors,
+  onDelete,
+  onReceiptUploaded,
   totalCost,
   workOrderId,
-  onReceiptClick
+  onReceiptClick,
 }: MaterialsTableProps) => {
   if (loading) {
     return (
@@ -35,17 +34,17 @@ const MaterialsTable = ({
       </div>
     );
   }
-  
+
   return (
     <Card className="shadow-sm border-[#0485ea]/10">
       <CardContent className="p-0">
-        <MaterialsTableContent 
-          materials={materials} 
-          vendors={vendors} 
+        <MaterialsTableContent
+          materials={materials}
+          vendors={vendors}
           onDelete={onDelete}
           onReceiptClick={onReceiptClick}
         />
-        
+
         {materials.length > 0 ? (
           <div className="flex justify-between items-center bg-gray-50 p-4 border-t">
             <div className="flex items-center gap-2 text-gray-600">

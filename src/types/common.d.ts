@@ -1,5 +1,23 @@
-
-export type StatusType = 'NEW' | 'DRAFT' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'APPROVED' | 'REJECTED' | 'SENT' | 'READY' | 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'CONVERTED' | 'draft' | 'sent' | 'approved' | 'rejected' | 'converted';
+export type StatusType =
+  | 'NEW'
+  | 'DRAFT'
+  | 'IN_PROGRESS'
+  | 'ON_HOLD'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'SENT'
+  | 'READY'
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'CONVERTED'
+  | 'draft'
+  | 'sent'
+  | 'approved'
+  | 'rejected'
+  | 'converted';
 
 export interface StatusOption {
   value: string;

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
@@ -14,7 +13,7 @@ interface NavigateToEntityButtonProps {
 const NavigateToEntityButton: React.FC<NavigateToEntityButtonProps> = ({
   document,
   variant = 'outline',
-  size = 'sm'
+  size = 'sm',
 }) => {
   const { navigateToEntity, isNavigating } = useDocumentNavigation();
 

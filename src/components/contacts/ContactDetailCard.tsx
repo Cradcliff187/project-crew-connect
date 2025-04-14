@@ -1,22 +1,16 @@
-
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Building, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Clock, 
-  CalendarDays, 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Building,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  CalendarDays,
   Star,
-  Wrench, 
+  Wrench,
   DollarSign,
-  Package
+  Package,
 } from 'lucide-react';
 import { Contact } from './hooks/useContact';
 import { Badge } from '@/components/ui/badge';
@@ -84,14 +78,14 @@ const ContactDetailCard: React.FC<ContactDetailCardProps> = ({ contact }) => {
             <Clock className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
             <div>
               <p className="text-sm font-medium">Status</p>
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className={`${
-                  contact.status === 'ACTIVE' 
-                    ? 'bg-green-50 text-green-700 border-green-200' 
-                    : contact.status === 'INACTIVE' 
-                    ? 'bg-gray-50 text-gray-700 border-gray-200'
-                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                  contact.status === 'ACTIVE'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : contact.status === 'INACTIVE'
+                      ? 'bg-gray-50 text-gray-700 border-gray-200'
+                      : 'bg-blue-50 text-blue-700 border-blue-200'
                 }`}
               >
                 {contact.status || 'Unknown'}
@@ -104,7 +98,9 @@ const ContactDetailCard: React.FC<ContactDetailCardProps> = ({ contact }) => {
             <div>
               <p className="text-sm font-medium">Created</p>
               <p className="text-muted-foreground">
-                {contact.created_at ? format(new Date(contact.created_at), 'MMM d, yyyy') : 'Unknown'}
+                {contact.created_at
+                  ? format(new Date(contact.created_at), 'MMM d, yyyy')
+                  : 'Unknown'}
               </p>
             </div>
           </div>
@@ -117,9 +113,7 @@ const ContactDetailCard: React.FC<ContactDetailCardProps> = ({ contact }) => {
               <Wrench className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
               <div>
                 <p className="text-sm font-medium">Type</p>
-                <Badge variant="outline">
-                  {contact.contact_type || 'Unknown'}
-                </Badge>
+                <Badge variant="outline">{contact.contact_type || 'Unknown'}</Badge>
               </div>
             </div>
 
@@ -163,8 +157,8 @@ const ContactDetailCard: React.FC<ContactDetailCardProps> = ({ contact }) => {
                       <Star
                         key={index}
                         className={`h-4 w-4 ${
-                          index < contact.rating! 
-                            ? 'text-yellow-400 fill-yellow-400' 
+                          index < contact.rating!
+                            ? 'text-yellow-400 fill-yellow-400'
                             : 'text-gray-300'
                         }`}
                       />

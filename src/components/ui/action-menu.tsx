@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,13 +6,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 export interface ActionItem {
   label: string;
@@ -37,12 +32,12 @@ interface ActionMenuProps {
   triggerClassName?: string;
 }
 
-const ActionMenu = ({ 
-  groups, 
-  align = 'end', 
+const ActionMenu = ({
+  groups,
+  align = 'end',
   size = 'default',
   variant = 'ghost',
-  triggerClassName 
+  triggerClassName,
 }: ActionMenuProps) => {
   const buttonSize = size === 'default' ? 'icon' : 'icon-sm';
   const buttonClasses = size === 'default' ? 'h-8 w-8' : 'h-6 w-6';
@@ -50,9 +45,9 @@ const ActionMenu = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant={variant} 
-          size={buttonSize as any} 
+        <Button
+          variant={variant}
+          size={buttonSize as any}
           className={`${buttonClasses} ${triggerClassName || ''}`}
         >
           <MoreHorizontal className={size === 'default' ? 'h-4 w-4' : 'h-3.5 w-3.5'} />
@@ -61,17 +56,17 @@ const ActionMenu = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-56">
         {groups.map((group, groupIndex) => (
-          <React.Fragment key={`group-${groupIndex}`}>
+          <div key={`group-${groupIndex}`}>
             {groupIndex > 0 && <DropdownMenuSeparator />}
             {group.items.map((item, itemIndex) => {
               // Create a unique key for each item
               const itemKey = `item-${groupIndex}-${itemIndex}`;
-              
+
               return item.hoverContent ? (
                 <HoverCard key={itemKey}>
                   <HoverCardTrigger asChild>
                     <DropdownMenuItem
-                      onClick={(e) => {
+                      onClick={e => {
                         e.preventDefault();
                         e.stopPropagation();
                         item.onClick(e);
@@ -83,14 +78,12 @@ const ActionMenu = ({
                       {item.label}
                     </DropdownMenuItem>
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-80 p-4">
-                    {item.hoverContent}
-                  </HoverCardContent>
+                  <HoverCardContent className="w-80 p-4">{item.hoverContent}</HoverCardContent>
                 </HoverCard>
               ) : (
                 <DropdownMenuItem
                   key={itemKey}
-                  onClick={(e) => {
+                  onClick={e => {
                     e.preventDefault();
                     e.stopPropagation();
                     item.onClick(e);
@@ -103,7 +96,7 @@ const ActionMenu = ({
                 </DropdownMenuItem>
               );
             })}
-          </React.Fragment>
+          </div>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

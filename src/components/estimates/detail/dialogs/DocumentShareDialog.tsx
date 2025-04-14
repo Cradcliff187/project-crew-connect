@@ -1,6 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,26 +31,30 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
   onOpenChange,
   document,
   estimateId,
-  clientEmail
+  clientEmail,
 }) => {
   const [recipientEmail, setRecipientEmail] = useState<string>(clientEmail || '');
   const [subject, setSubject] = useState<string>('Document Shared: Estimate PDF');
-  const [message, setMessage] = useState<string>(`Please find the attached PDF document for your estimate.\n\nThank you for your business.`);
+  const [message, setMessage] = useState<string>(
+    `Please find the attached PDF document for your estimate.\n\nThank you for your business.`
+  );
   const [includeEntityLink, setIncludeEntityLink] = useState<boolean>(false);
   const [includeBranding, setIncludeBranding] = useState<boolean>(true);
   const { shareDocument, isSending } = useDocumentSharing();
-  
+
   useEffect(() => {
     // Reset form when dialog opens
     if (open) {
       setRecipientEmail(clientEmail || '');
       setSubject('Document Shared: Estimate PDF');
-      setMessage(`Please find the attached PDF document for your estimate.\n\nThank you for your business.`);
+      setMessage(
+        `Please find the attached PDF document for your estimate.\n\nThank you for your business.`
+      );
       setIncludeEntityLink(false);
       setIncludeBranding(true);
     }
   }, [open, clientEmail]);
-  
+
   const handleSendEmail = async () => {
     if (!document || !document.document_id) {
       toast({
@@ -54,7 +64,7 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
       });
       return;
     }
-    
+
     if (!recipientEmail) {
       toast({
         title: 'Missing Recipient',
@@ -63,7 +73,7 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
       });
       return;
     }
-    
+
     const success = await shareDocument({
       documentId: document.document_id,
       estimateId,
@@ -73,21 +83,19 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
       includeEntityLink,
       includeBranding,
     });
-    
+
     if (success) {
       // Log the document sharing action for activity tracking
       try {
-        await supabase
-          .from('document_access_logs')
-          .insert({
-            document_id: document.document_id,
-            action: 'SHARE_EMAIL',
-            accessed_by: recipientEmail
-          });
+        await supabase.from('document_access_logs').insert({
+          document_id: document.document_id,
+          action: 'SHARE_EMAIL',
+          accessed_by: recipientEmail,
+        });
       } catch (error) {
         console.error('Error logging document share:', error);
       }
-      
+
       onOpenChange(false);
     }
   };
@@ -97,8 +105,9 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
       <DialogContent className="sm:max-w-[530px]">
         <DialogHeader>
           <DialogTitle>Share Document</DialogTitle>
+          <DialogDescription>Share this document via email with the recipient.</DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           {document ? (
             <>
@@ -111,74 +120,73 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
                       {document.file_type} • {(document.file_size / 1024).toFixed(1)} KB
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-[#0485ea] border-[#0485ea] bg-[#0485ea]/10">
+                  <Badge
+                    variant="outline"
+                    className="text-[#0485ea] border-[#0485ea] bg-[#0485ea]/10"
+                  >
                     <Paperclip className="h-3 w-3 mr-1" />
                     Attachment
                   </Badge>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Recipient Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  onChange={e => setRecipientEmail(e.target.value)}
                   placeholder="recipient@example.com"
                   disabled={isSending}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject</Label>
                 <Input
                   id="subject"
                   value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
+                  onChange={e => setSubject(e.target.value)}
                   placeholder="Email subject"
                   disabled={isSending}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="message">Message</Label>
                 <Textarea
                   id="message"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={e => setMessage(e.target.value)}
                   rows={5}
                   placeholder="Email message"
                   disabled={isSending}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     id="includeLink"
                     checked={includeEntityLink}
-                    onCheckedChange={(checked) => setIncludeEntityLink(checked as boolean)}
+                    onCheckedChange={checked => setIncludeEntityLink(checked as boolean)}
                     disabled={isSending}
                   />
-                  <Label htmlFor="includeLink">
-                    Include a link to view online (if available)
-                  </Label>
+                  <Label htmlFor="includeLink">Include a link to view online (if available)</Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     id="includeBranding"
                     checked={includeBranding}
-                    onCheckedChange={(checked) => setIncludeBranding(checked as boolean)}
+                    onCheckedChange={checked => setIncludeBranding(checked as boolean)}
                     disabled={isSending}
                   />
-                  <Label htmlFor="includeBranding">
-                    Include AKC LLC branding in email
-                  </Label>
+                  <Label htmlFor="includeBranding">Include AKC LLC branding in email</Label>
                 </div>
               </div>
-              
+
               <div className="flex items-center text-xs text-muted-foreground">
                 <Info className="h-3 w-3 mr-1" />
                 The document will be shared as an email attachment
@@ -190,19 +198,19 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
             </div>
           )}
         </div>
-          
+
         <DialogFooter>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => onOpenChange(false)} 
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
             disabled={isSending}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleSendEmail} 
-            disabled={isSending || !document} 
+          <Button
+            onClick={handleSendEmail}
+            disabled={isSending || !document}
             className="bg-[#0485ea] hover:bg-[#0375d1]"
           >
             {isSending ? (

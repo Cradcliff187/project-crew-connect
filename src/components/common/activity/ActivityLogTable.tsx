@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import {
@@ -35,7 +34,7 @@ const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
   activities,
   loading = false,
   title = 'Activity Log',
-  className = ''
+  className = '',
 }) => {
   if (loading) {
     return (
@@ -83,7 +82,7 @@ const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {activities.map((activity) => (
+            {activities.map(activity => (
               <TableRow key={activity.id}>
                 <TableCell className="font-medium">
                   {format(new Date(activity.timestamp), 'MM/dd/yyyy h:mm a')}

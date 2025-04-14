@@ -1,4 +1,3 @@
-
 import { TableBody, TableRow, TableCell } from '@/components/ui/table';
 import { FileText, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,10 +19,7 @@ const EmptyState = ({ onToggleUploadForm }: EmptyStateProps) => {
             <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
               Upload documents, receipts, and files related to this work order.
             </p>
-            <Button 
-              onClick={onToggleUploadForm}
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-            >
+            <Button onClick={onToggleUploadForm} className="bg-[#0485ea] hover:bg-[#0375d1]">
               <Plus className="h-4 w-4 mr-1" />
               Upload Document
             </Button>

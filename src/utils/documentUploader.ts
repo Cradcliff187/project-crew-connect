@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentMetadata, DocumentCategory } from '@/components/documents/schemas/documentSchema';
 import { toast } from '@/hooks/use-toast';
@@ -11,22 +10,22 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
     const randomString = Math.random().toString(36).substring(2, 10);
     const fileExt = file.name.split('.').pop();
     const fileName = `${timestamp}-${randomString}.${fileExt}`;
-    
+
     // Create storage path based on entity type and ID
     const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
     const entityIdPath = metadata.entityId || 'general';
     const filePath = `${entityTypePath}/${entityIdPath}/${fileName}`;
-    
+
     // Upload file to Supabase storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('construction_documents')
       .upload(filePath, file);
-    
+
     if (uploadError) {
       console.error('Upload error:', uploadError);
       return { success: false, error: 'Error uploading file: ' + uploadError.message };
     }
-    
+
     // Prepare document data for database
     const docData = {
       file_name: file.name,
@@ -46,35 +45,33 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
       vendor_type: metadata.vendorType,
       expense_type: metadata.expenseType,
     };
-    
+
     // Insert document record into database
     const { data: insertedDoc, error: documentError } = await supabase
       .from('documents')
       .insert(docData)
       .select()
       .single();
-    
+
     if (documentError) {
       console.error('Document insert error:', documentError);
       // Try to delete the uploaded file if database insert fails
-      await supabase.storage
-        .from('construction_documents')
-        .remove([filePath]);
-        
+      await supabase.storage.from('construction_documents').remove([filePath]);
+
       return { success: false, error: 'Error creating document record: ' + documentError.message };
     }
-    
+
     // Show success toast with feedback
     toast({
-      title: "Upload successful",
+      title: 'Upload successful',
       description: `${file.name} has been uploaded successfully.`,
-      variant: "default",
+      variant: 'default',
     });
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       documentId: insertedDoc.document_id,
-      document: insertedDoc
+      document: insertedDoc,
     };
   } catch (error: any) {
     console.error('Upload document error:', error);
@@ -83,54 +80,51 @@ export const uploadDocument = async (file: File, metadata: DocumentMetadata) => 
 };
 
 // Function to upload multiple documents
-export const uploadMultipleDocuments = async (
-  files: File[], 
-  metadata: DocumentMetadata
-) => {
+export const uploadMultipleDocuments = async (files: File[], metadata: DocumentMetadata) => {
   try {
     const results = [];
-    
+
     for (const file of files) {
       const result = await uploadDocument(file, metadata);
       results.push(result);
     }
-    
+
     const successCount = results.filter(r => r.success).length;
-    
+
     // Show appropriate toast message
     if (successCount === files.length) {
       toast({
-        title: "All uploads successful",
+        title: 'All uploads successful',
         description: `${successCount} document${successCount !== 1 ? 's' : ''} uploaded successfully.`,
       });
     } else if (successCount > 0) {
       toast({
-        title: "Some uploads failed",
+        title: 'Some uploads failed',
         description: `${successCount} of ${files.length} documents uploaded successfully.`,
-        variant: "default",
+        variant: 'default',
       });
     } else {
       toast({
-        title: "Upload failed",
-        description: "All document uploads failed.",
-        variant: "destructive",
+        title: 'Upload failed',
+        description: 'All document uploads failed.',
+        variant: 'destructive',
       });
     }
-    
+
     return {
       success: successCount > 0,
       totalCount: files.length,
       successCount,
-      results
+      results,
     };
   } catch (error: any) {
     console.error('Multiple upload error:', error);
-    return { 
-      success: false, 
-      error: error.message, 
-      totalCount: files.length, 
-      successCount: 0, 
-      results: [] 
+    return {
+      success: false,
+      error: error.message,
+      totalCount: files.length,
+      successCount: 0,
+      results: [],
     };
   }
 };

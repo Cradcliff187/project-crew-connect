@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,13 +18,13 @@ interface ProjectBudgetProps {
 
 const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
-  
+
   // Fetch project budget data
-  const { 
-    data: project, 
-    isLoading, 
+  const {
+    data: project,
+    isLoading,
     error,
-    refetch 
+    refetch,
   } = useQuery({
     queryKey: ['project-budget', projectId],
     queryFn: async () => {
@@ -34,7 +33,7 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
         .select('projectid, projectname, total_budget, current_expenses, budget_status')
         .eq('projectid', projectId)
         .single();
-        
+
       if (error) throw error;
       return data;
     },
@@ -44,10 +43,10 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
         toast({
           title: 'Error loading project budget',
           description: error.message,
-          variant: 'destructive'
+          variant: 'destructive',
         });
-      }
-    }
+      },
+    },
   });
 
   // Callback for when budget is updated
@@ -82,7 +81,7 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Project Budget</h2>
-        <Button 
+        <Button
           onClick={() => setShowBudgetDialog(true)}
           className="bg-[#0485ea] hover:bg-[#0375d1]"
         >
@@ -90,28 +89,28 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
           {project?.total_budget > 0 ? 'Update Budget' : 'Set Budget'}
         </Button>
       </div>
-      
-      <BudgetOverview 
-        totalBudget={project?.total_budget || 0} 
+
+      <BudgetOverview
+        totalBudget={project?.total_budget || 0}
         currentExpenses={project?.current_expenses || 0}
         budgetStatus={project?.budget_status || 'not_set'}
       />
-      
+
       <Tabs defaultValue="budget-items">
         <TabsList>
           <TabsTrigger value="budget-items">Budget Items</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="budget-items">
           <BudgetItems projectId={projectId} onRefresh={refetch} />
         </TabsContent>
-        
+
         <TabsContent value="expenses">
           <ProjectExpenses projectId={projectId} onRefresh={refetch} />
         </TabsContent>
       </Tabs>
-      
+
       {showBudgetDialog && (
         <BudgetFormDialog
           projectId={projectId}

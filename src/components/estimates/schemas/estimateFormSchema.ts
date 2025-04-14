@@ -1,8 +1,7 @@
-
 import { z } from 'zod';
 
 export const estimateFormSchema = z.object({
-  project: z.string().min(1, { message: "Project name is required" }),
+  project: z.string().min(1, { message: 'Project name is required' }),
   customer: z.string().optional(),
   description: z.string().optional(),
   contingency_percentage: z.string().default('0'),
@@ -12,23 +11,25 @@ export const estimateFormSchema = z.object({
     state: z.string().optional(),
     zip: z.string().optional(),
   }),
-  items: z.array(
-    z.object({
-      description: z.string().min(1, { message: "Description is required" }),
-      quantity: z.string().default('1'),
-      unit_price: z.string().default('0'),
-      cost: z.string().default('0'),
-      markup_percentage: z.string().default('0'),
-      item_type: z.string().optional(),
-      vendor_id: z.string().optional(),
-      subcontractor_id: z.string().optional(),
-      document_id: z.string().optional(),
-      trade_type: z.string().optional(),
-      expense_type: z.string().optional(),
-      custom_type: z.string().optional(),
-      notes: z.string().optional(),
-    })
-  ).default([]), // Set default to empty array to ensure it's always defined
+  items: z
+    .array(
+      z.object({
+        description: z.string().min(1, { message: 'Description is required' }),
+        quantity: z.string().default('1'),
+        unit_price: z.string().default('0'),
+        cost: z.string().default('0'),
+        markup_percentage: z.string().default('0'),
+        item_type: z.string().optional(),
+        vendor_id: z.string().optional(),
+        subcontractor_id: z.string().optional(),
+        document_id: z.string().optional(),
+        trade_type: z.string().optional(),
+        expense_type: z.string().optional(),
+        custom_type: z.string().optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .default([]), // Set default to empty array to ensure it's always defined
   showSiteLocation: z.boolean().default(false),
   isNewCustomer: z.boolean().default(false),
   newCustomer: z.object({
@@ -42,7 +43,7 @@ export const estimateFormSchema = z.object({
   }),
   estimate_documents: z.array(z.string()).optional(),
   // Add temporary ID for document handling
-  temp_id: z.string().optional()
+  temp_id: z.string().optional(),
 });
 
 export type EstimateFormValues = z.infer<typeof estimateFormSchema>;

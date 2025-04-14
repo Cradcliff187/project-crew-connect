@@ -1,6 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
@@ -30,7 +35,7 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
   onOpenChange,
   estimateId,
   oldRevisionId,
-  newRevisionId
+  newRevisionId,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [itemComparisons, setItemComparisons] = useState<ItemComparison[]>([]);
@@ -45,7 +50,7 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
 
   const fetchRevisions = async () => {
     if (!newRevisionId) return;
-    
+
     setIsLoading(true);
     try {
       const { data: newRevData, error: newRevError } = await supabase
@@ -53,49 +58,49 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
         .select('*')
         .eq('id', newRevisionId)
         .single();
-      
+
       if (newRevError) throw newRevError;
       setNewRevision(newRevData);
-      
+
       if (oldRevisionId) {
         const { data: oldRevData, error: oldRevError } = await supabase
           .from('estimate_revisions')
           .select('*')
           .eq('id', oldRevisionId)
           .single();
-        
+
         if (oldRevError) throw oldRevError;
         setOldRevision(oldRevData);
       }
-      
+
       const { data: newItems, error: newItemsError } = await supabase
         .from('estimate_items')
         .select('*')
         .eq('revision_id', newRevisionId);
-      
+
       if (newItemsError) throw newItemsError;
-      
+
       let comparisons: ItemComparison[] = [];
-      
+
       if (oldRevisionId) {
         const { data: oldItems, error: oldItemsError } = await supabase
           .from('estimate_items')
           .select('*')
           .eq('revision_id', oldRevisionId);
-        
+
         if (oldItemsError) throw oldItemsError;
-        
+
         const oldItemMap = new Map();
         (oldItems || []).forEach((item: any) => {
           const trackingId = item.original_item_id || item.id;
           oldItemMap.set(trackingId, item);
         });
-        
+
         // Process new items
         (newItems || []).forEach((newItem: any) => {
           const trackingId = newItem.original_item_id || newItem.id;
           const oldItem = oldItemMap.get(trackingId);
-          
+
           if (oldItem) {
             // Item exists in both revisions - check if changed
             const comparison: ItemComparison = {
@@ -107,18 +112,20 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
               newQuantity: newItem.quantity,
               newUnitPrice: newItem.unit_price,
               newTotalPrice: newItem.quantity * newItem.unit_price,
-              status: 'unchanged'
+              status: 'unchanged',
             };
-            
+
             // Check if any values changed
-            if (oldItem.quantity !== newItem.quantity || 
-                oldItem.unit_price !== newItem.unit_price ||
-                oldItem.description !== newItem.description) {
+            if (
+              oldItem.quantity !== newItem.quantity ||
+              oldItem.unit_price !== newItem.unit_price ||
+              oldItem.description !== newItem.description
+            ) {
               comparison.status = 'changed';
             }
-            
+
             comparisons.push(comparison);
-            
+
             // Remove from old map to track what's been processed
             oldItemMap.delete(trackingId);
           } else {
@@ -129,11 +136,11 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
               newQuantity: newItem.quantity,
               newUnitPrice: newItem.unit_price,
               newTotalPrice: newItem.quantity * newItem.unit_price,
-              status: 'added'
+              status: 'added',
             });
           }
         });
-        
+
         // Remaining old items are those not in new revision
         oldItemMap.forEach((item: any) => {
           const trackingId = item.original_item_id || item.id;
@@ -143,7 +150,7 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
             oldQuantity: item.quantity,
             oldUnitPrice: item.unit_price,
             oldTotalPrice: item.quantity * item.unit_price,
-            status: 'removed'
+            status: 'removed',
           });
         });
       } else {
@@ -154,13 +161,13 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
           newQuantity: item.quantity,
           newUnitPrice: item.unit_price,
           newTotalPrice: item.quantity * item.unit_price,
-          status: 'added'
+          status: 'added',
         }));
       }
-      
+
       setItemComparisons(comparisons);
     } catch (error) {
-      console.error("Error fetching revision data:", error);
+      console.error('Error fetching revision data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -171,11 +178,9 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>Revision Comparison</DialogTitle>
-          <DialogDescription>
-            Compare changes between estimate revisions
-          </DialogDescription>
+          <DialogDescription>Compare changes between estimate revisions</DialogDescription>
         </DialogHeader>
-        
+
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -204,7 +209,7 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
                 )}
               </div>
             </div>
-            
+
             <div className="border rounded-md overflow-hidden">
               <table className="w-full">
                 <thead className="bg-muted">
@@ -217,18 +222,22 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
                   </tr>
                 </thead>
                 <tbody>
-                  {itemComparisons.map((item) => {
+                  {itemComparisons.map(item => {
                     const oldPrice = item.oldTotalPrice || 0;
                     const newPrice = item.newTotalPrice || 0;
                     const priceDiff = newPrice - oldPrice;
-                    
+
                     return (
-                      <tr 
+                      <tr
                         key={item.id}
                         className={
-                          item.status === 'added' ? 'bg-green-50' : 
-                          item.status === 'removed' ? 'bg-red-50' : 
-                          item.status === 'changed' ? 'bg-blue-50' : ''
+                          item.status === 'added'
+                            ? 'bg-green-50'
+                            : item.status === 'removed'
+                              ? 'bg-red-50'
+                              : item.status === 'changed'
+                                ? 'bg-blue-50'
+                                : ''
                         }
                       >
                         <td className="p-2 border-t">{item.description}</td>
@@ -240,7 +249,9 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
                                 {item.oldQuantity} × {formatCurrency(item.oldUnitPrice || 0)}
                               </div>
                             </>
-                          ) : '—'}
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td className="p-2 border-t text-right">
                           {item.newTotalPrice !== undefined ? (
@@ -250,29 +261,50 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
                                 {item.newQuantity} × {formatCurrency(item.newUnitPrice || 0)}
                               </div>
                             </>
-                          ) : '—'}
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td className="p-2 border-t text-right">
                           {item.oldTotalPrice !== undefined && item.newTotalPrice !== undefined ? (
-                            <div className={
-                              priceDiff > 0 ? 'text-green-600' : 
-                              priceDiff < 0 ? 'text-red-600' : ''
-                            }>
-                              {priceDiff > 0 ? '+' : ''}{formatCurrency(priceDiff)}
+                            <div
+                              className={
+                                priceDiff > 0
+                                  ? 'text-green-600'
+                                  : priceDiff < 0
+                                    ? 'text-red-600'
+                                    : ''
+                              }
+                            >
+                              {priceDiff > 0 ? '+' : ''}
+                              {formatCurrency(priceDiff)}
                             </div>
-                          ) : '—'}
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td className="p-2 border-t text-center">
-                          <div className={`
+                          <div
+                            className={`
                             inline-block px-2 py-1 rounded-full text-xs font-medium
-                            ${item.status === 'added' ? 'bg-green-100 text-green-800' : 
-                              item.status === 'removed' ? 'bg-red-100 text-red-800' : 
-                              item.status === 'changed' ? 'bg-blue-100 text-blue-800' : 
-                              'bg-gray-100 text-gray-800'}
-                          `}>
-                            {item.status === 'added' ? 'Added' : 
-                             item.status === 'removed' ? 'Removed' : 
-                             item.status === 'changed' ? 'Modified' : 'Unchanged'}
+                            ${
+                              item.status === 'added'
+                                ? 'bg-green-100 text-green-800'
+                                : item.status === 'removed'
+                                  ? 'bg-red-100 text-red-800'
+                                  : item.status === 'changed'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-gray-100 text-gray-800'
+                            }
+                          `}
+                          >
+                            {item.status === 'added'
+                              ? 'Added'
+                              : item.status === 'removed'
+                                ? 'Removed'
+                                : item.status === 'changed'
+                                  ? 'Modified'
+                                  : 'Unchanged'}
                           </div>
                         </td>
                       </tr>
@@ -301,8 +333,10 @@ const EstimateRevisionCompareDialog: React.FC<EstimateRevisionCompareDialogProps
                     </th>
                     <th className="p-2 text-right">
                       {formatCurrency(
-                        itemComparisons.reduce((sum, item) => 
-                          sum + ((item.newTotalPrice || 0) - (item.oldTotalPrice || 0)), 0
+                        itemComparisons.reduce(
+                          (sum, item) =>
+                            sum + ((item.newTotalPrice || 0) - (item.oldTotalPrice || 0)),
+                          0
                         )
                       )}
                     </th>

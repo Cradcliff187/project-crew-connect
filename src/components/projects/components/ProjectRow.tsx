@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
@@ -33,15 +32,15 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
           label: 'View details',
           icon: <Eye className="w-4 h-4" />,
           onClick: () => handleViewDetails(),
-          className: "text-[#0485ea] hover:text-[#0375d1]"
+          className: 'text-[#0485ea] hover:text-[#0375d1]',
         },
         {
           label: 'Edit project',
           icon: <Edit className="w-4 h-4" />,
-          onClick: (e) => handleEditProject(e),
-          className: "text-gray-600 hover:text-gray-800"
-        }
-      ]
+          onClick: e => handleEditProject(e),
+          className: 'text-gray-600 hover:text-gray-800',
+        },
+      ],
     },
     {
       items: [
@@ -49,15 +48,15 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
           label: 'Schedule',
           icon: <Calendar className="w-4 h-4" />,
           onClick: () => console.log('Schedule project', project.projectid),
-          className: "text-gray-600 hover:text-gray-800"
+          className: 'text-gray-600 hover:text-gray-800',
         },
         {
           label: 'View time logs',
           icon: <Clock className="w-4 h-4" />,
           onClick: () => console.log('View time logs', project.projectid),
-          className: "text-gray-600 hover:text-gray-800"
-        }
-      ]
+          className: 'text-gray-600 hover:text-gray-800',
+        },
+      ],
     },
     {
       items: [
@@ -65,21 +64,21 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
           label: 'Generate report',
           icon: <FileText className="w-4 h-4" />,
           onClick: () => console.log('Generate report', project.projectid),
-          className: "text-gray-600 hover:text-gray-800"
+          className: 'text-gray-600 hover:text-gray-800',
         },
         {
           label: 'Archive project',
           icon: <Archive className="w-4 h-4" />,
           onClick: () => console.log('Archive project', project.projectid),
-          className: "text-red-600 hover:text-red-800"
-        }
-      ]
-    }
+          className: 'text-red-600 hover:text-red-800',
+        },
+      ],
+    },
   ];
 
   return (
-    <TableRow 
-      key={project.projectid} 
+    <TableRow
+      key={project.projectid}
       className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
       onClick={handleViewDetails}
     >
@@ -91,7 +90,9 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
       <TableCell>{formatDate(project.createdon)}</TableCell>
       <TableCell>
         <div className="font-medium">${project.spent?.toLocaleString() || '0'}</div>
-        <div className="text-xs text-muted-foreground">of ${project.budget?.toLocaleString() || '0'}</div>
+        <div className="text-xs text-muted-foreground">
+          of ${project.budget?.toLocaleString() || '0'}
+        </div>
       </TableCell>
       <TableCell>
         <div className="flex items-center space-x-2">
@@ -102,13 +103,8 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
       <TableCell>
         <StatusBadge status={mapStatusToStatusBadge(project.status)} />
       </TableCell>
-      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-        <ActionMenu 
-          groups={actionGroups} 
-          size="sm" 
-          align="end"
-          triggerClassName="ml-auto"
-        />
+      <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+        <ActionMenu groups={actionGroups} size="sm" align="end" triggerClassName="ml-auto" />
       </TableCell>
     </TableRow>
   );

@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,16 +19,16 @@ export const fetchPerformanceMetrics = async (contactId: string): Promise<Perfor
       .select('*')
       .eq('contact_id', contactId)
       .order('metric_date', { ascending: false });
-    
+
     if (error) throw error;
-    
+
     return data || [];
   } catch (error: any) {
-    console.error("Error fetching performance metrics:", error);
+    console.error('Error fetching performance metrics:', error);
     toast({
-      title: "Error",
-      description: "Failed to load performance metrics.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to load performance metrics.',
+      variant: 'destructive',
     });
     return [];
   }
@@ -51,28 +50,28 @@ export const addPerformanceMetric = async (
         metric_date: new Date().toISOString(),
         score,
         notes: notes || null,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       })
       .select('*')
       .single();
-      
+
     if (error) throw error;
-    
+
     // Update the overall rating in the contacts table (average of all metrics)
     await updateContactRating(contactId);
-    
+
     toast({
-      title: "Metric Added",
-      description: "Performance metric has been successfully added."
+      title: 'Metric Added',
+      description: 'Performance metric has been successfully added.',
     });
-    
+
     return data;
   } catch (error: any) {
-    console.error("Error adding performance metric:", error);
+    console.error('Error adding performance metric:', error);
     toast({
-      title: "Error",
-      description: "Failed to add performance metric.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to add performance metric.',
+      variant: 'destructive',
     });
     return null;
   }
@@ -86,24 +85,24 @@ const updateContactRating = async (contactId: string): Promise<void> => {
       .from('contact_performance_metrics')
       .select('score')
       .eq('contact_id', contactId);
-      
+
     if (error) throw error;
-    
+
     if (data && data.length > 0) {
       const totalScore = data.reduce((sum, item) => sum + (Number(item.score) || 0), 0);
       const averageScore = Math.round(totalScore / data.length);
-      
+
       // Update the contact's rating
       await supabase
         .from('contacts')
         .update({
           rating: averageScore,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', contactId);
     }
   } catch (error) {
-    console.error("Error updating contact rating:", error);
+    console.error('Error updating contact rating:', error);
   }
 };
 
@@ -115,23 +114,23 @@ export const getMetricTypeOptions = (contactType: string) => {
       { value: 'DELIVERY_TIME', label: 'Delivery Time' },
       { value: 'PRICE_COMPETITIVENESS', label: 'Price Competitiveness' },
       { value: 'COMMUNICATION', label: 'Communication' },
-      { value: 'OVERALL', label: 'Overall Satisfaction' }
+      { value: 'OVERALL', label: 'Overall Satisfaction' },
     ];
   }
-  
+
   if (contactType === 'subcontractor') {
     return [
       { value: 'WORK_QUALITY', label: 'Work Quality' },
       { value: 'TIMELINESS', label: 'Timeliness' },
       { value: 'SAFETY', label: 'Safety' },
       { value: 'COMMUNICATION', label: 'Communication' },
-      { value: 'OVERALL', label: 'Overall Performance' }
+      { value: 'OVERALL', label: 'Overall Performance' },
     ];
   }
-  
+
   return [
     { value: 'OVERALL', label: 'Overall Rating' },
     { value: 'COMMUNICATION', label: 'Communication' },
-    { value: 'RELIABILITY', label: 'Reliability' }
+    { value: 'RELIABILITY', label: 'Reliability' },
   ];
 };

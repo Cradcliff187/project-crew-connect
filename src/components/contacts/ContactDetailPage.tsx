@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -17,18 +16,13 @@ const ContactDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('details');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
-  const { 
-    contact, 
-    loading, 
-    notFound, 
-    refreshContact 
-  } = useContact(id);
-  
+
+  const { contact, loading, notFound, refreshContact } = useContact(id);
+
   if (loading) {
     return <LoadingContactDetailPage />;
   }
-  
+
   if (notFound || !contact) {
     return (
       <PageTransition>
@@ -41,7 +35,7 @@ const ContactDetailPage: React.FC = () => {
             </Button>
             <h1 className="text-2xl font-bold">Contact Not Found</h1>
           </div>
-          
+
           <div className="bg-destructive/10 p-6 rounded-lg text-center">
             <h2 className="text-lg font-medium mb-2 text-destructive">
               We couldn't find this contact
@@ -57,7 +51,7 @@ const ContactDetailPage: React.FC = () => {
       </PageTransition>
     );
   }
-  
+
   return (
     <PageTransition>
       <div className="container max-w-6xl py-6">
@@ -70,9 +64,9 @@ const ContactDetailPage: React.FC = () => {
             </Button>
             <h1 className="text-2xl font-bold">{contact.full_name}</h1>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <Button 
+            <Button
               className="bg-[#0485ea] hover:bg-[#0375d1]"
               onClick={() => setIsEditModalOpen(true)}
             >
@@ -82,10 +76,10 @@ const ContactDetailPage: React.FC = () => {
             <ContactOptionsMenu contact={contact} onRefresh={refreshContact} />
           </div>
         </div>
-        
-        <Tabs 
-          defaultValue="details" 
-          value={activeTab} 
+
+        <Tabs
+          defaultValue="details"
+          value={activeTab}
           onValueChange={setActiveTab}
           className="space-y-4"
         >
@@ -94,21 +88,21 @@ const ContactDetailPage: React.FC = () => {
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="details" className="space-y-4">
             <ContactDetailCard contact={contact} />
           </TabsContent>
-          
+
           <TabsContent value="documents">
             <ContactDocuments contactId={contact.contact_id} />
           </TabsContent>
-          
+
           <TabsContent value="activity">
             <ContactActivitySection contactId={contact.contact_id} />
           </TabsContent>
         </Tabs>
-        
-        <EditContactSheet 
+
+        <EditContactSheet
           contact={contact}
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}

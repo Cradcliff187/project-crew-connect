@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,18 +7,19 @@ export function useExpensesFetch(workOrderId: string) {
   const [expenses, setExpenses] = useState<WorkOrderExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       console.log('Fetching expenses for work order:', workOrderId);
-      
+
       // Direct query to the expenses table
       const { data, error } = await supabase
         .from('expenses')
-        .select(`
+        .select(
+          `
           id,
           entity_id,
           vendor_id,
@@ -31,17 +31,18 @@ export function useExpensesFetch(workOrderId: string) {
           document_id,
           created_at,
           updated_at
-        `)
+        `
+        )
         .eq('entity_id', workOrderId)
         .eq('entity_type', 'WORK_ORDER')
         .order('created_at', { ascending: false });
-      
+
       if (error) {
         throw error;
       }
-      
+
       console.log('Fetched expenses directly:', data);
-      
+
       // Transform data to ensure types match
       const transformedData = data?.map(item => ({
         id: item.id,
@@ -56,9 +57,9 @@ export function useExpensesFetch(workOrderId: string) {
         created_at: item.created_at,
         updated_at: item.updated_at,
         expense_type: item.expense_type || 'MATERIAL',
-        source_type: "material" as const
+        source_type: 'material' as const,
       })) as WorkOrderExpense[];
-      
+
       setExpenses(transformedData || []);
     } catch (error: any) {
       console.error('Error fetching expenses:', error);
@@ -72,17 +73,17 @@ export function useExpensesFetch(workOrderId: string) {
       setLoading(false);
     }
   }, [workOrderId]);
-  
+
   useEffect(() => {
     if (workOrderId) {
       fetchExpenses();
     }
   }, [workOrderId, fetchExpenses]);
-  
+
   return {
     expenses,
     loading,
     error,
-    fetchExpenses
+    fetchExpenses,
   };
 }

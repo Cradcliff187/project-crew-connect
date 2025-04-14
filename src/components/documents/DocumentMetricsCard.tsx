@@ -1,16 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { 
-  LineChart, 
-  BarChart, 
-  FileText, 
-  Receipt, 
-  Image, 
-  FileVideo, 
+import {
+  LineChart,
+  BarChart,
+  FileText,
+  Receipt,
+  Image,
+  FileVideo,
   FileCode,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { getEntityDocumentCounts } from '@/utils/documentManager';
 import { EntityType } from './schemas/documentSchema';
@@ -20,19 +19,16 @@ interface DocumentMetricsCardProps {
   entityId: string;
 }
 
-const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
-  entityType,
-  entityId
-}) => {
+const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({ entityType, entityId }) => {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<{
     total: number;
     byCategory: Record<string, number>;
   }>({
     total: 0,
-    byCategory: {}
+    byCategory: {},
   });
-  
+
   // Fetch metrics
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -41,10 +37,10 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
       setMetrics(counts);
       setLoading(false);
     };
-    
+
     fetchMetrics();
   }, [entityId, entityType]);
-  
+
   // Get category display name
   const getCategoryDisplayName = (category: string) => {
     switch (category.toLowerCase()) {
@@ -70,7 +66,7 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
         return category.charAt(0).toUpperCase() + category.slice(1);
     }
   };
-  
+
   // Get category icon
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
@@ -92,7 +88,7 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
         return <FileText className="h-4 w-4 text-gray-500" />;
     }
   };
-  
+
   if (loading) {
     return (
       <Card>
@@ -102,11 +98,11 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
       </Card>
     );
   }
-  
+
   if (metrics.total === 0) {
     return null; // Don't show metrics if there are no documents
   }
-  
+
   return (
     <Card className="bg-[#0485ea]/5 border-[#0485ea]/20">
       <CardContent className="p-4">
@@ -123,7 +119,7 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
               </div>
             </div>
           </div>
-          
+
           {Object.keys(metrics.byCategory).length > 0 && (
             <div>
               <h3 className="text-sm font-medium mb-2">By Category</h3>
@@ -139,9 +135,8 @@ const DocumentMetricsCard: React.FC<DocumentMetricsCardProps> = ({
                       </div>
                       <span className="text-sm font-medium">{count}</span>
                     </div>
-                  ))
-                }
-                
+                  ))}
+
                 {/* Show more if there are more categories */}
                 {Object.keys(metrics.byCategory).length > 4 && (
                   <div className="text-xs text-muted-foreground text-center pt-1">

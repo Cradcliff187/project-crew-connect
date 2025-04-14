@@ -1,12 +1,17 @@
-
 import React, { useState } from 'react';
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -26,11 +31,11 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
   entries,
   onDelete,
   onView,
-  onViewReceipts
+  onViewReceipts,
 }) => {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
-  
+
   const formatEntityTypeIcon = (type: string) => {
     switch (type) {
       case 'work_order':
@@ -41,24 +46,24 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
         return <FileClock className="h-4 w-4 text-gray-500" />;
     }
   };
-  
+
   const handleViewReceipts = (id: string) => {
     setSelectedEntryId(id);
     setShowReceiptsDialog(true);
   };
-  
+
   // Calculate entry cost properly
   const calculateEntryCost = (entry: TimeEntry) => {
     // Use total_cost if already calculated
     if (entry.total_cost) {
       return entry.total_cost;
     }
-    
+
     // Calculate based on hours and rate
     const hourlyRate = entry.employee_rate || 75; // Default to $75/hr if no rate
     return entry.hours_worked * hourlyRate;
   };
-  
+
   if (entries.length === 0) {
     return (
       <div className="text-center py-10 border rounded-md bg-muted/20">
@@ -66,11 +71,13 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
           <FileClock className="h-6 w-6 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-medium mb-2">No time entries found</h3>
-        <p className="text-sm text-muted-foreground">Use the Log Time button to track your work hours.</p>
+        <p className="text-sm text-muted-foreground">
+          Use the Log Time button to track your work hours.
+        </p>
       </div>
     );
   }
-  
+
   return (
     <>
       <div className="rounded-md border overflow-hidden">
@@ -81,21 +88,25 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
               <TableHead className="font-montserrat font-semibold text-[#0485ea]">Type</TableHead>
               <TableHead className="font-montserrat font-semibold text-[#0485ea]">Name</TableHead>
               <TableHead className="font-montserrat font-semibold text-[#0485ea]">Hours</TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea]">Employee</TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea] text-right">Cost</TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea] text-right">Actions</TableHead>
+              <TableHead className="font-montserrat font-semibold text-[#0485ea]">
+                Employee
+              </TableHead>
+              <TableHead className="font-montserrat font-semibold text-[#0485ea] text-right">
+                Cost
+              </TableHead>
+              <TableHead className="font-montserrat font-semibold text-[#0485ea] text-right">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map((entry) => (
+            {entries.map(entry => (
               <TableRow key={entry.id} className="hover:bg-[#0485ea]/5 transition-colors">
                 <TableCell>{formatDate(entry.date_worked)}</TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     {formatEntityTypeIcon(entry.entity_type)}
-                    <span className="ml-2 capitalize">
-                      {entry.entity_type.replace('_', ' ')}
-                    </span>
+                    <span className="ml-2 capitalize">{entry.entity_type.replace('_', ' ')}</span>
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">
@@ -124,10 +135,7 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                        >
+                        <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -138,7 +146,7 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
                         <DropdownMenuItem onClick={() => handleViewReceipts(entry.id)}>
                           {entry.has_receipts ? 'View Receipts' : 'Add Receipt'}
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-red-600"
                           onClick={() => onDelete(entry.id)}
                         >
@@ -154,16 +162,14 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
           </TableBody>
         </Table>
       </div>
-      
+
       {/* Receipts Dialog */}
       <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Time Entry Receipts</DialogTitle>
           </DialogHeader>
-          <TimeEntryReceipts 
-            timeEntryId={selectedEntryId || undefined} 
-          />
+          <TimeEntryReceipts timeEntryId={selectedEntryId || undefined} />
         </DialogContent>
       </Dialog>
     </>

@@ -1,13 +1,12 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  DocumentUploadFormValues, 
-  EntityType, 
-  documentUploadSchema, 
+import {
+  DocumentUploadFormValues,
+  EntityType,
+  documentUploadSchema,
   getEntityCategories,
-  DocumentCategory
+  DocumentCategory,
 } from '../schemas/documentSchema';
 import { useFormSubmitHandler } from './useFormSubmitHandler';
 
@@ -43,7 +42,7 @@ export const useDocumentUploadForm = ({
   prefillData,
   allowEntityTypeSelection = false,
   preventFormPropagation = false,
-  onEntityTypeChange
+  onEntityTypeChange,
 }: UseDocumentUploadFormProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
@@ -58,14 +57,16 @@ export const useDocumentUploadForm = ({
     defaultValues: {
       files: [],
       metadata: {
-        category: isReceiptUpload ? 'receipt' as DocumentCategory : (prefillData?.category as DocumentCategory || 'other' as DocumentCategory),
+        category: isReceiptUpload
+          ? ('receipt' as DocumentCategory)
+          : (prefillData?.category as DocumentCategory) || ('other' as DocumentCategory),
         entityType: entityType || 'PROJECT',
         entityId: entityId || '',
         isExpense: isReceiptUpload,
         tags: prefillData?.tags || [],
-        version: 1
-      }
-    }
+        version: 1,
+      },
+    },
   });
 
   // Watch form values for conditional display
@@ -77,27 +78,36 @@ export const useDocumentUploadForm = ({
   const watchEntityType = form.watch('metadata.entityType');
 
   // Handle file selection
-  const handleFileSelect = useCallback((files: File[]) => {
-    form.setValue('files', files);
-    
-    // Create preview URL for the first file if it's an image
-    if (files.length > 0 && files[0].type.startsWith('image/')) {
-      const url = URL.createObjectURL(files[0]);
-      setPreviewURL(url);
-    } else {
-      setPreviewURL(null);
-    }
-  }, [form]);
+  const handleFileSelect = useCallback(
+    (files: File[]) => {
+      form.setValue('files', files);
+
+      // Create preview URL for the first file if it's an image
+      if (files.length > 0 && files[0].type.startsWith('image/')) {
+        const url = URL.createObjectURL(files[0]);
+        setPreviewURL(url);
+      } else {
+        setPreviewURL(null);
+      }
+    },
+    [form]
+  );
 
   // Handle form submission
-  const { onSubmit } = useFormSubmitHandler(form, isUploading, setIsUploading, onSuccess, previewURL);
+  const { onSubmit } = useFormSubmitHandler(
+    form,
+    isUploading,
+    setIsUploading,
+    onSuccess,
+    previewURL
+  );
 
   // Initialize form with default values
   const initializeForm = useCallback(() => {
     if (entityType && entityId) {
       form.setValue('metadata.entityType', entityType);
       form.setValue('metadata.entityId', entityId);
-      
+
       // Update available categories based on entity type
       setAvailableCategories(getEntityCategories(entityType));
 
@@ -113,73 +123,76 @@ export const useDocumentUploadForm = ({
         form.setValue('metadata.category', 'certification' as DocumentCategory);
       }
     }
-    
+
     // Initialize with prefill data if available
     if (prefillData) {
       if (prefillData.amount !== undefined) {
         form.setValue('metadata.amount', prefillData.amount);
       }
-      
+
       if (prefillData.vendorId) {
         form.setValue('metadata.vendorId', prefillData.vendorId);
         setShowVendorSelector(true);
         form.setValue('metadata.vendorType', 'vendor');
       }
-      
+
       if (prefillData.notes) {
         form.setValue('metadata.notes', prefillData.notes);
       }
-      
+
       if (prefillData.tags && prefillData.tags.length > 0) {
         form.setValue('metadata.tags', prefillData.tags);
       }
-      
+
       if (prefillData.category) {
         // Ensure we cast the category to DocumentCategory type
         form.setValue('metadata.category', prefillData.category as DocumentCategory);
       }
-      
+
       if (prefillData.budgetItemId) {
         form.setValue('metadata.budgetItemId', prefillData.budgetItemId);
       }
-      
+
       if (prefillData.parentEntityType && prefillData.parentEntityId) {
         form.setValue('metadata.parentEntityType', prefillData.parentEntityType as EntityType);
         form.setValue('metadata.parentEntityId', prefillData.parentEntityId);
       }
     }
   }, [entityType, entityId, form, isReceiptUpload, prefillData]);
-  
+
   // Handle cancel button
   const handleCancel = useCallback(() => {
     // Cleanup any previews
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
     }
-    
+
     // Reset form
     form.reset();
-    
+
     // Call onCancel callback if provided
     if (onCancel) {
       onCancel();
     }
   }, [form, onCancel, previewURL]);
-  
+
   // Handle form submission
-  const handleFormSubmit = useCallback((e: React.FormEvent) => {
-    if (preventFormPropagation) {
-      e.stopPropagation();
-    }
-    
-    form.handleSubmit(onSubmit)(e);
-  }, [form, onSubmit, preventFormPropagation]);
-  
+  const handleFormSubmit = useCallback(
+    (e: React.FormEvent) => {
+      if (preventFormPropagation) {
+        e.stopPropagation();
+      }
+
+      form.handleSubmit(onSubmit)(e);
+    },
+    [form, onSubmit, preventFormPropagation]
+  );
+
   // Initialize the form on mount
   useEffect(() => {
     initializeForm();
   }, [initializeForm]);
-  
+
   // Notify parent component when entity type changes
   useEffect(() => {
     if (onEntityTypeChange && watchEntityType) {
@@ -200,7 +213,7 @@ export const useDocumentUploadForm = ({
       }
     };
   }, [previewURL]);
-  
+
   // Show vendor selector when watching vendor type changes
   useEffect(() => {
     if (watchVendorType) {
@@ -225,6 +238,6 @@ export const useDocumentUploadForm = ({
     watchFiles,
     watchCategory,
     watchExpenseType,
-    watchEntityType
+    watchEntityType,
   };
 };

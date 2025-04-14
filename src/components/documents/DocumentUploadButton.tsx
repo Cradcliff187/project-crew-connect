@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
@@ -10,7 +9,7 @@ interface DocumentUploadButtonProps {
 
 const DocumentUploadButton: React.FC<DocumentUploadButtonProps> = ({
   onUploadClick,
-  className
+  className,
 }) => {
   return (
     <Button

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FolderIcon, PaperclipIcon } from 'lucide-react';
 import { Document } from '@/components/documents/schemas/documentSchema';
@@ -30,7 +29,15 @@ const EmptyDocumentsState = () => (
   </div>
 );
 
-const CategoryDocuments = ({ category, documents, onViewDocument, onRemoveDocument }: DocumentCategory & { onViewDocument: (document: Document) => void; onRemoveDocument: (documentId: string) => void; }) => (
+const CategoryDocuments = ({
+  category,
+  documents,
+  onViewDocument,
+  onRemoveDocument,
+}: DocumentCategory & {
+  onViewDocument: (document: Document) => void;
+  onRemoveDocument: (documentId: string) => void;
+}) => (
   <div className="space-y-2">
     <h4 className="text-sm font-medium text-gray-600 capitalize flex items-center">
       <FolderIcon className="h-4 w-4 mr-1 text-[#0485ea]" />
@@ -54,7 +61,7 @@ const DocumentUploadContent: React.FC<DocumentUploadContentProps> = ({
   filteredDocuments,
   onViewDocument,
   onRemoveDocument,
-  showCategories = true
+  showCategories = true,
 }) => {
   if (filteredDocuments.length === 0) {
     return <EmptyDocumentsState />;
@@ -64,7 +71,7 @@ const DocumentUploadContent: React.FC<DocumentUploadContentProps> = ({
     return (
       <div className="space-y-4">
         {Object.entries(documentsByCategory).map(([category, docs]) => (
-          <CategoryDocuments 
+          <CategoryDocuments
             key={category}
             category={category}
             documents={docs}

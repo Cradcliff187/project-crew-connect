@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { WorkOrderExpense } from '@/types/workOrder';
 import { ExpensesTable } from '..';
@@ -8,7 +7,7 @@ interface ExpensesInfoSectionProps {
   expenses: WorkOrderExpense[];
   loading: boolean;
   submitting: boolean;
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   totalExpensesCost: number;
   workOrderId: string;
   onExpensePrompt: (expenseData: any) => void;
@@ -29,7 +28,7 @@ const ExpensesInfoSection = ({
   onDelete,
   onReceiptAttached,
   onVendorAdded,
-  onReceiptClick
+  onReceiptClick,
 }: ExpensesInfoSectionProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -37,7 +36,7 @@ const ExpensesInfoSection = ({
     <div className="space-y-4">
       {/* Section Header */}
       <SectionHeader onAddClick={() => setShowAddForm(true)} />
-      
+
       {/* Expenses Table */}
       <ExpensesTable
         expenses={expenses}
@@ -49,7 +48,7 @@ const ExpensesInfoSection = ({
         workOrderId={workOrderId}
         onReceiptClick={onReceiptClick}
       />
-      
+
       {/* Add Expense Sheet */}
       <AddExpenseSheet
         open={showAddForm}

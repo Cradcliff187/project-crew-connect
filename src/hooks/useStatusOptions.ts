@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { EntityType } from './useStatusHistory';
 
@@ -39,7 +38,7 @@ function getProjectStatusOptions(currentStatus: string): StatusOption[] {
     { value: 'on_hold', label: 'On Hold' },
     { value: 'completed', label: 'Completed' },
     { value: 'cancelled', label: 'Cancelled' },
-    { value: 'pending', label: 'Pending' }
+    { value: 'pending', label: 'Pending' },
   ];
 
   return statusOptions.filter(option => option.value !== currentStatus.toLowerCase());
@@ -52,23 +51,23 @@ function getWorkOrderStatusOptions(currentStatus: string): StatusOption[] {
     { value: 'IN_PROGRESS', label: 'In Progress' },
     { value: 'ON_HOLD', label: 'On Hold' },
     { value: 'COMPLETED', label: 'Completed' },
-    { value: 'CANCELLED', label: 'Cancelled' }
+    { value: 'CANCELLED', label: 'Cancelled' },
   ];
-  
+
   // Get valid transitions based on current status
   const transitionMap: Record<string, string[]> = {
-    'NEW': ['IN_PROGRESS', 'ON_HOLD', 'CANCELLED'],
-    'IN_PROGRESS': ['COMPLETED', 'ON_HOLD', 'CANCELLED'],
-    'ON_HOLD': ['IN_PROGRESS', 'CANCELLED'],
-    'COMPLETED': ['IN_PROGRESS'],
-    'CANCELLED': ['NEW', 'IN_PROGRESS']
+    NEW: ['IN_PROGRESS', 'ON_HOLD', 'CANCELLED'],
+    IN_PROGRESS: ['COMPLETED', 'ON_HOLD', 'CANCELLED'],
+    ON_HOLD: ['IN_PROGRESS', 'CANCELLED'],
+    COMPLETED: ['IN_PROGRESS'],
+    CANCELLED: ['NEW', 'IN_PROGRESS'],
   };
-  
+
   // Get valid transitions or return all options if current status isn't in our map
   const validTransitions = transitionMap[currentStatus] || allOptions.map(o => o.value);
-  
-  return allOptions.filter(option => 
-    validTransitions.includes(option.value) && option.value !== currentStatus
+
+  return allOptions.filter(
+    option => validTransitions.includes(option.value) && option.value !== currentStatus
   );
 }
 
@@ -81,25 +80,25 @@ function getChangeOrderStatusOptions(currentStatus: string): StatusOption[] {
     { value: 'APPROVED', label: 'Approved' },
     { value: 'REJECTED', label: 'Rejected' },
     { value: 'IMPLEMENTED', label: 'Implemented' },
-    { value: 'CANCELLED', label: 'Cancelled' }
+    { value: 'CANCELLED', label: 'Cancelled' },
   ];
-  
+
   // Get valid transitions based on current status
   const transitionMap: Record<string, string[]> = {
-    'DRAFT': ['SUBMITTED', 'CANCELLED'],
-    'SUBMITTED': ['REVIEW', 'CANCELLED'],
-    'REVIEW': ['APPROVED', 'REJECTED', 'CANCELLED'],
-    'APPROVED': ['IMPLEMENTED', 'CANCELLED'],
-    'REJECTED': ['DRAFT', 'CANCELLED'],
-    'IMPLEMENTED': ['CANCELLED'],
-    'CANCELLED': ['DRAFT']
+    DRAFT: ['SUBMITTED', 'CANCELLED'],
+    SUBMITTED: ['REVIEW', 'CANCELLED'],
+    REVIEW: ['APPROVED', 'REJECTED', 'CANCELLED'],
+    APPROVED: ['IMPLEMENTED', 'CANCELLED'],
+    REJECTED: ['DRAFT', 'CANCELLED'],
+    IMPLEMENTED: ['CANCELLED'],
+    CANCELLED: ['DRAFT'],
   };
-  
+
   // Get valid transitions or return all options if current status isn't in our map
   const validTransitions = transitionMap[currentStatus] || allOptions.map(o => o.value);
-  
-  return allOptions.filter(option => 
-    validTransitions.includes(option.value) && option.value !== currentStatus
+
+  return allOptions.filter(
+    option => validTransitions.includes(option.value) && option.value !== currentStatus
   );
 }
 
@@ -108,21 +107,21 @@ function getContactStatusOptions(currentStatus: string): StatusOption[] {
   const allOptions: StatusOption[] = [
     { value: 'PROSPECT', label: 'Prospect' },
     { value: 'ACTIVE', label: 'Active' },
-    { value: 'INACTIVE', label: 'Inactive' }
+    { value: 'INACTIVE', label: 'Inactive' },
   ];
-  
+
   // Get valid transitions based on current status
   const transitionMap: Record<string, string[]> = {
-    'PROSPECT': ['ACTIVE', 'INACTIVE'],
-    'ACTIVE': ['INACTIVE'],
-    'INACTIVE': ['ACTIVE']
+    PROSPECT: ['ACTIVE', 'INACTIVE'],
+    ACTIVE: ['INACTIVE'],
+    INACTIVE: ['ACTIVE'],
   };
-  
+
   // Get valid transitions or return all options if current status isn't in our map
   const validTransitions = transitionMap[currentStatus] || allOptions.map(o => o.value);
-  
-  return allOptions.filter(option => 
-    validTransitions.includes(option.value) && option.value !== currentStatus
+
+  return allOptions.filter(
+    option => validTransitions.includes(option.value) && option.value !== currentStatus
   );
 }
 
@@ -132,22 +131,22 @@ function getVendorStatusOptions(currentStatus: string): StatusOption[] {
     { value: 'POTENTIAL', label: 'Potential' },
     { value: 'APPROVED', label: 'Approved' },
     { value: 'ACTIVE', label: 'Active' },
-    { value: 'INACTIVE', label: 'Inactive' }
+    { value: 'INACTIVE', label: 'Inactive' },
   ];
-  
+
   // Get valid transitions based on current status
   const transitionMap: Record<string, string[]> = {
-    'POTENTIAL': ['APPROVED', 'ACTIVE', 'INACTIVE'],
-    'APPROVED': ['ACTIVE', 'INACTIVE'],
-    'ACTIVE': ['INACTIVE'],
-    'INACTIVE': ['ACTIVE']
+    POTENTIAL: ['APPROVED', 'ACTIVE', 'INACTIVE'],
+    APPROVED: ['ACTIVE', 'INACTIVE'],
+    ACTIVE: ['INACTIVE'],
+    INACTIVE: ['ACTIVE'],
   };
-  
+
   // Get valid transitions or return all options if current status isn't in our map
   const validTransitions = transitionMap[currentStatus] || allOptions.map(o => o.value);
-  
-  return allOptions.filter(option => 
-    validTransitions.includes(option.value) && option.value !== currentStatus
+
+  return allOptions.filter(
+    option => validTransitions.includes(option.value) && option.value !== currentStatus
   );
 }
 
@@ -159,23 +158,26 @@ function getEstimateStatusOptions(currentStatus: string): StatusOption[] {
     { value: 'pending', label: 'Pending Approval' },
     { value: 'approved', label: 'Approved' },
     { value: 'rejected', label: 'Rejected' },
-    { value: 'converted', label: 'Converted to Project' }
+    { value: 'converted', label: 'Converted to Project' },
   ];
-  
+
   // Get valid transitions based on current status
   const transitionMap: Record<string, string[]> = {
-    'draft': ['sent'],
-    'sent': ['approved', 'rejected'],
-    'pending': ['approved', 'rejected'],
-    'approved': ['converted'],
-    'rejected': ['draft'],
-    'converted': []
+    draft: ['sent'],
+    sent: ['approved', 'rejected'],
+    pending: ['approved', 'rejected'],
+    approved: ['converted'],
+    rejected: ['draft'],
+    converted: [],
   };
-  
+
   // Get valid transitions or return all options if current status isn't in our map
-  const validTransitions = transitionMap[currentStatus.toLowerCase()] || allOptions.map(o => o.value);
-  
-  return allOptions.filter(option => 
-    validTransitions.includes(option.value) && option.value.toLowerCase() !== currentStatus.toLowerCase()
+  const validTransitions =
+    transitionMap[currentStatus.toLowerCase()] || allOptions.map(o => o.value);
+
+  return allOptions.filter(
+    option =>
+      validTransitions.includes(option.value) &&
+      option.value.toLowerCase() !== currentStatus.toLowerCase()
   );
 }

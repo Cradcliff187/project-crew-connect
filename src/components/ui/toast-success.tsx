@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
 
@@ -13,9 +12,7 @@ const ToastSuccess: React.FC<ToastSuccessProps> = ({ title, description }) => {
       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
       <div>
         <h4 className="text-sm font-medium">{title}</h4>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
       </div>
     </div>
   );

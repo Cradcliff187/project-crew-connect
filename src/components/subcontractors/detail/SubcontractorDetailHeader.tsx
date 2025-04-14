@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit } from 'lucide-react';
@@ -11,9 +10,13 @@ interface SubcontractorDetailHeaderProps {
   onEdit: () => void;
 }
 
-const SubcontractorDetailHeader = ({ subcontractor, loading, onEdit }: SubcontractorDetailHeaderProps) => {
+const SubcontractorDetailHeader = ({
+  subcontractor,
+  loading,
+  onEdit,
+}: SubcontractorDetailHeaderProps) => {
   const navigate = useNavigate();
-  
+
   const handleBack = () => {
     navigate('/subcontractors');
   };
@@ -43,10 +46,7 @@ const SubcontractorDetailHeader = ({ subcontractor, loading, onEdit }: Subcontra
         </Button>
         <h1 className="text-2xl font-bold">{subcontractor.subname}</h1>
       </div>
-      <Button 
-        onClick={handleEdit} 
-        className="bg-[#0485ea] hover:bg-[#0375d1] text-white"
-      >
+      <Button onClick={handleEdit} className="bg-[#0485ea] hover:bg-[#0375d1] text-white">
         <Edit className="h-4 w-4 mr-2" />
         Edit Subcontractor
       </Button>

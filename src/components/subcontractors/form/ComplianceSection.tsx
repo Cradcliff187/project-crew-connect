@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,7 +20,7 @@ const ComplianceSection: React.FC<FormSectionProps> = ({ control }) => {
   return (
     <div className="pt-4 border-t">
       <h3 className="font-medium text-lg mb-4 text-[#0485ea]">Compliance & Insurance</h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={control}
@@ -35,11 +34,11 @@ const ComplianceSection: React.FC<FormSectionProps> = ({ control }) => {
                     <Button
                       variant="outline"
                       className={`w-full pl-3 text-left font-normal ${
-                        !field.value ? "text-muted-foreground" : ""
+                        !field.value ? 'text-muted-foreground' : ''
                       }`}
                     >
                       {field.value ? (
-                        format(new Date(field.value), "PPP")
+                        format(new Date(field.value), 'PPP')
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -51,7 +50,7 @@ const ComplianceSection: React.FC<FormSectionProps> = ({ control }) => {
                   <Calendar
                     mode="single"
                     selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
+                    onSelect={date => field.onChange(date ? date.toISOString() : null)}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
@@ -61,7 +60,7 @@ const ComplianceSection: React.FC<FormSectionProps> = ({ control }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={control}
           name="insurance_provider"
@@ -75,7 +74,7 @@ const ComplianceSection: React.FC<FormSectionProps> = ({ control }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={control}
           name="insurance_policy_number"
@@ -89,28 +88,23 @@ const ComplianceSection: React.FC<FormSectionProps> = ({ control }) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={control}
           name="contract_on_file"
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
               <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel>Contract on File</FormLabel>
-                <FormDescription>
-                  Check if a signed contract is on file
-                </FormDescription>
+                <FormDescription>Check if a signed contract is on file</FormDescription>
               </div>
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={control}
           name="contract_expiration"
@@ -123,11 +117,11 @@ const ComplianceSection: React.FC<FormSectionProps> = ({ control }) => {
                     <Button
                       variant="outline"
                       className={`w-full pl-3 text-left font-normal ${
-                        !field.value ? "text-muted-foreground" : ""
+                        !field.value ? 'text-muted-foreground' : ''
                       }`}
                     >
                       {field.value ? (
-                        format(new Date(field.value), "PPP")
+                        format(new Date(field.value), 'PPP')
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -139,7 +133,7 @@ const ComplianceSection: React.FC<FormSectionProps> = ({ control }) => {
                   <Calendar
                     mode="single"
                     selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
+                    onSelect={date => field.onChange(date ? date.toISOString() : null)}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />

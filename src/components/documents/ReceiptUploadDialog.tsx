@@ -1,11 +1,10 @@
-
 import { ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
 } from '@/components/ui/dialog';
 
 interface ReceiptUploadDialogProps {
@@ -19,9 +18,9 @@ interface ReceiptUploadDialogProps {
 const ReceiptUploadDialog = ({
   open,
   onOpenChange,
-  title = "Upload Receipt",
-  description = "Upload a receipt for this item",
-  children
+  title = 'Upload Receipt',
+  description = 'Upload a receipt for this item',
+  children,
 }: ReceiptUploadDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

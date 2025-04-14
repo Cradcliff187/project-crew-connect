@@ -1,8 +1,7 @@
-
 // Time Entry Interfaces
 export interface TimeEntry {
   id: string;
-  entity_type: 'work_order' | 'project';  // Using string literal types for consistency
+  entity_type: 'work_order' | 'project'; // Using string literal types for consistency
   entity_id: string;
   entity_name?: string;
   entity_location?: string;
@@ -64,8 +63,8 @@ export interface TimeEntryReceipt {
 export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
 
 export interface TimeOption {
-  value: string;      // 24h format value (e.g. "14:30")
-  display: string;    // 12h format display (e.g. "2:30 PM")
+  value: string; // 24h format value (e.g. "14:30")
+  display: string; // 12h format display (e.g. "2:30 PM")
   timeOfDay: TimeOfDay;
 }
 

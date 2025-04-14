@@ -1,9 +1,13 @@
-
 import React, { createContext, useContext, ReactNode } from 'react';
 
 // Create a fallback context that can be used when Form context is not available
 interface FormFallbackContextValue {
-  getFieldState: (name: string) => ({ invalid: false, isDirty: false, isTouched: false, error: undefined });
+  getFieldState: (name: string) => {
+    invalid: false;
+    isDirty: false;
+    isTouched: false;
+    error: undefined;
+  };
   formState: { errors: {} };
   getValues: (path?: string | string[]) => any;
   setValue: (name: string, value: any) => void;
@@ -28,20 +32,22 @@ const FormFallbackContext = createContext<FormFallbackContextValue>({
   formState: { errors: {} },
   getValues: () => ({}),
   setValue: () => undefined,
-  handleSubmit: () => (e) => { e.preventDefault(); },
+  handleSubmit: () => e => {
+    e.preventDefault();
+  },
   reset: () => undefined,
   trigger: () => Promise.resolve(false),
   watch: () => undefined,
   control: {
-    register: () => ({ name: "" }),
+    register: () => ({ name: '' }),
     unregister: () => {},
-    _names: { mount: {}, array: {}, watch: {} }
+    _names: { mount: {}, array: {}, watch: {} },
   },
-  register: () => ({ name: "" }),
+  register: () => ({ name: '' }),
   unregister: () => {},
   clearErrors: () => {},
   setError: () => {},
-  setFocus: () => {}
+  setFocus: () => {},
 });
 
 export const useFormFallback = () => {
@@ -54,13 +60,18 @@ interface FormFallbackProviderProps {
 
 export const FormFallbackProvider: React.FC<FormFallbackProviderProps> = ({ children }) => {
   return (
-    <FormFallbackContext.Provider 
+    <FormFallbackContext.Provider
       value={{
-        getFieldState: () => ({ invalid: false, isDirty: false, isTouched: false, error: undefined }),
+        getFieldState: () => ({
+          invalid: false,
+          isDirty: false,
+          isTouched: false,
+          error: undefined,
+        }),
         formState: { errors: {} },
-        getValues: (path) => path ? undefined : {},
+        getValues: path => (path ? undefined : {}),
         setValue: () => undefined,
-        handleSubmit: (onValid, onInvalid) => (e) => { 
+        handleSubmit: (onValid, onInvalid) => e => {
           e.preventDefault();
           return undefined;
         },
@@ -68,15 +79,15 @@ export const FormFallbackProvider: React.FC<FormFallbackProviderProps> = ({ chil
         trigger: () => Promise.resolve(false),
         watch: () => undefined,
         control: {
-          register: () => ({ name: "" }),
+          register: () => ({ name: '' }),
           unregister: () => {},
-          _names: { mount: {}, array: {}, watch: {} }
+          _names: { mount: {}, array: {}, watch: {} },
         },
-        register: () => ({ name: "" }),
+        register: () => ({ name: '' }),
         unregister: () => {},
         clearErrors: () => {},
         setError: () => {},
-        setFocus: () => {}
+        setFocus: () => {},
       }}
     >
       {children}
@@ -85,4 +96,4 @@ export const FormFallbackProvider: React.FC<FormFallbackProviderProps> = ({ chil
 };
 
 // Export the useFormFallback hook from the .ts file for backward compatibility
-export * from "./useFormContext";
+export * from './useFormContext';

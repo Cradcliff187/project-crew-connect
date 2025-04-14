@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,21 +20,26 @@ const ProgressEditForm: React.FC<ProgressEditFormProps> = ({
   progressValue,
   onProgressUpdate,
   onCancel,
-  onProgressChange
+  onProgressChange,
 }) => {
   // Use either progressValue or currentProgress, with progressValue taking precedence
-  const initialValue = progressValue !== undefined ? progressValue : (currentProgress !== undefined ? currentProgress : 0);
+  const initialValue =
+    progressValue !== undefined
+      ? progressValue
+      : currentProgress !== undefined
+        ? currentProgress
+        : 0;
   const [progress, setProgress] = useState(initialValue);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-  
+
   const handleProgressChange = (value: number[]) => {
     setProgress(value[0]);
     if (onProgressChange) {
       onProgressChange(value[0]);
     }
   };
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     if (!isNaN(value) && value >= 0 && value <= 100) {
@@ -45,7 +49,7 @@ const ProgressEditForm: React.FC<ProgressEditFormProps> = ({
       }
     }
   };
-  
+
   const handleSave = async () => {
     // If we have a projectId and onProgressUpdate, we're in the ProjectProgressCard mode
     if (projectId && onProgressUpdate) {
@@ -57,9 +61,9 @@ const ProgressEditForm: React.FC<ProgressEditFormProps> = ({
           .select('id')
           .eq('projectid', projectId)
           .maybeSingle();
-        
+
         let result;
-        
+
         if (data) {
           // Update existing record
           result = await supabase
@@ -72,14 +76,14 @@ const ProgressEditForm: React.FC<ProgressEditFormProps> = ({
             .from('project_progress')
             .insert({ projectid: projectId, progress_percentage: progress });
         }
-        
+
         if (result.error) throw result.error;
-        
+
         toast({
           title: 'Progress updated',
           description: `Project progress has been updated to ${progress}%.`,
         });
-        
+
         onProgressUpdate();
       } catch (error: any) {
         console.error('Error updating progress:', error);
@@ -93,7 +97,7 @@ const ProgressEditForm: React.FC<ProgressEditFormProps> = ({
       }
     }
   };
-  
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -117,16 +121,16 @@ const ProgressEditForm: React.FC<ProgressEditFormProps> = ({
           <span className="text-sm">%</span>
         </div>
       </div>
-      
+
       {/* Only show buttons if we're in ProjectProgressCard mode */}
       {projectId && onProgressUpdate && onCancel && (
         <div className="flex justify-end gap-2">
           <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button 
-            size="sm" 
-            onClick={handleSave} 
+          <Button
+            size="sm"
+            onClick={handleSave}
             disabled={saving}
             className="bg-[#0485ea] hover:bg-[#0375d1]"
           >

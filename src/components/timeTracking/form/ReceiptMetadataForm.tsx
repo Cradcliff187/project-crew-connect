@@ -1,9 +1,14 @@
-
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import VendorSearchCombobox from '@/components/documents/vendor-selector/VendorSearchCombobox';
 import { ReceiptMetadata } from '@/types/timeTracking';
 
@@ -25,7 +30,7 @@ const EXPENSE_TYPES = [
   { value: 'TOOLS', label: 'Tools & Equipment' },
   { value: 'FUEL', label: 'Fuel' },
   { value: 'MEALS', label: 'Meals & Entertainment' },
-  { value: 'OTHER', label: 'Other' }
+  { value: 'OTHER', label: 'Other' },
 ];
 
 const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
@@ -38,7 +43,7 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
   entityType,
   entityId,
   metadata,
-  updateMetadata
+  updateMetadata,
 }) => {
   // If metadata and updateMetadata are provided, use those instead
   const handleVendorChange = (value: string) => {
@@ -48,7 +53,7 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
       onVendorChange(value);
     }
   };
-  
+
   const handleExpenseTypeChange = (value: string) => {
     if (metadata && updateMetadata) {
       updateMetadata({ expenseType: value });
@@ -56,7 +61,7 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
       onExpenseTypeChange(value);
     }
   };
-  
+
   const handleAmountChange = (value: number | undefined) => {
     if (metadata && updateMetadata) {
       updateMetadata({ amount: value });
@@ -64,41 +69,40 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
       onAmountChange(value);
     }
   };
-  
+
   // Determine the actual values to use
   const actualVendor = metadata?.vendorId || vendor;
   const actualExpenseType = metadata?.expenseType || expenseType;
   const actualAmount = metadata?.amount || amount;
-  
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Vendor</Label>
-        <VendorSearchCombobox 
+        <VendorSearchCombobox
           value={actualVendor}
           onChange={handleVendorChange}
           vendorType="vendor"
           placeholder="Select a vendor"
         />
       </div>
-      
+
       <div className="space-y-2">
         <Label>Expense Type</Label>
-        <Select
-          value={actualExpenseType}
-          onValueChange={handleExpenseTypeChange}
-        >
+        <Select value={actualExpenseType} onValueChange={handleExpenseTypeChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select expense type" />
           </SelectTrigger>
           <SelectContent>
             {EXPENSE_TYPES.map(type => (
-              <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-      
+
       <div className="space-y-2">
         <Label>Amount</Label>
         <Input
@@ -107,7 +111,9 @@ const ReceiptMetadataForm: React.FC<ReceiptMetadataFormProps> = ({
           step="0.01"
           min="0"
           value={actualAmount || ''}
-          onChange={(e) => handleAmountChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+          onChange={e =>
+            handleAmountChange(e.target.value ? parseFloat(e.target.value) : undefined)
+          }
         />
       </div>
     </div>

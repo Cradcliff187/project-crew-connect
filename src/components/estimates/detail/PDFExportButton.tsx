@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Loader2, AlertCircle } from 'lucide-react';
@@ -11,7 +10,7 @@ interface PDFExportButtonProps {
   contentRef?: React.RefObject<HTMLDivElement>;
   onSuccess?: (documentId: string) => void;
   className?: string;
-  variant?: 
+  variant?:
     | 'default'
     | 'destructive'
     | 'outline'
@@ -29,22 +28,23 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   revisionId,
   contentRef,
   onSuccess,
-  className = "",
+  className = '',
   variant = 'default',
   size = 'default',
-  children
+  children,
 }) => {
   const { toast } = useToast();
-  const { generatePdf, generateClientSidePdf, checkRevisionPdf, isGenerating, error } = usePdfGeneration({
-    onSuccess,
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "An error occurred while generating the PDF",
-        variant: "destructive"
-      });
-    }
-  });
+  const { generatePdf, generateClientSidePdf, checkRevisionPdf, isGenerating, error } =
+    usePdfGeneration({
+      onSuccess,
+      onError: error => {
+        toast({
+          title: 'Error',
+          description: error.message || 'An error occurred while generating the PDF',
+          variant: 'destructive',
+        });
+      },
+    });
 
   const handleGeneratePdf = async () => {
     try {
@@ -52,32 +52,32 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       if (revisionId) {
         // Check if PDF already exists
         const existingPdfId = await checkRevisionPdf(revisionId);
-        
+
         if (existingPdfId) {
           // If PDF exists and we're regenerating, inform the user
           toast({
-            title: "Regenerating PDF",
-            description: "Creating a new PDF version for this revision",
+            title: 'Regenerating PDF',
+            description: 'Creating a new PDF version for this revision',
           });
         }
-        
+
         await generatePdf(estimateId, revisionId);
       } else if (contentRef && contentRef.current) {
         // Use client-side generation with the ref
         await generateClientSidePdf(contentRef);
       } else {
         toast({
-          title: "Missing Parameters",
-          description: "Either a revision ID or content reference is required",
-          variant: "destructive"
+          title: 'Missing Parameters',
+          description: 'Either a revision ID or content reference is required',
+          variant: 'destructive',
         });
       }
     } catch (error: any) {
       console.error('Error in PDF export:', error);
       toast({
-        title: "PDF Generation Failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive"
+        title: 'PDF Generation Failed',
+        description: error.message || 'An unexpected error occurred',
+        variant: 'destructive',
       });
     }
   };
@@ -86,9 +86,9 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   React.useEffect(() => {
     if (error) {
       toast({
-        title: "PDF Generation Error",
-        description: error.message || "Failed to generate PDF",
-        variant: "destructive"
+        title: 'PDF Generation Error',
+        description: error.message || 'Failed to generate PDF',
+        variant: 'destructive',
       });
     }
   }, [error, toast]);
@@ -104,17 +104,17 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       {isGenerating ? (
         <>
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          {children || "Generating..."}
+          {children || 'Generating...'}
         </>
       ) : error ? (
         <>
           <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
-          {children || "Retry PDF"}
+          {children || 'Retry PDF'}
         </>
       ) : (
         <>
           <FileText className="h-4 w-4 mr-2" />
-          {children || "Generate PDF"}
+          {children || 'Generate PDF'}
         </>
       )}
     </Button>

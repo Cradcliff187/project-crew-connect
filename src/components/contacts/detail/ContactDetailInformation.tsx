@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Contact } from '@/pages/Contacts';
 import ContactInfoSection from './ContactInfoSection';
@@ -11,15 +10,12 @@ interface ContactDetailInformationProps {
 
 const ContactDetailInformation: React.FC<ContactDetailInformationProps> = ({
   contact,
-  onStatusChange
+  onStatusChange,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <ContactInfoSection contact={contact} />
-      <ContactStatusSection 
-        contact={contact} 
-        onStatusChange={onStatusChange} 
-      />
+      <ContactStatusSection contact={contact} onStatusChange={onStatusChange} />
     </div>
   );
 };

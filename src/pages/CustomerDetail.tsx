@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
@@ -25,40 +24,40 @@ const CustomerDetail = () => {
   const fetchCustomerData = async (id: string) => {
     try {
       setLoading(true);
-      
+
       // Fetch the customer data
       const { data, error } = await supabase
         .from('customers')
         .select('*')
         .eq('customerid', id)
         .single();
-      
+
       if (error) {
         throw error;
       }
-      
+
       setCustomer(data);
-      
+
       // Fetch related projects
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
         .eq('customerid', id)
         .order('created_at', { ascending: false });
-      
+
       if (projectsError) {
         console.error('Error fetching projects:', projectsError);
       } else {
         setProjects(projectsData || []);
       }
-      
+
       // Fetch related estimates
       const { data: estimatesData, error: estimatesError } = await supabase
         .from('estimates')
         .select('*')
         .eq('customerid', id)
         .order('datecreated', { ascending: false });
-      
+
       if (estimatesError) {
         console.error('Error fetching estimates:', estimatesError);
       } else {
@@ -88,8 +87,8 @@ const CustomerDetail = () => {
         <div className="space-y-4">
           <h1 className="text-2xl font-bold">Error Loading Customer</h1>
           <p className="text-red-500">{error || 'Customer not found'}</p>
-          <button 
-            onClick={() => navigate('/customers')} 
+          <button
+            onClick={() => navigate('/customers')}
             className="px-4 py-2 bg-[#0485ea] text-white rounded-md hover:bg-[#0373ce]"
           >
             Back to Customers
@@ -104,11 +103,14 @@ const CustomerDetail = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{customer.customername || 'Customer Details'}</h1>
-          <Badge variant={customer.status === 'ACTIVE' ? 'default' : 'outline'} className="capitalize">
+          <Badge
+            variant={customer.status === 'ACTIVE' ? 'default' : 'outline'}
+            className="capitalize"
+          >
             {customer.status || 'No Status'}
           </Badge>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Contact Information</CardTitle>
@@ -119,22 +121,24 @@ const CustomerDetail = () => {
                 <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
                 <p>{customer.contactemail || 'Not specified'}</p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Phone</h3>
                 <p>{customer.phone || 'Not specified'}</p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
                 <p>{customer.address || 'Not specified'}</p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
                 <p>
-                  {customer.city || ''}{customer.city && customer.state ? ', ' : ''}
-                  {customer.state || ''}{(customer.city || customer.state) && customer.zip ? ' ' : ''}
+                  {customer.city || ''}
+                  {customer.city && customer.state ? ', ' : ''}
+                  {customer.state || ''}
+                  {(customer.city || customer.state) && customer.zip ? ' ' : ''}
                   {customer.zip || ''}
                   {!customer.city && !customer.state && !customer.zip && 'Not specified'}
                 </p>
@@ -154,15 +158,21 @@ const CustomerDetail = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">ID</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Name</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Status</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Budget</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Name
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Status
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Budget
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {projects.map((project) => (
-                      <tr 
-                        key={project.projectid} 
+                    {projects.map(project => (
+                      <tr
+                        key={project.projectid}
                         className="hover:bg-gray-50 cursor-pointer"
                         onClick={() => navigate(`/projects/${project.projectid}`)}
                       >
@@ -173,7 +183,9 @@ const CustomerDetail = () => {
                             {project.status || 'No Status'}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3 text-sm">${project.total_budget?.toLocaleString() || '0'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          ${project.total_budget?.toLocaleString() || '0'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -194,15 +206,21 @@ const CustomerDetail = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">ID</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Project</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Status</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">Amount</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Project
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Status
+                      </th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
+                        Amount
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {estimates.map((estimate) => (
-                      <tr 
-                        key={estimate.estimateid} 
+                    {estimates.map(estimate => (
+                      <tr
+                        key={estimate.estimateid}
                         className="hover:bg-gray-50 cursor-pointer"
                         onClick={() => navigate(`/estimates/${estimate.estimateid}`)}
                       >
@@ -213,7 +231,9 @@ const CustomerDetail = () => {
                             {estimate.status || 'draft'}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3 text-sm">${estimate.estimateamount?.toLocaleString() || '0'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          ${estimate.estimateamount?.toLocaleString() || '0'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

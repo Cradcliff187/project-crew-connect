@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { StatusType } from '@/types/common';
@@ -9,10 +8,14 @@ interface SubcontractorStatusBadgeProps {
 }
 
 const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => {
-  if (!status) return <Badge variant="outline" className="font-opensans flex items-center">
-    <CircleDashed className="mr-1.5 h-3.5 w-3.5" />Unknown
-  </Badge>;
-  
+  if (!status)
+    return (
+      <Badge variant="outline" className="font-opensans flex items-center">
+        <CircleDashed className="mr-1.5 h-3.5 w-3.5" />
+        Unknown
+      </Badge>
+    );
+
   const getStatusIcon = (statusType: StatusType) => {
     switch (statusType) {
       case 'success':
@@ -25,10 +28,10 @@ const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => 
         return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
     }
   };
-  
+
   const mapStatusToType = (status: string): StatusType => {
     const statusUpperCase = status.toUpperCase();
-    
+
     switch (statusUpperCase) {
       case 'ACTIVE':
         return 'success';
@@ -47,11 +50,11 @@ const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => 
         return 'neutral';
     }
   };
-  
+
   const statusType = mapStatusToType(status);
-  
+
   let className = 'bg-gray-50 text-gray-700 border-gray-200';
-  
+
   switch (statusType) {
     case 'success':
       className = 'bg-green-50 text-green-700 border-green-200 font-medium';
@@ -72,7 +75,7 @@ const SubcontractorStatusBadge = ({ status }: SubcontractorStatusBadgeProps) => 
       className = 'bg-purple-50 text-purple-700 border-purple-200 font-medium';
       break;
   }
-  
+
   return (
     <Badge variant="outline" className={`font-opensans flex items-center ${className}`}>
       {getStatusIcon(statusType)}

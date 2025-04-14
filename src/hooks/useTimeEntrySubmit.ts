@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,17 +8,17 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submitTimeEntry = async (
-    data: TimeEntryFormValues, 
+    data: TimeEntryFormValues,
     selectedFiles: File[],
-    receiptMetadata: ReceiptMetadata = { 
-      category: 'receipt', 
-      expenseType: null, 
-      tags: ['time-entry'] 
+    receiptMetadata: ReceiptMetadata = {
+      category: 'receipt',
+      expenseType: null,
+      tags: ['time-entry'],
     }
   ) => {
     setIsSubmitting(true);
     console.log('Starting time entry submission with files:', selectedFiles.length);
-    
+
     try {
       let employeeRate = null;
       if (data.employeeId) {
@@ -29,14 +28,14 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           .select('hourly_rate')
           .eq('employee_id', data.employeeId)
           .maybeSingle();
-        
+
         employeeRate = empData?.hourly_rate;
       }
-      
+
       // Calculate total cost
       const hourlyRate = employeeRate || 75; // Default rate
       const totalCost = data.hoursWorked * hourlyRate;
-      
+
       // Create the time entry
       const timeEntry = {
         entity_type: data.entityType,
@@ -51,24 +50,24 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
         notes: data.notes || null,
         has_receipts: selectedFiles.length > 0,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
-      
+
       console.log('Creating time entry:', timeEntry);
-      
+
       const { data: insertedEntry, error } = await supabase
         .from('time_entries')
         .insert(timeEntry)
         .select('id')
         .single();
-        
+
       if (error) {
         console.error('Error inserting time entry:', error);
         throw error;
       }
-      
+
       console.log('Time entry created successfully with ID:', insertedEntry.id);
-      
+
       // Upload receipts if provided
       if (selectedFiles.length > 0 && insertedEntry) {
         for (const file of selectedFiles) {
@@ -77,23 +76,23 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
             const filePath = `receipts/time_entries/${insertedEntry.id}/${fileName}`;
-            
+
             console.log('Uploading file to path:', filePath);
-            
+
             // Upload the file to storage
             const { error: uploadError } = await supabase.storage
               .from('construction_documents')
               .upload(filePath, file);
-              
+
             if (uploadError) {
               console.error('Error uploading file to storage:', uploadError);
               throw uploadError;
             }
-            
+
             console.log('File uploaded successfully');
-            
+
             const mimeType = file.type || `application/${fileExt}`;
-            
+
             // Create document metadata
             const documentData = {
               file_name: file.name,
@@ -112,40 +111,42 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
               expense_type: receiptMetadata.expenseType || 'other',
               vendor_id: receiptMetadata.vendorId || null,
               vendor_type: receiptMetadata.vendorType || null,
-              amount: receiptMetadata.amount || null
+              amount: receiptMetadata.amount || null,
             };
-            
+
             console.log('Creating document record:', documentData);
-            
+
             // Insert document record
             const { data: insertedDoc, error: documentError } = await supabase
               .from('documents')
               .insert(documentData)
               .select('document_id')
               .single();
-              
+
             if (documentError) {
               console.error('Error creating document record:', documentError);
               throw documentError;
             }
-            
+
             console.log('Document record created successfully with ID:', insertedDoc.document_id);
-            
+
             // Link document to time entry using the optimized function
             console.log('Linking document to time entry using RPC function');
-            const { data: linkResult, error: linkError } = await supabase
-              .rpc('attach_document_to_time_entry', {
+            const { data: linkResult, error: linkError } = await supabase.rpc(
+              'attach_document_to_time_entry',
+              {
                 p_time_entry_id: insertedEntry.id,
-                p_document_id: insertedDoc.document_id
-              });
-              
+                p_document_id: insertedDoc.document_id,
+              }
+            );
+
             if (linkError) {
               console.error('Error linking document to time entry:', linkError);
               // Don't throw, continue with other operations
             } else {
               console.log('Document linked to time entry successfully');
             }
-            
+
             // Create expense entry for receipts if we have an amount
             if (receiptMetadata.amount && receiptMetadata.amount > 0) {
               console.log('Creating expense record for receipt');
@@ -162,13 +163,11 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
                 quantity: 1,
                 unit_price: receiptMetadata.amount,
                 vendor_id: receiptMetadata.vendorId || null,
-                is_receipt: true
+                is_receipt: true,
               };
-              
-              const { error: expenseError } = await supabase
-                .from('expenses')
-                .insert(expenseData);
-                
+
+              const { error: expenseError } = await supabase.from('expenses').insert(expenseData);
+
               if (expenseError) {
                 console.error('Error creating expense for receipt:', expenseError);
                 // Continue execution despite error
@@ -187,7 +186,7 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           }
         }
       }
-      
+
       // Create expense entry for labor time
       if (data.entityType === 'work_order' && data.hoursWorked > 0) {
         console.log('Creating labor expense record');
@@ -202,20 +201,20 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           updated_at: new Date().toISOString(),
           quantity: data.hoursWorked,
           unit_price: hourlyRate,
-          vendor_id: null
+          vendor_id: null,
         };
-        
+
         const { error: laborExpenseError } = await supabase
           .from('expenses')
           .insert(laborExpenseData);
-          
+
         if (laborExpenseError) {
           console.error('Error creating labor expense:', laborExpenseError);
         } else {
           console.log('Labor expense record created successfully');
         }
       }
-      
+
       // Create expense entry for projects as well
       if (data.entityType === 'project' && data.hoursWorked > 0) {
         console.log('Creating project labor expense record');
@@ -230,25 +229,25 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
           updated_at: new Date().toISOString(),
           quantity: data.hoursWorked,
           unit_price: hourlyRate,
-          vendor_id: null
+          vendor_id: null,
         };
-        
+
         const { error: laborExpenseError } = await supabase
           .from('expenses')
           .insert(projectLaborExpenseData);
-          
+
         if (laborExpenseError) {
           console.error('Error creating project labor expense:', laborExpenseError);
         } else {
           console.log('Project labor expense record created successfully');
         }
       }
-      
+
       toast({
         title: 'Time entry submitted',
         description: 'Your time entry has been successfully recorded.',
       });
-      
+
       onSuccess();
     } catch (error: any) {
       console.error('Error submitting time entry:', error);
@@ -264,6 +263,6 @@ export function useTimeEntrySubmit(onSuccess: () => void) {
 
   return {
     isSubmitting,
-    submitTimeEntry
+    submitTimeEntry,
   };
 }

@@ -1,4 +1,3 @@
-
 // Define subcontractor form data type
 export interface SubcontractorFormData {
   subid?: string;

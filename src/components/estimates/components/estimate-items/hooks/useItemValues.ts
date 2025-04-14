@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { EstimateFormValues } from '../../../schemas/estimateFormSchema';
@@ -32,19 +31,19 @@ const useItemValues = (index: number, form: UseFormReturn<EstimateFormValues>) =
     description: '',
     documentId: '',
     vendorId: '',
-    subcontractorId: ''
+    subcontractorId: '',
   });
-  
+
   // Cache calculation results to prevent unnecessary re-renders
   const [calculatedValues, setCalculatedValues] = useState<CalculatedValues>({
     itemPrice: 0,
     grossMargin: 0,
-    grossMarginPercentage: 0
+    grossMarginPercentage: 0,
   });
-  
+
   // Use ref to track if values have changed to prevent recalculation
   const prevValuesRef = useRef<string>('');
-  
+
   // Get the field values once at the beginning and when specific fields change
   useEffect(() => {
     const values = {
@@ -56,22 +55,22 @@ const useItemValues = (index: number, form: UseFormReturn<EstimateFormValues>) =
       description: form.getValues(`items.${index}.description`) || '',
       documentId: form.getValues(`items.${index}.document_id`) || '',
       vendorId: form.getValues(`items.${index}.vendor_id`) || '',
-      subcontractorId: form.getValues(`items.${index}.subcontractor_id`) || ''
+      subcontractorId: form.getValues(`items.${index}.subcontractor_id`) || '',
     };
-    
+
     setItemValues(values);
-    
+
     // Subscribe to changes for this item only - with minimal resubscription
     // Fix: Correctly handle the subscription returned by watch
     const subscription = form.watch((value, { name }) => {
       if (!name || !name.startsWith(`items.${index}.`)) return;
-      
+
       const field = name.split('.').pop();
       if (!field) return;
-      
+
       let keyName: keyof ItemValues;
-      
-      switch(field) {
+
+      switch (field) {
         case 'item_type':
           keyName = 'itemType';
           break;
@@ -93,52 +92,50 @@ const useItemValues = (index: number, form: UseFormReturn<EstimateFormValues>) =
         default:
           keyName = field as keyof ItemValues;
       }
-      
+
       // Update only the changed field
       setItemValues(prev => ({
         ...prev,
-        [keyName]: value.items?.[index]?.[field] ?? prev[keyName]
+        [keyName]: value.items?.[index]?.[field] ?? prev[keyName],
       }));
     });
-    
+
     // Properly cleanup the subscription
     return () => subscription.unsubscribe();
   }, [form, index]);
-  
+
   // Calculate derived values - but only when relevant values change
   useEffect(() => {
     // Create a string representation of the values that affect calculations
     const currentValues = `${itemValues.cost}-${itemValues.quantity}-${itemValues.unitPrice}`;
-    
+
     // Skip calculation if values haven't changed
     if (currentValues === prevValuesRef.current) return;
-    
+
     // Cache the new values
     prevValuesRef.current = currentValues;
-    
+
     // Get numeric values
     const unitPrice = parseFloat(itemValues.unitPrice) || 0;
     const quantity = parseFloat(itemValues.quantity) || 1;
     const cost = parseFloat(itemValues.cost) || 0;
-    
+
     // Calculate item price
     const itemPrice = unitPrice * quantity;
-    
+
     // Calculate margin values
     const totalCost = cost * quantity;
     const grossMargin = itemPrice - totalCost;
-    const grossMarginPercentage = itemPrice > 0 
-      ? (grossMargin / itemPrice) * 100 
-      : 0;
-    
+    const grossMarginPercentage = itemPrice > 0 ? (grossMargin / itemPrice) * 100 : 0;
+
     // Update calculated values in a single state update
     setCalculatedValues({
       itemPrice,
       grossMargin,
-      grossMarginPercentage
+      grossMarginPercentage,
     });
   }, [itemValues.cost, itemValues.quantity, itemValues.unitPrice]);
-  
+
   return { itemValues, calculatedValues };
 };
 

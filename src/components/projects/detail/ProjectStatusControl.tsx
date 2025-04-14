@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { ProjectDetails } from '../ProjectDetails';
@@ -12,10 +11,10 @@ interface ProjectStatusControlProps {
 
 const ProjectStatusControl = ({ project, onStatusChange }: ProjectStatusControlProps) => {
   const { statusOptions } = useStatusOptions('PROJECT', project.status);
-  
+
   return (
     <div className="flex items-center gap-2">
-      <UniversalStatusControl 
+      <UniversalStatusControl
         entityId={project.projectid}
         entityType="PROJECT"
         currentStatus={project.status}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,9 +11,11 @@ const fetchProjects = async () => {
   // First, fetch all projects
   const { data: projectsData, error: projectsError } = await supabase
     .from('projects')
-    .select('projectid, projectname, customername, customerid, status, createdon, total_budget, current_expenses, budget_status')
+    .select(
+      'projectid, projectname, customername, customerid, status, createdon, total_budget, current_expenses, budget_status'
+    )
     .order('createdon', { ascending: false });
-  
+
   if (projectsError) {
     throw projectsError;
   }
@@ -23,12 +24,12 @@ const fetchProjects = async () => {
   const { data: progressData, error: progressError } = await supabase
     .from('project_progress')
     .select('projectid, progress_percentage');
-  
+
   if (progressError) {
     console.warn('Error fetching progress data:', progressError);
     // Continue without progress data rather than failing completely
   }
-  
+
   // Create a map of project ID to progress percentage for quick lookup
   const progressMap = new Map();
   if (progressData) {
@@ -36,7 +37,7 @@ const fetchProjects = async () => {
       progressMap.set(item.projectid, item.progress_percentage);
     });
   }
-  
+
   // Transform data to match our UI requirements
   return projectsData.map(project => ({
     ...project,
@@ -44,21 +45,19 @@ const fetchProjects = async () => {
     budget: project.total_budget || 0,
     spent: project.current_expenses || 0,
     // Use actual progress from database if available, otherwise default to 0
-    progress: progressMap.has(project.projectid) 
-      ? progressMap.get(project.projectid) 
-      : 0
+    progress: progressMap.has(project.projectid) ? progressMap.get(project.projectid) : 0,
   }));
 };
 
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
-  
-  const { 
-    data: projects = [], 
-    isLoading: loading, 
+
+  const {
+    data: projects = [],
+    isLoading: loading,
     error: queryError,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: ['projects'],
     queryFn: fetchProjects,
@@ -68,14 +67,14 @@ const Projects = () => {
         toast({
           title: 'Error fetching projects',
           description: error.message,
-          variant: 'destructive'
+          variant: 'destructive',
         });
-      }
-    }
+      },
+    },
   });
 
   const error = queryError ? (queryError as Error).message : null;
-  
+
   // Function to trigger refresh of projects
   const handleProjectAdded = () => {
     refetch();
@@ -84,21 +83,18 @@ const Projects = () => {
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <PageHeader
-          title="Projects"
-          description="Manage construction and maintenance projects"
-        >
-          <ProjectsHeader 
-            searchQuery={searchQuery} 
+        <PageHeader title="Projects" description="Manage construction and maintenance projects">
+          <ProjectsHeader
+            searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onProjectAdded={handleProjectAdded}
             showAddDialog={showAddDialog}
             setShowAddDialog={setShowAddDialog}
           />
         </PageHeader>
-        
+
         <div className="mt-6">
-          <ProjectsTable 
+          <ProjectsTable
             projects={projects}
             loading={loading}
             error={error}

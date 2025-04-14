@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
@@ -15,7 +14,7 @@ const chartTypes: ChartTypeOption[] = [
   { value: 'table', label: 'Table', icon: <ListFilter className="h-4 w-4" /> },
   { value: 'bar', label: 'Bar Chart', icon: <BarChart3 className="h-4 w-4" /> },
   { value: 'line', label: 'Line Chart', icon: <LineChart className="h-4 w-4" /> },
-  { value: 'pie', label: 'Pie Chart', icon: <PieChart className="h-4 w-4" /> }
+  { value: 'pie', label: 'Pie Chart', icon: <PieChart className="h-4 w-4" /> },
 ];
 
 interface ChartTypeSelectorProps {
@@ -34,10 +33,7 @@ const ChartTypeSelector = ({ value, onChange }: ChartTypeSelectorProps) => {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Chart Type</Label>
-            <Select
-              value={value}
-              onValueChange={onChange}
-            >
+            <Select value={value} onValueChange={onChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select chart type" />
               </SelectTrigger>

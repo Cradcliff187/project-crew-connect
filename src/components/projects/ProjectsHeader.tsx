@@ -1,4 +1,3 @@
-
 import { PlusCircle, Search, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,12 +11,12 @@ interface ProjectsHeaderProps {
   setShowAddDialog?: (show: boolean) => void;
 }
 
-const ProjectsHeader = ({ 
-  searchQuery, 
-  setSearchQuery, 
+const ProjectsHeader = ({
+  searchQuery,
+  setSearchQuery,
   onProjectAdded,
   showAddDialog = false,
-  setShowAddDialog = () => {}
+  setShowAddDialog = () => {},
 }: ProjectsHeaderProps) => {
   const openAddDialog = () => {
     if (setShowAddDialog) {
@@ -40,29 +39,26 @@ const ProjectsHeader = ({
           placeholder="Search projects..."
           className="pl-8 bg-white w-full"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={e => setSearchQuery(e.target.value)}
         />
       </div>
-      
+
       <div className="flex items-center gap-2 self-end sm:self-auto">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => console.log('View schedule')}
           className="hidden md:flex"
         >
           <CalendarClock className="mr-2 h-4 w-4" />
           Schedule
         </Button>
-        
-        <Button 
-          onClick={openAddDialog}
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-        >
+
+        <Button onClick={openAddDialog} className="bg-[#0485ea] hover:bg-[#0375d1]">
           <PlusCircle className="mr-2 h-4 w-4" />
           New Project
         </Button>
       </div>
-      
+
       {showAddDialog && (
         <ProjectDialog
           open={showAddDialog}

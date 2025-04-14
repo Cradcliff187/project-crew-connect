@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { FileUpload } from '@/components/ui/file-upload';
@@ -12,10 +11,13 @@ interface ReceiptUploaderProps {
 const ReceiptUploader: React.FC<ReceiptUploaderProps> = ({
   selectedFiles,
   onFilesSelected,
-  onFileClear
+  onFileClear,
 }) => {
   const handleFilesSelected = (files: File[]) => {
-    console.log('Files selected in ReceiptUploader:', files.map(f => f.name));
+    console.log(
+      'Files selected in ReceiptUploader:',
+      files.map(f => f.name)
+    );
     onFilesSelected(files);
   };
 

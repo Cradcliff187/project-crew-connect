@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 
 /**
@@ -8,17 +7,17 @@ import { useCallback } from 'react';
 export const useFormFallback = () => {
   // Create a minimal implementation of form context API
   const getValues = useCallback((path?: string | string[]) => {
-    console.warn("useFormContext used outside FormProvider - using fallback implementation");
+    console.warn('useFormContext used outside FormProvider - using fallback implementation');
     return path ? undefined : {};
   }, []);
 
   const setValue = useCallback(() => {
-    console.warn("useFormContext used outside FormProvider - using fallback implementation");
+    console.warn('useFormContext used outside FormProvider - using fallback implementation');
     return undefined;
   }, []);
 
   const handleSubmit = useCallback((onValid: Function, onInvalid?: Function) => {
-    console.warn("useFormContext used outside FormProvider - using fallback implementation");
+    console.warn('useFormContext used outside FormProvider - using fallback implementation');
     return (e: any) => {
       e.preventDefault();
       return undefined;
@@ -26,12 +25,12 @@ export const useFormFallback = () => {
   }, []);
 
   const reset = useCallback(() => {
-    console.warn("useFormContext used outside FormProvider - using fallback implementation");
+    console.warn('useFormContext used outside FormProvider - using fallback implementation');
     return undefined;
   }, []);
 
   const trigger = useCallback(() => {
-    console.warn("useFormContext used outside FormProvider - using fallback implementation");
+    console.warn('useFormContext used outside FormProvider - using fallback implementation');
     return Promise.resolve(false);
   }, []);
 
@@ -40,7 +39,7 @@ export const useFormFallback = () => {
   }, []);
 
   const watch = useCallback(() => {
-    console.warn("useFormContext used outside FormProvider - using fallback implementation");
+    console.warn('useFormContext used outside FormProvider - using fallback implementation');
     return undefined;
   }, []);
 
@@ -57,19 +56,19 @@ export const useFormFallback = () => {
       isDirty: false,
       isValid: false,
       dirtyFields: {},
-      touchedFields: {}
+      touchedFields: {},
     },
     watch,
     getFieldState,
     control: {
-      register: () => ({ name: "" }),
+      register: () => ({ name: '' }),
       unregister: () => {},
-      _names: { mount: {}, array: {}, watch: {} }
+      _names: { mount: {}, array: {}, watch: {} },
     },
-    register: () => ({ name: "" }),
+    register: () => ({ name: '' }),
     unregister: () => {},
     clearErrors: () => {},
     setError: () => {},
-    setFocus: () => {}
+    setFocus: () => {},
   };
 };

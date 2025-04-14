@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Control } from 'react-hook-form';
 import { Calendar } from '@/components/ui/calendar';
@@ -19,7 +18,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
   return (
     <div className="space-y-4 border rounded-md p-4 bg-gray-50">
       <h3 className="text-sm font-medium">Expense Details</h3>
-      
+
       <FormField
         control={control}
         name="metadata.amount"
@@ -32,7 +31,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
                 <Input
                   {...field}
                   value={field.value || ''}
-                  onChange={(e) => {
+                  onChange={e => {
                     const value = e.target.value;
                     // Only allow numbers and decimal points
                     if (/^(\d*\.)?\d*$/.test(value)) {
@@ -48,7 +47,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
           </FormItem>
         )}
       />
-      
+
       {isReceiptUpload && (
         <FormField
           control={control}
@@ -62,7 +61,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
                   value={field.value}
                   onChange={field.onChange}
                 >
-                  {['materials', 'equipment', 'supplies', 'other'].map((type) => (
+                  {['materials', 'equipment', 'supplies', 'other'].map(type => (
                     <option key={type} value={type}>
                       {type.charAt(0).toUpperCase() + type.slice(1)}
                     </option>
@@ -74,7 +73,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
           )}
         />
       )}
-      
+
       <FormField
         control={control}
         name="metadata.expenseDate"
@@ -85,17 +84,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
               <PopoverTrigger asChild>
                 <FormControl>
                   <Button
-                    variant={"outline"}
+                    variant={'outline'}
                     className={cn(
-                      "w-full pl-3 text-left font-normal",
-                      !field.value && "text-muted-foreground"
+                      'w-full pl-3 text-left font-normal',
+                      !field.value && 'text-muted-foreground'
                     )}
                   >
-                    {field.value ? (
-                      format(field.value, "PPP")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
+                    {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                   </Button>
                 </FormControl>
@@ -105,7 +100,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
                   mode="single"
                   selected={field.value || undefined}
                   onSelect={field.onChange}
-                  disabled={(date) => date > new Date()}
+                  disabled={date => date > new Date()}
                   initialFocus
                 />
               </PopoverContent>
@@ -119,6 +114,6 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ control, isReceiptUpload = fa
 };
 
 // Add this to fix the Button import error
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 
 export default ExpenseForm;

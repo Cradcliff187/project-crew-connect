@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRightLeft, Loader2 } from 'lucide-react';
@@ -26,10 +25,10 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
     comparisonData,
     setCurrentRevisionId,
     setCompareRevisionId,
-    compareRevisions
+    compareRevisions,
   } = useRevisionComparison({
     estimateId,
-    onError: (error) => console.error(error)
+    onError: error => console.error(error),
   });
 
   const handleCompare = () => {
@@ -50,9 +49,7 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
     return (
       <div className="text-center py-6">
         <p className="text-muted-foreground mb-2">At least two revisions are needed to compare.</p>
-        <p className="text-sm text-muted-foreground">
-          Create a new revision to enable comparison.
-        </p>
+        <p className="text-sm text-muted-foreground">Create a new revision to enable comparison.</p>
       </div>
     );
   }
@@ -71,15 +68,16 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
               <SelectValue placeholder="Select current revision" />
             </SelectTrigger>
             <SelectContent>
-              {revisions.map((revision) => (
+              {revisions.map(revision => (
                 <SelectItem key={revision.id} value={revision.id}>
-                  Version {revision.version} ({new Date(revision.revision_date).toLocaleDateString()})
+                  Version {revision.version} (
+                  {new Date(revision.revision_date).toLocaleDateString()})
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        
+
         <Button
           variant="ghost"
           size="icon"
@@ -88,7 +86,7 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
         >
           <ArrowRightLeft className="h-4 w-4" />
         </Button>
-        
+
         <div className="w-full sm:w-64">
           <label className="block text-xs text-muted-foreground mb-1">Compare With</label>
           <Select
@@ -101,26 +99,29 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
             </SelectTrigger>
             <SelectContent>
               {revisions
-                .filter((revision) => revision.id !== currentRevisionId)
-                .map((revision) => (
+                .filter(revision => revision.id !== currentRevisionId)
+                .map(revision => (
                   <SelectItem key={revision.id} value={revision.id}>
-                    Version {revision.version} ({new Date(revision.revision_date).toLocaleDateString()})
+                    Version {revision.version} (
+                    {new Date(revision.revision_date).toLocaleDateString()})
                   </SelectItem>
                 ))}
             </SelectContent>
           </Select>
         </div>
-        
+
         <Button
           variant="outline"
           className="mt-0 sm:mt-6"
           onClick={handleCompare}
-          disabled={!currentRevisionId || !compareRevisionId || currentRevisionId === compareRevisionId}
+          disabled={
+            !currentRevisionId || !compareRevisionId || currentRevisionId === compareRevisionId
+          }
         >
           Compare
         </Button>
       </div>
-      
+
       {isLoading ? (
         <div className="flex justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
@@ -133,17 +134,21 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
                 <div>
                   <h3 className="text-sm font-medium mb-1">Summary</h3>
                   <div className="text-xs text-muted-foreground mb-1">
-                    Comparing Version {comparisonData.currentRevision.version} with Version {comparisonData.compareRevision.version}
+                    Comparing Version {comparisonData.currentRevision.version} with Version{' '}
+                    {comparisonData.compareRevision.version}
                   </div>
                   <div className="text-xl font-semibold text-[#0485ea]">
                     {formatCurrency(comparisonData.currentRevision.amount || 0)}
                   </div>
-                  <div className={`text-sm ${comparisonData.totalDifference > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div
+                    className={`text-sm ${comparisonData.totalDifference > 0 ? 'text-green-600' : 'text-red-600'}`}
+                  >
                     {comparisonData.totalDifference > 0 ? '+' : ''}
-                    {formatCurrency(comparisonData.totalDifference)} ({comparisonData.percentageChange.toFixed(1)}%)
+                    {formatCurrency(comparisonData.totalDifference)} (
+                    {comparisonData.percentageChange.toFixed(1)}%)
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="text-sm font-medium mb-1">Changes</h3>
                   <div className="grid grid-cols-2 text-sm">
@@ -165,21 +170,33 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="text-sm font-medium mb-1">Cost Impact</h3>
                   <div className="grid grid-cols-2 text-sm">
                     <div>
                       <div className="text-xs text-muted-foreground">New Items:</div>
-                      <div className="text-green-600">{formatCurrency(comparisonData.summary.newItemsCost)}</div>
+                      <div className="text-green-600">
+                        {formatCurrency(comparisonData.summary.newItemsCost)}
+                      </div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground">Removed Items:</div>
-                      <div className="text-red-600">-{formatCurrency(comparisonData.summary.removedItemsCost)}</div>
+                      <div className="text-red-600">
+                        -{formatCurrency(comparisonData.summary.removedItemsCost)}
+                      </div>
                     </div>
                     <div className="col-span-2">
-                      <div className="text-xs text-muted-foreground">Modified Items Difference:</div>
-                      <div className={comparisonData.summary.modifiedItemsDifference > 0 ? 'text-green-600' : 'text-red-600'}>
+                      <div className="text-xs text-muted-foreground">
+                        Modified Items Difference:
+                      </div>
+                      <div
+                        className={
+                          comparisonData.summary.modifiedItemsDifference > 0
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }
+                      >
                         {comparisonData.summary.modifiedItemsDifference > 0 ? '+' : ''}
                         {formatCurrency(comparisonData.summary.modifiedItemsDifference)}
                       </div>
@@ -189,7 +206,7 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
               </div>
             </CardContent>
           </Card>
-          
+
           {comparisonData.changedItems.length > 0 && (
             <div>
               <h3 className="text-sm font-medium mb-2">Modified Items</h3>
@@ -208,9 +225,12 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
                             ))}
                           </div>
                         </div>
-                        <div className={`text-sm ${item.priceDifference > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div
+                          className={`text-sm ${item.priceDifference > 0 ? 'text-green-600' : 'text-red-600'}`}
+                        >
                           {item.priceDifference > 0 ? '+' : ''}
-                          {formatCurrency(item.priceDifference)} ({item.percentageDifference.toFixed(1)}%)
+                          {formatCurrency(item.priceDifference)} (
+                          {item.percentageDifference.toFixed(1)}%)
                         </div>
                       </div>
                     </CardContent>
@@ -219,7 +239,7 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
               </div>
             </div>
           )}
-          
+
           {comparisonData.addedItems.length > 0 && (
             <div>
               <h3 className="text-sm font-medium mb-2">Added Items</h3>
@@ -244,7 +264,7 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
               </div>
             </div>
           )}
-          
+
           {comparisonData.removedItems.length > 0 && (
             <div>
               <h3 className="text-sm font-medium mb-2">Removed Items</h3>
@@ -270,7 +290,7 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
             </div>
           )}
         </div>
-      ) : (currentRevisionId && compareRevisionId && currentRevisionId !== compareRevisionId) ? (
+      ) : currentRevisionId && compareRevisionId && currentRevisionId !== compareRevisionId ? (
         <div className="text-center py-6">
           <Button onClick={handleCompare}>Compare Selected Revisions</Button>
         </div>

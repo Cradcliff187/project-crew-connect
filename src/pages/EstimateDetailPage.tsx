@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
@@ -34,14 +33,14 @@ const EstimateDetailPage = () => {
   const [revisions, setRevisions] = useState<any[]>([]);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
-  
+
   // Use the custom hook for fetching estimate details
-  const { 
+  const {
     estimateRevisions,
     fetchEstimateDetails,
     isLoading: revisionsLoading,
     refetchRevisions,
-    setRevisionAsCurrent
+    setRevisionAsCurrent,
   } = useEstimateDetails();
 
   useEffect(() => {
@@ -60,38 +59,42 @@ const EstimateDetailPage = () => {
         .from('estimate_items')
         .select('*')
         .eq('revision_id', revisionId);
-      
+
       if (itemsError) {
         console.error('Error fetching items for revision amount update:', itemsError);
         return;
       }
-      
+
       if (!items || items.length === 0) {
         return;
       }
-      
+
       // Calculate total amount - using Number() to ensure we're working with numbers
       const totalAmount = items.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0);
-      
+
       // Get current revision amount
       const { data: revision, error: revisionError } = await supabase
         .from('estimate_revisions')
         .select('amount')
         .eq('id', revisionId)
         .single();
-      
+
       if (revisionError) {
         console.error('Error fetching revision for amount update:', revisionError);
         return;
       }
-      
+
       // Only update if the amount is null, 0, or different from calculated total
-      if (!revision.amount || revision.amount === 0 || Math.abs(revision.amount - totalAmount) > 0.01) {
+      if (
+        !revision.amount ||
+        revision.amount === 0 ||
+        Math.abs(revision.amount - totalAmount) > 0.01
+      ) {
         await supabase
           .from('estimate_revisions')
           .update({ amount: totalAmount })
           .eq('id', revisionId);
-        
+
         console.log(`Updated revision ${revisionId} amount to ${totalAmount}`);
       }
     } catch (err) {
@@ -103,18 +106,18 @@ const EstimateDetailPage = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Fetch the estimate data with error handling
       const { data: estimateData, error: estimateError } = await supabase
         .from('estimates')
         .select('*')
         .eq('estimateid', id)
         .single();
-      
+
       if (estimateError) {
         throw estimateError;
       }
-      
+
       // Fetch the current revision
       const { data: revisionData, error: revisionError } = await supabase
         .from('estimate_revisions')
@@ -123,7 +126,7 @@ const EstimateDetailPage = () => {
         .eq('is_current', true)
         .order('created_at', { ascending: false })
         .single();
-      
+
       if (revisionError && revisionError.code !== 'PGRST116') {
         console.error('Error fetching current revision:', revisionError);
         // If we couldn't find a revision marked as current, try to get the latest one
@@ -134,23 +137,23 @@ const EstimateDetailPage = () => {
           .order('version', { ascending: false })
           .limit(1)
           .single();
-          
+
         if (!latestRevisionError) {
           setCurrentRevision(latestRevision);
-          
+
           // Mark this revision as current
           await supabase
             .from('estimate_revisions')
             .update({ is_current: true })
             .eq('id', latestRevision.id);
-          
+
           // Update the amount if needed
           await updateRevisionAmountsIfNeeded(latestRevision.id);
-            
+
           toast({
-            title: "Revision Updated",
-            description: "The latest revision has been marked as current.",
-            variant: "default"
+            title: 'Revision Updated',
+            description: 'The latest revision has been marked as current.',
+            variant: 'default',
           });
         } else {
           // Create a new revision if none exists
@@ -163,33 +166,33 @@ const EstimateDetailPage = () => {
                 is_current: true,
                 revision_date: new Date().toISOString(),
                 amount: estimateData.estimateamount,
-                status: estimateData.status
+                status: estimateData.status,
               })
               .select()
               .single();
-              
+
             if (newRevisionError) {
               console.error('Error creating new revision:', newRevisionError);
             } else {
               setCurrentRevision(newRevision);
-              
+
               toast({
-                title: "New Revision Created",
-                description: "A new revision has been created for this estimate.",
-                variant: "default"
+                title: 'New Revision Created',
+                description: 'A new revision has been created for this estimate.',
+                variant: 'default',
               });
             }
           }
         }
       } else if (revisionData) {
         setCurrentRevision(revisionData);
-        
+
         // Update the amount if needed
         if (revisionData.id) {
           await updateRevisionAmountsIfNeeded(revisionData.id);
         }
       }
-      
+
       // Fetch the estimate items (for the current revision if available)
       const { data: itemsData, error: itemsError } = await supabase
         .from('estimate_items')
@@ -197,23 +200,23 @@ const EstimateDetailPage = () => {
         .eq('estimate_id', id)
         .eq('revision_id', currentRevision?.id || revisionData?.id)
         .order('created_at', { ascending: true });
-      
+
       if (itemsError) {
         console.error('Error fetching estimate items:', itemsError);
       }
-      
+
       // Fetch all revisions for this estimate
       const { data: allRevisions, error: revisionsError } = await supabase
         .from('estimate_revisions')
         .select('*')
         .eq('estimate_id', id)
         .order('version', { ascending: false });
-      
+
       if (revisionsError) {
         console.error('Error fetching estimate revisions:', revisionsError);
       } else {
         setRevisions(allRevisions || []);
-        
+
         // Update amounts for all revisions
         if (allRevisions && allRevisions.length > 0) {
           for (const revision of allRevisions) {
@@ -221,12 +224,12 @@ const EstimateDetailPage = () => {
           }
         }
       }
-      
+
       // Set the data
       setEstimate({
         ...estimateData,
         items: itemsData || [],
-        currentRevision: currentRevision || revisionData
+        currentRevision: currentRevision || revisionData,
       });
     } catch (error: any) {
       console.error('Error fetching estimate data:', error);
@@ -264,22 +267,25 @@ const EstimateDetailPage = () => {
   };
 
   const handleRevisionSelect = async (revisionId: string) => {
-    const selectedRevision = (estimateRevisions.length > 0 ? estimateRevisions : revisions)
-      .find(rev => rev.id === revisionId);
-    
+    const selectedRevision = (estimateRevisions.length > 0 ? estimateRevisions : revisions).find(
+      rev => rev.id === revisionId
+    );
+
     if (selectedRevision) {
       setCurrentRevision(selectedRevision);
-      
+
       if (!selectedRevision.is_current && estimateId) {
         // First set this as the current revision in database
         await setRevisionAsCurrent(revisionId, estimateId);
       }
-      
+
       toast({
         title: `Viewing Revision ${selectedRevision.version}`,
-        description: selectedRevision.is_current ? "This is the current revision" : "This revision is now set as current",
+        description: selectedRevision.is_current
+          ? 'This is the current revision'
+          : 'This revision is now set as current',
       });
-      
+
       // Fetch items for this specific revision
       if (estimateId) {
         // Fetch items for this specific revision
@@ -294,11 +300,11 @@ const EstimateDetailPage = () => {
               console.error('Error fetching revision items:', error);
               return;
             }
-            
+
             setEstimate(prev => ({
               ...prev,
               items: data || [],
-              currentRevision: selectedRevision
+              currentRevision: selectedRevision,
             }));
           });
       }
@@ -319,24 +325,17 @@ const EstimateDetailPage = () => {
     return (
       <PageTransition>
         <div className="space-y-4">
-          <Button 
-            variant="outline" 
-            onClick={handleBackClick} 
-            className="mb-4"
-          >
+          <Button variant="outline" onClick={handleBackClick} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Estimates
           </Button>
-          
+
           <Card>
             <CardContent className="py-8">
               <div className="text-center">
                 <h1 className="text-2xl font-bold text-red-500">Error Loading Estimate</h1>
                 <p className="mt-2 text-gray-600">{error || 'Estimate not found'}</p>
-                <Button 
-                  onClick={handleBackClick} 
-                  className="mt-4 bg-[#0485ea] hover:bg-[#0373ce]"
-                >
+                <Button onClick={handleBackClick} className="mt-4 bg-[#0485ea] hover:bg-[#0373ce]">
                   Return to Estimates
                 </Button>
               </div>
@@ -349,8 +348,10 @@ const EstimateDetailPage = () => {
 
   // Use the more robust revisions data either from our direct query or from the hook
   const displayRevisions = estimateRevisions.length > 0 ? estimateRevisions : revisions;
-  
-  const canCreateRevision = ['draft', 'sent', 'pending', 'approved', 'rejected'].includes(estimate.status);
+
+  const canCreateRevision = ['draft', 'sent', 'pending', 'approved', 'rejected'].includes(
+    estimate.status
+  );
 
   return (
     <PageTransition>
@@ -358,31 +359,29 @@ const EstimateDetailPage = () => {
         {/* Header Section with Back Button, Status Control and Actions */}
         <div className="flex flex-col md:flex-row justify-between gap-3">
           <div className="flex items-center">
-            <Button 
-              variant="outline" 
-              onClick={handleBackClick}
-              size="sm"
-              className="mr-3"
-            >
+            <Button variant="outline" onClick={handleBackClick} size="sm" className="mr-3">
               <ArrowLeft className="h-4 w-4 mr-1" />
               Back
             </Button>
-            
+
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold">Estimate #{estimate.estimateid.substring(4, 10)}</h1>
-                <EstimateStatusControl 
+                <h1 className="text-xl font-bold">
+                  Estimate #{estimate.estimateid.substring(4, 10)}
+                </h1>
+                <EstimateStatusControl
                   estimateId={estimate.estimateid}
                   currentStatus={estimate.status}
                   onStatusChange={handleStatusChange}
                 />
               </div>
               <p className="text-sm text-muted-foreground hidden sm:block">
-                {estimate.customername || 'No customer'} • Created {new Date(estimate.datecreated).toLocaleDateString()}
+                {estimate.customername || 'No customer'} • Created{' '}
+                {new Date(estimate.datecreated).toLocaleDateString()}
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 justify-end">
             {/* PDF Export Button */}
             {currentRevision && (
@@ -392,7 +391,7 @@ const EstimateDetailPage = () => {
                 className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
               />
             )}
-            
+
             {canCreateRevision && (
               <Button
                 variant="outline"
@@ -404,8 +403,8 @@ const EstimateDetailPage = () => {
                 New Revision
               </Button>
             )}
-            
-            <EstimateActions 
+
+            <EstimateActions
               status={estimate.status}
               onEdit={() => {}}
               onDelete={handleDelete}
@@ -416,7 +415,7 @@ const EstimateDetailPage = () => {
             />
           </div>
         </div>
-        
+
         {/* Main Content */}
         <EstimateDetailLayout
           sidebar={
@@ -437,29 +436,23 @@ const EstimateDetailPage = () => {
                     <TabsTrigger value="email">Communication</TabsTrigger>
                     <TabsTrigger value="history">History</TabsTrigger>
                   </TabsList>
-                  
+
                   <div className="p-6">
                     <TabsContent value="overview" className="mt-0">
-                      <EstimateDetailContent 
-                        data={estimate}
-                        onRefresh={handleRefresh}
-                      />
+                      <EstimateDetailContent data={estimate} onRefresh={handleRefresh} />
                     </TabsContent>
-                    
+
                     <TabsContent value="documents" className="mt-0">
-                      <EstimateDocumentsTab 
-                        estimateId={estimate.estimateid} 
+                      <EstimateDocumentsTab
+                        estimateId={estimate.estimateid}
                         onShareDocument={() => {}} // This will be implemented in the component
                       />
                     </TabsContent>
-                    
+
                     <TabsContent value="email" className="mt-0">
-                      <EstimateEmailTab 
-                        estimate={estimate}
-                        onEmailSent={handleRefresh}
-                      />
+                      <EstimateEmailTab estimate={estimate} onEmailSent={handleRefresh} />
                     </TabsContent>
-                    
+
                     <TabsContent value="history" className="mt-0">
                       <EstimateRevisionsTab
                         estimateId={estimate.estimateid}
@@ -474,18 +467,22 @@ const EstimateDetailPage = () => {
             </Card>
           }
         />
-        
+
         {/* Document share dialog */}
         <DocumentShareDialog
           open={shareDialogOpen}
           onOpenChange={setShareDialogOpen}
-          document={currentRevision?.pdf_document_id ? {
-            document_id: currentRevision.pdf_document_id
-          } : null}
+          document={
+            currentRevision?.pdf_document_id
+              ? {
+                  document_id: currentRevision.pdf_document_id,
+                }
+              : null
+          }
           estimateId={estimate.estimateid}
           clientEmail={estimate.contactemail}
         />
-        
+
         {/* Revision creation dialog */}
         <EstimateRevisionDialog
           open={revisionDialogOpen}

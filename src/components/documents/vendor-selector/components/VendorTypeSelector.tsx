@@ -1,7 +1,12 @@
-
 import React from 'react';
 import { Control, useController } from 'react-hook-form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { DocumentUploadFormValues } from '../../schemas/documentSchema';
 
@@ -19,7 +24,7 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
   const handleVendorTypeChange = (value: string) => {
     // First update the vendor type
     control._formValues.metadata.vendorType = value;
-    
+
     // Then reset the vendor ID
     vendorIdController.field.onChange('');
   };
@@ -31,9 +36,9 @@ const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Vendor Type</FormLabel>
-          <Select 
-            value={field.value} 
-            onValueChange={(value) => {
+          <Select
+            value={field.value}
+            onValueChange={value => {
               field.onChange(value);
               // Reset the vendor ID when changing type
               handleVendorTypeChange(value);

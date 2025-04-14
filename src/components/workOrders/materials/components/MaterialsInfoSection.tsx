@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { WorkOrderMaterial } from '@/types/workOrder';
 import { MaterialsTable } from '..';
@@ -8,7 +7,7 @@ interface MaterialsInfoSectionProps {
   materials: WorkOrderMaterial[];
   loading: boolean;
   submitting: boolean;
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   totalMaterialsCost: number;
   workOrderId: string;
   onMaterialPrompt: (materialData: any) => void;
@@ -29,7 +28,7 @@ const MaterialsInfoSection = ({
   onDelete,
   onReceiptAttached,
   onVendorAdded,
-  onReceiptClick
+  onReceiptClick,
 }: MaterialsInfoSectionProps) => {
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -37,7 +36,7 @@ const MaterialsInfoSection = ({
     <div className="space-y-4">
       {/* Section Header */}
       <SectionHeader onAddClick={() => setShowAddForm(true)} />
-      
+
       {/* Materials Table */}
       <MaterialsTable
         materials={materials}
@@ -49,7 +48,7 @@ const MaterialsInfoSection = ({
         workOrderId={workOrderId}
         onReceiptClick={onReceiptClick}
       />
-      
+
       {/* Add Material Sheet */}
       <AddMaterialSheet
         open={showAddForm}

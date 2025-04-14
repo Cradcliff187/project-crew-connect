@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Contact } from '@/pages/Contacts';
@@ -15,23 +14,20 @@ interface ContactStatusSectionProps {
   onStatusChange: () => void;
 }
 
-const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ 
-  contact, 
-  onStatusChange 
-}) => {
+const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({ contact, onStatusChange }) => {
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const contactType = contact.type?.toLowerCase() || '';
-  
+
   // Get appropriate status options based on contact type and current status
   const statusOptions = getStatusOptions(contactType, contact.status || '');
-  
+
   const handleTypeChange = async (newType: string) => {
     try {
       const success = await transitionContactType(contact, newType);
-      
+
       if (success) {
         toast({
-          title: "Contact Type Updated",
+          title: 'Contact Type Updated',
           description: `Contact has been converted to ${newType}.`,
           className: 'bg-[#0485ea]',
         });
@@ -41,7 +37,7 @@ const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({
       console.error('Error changing contact type:', error);
     }
   };
-  
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -59,9 +55,9 @@ const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({
               )}
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setTypeDialogOpen(true)}
             className="h-8 px-2"
           >
@@ -69,35 +65,31 @@ const ContactStatusSection: React.FC<ContactStatusSectionProps> = ({
             Change Type
           </Button>
         </div>
-        
+
         <div>
           <h3 className="text-sm font-medium mb-2">Current Status</h3>
-          <StatusDropdown 
+          <StatusDropdown
             contact={contact}
             onStatusChange={onStatusChange}
             statusOptions={statusOptions}
           />
         </div>
-        
+
         {contact.specialty && (
           <div>
             <h3 className="text-sm font-medium mb-2">Specialty</h3>
-            <div className="p-2 bg-muted rounded-md">
-              {contact.specialty}
-            </div>
+            <div className="p-2 bg-muted rounded-md">{contact.specialty}</div>
           </div>
         )}
-        
+
         {contact.rating !== undefined && contact.rating !== null && (
           <div>
             <h3 className="text-sm font-medium mb-2">Rating</h3>
-            <div className="p-2 bg-muted rounded-md">
-              {contact.rating} / 5
-            </div>
+            <div className="p-2 bg-muted rounded-md">{contact.rating} / 5</div>
           </div>
         )}
       </CardContent>
-      
+
       <TypeTransitionDialog
         open={typeDialogOpen}
         onOpenChange={setTypeDialogOpen}

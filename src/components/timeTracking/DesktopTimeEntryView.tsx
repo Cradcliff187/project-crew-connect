@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -32,10 +31,10 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
   timeEntries,
   isLoading,
   onAddSuccess,
-  totalHours
+  totalHours,
 }) => {
   const [activeTab, setActiveTab] = useState('entries');
-  
+
   // Effect to trigger data loading when component mounts or dateRange changes
   useEffect(() => {
     // No specific action needed here, just ensuring the component re-renders
@@ -46,19 +45,16 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-[#0485ea]">Time Tracking</h1>
-        <Button 
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-          onClick={() => setActiveTab('add')}
-        >
+        <Button className="bg-[#0485ea] hover:bg-[#0375d1]" onClick={() => setActiveTab('add')}>
           <Plus className="h-4 w-4 mr-2" />
           Log Time
         </Button>
       </div>
-      
+
       <div className="grid grid-cols-1 gap-6">
         <Card className="mb-6">
           <CardHeader className="pb-3">
-            <DateNavigation 
+            <DateNavigation
               dateRange={dateRange}
               onDateRangeChange={onDateRangeChange}
               onNextWeek={onNextWeek}
@@ -74,14 +70,14 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
                 <TabsTrigger value="add">Add Entry</TabsTrigger>
               </TabsList>
               <TabsContent value="entries" className="mt-4">
-                <TimeEntryList 
-                  entries={timeEntries} 
+                <TimeEntryList
+                  entries={timeEntries}
                   isLoading={isLoading}
                   onEntryChange={onAddSuccess}
                 />
               </TabsContent>
               <TabsContent value="add" className="mt-4">
-                <TimeEntryFormWizard 
+                <TimeEntryFormWizard
                   onSuccess={() => {
                     onAddSuccess();
                     setActiveTab('entries');

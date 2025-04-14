@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo } from 'react';
 import { Document } from '../schemas/documentSchema';
 
@@ -15,7 +14,7 @@ const defaultFilters: DocumentFilterState = {
   startDate: null,
   endDate: null,
   categories: [],
-  tags: []
+  tags: [],
 };
 
 const useDocumentFilters = (documents: Document[]) => {
@@ -24,7 +23,7 @@ const useDocumentFilters = (documents: Document[]) => {
   const updateFilters = useCallback((newFilters: Partial<DocumentFilterState>) => {
     setFilters(prevFilters => ({
       ...prevFilters,
-      ...newFilters
+      ...newFilters,
     }));
   }, []);
 
@@ -38,12 +37,16 @@ const useDocumentFilters = (documents: Document[]) => {
       if (filters.search && !matchesSearch(doc, filters.search.toLowerCase())) {
         return false;
       }
-      
+
       // Category filter
-      if (filters.categories.length > 0 && doc.category && !filters.categories.includes(doc.category)) {
+      if (
+        filters.categories.length > 0 &&
+        doc.category &&
+        !filters.categories.includes(doc.category)
+      ) {
         return false;
       }
-      
+
       // Tags filter
       if (filters.tags.length > 0 && doc.tags) {
         const docTags = doc.tags || [];
@@ -51,7 +54,7 @@ const useDocumentFilters = (documents: Document[]) => {
           return false;
         }
       }
-      
+
       // Date range filter
       const docDate = new Date(doc.created_at);
       if (filters.startDate && docDate < filters.startDate) {
@@ -64,7 +67,7 @@ const useDocumentFilters = (documents: Document[]) => {
           return false;
         }
       }
-      
+
       return true;
     });
   }, [documents, filters]);
@@ -73,7 +76,7 @@ const useDocumentFilters = (documents: Document[]) => {
     filters,
     updateFilters,
     resetFilters,
-    filteredDocuments
+    filteredDocuments,
   };
 };
 
@@ -83,22 +86,22 @@ const matchesSearch = (document: Document, searchQuery: string): boolean => {
   if (document.file_name.toLowerCase().includes(searchQuery)) {
     return true;
   }
-  
+
   // Match category
   if (document.category && document.category.toLowerCase().includes(searchQuery)) {
     return true;
   }
-  
+
   // Match tags
   if (document.tags && document.tags.some(tag => tag.toLowerCase().includes(searchQuery))) {
     return true;
   }
-  
+
   // Match notes
   if (document.notes && document.notes.toLowerCase().includes(searchQuery)) {
     return true;
   }
-  
+
   return false;
 };
 

@@ -1,7 +1,15 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { ChangeOrderItem } from '@/types/changeOrders';
 import { formatCurrency } from '@/lib/utils';
 
@@ -18,21 +26,21 @@ const BudgetImpactAnalysis: React.FC<BudgetImpactAnalysisProps> = ({ items }) =>
   // Group and sum the items by category
   const getCategoryImpacts = (): CategoryImpact[] => {
     const categoryMap = new Map<string, number>();
-    
+
     items.forEach(item => {
       const category = item.item_type || item.trade_type || item.expense_type || 'Other';
       const currentAmount = categoryMap.get(category) || 0;
       categoryMap.set(category, currentAmount + item.total_price);
     });
-    
+
     return Array.from(categoryMap.entries()).map(([name, amount]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(),
-      amount
+      amount,
     }));
   };
-  
+
   const categoryImpacts = getCategoryImpacts();
-  
+
   // Create custom tooltip to format currency
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -45,7 +53,7 @@ const BudgetImpactAnalysis: React.FC<BudgetImpactAnalysisProps> = ({ items }) =>
     }
     return null;
   };
-  
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2">
@@ -58,7 +66,7 @@ const BudgetImpactAnalysis: React.FC<BudgetImpactAnalysisProps> = ({ items }) =>
               <BarChart data={categoryImpacts} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
-                <YAxis tickFormatter={(value) => `$${value}`} />
+                <YAxis tickFormatter={value => `$${value}`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Bar dataKey="amount" fill="#0485ea" name="Amount" />

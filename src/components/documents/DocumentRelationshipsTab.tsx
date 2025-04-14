@@ -1,4 +1,3 @@
-
 // This file is no longer needed since we've replaced it with DocumentRelationshipsView.tsx
 import React from 'react';
 import DocumentRelationshipsView from './DocumentRelationshipsView';
@@ -11,15 +10,10 @@ interface DocumentRelationshipsTabProps {
 
 const DocumentRelationshipsTab: React.FC<DocumentRelationshipsTabProps> = ({
   document,
-  onViewDocument
+  onViewDocument,
 }) => {
   // This is now just a wrapper for DocumentRelationshipsView
-  return (
-    <DocumentRelationshipsView
-      document={document}
-      onViewDocument={onViewDocument}
-    />
-  );
+  return <DocumentRelationshipsView document={document} onViewDocument={onViewDocument} />;
 };
 
 export default DocumentRelationshipsTab;

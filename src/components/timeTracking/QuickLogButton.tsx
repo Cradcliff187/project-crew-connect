@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Clock } from 'lucide-react';
@@ -9,7 +8,7 @@ interface QuickLogButtonProps {
 
 const QuickLogButton: React.FC<QuickLogButtonProps> = ({ onQuickLog }) => {
   return (
-    <Button 
+    <Button
       onClick={onQuickLog}
       className="w-full flex items-center justify-center gap-2 bg-[#0485ea] hover:bg-[#0375d1] font-medium"
     >

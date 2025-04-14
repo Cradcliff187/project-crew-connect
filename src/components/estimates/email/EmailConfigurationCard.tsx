@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,7 @@ const EmailConfigurationCard: React.FC = () => {
     bcc_email: '',
     auto_bcc: false,
     reply_to: '',
-    signature: ''
+    signature: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,7 +62,7 @@ const EmailConfigurationCard: React.FC = () => {
           bcc_email: emailData.bcc_email || '',
           auto_bcc: emailData.auto_bcc || false,
           reply_to: emailData.reply_to || '',
-          signature: emailData.signature || ''
+          signature: emailData.signature || '',
         });
       }
     } catch (error) {
@@ -99,21 +98,19 @@ const EmailConfigurationCard: React.FC = () => {
             bcc_email: config.bcc_email,
             auto_bcc: config.auto_bcc,
             reply_to: config.reply_to,
-            signature: config.signature
+            signature: config.signature,
           } as any)
           .eq('id', existingData.id);
       } else {
         // Insert with type assertion to bypass Supabase client type issues
-        result = await supabase
-          .from('estimate_email_config')
-          .insert({
-            from_email: config.from_email,
-            from_name: config.from_name,
-            bcc_email: config.bcc_email,
-            auto_bcc: config.auto_bcc,
-            reply_to: config.reply_to,
-            signature: config.signature
-          } as any);
+        result = await supabase.from('estimate_email_config').insert({
+          from_email: config.from_email,
+          from_name: config.from_name,
+          bcc_email: config.bcc_email,
+          auto_bcc: config.auto_bcc,
+          reply_to: config.reply_to,
+          signature: config.signature,
+        } as any);
       }
 
       if (result.error) throw result.error;
@@ -142,7 +139,7 @@ const EmailConfigurationCard: React.FC = () => {
   const handleInputChange = (field: keyof EmailConfig, value: any) => {
     setConfig(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -178,7 +175,7 @@ const EmailConfigurationCard: React.FC = () => {
                 <Input
                   id="fromName"
                   value={config.from_name}
-                  onChange={(e) => handleInputChange('from_name', e.target.value)}
+                  onChange={e => handleInputChange('from_name', e.target.value)}
                   placeholder="AKC LLC"
                 />
               </div>
@@ -188,7 +185,7 @@ const EmailConfigurationCard: React.FC = () => {
                 <Input
                   id="fromEmail"
                   value={config.from_email}
-                  onChange={(e) => handleInputChange('from_email', e.target.value)}
+                  onChange={e => handleInputChange('from_email', e.target.value)}
                   placeholder="estimates@akcllc.com"
                   type="email"
                 />
@@ -201,7 +198,7 @@ const EmailConfigurationCard: React.FC = () => {
                 <Input
                   id="replyTo"
                   value={config.reply_to}
-                  onChange={(e) => handleInputChange('reply_to', e.target.value)}
+                  onChange={e => handleInputChange('reply_to', e.target.value)}
                   placeholder="support@akcllc.com"
                   type="email"
                 />
@@ -212,7 +209,7 @@ const EmailConfigurationCard: React.FC = () => {
                 <Input
                   id="bccEmail"
                   value={config.bcc_email}
-                  onChange={(e) => handleInputChange('bcc_email', e.target.value)}
+                  onChange={e => handleInputChange('bcc_email', e.target.value)}
                   placeholder="records@akcllc.com"
                   type="email"
                 />
@@ -223,7 +220,7 @@ const EmailConfigurationCard: React.FC = () => {
               <Checkbox
                 id="autoBcc"
                 checked={config.auto_bcc}
-                onCheckedChange={(checked) => handleInputChange('auto_bcc', !!checked)}
+                onCheckedChange={checked => handleInputChange('auto_bcc', !!checked)}
               />
               <Label htmlFor="autoBcc">
                 Automatically BCC all estimate emails to the BCC address

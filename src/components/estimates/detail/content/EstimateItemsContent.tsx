@@ -1,4 +1,3 @@
-
 import React from 'react';
 import EstimateItems from '../../EstimateItems';
 
@@ -22,28 +21,28 @@ interface EstimateItemsContentProps {
   showFinancialDetails?: boolean;
 }
 
-const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({ 
-  items, 
+const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
+  items,
   subtotal,
   contingencyAmount,
   contingencyPercentage,
   total,
-  showFinancialDetails = false
+  showFinancialDetails = false,
 }) => {
   // Calculate total costs and margins for financial summary
   const totalCost = items.reduce((sum, item) => sum + (item.cost || 0) * item.quantity, 0);
   const totalMarkup = items.reduce((sum, item) => {
     const itemCost = (item.cost || 0) * item.quantity;
     const markupPercentage = item.markup_percentage || 0;
-    return sum + (itemCost * markupPercentage / 100);
+    return sum + (itemCost * markupPercentage) / 100;
   }, 0);
   const totalMargin = subtotal - totalCost;
   const marginPercentage = subtotal > 0 ? (totalMargin / subtotal) * 100 : 0;
-  
+
   return (
     <>
       <EstimateItems items={items} showFinancialDetails={showFinancialDetails} />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         {showFinancialDetails && (
           <div className="md:col-span-2">
@@ -52,19 +51,27 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500">Total Cost</p>
-                  <p className="font-medium">${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="font-medium">
+                    ${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Total Markup</p>
-                  <p className="font-medium">${totalMarkup.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="font-medium">
+                    ${totalMarkup.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Gross Margin</p>
-                  <p className="font-medium">${totalMargin.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="font-medium">
+                    ${totalMargin.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Margin %</p>
-                  <p className={`font-medium ${marginPercentage < 20 ? 'text-red-600' : marginPercentage > 30 ? 'text-green-600' : ''}`}>
+                  <p
+                    className={`font-medium ${marginPercentage < 20 ? 'text-red-600' : marginPercentage > 30 ? 'text-green-600' : ''}`}
+                  >
                     {marginPercentage.toFixed(1)}%
                   </p>
                 </div>
@@ -72,7 +79,7 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
             </div>
           </div>
         )}
-        
+
         <div className={`${showFinancialDetails ? 'md:col-span-1' : 'md:col-span-3'}`}>
           <div className="border rounded-md p-3 bg-gray-50">
             <div className="flex justify-between py-2 text-sm">
@@ -81,7 +88,7 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
                 ${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
             </div>
-            
+
             {contingencyAmount !== undefined && contingencyPercentage !== undefined && (
               <div className="flex justify-between py-2 text-sm">
                 <span>Contingency ({contingencyPercentage}%):</span>
@@ -90,7 +97,7 @@ const EstimateItemsContent: React.FC<EstimateItemsContentProps> = ({
                 </span>
               </div>
             )}
-            
+
             <div className="flex justify-between py-2 text-lg font-bold border-t mt-1 pt-2">
               <span>Total:</span>
               <span>${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { EstimateRevision } from '../types/estimateTypes';
@@ -11,85 +10,94 @@ export const useEstimateDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchEstimateDetails = useCallback(async (estimateId: string) => {
-    setIsLoading(true);
-    setError(null);
+  const fetchEstimateDetails = useCallback(
+    async (estimateId: string) => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      // Fetch all revisions for this estimate
-      const { data: revisionsData, error: revisionsError } = await supabase
-        .from('estimate_revisions')
-        .select('*')
-        .eq('estimate_id', estimateId)
-        .order('version', { ascending: false });
+      try {
+        // Fetch all revisions for this estimate
+        const { data: revisionsData, error: revisionsError } = await supabase
+          .from('estimate_revisions')
+          .select('*')
+          .eq('estimate_id', estimateId)
+          .order('version', { ascending: false });
 
-      if (revisionsError) throw revisionsError;
-      
-      setEstimateRevisions(revisionsData || []);
+        if (revisionsError) throw revisionsError;
 
-      // Find the current revision
-      const current = revisionsData?.find(rev => rev.is_current) || revisionsData?.[0] || null;
-      setCurrentRevision(current);
+        setEstimateRevisions(revisionsData || []);
 
-      return {
-        revisions: revisionsData || [],
-        current
-      };
-    } catch (err: any) {
-      console.error('Error fetching estimate details:', err);
-      setError(err.message || 'Failed to load estimate details');
-      toast({
-        title: 'Error',
-        description: 'Failed to load estimate revisions',
-        variant: 'destructive',
-      });
-      return { revisions: [], current: null };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
+        // Find the current revision
+        const current = revisionsData?.find(rev => rev.is_current) || revisionsData?.[0] || null;
+        setCurrentRevision(current);
 
-  const refetchRevisions = useCallback((estimateId?: string) => {
-    if (estimateId) {
-      return fetchEstimateDetails(estimateId);
-    }
-    return null;
-  }, [fetchEstimateDetails]);
+        return {
+          revisions: revisionsData || [],
+          current,
+        };
+      } catch (err: any) {
+        console.error('Error fetching estimate details:', err);
+        setError(err.message || 'Failed to load estimate details');
+        toast({
+          title: 'Error',
+          description: 'Failed to load estimate revisions',
+          variant: 'destructive',
+        });
+        return { revisions: [], current: null };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [toast]
+  );
 
-  const setRevisionAsCurrent = useCallback(async (revisionId: string, estimateId: string) => {
-    try {
-      // First, set all revisions to not current
-      await supabase
-        .from('estimate_revisions')
-        .update({ is_current: false })
-        .eq('estimate_id', estimateId);
+  const refetchRevisions = useCallback(
+    (estimateId?: string) => {
+      if (estimateId) {
+        return fetchEstimateDetails(estimateId);
+      }
+      return null;
+    },
+    [fetchEstimateDetails]
+  );
 
-      // Then set the selected revision as current
-      const { error } = await supabase
-        .from('estimate_revisions')
-        .update({ is_current: true })
-        .eq('id', revisionId);
+  const setRevisionAsCurrent = useCallback(
+    async (revisionId: string, estimateId: string) => {
+      try {
+        // First, set all revisions to not current
+        await supabase
+          .from('estimate_revisions')
+          .update({ is_current: false })
+          .eq('estimate_id', estimateId);
 
-      if (error) throw error;
+        // Then set the selected revision as current
+        const { error } = await supabase
+          .from('estimate_revisions')
+          .update({ is_current: true })
+          .eq('id', revisionId);
 
-      toast({
-        title: 'Success',
-        description: 'Current revision updated',
-      });
+        if (error) throw error;
 
-      // Refetch revisions to update the state
-      refetchRevisions(estimateId);
-      return true;
-    } catch (err: any) {
-      console.error('Error setting current revision:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to update current revision',
-        variant: 'destructive',
-      });
-      return false;
-    }
-  }, [toast, refetchRevisions]);
+        toast({
+          title: 'Success',
+          description: 'Current revision updated',
+        });
+
+        // Refetch revisions to update the state
+        refetchRevisions(estimateId);
+        return true;
+      } catch (err: any) {
+        console.error('Error setting current revision:', err);
+        toast({
+          title: 'Error',
+          description: 'Failed to update current revision',
+          variant: 'destructive',
+        });
+        return false;
+      }
+    },
+    [toast, refetchRevisions]
+  );
 
   return {
     estimateRevisions,
@@ -98,6 +106,6 @@ export const useEstimateDetails = () => {
     error,
     fetchEstimateDetails,
     refetchRevisions,
-    setRevisionAsCurrent
+    setRevisionAsCurrent,
   };
 };

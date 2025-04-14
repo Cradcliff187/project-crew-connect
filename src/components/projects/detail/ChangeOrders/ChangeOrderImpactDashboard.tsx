@@ -1,7 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,7 +22,7 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
   const [changeOrders, setChangeOrders] = useState<ChangeOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectBudget, setProjectBudget] = useState<number>(0);
-  
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -26,11 +33,11 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
           .select('total_budget')
           .eq('projectid', projectId)
           .single();
-          
+
         if (!projectError && projectData) {
           setProjectBudget(projectData.total_budget || 0);
         }
-        
+
         // Fetch change orders
         const { data, error } = await supabase
           .from('change_orders')
@@ -38,16 +45,17 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
           .eq('entity_type', 'PROJECT')
           .eq('entity_id', projectId)
           .order('created_at', { ascending: true });
-          
+
         if (error) throw error;
-        
+
         // Map the data to ensure the proper types for entity_type and status
-        const typedChangeOrders: ChangeOrder[] = data?.map(order => ({
-          ...order,
-          entity_type: order.entity_type as ChangeOrderEntityType,
-          status: order.status as ChangeOrderStatus,
-        })) || [];
-        
+        const typedChangeOrders: ChangeOrder[] =
+          data?.map(order => ({
+            ...order,
+            entity_type: order.entity_type as ChangeOrderEntityType,
+            status: order.status as ChangeOrderStatus,
+          })) || [];
+
         setChangeOrders(typedChangeOrders);
       } catch (error) {
         console.error('Error fetching change order data:', error);
@@ -55,60 +63,63 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [projectId]);
-  
+
   // Calculate the cumulative impact over time
   const getCumulativeImpactData = () => {
     if (!changeOrders.length) return [];
-    
+
     let cumulativeAmount = 0;
     let cumulativeDays = 0;
-    
+
     return changeOrders.map(co => {
       const date = new Date(co.created_at);
       cumulativeAmount += co.total_amount;
       cumulativeDays += co.impact_days;
-      
+
       return {
         name: date.toLocaleDateString(),
         amount: cumulativeAmount,
         days: cumulativeDays,
         budget: projectBudget,
         budgetWithChanges: projectBudget + cumulativeAmount,
-        changeOrder: co.title
+        changeOrder: co.title,
       };
     });
   };
-  
+
   const cumulativeData = getCumulativeImpactData();
-  
+
   // Calculate total impacts
   const calculateTotals = () => {
-    return changeOrders.reduce((acc, co) => {
-      return {
-        amount: acc.amount + co.total_amount,
-        days: acc.days + co.impact_days,
-        count: acc.count + 1
-      };
-    }, { amount: 0, days: 0, count: 0 });
+    return changeOrders.reduce(
+      (acc, co) => {
+        return {
+          amount: acc.amount + co.total_amount,
+          days: acc.days + co.impact_days,
+          count: acc.count + 1,
+        };
+      },
+      { amount: 0, days: 0, count: 0 }
+    );
   };
-  
+
   const totals = calculateTotals();
-  
+
   // Custom tooltip for the chart
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border rounded shadow-sm">
-          <p className="font-medium mb-1">{label} - {payload[0]?.payload?.changeOrder}</p>
+          <p className="font-medium mb-1">
+            {label} - {payload[0]?.payload?.changeOrder}
+          </p>
           <p className="text-sm text-[#0485ea] mb-1">
             Cumulative Amount: {formatCurrency(payload[0]?.value || 0)}
           </p>
-          <p className="text-sm text-amber-500">
-            Cumulative Days: {payload[1]?.value || 0} days
-          </p>
+          <p className="text-sm text-amber-500">Cumulative Days: {payload[1]?.value || 0} days</p>
           <p className="text-sm text-emerald-500 mt-1">
             Budget: {formatCurrency(payload[2]?.value || 0)}
           </p>
@@ -120,12 +131,11 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
     }
     return null;
   };
-  
+
   // Calculate percentage of budget impact
-  const budgetImpactPercentage = projectBudget > 0 
-    ? ((totals.amount / projectBudget) * 100).toFixed(1) 
-    : 0;
-  
+  const budgetImpactPercentage =
+    projectBudget > 0 ? ((totals.amount / projectBudget) * 100).toFixed(1) : 0;
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2">
@@ -143,15 +153,17 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
                   <p className="text-2xl font-bold">{totals.count}</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-[#0485ea]/5">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">Total Financial Impact</p>
                   <p className="text-2xl font-bold">{formatCurrency(totals.amount)}</p>
-                  <p className="text-xs text-muted-foreground">{budgetImpactPercentage}% of budget</p>
+                  <p className="text-xs text-muted-foreground">
+                    {budgetImpactPercentage}% of budget
+                  </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-[#0485ea]/5">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">Total Schedule Impact</p>
@@ -159,7 +171,7 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
                 </CardContent>
               </Card>
             </div>
-            
+
             {changeOrders.length > 0 ? (
               <div className="h-72 mt-4">
                 <ResponsiveContainer width="100%" height="100%">
@@ -172,38 +184,38 @@ const ChangeOrderImpactDashboard: React.FC<ChangeOrderImpactDashboardProps> = ({
                     <YAxis yAxisId="left" orientation="left" />
                     <YAxis yAxisId="right" orientation="right" />
                     <Tooltip content={<CustomTooltip />} />
-                    <Area 
+                    <Area
                       yAxisId="left"
-                      type="monotone" 
-                      dataKey="amount" 
-                      stroke="#0485ea" 
-                      fill="#0485ea" 
+                      type="monotone"
+                      dataKey="amount"
+                      stroke="#0485ea"
+                      fill="#0485ea"
                       fillOpacity={0.3}
                       name="Cumulative Amount"
                     />
-                    <Area 
+                    <Area
                       yAxisId="right"
-                      type="monotone" 
-                      dataKey="days" 
-                      stroke="#f59e0b" 
-                      fill="#f59e0b" 
+                      type="monotone"
+                      dataKey="days"
+                      stroke="#f59e0b"
+                      fill="#f59e0b"
                       fillOpacity={0.3}
                       name="Cumulative Days"
                     />
-                    <Area 
+                    <Area
                       yAxisId="left"
-                      type="monotone" 
-                      dataKey="budget" 
-                      stroke="#10b981" 
+                      type="monotone"
+                      dataKey="budget"
+                      stroke="#10b981"
                       strokeDasharray="5 5"
                       fill="none"
                       name="Original Budget"
                     />
-                    <Area 
+                    <Area
                       yAxisId="left"
-                      type="monotone" 
-                      dataKey="budgetWithChanges" 
-                      stroke="#ef4444" 
+                      type="monotone"
+                      dataKey="budgetWithChanges"
+                      stroke="#ef4444"
                       strokeDasharray="3 3"
                       fill="none"
                       name="Budget With Changes"

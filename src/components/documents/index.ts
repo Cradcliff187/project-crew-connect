@@ -1,4 +1,3 @@
-
 // Export document components for easier imports
 export { default as DocumentViewerDialog } from './DocumentViewerDialog';
 export { default as ReceiptUploadDialog } from './ReceiptUploadDialog';

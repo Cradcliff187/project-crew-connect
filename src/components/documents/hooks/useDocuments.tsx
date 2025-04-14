@@ -1,8 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Document, DocumentCategory, EntityType } from '@/components/documents/schemas/documentSchema';
+import {
+  Document,
+  DocumentCategory,
+  EntityType,
+} from '@/components/documents/schemas/documentSchema';
 
 export interface DocumentFiltersState {
   search: string;
@@ -31,9 +34,7 @@ export const useDocuments = (initialFilters: DocumentFiltersState) => {
     setLoading(true);
 
     try {
-      let query = supabase
-        .from('documents')
-        .select('*');
+      let query = supabase.from('documents').select('*');
 
       // Apply filters
       if (filters.search) {
@@ -51,12 +52,12 @@ export const useDocuments = (initialFilters: DocumentFiltersState) => {
       if (filters.isExpense !== undefined) {
         query = query.eq('is_expense', filters.isExpense);
       }
-      
+
       // Apply date range filter if set
       if (filters.dateRange?.from) {
         query = query.gte('created_at', filters.dateRange.from.toISOString());
       }
-      
+
       if (filters.dateRange?.to) {
         // Add one day to include the end date fully
         const endDate = new Date(filters.dateRange.to);
@@ -93,21 +94,23 @@ export const useDocuments = (initialFilters: DocumentFiltersState) => {
       }
 
       // Get document URLs
-      const docsWithUrls = await Promise.all(data.map(async (doc) => {
-        const { data: { publicUrl } } = supabase.storage
-          .from('construction_documents')
-          .getPublicUrl(doc.storage_path);
-        
-        return { ...doc, url: publicUrl };
-      }));
+      const docsWithUrls = await Promise.all(
+        data.map(async doc => {
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('construction_documents').getPublicUrl(doc.storage_path);
+
+          return { ...doc, url: publicUrl };
+        })
+      );
 
       setDocuments(docsWithUrls);
     } catch (error: any) {
       console.error('Error fetching documents:', error);
       toast({
-        title: "Failed to load documents",
+        title: 'Failed to load documents',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -125,7 +128,7 @@ export const useDocuments = (initialFilters: DocumentFiltersState) => {
       entityType: undefined,
       isExpense: undefined,
       dateRange: undefined,
-      sortBy: 'newest'
+      sortBy: 'newest',
     });
   };
 
@@ -141,6 +144,6 @@ export const useDocuments = (initialFilters: DocumentFiltersState) => {
     activeFiltersCount,
     handleFilterChange,
     handleResetFilters,
-    fetchDocuments
+    fetchDocuments,
   };
 };

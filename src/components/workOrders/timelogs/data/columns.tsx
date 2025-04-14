@@ -1,14 +1,13 @@
-
-import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash } from "lucide-react";
+import { ColumnDef } from '@tanstack/react-table';
+import { Button } from '@/components/ui/button';
+import { MoreHorizontal, Trash } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { formatCurrency } from "@/lib/utils";
+} from '@/components/ui/dropdown-menu';
+import { formatCurrency } from '@/lib/utils';
 
 type Timelog = {
   id: string;
@@ -22,34 +21,32 @@ type Timelog = {
 
 export const timelogColumns = (onDelete: (id: string) => void): ColumnDef<Timelog>[] => [
   {
-    accessorKey: "date",
-    header: "Date",
+    accessorKey: 'date',
+    header: 'Date',
   },
   {
-    accessorKey: "employee",
-    header: "Employee",
+    accessorKey: 'employee',
+    header: 'Employee',
   },
   {
-    accessorKey: "hours",
-    header: "Hours",
+    accessorKey: 'hours',
+    header: 'Hours',
   },
   {
-    accessorKey: "total_cost",
-    header: "Cost",
+    accessorKey: 'total_cost',
+    header: 'Cost',
     cell: ({ row }) => formatCurrency(row.original.total_cost),
   },
   {
-    accessorKey: "notes",
-    header: "Notes",
+    accessorKey: 'notes',
+    header: 'Notes',
     cell: ({ row }) => {
-      const notes = row.getValue("notes") as string;
-      return notes && notes.length > 30 
-        ? `${notes.substring(0, 30)}...` 
-        : notes || "-";
+      const notes = row.getValue('notes') as string;
+      return notes && notes.length > 30 ? `${notes.substring(0, 30)}...` : notes || '-';
     },
   },
   {
-    id: "actions",
+    id: 'actions',
     cell: ({ row }) => {
       const timelog = row.original;
 
@@ -62,10 +59,7 @@ export const timelogColumns = (onDelete: (id: string) => void): ColumnDef<Timelo
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => onDelete(timelog.id)}
-            >
+            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(timelog.id)}>
               <Trash className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
@@ -76,8 +70,8 @@ export const timelogColumns = (onDelete: (id: string) => void): ColumnDef<Timelo
   },
   {
     // Hidden column for sorting
-    accessorKey: "date_raw",
-    header: "",
+    accessorKey: 'date_raw',
+    header: '',
     enableHiding: true,
   },
 ];

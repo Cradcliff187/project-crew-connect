@@ -1,23 +1,12 @@
-
 import { UseFormReturn } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { 
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage
-} from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { ChangeOrder } from '@/types/changeOrders';
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 
@@ -53,10 +42,10 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea 
-                  {...field} 
+                <Textarea
+                  {...field}
                   value={field.value || ''}
-                  placeholder="Describe the changes required" 
+                  placeholder="Describe the changes required"
                   rows={4}
                 />
               </FormControl>
@@ -80,7 +69,7 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="requested_date"
@@ -90,12 +79,9 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className="w-full pl-3 text-left font-normal"
-                    >
+                    <Button variant={'outline'} className="w-full pl-3 text-left font-normal">
                       {field.value ? (
-                        format(new Date(field.value), "PPP")
+                        format(new Date(field.value), 'PPP')
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -107,7 +93,7 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
                   <Calendar
                     mode="single"
                     selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(date) => field.onChange(date?.toISOString())}
+                    onSelect={date => field.onChange(date?.toISOString())}
                     initialFocus
                   />
                 </PopoverContent>
@@ -129,12 +115,9 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className="w-full pl-3 text-left font-normal"
-                      >
+                      <Button variant={'outline'} className="w-full pl-3 text-left font-normal">
                         {field.value ? (
-                          format(new Date(field.value), "PPP")
+                          format(new Date(field.value), 'PPP')
                         ) : (
                           <span>Pick a date</span>
                         )}
@@ -146,7 +129,7 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
                     <Calendar
                       mode="single"
                       selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date?.toISOString())}
+                      onSelect={date => field.onChange(date?.toISOString())}
                       initialFocus
                     />
                   </PopoverContent>
@@ -155,7 +138,7 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="new_completion_date"
@@ -165,12 +148,9 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className="w-full pl-3 text-left font-normal"
-                      >
+                      <Button variant={'outline'} className="w-full pl-3 text-left font-normal">
                         {field.value ? (
-                          format(new Date(field.value), "PPP")
+                          format(new Date(field.value), 'PPP')
                         ) : (
                           <span>Pick a date</span>
                         )}
@@ -182,7 +162,7 @@ const ChangeOrderBasicInfo = ({ form, isEditing }: ChangeOrderBasicInfoProps) =>
                     <Calendar
                       mode="single"
                       selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date?.toISOString())}
+                      onSelect={date => field.onChange(date?.toISOString())}
                       initialFocus
                     />
                   </PopoverContent>

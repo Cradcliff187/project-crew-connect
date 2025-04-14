@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,34 +27,34 @@ export function useContact(contactId?: string) {
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  
+
   const fetchContact = async () => {
     if (!contactId) {
       setLoading(false);
       setNotFound(true);
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
         .eq('id', contactId)
         .single();
-      
+
       if (error) {
         console.error('Error fetching contact:', error);
         setNotFound(true);
         return;
       }
-      
+
       if (!data) {
         setNotFound(true);
         return;
       }
-      
+
       // Transform the data to match our Contact interface
       setContact({
         contact_id: data.id,
@@ -76,9 +75,9 @@ export function useContact(contactId?: string) {
         specialty: data.specialty,
         rating: data.rating,
         hourly_rate: data.hourly_rate,
-        materials: data.materials
+        materials: data.materials,
       });
-      
+
       setNotFound(false);
     } catch (error) {
       console.error('Error fetching contact:', error);
@@ -87,19 +86,19 @@ export function useContact(contactId?: string) {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchContact();
   }, [contactId]);
-  
+
   const refreshContact = () => {
     fetchContact();
   };
-  
+
   return {
     contact,
     loading,
     notFound,
-    refreshContact
+    refreshContact,
   };
 }

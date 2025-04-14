@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, Eye, Phone, History, Calendar } from 'lucide-react';
@@ -25,10 +24,10 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
   specialties,
   onEdit,
   onDelete,
-  onView
+  onView,
 }) => {
   const navigate = useNavigate();
-  
+
   // Handle view click - Navigate to detail page
   const handleViewClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -64,14 +63,14 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
           {
             label: 'View details',
             icon: <Eye className="h-4 w-4" />,
-            onClick: handleViewClick
+            onClick: handleViewClick,
           },
           {
             label: 'Edit subcontractor',
             icon: <Edit className="h-4 w-4" />,
-            onClick: handleEditClick
-          }
-        ]
+            onClick: handleEditClick,
+          },
+        ],
       },
       {
         // Subcontractor specific actions
@@ -79,28 +78,28 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
           {
             label: 'Assign to project',
             icon: <Calendar className="h-4 w-4" />,
-            onClick: (e) => {
+            onClick: e => {
               e.stopPropagation();
               console.log('Assign to project');
-            }
+            },
           },
           {
             label: 'Call subcontractor',
             icon: <Phone className="h-4 w-4" />,
-            onClick: (e) => {
+            onClick: e => {
               e.stopPropagation();
               console.log('Call subcontractor');
-            }
+            },
           },
           {
             label: 'Payment history',
             icon: <History className="h-4 w-4" />,
-            onClick: (e) => {
+            onClick: e => {
               e.stopPropagation();
               console.log('Payment history');
-            }
-          }
-        ]
+            },
+          },
+        ],
       },
       {
         // Destructive actions
@@ -109,10 +108,10 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
             label: 'Delete subcontractor',
             icon: <Trash2 className="h-4 w-4" />,
             onClick: handleDeleteClick,
-            className: 'text-red-600'
-          }
-        ]
-      }
+            className: 'text-red-600',
+          },
+        ],
+      },
     ];
   };
 
@@ -122,9 +121,9 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
         <SubcontractorInfo subcontractor={subcontractor} />
       </TableCell>
       <TableCell>
-        <SubcontractorSpecialties 
-          specialtyIds={subcontractor.specialty_ids} 
-          specialties={specialties} 
+        <SubcontractorSpecialties
+          specialtyIds={subcontractor.specialty_ids}
+          specialties={specialties}
         />
       </TableCell>
       <TableCell>
@@ -139,7 +138,7 @@ const SubcontractorRow: React.FC<SubcontractorRowProps> = ({
       <TableCell>
         <SubcontractorStatusBadge status={subcontractor.status} />
       </TableCell>
-      <TableCell onClick={(e) => e.stopPropagation()}>
+      <TableCell onClick={e => e.stopPropagation()}>
         <div className="flex justify-end">
           <ActionMenu groups={getSubcontractorActions()} />
         </div>

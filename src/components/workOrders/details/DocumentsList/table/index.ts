@@ -1,4 +1,3 @@
-
 export { default as DocumentsTableHeader } from '../DocumentsTableHeader';
 export { default as DocumentsTableBody } from '../DocumentsTableBody';
 export { default as EmptyState } from '../EmptyState';

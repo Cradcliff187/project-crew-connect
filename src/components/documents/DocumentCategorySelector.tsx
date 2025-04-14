@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Check, FileText, Receipt, FileBox, Shield, FileImage, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,7 +9,11 @@ interface DocumentCategorySelectorProps {
   className?: string;
 }
 
-const DocumentCategorySelector = ({ value, onChange, className }: DocumentCategorySelectorProps) => {
+const DocumentCategorySelector = ({
+  value,
+  onChange,
+  className,
+}: DocumentCategorySelectorProps) => {
   const getCategoryIcon = (category: DocumentCategory) => {
     switch (category) {
       case 'invoice':
@@ -37,17 +40,17 @@ const DocumentCategorySelector = ({ value, onChange, className }: DocumentCatego
   };
 
   return (
-    <div className={cn("grid grid-cols-2 md:grid-cols-4 gap-2", className)}>
-      {documentCategories.map((category) => (
+    <div className={cn('grid grid-cols-2 md:grid-cols-4 gap-2', className)}>
+      {documentCategories.map(category => (
         <button
           key={category}
           type="button"
           onClick={() => onChange(category)}
           className={cn(
-            "flex items-center p-2 border rounded-md transition-colors relative overflow-hidden",
+            'flex items-center p-2 border rounded-md transition-colors relative overflow-hidden',
             value === category
-              ? "border-construction-300 bg-construction-50"
-              : "border-border hover:border-construction-200 hover:bg-warmgray-50"
+              ? 'border-construction-300 bg-construction-50'
+              : 'border-border hover:border-construction-200 hover:bg-warmgray-50'
           )}
         >
           <div className="mr-2 flex-shrink-0">{getCategoryIcon(category)}</div>

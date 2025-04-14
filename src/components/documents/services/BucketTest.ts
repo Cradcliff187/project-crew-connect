@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface BucketTestResult {
@@ -15,42 +14,37 @@ interface BucketTestResult {
 export const testBucketAccess = async (): Promise<BucketTestResult> => {
   try {
     // Get the list of buckets to check if construction_documents exists
-    const { data: buckets, error: bucketsError } = await supabase
-      .storage
-      .listBuckets();
-    
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+
     if (bucketsError) {
       console.error('Error listing buckets:', bucketsError);
-      return { 
-        success: false, 
-        error: bucketsError 
+      return {
+        success: false,
+        error: bucketsError,
       };
     }
-    
+
     // Find construction_documents bucket
-    const constructionBucket = buckets.find(bucket => 
-      bucket.name === 'construction_documents'
-    );
-    
+    const constructionBucket = buckets.find(bucket => bucket.name === 'construction_documents');
+
     if (!constructionBucket) {
       console.error('construction_documents bucket not found');
-      return { 
-        success: false, 
-        error: 'construction_documents bucket not found' 
+      return {
+        success: false,
+        error: 'construction_documents bucket not found',
       };
     }
-    
+
     return {
       success: true,
       bucketId: constructionBucket.id,
-      bucketName: constructionBucket.name
+      bucketName: constructionBucket.name,
     };
-    
   } catch (error) {
     console.error('Error testing bucket access:', error);
     return {
       success: false,
-      error
+      error,
     };
   }
 };

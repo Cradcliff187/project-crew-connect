@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
   const { documents, loading, fetchDocuments } = useWorkOrderDocuments(workOrderId);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [viewDocument, setViewDocument] = useState<WorkOrderDocument | null>(null);
-  
+
   // Toggle document upload form
   const toggleUploadForm = () => {
     setShowUploadForm(!showUploadForm);
@@ -31,26 +30,28 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
     setShowUploadForm(false);
     fetchDocuments();
   };
-  
+
   // Handle view document
   const handleViewDocument = (doc: WorkOrderDocument) => {
     setViewDocument(doc);
   };
-  
+
   // Close document viewer
   const handleCloseViewer = () => {
     setViewDocument(null);
   };
-  
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Documents & Receipts</h3>
-        <Button 
-          variant={showUploadForm ? "outline" : "default"}
-          className={showUploadForm 
-            ? "text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50" 
-            : "bg-[#0485ea] hover:bg-[#0375d1]"}
+        <Button
+          variant={showUploadForm ? 'outline' : 'default'}
+          className={
+            showUploadForm
+              ? 'text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50'
+              : 'bg-[#0485ea] hover:bg-[#0375d1]'
+          }
           onClick={toggleUploadForm}
         >
           {showUploadForm ? (
@@ -66,18 +67,18 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
           )}
         </Button>
       </div>
-      
+
       {showUploadForm && (
         <div className="mb-6">
-          <EnhancedDocumentUpload 
-            entityType={"WORK_ORDER" as EntityType}
+          <EnhancedDocumentUpload
+            entityType={'WORK_ORDER' as EntityType}
             entityId={workOrderId}
             onSuccess={handleUploadSuccess}
             onCancel={() => setShowUploadForm(false)}
           />
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           {loading ? (
@@ -98,12 +99,12 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
             </Card>
           )}
         </div>
-        
+
         {viewDocument && viewDocument.document_id && (
           <div className="md:col-span-1">
-            <DocumentVersionHistoryCard 
+            <DocumentVersionHistoryCard
               documentId={viewDocument.document_id}
-              onVersionChange={(document) => {
+              onVersionChange={document => {
                 // Cast the Document type to WorkOrderDocument
                 handleViewDocument(document as unknown as WorkOrderDocument);
               }}
@@ -111,11 +112,11 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
           </div>
         )}
       </div>
-      
-      <DocumentViewer 
+
+      <DocumentViewer
         document={viewDocument}
         open={!!viewDocument}
-        onOpenChange={(open) => !open && handleCloseViewer()}
+        onOpenChange={open => !open && handleCloseViewer()}
       />
     </div>
   );

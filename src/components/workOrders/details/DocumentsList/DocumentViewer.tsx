@@ -1,11 +1,10 @@
-
 import React from 'react';
-import { 
-  Dialog, 
+import {
+  Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, X, FileText } from 'lucide-react';
@@ -18,19 +17,15 @@ interface DocumentViewerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const DocumentViewer: React.FC<DocumentViewerProps> = ({
-  document,
-  open,
-  onOpenChange
-}) => {
+const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, open, onOpenChange }) => {
   if (!document) return null;
 
   const isImage = document.file_type?.startsWith('image/');
   const isPdf = document.file_type === 'application/pdf';
-  
+
   const handleDownload = () => {
     if (!document?.url) return;
-    
+
     // Create a temporary anchor element to trigger download
     const a = window.document.createElement('a');
     a.href = document.url;
@@ -59,16 +54,16 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             {document.version && <div>Version: {document.version}</div>}
           </div>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-auto bg-gray-50 min-h-[400px] flex items-center justify-center">
           {isImage ? (
-            <img 
-              src={document.url} 
+            <img
+              src={document.url}
               alt={document.file_name}
               className="max-w-full max-h-[70vh] object-contain"
             />
           ) : isPdf ? (
-            <iframe 
+            <iframe
               src={document.url}
               title={document.file_name}
               className="w-full h-full min-h-[500px]"
@@ -83,12 +78,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
             </div>
           )}
         </div>
-        
+
         <DialogFooter className="p-4 border-t">
-          <Button
-            onClick={handleDownload}
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
-          >
+          <Button onClick={handleDownload} className="bg-[#0485ea] hover:bg-[#0375d1]">
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>

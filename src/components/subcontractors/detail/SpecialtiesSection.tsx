@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Subcontractor } from '../utils/types';
@@ -30,10 +29,13 @@ const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionP
         if (error) throw error;
 
         // Convert to a map for easier lookup
-        const specialtiesMap = (data || []).reduce((acc, curr) => {
-          acc[curr.id] = curr;
-          return acc;
-        }, {} as Record<string, any>);
+        const specialtiesMap = (data || []).reduce(
+          (acc, curr) => {
+            acc[curr.id] = curr;
+            return acc;
+          },
+          {} as Record<string, any>
+        );
 
         setSpecialties(specialtiesMap);
       } catch (error) {
@@ -60,7 +62,11 @@ const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionP
         {subcontractor.specialty_ids.map(id => {
           const specialty = specialties[id];
           return specialty ? (
-            <Badge key={id} variant="secondary" className="text-xs font-medium bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]">
+            <Badge
+              key={id}
+              variant="secondary"
+              className="text-xs font-medium bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]"
+            >
               {specialty.specialty}
             </Badge>
           ) : null;
@@ -72,9 +78,7 @@ const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionP
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Specialties</h3>
-      <div>
-        {renderSpecialties()}
-      </div>
+      <div>{renderSpecialties()}</div>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableCell } from '@/components/ui/table';
@@ -46,10 +45,17 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
-                <TableRow key={project.projectid} className="cursor-pointer hover:bg-gray-100" onClick={() => handleViewProject(project)}>
+              {projects.map(project => (
+                <TableRow
+                  key={project.projectid}
+                  className="cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleViewProject(project)}
+                >
                   <TableCell>
-                    <Link to={`/projects/${project.projectid}`} className="text-[#0485ea] hover:underline">
+                    <Link
+                      to={`/projects/${project.projectid}`}
+                      className="text-[#0485ea] hover:underline"
+                    >
                       {project.projectname || 'Unnamed Project'}
                     </Link>
                   </TableCell>

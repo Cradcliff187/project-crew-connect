@@ -1,4 +1,3 @@
-
 import { BaseDocument } from '@/components/workOrders/details/DocumentsList/types';
 
 export interface SubcontractorDocument extends BaseDocument {

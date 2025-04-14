@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { StatusType } from '@/types/common';
 import EstimateDetailHeader from './EstimateDetailHeader';
@@ -40,12 +39,12 @@ interface EstimateDetailViewProps {
   onRefresh?: () => void;
 }
 
-const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({ 
-  data, 
-  onEdit, 
+const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
+  data,
+  onEdit,
   onDelete,
   onStatusChange,
-  onRefresh
+  onRefresh,
 }) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
@@ -60,12 +59,12 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
         .eq('estimate_id', data.estimateid)
         .eq('is_current', true)
         .single();
-      
+
       if (revisions && !error) {
         setCurrentVersion(revisions.version);
       }
     };
-    
+
     fetchCurrentVersion();
   }, [data.estimateid]);
 
@@ -84,7 +83,7 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
 
   return (
     <div className="space-y-6">
-      <EstimateDetailHeader 
+      <EstimateDetailHeader
         data={data}
         currentVersion={currentVersion}
         onEdit={onEdit}
@@ -92,18 +91,15 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
         onConvert={() => setConvertDialogOpen(true)}
         onStatusChange={handleStatusChange}
       />
-      
-      <EstimateDetailContent 
-        data={data} 
-        onRefresh={onRefresh} 
-      />
-      
+
+      <EstimateDetailContent data={data} onRefresh={onRefresh} />
+
       <EstimateDeleteDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onDelete={handleDelete}
       />
-      
+
       <EstimateConvertDialog
         open={convertDialogOpen}
         onOpenChange={setConvertDialogOpen}
@@ -116,10 +112,10 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
             address: data.sitelocationaddress,
             city: data.sitelocationcity,
             state: data.sitelocationstate,
-            zip: data.sitelocationzip
+            zip: data.sitelocationzip,
           },
           amount: data.estimateamount,
-          status: data.status as StatusType
+          status: data.status as StatusType,
         }}
         onStatusChange={onStatusChange}
         onRefresh={onRefresh}

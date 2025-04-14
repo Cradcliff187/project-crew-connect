@@ -1,6 +1,14 @@
-
 import React from 'react';
-import { MoreHorizontal, FileEdit, Trash, Send, CheckCircle, XCircle, ArrowRightLeft, Share2 } from 'lucide-react';
+import {
+  MoreHorizontal,
+  FileEdit,
+  Trash,
+  Send,
+  CheckCircle,
+  XCircle,
+  ArrowRightLeft,
+  Share2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -34,10 +42,10 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
   size = 'default',
   direction = 'horizontal',
   currentRevision,
-  estimateId
+  estimateId,
 }) => {
   const navigate = useNavigate();
-  
+
   const handleEdit = () => {
     if (onEdit) {
       onEdit();
@@ -57,35 +65,32 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        
+
         {onEdit !== null && (
           <DropdownMenuItem onClick={handleEdit}>
             <FileEdit className="mr-2 h-4 w-4" />
             Edit
           </DropdownMenuItem>
         )}
-        
+
         {onShare && currentRevision?.pdf_document_id && (
           <DropdownMenuItem onClick={onShare}>
             <Share2 className="mr-2 h-4 w-4" />
             Share
           </DropdownMenuItem>
         )}
-        
+
         {status !== 'cancelled' && status !== 'converted' && onConvert && (
           <DropdownMenuItem onClick={onConvert}>
             <ArrowRightLeft className="mr-2 h-4 w-4" />
             Convert to Project
           </DropdownMenuItem>
         )}
-        
+
         {onDelete && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="text-red-600" 
-              onClick={onDelete}
-            >
+            <DropdownMenuItem className="text-red-600" onClick={onDelete}>
               <Trash className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
@@ -96,46 +101,31 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
   ) : (
     <div className="flex flex-col space-y-2">
       {onEdit !== null && (
-        <Button 
-          size={size} 
-          variant="outline" 
-          className="justify-start" 
-          onClick={handleEdit}
-        >
+        <Button size={size} variant="outline" className="justify-start" onClick={handleEdit}>
           <FileEdit className="mr-2 h-4 w-4" />
           Edit
         </Button>
       )}
-      
+
       {onShare && currentRevision?.pdf_document_id && (
-        <Button 
-          size={size} 
-          variant="outline" 
-          className="justify-start" 
-          onClick={onShare}
-        >
+        <Button size={size} variant="outline" className="justify-start" onClick={onShare}>
           <Share2 className="mr-2 h-4 w-4" />
           Share
         </Button>
       )}
-      
+
       {status !== 'cancelled' && status !== 'converted' && onConvert && (
-        <Button 
-          size={size} 
-          variant="outline" 
-          className="justify-start" 
-          onClick={onConvert}
-        >
+        <Button size={size} variant="outline" className="justify-start" onClick={onConvert}>
           <ArrowRightLeft className="mr-2 h-4 w-4" />
           Convert to Project
         </Button>
       )}
-      
+
       {onDelete && (
-        <Button 
-          size={size} 
-          variant="outline" 
-          className="justify-start text-red-600" 
+        <Button
+          size={size}
+          variant="outline"
+          className="justify-start text-red-600"
           onClick={onDelete}
         >
           <Trash className="mr-2 h-4 w-4" />

@@ -1,4 +1,3 @@
-
 /**
  * Calculate the total price of an estimate item
  */
@@ -16,7 +15,7 @@ export const calculateItemGrossMargin = (item: any): number => {
   const quantity = parseFloat(item.quantity) || 1;
   const cost = parseFloat(item.cost) || 0;
   const totalCost = quantity * cost;
-  
+
   return totalPrice - totalCost;
 };
 
@@ -26,7 +25,7 @@ export const calculateItemGrossMargin = (item: any): number => {
 export const calculateItemGrossMarginPercentage = (item: any): number => {
   const totalPrice = calculateItemPrice(item);
   const grossMargin = calculateItemGrossMargin(item);
-  
+
   if (totalPrice <= 0) return 0;
   return (grossMargin / totalPrice) * 100;
 };
@@ -39,26 +38,26 @@ export const calculateEstimateTotals = (items: any[], contingencyPercentage = '0
     const itemPrice = calculateItemPrice(item);
     return sum + itemPrice;
   }, 0);
-  
+
   const totalCost = items.reduce((sum, item) => {
     const quantity = parseFloat(item.quantity) || 1;
     const cost = parseFloat(item.cost) || 0;
-    return sum + (quantity * cost);
+    return sum + quantity * cost;
   }, 0);
-  
+
   const grossMargin = subtotal - totalCost;
   const grossMarginPercentage = subtotal > 0 ? (grossMargin / subtotal) * 100 : 0;
-  
+
   const contingencyAmount = calculateContingency(subtotal, parseFloat(contingencyPercentage));
   const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
-  
+
   return {
     subtotal,
     totalCost,
     grossMargin,
     grossMarginPercentage,
     contingencyAmount,
-    grandTotal
+    grandTotal,
   };
 };
 
@@ -83,7 +82,7 @@ export const calculateSubtotal = (items: any[]): number => {
   return items.reduce((sum, item) => {
     const quantity = parseFloat(item.quantity) || 1;
     const unitPrice = parseFloat(item.unit_price) || 0;
-    return sum + (quantity * unitPrice);
+    return sum + quantity * unitPrice;
   }, 0);
 };
 
@@ -94,7 +93,7 @@ export const calculateTotalCost = (items: any[]): number => {
   return items.reduce((sum, item) => {
     const quantity = parseFloat(item.quantity) || 1;
     const cost = parseFloat(item.cost) || 0;
-    return sum + (quantity * cost);
+    return sum + quantity * cost;
   }, 0);
 };
 
@@ -128,7 +127,7 @@ export const calculateTotalGrossMargin = (items: any[]): number => {
 export const calculateOverallGrossMarginPercentage = (items: any[]): number => {
   const subtotal = calculateSubtotal(items);
   const totalGrossMargin = calculateTotalGrossMargin(items);
-  
+
   if (subtotal <= 0) return 0;
   return (totalGrossMargin / subtotal) * 100;
 };

@@ -1,4 +1,3 @@
-
 import { Package2 } from 'lucide-react';
 import { AddMaterialButton } from './';
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
@@ -14,7 +13,7 @@ const EstimateSummary = () => {
     contingencyAmount,
     grandTotal,
     hasError,
-    errorMessage
+    errorMessage,
   } = useSummaryCalculations();
 
   const formatCurrency = (value: number): string => {
@@ -22,7 +21,7 @@ const EstimateSummary = () => {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
@@ -36,7 +35,7 @@ const EstimateSummary = () => {
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {errorMessage || "There was an error calculating the estimate totals"}
+              {errorMessage || 'There was an error calculating the estimate totals'}
             </AlertDescription>
           </Alert>
         ) : (
@@ -45,34 +44,39 @@ const EstimateSummary = () => {
               <span className="text-muted-foreground">Subtotal:</span>
               <span className="font-medium">{formatCurrency(subtotal)}</span>
             </div>
-            
+
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Total Cost:</span>
               <span className="font-medium">{formatCurrency(totalCost)}</span>
             </div>
-            
+
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Gross Margin:</span>
               <span className="font-medium">{formatCurrency(totalGrossMargin)}</span>
             </div>
-            
+
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Margin %:</span>
-              <span className={`font-medium ${
-                overallMarginPercentage < 15 ? 'text-red-600' : 
-                overallMarginPercentage > 30 ? 'text-green-600' : ''
-              }`}>
+              <span
+                className={`font-medium ${
+                  overallMarginPercentage < 15
+                    ? 'text-red-600'
+                    : overallMarginPercentage > 30
+                      ? 'text-green-600'
+                      : ''
+                }`}
+              >
                 {overallMarginPercentage.toFixed(1)}%
               </span>
             </div>
-            
+
             {contingencyAmount > 0 && (
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Contingency:</span>
                 <span className="font-medium">{formatCurrency(contingencyAmount)}</span>
               </div>
             )}
-            
+
             <div className="pt-2 border-t mt-2">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Total:</span>

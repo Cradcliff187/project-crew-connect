@@ -12,10 +12,7 @@ interface TimeEntryReceiptsProps {
   onViewReceipt?: (receipt: TimeEntryReceipt) => void;
 }
 
-const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ 
-  timeEntryId,
-  onViewReceipt 
-}) => {
+const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({ timeEntryId, onViewReceipt }) => {
   const [receipts, setReceipts] = useState<TimeEntryReceipt[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,30 +22,30 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
     const fetchReceipts = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         // First get the document IDs linked to this time entry
         const { data: linkData, error: linkError } = await supabase
           .from('time_entry_document_links')
           .select('document_id')
           .eq('time_entry_id', timeEntryId);
-        
+
         if (linkError) throw linkError;
-        
+
         if (!linkData || linkData.length === 0) {
           setReceipts([]);
           return;
         }
-        
+
         // Get the documents with their URLs
         const documentIds = linkData.map(link => link.document_id);
         const { data: docData, error: docError } = await supabase
           .from('documents_with_urls')
           .select('*')
           .in('document_id', documentIds);
-        
+
         if (docError) throw docError;
-        
+
         // Map to the right format
         const formattedReceipts = (docData || []).map(doc => ({
           id: doc.document_id,
@@ -62,9 +59,9 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
           url: doc.url,
           expense_type: doc.expense_type,
           vendor_id: doc.vendor_id,
-          amount: doc.amount
+          amount: doc.amount,
         }));
-        
+
         setReceipts(formattedReceipts);
       } catch (error: any) {
         console.error('Error fetching receipts:', error);
@@ -73,7 +70,7 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
         setLoading(false);
       }
     };
-    
+
     if (timeEntryId) {
       fetchReceipts();
     }
@@ -86,14 +83,14 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
         window.open(receipt.url, '_blank');
         return;
       }
-      
+
       // Otherwise, try to generate a URL
       const { data, error } = await supabase.storage
         .from('construction_documents')
         .createSignedUrl(receipt.storage_path, 60);
-      
+
       if (error) throw error;
-      
+
       if (data?.signedUrl) {
         window.open(data.signedUrl, '_blank');
       } else {
@@ -135,7 +132,7 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
     <div className="space-y-2">
       <div className="text-sm font-medium">Receipts</div>
       <div className="flex flex-wrap gap-2">
-        {receipts.map((receipt) => (
+        {receipts.map(receipt => (
           <Tooltip key={receipt.id}>
             <TooltipTrigger asChild>
               <div className="group relative">
@@ -143,14 +140,17 @@ const TimeEntryReceipts: React.FC<TimeEntryReceiptsProps> = ({
                   variant="outline"
                   size="sm"
                   className="h-auto py-1 px-2 text-xs flex items-center"
-                  onClick={() => onViewReceipt ? onViewReceipt(receipt) : handleDownload(receipt)}
+                  onClick={() => (onViewReceipt ? onViewReceipt(receipt) : handleDownload(receipt))}
                 >
                   <Receipt className="h-3 w-3 mr-1" />
                   <span className="max-w-[120px] truncate">{receipt.file_name}</span>
                 </Button>
-                
+
                 {receipt.expense_type && (
-                  <Badge variant="outline" className="absolute -top-2 -right-2 text-[10px] px-1 py-0 h-4">
+                  <Badge
+                    variant="outline"
+                    className="absolute -top-2 -right-2 text-[10px] px-1 py-0 h-4"
+                  >
                     {receipt.expense_type}
                   </Badge>
                 )}

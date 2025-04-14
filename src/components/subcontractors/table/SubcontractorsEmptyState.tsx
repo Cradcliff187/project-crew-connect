@@ -1,6 +1,12 @@
-
 import { HardHat } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface SubcontractorsEmptyStateProps {
   searchQuery: string;
@@ -17,12 +23,16 @@ const SubcontractorsEmptyState = ({ searchQuery }: SubcontractorsEmptyStateProps
         <TableHeader className="bg-[#0485ea]/10">
           <TableRow>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Name</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Specialties</TableHead>
+            <TableHead className="font-montserrat font-semibold text-[#0485ea]">
+              Specialties
+            </TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Details</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-            <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
+            <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

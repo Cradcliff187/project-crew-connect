@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { statusOptions } from '@/components/projects/ProjectConstants';
 
@@ -17,18 +16,20 @@ export const useStatusTransitions = (projectId: string, currentStatus: string) =
     try {
       setLoading(true);
       setError(null);
-      
-      console.log(`Fetching all possible statuses for project: ${projectId}, current status: ${currentStatus}`);
-      
+
+      console.log(
+        `Fetching all possible statuses for project: ${projectId}, current status: ${currentStatus}`
+      );
+
       // Instead of fetching transitions from the database,
       // we now return all statuses except the current one
       const normalizedCurrentStatus = currentStatus.toLowerCase();
-      
+
       // Get all statuses except the current one
       const allPossibleTransitions = statusOptions
         .filter(option => option.value.toLowerCase() !== normalizedCurrentStatus)
         .map(option => option.value);
-      
+
       setAllowedTransitions(allPossibleTransitions);
       console.log('Available statuses:', allPossibleTransitions);
     } catch (err: any) {
@@ -38,7 +39,7 @@ export const useStatusTransitions = (projectId: string, currentStatus: string) =
       const allStatusesExceptCurrent = statusOptions
         .filter(option => option.value.toLowerCase() !== normalizedStatus)
         .map(option => option.value);
-      
+
       setAllowedTransitions(allStatusesExceptCurrent);
       setError(err.message);
     } finally {
@@ -54,6 +55,6 @@ export const useStatusTransitions = (projectId: string, currentStatus: string) =
     allowedTransitions,
     loading,
     error,
-    refreshTransitions: fetchTransitions
+    refreshTransitions: fetchTransitions,
   };
 };

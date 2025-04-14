@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Shield, FileText } from 'lucide-react';
 import { Subcontractor } from '../utils/types';
@@ -21,7 +20,9 @@ const ComplianceInformationCard = ({ subcontractor }: ComplianceInformationCardP
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-montserrat font-semibold mb-4 text-[#0485ea]">Compliance Information</h3>
+      <h3 className="text-lg font-montserrat font-semibold mb-4 text-[#0485ea]">
+        Compliance Information
+      </h3>
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -41,15 +42,19 @@ const ComplianceInformationCard = ({ subcontractor }: ComplianceInformationCardP
           )}
           {subcontractor.insurance_expiration && (
             <div className="flex items-center gap-2">
-              <span className="ml-6">Expires: {formatDate(subcontractor.insurance_expiration)}</span>
+              <span className="ml-6">
+                Expires: {formatDate(subcontractor.insurance_expiration)}
+              </span>
             </div>
           )}
         </div>
-        
+
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-[#0485ea]" />
-            <span className="font-medium">Contract on File: {subcontractor.contract_on_file ? 'Yes' : 'No'}</span>
+            <span className="font-medium">
+              Contract on File: {subcontractor.contract_on_file ? 'Yes' : 'No'}
+            </span>
           </div>
           {subcontractor.contract_on_file && subcontractor.contract_expiration && (
             <div className="flex items-center gap-2">

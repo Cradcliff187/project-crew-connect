@@ -1,11 +1,16 @@
-
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useFormContext } from 'react-hook-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { Loader2 } from 'lucide-react';
 
@@ -14,21 +19,28 @@ interface BasicInfoStepProps {
   onNewCustomer: () => void;
   onExistingCustomer: () => void;
   selectedCustomerAddress: string | null;
-  customers: { id: string; name: string; address?: string; city?: string; state?: string; zip?: string; }[];
+  customers: {
+    id: string;
+    name: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  }[];
   loading: boolean;
 }
 
-const BasicInfoStep = ({ 
-  customerTab, 
-  onNewCustomer, 
-  onExistingCustomer, 
+const BasicInfoStep = ({
+  customerTab,
+  onNewCustomer,
+  onExistingCustomer,
   selectedCustomerAddress,
   customers,
-  loading
+  loading,
 }: BasicInfoStepProps) => {
   const form = useFormContext<EstimateFormValues>();
   const showSiteLocation = form.watch('showSiteLocation');
-  
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4">
@@ -45,16 +57,20 @@ const BasicInfoStep = ({
             </FormItem>
           )}
         />
-        
+
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Customer</h3>
-          
+
           <Tabs value={customerTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="existing" onClick={onExistingCustomer}>Existing Customer</TabsTrigger>
-              <TabsTrigger value="new" onClick={onNewCustomer}>New Customer</TabsTrigger>
+              <TabsTrigger value="existing" onClick={onExistingCustomer}>
+                Existing Customer
+              </TabsTrigger>
+              <TabsTrigger value="new" onClick={onNewCustomer}>
+                New Customer
+              </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="existing" className="pt-4">
               <FormField
                 control={form.control}
@@ -63,13 +79,11 @@ const BasicInfoStep = ({
                   <FormItem>
                     <FormLabel>Select Customer</FormLabel>
                     <FormControl>
-                      <Select 
-                        value={field.value} 
-                        onValueChange={field.onChange}
-                        disabled={loading}
-                      >
+                      <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
                         <SelectTrigger>
-                          <SelectValue placeholder={loading ? "Loading customers..." : "Select a customer"} />
+                          <SelectValue
+                            placeholder={loading ? 'Loading customers...' : 'Select a customer'}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {loading ? (
@@ -91,14 +105,12 @@ const BasicInfoStep = ({
                   </FormItem>
                 )}
               />
-              
+
               {selectedCustomerAddress && (
-                <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
-                  {selectedCustomerAddress}
-                </div>
+                <div className="mt-2 p-2 bg-gray-50 rounded text-sm">{selectedCustomerAddress}</div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="new" className="pt-4 space-y-4">
               <FormField
                 control={form.control}
@@ -113,7 +125,7 @@ const BasicInfoStep = ({
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -128,7 +140,7 @@ const BasicInfoStep = ({
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="newCustomer.phone"
@@ -143,7 +155,7 @@ const BasicInfoStep = ({
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={form.control}
                 name="newCustomer.address"
@@ -157,7 +169,7 @@ const BasicInfoStep = ({
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
@@ -172,7 +184,7 @@ const BasicInfoStep = ({
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="newCustomer.state"
@@ -186,7 +198,7 @@ const BasicInfoStep = ({
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="newCustomer.zip"
@@ -204,7 +216,7 @@ const BasicInfoStep = ({
             </TabsContent>
           </Tabs>
         </div>
-        
+
         <FormField
           control={form.control}
           name="description"
@@ -212,17 +224,17 @@ const BasicInfoStep = ({
             <FormItem>
               <FormLabel>Project Description</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Enter project description" 
-                  className="min-h-[100px]" 
-                  {...field} 
+                <Textarea
+                  placeholder="Enter project description"
+                  className="min-h-[100px]"
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="showSiteLocation"
@@ -235,15 +247,12 @@ const BasicInfoStep = ({
                 </div>
               </div>
               <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
             </FormItem>
           )}
         />
-        
+
         {showSiteLocation && (
           <div className="space-y-4 border-l-2 border-[#0485ea] pl-4">
             <FormField
@@ -259,7 +268,7 @@ const BasicInfoStep = ({
                 </FormItem>
               )}
             />
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <FormField
                 control={form.control}
@@ -274,7 +283,7 @@ const BasicInfoStep = ({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="location.state"
@@ -288,7 +297,7 @@ const BasicInfoStep = ({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="location.zip"

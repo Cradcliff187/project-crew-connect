@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Search, Users, Plus, Filter, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,10 +26,10 @@ export type Contact = {
   zip?: string;
   type: 'client' | 'customer' | 'supplier' | 'subcontractor' | 'employee'; // Changed from contact_type
   status?: StatusType | string;
-  lastContact?: string;  // Changed from last_contact
+  lastContact?: string; // Changed from last_contact
   notes?: string;
   specialty?: string;
-  hourlyRate?: string;  // Changed from hourly_rate
+  hourlyRate?: string; // Changed from hourly_rate
   materials?: string;
   rating?: number;
 };
@@ -82,7 +81,7 @@ const fetchContacts = async (): Promise<Contact[]> => {
     specialty: item.specialty,
     hourlyRate: item.hourly_rate?.toString(),
     materials: item.materials,
-    rating: item.rating
+    rating: item.rating,
   }));
 };
 
@@ -92,13 +91,17 @@ const Contacts = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  
+
   const queryClient = useQueryClient();
-  const { data: contacts = [], isLoading, error } = useQuery({
+  const {
+    data: contacts = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['contacts'],
-    queryFn: fetchContacts
+    queryFn: fetchContacts,
   });
-  
+
   const addContactMutation = useMutation({
     mutationFn: async (newContact: ContactFormData) => {
       const { data, error } = await supabase
@@ -120,7 +123,7 @@ const Contacts = () => {
           hourly_rate: newContact.hourlyRate ? parseFloat(newContact.hourlyRate.toString()) : null,
           materials: newContact.materials,
           rating: newContact.rating,
-          last_contact: new Date().toISOString()
+          last_contact: new Date().toISOString(),
         })
         .select('*')
         .single();
@@ -131,21 +134,21 @@ const Contacts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       toast({
-        title: "Contact Added",
-        description: "The contact has been added successfully."
+        title: 'Contact Added',
+        description: 'The contact has been added successfully.',
       });
       setShowForm(false);
     },
-    onError: (error) => {
-      console.error("Error adding contact:", error);
+    onError: error => {
+      console.error('Error adding contact:', error);
       toast({
-        title: "Error",
-        description: "Failed to add contact. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to add contact. Please try again.',
+        variant: 'destructive',
       });
-    }
+    },
   });
-  
+
   const updateContactMutation = useMutation({
     mutationFn: async (updatedContact: Contact) => {
       const { data, error } = await supabase
@@ -164,10 +167,12 @@ const Contacts = () => {
           status: updatedContact.status?.toLowerCase(),
           notes: updatedContact.notes,
           specialty: updatedContact.specialty,
-          hourly_rate: updatedContact.hourlyRate ? parseFloat(updatedContact.hourlyRate.toString()) : null,
+          hourly_rate: updatedContact.hourlyRate
+            ? parseFloat(updatedContact.hourlyRate.toString())
+            : null,
           materials: updatedContact.materials,
           rating: updatedContact.rating,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', updatedContact.id)
         .select('*')
@@ -179,45 +184,42 @@ const Contacts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       toast({
-        title: "Contact Updated",
-        description: "The contact has been updated successfully."
+        title: 'Contact Updated',
+        description: 'The contact has been updated successfully.',
       });
       setEditingContact(null);
     },
-    onError: (error) => {
-      console.error("Error updating contact:", error);
+    onError: error => {
+      console.error('Error updating contact:', error);
       toast({
-        title: "Error",
-        description: "Failed to update contact. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update contact. Please try again.',
+        variant: 'destructive',
       });
-    }
+    },
   });
-  
+
   const deleteContactMutation = useMutation({
     mutationFn: async (contactId: string) => {
-      const { error } = await supabase
-        .from('contacts')
-        .delete()
-        .eq('id', contactId);
+      const { error } = await supabase.from('contacts').delete().eq('id', contactId);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       toast({
-        title: "Contact Deleted",
-        description: "The contact has been removed."
+        title: 'Contact Deleted',
+        description: 'The contact has been removed.',
       });
     },
-    onError: (error) => {
-      console.error("Error deleting contact:", error);
+    onError: error => {
+      console.error('Error deleting contact:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete contact. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to delete contact. Please try again.',
+        variant: 'destructive',
       });
-    }
+    },
   });
 
   const updateStatusMutation = useMutation({
@@ -226,7 +228,7 @@ const Contacts = () => {
         .from('contacts')
         .update({
           status: newStatus.toLowerCase(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', contactId)
         .select('*')
@@ -238,37 +240,38 @@ const Contacts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       toast({
-        title: "Status Updated",
-        description: "The contact's status has been updated."
+        title: 'Status Updated',
+        description: "The contact's status has been updated.",
       });
     },
-    onError: (error) => {
-      console.error("Error updating status:", error);
+    onError: error => {
+      console.error('Error updating status:', error);
       toast({
-        title: "Error",
-        description: "Failed to update status. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update status. Please try again.',
+        variant: 'destructive',
       });
-    }
+    },
   });
-  
+
   const filteredContacts = contacts
-    .filter(contact => 
-      contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (contact.company && contact.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (contact.specialty && contact.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(
+      contact =>
+        contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (contact.company && contact.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (contact.specialty && contact.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .filter(contact => activeTab === 'all' || contact.type === activeTab);
-  
+
   const handleAddContact = (data: ContactFormData) => {
     addContactMutation.mutate(data);
   };
-  
+
   const handleEditContact = (data: Contact) => {
     updateContactMutation.mutate(data);
   };
-  
+
   const handleDeleteContact = (contact: Contact) => {
     deleteContactMutation.mutate(contact.id);
   };
@@ -276,15 +279,15 @@ const Contacts = () => {
   const handleStatusChange = (contact: Contact, newStatus: string) => {
     updateStatusMutation.mutate({ contactId: contact.id, newStatus });
   };
-  
+
   if (error) {
     toast({
-      title: "Error Loading Contacts",
-      description: "There was an error loading contacts. Please refresh the page.",
-      variant: "destructive"
+      title: 'Error Loading Contacts',
+      description: 'There was an error loading contacts. Please refresh the page.',
+      variant: 'destructive',
     });
   }
-  
+
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
@@ -294,23 +297,23 @@ const Contacts = () => {
         >
           <div className="relative w-full md:w-auto flex-1 max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="search" 
-              placeholder="Search contacts..." 
+            <Input
+              type="search"
+              placeholder="Search contacts..."
               className="pl-9 subtle-input rounded-md"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-          
+
           <div className="flex items-center gap-2 w-full md:w-auto">
             <Button variant="outline" size="sm" className="flex items-center gap-1">
               <Filter className="h-4 w-4 mr-1" />
               Filter
               <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]"
               onClick={() => setShowForm(true)}
             >
@@ -319,19 +322,39 @@ const Contacts = () => {
             </Button>
           </div>
         </PageHeader>
-        
-        <Tabs defaultValue="all" className="animate-in" style={{ animationDelay: '0.15s' }} onValueChange={setActiveTab}>
+
+        <Tabs
+          defaultValue="all"
+          className="animate-in"
+          style={{ animationDelay: '0.15s' }}
+          onValueChange={setActiveTab}
+        >
           <TabsList>
-            <TabsTrigger value="all" className="px-4">All Contacts</TabsTrigger>
-            <TabsTrigger value="client" className="px-4">Clients</TabsTrigger>
-            <TabsTrigger value="customer" className="px-4">Customers</TabsTrigger>
-            <TabsTrigger value="supplier" className="px-4">Suppliers</TabsTrigger>
-            <TabsTrigger value="subcontractor" className="px-4">Subcontractors</TabsTrigger>
-            <TabsTrigger value="employee" className="px-4">Employees</TabsTrigger>
+            <TabsTrigger value="all" className="px-4">
+              All Contacts
+            </TabsTrigger>
+            <TabsTrigger value="client" className="px-4">
+              Clients
+            </TabsTrigger>
+            <TabsTrigger value="customer" className="px-4">
+              Customers
+            </TabsTrigger>
+            <TabsTrigger value="supplier" className="px-4">
+              Suppliers
+            </TabsTrigger>
+            <TabsTrigger value="subcontractor" className="px-4">
+              Subcontractors
+            </TabsTrigger>
+            <TabsTrigger value="employee" className="px-4">
+              Employees
+            </TabsTrigger>
           </TabsList>
         </Tabs>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6 animate-in" style={{ animationDelay: '0.2s' }}>
+
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6 animate-in"
+          style={{ animationDelay: '0.2s' }}
+        >
           {isLoading ? (
             Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="premium-card h-[250px] animate-pulse">
@@ -348,12 +371,12 @@ const Contacts = () => {
               </div>
             ))
           ) : filteredContacts.length > 0 ? (
-            filteredContacts.map((contact) => (
-              <ContactCard 
-                key={contact.id} 
-                contact={contact} 
-                onView={(contact) => setSelectedContact(contact)}
-                onEdit={(contact) => setEditingContact(contact)}
+            filteredContacts.map(contact => (
+              <ContactCard
+                key={contact.id}
+                contact={contact}
+                onView={contact => setSelectedContact(contact)}
+                onEdit={contact => setEditingContact(contact)}
                 onDelete={handleDeleteContact}
                 onStatusChange={handleStatusChange}
               />
@@ -363,10 +386,7 @@ const Contacts = () => {
               <Users className="h-16 w-16 text-muted-foreground/30 mb-4" />
               <h3 className="text-lg font-medium mb-1">No contacts found</h3>
               <p className="text-muted-foreground mb-4">Try adjusting your search or filters</p>
-              <Button 
-                className="bg-[#0485ea] hover:bg-[#0375d1]"
-                onClick={() => setShowForm(true)}
-              >
+              <Button className="bg-[#0485ea] hover:bg-[#0375d1]" onClick={() => setShowForm(true)}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Your First Contact
               </Button>

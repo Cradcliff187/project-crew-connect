@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { DocumentUploadFormValues, EntityType, VendorType } from '../schemas/documentSchema';
@@ -18,8 +17,8 @@ export const useFormValueWatchers = (form: UseFormReturn<DocumentUploadFormValue
   // Helper to determine if vendor selection is needed
   const needsVendorSelection = useCallback(() => {
     return (
-      watchIsExpense || 
-      watchCategory === 'receipt' || 
+      watchIsExpense ||
+      watchCategory === 'receipt' ||
       watchCategory === 'invoice' ||
       watchEntityType === 'VENDOR' ||
       watchEntityType === 'SUBCONTRACTOR'
@@ -43,6 +42,6 @@ export const useFormValueWatchers = (form: UseFormReturn<DocumentUploadFormValue
     watchExpenseDate,
     watchTags,
     needsVendorSelection,
-    needsEntitySelection
+    needsEntitySelection,
   };
 };

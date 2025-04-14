@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LayoutList } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -20,7 +19,7 @@ interface WorkOrdersCardProps {
 
 const WorkOrdersCard = ({ workOrders, loading }: WorkOrdersCardProps) => {
   const navigate = useNavigate();
-  
+
   if (workOrders.length === 0) return null;
 
   return (
@@ -30,7 +29,7 @@ const WorkOrdersCard = ({ workOrders, loading }: WorkOrdersCardProps) => {
         {loading ? (
           <Skeleton className="h-16 w-full" />
         ) : (
-          workOrders.map((workOrder) => (
+          workOrders.map(workOrder => (
             <Card key={workOrder.work_order_id} className="p-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-2">
@@ -44,8 +43,8 @@ const WorkOrdersCard = ({ workOrders, loading }: WorkOrdersCardProps) => {
                     </div>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => navigate(`/workorders/${workOrder.work_order_id}`)}
                 >

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { DollarSign, Calendar, FileText, MapPin } from 'lucide-react';
@@ -24,20 +23,21 @@ interface EstimateInfoCardProps {
 const EstimateInfoCard: React.FC<EstimateInfoCardProps> = ({ data }) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Not set';
-    
+
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   // Check if we have valid location data to display
-  const hasLocationData = data.sitelocationaddress || 
-                         data.sitelocationcity || 
-                         data.sitelocationstate || 
-                         data.sitelocationzip;
+  const hasLocationData =
+    data.sitelocationaddress ||
+    data.sitelocationcity ||
+    data.sitelocationstate ||
+    data.sitelocationzip;
 
   return (
     <Card>
@@ -50,14 +50,17 @@ const EstimateInfoCard: React.FC<EstimateInfoCardProps> = ({ data }) => {
             <DollarSign className="h-4 w-4 mr-1 text-gray-400" />
             Amount
           </h3>
-          <p className="text-lg font-semibold">${data.estimateamount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+          <p className="text-lg font-semibold">
+            ${data.estimateamount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </p>
           {data.contingencyamount && data.contingency_percentage && (
             <p className="text-sm text-gray-500">
-              Includes {data.contingency_percentage}% contingency (${data.contingencyamount.toLocaleString('en-US', { minimumFractionDigits: 2 })})
+              Includes {data.contingency_percentage}% contingency ($
+              {data.contingencyamount.toLocaleString('en-US', { minimumFractionDigits: 2 })})
             </p>
           )}
         </div>
-        
+
         <div>
           <h3 className="font-medium text-sm text-gray-500 mb-1 flex items-center">
             <Calendar className="h-4 w-4 mr-1 text-gray-400" />
@@ -78,7 +81,7 @@ const EstimateInfoCard: React.FC<EstimateInfoCardProps> = ({ data }) => {
             </div>
           </dl>
         </div>
-        
+
         <div>
           <h3 className="font-medium text-sm text-gray-500 mb-1 flex items-center">
             <FileText className="h-4 w-4 mr-1 text-gray-400" />
@@ -87,7 +90,9 @@ const EstimateInfoCard: React.FC<EstimateInfoCardProps> = ({ data }) => {
           <dl className="space-y-1">
             <div className="flex justify-between">
               <dt className="text-sm">Client:</dt>
-              <dd className="text-sm font-medium">{data.customername || data.customerid || 'Not specified'}</dd>
+              <dd className="text-sm font-medium">
+                {data.customername || data.customerid || 'Not specified'}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-sm">Project:</dt>
@@ -95,7 +100,7 @@ const EstimateInfoCard: React.FC<EstimateInfoCardProps> = ({ data }) => {
             </div>
           </dl>
         </div>
-        
+
         {hasLocationData && (
           <div>
             <h3 className="font-medium text-sm text-gray-500 mb-1 flex items-center">

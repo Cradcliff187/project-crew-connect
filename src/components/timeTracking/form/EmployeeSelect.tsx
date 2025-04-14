@@ -1,7 +1,12 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Employee {
   employee_id: string;
@@ -23,28 +28,25 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   value,
   onChange,
   employees,
-  label = "Employee",
+  label = 'Employee',
   required = false,
   disabled = false,
-  className = "",
-  placeholder = "Select employee"
+  className = '',
+  placeholder = 'Select employee',
 }) => {
   return (
     <div className={`space-y-2 ${className}`}>
       <Label>
-        {label}{required && <span className="text-red-500 ml-1">*</span>}
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
-      <Select 
-        value={value} 
-        onValueChange={onChange}
-        disabled={disabled}
-      >
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">Not assigned</SelectItem>
-          {employees.map((employee) => (
+          {employees.map(employee => (
             <SelectItem key={employee.employee_id} value={employee.employee_id}>
               {employee.name}
             </SelectItem>

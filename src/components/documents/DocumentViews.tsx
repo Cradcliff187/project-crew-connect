@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import DocumentList from './DocumentList';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { FolderIcon, FilterIcon, LayoutGrid, List, Loader2, FileText, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,7 @@ const DocumentViews: React.FC<DocumentViewsProps> = ({
   onDelete,
   onBatchDelete,
   onUploadClick,
-  showNavigationButtons = false
+  showNavigationButtons = false,
 }) => {
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
@@ -54,7 +53,11 @@ const DocumentViews: React.FC<DocumentViewsProps> = ({
           )}
         </h2>
         <div className="flex items-center space-x-2">
-          <ToggleGroup type="single" value={view} onValueChange={(value) => value && setView(value as any)}>
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={value => value && setView(value as any)}
+          >
             <ToggleGroupItem value="grid" aria-label="Grid view">
               <LayoutGrid className="h-4 w-4" />
             </ToggleGroupItem>
@@ -75,10 +78,7 @@ const DocumentViews: React.FC<DocumentViewsProps> = ({
           <FileText className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
           <h3 className="font-medium mb-2">No documents found</h3>
           {onUploadClick && (
-            <Button 
-              onClick={onUploadClick}
-              className="mt-4 bg-[#0485ea] hover:bg-[#0375d1]"
-            >
+            <Button onClick={onUploadClick} className="mt-4 bg-[#0485ea] hover:bg-[#0375d1]">
               <Upload className="h-4 w-4 mr-2" />
               Upload Document
             </Button>

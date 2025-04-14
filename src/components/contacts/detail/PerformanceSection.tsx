@@ -1,14 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { 
-  Plus, 
-  Star, 
-  BarChart, 
-  RefreshCw 
-} from 'lucide-react';
+import { Plus, Star, BarChart, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -37,18 +31,21 @@ import {
   PerformanceMetric,
   fetchPerformanceMetrics,
   addPerformanceMetric,
-  getMetricTypeOptions
+  getMetricTypeOptions,
 } from './util/contactPerformance';
 import { format } from 'date-fns';
 import { Contact } from '@/pages/Contacts';
 
 const formSchema = z.object({
   metric_type: z.string({
-    required_error: "Please select a metric type",
+    required_error: 'Please select a metric type',
   }),
-  score: z.number({
-    required_error: "Please select a score",
-  }).min(1).max(5),
+  score: z
+    .number({
+      required_error: 'Please select a score',
+    })
+    .min(1)
+    .max(5),
   notes: z.string().optional(),
 });
 
@@ -79,46 +76,41 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
         const data = await fetchPerformanceMetrics(contact.id);
         setMetrics(data);
       } catch (error) {
-        console.error("Error loading performance metrics:", error);
+        console.error('Error loading performance metrics:', error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadMetrics();
   }, [contact.id, refreshTrigger]);
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await addPerformanceMetric(
-        contact.id,
-        values.metric_type,
-        values.score,
-        values.notes
-      );
+      await addPerformanceMetric(contact.id, values.metric_type, values.score, values.notes);
       setShowAddDialog(false);
       form.reset();
       setRefreshTrigger(prev => prev + 1);
-      
+
       if (onMetricAdded) {
         onMetricAdded();
       }
     } catch (error) {
-      console.error("Error adding performance metric:", error);
+      console.error('Error adding performance metric:', error);
     }
   };
 
   // Calculate averages by metric type
   const calculateAveragesByType = () => {
     const groups: { [key: string]: number[] } = {};
-    
+
     metrics.forEach(metric => {
       if (!groups[metric.metric_type]) {
         groups[metric.metric_type] = [];
       }
       groups[metric.metric_type].push(metric.score);
     });
-    
+
     return Object.entries(groups).map(([type, scores]) => {
       const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
       return { type, average: Math.round(average * 10) / 10 };
@@ -132,18 +124,18 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Performance Metrics</h3>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setRefreshTrigger(prev => prev + 1)}
             disabled={loading}
           >
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button 
-            size="sm" 
-            variant="default" 
+          <Button
+            size="sm"
+            variant="default"
             className="bg-[#0485ea] hover:bg-[#0375d1]"
             onClick={() => setShowAddDialog(true)}
           >
@@ -157,8 +149,8 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
       {averages.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {averages.map(({ type, average }) => (
-            <div 
-              key={type} 
+            <div
+              key={type}
               className="bg-white border rounded-md shadow-sm p-4 flex items-center justify-between"
             >
               <div>
@@ -167,9 +159,9 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
                   <span className="text-2xl font-semibold mr-2">{average}</span>
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map(n => (
-                      <Star 
-                        key={n} 
-                        className={`h-4 w-4 ${n <= average ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
+                      <Star
+                        key={n}
+                        className={`h-4 w-4 ${n <= average ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
                       />
                     ))}
                   </div>
@@ -184,7 +176,7 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
       {/* Metrics History */}
       <div className="space-y-4">
         <h4 className="text-sm font-medium">Metrics History</h4>
-        
+
         {metrics.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground">
             No performance metrics recorded for this contact yet.
@@ -192,7 +184,10 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
         ) : (
           <div className="space-y-2">
             {metrics.map(metric => (
-              <div key={metric.id} className="flex gap-3 p-3 border rounded-md hover:bg-gray-50 transition-colors">
+              <div
+                key={metric.id}
+                className="flex gap-3 p-3 border rounded-md hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex-1">
                   <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-1">
                     <h4 className="font-medium">{metric.metric_type}</h4>
@@ -203,9 +198,9 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
                   <div className="flex items-center mb-2">
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map(n => (
-                        <Star 
-                          key={n} 
-                          className={`h-4 w-4 ${n <= metric.score ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
+                        <Star
+                          key={n}
+                          className={`h-4 w-4 ${n <= metric.score ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
                         />
                       ))}
                     </div>
@@ -224,7 +219,7 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
           <DialogHeader>
             <DialogTitle>Add Performance Metric</DialogTitle>
           </DialogHeader>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <FormField
@@ -233,10 +228,7 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Metric Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select metric type" />
@@ -254,15 +246,15 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="score"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Score (1-5)</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(parseInt(value))} 
+                    <Select
+                      onValueChange={value => field.onChange(parseInt(value))}
                       defaultValue={field.value.toString()}
                     >
                       <FormControl>
@@ -282,7 +274,7 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="notes"
@@ -290,29 +282,22 @@ const PerformanceSection = ({ contact, onMetricAdded }: PerformanceSectionProps)
                   <FormItem>
                     <FormLabel>Notes</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Add any additional details about this metric" 
+                      <Textarea
+                        placeholder="Add any additional details about this metric"
                         className="resize-none h-20"
-                        {...field} 
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowAddDialog(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-[#0485ea] hover:bg-[#0375d1]"
-                >
+                <Button type="submit" className="bg-[#0485ea] hover:bg-[#0375d1]">
                   Add Metric
                 </Button>
               </DialogFooter>

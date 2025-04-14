@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
@@ -23,18 +22,18 @@ const ProjectDetail = () => {
   const fetchProjectData = async (id: string) => {
     try {
       setLoading(true);
-      
+
       // Fetch the project data
       const { data, error } = await supabase
         .from('projects')
         .select('*')
         .eq('projectid', id)
         .single();
-      
+
       if (error) {
         throw error;
       }
-      
+
       setProject(data);
     } catch (error: any) {
       console.error('Error fetching project data:', error);
@@ -60,8 +59,8 @@ const ProjectDetail = () => {
         <div className="space-y-4">
           <h1 className="text-2xl font-bold">Error Loading Project</h1>
           <p className="text-red-500">{error || 'Project not found'}</p>
-          <button 
-            onClick={() => navigate('/projects')} 
+          <button
+            onClick={() => navigate('/projects')}
             className="px-4 py-2 bg-[#0485ea] text-white rounded-md hover:bg-[#0373ce]"
           >
             Back to Projects
@@ -76,11 +75,14 @@ const ProjectDetail = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{project.projectname || 'Project Details'}</h1>
-          <Badge variant={project.status === 'ACTIVE' ? 'default' : 'outline'} className="capitalize">
+          <Badge
+            variant={project.status === 'ACTIVE' ? 'default' : 'outline'}
+            className="capitalize"
+          >
             {project.status || 'No Status'}
           </Badge>
         </div>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
@@ -91,19 +93,19 @@ const ProjectDetail = () => {
                 <h3 className="text-sm font-medium text-muted-foreground">Project ID</h3>
                 <p>{project.projectid}</p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Customer</h3>
                 <p>{project.customername || 'Not specified'}</p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
                 <p>{project.jobdescription || 'No description'}</p>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Budget Information</CardTitle>
@@ -113,12 +115,12 @@ const ProjectDetail = () => {
                 <h3 className="text-sm font-medium text-muted-foreground">Total Budget</h3>
                 <p>${project.total_budget?.toLocaleString() || '0'}</p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Current Expenses</h3>
                 <p>${project.current_expenses?.toLocaleString() || '0'}</p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Budget Status</h3>
                 <p className="capitalize">{project.budget_status || 'Not set'}</p>

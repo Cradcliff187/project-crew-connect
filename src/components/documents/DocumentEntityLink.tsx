@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
@@ -20,7 +19,7 @@ const DocumentEntityLink: React.FC<DocumentEntityLinkProps> = ({
   variant = 'outline',
   size = 'sm',
   showEntityType = true,
-  className = ''
+  className = '',
 }) => {
   const { navigateToEntity, isNavigating } = useDocumentNavigation();
 
@@ -53,8 +52,8 @@ const DocumentEntityLink: React.FC<DocumentEntityLinkProps> = ({
 
   if (variant === 'badge') {
     return (
-      <Badge 
-        variant="outline" 
+      <Badge
+        variant="outline"
         className={`cursor-pointer hover:bg-${entityColor}-50 border-${entityColor}-200 text-${entityColor}-700 ${className}`}
         onClick={() => navigateToEntity(document)}
       >

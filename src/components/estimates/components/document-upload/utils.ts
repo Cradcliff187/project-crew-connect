@@ -1,4 +1,3 @@
-
 import { Document } from '@/components/documents/schemas/documentSchema';
 
 /**
@@ -13,7 +12,7 @@ export const isLineItemDocument = (document: Document): boolean => {
  */
 export const categorizeDocuments = (documents: Document[]): Record<string, Document[]> => {
   const documentsByCategory: Record<string, Document[]> = {};
-  
+
   documents.forEach(doc => {
     const category = doc.category || 'Other';
     if (!documentsByCategory[category]) {
@@ -21,7 +20,7 @@ export const categorizeDocuments = (documents: Document[]): Record<string, Docum
     }
     documentsByCategory[category].push(doc);
   });
-  
+
   return documentsByCategory;
 };
 
@@ -29,10 +28,10 @@ export const categorizeDocuments = (documents: Document[]): Record<string, Docum
  * Filters documents based on whether they are line item documents or not
  */
 export const filterDocumentsByType = (
-  documents: Document[], 
+  documents: Document[],
   showLineItemDocuments: boolean
 ): Document[] => {
-  return showLineItemDocuments 
+  return showLineItemDocuments
     ? documents.filter(isLineItemDocument)
     : documents.filter(doc => !isLineItemDocument(doc));
 };

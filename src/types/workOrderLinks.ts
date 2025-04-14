@@ -1,4 +1,3 @@
-
 export interface WorkOrderProjectLink {
   id: string;
   work_order_id: string;

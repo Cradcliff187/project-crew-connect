@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { UseFormReturn } from 'react-hook-form';
 import { WorkOrderFormValues } from '../WorkOrderFormSchema';
@@ -23,22 +22,22 @@ const WorkOrderStepContent = ({
   useCustomAddress,
   formData,
   dataLoaded,
-  setCurrentStep
+  setCurrentStep,
 }: WorkOrderStepContentProps) => {
   return (
     <Tabs value={currentStep} onValueChange={setCurrentStep}>
       <TabsContent value="basic-info" className="mt-0">
         <WorkOrderBasicInfoFields form={form} />
       </TabsContent>
-      
+
       <TabsContent value="schedule" className="mt-0">
         <WorkOrderScheduleFields form={form} />
       </TabsContent>
-      
+
       {dataLoaded && (
         <TabsContent value="location" className="mt-0">
-          <WorkOrderLocationFields 
-            form={form} 
+          <WorkOrderLocationFields
+            form={form}
             useCustomAddress={useCustomAddress}
             customers={formData.customers}
             locations={formData.locations}

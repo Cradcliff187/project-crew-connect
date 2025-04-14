@@ -1,4 +1,3 @@
-
 import { Table } from '@/components/ui/table';
 import { TimeEntry } from '@/types/timeTracking';
 import { TimelogsTableHeader, TimelogsTableBody, EmptyState } from './table';
@@ -14,7 +13,7 @@ const TimelogsTableContent = ({
   timelogs,
   loading = false,
   employeeNameFn,
-  onDelete
+  onDelete,
 }: TimelogsTableContentProps) => {
   if (loading) {
     return (
@@ -32,10 +31,10 @@ const TimelogsTableContent = ({
     <div className="w-full overflow-x-auto">
       <Table>
         <TimelogsTableHeader />
-        <TimelogsTableBody 
-          timelogs={timelogs} 
-          employeeNameFn={employeeNameFn} 
-          onDelete={onDelete} 
+        <TimelogsTableBody
+          timelogs={timelogs}
+          employeeNameFn={employeeNameFn}
+          onDelete={onDelete}
         />
       </Table>
     </div>

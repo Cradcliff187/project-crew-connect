@@ -1,4 +1,3 @@
-
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,31 +11,33 @@ export interface ContactRelationship {
 }
 
 // Fetch relationships for a contact (both directions)
-export const fetchContactRelationships = async (contactId: string): Promise<ContactRelationship[]> => {
+export const fetchContactRelationships = async (
+  contactId: string
+): Promise<ContactRelationship[]> => {
   try {
     // Fetch relationships where the contact is either the source or target
     const { data: fromRelationships, error: fromError } = await supabase
       .from('contact_relationships')
       .select('*')
       .eq('from_contact_id', contactId);
-      
+
     const { data: toRelationships, error: toError } = await supabase
       .from('contact_relationships')
       .select('*')
       .eq('to_contact_id', contactId);
-    
+
     if (fromError || toError) {
       throw fromError || toError;
     }
-    
+
     // Combine both sets of relationships
     return [...(fromRelationships || []), ...(toRelationships || [])];
   } catch (error: any) {
-    console.error("Error fetching contact relationships:", error);
+    console.error('Error fetching contact relationships:', error);
     toast({
-      title: "Error",
-      description: "Failed to load contact relationships.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to load contact relationships.',
+      variant: 'destructive',
     });
     return [];
   }
@@ -57,25 +58,25 @@ export const addContactRelationship = async (
         to_contact_id: toContactId,
         relationship_type: relationshipType,
         notes: notes || null,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       })
       .select('*')
       .single();
-      
+
     if (error) throw error;
-    
+
     toast({
-      title: "Relationship Added",
-      description: "Contact relationship has been successfully created."
+      title: 'Relationship Added',
+      description: 'Contact relationship has been successfully created.',
     });
-    
+
     return data;
   } catch (error: any) {
-    console.error("Error adding contact relationship:", error);
+    console.error('Error adding contact relationship:', error);
     toast({
-      title: "Error",
-      description: "Failed to create contact relationship.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to create contact relationship.',
+      variant: 'destructive',
     });
     return null;
   }
@@ -88,21 +89,21 @@ export const removeContactRelationship = async (relationshipId: string): Promise
       .from('contact_relationships')
       .delete()
       .eq('id', relationshipId);
-      
+
     if (error) throw error;
-    
+
     toast({
-      title: "Relationship Removed",
-      description: "Contact relationship has been successfully removed."
+      title: 'Relationship Removed',
+      description: 'Contact relationship has been successfully removed.',
     });
-    
+
     return true;
   } catch (error: any) {
-    console.error("Error removing contact relationship:", error);
+    console.error('Error removing contact relationship:', error);
     toast({
-      title: "Error",
-      description: "Failed to remove contact relationship.",
-      variant: "destructive"
+      title: 'Error',
+      description: 'Failed to remove contact relationship.',
+      variant: 'destructive',
     });
     return false;
   }
@@ -117,5 +118,5 @@ export const getRelationshipTypeOptions = () => [
   { value: 'PARTNER', label: 'Partner' },
   { value: 'AFFILIATE', label: 'Affiliate' },
   { value: 'CONTRACTOR', label: 'Contractor' },
-  { value: 'SUBCONTRACTOR', label: 'Subcontractor' }
+  { value: 'SUBCONTRACTOR', label: 'Subcontractor' },
 ];

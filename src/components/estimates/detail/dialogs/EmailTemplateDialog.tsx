@@ -1,6 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,14 +20,9 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from '@/components/ui/card';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface EmailTemplateDialogProps {
   open: boolean;
@@ -47,15 +47,12 @@ interface EmailConfig {
   signature: string;
 }
 
-const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
-  open,
-  onOpenChange,
-}) => {
+const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({ open, onOpenChange }) => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [emailConfig, setEmailConfig] = useState<EmailConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('templates');
-  
+
   // Template editing state
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [templateName, setTemplateName] = useState('');
@@ -63,7 +60,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
   const [bodyTemplate, setBodyTemplate] = useState('');
   const [isDefault, setIsDefault] = useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
-  
+
   // Config editing state
   const [fromName, setFromName] = useState('');
   const [fromEmail, setFromEmail] = useState('');
@@ -72,13 +69,13 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
   const [autoBcc, setAutoBcc] = useState(false);
   const [signature, setSignature] = useState('');
   const [isSavingConfig, setIsSavingConfig] = useState(false);
-  
+
   useEffect(() => {
     if (open) {
       fetchTemplatesAndConfig();
     }
   }, [open]);
-  
+
   const fetchTemplatesAndConfig = async () => {
     setIsLoading(true);
     try {
@@ -86,20 +83,20 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
       const { data: templateData, error: templateError } = await supabase
         .from('estimate_email_settings')
         .select('*');
-        
+
       if (templateError) throw templateError;
       setTemplates(templateData || []);
-      
+
       // Fetch email config
       const { data: configData, error: configError } = await supabase
         .from('estimate_email_config')
         .select('*')
         .single();
-        
+
       if (configError && configError.code !== 'PGRST116') {
         throw configError;
       }
-      
+
       if (configData) {
         setEmailConfig(configData);
         setFromName(configData.from_name);
@@ -120,7 +117,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
       setIsLoading(false);
     }
   };
-  
+
   const handleEditTemplate = (template: EmailTemplate) => {
     setEditingTemplate(template);
     setTemplateName(template.template_name);
@@ -128,15 +125,17 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
     setBodyTemplate(template.body_template);
     setIsDefault(template.is_default || false);
   };
-  
+
   const handleNewTemplate = () => {
     setEditingTemplate(null);
     setTemplateName('');
     setSubjectTemplate('Your Estimate #{estimate_id} is ready for review');
-    setBodyTemplate('Dear {client_name},\n\nThank you for your interest. Your estimate #{estimate_id} revision {revision_number} is ready for your review.\n\nPlease let us know if you have any questions.\n\nBest regards,\nAKC LLC Team');
+    setBodyTemplate(
+      'Dear {client_name},\n\nThank you for your interest. Your estimate #{estimate_id} revision {revision_number} is ready for your review.\n\nPlease let us know if you have any questions.\n\nBest regards,\nAKC LLC Team'
+    );
     setIsDefault(false);
   };
-  
+
   const handleSaveTemplate = async () => {
     if (!templateName || !subjectTemplate || !bodyTemplate) {
       toast({
@@ -146,7 +145,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
       });
       return;
     }
-    
+
     setIsSavingTemplate(true);
     try {
       // If setting as default, unset any existing default
@@ -155,49 +154,47 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
           .from('estimate_email_settings')
           .update({ is_default: false })
           .eq('is_default', true);
-          
+
         if (unsetError) {
           console.error('Error unsetting default template:', unsetError);
         }
       }
-      
+
       const templateData = {
         template_name: templateName,
         subject_template: subjectTemplate,
         body_template: bodyTemplate,
         is_default: isDefault,
       };
-      
+
       if (editingTemplate) {
         // Update existing template
         const { error } = await supabase
           .from('estimate_email_settings')
           .update(templateData)
           .eq('id', editingTemplate.id);
-          
+
         if (error) throw error;
-        
+
         toast({
           title: 'Template Updated',
           description: 'Email template has been updated successfully.',
         });
       } else {
         // Create new template
-        const { error } = await supabase
-          .from('estimate_email_settings')
-          .insert(templateData);
-          
+        const { error } = await supabase.from('estimate_email_settings').insert(templateData);
+
         if (error) throw error;
-        
+
         toast({
           title: 'Template Created',
           description: 'New email template has been created successfully.',
         });
       }
-      
+
       // Refresh templates
       fetchTemplatesAndConfig();
-      
+
       // Reset form
       setEditingTemplate(null);
       setTemplateName('');
@@ -215,7 +212,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
       setIsSavingTemplate(false);
     }
   };
-  
+
   const handleDeleteTemplate = async (templateId: string) => {
     if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
       try {
@@ -223,14 +220,14 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
           .from('estimate_email_settings')
           .delete()
           .eq('id', templateId);
-          
+
         if (error) throw error;
-        
+
         toast({
           title: 'Template Deleted',
           description: 'Email template has been deleted successfully.',
         });
-        
+
         fetchTemplatesAndConfig();
       } catch (error: any) {
         console.error('Error deleting template:', error);
@@ -242,7 +239,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
       }
     }
   };
-  
+
   const handleSaveConfig = async () => {
     if (!fromName || !fromEmail) {
       toast({
@@ -252,7 +249,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
       });
       return;
     }
-    
+
     setIsSavingConfig(true);
     try {
       const configData = {
@@ -263,29 +260,27 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
         auto_bcc: autoBcc,
         signature: signature,
       };
-      
+
       if (emailConfig) {
         // Update existing config
         const { error } = await supabase
           .from('estimate_email_config')
           .update(configData)
           .eq('id', emailConfig.id);
-          
+
         if (error) throw error;
       } else {
         // Create new config
-        const { error } = await supabase
-          .from('estimate_email_config')
-          .insert(configData);
-          
+        const { error } = await supabase.from('estimate_email_config').insert(configData);
+
         if (error) throw error;
       }
-      
+
       toast({
         title: 'Settings Saved',
         description: 'Email settings have been saved successfully.',
       });
-      
+
       // Refresh config
       fetchTemplatesAndConfig();
     } catch (error: any) {
@@ -305,14 +300,21 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Email Settings</DialogTitle>
+          <DialogDescription>
+            Manage email templates and configuration for estimate communications.
+          </DialogDescription>
         </DialogHeader>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 flex flex-col overflow-hidden"
+        >
           <TabsList>
             <TabsTrigger value="templates">Email Templates</TabsTrigger>
             <TabsTrigger value="settings">Email Configuration</TabsTrigger>
           </TabsList>
-          
+
           <div className="flex-1 overflow-y-auto mt-4 pr-2">
             <TabsContent value="templates" className="mt-0 h-full">
               {isLoading ? (
@@ -335,50 +337,50 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                           <Input
                             id="templateName"
                             value={templateName}
-                            onChange={(e) => setTemplateName(e.target.value)}
+                            onChange={e => setTemplateName(e.target.value)}
                             disabled={isSavingTemplate}
                             placeholder="Invoice Reminder"
                           />
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Label htmlFor="subjectTemplate">Email Subject Template</Label>
                           <Input
                             id="subjectTemplate"
                             value={subjectTemplate}
-                            onChange={(e) => setSubjectTemplate(e.target.value)}
+                            onChange={e => setSubjectTemplate(e.target.value)}
                             disabled={isSavingTemplate}
                             placeholder="Your invoice #{invoice_number} is ready"
                           />
                           <p className="text-xs text-muted-foreground">
-                            Available variables: {'{client_name}'}, {'{estimate_id}'}, {'{revision_number}'}
+                            Available variables: {'{client_name}'}, {'{estimate_id}'},{' '}
+                            {'{revision_number}'}
                           </p>
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Label htmlFor="bodyTemplate">Email Body Template</Label>
                           <Textarea
                             id="bodyTemplate"
                             value={bodyTemplate}
-                            onChange={(e) => setBodyTemplate(e.target.value)}
+                            onChange={e => setBodyTemplate(e.target.value)}
                             disabled={isSavingTemplate}
                             rows={8}
                           />
                           <p className="text-xs text-muted-foreground">
-                            Available variables: {'{client_name}'}, {'{estimate_id}'}, {'{revision_number}'}
+                            Available variables: {'{client_name}'}, {'{estimate_id}'},{' '}
+                            {'{revision_number}'}
                           </p>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
-                          <Checkbox 
+                          <Checkbox
                             id="isDefault"
                             checked={isDefault}
-                            onCheckedChange={(checked) => setIsDefault(checked as boolean)}
+                            onCheckedChange={checked => setIsDefault(checked as boolean)}
                             disabled={isSavingTemplate}
                           />
-                          <Label htmlFor="isDefault">
-                            Set as default template
-                          </Label>
+                          <Label htmlFor="isDefault">Set as default template</Label>
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-between">
@@ -395,8 +397,8 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                         >
                           Cancel
                         </Button>
-                        <Button 
-                          onClick={handleSaveTemplate} 
+                        <Button
+                          onClick={handleSaveTemplate}
                           disabled={isSavingTemplate}
                           className="bg-[#0485ea] hover:bg-[#0375d1]"
                         >
@@ -413,7 +415,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                     </Card>
                   ) : (
                     <div className="flex justify-end">
-                      <Button 
+                      <Button
                         onClick={handleNewTemplate}
                         className="bg-[#0485ea] hover:bg-[#0375d1]"
                       >
@@ -422,16 +424,18 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                       </Button>
                     </div>
                   )}
-                  
+
                   {templates.length > 0 ? (
                     <div className="space-y-3">
-                      {templates.map((template) => (
+                      {templates.map(template => (
                         <Card key={template.id}>
                           <CardHeader>
                             <div className="flex items-center justify-between">
                               <CardTitle>{template.template_name}</CardTitle>
                               {template.is_default && (
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Default</span>
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Default
+                                </span>
                               )}
                             </div>
                           </CardHeader>
@@ -442,20 +446,22 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                             </div>
                             <div>
                               <p className="text-sm font-medium">Body:</p>
-                              <p className="text-sm whitespace-pre-wrap">{template.body_template}</p>
+                              <p className="text-sm whitespace-pre-wrap">
+                                {template.body_template}
+                              </p>
                             </div>
                           </CardContent>
                           <CardFooter className="flex justify-end gap-2">
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => handleEditTemplate(template)}
                             >
                               <Edit2 className="h-4 w-4 mr-1" />
                               Edit
                             </Button>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => handleDeleteTemplate(template.id)}
                               className="text-red-500 hover:text-red-700"
@@ -475,7 +481,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="settings" className="mt-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -497,7 +503,7 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                         <Input
                           id="fromName"
                           value={fromName}
-                          onChange={(e) => setFromName(e.target.value)}
+                          onChange={e => setFromName(e.target.value)}
                           disabled={isSavingConfig}
                           placeholder="AKC LLC Estimates"
                         />
@@ -508,25 +514,25 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                           id="fromEmail"
                           type="email"
                           value={fromEmail}
-                          onChange={(e) => setFromEmail(e.target.value)}
+                          onChange={e => setFromEmail(e.target.value)}
                           disabled={isSavingConfig}
                           placeholder="estimates@akcllc.com"
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="replyTo">Reply-To Email (Optional)</Label>
                       <Input
                         id="replyTo"
                         type="email"
                         value={replyTo}
-                        onChange={(e) => setReplyTo(e.target.value)}
+                        onChange={e => setReplyTo(e.target.value)}
                         disabled={isSavingConfig}
                         placeholder="support@akcllc.com"
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 items-end">
                       <div className="space-y-2">
                         <Label htmlFor="bccEmail">BCC Email (Optional)</Label>
@@ -534,30 +540,28 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                           id="bccEmail"
                           type="email"
                           value={bccEmail}
-                          onChange={(e) => setBccEmail(e.target.value)}
+                          onChange={e => setBccEmail(e.target.value)}
                           disabled={isSavingConfig}
                           placeholder="records@akcllc.com"
                         />
                       </div>
                       <div className="flex items-center space-x-2 h-10">
-                        <Checkbox 
+                        <Checkbox
                           id="autoBcc"
                           checked={autoBcc}
-                          onCheckedChange={(checked) => setAutoBcc(checked as boolean)}
+                          onCheckedChange={checked => setAutoBcc(checked as boolean)}
                           disabled={isSavingConfig}
                         />
-                        <Label htmlFor="autoBcc">
-                          Always BCC this address
-                        </Label>
+                        <Label htmlFor="autoBcc">Always BCC this address</Label>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="signature">Email Signature (Optional)</Label>
                       <Textarea
                         id="signature"
                         value={signature}
-                        onChange={(e) => setSignature(e.target.value)}
+                        onChange={e => setSignature(e.target.value)}
                         disabled={isSavingConfig}
                         rows={5}
                         placeholder="Your signature here..."
@@ -565,8 +569,8 @@ const EmailTemplateDialog: React.FC<EmailTemplateDialogProps> = ({
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-end">
-                    <Button 
-                      onClick={handleSaveConfig} 
+                    <Button
+                      onClick={handleSaveConfig}
                       disabled={isSavingConfig}
                       className="bg-[#0485ea] hover:bg-[#0375d1]"
                     >

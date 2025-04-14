@@ -1,6 +1,12 @@
-
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const VendorsLoadingState = () => {
   return (
@@ -12,7 +18,9 @@ const VendorsLoadingState = () => {
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
             <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-            <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">Actions</TableHead>
+            <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

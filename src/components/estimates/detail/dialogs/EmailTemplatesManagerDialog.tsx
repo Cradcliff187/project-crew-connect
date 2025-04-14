@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,9 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Edit, Star, StarOff, Trash2, Plus } from 'lucide-react';
 import { EmailTemplate } from '../EmailTemplateSelector';
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import EmailTemplateFormDialog from './EmailTemplateFormDialog';
@@ -21,7 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 interface EmailTemplatesManagerDialogProps {
   open: boolean;
@@ -32,7 +35,7 @@ interface EmailTemplatesManagerDialogProps {
 const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = ({
   open,
   onOpenChange,
-  onSuccess
+  onSuccess,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
@@ -41,13 +44,13 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTemplateId, setDeleteTemplateId] = useState<string | null>(null);
   const { toast } = useToast();
-  
+
   useEffect(() => {
     if (open) {
       fetchTemplates();
     }
   }, [open]);
-  
+
   const fetchTemplates = async () => {
     setIsLoading(true);
     try {
@@ -56,9 +59,9 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
         .select('*')
         .order('is_default', { ascending: false })
         .order('template_name');
-      
+
       if (error) throw error;
-      
+
       setTemplates(data || []);
     } catch (error) {
       console.error('Error fetching email templates:', error);
@@ -71,17 +74,17 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
       setIsLoading(false);
     }
   };
-  
+
   const handleEditTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId);
     setTemplateFormOpen(true);
   };
-  
+
   const handleCreateTemplate = () => {
     setSelectedTemplateId(null);
     setTemplateFormOpen(true);
   };
-  
+
   const handleSetDefault = async (templateId: string) => {
     try {
       // First, unset all default templates
@@ -89,22 +92,22 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
         .from('estimate_email_settings')
         .update({ is_default: false })
         .not('id', 'eq', templateId);
-      
+
       if (unsetError) throw unsetError;
-      
+
       // Set this template as default
       const { error: setError } = await supabase
         .from('estimate_email_settings')
         .update({ is_default: true })
         .eq('id', templateId);
-      
+
       if (setError) throw setError;
-      
+
       toast({
         title: 'Default template updated',
         className: 'bg-[#0485ea] text-white',
       });
-      
+
       fetchTemplates();
     } catch (error) {
       console.error('Error setting default template:', error);
@@ -115,23 +118,23 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
       });
     }
   };
-  
+
   const handleDeleteTemplate = async () => {
     if (!deleteTemplateId) return;
-    
+
     try {
       const { error } = await supabase
         .from('estimate_email_settings')
         .delete()
         .eq('id', deleteTemplateId);
-      
+
       if (error) throw error;
-      
+
       toast({
         title: 'Template deleted',
         className: 'bg-[#0485ea] text-white',
       });
-      
+
       fetchTemplates();
       setDeleteDialogOpen(false);
     } catch (error) {
@@ -143,12 +146,12 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
       });
     }
   };
-  
+
   const confirmDelete = (templateId: string) => {
     setDeleteTemplateId(templateId);
     setDeleteDialogOpen(true);
   };
-  
+
   const handleTemplateFormSuccess = () => {
     setTemplateFormOpen(false);
     fetchTemplates();
@@ -156,12 +159,12 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
       onSuccess();
     }
   };
-  
+
   const truncateText = (text: string, maxLength: number) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
@@ -174,7 +177,7 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
             </Button>
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-y-auto py-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
@@ -183,8 +186,8 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
           ) : templates.length === 0 ? (
             <div className="text-center py-10">
               <p className="text-muted-foreground">No email templates found.</p>
-              <Button 
-                onClick={handleCreateTemplate} 
+              <Button
+                onClick={handleCreateTemplate}
                 className="mt-4 bg-[#0485ea] hover:bg-[#0373ce]"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -207,9 +210,7 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {template.template_name}
-                          {template.is_default && (
-                            <Badge className="bg-[#0485ea]">Default</Badge>
-                          )}
+                          {template.is_default && <Badge className="bg-[#0485ea]">Default</Badge>}
                         </div>
                       </TableCell>
                       <TableCell>{truncateText(template.subject_template, 60)}</TableCell>
@@ -252,14 +253,14 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
           )}
         </div>
       </DialogContent>
-      
+
       <EmailTemplateFormDialog
         open={templateFormOpen}
         onOpenChange={setTemplateFormOpen}
         templateId={selectedTemplateId || undefined}
         onSuccess={handleTemplateFormSuccess}
       />
-      
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -270,7 +271,10 @@ const EmailTemplatesManagerDialog: React.FC<EmailTemplatesManagerDialogProps> = 
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteTemplate} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleDeleteTemplate}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

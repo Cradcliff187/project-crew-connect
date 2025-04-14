@@ -12,12 +12,11 @@ interface RevisionPDFViewerProps {
   className?: string;
 }
 
-const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({ 
+const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
   revision,
   showCard = true,
-  className = ""
+  className = '',
 }) => {
-  
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +25,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
   useEffect(() => {
     const loadPdfUrl = async () => {
       if (!revision?.pdf_document_id) return;
-      
+
       try {
         setIsLoading(true);
         const { data, error } = await supabase
@@ -34,9 +33,9 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
           .select('url, file_name')
           .eq('document_id', revision.pdf_document_id)
           .single();
-          
+
         if (error) throw error;
-        
+
         if (data?.url) {
           setPdfUrl(data.url);
           setFileName(data.file_name || `Estimate-V${revision.version}.pdf`);
@@ -47,24 +46,22 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
         setIsLoading(false);
       }
     };
-    
+
     loadPdfUrl();
   }, [revision]);
-  
+
   const handleViewPdf = async () => {
     if (pdfUrl) {
       // Log the view action
       try {
-        await supabase
-          .from('document_access_logs')
-          .insert({
-            document_id: revision.pdf_document_id,
-            action: 'VIEW'
-          });
+        await supabase.from('document_access_logs').insert({
+          document_id: revision.pdf_document_id,
+          action: 'VIEW',
+        });
       } catch (error) {
         console.error('Error logging document view:', error);
       }
-      
+
       // Open the PDF in a new window
       window.open(pdfUrl, '_blank');
     } else {
@@ -85,27 +82,26 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
       });
       return;
     }
-    
+
     try {
       const response = await fetch(pdfUrl);
       const blob = await response.blob();
-      
+
       // Create a download link
       const downloadLink = document.createElement('a');
       downloadLink.href = URL.createObjectURL(blob);
-      downloadLink.download = fileName || `Estimate-V${revision.version}-${new Date().toISOString().split('T')[0]}.pdf`;
+      downloadLink.download =
+        fileName || `Estimate-V${revision.version}-${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
-      
+
       // Log the download action
       try {
-        await supabase
-          .from('document_access_logs')
-          .insert({
-            document_id: revision.pdf_document_id,
-            action: 'DOWNLOAD'
-          });
+        await supabase.from('document_access_logs').insert({
+          document_id: revision.pdf_document_id,
+          action: 'DOWNLOAD',
+        });
       } catch (error) {
         console.error('Error logging document download:', error);
       }
@@ -122,7 +118,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
   if (!revision?.pdf_document_id) {
     return null;
   }
-  
+
   const content = (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
       <div className="flex items-center space-x-2">
@@ -134,12 +130,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
       </div>
       <div className="flex gap-2">
         {isLoading ? (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            className="text-xs"
-          >
+          <Button variant="outline" size="sm" disabled className="text-xs">
             <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
             Loading
           </Button>
@@ -174,9 +165,7 @@ const RevisionPDFViewer: React.FC<RevisionPDFViewerProps> = ({
   if (showCard) {
     return (
       <Card className={`mt-2 ${className}`}>
-        <CardContent className="p-4">
-          {content}
-        </CardContent>
+        <CardContent className="p-4">{content}</CardContent>
       </Card>
     );
   }

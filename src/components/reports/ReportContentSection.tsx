@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { Search } from 'lucide-react';
@@ -23,7 +22,7 @@ const ReportContentSection = ({
   data,
   loading,
   error,
-  fields
+  fields,
 }: ReportContentSectionProps) => {
   const columns = generateTableColumns(fields);
 
@@ -37,12 +36,12 @@ const ReportContentSection = ({
             <Input
               placeholder={`Search ${title}...`}
               value={searchValue}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={e => onSearchChange(e.target.value)}
               className="pl-7 h-8 text-sm"
             />
           </div>
         </div>
-        
+
         {/* Data Table - Excel-style with compact rows */}
         {loading ? (
           <div className="py-6 text-center">
@@ -55,8 +54,8 @@ const ReportContentSection = ({
           </div>
         ) : data && data.length > 0 ? (
           <div className="border rounded-sm overflow-auto excel-style">
-            <DataTable 
-              columns={columns} 
+            <DataTable
+              columns={columns}
               data={data}
               compact={true}
               defaultSorting={{ columnId: Object.keys(data[0])[0], direction: 'asc' }}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,14 +17,14 @@ export const useProjectProgress = (projectId: string): UseProjectProgressResult 
   const [progressData, setProgressData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const fetchProgress = async () => {
     if (!projectId) {
       setError('No project ID provided');
       setLoading(false);
       return;
     }
-    
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -33,7 +32,7 @@ export const useProjectProgress = (projectId: string): UseProjectProgressResult 
         .select('*')
         .eq('projectid', projectId)
         .maybeSingle();
-      
+
       if (error) {
         // If no record found, just set progress to 0
         if (error.code === 'PGRST116') {
@@ -49,7 +48,7 @@ export const useProjectProgress = (projectId: string): UseProjectProgressResult 
         setProgressValue(0);
         setProgressData(null);
       }
-      
+
       setError(null);
     } catch (err: any) {
       console.error('Error fetching project progress:', err);
@@ -58,7 +57,7 @@ export const useProjectProgress = (projectId: string): UseProjectProgressResult 
       setLoading(false);
     }
   };
-  
+
   const saveProgress = async (value: number): Promise<boolean> => {
     try {
       // Check if a progress record exists
@@ -67,9 +66,9 @@ export const useProjectProgress = (projectId: string): UseProjectProgressResult 
         .select('id')
         .eq('projectid', projectId)
         .maybeSingle();
-      
+
       let result;
-      
+
       if (data) {
         // Update existing record
         result = await supabase
@@ -82,9 +81,9 @@ export const useProjectProgress = (projectId: string): UseProjectProgressResult 
           .from('project_progress')
           .insert({ projectid: projectId, progress_percentage: value });
       }
-      
+
       if (result.error) throw result.error;
-      
+
       // Update the local state
       setProgressValue(value);
       return true;
@@ -94,19 +93,19 @@ export const useProjectProgress = (projectId: string): UseProjectProgressResult 
       return false;
     }
   };
-  
+
   useEffect(() => {
     fetchProgress();
   }, [projectId]);
-  
-  return { 
-    progressValue, 
+
+  return {
+    progressValue,
     progressData,
-    loading, 
-    error, 
+    loading,
+    error,
     fetchProgress,
-    refetch: fetchProgress, // Add refetch as an alias for fetchProgress 
+    refetch: fetchProgress, // Add refetch as an alias for fetchProgress
     setProgressValue,
-    saveProgress
+    saveProgress,
   };
 };

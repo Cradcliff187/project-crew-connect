@@ -1,4 +1,3 @@
-
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import AddExpenseForm from '../../AddExpenseForm';
 
@@ -6,7 +5,7 @@ interface AddExpenseSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
-  vendors: { vendorid: string, vendorname: string }[];
+  vendors: { vendorid: string; vendorname: string }[];
   submitting: boolean;
   onExpensePrompt: (expenseData: any) => void;
   onVendorAdded: () => void;
@@ -21,7 +20,7 @@ const AddExpenseSheet = ({
   submitting,
   onExpensePrompt,
   onVendorAdded,
-  onSuccess
+  onSuccess,
 }: AddExpenseSheetProps) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

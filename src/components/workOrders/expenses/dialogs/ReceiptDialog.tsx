@@ -1,10 +1,9 @@
-
 import { WorkOrderExpense } from '@/types/workOrder';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import ExpenseReceiptUpload from '../components/ExpenseReceiptUpload';
-import { 
+import {
   ReceiptUploadDialog as SharedReceiptUploadDialog,
-  ReceiptViewerDialog as SharedReceiptViewerDialog
+  ReceiptViewerDialog as SharedReceiptViewerDialog,
 } from '../../common/ReceiptDialogManager';
 
 interface ReceiptUploadDialogProps {
@@ -40,7 +39,7 @@ export const ReceiptUploadDialog = ({
         workOrderId={workOrderId}
         expense={expense}
         vendorName={vendorName}
-        onSuccess={(documentId) => documentId && onSuccess(expense.id, documentId)}
+        onSuccess={documentId => documentId && onSuccess(expense.id, documentId)}
         onCancel={onCancel}
       />
     </SharedReceiptUploadDialog>

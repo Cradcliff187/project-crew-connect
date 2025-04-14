@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useEstimateItemData = () => {
@@ -13,16 +12,16 @@ export const useEstimateItemData = () => {
     if (dataFetchedRef.current) {
       return;
     }
-    
+
     try {
       setLoading(true);
       // Dynamically import supabase to reduce initial load time
       const { supabase } = await import('@/integrations/supabase/client');
-      
+
       // Use Promise.all to fetch data in parallel
       const [vendorsResult, subcontractorsResult] = await Promise.all([
         supabase.from('vendors').select('vendorid, vendorname').order('vendorname'),
-        supabase.from('subcontractors').select('subid, subname').order('subname')
+        supabase.from('subcontractors').select('subid, subname').order('subname'),
       ]);
 
       if (vendorsResult.error) {
@@ -36,7 +35,7 @@ export const useEstimateItemData = () => {
       } else {
         setSubcontractors(subcontractorsResult.data || []);
       }
-      
+
       // Mark data as fetched so we don't fetch it again
       dataFetchedRef.current = true;
     } catch (error) {

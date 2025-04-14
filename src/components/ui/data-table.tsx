@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   ColumnDef,
@@ -22,7 +21,13 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -43,14 +48,16 @@ export function DataTable<TData, TValue>({
   data,
   filterColumn,
   defaultSorting,
-  searchPlaceholder = "Filter...",
-  compact = false
+  searchPlaceholder = 'Filter...',
+  compact = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>(
-    defaultSorting ? [{ id: defaultSorting.columnId, desc: defaultSorting.direction === 'desc' }] : []
+    defaultSorting
+      ? [{ id: defaultSorting.columnId, desc: defaultSorting.direction === 'desc' }]
+      : []
   );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  
+
   const table = useReactTable({
     data,
     columns,
@@ -72,10 +79,8 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center py-2">
           <Input
             placeholder={searchPlaceholder}
-            value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn(filterColumn)?.setFilterValue(event.target.value)
-            }
+            value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ''}
+            onChange={event => table.getColumn(filterColumn)?.setFilterValue(event.target.value)}
             className="max-w-sm h-8 text-sm"
           />
         </div>
@@ -83,21 +88,14 @@ export function DataTable<TData, TValue>({
       <div>
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className={cn(
-                compact ? "h-8" : ""
-              )}>
-                {headerGroup.headers.map((header) => {
+            {table.getHeaderGroups().map(headerGroup => (
+              <TableRow key={headerGroup.id} className={cn(compact ? 'h-8' : '')}>
+                {headerGroup.headers.map(header => {
                   return (
-                    <TableHead key={header.id} className={cn(
-                      compact ? "py-1 px-2 text-xs" : ""
-                    )}>
+                    <TableHead key={header.id} className={cn(compact ? 'py-1 px-2 text-xs' : '')}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
                 })}
@@ -106,18 +104,14 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map(row => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={cn(
-                    compact ? "h-7 hover:bg-muted/30" : ""
-                  )}
+                  data-state={row.getIsSelected() && 'selected'}
+                  className={cn(compact ? 'h-7 hover:bg-muted/30' : '')}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={cn(
-                      compact ? "py-1 px-2 text-xs" : ""
-                    )}>
+                  {row.getVisibleCells().map(cell => (
+                    <TableCell key={cell.id} className={cn(compact ? 'py-1 px-2 text-xs' : '')}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -125,10 +119,10 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className={cn(
-                  "h-24 text-center",
-                  compact ? "text-xs" : ""
-                )}>
+                <TableCell
+                  colSpan={columns.length}
+                  className={cn('h-24 text-center', compact ? 'text-xs' : '')}
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -136,77 +130,75 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      
-      <div className={cn(
-        "flex items-center justify-between space-x-2 py-2",
-        compact ? "py-1" : "py-4"
-      )}>
-        <div className={cn(
-          "flex-1 text-sm text-muted-foreground",
-          compact ? "text-xs" : ""
-        )}>
-          {compact ? `${table.getFilteredRowModel().rows.length} rows` : 
-            `Showing ${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to 
+
+      <div
+        className={cn(
+          'flex items-center justify-between space-x-2 py-2',
+          compact ? 'py-1' : 'py-4'
+        )}
+      >
+        <div className={cn('flex-1 text-sm text-muted-foreground', compact ? 'text-xs' : '')}>
+          {compact
+            ? `${table.getFilteredRowModel().rows.length} rows`
+            : `Showing ${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to 
             ${Math.min(
               (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
               table.getFilteredRowModel().rows.length
-            )} of ${table.getFilteredRowModel().rows.length} entries`
-          }
+            )} of ${table.getFilteredRowModel().rows.length} entries`}
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
-            size={compact ? "xs" : "sm"}
+            size={compact ? 'xs' : 'sm'}
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
-            className={compact ? "h-6 w-6 p-0" : ""}
+            className={compact ? 'h-6 w-6 p-0' : ''}
           >
-            <ChevronsLeft className={cn("h-4 w-4", compact ? "h-3 w-3" : "")} />
+            <ChevronsLeft className={cn('h-4 w-4', compact ? 'h-3 w-3' : '')} />
           </Button>
           <Button
             variant="outline"
-            size={compact ? "xs" : "sm"}
+            size={compact ? 'xs' : 'sm'}
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className={compact ? "h-6 w-6 p-0" : ""}
+            className={compact ? 'h-6 w-6 p-0' : ''}
           >
-            <ChevronLeft className={cn("h-4 w-4", compact ? "h-3 w-3" : "")} />
+            <ChevronLeft className={cn('h-4 w-4', compact ? 'h-3 w-3' : '')} />
           </Button>
-          
+
           {!compact && (
             <span className="flex items-center gap-1 text-sm">
               <div>Page</div>
               <strong>
-                {table.getState().pagination.pageIndex + 1} of{" "}
-                {table.getPageCount()}
+                {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
               </strong>
             </span>
           )}
-          
+
           <Button
             variant="outline"
-            size={compact ? "xs" : "sm"}
+            size={compact ? 'xs' : 'sm'}
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className={compact ? "h-6 w-6 p-0" : ""}
+            className={compact ? 'h-6 w-6 p-0' : ''}
           >
-            <ChevronRight className={cn("h-4 w-4", compact ? "h-3 w-3" : "")} />
+            <ChevronRight className={cn('h-4 w-4', compact ? 'h-3 w-3' : '')} />
           </Button>
           <Button
             variant="outline"
-            size={compact ? "xs" : "sm"}
+            size={compact ? 'xs' : 'sm'}
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
-            className={compact ? "h-6 w-6 p-0" : ""}
+            className={compact ? 'h-6 w-6 p-0' : ''}
           >
-            <ChevronsRight className={cn("h-4 w-4", compact ? "h-3 w-3" : "")} />
+            <ChevronsRight className={cn('h-4 w-4', compact ? 'h-3 w-3' : '')} />
           </Button>
-          
+
           {!compact && (
             <Select
               value={table.getState().pagination.pageSize.toString()}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 table.setPageSize(Number(value));
               }}
             >
@@ -214,7 +206,7 @@ export function DataTable<TData, TValue>({
                 <SelectValue placeholder={table.getState().pagination.pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
+                {[10, 20, 30, 40, 50].map(pageSize => (
                   <SelectItem key={pageSize} value={pageSize.toString()}>
                     {pageSize}
                   </SelectItem>
@@ -222,11 +214,11 @@ export function DataTable<TData, TValue>({
               </SelectContent>
             </Select>
           )}
-          
+
           {compact && (
             <Select
               value={table.getState().pagination.pageSize.toString()}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 table.setPageSize(Number(value));
               }}
             >
@@ -234,7 +226,7 @@ export function DataTable<TData, TValue>({
                 <SelectValue placeholder={table.getState().pagination.pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
-                {[10, 25, 50, 100].map((pageSize) => (
+                {[10, 25, 50, 100].map(pageSize => (
                   <SelectItem key={pageSize} value={pageSize.toString()} className="text-xs py-1">
                     {pageSize}
                   </SelectItem>

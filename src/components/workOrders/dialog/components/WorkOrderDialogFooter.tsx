@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, Loader2, SaveIcon, X } from 'lucide-react';
@@ -23,7 +22,7 @@ const WorkOrderDialogFooter = ({
   onPrevious,
   onNext,
   onCancel,
-  onSubmit
+  onSubmit,
 }: WorkOrderDialogFooterProps) => {
   const isFirstStep = currentStep === WORK_ORDER_STEPS[0].id;
   const isLastStep = currentStep === WORK_ORDER_STEPS[WORK_ORDER_STEPS.length - 1].id;
@@ -32,9 +31,9 @@ const WorkOrderDialogFooter = ({
     <DialogFooter className="border-t pt-4 mt-auto flex justify-between">
       <div>
         {!isFirstStep && (
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={onPrevious}
             disabled={isSubmitting || isLoading}
           >
@@ -43,21 +42,16 @@ const WorkOrderDialogFooter = ({
           </Button>
         )}
       </div>
-      
+
       <div className="flex space-x-2">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           <X className="h-4 w-4 mr-2" />
           Cancel
         </Button>
-        
+
         {!isLastStep ? (
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={onNext}
             disabled={isLoading || !dataLoaded}
             className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
@@ -66,8 +60,8 @@ const WorkOrderDialogFooter = ({
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         ) : (
-          <Button 
-            type="button" // Changed from "submit" to "button" 
+          <Button
+            type="button" // Changed from "submit" to "button"
             onClick={onSubmit} // Use the onSubmit prop instead of form submission
             disabled={isSubmitting || isLoading || !dataLoaded}
             className="bg-[#0485ea] text-white hover:bg-[#0373d1]"

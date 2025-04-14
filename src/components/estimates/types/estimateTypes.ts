@@ -84,5 +84,5 @@ export interface EstimateRevisionComparison {
     newItemsCost: number;
     removedItemsCost: number;
     modifiedItemsDifference: number;
-  }
+  };
 }

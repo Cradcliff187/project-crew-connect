@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { EstimateType } from '../EstimatesTable';
@@ -10,24 +9,24 @@ interface EstimatePrintTemplateProps {
   revision?: EstimateRevision;
 }
 
-const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({ 
-  estimate, 
+const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
+  estimate,
   items,
-  revision
+  revision,
 }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
     }).format(date);
   };
 
@@ -46,7 +45,9 @@ const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
             ESTIMATE {revision && <span className="text-lg">Revision {revision.version}</span>}
           </h1>
           <p className="text-gray-600">#{estimate.id}</p>
-          <p className="text-gray-600">Date: {formatDate(revision?.revision_date || estimate.date)}</p>
+          <p className="text-gray-600">
+            Date: {formatDate(revision?.revision_date || estimate.date)}
+          </p>
           {revision && revision.version > 1 && (
             <p className="text-gray-600">Original Estimate Date: {formatDate(estimate.date)}</p>
           )}
@@ -78,7 +79,7 @@ const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
         <div>
           <h3 className="font-semibold text-gray-700 mb-2">Project:</h3>
           <p className="font-medium">{estimate.project}</p>
-          
+
           {/* If job site location is different from client location */}
           {estimate.location && (
             <div className="mt-4">
@@ -135,7 +136,9 @@ const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} className="p-3 text-right font-medium">Subtotal:</td>
+              <td colSpan={3} className="p-3 text-right font-medium">
+                Subtotal:
+              </td>
               <td className="p-3 text-right font-medium">{formatCurrency(subtotal)}</td>
             </tr>
             <tr>
@@ -145,7 +148,9 @@ const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
               <td className="p-3 text-right font-medium">{formatCurrency(contingencyAmount)}</td>
             </tr>
             <tr className="bg-gray-100">
-              <td colSpan={3} className="p-3 text-right font-bold">Total:</td>
+              <td colSpan={3} className="p-3 text-right font-bold">
+                Total:
+              </td>
               <td className="p-3 text-right font-bold">{formatCurrency(total)}</td>
             </tr>
           </tfoot>
@@ -160,7 +165,7 @@ const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
           <li>Payment terms: 50% deposit required to begin work, balance due upon completion.</li>
           <li>Any additional work not specified in this estimate will require a separate quote.</li>
         </ol>
-        
+
         <div className="mt-8 pt-6 flex justify-between">
           <div>
             <p className="font-medium">Approved By:</p>

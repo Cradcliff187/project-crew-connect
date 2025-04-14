@@ -1,16 +1,21 @@
-
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form';
 import { useWorkOrderForm } from './hooks/useWorkOrderForm';
 import { useWorkOrderData } from './hooks/useWorkOrderData';
 import { useWorkOrderSubmit } from './hooks/useWorkOrderSubmit';
-import { 
-  WorkOrderStepTabs, 
-  WorkOrderDialogFooter, 
-  WorkOrderLoadingState, 
+import {
+  WorkOrderStepTabs,
+  WorkOrderDialogFooter,
+  WorkOrderLoadingState,
   WorkOrderStepContent,
-  WORK_ORDER_STEPS
+  WORK_ORDER_STEPS,
 } from './components';
 
 interface WorkOrderDialogProps {
@@ -22,20 +27,20 @@ interface WorkOrderDialogProps {
 const WorkOrderMultiStepDialog = ({
   open,
   onOpenChange,
-  onWorkOrderAdded
+  onWorkOrderAdded,
 }: WorkOrderDialogProps) => {
   const [currentStep, setCurrentStep] = useState(WORK_ORDER_STEPS[0].id);
-  
+
   // Use separate hooks for form, data, and submission
   const { form, resetForm, useCustomAddress } = useWorkOrderForm();
   const { formData, dataLoaded, isLoading } = useWorkOrderData(open);
   const { isSubmitting, onSubmit } = useWorkOrderSubmit({
     onWorkOrderAdded,
     onOpenChange,
-    resetForm
+    resetForm,
   });
 
-  const handleFormSubmit = form.handleSubmit(async (values) => {
+  const handleFormSubmit = form.handleSubmit(async values => {
     await onSubmit(values);
   });
 
@@ -93,12 +98,12 @@ const WorkOrderMultiStepDialog = ({
             Form to create a new work order
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="mt-2 mb-6">
-          <WorkOrderStepTabs 
-            currentStep={currentStep} 
-            setCurrentStep={setCurrentStep} 
-            isDisabled={isLoading || isSubmitting} 
+          <WorkOrderStepTabs
+            currentStep={currentStep}
+            setCurrentStep={setCurrentStep}
+            isDisabled={isLoading || isSubmitting}
           />
         </div>
 
@@ -120,7 +125,7 @@ const WorkOrderMultiStepDialog = ({
             </Form>
           )}
         </div>
-        
+
         <WorkOrderDialogFooter
           currentStep={currentStep}
           isSubmitting={isSubmitting}

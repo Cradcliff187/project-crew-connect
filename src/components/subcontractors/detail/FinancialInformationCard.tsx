@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Clock, DollarSign, FileText } from 'lucide-react';
 import { getPaymentTermsLabel } from '../utils/performanceUtils';
@@ -11,7 +10,9 @@ interface FinancialInformationCardProps {
 const FinancialInformationCard = ({ subcontractor }: FinancialInformationCardProps) => {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Financial Information</h3>
+      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">
+        Financial Information
+      </h3>
       <div className="space-y-2">
         {subcontractor.payment_terms && (
           <div className="flex items-center gap-2">

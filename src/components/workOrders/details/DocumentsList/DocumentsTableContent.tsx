@@ -1,6 +1,12 @@
-
 import React from 'react';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
 import { formatDate, formatFileSize } from '@/lib/utils';
 import { FileIcon, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +25,7 @@ const DocumentsTableContent: React.FC<DocumentsTableContentProps> = ({
   documents,
   loading,
   onViewDocument,
-  onToggleUploadForm
+  onToggleUploadForm,
 }) => {
   if (loading) {
     return (
@@ -36,12 +42,10 @@ const DocumentsTableContent: React.FC<DocumentsTableContentProps> = ({
         <FileIcon className="h-12 w-12 text-gray-300 mb-4" />
         <h3 className="text-lg font-medium">No documents yet</h3>
         <p className="mt-2 text-sm text-gray-500 max-w-md">
-          No documents have been uploaded for this work order yet. Add documents such as contracts, photos, or receipts.
+          No documents have been uploaded for this work order yet. Add documents such as contracts,
+          photos, or receipts.
         </p>
-        <Button 
-          onClick={onToggleUploadForm} 
-          className="mt-6 bg-[#0485ea] hover:bg-[#0375d1]"
-        >
+        <Button onClick={onToggleUploadForm} className="mt-6 bg-[#0485ea] hover:bg-[#0375d1]">
           <Upload className="h-4 w-4 mr-2" />
           Upload Document
         </Button>
@@ -62,9 +66,9 @@ const DocumentsTableContent: React.FC<DocumentsTableContentProps> = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {documents.map((doc) => (
-          <TableRow 
-            key={doc.document_id} 
+        {documents.map(doc => (
+          <TableRow
+            key={doc.document_id}
             className="cursor-pointer hover:bg-[#0485ea]/5"
             onClick={() => onViewDocument(doc)}
           >
@@ -88,7 +92,7 @@ const DocumentsTableContent: React.FC<DocumentsTableContentProps> = ({
                 size="sm"
                 variant="ghost"
                 className="text-[#0485ea] hover:bg-[#0485ea]/10 hover:text-[#0485ea]"
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   onViewDocument(doc);
                 }}

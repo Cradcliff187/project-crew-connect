@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,7 @@ interface LocationFieldsProps {
 
 const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress }) => {
   const form = useFormContext<EstimateFormValues>();
-  
+
   // Set default state if none is provided
   React.useEffect(() => {
     const currentState = form.getValues('location.state');
@@ -19,11 +18,11 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
       form.setValue('location.state', 'California');
     }
   }, [form]);
-  
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold mt-8 mb-4">Project Location</h3>
-      
+
       {selectedCustomerAddress && (
         <div className="p-3 bg-gray-50 rounded-md border mb-4">
           <p className="text-sm text-gray-700">
@@ -34,7 +33,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
           </p>
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
@@ -49,7 +48,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="location.city"
@@ -64,7 +63,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
           )}
         />
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
@@ -79,7 +78,7 @@ const LocationFields: React.FC<LocationFieldsProps> = ({ selectedCustomerAddress
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="location.zip"

@@ -1,14 +1,13 @@
-
 import React from 'react';
-import { 
-  AlertDialog, 
-  AlertDialogContent, 
-  AlertDialogTitle, 
-  AlertDialogHeader, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogCancel, 
-  AlertDialogAction 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogHeader,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 
 interface EstimateDeleteDialogProps {
@@ -17,10 +16,10 @@ interface EstimateDeleteDialogProps {
   onDelete: () => void;
 }
 
-const EstimateDeleteDialog: React.FC<EstimateDeleteDialogProps> = ({ 
-  open, 
-  onOpenChange, 
-  onDelete 
+const EstimateDeleteDialog: React.FC<EstimateDeleteDialogProps> = ({
+  open,
+  onOpenChange,
+  onDelete,
 }) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -33,10 +32,7 @@ const EstimateDeleteDialog: React.FC<EstimateDeleteDialogProps> = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onDelete}
-            className="bg-red-600 hover:bg-red-700"
-          >
+          <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

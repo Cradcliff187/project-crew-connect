@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,27 +12,27 @@ interface ProjectProgressCardProps {
   className?: string;
 }
 
-const ProjectProgressCard: React.FC<ProjectProgressCardProps> = ({ 
-  projectId, 
-  title = "Project Progress", 
-  className = ""
+const ProjectProgressCard: React.FC<ProjectProgressCardProps> = ({
+  projectId,
+  title = 'Project Progress',
+  className = '',
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const { progressValue, loading, error, refetch } = useProjectProgress(projectId);
-  
+
   const handleProgressUpdate = () => {
     refetch();
     setIsEditing(false);
   };
-  
+
   return (
     <Card className={className}>
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-base font-medium">{title}</CardTitle>
         {!isEditing && !loading && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="h-8 w-8 p-0"
             onClick={() => setIsEditing(true)}
           >
@@ -47,7 +46,7 @@ const ProjectProgressCard: React.FC<ProjectProgressCardProps> = ({
         ) : error ? (
           <p className="text-sm text-red-500">Error loading progress</p>
         ) : isEditing ? (
-          <ProgressEditForm 
+          <ProgressEditForm
             projectId={projectId}
             currentProgress={progressValue}
             onProgressUpdate={handleProgressUpdate}

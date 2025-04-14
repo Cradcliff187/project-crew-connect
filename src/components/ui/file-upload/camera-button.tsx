@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,9 +6,7 @@ interface CameraButtonProps {
   onCameraCapture: () => void;
 }
 
-export const CameraButton: React.FC<CameraButtonProps> = ({
-  onCameraCapture
-}) => {
+export const CameraButton: React.FC<CameraButtonProps> = ({ onCameraCapture }) => {
   return (
     <Button
       type="button"

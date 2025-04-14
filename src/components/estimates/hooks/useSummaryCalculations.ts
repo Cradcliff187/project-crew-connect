@@ -1,14 +1,13 @@
-
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useMemo, useRef, useCallback, useEffect, useState } from 'react';
-import { 
-  calculateSubtotal, 
-  calculateContingencyAmount, 
+import {
+  calculateSubtotal,
+  calculateContingencyAmount,
   calculateGrandTotal,
   calculateTotalCost,
   calculateTotalMarkup,
   calculateTotalGrossMargin,
-  calculateOverallGrossMarginPercentage
+  calculateOverallGrossMarginPercentage,
 } from '../utils/estimateCalculations';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -43,31 +42,31 @@ export const useSummaryCalculations = () => {
     contingencyAmount: 0,
     grandTotal: 0,
     hasError: false,
-    errorMessage: ""
+    errorMessage: '',
   });
-  
+
   // Use useWatch with selective dependencies instead of watching the entire form
   const items = useWatch({
     control: form.control,
     name: 'items',
-    defaultValue: []
+    defaultValue: [],
   });
 
   const contingencyPercentage = useWatch({
     control: form.control,
     name: 'contingency_percentage',
-    defaultValue: "0"
+    defaultValue: '0',
   });
 
   // Increase debounce time to reduce calculation frequency
   const debouncedItems = useDebounce(items, 800);
   const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 800);
-  
+
   // Normalize calculation items - memoized to prevent recreation
   const normalizeCalculationItems = useCallback((formItems: any[]): any[] => {
     if (!Array.isArray(formItems)) return [];
-    
-    return formItems.map((item) => ({
+
+    return formItems.map(item => ({
       cost: item?.cost || '0',
       markup_percentage: item?.markup_percentage || '0',
       quantity: item?.quantity || '1',
@@ -78,15 +77,15 @@ export const useSummaryCalculations = () => {
       document_id: item?.document_id,
       trade_type: item?.trade_type,
       expense_type: item?.expense_type,
-      custom_type: item?.custom_type
+      custom_type: item?.custom_type,
     }));
   }, []);
-  
+
   // Effect for calculation with rate limiting
   useEffect(() => {
     // Skip calculation if we're in a lock period
     if (calculationLockRef.current) return;
-    
+
     // Rate limit to max one calculation per 500ms
     const now = Date.now();
     if (now - lastCalculationTimeRef.current < 500) {
@@ -99,30 +98,33 @@ export const useSummaryCalculations = () => {
       }, timeToWait);
       return () => clearTimeout(timeout);
     }
-    
+
     // Set lock during calculation to prevent recursive updates
     calculationLockRef.current = true;
     performCalculation();
     calculationLockRef.current = false;
   }, [debouncedItems, debouncedContingencyPercentage]);
-  
+
   const performCalculation = () => {
     try {
       // Record calculation time
       lastCalculationTimeRef.current = Date.now();
-      
+
       // Use normalized items
       const calculationItems = normalizeCalculationItems(debouncedItems);
-      
+
       // Calculate all the totals
       const totalCost = calculateTotalCost(calculationItems);
       const totalMarkup = calculateTotalMarkup(calculationItems);
       const subtotal = calculateSubtotal(calculationItems);
       const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
       const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
-      const contingencyAmount = calculateContingencyAmount(calculationItems, debouncedContingencyPercentage);
+      const contingencyAmount = calculateContingencyAmount(
+        calculationItems,
+        debouncedContingencyPercentage
+      );
       const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
-      
+
       // Update state with new values
       setCalculationResults({
         totalCost,
@@ -133,14 +135,14 @@ export const useSummaryCalculations = () => {
         contingencyAmount,
         grandTotal,
         hasError: false,
-        errorMessage: ""
+        errorMessage: '',
       });
     } catch (error: any) {
-      console.error("Error in estimate calculations:", error);
+      console.error('Error in estimate calculations:', error);
       setCalculationResults(prev => ({
         ...prev,
         hasError: true,
-        errorMessage: error.message || "Error calculating totals"
+        errorMessage: error.message || 'Error calculating totals',
       }));
     }
   };

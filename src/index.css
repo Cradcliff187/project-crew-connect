@@ -1,9 +1,10 @@
-
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
     --background: 30 25% 97%;
@@ -11,7 +12,7 @@
 
     --card: 32 30% 98%;
     --card-foreground: 222.2 84% 4.9%;
- 
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
@@ -22,15 +23,15 @@
     /* Secondary color now warm gray */
     --secondary: 30 10% 94%;
     --secondary-foreground: 222.2 47.4% 11.2%;
- 
+
     /* Muted now warmer */
     --muted: 30 15% 94%;
     --muted-foreground: 215.4 16.3% 46.9%;
- 
+
     /* Accent now terracotta-inspired */
     --accent: 17 70% 50%;
     --accent-foreground: 210 40% 98%;
- 
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
@@ -38,7 +39,7 @@
     --border: 30 15% 85%;
     --input: 30 15% 85%;
     --ring: 213 94% 48%;
- 
+
     --radius: 0.5rem;
 
     /* AKC Brand Blue sidebar colors - explicitly using #0485ea */
@@ -53,12 +54,12 @@
     --sidebar-border: 30 15% 85%;
     --sidebar-ring: 213 94% 48% / 0.5;
   }
- 
+
   .dark {
     /* Keep existing dark mode code */
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
@@ -67,7 +68,12 @@
     @apply bg-background text-foreground;
     font-family: 'Open Sans', sans-serif;
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Montserrat', sans-serif;
     font-weight: 700;
   }
@@ -78,25 +84,21 @@
   .card-gradient {
     @apply bg-gradient-to-br from-card to-secondary/80;
   }
-  
+
   .card-glass {
     @apply bg-white/70 backdrop-blur-sm border border-white/20;
   }
-  
+
   .premium-card {
     @apply rounded-lg border border-border bg-card shadow-sm relative overflow-hidden;
   }
-  
+
   .premium-card::before {
     content: '';
     @apply absolute inset-0 bg-gradient-to-br from-construction-50/40 to-white pointer-events-none;
   }
-  
+
   .subtle-input {
     @apply bg-background/70 border-border/70 focus:border-primary/50 focus:ring-1 focus:ring-primary/30;
   }
 }
-
-/* Import fonts */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;500;600&display=swap');
-

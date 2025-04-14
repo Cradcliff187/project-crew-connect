@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { CheckCircle, Clock, AlertCircle, XCircle, ArrowRightCircle, FileText } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/utils';
@@ -15,18 +14,18 @@ interface EstimateRevisionTimelineProps {
   maxHeight?: string;
 }
 
-const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({ 
-  revisions, 
+const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
+  revisions,
   currentRevisionId,
   onSelectRevision,
-  maxHeight = '500px'
+  maxHeight = '500px',
 }) => {
   // Sort revisions by version (newest first)
   const sortedRevisions = [...revisions].sort((a, b) => b.version - a.version);
-  
+
   // Helper function to get status icon
   const getStatusIcon = (status: string | undefined) => {
-    switch(status?.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'approved':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'sent':
@@ -37,9 +36,9 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
         return <AlertCircle className="h-4 w-4 text-gray-500" />;
     }
   };
-  
+
   const getStatusColor = (status: string | undefined) => {
-    switch(status?.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'approved':
         return 'bg-green-100 text-green-800 border-green-300';
       case 'sent':
@@ -50,12 +49,12 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
   };
-  
+
   // Find the index of the current revision
-  const currentRevisionIndex = currentRevisionId 
+  const currentRevisionIndex = currentRevisionId
     ? sortedRevisions.findIndex(r => r.id === currentRevisionId)
     : -1;
-  
+
   if (revisions.length === 0) {
     return (
       <div className="text-center p-4 border rounded-md bg-slate-50">
@@ -70,30 +69,36 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
         <FileText className="h-4 w-4 mr-1.5 text-[#0485ea]" />
         Version History
       </h3>
-      
+
       <ScrollArea className={`pr-3 -mr-3 ${maxHeight ? `max-h-[${maxHeight}]` : ''}`}>
         <div className="space-y-3">
           {sortedRevisions.map((revision, index) => {
             const isCurrent = revision.id === currentRevisionId;
-            
+
             return (
-              <div 
+              <div
                 key={revision.id}
                 className={`p-3 border rounded-md ${isCurrent ? 'bg-[#0485ea]/5 border-[#0485ea]/20' : 'hover:bg-slate-50'}`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center">
-                    <Badge variant="outline" className={`${isCurrent ? 'bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20' : 'bg-gray-100'}`}>
+                    <Badge
+                      variant="outline"
+                      className={`${isCurrent ? 'bg-[#0485ea]/10 text-[#0485ea] border-[#0485ea]/20' : 'bg-gray-100'}`}
+                    >
                       v{revision.version}
                     </Badge>
-                    
+
                     {revision.is_current && !isCurrent && (
-                      <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-800 border-blue-200">
+                      <Badge
+                        variant="outline"
+                        className="ml-2 bg-blue-50 text-blue-800 border-blue-200"
+                      >
                         Current
                       </Badge>
                     )}
                   </div>
-                  
+
                   <Badge variant="outline" className={`${getStatusColor(revision.status)}`}>
                     <span className="flex items-center">
                       {getStatusIcon(revision.status)}
@@ -101,25 +106,21 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
                     </span>
                   </Badge>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <div className="text-sm text-muted-foreground">
                     {formatDate(revision.revision_date)}
                   </div>
-                  
-                  <div className="font-medium">
-                    {formatCurrency(revision.amount || 0)}
-                  </div>
+
+                  <div className="font-medium">{formatCurrency(revision.amount || 0)}</div>
                 </div>
-                
+
                 {revision.notes && (
                   <div className="mt-2 text-xs text-muted-foreground bg-slate-50 p-2 rounded-sm border border-slate-100">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="truncate">
-                            {revision.notes}
-                          </div>
+                          <div className="truncate">{revision.notes}</div>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-sm">
                           <p className="text-xs">{revision.notes}</p>
@@ -128,12 +129,12 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
                     </TooltipProvider>
                   </div>
                 )}
-                
+
                 {!isCurrent && (
                   <div className="mt-2 flex justify-end">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-8 text-xs text-[#0485ea] hover:text-[#0485ea]/80 hover:bg-[#0485ea]/5"
                       onClick={() => onSelectRevision(revision.id)}
                     >

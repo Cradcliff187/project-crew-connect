@@ -1,10 +1,15 @@
-
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronDown, Loader2 } from 'lucide-react';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
 import StatusBadge from './StatusBadge';
 import StatusHistoryDialog from './StatusHistoryDialog';
 import StatusTransitionPrompt from './StatusTransitionPrompt';
@@ -50,7 +55,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   showStatusBadge = true,
   additionalUpdateFields,
   className = '',
-  notes
+  notes,
 }) => {
   const [open, setOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
@@ -58,19 +63,20 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   const [showHistory, setShowHistory] = useState(false);
   const [showTransitionPrompt, setShowTransitionPrompt] = useState(false);
   const [transitionNotes, setTransitionNotes] = useState('');
-  
+
   // Ensure statusOptions is never undefined and is always an array
   const safeStatusOptions = Array.isArray(statusOptions) ? statusOptions : [];
-  
+
   // Filter out any undefined options and the current status
-  const filteredStatusOptions = safeStatusOptions
-    .filter(option => option && typeof option === 'object' && option.value !== currentStatus);
-  
+  const filteredStatusOptions = safeStatusOptions.filter(
+    option => option && typeof option === 'object' && option.value !== currentStatus
+  );
+
   const handleStatusChange = async (newStatus: string) => {
     setPendingStatus(newStatus);
     setShowTransitionPrompt(true);
   };
-  
+
   const confirmStatusChange = async () => {
     if (!pendingStatus) return;
     if (!entityId) {
@@ -81,64 +87,62 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
       });
       return;
     }
-    
+
     setLoading(true);
     try {
       const updateFields: Record<string, any> = { status: pendingStatus };
-      
+
       if (additionalUpdateFields) {
         const additionalFields = additionalUpdateFields(pendingStatus);
         for (const key in additionalFields) {
           updateFields[key] = additionalFields[key];
         }
       }
-      
+
       // Automatically set progress to 100 if status is COMPLETED
       if (pendingStatus === 'COMPLETED' && entityType === 'WORK_ORDER') {
         updateFields.progress = 100;
       }
-      
+
       // Use a type assertion to handle dynamic table names
       const { error } = await supabase
         .from(tableName as any)
         .update(updateFields)
         .eq(idField, entityId);
-      
+
       if (error) {
         throw error;
       }
-      
+
       if (recordHistory) {
         // Use activitylog table for history which is guaranteed to exist
-        const { error: historyError } = await supabase
-          .from('activitylog')
-          .insert({
-            action: 'Status Change',
-            moduletype: entityType,
-            referenceid: entityId,
-            status: pendingStatus,
-            previousstatus: currentStatus,
-            timestamp: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            detailsjson: transitionNotes ? JSON.stringify({ notes: transitionNotes }) : null
-          });
-        
+        const { error: historyError } = await supabase.from('activitylog').insert({
+          action: 'Status Change',
+          moduletype: entityType,
+          referenceid: entityId,
+          status: pendingStatus,
+          previousstatus: currentStatus,
+          timestamp: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          detailsjson: transitionNotes ? JSON.stringify({ notes: transitionNotes }) : null,
+        });
+
         if (historyError) {
           console.error('Error recording status history:', historyError);
         }
       }
-      
+
       toast({
         title: 'Status Updated',
         description: `Status changed to ${pendingStatus}`,
       });
-      
+
       // Call the standard onStatusChange callback
       if (typeof onStatusChange === 'function') {
         onStatusChange();
       }
-      
+
       // Call the additional after-status-change handler if provided
       if (typeof onAfterStatusChange === 'function') {
         await onAfterStatusChange(pendingStatus);
@@ -158,43 +162,40 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
       setPendingStatus(null);
     }
   };
-  
+
   const cancelStatusChange = () => {
     setShowTransitionPrompt(false);
     setPendingStatus(null);
     setTransitionNotes('');
   };
-  
+
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTransitionNotes(e.target.value);
   };
-  
+
   const getStatusLabel = (status: string): string => {
     if (!status) return 'Unknown';
     const option = safeStatusOptions.find(opt => opt?.value === status);
     return option?.label || status;
   };
-  
+
   const getStatusColor = (status: string): string => {
     if (!status) return 'neutral';
     const option = safeStatusOptions.find(opt => opt?.value === status);
     return option?.color || 'neutral';
   };
-  
+
   // If no entity ID is provided, don't render the control
   if (!entityId) {
     return null;
   }
-  
+
   return (
     <div className={`flex items-center ${className}`}>
       {showStatusBadge && (
-        <StatusBadge 
-          label={getStatusLabel(currentStatus)}
-          color={getStatusColor(currentStatus)}
-        />
+        <StatusBadge label={getStatusLabel(currentStatus)} color={getStatusColor(currentStatus)} />
       )}
-      
+
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -214,7 +215,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
             <CommandInput placeholder="Search status..." />
             <CommandEmpty>No status found.</CommandEmpty>
             <CommandGroup>
-              {filteredStatusOptions.map((status) => (
+              {filteredStatusOptions.map(status => (
                 <CommandItem
                   key={status.value}
                   value={status.value}
@@ -222,7 +223,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
                 >
                   <Check
                     className="mr-2 h-4 w-4"
-                    style={{color: status.color}}
+                    style={{ color: status.color }}
                     aria-hidden="true"
                   />
                   {status.label}
@@ -238,10 +239,10 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
           </Command>
         </PopoverContent>
       </Popover>
-      
+
       {recordHistory && (
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size={size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : 'default'}
           className="ml-2"
           onClick={() => setShowHistory(true)}
@@ -249,7 +250,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
           History
         </Button>
       )}
-      
+
       <StatusHistoryDialog
         open={showHistory}
         onOpenChange={setShowHistory}
@@ -260,7 +261,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
         currentStatus={currentStatus}
         statusOptions={safeStatusOptions}
       />
-      
+
       <StatusTransitionPrompt
         open={showTransitionPrompt}
         onOpenChange={setShowTransitionPrompt}

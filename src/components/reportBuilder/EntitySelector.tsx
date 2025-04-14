@@ -1,11 +1,4 @@
-
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -30,16 +23,15 @@ const EntitySelector = ({ value, onChange }: EntitySelectorProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <Select
-            value={value}
-            onValueChange={(value) => onChange(value as EntityType)}
-          >
+          <Select value={value} onValueChange={value => onChange(value as EntityType)}>
             <SelectTrigger>
               <SelectValue placeholder="Select an entity" />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(entityNames).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>

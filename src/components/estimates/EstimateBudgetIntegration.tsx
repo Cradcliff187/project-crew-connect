@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useBudgetIntegration } from '@/hooks/useBudgetIntegration';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,14 +12,14 @@ interface EstimateBudgetIntegrationProps {
   onComplete?: () => void;
 }
 
-const EstimateBudgetIntegration: React.FC<EstimateBudgetIntegrationProps> = ({ 
-  estimateId, 
+const EstimateBudgetIntegration: React.FC<EstimateBudgetIntegrationProps> = ({
+  estimateId,
   projectId,
-  onComplete
+  onComplete,
 }) => {
   const [hasBudgetItems, setHasBudgetItems] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const { createBudgetFromEstimate, isLoading } = useBudgetIntegration();
 
   // Check if the project already has budget items
@@ -32,7 +31,7 @@ const EstimateBudgetIntegration: React.FC<EstimateBudgetIntegrationProps> = ({
           .from('project_budget_items')
           .select('id', { count: 'exact', head: true })
           .eq('project_id', projectId);
-        
+
         if (error) throw error;
         setHasBudgetItems(count ? count > 0 : false);
       } catch (error) {
@@ -40,13 +39,13 @@ const EstimateBudgetIntegration: React.FC<EstimateBudgetIntegrationProps> = ({
         toast({
           title: 'Error',
           description: 'Failed to check existing budget items.',
-          variant: 'destructive'
+          variant: 'destructive',
         });
       } finally {
         setLoading(false);
       }
     };
-    
+
     if (projectId) {
       checkBudgetItems();
     }
@@ -84,7 +83,9 @@ const EstimateBudgetIntegration: React.FC<EstimateBudgetIntegrationProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-medium text-green-700">Budget Already Created</h3>
-              <p className="text-sm text-green-600">This project already has budget items created.</p>
+              <p className="text-sm text-green-600">
+                This project already has budget items created.
+              </p>
             </div>
           </div>
         </CardContent>
@@ -107,21 +108,23 @@ const EstimateBudgetIntegration: React.FC<EstimateBudgetIntegrationProps> = ({
             <div>
               <p className="font-medium text-blue-700">Create Project Budget from Estimate</p>
               <p className="text-sm text-blue-600">
-                This will convert your estimate line items into budget categories for this project, making it easier to track project costs against your initial estimate.
+                This will convert your estimate line items into budget categories for this project,
+                making it easier to track project costs against your initial estimate.
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-start mt-4">
             <AlertTriangle className="h-5 w-5 mr-2 text-amber-500 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-amber-600">
-              If you've already created a custom budget for this project, this action will add additional budget items based on the estimate.
+              If you've already created a custom budget for this project, this action will add
+              additional budget items based on the estimate.
             </p>
           </div>
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
+        <Button
           className="bg-[#0485ea] hover:bg-[#0375d1]"
           onClick={handleCreateBudget}
           disabled={isLoading}

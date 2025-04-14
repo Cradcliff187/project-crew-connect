@@ -1,11 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import TimeRangeSelector from './form/TimeRangeSelector';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,7 +21,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   open,
   onOpenChange,
   onSuccess,
-  date
+  date,
 }) => {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
@@ -39,10 +33,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [entityId, setEntityId] = useState('');
   const [entityOptions, setEntityOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [employeeId, setEmployeeId] = useState('none'); // Default to 'none' instead of empty string
-  const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
-  
+  const [employees, setEmployees] = useState<{ employee_id: string; name: string }[]>([]);
+
   const { toast } = useToast();
-  
+
   useEffect(() => {
     if (startTime && endTime) {
       try {
@@ -58,7 +52,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       }
     }
   }, [startTime, endTime]);
-  
+
   useEffect(() => {
     const fetchRecentEntities = async () => {
       if (entityType === 'work_order') {
@@ -67,12 +61,14 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
           .select('work_order_id, title')
           .order('updated_at', { ascending: false })
           .limit(5);
-          
+
         if (data) {
-          setEntityOptions(data.map(wo => ({
-            id: wo.work_order_id,
-            name: wo.title
-          })));
+          setEntityOptions(
+            data.map(wo => ({
+              id: wo.work_order_id,
+              name: wo.title,
+            }))
+          );
         }
       } else {
         const { data } = await supabase
@@ -80,16 +76,18 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
           .select('projectid, projectname')
           .order('updated_at', { ascending: false })
           .limit(5);
-          
+
         if (data) {
-          setEntityOptions(data.map(proj => ({
-            id: proj.projectid,
-            name: proj.projectname
-          })));
+          setEntityOptions(
+            data.map(proj => ({
+              id: proj.projectid,
+              name: proj.projectname,
+            }))
+          );
         }
       }
     };
-    
+
     fetchRecentEntities();
   }, [entityType]);
 
@@ -100,16 +98,16 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
           .from('employees')
           .select('employee_id, first_name, last_name')
           .order('last_name');
-          
+
         if (error) {
           console.error('Error fetching employees:', error);
           return;
         }
-        
+
         if (data) {
           const formattedEmployees = data.map(emp => ({
             employee_id: emp.employee_id,
-            name: `${emp.first_name} ${emp.last_name}`
+            name: `${emp.first_name} ${emp.last_name}`,
           }));
           setEmployees(formattedEmployees);
         }
@@ -117,10 +115,10 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         console.error('Exception when fetching employees:', error);
       }
     };
-    
+
     fetchEmployees();
   }, []);
-  
+
   const handleSubmit = async () => {
     if (!entityId) {
       toast({
@@ -129,7 +127,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       });
       return;
     }
-    
+
     if (timeError) {
       toast({
         title: 'Invalid time range',
@@ -138,28 +136,28 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       });
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const formattedDate = format(date, 'yyyy-MM-dd');
-      
+
       let hourlyRate = null;
       const actualEmployeeId = employeeId === 'none' ? null : employeeId;
-      
+
       if (actualEmployeeId) {
         const { data: empData } = await supabase
           .from('employees')
           .select('hourly_rate')
           .eq('employee_id', actualEmployeeId)
           .maybeSingle();
-        
+
         hourlyRate = empData?.hourly_rate;
       }
-      
+
       const rate = hourlyRate || 75;
       const totalCost = hoursWorked * rate;
-      
+
       const timeEntry = {
         entity_type: entityType,
         entity_id: entityId,
@@ -172,38 +170,36 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
         employee_rate: rate,
         total_cost: totalCost,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
-      
+
       const { data: insertedEntry, error } = await supabase
         .from('time_entries')
         .insert(timeEntry)
         .select('id')
         .single();
-        
+
       if (error) throw error;
-      
-      await supabase
-        .from('expenses')
-        .insert({
-          entity_type: entityType.toUpperCase(),
-          entity_id: entityId,
-          description: `Labor: ${hoursWorked} hours`,
-          expense_type: 'LABOR',
-          amount: totalCost,
-          time_entry_id: insertedEntry.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          quantity: hoursWorked,
-          unit_price: rate,
-          vendor_id: null
-        });
-      
+
+      await supabase.from('expenses').insert({
+        entity_type: entityType.toUpperCase(),
+        entity_id: entityId,
+        description: `Labor: ${hoursWorked} hours`,
+        expense_type: 'LABOR',
+        amount: totalCost,
+        time_entry_id: insertedEntry.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        quantity: hoursWorked,
+        unit_price: rate,
+        vendor_id: null,
+      });
+
       toast({
         title: 'Time entry added',
         description: `${hoursWorked} hours have been logged successfully.`,
       });
-      
+
       resetForm();
       onSuccess();
     } catch (error: any) {
@@ -217,7 +213,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       setIsSubmitting(false);
     }
   };
-  
+
   const resetForm = () => {
     setStartTime('09:00');
     setEndTime('17:00');
@@ -227,14 +223,14 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setEmployeeId('none'); // Reset to 'none' not empty string
     setEntityId('');
   };
-  
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
         <SheetHeader className="text-left mb-4">
           <SheetTitle>Quick Time Log</SheetTitle>
         </SheetHeader>
-        
+
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Type</label>
@@ -257,29 +253,27 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-2">
-            <label className="text-sm font-medium">Select {entityType === 'work_order' ? 'Work Order' : 'Project'}</label>
+            <label className="text-sm font-medium">
+              Select {entityType === 'work_order' ? 'Work Order' : 'Project'}
+            </label>
             <select
               className="w-full border border-input bg-background px-3 py-2 rounded-md"
               value={entityId}
-              onChange={(e) => setEntityId(e.target.value)}
+              onChange={e => setEntityId(e.target.value)}
               disabled={isSubmitting}
             >
               <option value="">Select...</option>
-              {entityOptions.map((entity) => (
+              {entityOptions.map(entity => (
                 <option key={entity.id} value={entity.id}>
                   {entity.name}
                 </option>
               ))}
             </select>
           </div>
-          
-          <EmployeeSelect
-            value={employeeId}
-            onChange={setEmployeeId}
-            employees={employees}
-          />
+
+          <EmployeeSelect value={employeeId} onChange={setEmployeeId} employees={employees} />
 
           <TimeRangeSelector
             startTime={startTime}
@@ -291,20 +285,22 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
           />
 
           <div className="space-y-2">
-            <label htmlFor="notes" className="text-sm font-medium">Notes (Optional)</label>
+            <label htmlFor="notes" className="text-sm font-medium">
+              Notes (Optional)
+            </label>
             <Textarea
               id="notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={e => setNotes(e.target.value)}
               placeholder="What did you work on?"
               disabled={isSubmitting}
             />
           </div>
-          
+
           <div className="flex justify-end gap-2 pt-4">
             <Button
-              type="button" 
-              variant="outline" 
+              type="button"
+              variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >

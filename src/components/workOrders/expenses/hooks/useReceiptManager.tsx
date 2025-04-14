@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { WorkOrderExpense } from '@/types/workOrder';
 import { useDocumentViewer } from '@/hooks/useDocumentViewer';
@@ -7,21 +6,21 @@ import { toast } from '@/hooks/use-toast';
 export function useReceiptManager() {
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<WorkOrderExpense | null>(null);
-  
+
   // Use the centralized document viewer hook
-  const { 
-    viewDocument, 
-    closeViewer, 
-    isViewerOpen, 
+  const {
+    viewDocument,
+    closeViewer,
+    isViewerOpen,
     setIsViewerOpen,
-    currentDocument, 
-    loading: isLoading 
+    currentDocument,
+    loading: isLoading,
   } = useDocumentViewer({
     onClose: () => {
       console.log('Document viewer closed via hook callback');
-    }
+    },
   });
-  
+
   const handleReceiptClick = async (expense: WorkOrderExpense) => {
     if (expense.receipt_document_id) {
       console.log('Viewing existing receipt for expense:', expense.id);
@@ -34,7 +33,7 @@ export function useReceiptManager() {
       setShowReceiptUpload(true);
     }
   };
-  
+
   const handleCloseReceiptViewer = useCallback(() => {
     closeViewer();
     // Add delay before clearing selected expense
@@ -42,7 +41,7 @@ export function useReceiptManager() {
       setSelectedExpense(null);
     }, 100);
   }, [closeViewer]);
-  
+
   return {
     showReceiptUpload,
     setShowReceiptUpload,
@@ -59,6 +58,6 @@ export function useReceiptManager() {
     receiptDocument: currentDocument,
     isLoading,
     handleReceiptClick,
-    handleCloseReceiptViewer
+    handleCloseReceiptViewer,
   };
 }

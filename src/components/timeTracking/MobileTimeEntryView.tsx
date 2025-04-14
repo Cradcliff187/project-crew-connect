@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -39,16 +38,16 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   onAddSuccess,
   showAddForm,
   setShowAddForm,
-  totalHours
+  totalHours,
 }) => {
   const [showQuickLog, setShowQuickLog] = useState(false);
   const { hasCamera, isMobile } = useDeviceCapabilities();
-  
+
   const handleQuickLogSuccess = () => {
     setShowQuickLog(false);
     onAddSuccess();
   };
-  
+
   return (
     <PageTransition>
       <div className="container px-4 py-4">
@@ -62,23 +61,24 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           totalHours={totalHours}
           isMobile={true}
         />
-        
+
         {/* Quick Log Button */}
         <div className="mb-4">
           <QuickLogButton onQuickLog={() => setShowQuickLog(true)} />
         </div>
-        
+
         {/* Total Hours Display */}
         <div className="mb-4 px-3 py-2 bg-muted rounded-md flex items-center">
           <Clock className="h-4 w-4 mr-2 text-[#0485ea]" />
           <span className="text-sm">
-            Total Hours This Week: <span className="font-medium text-[#0485ea]">{totalHours.toFixed(1)}</span>
+            Total Hours This Week:{' '}
+            <span className="font-medium text-[#0485ea]">{totalHours.toFixed(1)}</span>
           </span>
         </div>
-        
+
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <Button 
+          <Button
             variant="outline"
             size="sm"
             className="justify-start"
@@ -87,9 +87,9 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
             <Plus className="h-4 w-4 mr-1" />
             Detailed Log
           </Button>
-          
+
           {hasCamera && (
-            <Button 
+            <Button
               variant="outline"
               size="sm"
               className="justify-start"
@@ -100,22 +100,22 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
             </Button>
           )}
         </div>
-        
+
         {/* Time entries list */}
         <Card className="mb-6 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Weekly Entries</CardTitle>
           </CardHeader>
           <CardContent>
-            <TimeEntryList 
-              entries={timeEntries} 
+            <TimeEntryList
+              entries={timeEntries}
               isLoading={isLoading}
               onEntryChange={onAddSuccess}
               isMobile={true}
             />
           </CardContent>
         </Card>
-        
+
         {/* Log Time Sheet */}
         <Sheet open={showAddForm} onOpenChange={setShowAddForm}>
           <SheetContent side="bottom" className="h-[90vh] overflow-y-auto p-0">
@@ -123,7 +123,7 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
               <SheetTitle>Log Time</SheetTitle>
             </SheetHeader>
             <div className="py-2 px-2">
-              <TimeEntryFormWizard 
+              <TimeEntryFormWizard
                 onSuccess={() => {
                   setShowAddForm(false);
                   onAddSuccess();
@@ -133,9 +133,9 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
             </div>
           </SheetContent>
         </Sheet>
-        
+
         {/* Quick Log Sheet */}
-        <MobileQuickLogSheet 
+        <MobileQuickLogSheet
           open={showQuickLog}
           onOpenChange={setShowQuickLog}
           onSuccess={handleQuickLogSuccess}

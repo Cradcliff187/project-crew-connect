@@ -1,7 +1,12 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useFormContext } from 'react-hook-form';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 
@@ -11,7 +16,7 @@ interface ItemTypeSelectorProps {
 
 const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
   const form = useFormContext<EstimateFormValues>();
-  
+
   return (
     <div className="col-span-12 md:col-span-3">
       <FormField
@@ -20,9 +25,9 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Type*</FormLabel>
-            <Select 
-              value={field.value} 
-              onValueChange={(value) => {
+            <Select
+              value={field.value}
+              onValueChange={value => {
                 field.onChange(value);
                 // Reset type-specific fields when type changes
                 if (value === 'vendor') {

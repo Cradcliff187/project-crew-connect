@@ -1,4 +1,3 @@
-
 import { DatePickerWithRange } from '@/components/ui/date-range-picker';
 import { ReportFilters } from '@/types/reports';
 import {
@@ -14,8 +13,8 @@ import { X } from 'lucide-react';
 interface ReportFilterSectionProps {
   filters: ReportFilters;
   onFilterChange: (key: keyof ReportFilters, value: any) => void;
-  getStatusOptions: () => { value: string, label: string }[];
-  getRoleOptions?: () => { value: string, label: string }[];
+  getStatusOptions: () => { value: string; label: string }[];
+  getRoleOptions?: () => { value: string; label: string }[];
   showEmployeeFilters?: boolean;
 }
 
@@ -24,12 +23,12 @@ const ReportFilterSection = ({
   onFilterChange,
   getStatusOptions,
   getRoleOptions = () => [],
-  showEmployeeFilters = false
+  showEmployeeFilters = false,
 }: ReportFilterSectionProps) => {
   // Create a valid DateRange object to pass to the DatePickerWithRange
   const dateRange = {
     from: filters.dateRange?.from || undefined,
-    to: filters.dateRange?.to || undefined
+    to: filters.dateRange?.to || undefined,
   };
 
   // Function to clear all filters
@@ -41,17 +40,12 @@ const ReportFilterSection = ({
       onFilterChange('role', 'all');
     }
   };
-  
+
   return (
     <div className="mb-4 p-3 border rounded-md bg-white shadow-sm">
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-sm font-semibold text-[#0485ea]">Filter Options</h3>
-        <Button 
-          variant="ghost" 
-          size="xs"
-          className="h-6 text-xs"
-          onClick={clearAllFilters}
-        >
+        <Button variant="ghost" size="xs" className="h-6 text-xs" onClick={clearAllFilters}>
           <X className="h-3 w-3 mr-1" />
           Clear All
         </Button>
@@ -60,44 +54,45 @@ const ReportFilterSection = ({
         {/* Date Range Filter */}
         <div>
           <label className="text-xs font-medium mb-1 block">Date Range</label>
-          <DatePickerWithRange 
+          <DatePickerWithRange
             value={dateRange}
-            onChange={(range) => onFilterChange('dateRange', range)}
+            onChange={range => onFilterChange('dateRange', range)}
           />
         </div>
-        
+
         {/* Status Filter */}
         <div>
           <label className="text-xs font-medium mb-1 block">Status</label>
-          <Select
-            value={filters.status}
-            onValueChange={(value) => onFilterChange('status', value)}
-          >
+          <Select value={filters.status} onValueChange={value => onFilterChange('status', value)}>
             <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder="Select Status" />
             </SelectTrigger>
             <SelectContent>
               {getStatusOptions().map(option => (
-                <SelectItem key={option.value} value={option.value} className="text-xs">{option.label}</SelectItem>
+                <SelectItem key={option.value} value={option.value} className="text-xs">
+                  {option.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        
+
         {/* Entity-specific filters */}
         {showEmployeeFilters && (
           <div>
             <label className="text-xs font-medium mb-1 block">Role</label>
             <Select
               value={filters.role || 'all'}
-              onValueChange={(value) => onFilterChange('role', value)}
+              onValueChange={value => onFilterChange('role', value)}
             >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Select Role" />
               </SelectTrigger>
               <SelectContent>
                 {getRoleOptions().map(option => (
-                  <SelectItem key={option.value} value={option.value} className="text-xs">{option.label}</SelectItem>
+                  <SelectItem key={option.value} value={option.value} className="text-xs">
+                    {option.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

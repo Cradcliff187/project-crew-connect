@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PaperclipIcon, UploadIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ const DocumentUploadHeader: React.FC<DocumentUploadHeaderProps> = ({
   onOpenUpload,
   isDocumentUploadOpen,
   setIsDocumentUploadOpen,
-  children
+  children,
 }) => {
   return (
     <div className="flex justify-between items-center">
@@ -34,9 +33,9 @@ const DocumentUploadHeader: React.FC<DocumentUploadHeaderProps> = ({
         )}
       </h3>
       <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
-        <Button 
-          type="button" 
-          variant="outline" 
+        <Button
+          type="button"
+          variant="outline"
           size="sm"
           className="bg-[#0485ea] text-white hover:bg-[#0375d1]"
           onClick={onOpenUpload}

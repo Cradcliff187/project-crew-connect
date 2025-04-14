@@ -1,4 +1,3 @@
-
 import { Check, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -36,15 +35,15 @@ const ProjectDialog = ({
   open,
   onOpenChange,
   onProjectSaved,
-  estimateData
+  estimateData,
 }: ProjectDialogProps) => {
   const handleSuccess = () => {
     onOpenChange(false); // Close dialog
     onProjectSaved(); // Refresh projects list
   };
-  
+
   const { isSubmitting, handleSubmit } = useProjectSubmit(handleSuccess);
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
@@ -53,30 +52,30 @@ const ProjectDialog = ({
             {estimateData ? 'Convert Estimate to Project' : 'Add New Project'}
           </DialogTitle>
           <DialogDescription>
-            {estimateData 
+            {estimateData
               ? 'Create a project based on this estimate.'
               : 'Enter the project details to add it to your system.'}
           </DialogDescription>
         </DialogHeader>
-        
-        <ProjectForm 
-          onSubmit={handleSubmit} 
-          isSubmitting={isSubmitting} 
+
+        <ProjectForm
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
           estimateData={estimateData}
         />
-        
+
         <DialogFooter className="pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
             <X className="h-4 w-4 mr-1" />
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             form="project-form"
             className="bg-[#0485ea] hover:bg-[#0375d1]"
             disabled={isSubmitting}
