@@ -139,8 +139,10 @@ export const entityFields: Record<EntityType, FieldDefinition[]> = {
     { label: 'Requested By', field: 'requested_by', type: 'text' },
   ],
   employees: [
-    { label: 'Name', field: 'full_name', type: 'text' },
+    { label: 'First Name', field: 'first_name', type: 'text' },
+    { label: 'Last Name', field: 'last_name', type: 'text' },
     { label: 'Email', field: 'email', type: 'text' },
+    { label: 'Phone', field: 'phone', type: 'text' },
     { label: 'Role', field: 'role', type: 'text' },
     { label: 'Status', field: 'status', type: 'status' },
     { label: 'Hourly Rate', field: 'hourly_rate', type: 'currency' },

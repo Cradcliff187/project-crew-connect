@@ -4,17 +4,25 @@ import EstimateDocumentsSection from '@/components/estimates/documents/EstimateD
 
 interface EstimateDocumentsTabProps {
   estimateId: string;
+  estimateName?: string;
+  currentRevisionId?: string;
+  currentVersion?: number;
   onShareDocument?: (document: Document) => void;
 }
 
 const EstimateDocumentsTab: React.FC<EstimateDocumentsTabProps> = ({
   estimateId,
+  estimateName,
+  currentRevisionId,
+  currentVersion,
   onShareDocument,
 }) => {
   return (
     <EstimateDocumentsSection
       estimateId={estimateId}
-      estimateName={`Estimate #${estimateId.substring(4, 10)}`}
+      estimateName={estimateName || `Estimate #${estimateId.substring(0, 6)}`}
+      revisionId={currentRevisionId}
+      versionNumber={currentVersion}
     />
   );
 };

@@ -445,6 +445,11 @@ const EstimateDetailPage = () => {
                     <TabsContent value="documents" className="mt-0">
                       <EstimateDocumentsTab
                         estimateId={estimate.estimateid}
+                        estimateName={
+                          estimate.projectname || `Estimate #${estimate.estimateid.substring(0, 6)}`
+                        }
+                        currentRevisionId={currentRevision?.id}
+                        currentVersion={currentRevision?.version}
                         onShareDocument={() => {}} // This will be implemented in the component
                       />
                     </TabsContent>

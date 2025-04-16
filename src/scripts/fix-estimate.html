@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estimate Conversion Fix</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1 {
+        color: #0485ea;
+      }
+      pre {
+        background-color: #f5f5f5;
+        padding: 15px;
+        border-radius: 5px;
+        overflow: auto;
+        max-height: 500px;
+      }
+      .log {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .info {
+        background-color: #f0f8ff;
+        border: 1px solid #add8e6;
+      }
+      .success {
+        background-color: #f0fff0;
+        border: 1px solid #98fb98;
+      }
+      .error {
+        background-color: #fff0f0;
+        border: 1px solid #ffb6c1;
+        color: #d8000c;
+      }
+      button {
+        padding: 10px 15px;
+        background-color: #0485ea;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:disabled {
+        background-color: #cccccc;
+      }
+      .step-btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin: 5px 0;
+      }
+      #logContainer {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Estimate Conversion Fix</h1>
+
+    <div>
+      <input type="text" id="estimateId" value="EST-364978" placeholder="Enter estimate ID" />
+      <button id="checkBtn">Check Estimate</button>
+      <button id="fixAllBtn">Fix All Steps</button>
+    </div>
+
+    <div id="stepButtons" style="display: none">
+      <h3>Manual Steps:</h3>
+      <button class="step-btn" id="toPendingBtn">1. Update to Pending</button>
+      <button class="step-btn" id="toApprovedBtn">2. Update to Approved</button>
+      <button class="step-btn" id="createProjectBtn">3. Create Project</button>
+      <button class="step-btn" id="linkEstimateBtn">4. Link Estimate to Project</button>
+    </div>
+
+    <div id="logContainer"></div>
+
+    <script>
+      // Initialize Supabase client
+      const supabaseUrl = 'https://zrxezqllmpdlhiudutme.supabase.co';
+      const supabaseKey =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ';
+      const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+      // State variables
+      let currentEstimate = null;
+      let createdProject = null;
+
+      // Logging function
+      function log(message, type = 'info') {
+        const logContainer = document.getElementById('logContainer');
+        const logEntry = document.createElement('div');
+        logEntry.className = `log ${type}`;
+
+        if (typeof message === 'object') {
+          const pre = document.createElement('pre');
+          pre.textContent = JSON.stringify(message, null, 2);
+          logEntry.appendChild(pre);
+        } else {
+          logEntry.textContent = message;
+        }
+
+        logContainer.appendChild(logEntry);
+        console.log(message);
+      }
+
+      // Function to check estimate
+      async function checkEstimate(estimateId) {
+        log(`Checking estimate ${estimateId}...`);
+
+        try {
+          const { data, error } = await supabase
+            .from('estimates')
+            .select('*')
+            .eq('estimateid', estimateId)
+            .single();
+
+          if (error) {
+            log(`Error checking estimate: ${error.message}`, 'error');
+            return null;
+          }
+
+          if (data) {
+            log(`Estimate found: ${data.estimateid}, Status: ${data.status}`, 'success');
+            log({
+              id: data.estimateid,
+              status: data.status,
+              project: data.projectname,
+              client: data.customerid || data.customername,
+              projectId: data.projectid || 'Not linked to a project',
+              createdOn: data.datecreated,
+            });
+
+            currentEstimate = data;
+            document.getElementById('stepButtons').style.display = 'block';
+            return data;
+          } else {
+            log(`No estimate found with ID ${estimateId}`, 'error');
+            return null;
+          }
+        } catch (err) {
+          log(`Exception checking estimate: ${err.message}`, 'error');
+          return null;
+        }
+      }
+
+      // Function to update status to pending
+      async function updateToPending(estimateId) {
+        log(`Updating estimate ${estimateId} to pending...`);
+
+        try {
+          const { error } = await supabase
+            .from('estimates')
+            .update({
+              status: 'pending',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('estimateid', estimateId);
+
+          if (error) {
+            log(`Error updating to pending: ${error.message}`, 'error');
+            return false;
+          }
+
+          log('Status updated to pending', 'success');
+          return true;
+        } catch (err) {
+          log(`Exception updating to pending: ${err.message}`, 'error');
+          return false;
+        }
+      }
+
+      // Function to update status to approved
+      async function updateToApproved(estimateId) {
+        log(`Updating estimate ${estimateId} to approved...`);
+
+        try {
+          const { error } = await supabase
+            .from('estimates')
+            .update({
+              status: 'approved',
+              approveddate: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('estimateid', estimateId);
+
+          if (error) {
+            log(`Error updating to approved: ${error.message}`, 'error');
+            return false;
+          }
+
+          log('Status updated to approved', 'success');
+          return true;
+        } catch (err) {
+          log(`Exception updating to approved: ${err.message}`, 'error');
+          return false;
+        }
+      }
+
+      // Function to create project
+      async function createProject(estimate) {
+        log(`Creating project from estimate ${estimate.estimateid}...`);
+
+        try {
+          const projectData = {
+            customerid: estimate.customerid,
+            customername: estimate.customername,
+            projectname: estimate.projectname || `Project from ${estimate.estimateid}`,
+            jobdescription: estimate['job description'] || '', // Note the space in field name
+            status: 'active',
+            sitelocationaddress: estimate.sitelocationaddress || '',
+            sitelocationcity: estimate.sitelocationcity || '',
+            sitelocationstate: estimate.sitelocationstate || '',
+            sitelocationzip: estimate.sitelocationzip || '',
+            createdon: new Date().toISOString(),
+            total_budget: estimate.estimateamount || 0,
+          };
+
+          log('Creating project with data:', 'info');
+          log(projectData);
+
+          const { data, error } = await supabase.from('projects').insert([projectData]).select();
+
+          if (error) {
+            log(`Error creating project: ${error.message}`, 'error');
+            return null;
+          }
+
+          if (!data || data.length === 0) {
+            log('No project created', 'error');
+            return null;
+          }
+
+          log('Project created successfully', 'success');
+          log(data[0]);
+
+          createdProject = data[0];
+          return data[0];
+        } catch (err) {
+          log(`Exception creating project: ${err.message}`, 'error');
+          return null;
+        }
+      }
+
+      // Function to link estimate to project
+      async function linkEstimateToProject(estimateId, projectId) {
+        log(`Linking estimate ${estimateId} to project ${projectId}...`);
+
+        try {
+          const { error } = await supabase
+            .from('estimates')
+            .update({
+              projectid: projectId,
+              status: 'converted',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('estimateid', estimateId);
+
+          if (error) {
+            log(`Error linking estimate to project: ${error.message}`, 'error');
+            return false;
+          }
+
+          log('Estimate linked to project successfully', 'success');
+          return true;
+        } catch (err) {
+          log(`Exception linking estimate to project: ${err.message}`, 'error');
+          return false;
+        }
+      }
+
+      // Function to fix all steps
+      async function fixAll(estimateId) {
+        // Step 1: Check estimate
+        const estimate = await checkEstimate(estimateId);
+        if (!estimate) return;
+
+        // If already linked to a project, we're done
+        if (estimate.projectid) {
+          log(`Estimate already linked to project ${estimate.projectid}`, 'success');
+          return;
+        }
+
+        // Step 2: Update to pending if needed
+        if (estimate.status === 'draft') {
+          const pendingResult = await updateToPending(estimateId);
+          if (!pendingResult) return;
+
+          // Wait for database
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        // Step 3: Update to approved if needed
+        if (
+          estimate.status === 'draft' ||
+          estimate.status === 'pending' ||
+          estimate.status === 'sent'
+        ) {
+          const approvedResult = await updateToApproved(estimateId);
+          if (!approvedResult) return;
+
+          // Wait for database
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Refresh estimate data
+          await checkEstimate(estimateId);
+        }
+
+        // Step 4: Create project
+        const project = await createProject(currentEstimate);
+        if (!project) return;
+
+        // Step 5: Link estimate to project
+        const linkResult = await linkEstimateToProject(estimateId, project.projectid);
+        if (!linkResult) return;
+
+        // Step 6: Final check
+        await checkEstimate(estimateId);
+
+        log('✅ ALL STEPS COMPLETED SUCCESSFULLY!', 'success');
+      }
+
+      // Set up event listeners
+      document.getElementById('checkBtn').addEventListener('click', () => {
+        const estimateId = document.getElementById('estimateId').value.trim();
+        if (estimateId) {
+          checkEstimate(estimateId);
+        } else {
+          log('Please enter an estimate ID', 'error');
+        }
+      });
+
+      document.getElementById('fixAllBtn').addEventListener('click', () => {
+        const estimateId = document.getElementById('estimateId').value.trim();
+        if (estimateId) {
+          fixAll(estimateId);
+        } else {
+          log('Please enter an estimate ID', 'error');
+        }
+      });
+
+      document.getElementById('toPendingBtn').addEventListener('click', () => {
+        if (currentEstimate) {
+          updateToPending(currentEstimate.estimateid).then(() =>
+            setTimeout(() => checkEstimate(currentEstimate.estimateid), 1000)
+          );
+        } else {
+          log('Please check an estimate first', 'error');
+        }
+      });
+
+      document.getElementById('toApprovedBtn').addEventListener('click', () => {
+        if (currentEstimate) {
+          updateToApproved(currentEstimate.estimateid).then(() =>
+            setTimeout(() => checkEstimate(currentEstimate.estimateid), 1000)
+          );
+        } else {
+          log('Please check an estimate first', 'error');
+        }
+      });
+
+      document.getElementById('createProjectBtn').addEventListener('click', () => {
+        if (currentEstimate) {
+          createProject(currentEstimate);
+        } else {
+          log('Please check an estimate first', 'error');
+        }
+      });
+
+      document.getElementById('linkEstimateBtn').addEventListener('click', () => {
+        if (currentEstimate && createdProject) {
+          linkEstimateToProject(currentEstimate.estimateid, createdProject.projectid).then(() =>
+            setTimeout(() => checkEstimate(currentEstimate.estimateid), 1000)
+          );
+        } else {
+          log('Please check an estimate and create a project first', 'error');
+        }
+      });
+
+      // Check for estimate in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const estimateIdParam = urlParams.get('id');
+      if (estimateIdParam) {
+        document.getElementById('estimateId').value = estimateIdParam;
+        checkEstimate(estimateIdParam);
+      }
+    </script>
+  </body>
+</html>

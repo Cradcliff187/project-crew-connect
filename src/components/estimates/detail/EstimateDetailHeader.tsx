@@ -4,7 +4,7 @@ import EstimateActions from '../EstimateActions';
 import { StatusType } from '@/types/common';
 import EstimateStatusControl from './EstimateStatusControl';
 import { Button } from '@/components/ui/button';
-import { FileUp } from 'lucide-react';
+import { FileUp, ArrowRightLeft } from 'lucide-react';
 import EstimateRevisionDialog from './dialogs/EstimateRevisionDialog';
 
 interface EstimateDetailHeaderProps {
@@ -46,6 +46,13 @@ const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({
     data.status
   );
 
+  const handleConvert = () => {
+    console.log('Convert button clicked in header. Status:', data.status);
+    onConvert();
+  };
+
+  const showConvertButton = ['draft', 'sent', 'pending', 'approved'].includes(data.status);
+
   return (
     <div className="flex justify-between items-start">
       <div>
@@ -73,11 +80,18 @@ const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({
           </Button>
         )}
 
+        {showConvertButton && (
+          <Button variant="outline" size="sm" onClick={handleConvert} className="flex items-center">
+            <ArrowRightLeft className="h-4 w-4 mr-1" />
+            Convert to Project
+          </Button>
+        )}
+
         <EstimateActions
           status={data.status as StatusType}
           onEdit={onEdit}
           onDelete={onDelete}
-          onConvert={onConvert}
+          onConvert={handleConvert}
         />
       </div>
 

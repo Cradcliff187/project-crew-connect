@@ -7,11 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-interface Employee {
-  employee_id: string;
-  name: string;
-}
+import { Employee, getEmployeeFullName } from '@/types/common';
 
 interface EmployeeSelectProps {
   value: string;
@@ -47,8 +43,8 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         <SelectContent>
           <SelectItem value="none">Not assigned</SelectItem>
           {employees.map(employee => (
-            <SelectItem key={employee.employee_id} value={employee.employee_id}>
-              {employee.name}
+            <SelectItem key={employee.id} value={employee.id}>
+              {getEmployeeFullName(employee)}
             </SelectItem>
           ))}
         </SelectContent>

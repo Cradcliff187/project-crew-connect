@@ -1,4 +1,4 @@
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface EstimateStep {
   id: string;
@@ -9,11 +9,19 @@ interface EstimateStepTabsProps {
   steps: EstimateStep[];
   currentStep: string;
   setCurrentStep: (step: string) => void;
+  children?: React.ReactNode;
+  className?: string;
 }
 
-const EstimateStepTabs = ({ steps, currentStep, setCurrentStep }: EstimateStepTabsProps) => {
+const EstimateStepTabs = ({
+  steps,
+  currentStep,
+  setCurrentStep,
+  children,
+  className = '',
+}: EstimateStepTabsProps) => {
   return (
-    <Tabs value={currentStep}>
+    <Tabs value={currentStep} className={`w-full ${className}`}>
       <TabsList
         className="grid w-full h-12 p-1 bg-gray-50 border border-gray-200 rounded-lg"
         style={{ gridTemplateColumns: `repeat(${steps.length}, 1fr)` }}
@@ -35,6 +43,12 @@ const EstimateStepTabs = ({ steps, currentStep, setCurrentStep }: EstimateStepTa
           </TabsTrigger>
         ))}
       </TabsList>
+
+      {steps.map(step => (
+        <TabsContent key={step.id} value={step.id} className="mt-0 flex-1 overflow-auto">
+          {currentStep === step.id && children}
+        </TabsContent>
+      ))}
     </Tabs>
   );
 };

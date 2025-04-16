@@ -22,11 +22,15 @@ import { useEstimateDocuments } from '@/components/documents/hooks/useEstimateDo
 interface EstimateDocumentsSectionProps {
   estimateId: string;
   estimateName?: string;
+  revisionId?: string;
+  versionNumber?: number;
 }
 
 export default function EstimateDocumentsSection({
   estimateId,
   estimateName = 'Estimate',
+  revisionId,
+  versionNumber,
 }: EstimateDocumentsSectionProps) {
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -36,7 +40,11 @@ export default function EstimateDocumentsSection({
   const { isAboveMd } = useBreakpoint('md');
   const { toast } = useToast();
 
-  const { documents, loading: isLoading, refetchDocuments } = useEstimateDocuments(estimateId);
+  const {
+    documents,
+    loading: isLoading,
+    refetchDocuments,
+  } = useEstimateDocuments(estimateId, revisionId);
 
   const handleViewDocument = (document: Document) => {
     setSelectedDocument(document);
@@ -99,10 +107,18 @@ export default function EstimateDocumentsSection({
     []
   );
 
+  const sectionTitle = versionNumber
+    ? `Estimate Documents (Version ${versionNumber})`
+    : 'Estimate Documents';
+
+  const emptyMessage = revisionId
+    ? `No documents found for this revision (Version ${versionNumber || '?'})`
+    : 'No estimate documents found';
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Estimate Documents</h3>
+        <h3 className="text-lg font-medium">{sectionTitle}</h3>
         <div className="flex items-center gap-2">
           <ToggleGroup
             type="single"
@@ -127,7 +143,7 @@ export default function EstimateDocumentsSection({
         <DocumentsGrid
           documents={documents}
           isLoading={isLoading}
-          emptyMessage="No estimate documents found"
+          emptyMessage={emptyMessage}
           emptyDescription="Upload documents for this estimate such as quotes, proposals, or specifications."
           getActions={getDocumentActions}
           onDocumentClick={handleViewDocument}
@@ -137,7 +153,7 @@ export default function EstimateDocumentsSection({
           documents={documents}
           isLoading={isLoading}
           getActions={getDocumentActions}
-          emptyMessage="No estimate documents found"
+          emptyMessage={emptyMessage}
         />
       )}
 
@@ -147,8 +163,9 @@ export default function EstimateDocumentsSection({
           <DialogHeader>
             <DialogTitle>Upload Estimate Document</DialogTitle>
             <DialogDescription>
-              Upload documents related to {estimateName} such as quotes, proposals, or
-              specifications.
+              Upload documents related to {estimateName}{' '}
+              {versionNumber ? `(Version ${versionNumber})` : ''}
+              such as quotes, proposals, or specifications.
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-grow pr-1 -mr-1">
@@ -158,7 +175,7 @@ export default function EstimateDocumentsSection({
               onSuccess={handleDocumentUploaded}
               onCancel={() => setUploadOpen(false)}
               prefillData={{
-                notes: `Document for ${estimateName}`,
+                notes: `Document for ${estimateName}${versionNumber ? ` (Version ${versionNumber})` : ''}${revisionId ? ` [Revision: ${revisionId}]` : ''}`,
               }}
               preventFormPropagation={true}
             />

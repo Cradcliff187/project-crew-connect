@@ -110,10 +110,31 @@ export interface Subcontractor {
   name: string;
 }
 
+/**
+ * Standardized Employee interface that matches the Supabase database schema
+ * This should be used consistently across the application
+ */
 export interface Employee {
-  employee_id: string;
-  first_name: string;
-  last_name: string;
+  id: string; // maps to employee_id in database
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  hourlyRate?: number | null;
+  status?: string | null;
+  created_at?: string; // database naming - will be mapped by the adapter
+  updated_at?: string; // database naming - will be mapped by the adapter
+}
+
+/**
+ * Helper function to get the full name of an employee
+ * @param employee - The employee object
+ * @returns A formatted full name or default text if employee is undefined/null
+ */
+export function getEmployeeFullName(employee?: Employee | null): string {
+  if (!employee) return 'Unassigned';
+  return `${employee.firstName} ${employee.lastName}`;
 }
 
 export interface DocumentMetadata {

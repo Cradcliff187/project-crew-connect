@@ -4,12 +4,12 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import {
   Plus,
   Trash2,
-  Search,
   ChevronDown,
   ChevronUp,
-  Check,
-  Filter,
-  Download,
+  MoreVertical,
+  Paperclip,
+  AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
 import {
@@ -29,24 +29,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useEstimateItemData } from './estimate-items/useEstimateItemData';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetDescription,
-} from '@/components/ui/sheet';
 import { PaperclipIcon } from 'lucide-react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Pagination,
@@ -56,6 +42,17 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -73,14 +70,15 @@ const EstimateItemFields = memo(() => {
   const form = useFormContext<EstimateFormValues>();
   const { vendors, subcontractors, loading } = useEstimateItemData();
 
-  // State for table features
+  // State for table features - removed search and filter state
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<SortField>('description');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [filterType, setFilterType] = useState<string | null>(null);
   const [isCompactView, setIsCompactView] = useState(false);
+
+  // State for document upload
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+  const [showDocumentDialog, setShowDocumentDialog] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -92,7 +90,7 @@ const EstimateItemFields = memo(() => {
   const addNewItem = useCallback(() => {
     append({
       description: '',
-      item_type: 'labor',
+      item_type: 'none',
       cost: '0',
       markup_percentage: '20',
       quantity: '1',
@@ -114,7 +112,10 @@ const EstimateItemFields = memo(() => {
     (index: number) => {
       const quantity = Number(form.getValues(`items.${index}.quantity`)) || 0;
       const unitPrice = Number(form.getValues(`items.${index}.unit_price`)) || 0;
-      return quantity * unitPrice;
+      const total = quantity * unitPrice;
+
+      // Store the total with 2 decimal places of precision
+      return parseFloat(total.toFixed(2));
     },
     [form]
   );
@@ -128,7 +129,8 @@ const EstimateItemFields = memo(() => {
       const markupAmount = cost * (markupPercentage / 100);
       const unitPrice = cost + markupAmount;
 
-      form.setValue(`items.${index}.unit_price`, String(unitPrice));
+      // Format to 2 decimal places for consistency
+      form.setValue(`items.${index}.unit_price`, unitPrice.toFixed(2));
     },
     [form]
   );
@@ -147,126 +149,77 @@ const EstimateItemFields = memo(() => {
     [form]
   );
 
-  // Calculate gross margin percentage
-  const calculateGrossMarginPercentage = useCallback(
-    (index: number) => {
-      const grossMargin = calculateGrossMargin(index);
-      const totalPrice = calculateTotalPrice(index);
-
-      if (totalPrice === 0) return 0;
-      return (grossMargin / totalPrice) * 100;
-    },
-    [calculateGrossMargin, calculateTotalPrice]
-  );
+  // Handle document upload for a line item
+  const handleOpenDocumentDialog = useCallback((index: number) => {
+    setActiveItemIndex(index);
+    setShowDocumentDialog(true);
+    setUploadError(null);
+  }, []);
 
   // Handle document upload success
   const handleDocumentUploadSuccess = useCallback(
-    (index: number, docId?: string) => {
-      if (docId) {
-        form.setValue(`items.${index}.document_id`, docId, {
+    (documentId: string) => {
+      if (activeItemIndex !== null && documentId) {
+        const tempId = form.getValues('temp_id');
+        console.log(
+          `[Line Item Doc] Attaching document ${documentId} to line item ${activeItemIndex} with temp_id ${tempId}`
+        );
+
+        // Update the line item with the document ID
+        form.setValue(`items.${activeItemIndex}.document_id`, documentId, {
           shouldDirty: true,
-          shouldTouch: false,
-          shouldValidate: false,
+          shouldTouch: true,
+        });
+
+        toast({
+          title: 'Document attached',
+          description: 'Document has been successfully attached to the line item',
+        });
+
+        // Close the dialog with a slight delay to ensure UI updates are complete
+        setTimeout(() => {
+          setShowDocumentDialog(false);
+          setActiveItemIndex(null); // Reset active item
+        }, 100);
+      } else {
+        console.error(
+          '[Line Item Doc] Failed to attach document - activeItemIndex:',
+          activeItemIndex,
+          'documentId:',
+          documentId
+        );
+        setUploadError('Failed to attach document to the line item');
+      }
+    },
+    [activeItemIndex, form]
+  );
+
+  // Handle item deletion
+  const handleDeleteItem = useCallback(
+    (index: number) => {
+      if (index >= 0 && index < fields.length) {
+        remove(index);
+        toast({
+          title: 'Item deleted',
+          description: 'The line item has been removed from the estimate',
         });
       }
     },
-    [form]
+    [fields.length, remove]
   );
 
-  // Handle sorting
-  const handleSort = useCallback(
-    (field: SortField) => {
-      if (sortField === field) {
-        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-      } else {
-        setSortField(field);
-        setSortDirection('asc');
-      }
-    },
-    [sortField, sortDirection]
-  );
-
-  // Filter and sort fields
-  const filteredAndSortedFields = useMemo(() => {
-    let result = [...fields];
-
-    // Apply search filter
-    if (searchTerm) {
-      const lowerCaseSearch = searchTerm.toLowerCase();
-      result = result.filter((field, index) => {
-        const description = form.getValues(`items.${index}.description`).toLowerCase();
-        const itemType = form.getValues(`items.${index}.item_type`).toLowerCase();
-        return description.includes(lowerCaseSearch) || itemType.includes(lowerCaseSearch);
-      });
-    }
-
-    // Apply type filter
-    if (filterType) {
-      result = result.filter((field, index) => {
-        return form.getValues(`items.${index}.item_type`) === filterType;
-      });
-    }
-
-    // Apply sorting
-    result.sort((a, b) => {
-      const aIndex = fields.findIndex(field => field.id === a.id);
-      const bIndex = fields.findIndex(field => field.id === b.id);
-
-      let aValue: string | number = '';
-      let bValue: string | number = '';
-
-      switch (sortField) {
-        case 'description':
-          aValue = form.getValues(`items.${aIndex}.description`);
-          bValue = form.getValues(`items.${bIndex}.description`);
-          break;
-        case 'item_type':
-          aValue = form.getValues(`items.${aIndex}.item_type`);
-          bValue = form.getValues(`items.${bIndex}.item_type`);
-          break;
-        case 'quantity':
-          aValue = Number(form.getValues(`items.${aIndex}.quantity`)) || 0;
-          bValue = Number(form.getValues(`items.${bIndex}.quantity`)) || 0;
-          break;
-        case 'cost':
-          aValue = Number(form.getValues(`items.${aIndex}.cost`)) || 0;
-          bValue = Number(form.getValues(`items.${bIndex}.cost`)) || 0;
-          break;
-        case 'markup_percentage':
-          aValue = Number(form.getValues(`items.${aIndex}.markup_percentage`)) || 0;
-          bValue = Number(form.getValues(`items.${bIndex}.markup_percentage`)) || 0;
-          break;
-        case 'unit_price':
-          aValue = Number(form.getValues(`items.${aIndex}.unit_price`)) || 0;
-          bValue = Number(form.getValues(`items.${bIndex}.unit_price`)) || 0;
-          break;
-        case 'total':
-          aValue = calculateTotalPrice(aIndex);
-          bValue = calculateTotalPrice(bIndex);
-          break;
-      }
-
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc'
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      } else {
-        return sortDirection === 'asc'
-          ? (aValue as number) - (bValue as number)
-          : (bValue as number) - (aValue as number);
-      }
-    });
-
-    return result;
-  }, [fields, form, searchTerm, filterType, sortField, sortDirection, calculateTotalPrice]);
-
-  // Calculate total pages and current items to display
-  const totalPages = Math.max(1, Math.ceil(filteredAndSortedFields.length / ITEMS_PER_PAGE));
+  // All items (no filtering now)
   const currentPageItems = useMemo(() => {
+    const result = [...fields];
+
+    // Pagination
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredAndSortedFields.slice(startIndex, endIndex);
-  }, [filteredAndSortedFields, currentPage]);
+    return result.slice(startIndex, endIndex);
+  }, [fields, currentPage]);
+
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(fields.length / ITEMS_PER_PAGE));
 
   // Handle page change
   const handlePageChange = useCallback((page: number) => {
@@ -303,138 +256,65 @@ const EstimateItemFields = memo(() => {
     });
 
     setSelectedItems([]);
+
+    toast({
+      title: 'Items deleted',
+      description: `${indexesToRemove.length} items have been removed from the estimate`,
+    });
   }, [selectedItems, fields, remove]);
 
-  // Export to CSV
-  const exportToCSV = useCallback(() => {
-    const headers = ['Description', 'Type', 'Quantity', 'Cost', 'Markup %', 'Unit Price', 'Total'];
-    const rows = fields.map((field, index) => [
-      form.getValues(`items.${index}.description`),
-      form.getValues(`items.${index}.item_type`),
-      form.getValues(`items.${index}.quantity`),
-      form.getValues(`items.${index}.cost`),
-      form.getValues(`items.${index}.markup_percentage`),
-      form.getValues(`items.${index}.unit_price`),
-      calculateTotalPrice(index).toString(),
-    ]);
+  // Add this function to calculate markup from price and cost
+  const updateMarkupFromPrice = useCallback(
+    (index: number) => {
+      const cost = Number(form.getValues(`items.${index}.cost`)) || 0;
+      const unitPrice = Number(form.getValues(`items.${index}.unit_price`)) || 0;
 
-    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+      // Avoid division by zero
+      if (cost > 0) {
+        // Calculate markup percentage: (Price - Cost) / Cost * 100
+        const markupPercentage = ((unitPrice - cost) / cost) * 100;
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'estimate_items.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [fields, form, calculateTotalPrice]);
-
-  // Unique item types for filtering
-  const uniqueItemTypes = useMemo(() => {
-    const types = new Set<string>();
-    fields.forEach((_, index) => {
-      const type = form.getValues(`items.${index}.item_type`);
-      if (type) types.add(type);
-    });
-    return Array.from(types);
-  }, [fields, form]);
+        // Format to one decimal place and update the form
+        form.setValue(`items.${index}.markup_percentage`, Math.max(0, markupPercentage).toFixed(1));
+      }
+    },
+    [form]
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-        <h3 className="text-lg font-medium">Items ({fields.length})</h3>
-        <div className="flex flex-wrap gap-2 items-center">
-          {selectedItems.length > 0 && (
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={handleBulkDelete}
-              className="h-9"
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Delete ({selectedItems.length})
-            </Button>
-          )}
-
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
+        <div className="flex items-center">
+          <h3 className="text-base font-medium mr-2">Line Items ({fields.length})</h3>
           <Button
             type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsCompactView(!isCompactView)}
-            className="h-9"
-          >
-            {isCompactView ? 'Detailed View' : 'Compact View'}
-          </Button>
-
-          <Button type="button" variant="outline" size="sm" onClick={exportToCSV} className="h-9">
-            <Download className="h-4 w-4 mr-1" />
-            Export
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={addNewItem}
-            className="bg-[#0485ea] text-white hover:bg-[#0375d1] h-9"
+            className="bg-[#0485ea] text-white hover:bg-[#0375d1]"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add Item
           </Button>
         </div>
-      </div>
 
-      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center mb-2">
-        <div className="relative w-full sm:w-auto flex-1 max-w-sm">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search items..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="pl-8 h-9"
-          />
-        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsCompactView(!isCompactView)}
+          >
+            {isCompactView ? 'Show Financial Details' : 'Hide Financial Details'}
+          </Button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9">
-              <Filter className="h-4 w-4 mr-1" />
-              {filterType ? `Filter: ${filterType}` : 'Filter'}
-              {filterType && (
-                <Badge
-                  variant="secondary"
-                  className="ml-2 cursor-pointer"
-                  onClick={e => {
-                    e.stopPropagation();
-                    setFilterType(null);
-                  }}
-                >
-                  ×
-                </Badge>
-              )}
+          {selectedItems.length > 0 && (
+            <Button type="button" variant="destructive" size="sm" onClick={handleBulkDelete}>
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete ({selectedItems.length})
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuCheckboxItem
-              checked={filterType === null}
-              onCheckedChange={() => setFilterType(null)}
-            >
-              All Types
-            </DropdownMenuCheckboxItem>
-            {uniqueItemTypes.map(type => (
-              <DropdownMenuCheckboxItem
-                key={type}
-                checked={filterType === type}
-                onCheckedChange={() => setFilterType(type)}
-              >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+        </div>
       </div>
 
       {fields.length === 0 ? (
@@ -443,308 +323,348 @@ const EstimateItemFields = memo(() => {
         </div>
       ) : (
         <>
-          <div className="border rounded-md overflow-x-auto">
-            <Table>
-              <TableHeader className="sticky top-0 bg-white z-10">
-                <TableRow>
-                  <TableHead className="w-[50px]">
-                    <Checkbox
-                      checked={
-                        currentPageItems.length > 0 &&
-                        selectedItems.length === currentPageItems.length
-                      }
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Select all items"
-                    />
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleSort('description')}
-                  >
-                    Description
-                    {sortField === 'description' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp className="ml-1 h-4 w-4 inline" />
-                      ) : (
-                        <ChevronDown className="ml-1 h-4 w-4 inline" />
-                      ))}
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleSort('item_type')}
-                  >
-                    Type
-                    {sortField === 'item_type' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp className="ml-1 h-4 w-4 inline" />
-                      ) : (
-                        <ChevronDown className="ml-1 h-4 w-4 inline" />
-                      ))}
-                  </TableHead>
-                  {!isCompactView && (
-                    <TableHead
-                      className="cursor-pointer hover:bg-gray-50 text-right"
-                      onClick={() => handleSort('quantity')}
-                    >
-                      Quantity
-                      {sortField === 'quantity' &&
-                        (sortDirection === 'asc' ? (
-                          <ChevronUp className="ml-1 h-4 w-4 inline" />
-                        ) : (
-                          <ChevronDown className="ml-1 h-4 w-4 inline" />
-                        ))}
+          <div className="w-full border rounded-md overflow-x-auto">
+            <TooltipProvider>
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="w-[40px] pl-2">
+                      <Checkbox
+                        checked={
+                          currentPageItems.length > 0 &&
+                          selectedItems.length === currentPageItems.length
+                        }
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all items"
+                      />
                     </TableHead>
-                  )}
-                  {!isCompactView && (
-                    <TableHead
-                      className="cursor-pointer hover:bg-gray-50 text-right"
-                      onClick={() => handleSort('cost')}
-                    >
-                      Cost
-                      {sortField === 'cost' &&
-                        (sortDirection === 'asc' ? (
-                          <ChevronUp className="ml-1 h-4 w-4 inline" />
-                        ) : (
-                          <ChevronDown className="ml-1 h-4 w-4 inline" />
-                        ))}
+                    <TableHead className="w-[30%]">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex items-center">
+                            Description
+                            <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Enter a detailed description of the item or service</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </TableHead>
-                  )}
-                  {!isCompactView && (
-                    <TableHead
-                      className="cursor-pointer hover:bg-gray-50 text-right"
-                      onClick={() => handleSort('markup_percentage')}
-                    >
-                      Markup %
-                      {sortField === 'markup_percentage' &&
-                        (sortDirection === 'asc' ? (
-                          <ChevronUp className="ml-1 h-4 w-4 inline" />
-                        ) : (
-                          <ChevronDown className="ml-1 h-4 w-4 inline" />
-                        ))}
+                    <TableHead className="w-[12%]">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex items-center">
+                            Type
+                            <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            Select the type of item. Choose Material to add vendor-supplied items.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     </TableHead>
-                  )}
-                  <TableHead
-                    className="cursor-pointer hover:bg-gray-50 text-right"
-                    onClick={() => handleSort('unit_price')}
-                  >
-                    Unit Price
-                    {sortField === 'unit_price' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp className="ml-1 h-4 w-4 inline" />
-                      ) : (
-                        <ChevronDown className="ml-1 h-4 w-4 inline" />
-                      ))}
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-gray-50 text-right"
-                    onClick={() => handleSort('total')}
-                  >
-                    Total
-                    {sortField === 'total' &&
-                      (sortDirection === 'asc' ? (
-                        <ChevronUp className="ml-1 h-4 w-4 inline" />
-                      ) : (
-                        <ChevronDown className="ml-1 h-4 w-4 inline" />
-                      ))}
-                  </TableHead>
-                  <TableHead className="w-[100px] text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentPageItems.map(field => {
-                  const index = fields.findIndex(f => f.id === field.id);
-                  const itemType = form.watch(`items.${index}.item_type`);
-                  const isVendor = itemType === 'vendor';
-                  const isSubcontractor = itemType === 'subcontractor';
-                  const isSelected = selectedItems.includes(field.id);
+                    {!isCompactView && (
+                      <TableHead className="text-right w-[8%]">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex items-center justify-end">
+                              Qty
+                              <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Number of units</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableHead>
+                    )}
+                    {!isCompactView && (
+                      <TableHead className="text-right w-[12%]">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex items-center justify-end">
+                              Cost (USD)
+                              <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Your cost per unit in USD</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableHead>
+                    )}
+                    {!isCompactView && (
+                      <TableHead className="text-right w-[10%]">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex items-center justify-end">
+                              Markup %
+                              <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Percentage added to cost</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableHead>
+                    )}
+                    <TableHead className="text-right w-[12%]">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex items-center justify-end">
+                            Price (USD)
+                            <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Price charged per unit in USD</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TableHead>
+                    <TableHead className="text-right w-[12%]">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex items-center justify-end">
+                            Total (USD)
+                            <HelpCircle className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Quantity × Price in USD</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentPageItems.map((field, rowIndex) => {
+                    const index = fields.findIndex(f => f.id === field.id);
+                    const itemType = form.watch(`items.${index}.item_type`);
+                    const isVendor = itemType === 'material';
+                    const isSubcontractor = itemType === 'subcontractor';
+                    const isSelected = selectedItems.includes(field.id);
 
-                  return (
-                    <TableRow key={field.id} className={isSelected ? 'bg-blue-50' : ''}>
-                      <TableCell>
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => handleSelectItem(field.id)}
-                          aria-label={`Select item ${index + 1}`}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          {...form.register(`items.${index}.description`)}
-                          placeholder="Description"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={itemType || 'labor'}
-                          onValueChange={value => form.setValue(`items.${index}.item_type`, value)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="labor">Labor</SelectItem>
-                            <SelectItem value="material">Material</SelectItem>
-                            <SelectItem value="vendor">Vendor</SelectItem>
-                            <SelectItem value="subcontractor">Subcontractor</SelectItem>
-                            <SelectItem value="fee">Fee</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        {isVendor && !loading && vendors.length > 0 && (
+                    return (
+                      <TableRow key={field.id} className={isSelected ? 'bg-blue-50' : ''}>
+                        <TableCell>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleSelectItem(field.id)}
+                            aria-label={`Select item ${rowIndex + 1}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              {...form.register(`items.${index}.description`)}
+                              placeholder="Description"
+                            />
+                            {form.watch(`items.${index}.document_id`) && (
+                              <div className="relative">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-blue-50 text-blue-700 hover:bg-blue-100 cursor-pointer"
+                                      >
+                                        <PaperclipIcon className="h-3 w-3 mr-1" />
+                                        Doc
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Document attached to this line item</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <Select
-                            value={form.watch(`items.${index}.vendor_id`) || ''}
+                            value={itemType || 'none'}
                             onValueChange={value =>
-                              form.setValue(`items.${index}.vendor_id`, value)
+                              form.setValue(`items.${index}.item_type`, value)
                             }
-                            className="mt-2"
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select vendor" />
+                              <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {vendors.map(vendor => (
-                                <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                                  {vendor.vendorname}
-                                </SelectItem>
-                              ))}
+                              <SelectItem value="none">Select type</SelectItem>
+                              <SelectItem value="labor">Labor</SelectItem>
+                              <SelectItem value="material">Material</SelectItem>
+                              <SelectItem value="subcontractor">Subcontractor</SelectItem>
+                              <SelectItem value="fee">Fee</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
                             </SelectContent>
                           </Select>
-                        )}
 
-                        {isSubcontractor && !loading && subcontractors.length > 0 && (
-                          <Select
-                            value={form.watch(`items.${index}.subcontractor_id`) || ''}
-                            onValueChange={value =>
-                              form.setValue(`items.${index}.subcontractor_id`, value)
-                            }
-                            className="mt-2"
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select subcontractor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {subcontractors.map(sub => (
-                                <SelectItem key={sub.subid} value={sub.subid}>
-                                  {sub.subname}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </TableCell>
-                      {!isCompactView && (
-                        <TableCell>
-                          <Input
-                            {...form.register(`items.${index}.quantity`)}
-                            type="number"
-                            min="1"
-                            step="1"
-                            className="text-right"
-                            onBlur={() => {
-                              const total = calculateTotalPrice(index);
-                              form.setValue(`items.${index}.total_price`, total);
-                            }}
-                          />
-                        </TableCell>
-                      )}
-                      {!isCompactView && (
-                        <TableCell>
-                          <Input
-                            {...form.register(`items.${index}.cost`)}
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="text-right"
-                            onBlur={() => {
-                              updateUnitPriceFromMarkup(index);
-                            }}
-                          />
-                        </TableCell>
-                      )}
-                      {!isCompactView && (
-                        <TableCell>
-                          <Input
-                            {...form.register(`items.${index}.markup_percentage`)}
-                            type="number"
-                            min="0"
-                            step="0.1"
-                            className="text-right"
-                            onBlur={() => {
-                              updateUnitPriceFromMarkup(index);
-                            }}
-                          />
-                        </TableCell>
-                      )}
-                      <TableCell>
-                        <Input
-                          {...form.register(`items.${index}.unit_price`)}
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          className="text-right"
-                          onBlur={() => {
-                            const total = calculateTotalPrice(index);
-                            form.setValue(`items.${index}.total_price`, total);
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(calculateTotalPrice(index))}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end space-x-2">
-                          <Sheet>
-                            <SheetTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-blue-500 border-blue-200 hover:bg-blue-50 h-8 w-8 p-0"
-                                onClick={e => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                              >
-                                <PaperclipIcon className="h-3.5 w-3.5" />
-                                <span className="sr-only">Attach document</span>
-                              </Button>
-                            </SheetTrigger>
-                            <SheetContent
-                              className="w-[90vw] sm:max-w-[600px] p-0"
-                              accessibleTitle="Attach Document to Line Item"
+                          {isVendor && !loading && vendors.length > 0 && (
+                            <Select
+                              value={form.watch(`items.${index}.vendor_id`) || ''}
+                              onValueChange={value =>
+                                form.setValue(`items.${index}.vendor_id`, value)
+                              }
                             >
-                              <SheetHeader className="p-6 pb-2">
-                                <SheetTitle>Attach Document to Line Item</SheetTitle>
-                                <SheetDescription>
-                                  Upload a document to attach to this line item.
-                                </SheetDescription>
-                              </SheetHeader>
-                              <EnhancedDocumentUpload
-                                entityType="ESTIMATE_ITEM"
-                                entityId={form.getValues('temp_id') || 'pending'}
-                                onSuccess={docId => handleDocumentUploadSuccess(index, docId)}
-                                preventFormPropagation={true}
-                              />
-                            </SheetContent>
-                          </Sheet>
+                              <SelectTrigger className="w-full mt-2">
+                                <SelectValue placeholder="Select vendor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {vendors.map(vendor => (
+                                  <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
+                                    {vendor.vendorname}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
 
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-red-500"
-                            onClick={() => remove(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Remove item</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                          {isSubcontractor && !loading && subcontractors.length > 0 && (
+                            <Select
+                              value={form.watch(`items.${index}.subcontractor_id`) || ''}
+                              onValueChange={value =>
+                                form.setValue(`items.${index}.subcontractor_id`, value)
+                              }
+                            >
+                              <SelectTrigger className="w-full mt-2">
+                                <SelectValue placeholder="Select subcontractor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {subcontractors.map(sub => (
+                                  <SelectItem key={sub.subid} value={sub.subid}>
+                                    {sub.subname}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </TableCell>
+                        {!isCompactView && (
+                          <TableCell>
+                            <Input
+                              {...form.register(`items.${index}.quantity`)}
+                              type="number"
+                              min="1"
+                              step="1"
+                              className="text-right"
+                              onBlur={() => {
+                                const total = calculateTotalPrice(index);
+                                form.setValue(`items.${index}.total_price` as any, total);
+                              }}
+                            />
+                          </TableCell>
+                        )}
+                        {!isCompactView && (
+                          <TableCell>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">
+                                $
+                              </span>
+                              <Input
+                                {...form.register(`items.${index}.cost`)}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                className="text-right font-medium text-base pl-6"
+                                placeholder="0.00"
+                                onBlur={e => {
+                                  // Format to 2 decimal places on blur
+                                  const value = parseFloat(e.target.value);
+                                  if (!isNaN(value)) {
+                                    const formatted = value.toFixed(2);
+                                    form.setValue(`items.${index}.cost`, formatted);
+                                  }
+                                  updateUnitPriceFromMarkup(index);
+                                }}
+                              />
+                            </div>
+                          </TableCell>
+                        )}
+                        {!isCompactView && (
+                          <TableCell>
+                            <Input
+                              {...form.register(`items.${index}.markup_percentage`)}
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              className="text-right"
+                              placeholder="Markup %"
+                              onBlur={() => {
+                                updateUnitPriceFromMarkup(index);
+                              }}
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">
+                              $
+                            </span>
+                            <Input
+                              {...form.register(`items.${index}.unit_price`)}
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className="text-right font-medium text-base pl-6"
+                              placeholder="0.00"
+                              onBlur={e => {
+                                // Format to 2 decimal places on blur
+                                const value = parseFloat(e.target.value);
+                                if (!isNaN(value)) {
+                                  const formatted = value.toFixed(2);
+                                  form.setValue(`items.${index}.unit_price`, formatted);
+
+                                  // When price changes directly, update the markup percentage
+                                  updateMarkupFromPrice(index);
+                                }
+                                const total = calculateTotalPrice(index);
+                                form.setValue(`items.${index}.total_price` as any, total);
+                              }}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-base pr-4">
+                          <div className="inline-flex items-center justify-end">
+                            <span className="text-gray-500 mr-0.5">$</span>
+                            {calculateTotalPrice(index).toFixed(2)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right p-1">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-50"
+                              title="Attach Document"
+                              onClick={() => handleOpenDocumentDialog(index)}
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
+                              title="Delete Item"
+                              onClick={() => handleDeleteItem(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TooltipProvider>
           </div>
 
           {totalPages > 1 && (
@@ -792,90 +712,52 @@ const EstimateItemFields = memo(() => {
         </>
       )}
 
-      {fields.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div className="md:col-span-2 bg-slate-50 p-3 border rounded-md">
-            <h4 className="text-sm font-medium text-[#0485ea] mb-2">Financial Summary</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <div className="text-xs text-muted-foreground">Total Cost</div>
-                <div className="text-sm font-medium">
-                  {formatCurrency(
-                    fields.reduce((sum, _, index) => {
-                      const cost = Number(form.getValues(`items.${index}.cost`)) || 0;
-                      const quantity = Number(form.getValues(`items.${index}.quantity`)) || 0;
-                      return sum + cost * quantity;
-                    }, 0)
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Total Revenue</div>
-                <div className="text-sm font-medium">
-                  {formatCurrency(
-                    fields.reduce((sum, _, index) => sum + calculateTotalPrice(index), 0)
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Gross Margin</div>
-                <div className="text-sm font-medium">
-                  {formatCurrency(
-                    fields.reduce((sum, _, index) => sum + calculateGrossMargin(index), 0)
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Margin %</div>
-                <div className="text-sm font-medium">
-                  {(() => {
-                    const totalRevenue = fields.reduce(
-                      (sum, _, index) => sum + calculateTotalPrice(index),
-                      0
-                    );
-                    const totalMargin = fields.reduce(
-                      (sum, _, index) => sum + calculateGrossMargin(index),
-                      0
-                    );
-                    const marginPercentage =
-                      totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
-                    return marginPercentage.toFixed(1) + '%';
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Document Upload Dialog - Single instance outside of table loop */}
+      <Dialog
+        open={showDocumentDialog}
+        onOpenChange={open => {
+          if (!open) {
+            setUploadError(null);
+            // Only reset active item index when dialog is closed by user
+            // not when it's closed programmatically after success
+            if (showDocumentDialog) {
+              setActiveItemIndex(null);
+            }
+          }
+          setShowDocumentDialog(open);
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Attach Document to Line Item</DialogTitle>
+            <DialogDescription>Upload a document to attach to this line item.</DialogDescription>
+          </DialogHeader>
 
-          <div className="bg-slate-50 p-3 border rounded-md">
-            <h4 className="text-sm font-medium text-[#0485ea] mb-2">Items by Type</h4>
-            <div className="space-y-2">
-              {uniqueItemTypes.map(type => {
-                const count = fields.filter(
-                  (_, index) => form.getValues(`items.${index}.item_type`) === type
-                ).length;
-                const total = fields.reduce((sum, _, index) => {
-                  if (form.getValues(`items.${index}.item_type`) === type) {
-                    return sum + calculateTotalPrice(index);
-                  }
-                  return sum;
-                }, 0);
+          {uploadError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{uploadError}</AlertDescription>
+            </Alert>
+          )}
 
-                return (
-                  <div key={type} className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <Badge variant="outline" className="capitalize mr-2">
-                        {type}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">({count})</span>
-                    </div>
-                    <span className="text-sm font-medium">{formatCurrency(total)}</span>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {activeItemIndex !== null && (
+              <>
+                <div className="text-xs text-gray-500 mb-2">
+                  Using temp ID: {form.getValues('temp_id') || 'pending'}
+                </div>
+                <EnhancedDocumentUpload
+                  entityType="ESTIMATE_ITEM"
+                  entityId={form.getValues('temp_id') || 'pending'}
+                  onSuccess={handleDocumentUploadSuccess}
+                  onCancel={() => setShowDocumentDialog(false)}
+                  preventFormPropagation={true}
+                />
+              </>
+            )}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 });

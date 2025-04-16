@@ -14,6 +14,8 @@ import {
   LineChart,
   FileUp,
   Download,
+  ListIcon,
+  LayoutIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +30,8 @@ import { EstimateRevision } from '../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import PDFExportButton from '../detail/PDFExportButton';
 import RevisionPDFViewer from '../components/RevisionPDFViewer';
 
@@ -46,7 +49,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   onRevisionSelect,
 }) => {
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('timeline');
+  const [viewType, setViewType] = useState<'timeline' | 'table'>('table'); // Default to table view
   const [revisionItems, setRevisionItems] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -428,7 +431,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                         onClick={() => {
                           setExpandedRevision(revision.id);
                           fetchRevisionItems(revision.id);
-                          setActiveTab('timeline');
+                          setViewType('timeline');
                         }}
                         className="h-7 text-xs"
                       >
@@ -448,34 +451,35 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
 
   return (
     <div>
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="table">Table</TabsTrigger>
-          </TabsList>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Estimate Revisions</h3>
+        <div className="flex items-center gap-2">
+          <ToggleGroup
+            type="single"
+            value={viewType}
+            onValueChange={v => v && setViewType(v as 'timeline' | 'table')}
+          >
+            <ToggleGroupItem value="timeline" aria-label="Timeline View">
+              <LayoutIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Table View">
+              <ListIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
 
-          <div>
-            <PDFExportButton
-              estimateId={estimateId}
-              revisionId={currentRevisionId}
-              size="sm"
-              variant="outline"
-            >
-              <FileUp className="mr-2 h-4 w-4" />
-              Generate PDF
-            </PDFExportButton>
-          </div>
+          <PDFExportButton
+            estimateId={estimateId}
+            revisionId={currentRevisionId}
+            size="sm"
+            variant="outline"
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            Generate PDF
+          </PDFExportButton>
         </div>
+      </div>
 
-        <TabsContent value="timeline" className="mt-0">
-          {renderTimelineView()}
-        </TabsContent>
-
-        <TabsContent value="table" className="mt-0">
-          {renderCompactTableView()}
-        </TabsContent>
-      </Tabs>
+      {viewType === 'timeline' ? renderTimelineView() : renderCompactTableView()}
     </div>
   );
 };

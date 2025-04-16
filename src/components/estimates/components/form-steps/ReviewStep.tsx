@@ -1,15 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import EstimatePreview from '../EstimatePreview';
 import { Card, CardContent } from '@/components/ui/card';
-import { PaperclipIcon, FileIcon } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  FileIcon,
+  PrinterIcon,
+  DownloadIcon,
+  ZoomInIcon,
+  ZoomOutIcon,
+  Save,
+  Send,
+  FileCheck,
+  CheckCircle,
+} from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 interface ReviewStepProps {
   formData: EstimateFormValues;
   selectedCustomerName: string | null;
   selectedCustomerAddress: string | null;
-  selectedCustomerId?: string | null; // Ensure this prop is properly typed
+  selectedCustomerId?: string | null;
+  onSubmit?: (status: string) => void;
 }
 
 const ReviewStep = ({
@@ -17,46 +29,9 @@ const ReviewStep = ({
   selectedCustomerName,
   selectedCustomerAddress,
   selectedCustomerId,
+  onSubmit,
 }: ReviewStepProps) => {
-  const [attachedDocuments, setAttachedDocuments] = useState<Record<string, any>>({});
-
-  // Fetch document info for each document ID
-  useEffect(() => {
-    const documentIds = [
-      ...(formData.estimate_documents || []),
-      ...(formData.items?.filter(i => i.document_id).map(i => i.document_id) || []),
-    ].filter(Boolean) as string[];
-
-    if (documentIds.length === 0) {
-      return;
-    }
-
-    const fetchDocumentInfo = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('documents')
-          .select('document_id, file_name, file_type, category')
-          .in('document_id', documentIds);
-
-        if (error) {
-          console.error('Error fetching documents:', error);
-          return;
-        }
-
-        const docsById = data.reduce((acc: Record<string, any>, doc) => {
-          acc[doc.document_id] = doc;
-          return acc;
-        }, {});
-
-        setAttachedDocuments(docsById);
-      } catch (err) {
-        console.error('Error in document fetch:', err);
-      }
-    };
-
-    fetchDocumentInfo();
-  }, [formData.estimate_documents, formData.items]);
-
+  const [activeView, setActiveView] = useState<string>('basic');
   // Ensure formData has required items property
   const safeFormData = {
     ...formData,
@@ -67,88 +42,133 @@ const ReviewStep = ({
     (formData.estimate_documents?.length || 0) +
     (formData.items?.filter(i => i.document_id).length || 0);
 
+  // Use the real submit handler if available, otherwise show an alert
+  const handleSubmit = (status: string) => {
+    if (onSubmit) {
+      onSubmit(status);
+    } else {
+      // Fallback for development/testing
+      window.alert(`Option selected: ${status}`);
+      console.log(
+        'No submit handler provided. In production, this would submit the form with status:',
+        status
+      );
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium">Review Your Estimate</h3>
-      <div className="border rounded-md p-4">
-        <EstimatePreview
-          formData={safeFormData}
-          selectedCustomerName={selectedCustomerName}
-          selectedCustomerAddress={selectedCustomerAddress}
-          selectedCustomerId={selectedCustomerId}
-        />
+    <div className="mb-24 overflow-y-auto max-h-[70vh]">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-medium">Review Your Estimate</h3>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+            onClick={() => window.print()}
+          >
+            <PrinterIcon className="h-4 w-4" />
+            Print
+          </Button>
+          <Button variant="outline" size="sm" className="flex items-center gap-1">
+            <DownloadIcon className="h-4 w-4" />
+            Export
+          </Button>
+        </div>
       </div>
 
-      {documentCount > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
-              <PaperclipIcon className="h-4 w-4" />
-              Attached Documents ({documentCount})
-            </h4>
+      <Card className="mb-4">
+        <CardContent className="p-0">
+          <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
+            <div className="flex justify-between items-center px-4 py-2 border-b">
+              <TabsList className="grid grid-cols-2 w-auto">
+                <TabsTrigger value="basic">Basic View</TabsTrigger>
+                <TabsTrigger value="printable">Printable View</TabsTrigger>
+              </TabsList>
 
-            <div className="space-y-4">
-              {formData.estimate_documents && formData.estimate_documents.length > 0 && (
-                <div>
-                  <h5 className="text-xs font-medium uppercase text-muted-foreground mb-2">
-                    Estimate Documents
-                  </h5>
-                  <div className="border rounded-md divide-y">
-                    {formData.estimate_documents.map((docId, idx) => {
-                      const docInfo = attachedDocuments[docId];
-                      return (
-                        <div key={idx} className="flex items-center p-3">
-                          <FileIcon className="h-4 w-4 text-blue-500 mr-2" />
-                          <div>
-                            <p className="text-sm font-medium">
-                              {docInfo?.file_name || 'Document'}
-                            </p>
-                            {docInfo?.category && (
-                              <p className="text-xs text-muted-foreground">
-                                Category: {docInfo.category}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {formData.items?.filter(i => i.document_id).length > 0 && (
-                <div>
-                  <h5 className="text-xs font-medium uppercase text-muted-foreground mb-2">
-                    Line Item Attachments
-                  </h5>
-                  <div className="border rounded-md divide-y">
-                    {formData.items
-                      .filter(i => i.document_id)
-                      .map((item, idx) => {
-                        const docInfo = item.document_id
-                          ? attachedDocuments[item.document_id]
-                          : null;
-                        return (
-                          <div key={idx} className="flex items-center p-3">
-                            <FileIcon className="h-4 w-4 text-blue-500 mr-2" />
-                            <div>
-                              <p className="text-sm font-medium">
-                                {docInfo?.file_name || 'Document'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                For: {item.description || `Item ${idx + 1}`}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <ZoomOutIcon className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <ZoomInIcon className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <TabsContent value="basic" className="m-0 p-0 min-h-[400px]">
+              <EstimatePreview
+                formData={safeFormData}
+                selectedCustomerName={selectedCustomerName}
+                selectedCustomerAddress={selectedCustomerAddress}
+                selectedCustomerId={selectedCustomerId}
+              />
+            </TabsContent>
+
+            <TabsContent value="printable" className="m-0 p-0 min-h-[400px]">
+              <EstimatePreview
+                formData={safeFormData}
+                selectedCustomerName={selectedCustomerName}
+                selectedCustomerAddress={selectedCustomerAddress}
+                selectedCustomerId={selectedCustomerId}
+                printable={true}
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {documentCount > 0 && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <FileIcon className="h-4 w-4" />
+          <span>
+            {documentCount} document{documentCount !== 1 ? 's' : ''} attached
+          </span>
+        </div>
       )}
+
+      {/* Finalization Options */}
+      <div className="mt-6 border rounded-lg p-4 bg-white shadow-sm">
+        <h2 className="text-lg font-semibold mb-4">Choose how to save this estimate:</h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            className="justify-start h-auto py-3 border-blue-100 hover:bg-blue-50"
+            onClick={() => handleSubmit('draft')}
+          >
+            <Save className="h-5 w-5 mr-2 text-blue-600" />
+            <span className="text-base">Save as Draft</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="justify-start h-auto py-3 border-green-100 hover:bg-green-50"
+            onClick={() => handleSubmit('sent')}
+          >
+            <Send className="h-5 w-5 mr-2 text-green-600" />
+            <span className="text-base">Send to Customer</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="justify-start h-auto py-3 border-orange-100 hover:bg-orange-50"
+            onClick={() => handleSubmit('awaiting_approval')}
+          >
+            <FileCheck className="h-5 w-5 mr-2 text-orange-600" />
+            <span className="text-base">Save as Pending Approval</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="justify-start h-auto py-3 border-green-100 hover:bg-green-50"
+            onClick={() => handleSubmit('approved')}
+          >
+            <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+            <span className="text-base">Save as Approved</span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

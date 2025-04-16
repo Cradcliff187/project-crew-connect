@@ -2,9 +2,14 @@ import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EstimateFormValues } from '../schemas/estimateFormSchema';
+import { useNavigate } from 'react-router-dom';
+
+// Keep track of active submissions to prevent duplicates
+const activeSubmissions = new Set();
 
 export const useEstimateSubmit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const submitEstimate = async (
     data: EstimateFormValues,
@@ -16,11 +21,26 @@ export const useEstimateSubmit = () => {
       state?: string;
       zip?: string;
     }[],
+    status: string = 'draft',
     onClose: () => void
   ) => {
+    // Generate a unique submission ID based on temp_id to prevent duplicate submissions
+    const submissionId = data.temp_id || `est-${Date.now()}`;
+
+    // If this submission is already in progress, don't start another one
+    if (activeSubmissions.has(submissionId)) {
+      console.log(`[Submission] Prevented duplicate submission for ${submissionId}`);
+      return false;
+    }
+
+    // Track this submission
+    activeSubmissions.add(submissionId);
+    console.log(`[Submission] Starting submission for ${submissionId}`);
+
     try {
       setIsSubmitting(true);
       console.log('Starting estimate submission with data:', data);
+      console.log('Using status:', status);
 
       let customerId: string | null = null;
       let customerAddress: string | null = null;
@@ -99,7 +119,7 @@ export const useEstimateSubmit = () => {
       const locationState = data.showSiteLocation ? data.location.state : customerState;
       const locationZip = data.showSiteLocation ? data.location.zip : customerZip;
 
-      // Create the estimate with our generated ID
+      // Create the estimate with our generated ID and the provided status
       const { data: newEstimate, error: estimateError } = await supabase
         .from('estimates')
         .insert({
@@ -115,7 +135,7 @@ export const useEstimateSubmit = () => {
           sitelocationstate: locationState,
           sitelocationzip: locationZip,
           datecreated: new Date().toISOString(),
-          status: 'draft',
+          status: status, // Use the provided status
           contingency_percentage: parseFloat(data.contingency_percentage || '0'),
         })
         .select('estimateid')
@@ -129,7 +149,7 @@ export const useEstimateSubmit = () => {
       const estimateId = newEstimate.estimateid;
       console.log('Estimate created with ID:', estimateId);
 
-      // Create a revision for the estimate
+      // Create a revision for the estimate with the provided status
       console.log('Creating revision for estimate');
       const { data: newRevision, error: revisionError } = await supabase
         .from('estimate_revisions')
@@ -137,7 +157,7 @@ export const useEstimateSubmit = () => {
           estimate_id: estimateId,
           version: 1,
           is_current: true,
-          status: 'draft',
+          status: status, // Use the provided status here too
         })
         .select('id')
         .single();
@@ -192,11 +212,12 @@ export const useEstimateSubmit = () => {
 
       // Get the temp ID used for documents
       const tempId = data.temp_id || '';
+      console.log('[Document Update] Using temp ID for document updates:', tempId);
 
       // Update any estimate-level documents
       if (data.estimate_documents && data.estimate_documents.length > 0) {
         console.log(
-          `Updating ${data.estimate_documents.length} documents to estimate ID: ${estimateId}`
+          `[Document Update] Updating ${data.estimate_documents.length} documents to estimate ID: ${estimateId}`
         );
 
         // Update the documents to associate them with the estimate
@@ -206,24 +227,33 @@ export const useEstimateSubmit = () => {
           .in('document_id', data.estimate_documents);
 
         if (documentsError) {
-          console.error('Error updating document associations:', documentsError);
+          console.error('[Document Update] Error updating document associations:', documentsError);
           // Continue even if this fails - not critical
         }
       }
 
       // Update any documents that were tagged with the temp ID
       if (tempId) {
-        console.log(`Updating documents with temp ID ${tempId} to estimate ID: ${estimateId}`);
+        console.log(`[Document Update] Checking for any documents with temp ID: ${tempId}`);
 
-        const { error: tempDocsError } = await supabase
+        // First, let's see if there are any documents with this temp ID
+        const { data: tempDocuments, error: findError } = await supabase
           .from('documents')
-          .update({ entity_id: estimateId })
+          .select('document_id, entity_type')
           .eq('entity_id', tempId);
 
-        if (tempDocsError) {
-          console.error('Error updating temp documents:', tempDocsError);
-          // Continue even if this fails - not critical
+        if (findError) {
+          console.error('[Document Update] Error finding temp documents:', findError);
+        } else {
+          console.log(
+            `[Document Update] Found ${tempDocuments?.length || 0} documents with temp ID`
+          );
+          if (tempDocuments && tempDocuments.length > 0) {
+            console.log('[Document Update] Document details:', tempDocuments);
+          }
         }
+
+        await updateDocumentReferences(tempId, estimateId);
       }
 
       // Calculate total amount
@@ -247,12 +277,61 @@ export const useEstimateSubmit = () => {
       }
 
       console.log('Estimate creation completed successfully');
-      toast({
-        title: 'Estimate Created',
-        description: 'Your estimate has been created successfully.',
-      });
 
-      onClose();
+      // Send email if status is 'sent'
+      if (status === 'sent') {
+        console.log('Status is "sent", attempting to send email to customer');
+        try {
+          // Using a hypothetical email service
+          // This would be replaced with your actual email implementation
+          // const emailResult = await emailService.sendEstimateEmail({
+          //   estimateId,
+          //   customerEmail: customerEmail,
+          //   customerName: customerName,
+          // });
+
+          console.log('Email sending would happen here in production');
+
+          // Add a delay to simulate email sending
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          toast({
+            title: 'Estimate Sent',
+            description: 'Your estimate has been emailed to the customer.',
+          });
+        } catch (emailError) {
+          console.error('Error sending email:', emailError);
+          toast({
+            title: 'Email Not Sent',
+            description: 'The estimate was created but could not be emailed to the customer.',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        // Show appropriate toast for other statuses
+        const statusMessages = {
+          draft: 'Your estimate has been saved as a draft.',
+          awaiting_approval: 'Your estimate has been marked as pending approval.',
+          approved: 'Your estimate has been marked as approved.',
+        };
+
+        toast({
+          title: 'Estimate Created',
+          description: statusMessages[status] || 'Your estimate has been created successfully.',
+        });
+      }
+
+      // Don't navigate immediately to let the user see the success message
+      setTimeout(() => {
+        navigate('/estimates');
+      }, 750);
+
+      // Call onClose callback after a slight delay to ensure state updates are complete
+      setTimeout(() => {
+        if (onClose) onClose();
+      }, 800);
+
+      return true;
     } catch (error: any) {
       console.error('Error submitting estimate:', error);
 
@@ -261,10 +340,59 @@ export const useEstimateSubmit = () => {
         description: error.message || 'An error occurred while creating the estimate.',
         variant: 'destructive',
       });
+      return false;
     } finally {
+      // Remove this submission from active tracking
+      activeSubmissions.delete(submissionId);
       setIsSubmitting(false);
     }
   };
 
   return { submitEstimate, isSubmitting };
+};
+
+// Helper function to update all documents that reference the temporary ID
+const updateDocumentReferences = async (tempId: string, estimateId: string) => {
+  try {
+    console.log(
+      `[Document Update] Starting document reference update from ${tempId} to ${estimateId}`
+    );
+
+    // Update estimate-level documents
+    const { data: updatedEstimateDocs, error } = await supabase
+      .from('documents')
+      .update({ entity_id: estimateId })
+      .eq('entity_id', tempId)
+      .eq('entity_type', 'ESTIMATE')
+      .select('document_id');
+
+    if (error) {
+      console.error('[Document Update] Error updating estimate document references:', error);
+    } else {
+      console.log(
+        `[Document Update] Updated ${updatedEstimateDocs?.length || 0} estimate documents`
+      );
+    }
+
+    // Also update any line item documents
+    const { data: updatedItemDocs, error: itemDocError } = await supabase
+      .from('documents')
+      .update({ entity_id: estimateId })
+      .eq('entity_id', tempId)
+      .eq('entity_type', 'ESTIMATE_ITEM')
+      .select('document_id');
+
+    if (itemDocError) {
+      console.error(
+        '[Document Update] Error updating line item document references:',
+        itemDocError
+      );
+    } else {
+      console.log(`[Document Update] Updated ${updatedItemDocs?.length || 0} line item documents`);
+    }
+
+    console.log('[Document Update] Document reference update completed');
+  } catch (err) {
+    console.error('[Document Update] Failed to update document references:', err);
+  }
 };

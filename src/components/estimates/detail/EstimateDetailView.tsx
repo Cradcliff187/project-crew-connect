@@ -4,6 +4,7 @@ import EstimateDetailHeader from './EstimateDetailHeader';
 import EstimateDetailContent from './EstimateDetailContent';
 import EstimateDeleteDialog from './dialogs/EstimateDeleteDialog';
 import EstimateConvertDialog from './dialogs/EstimateConvertDialog';
+import EstimateDiagnosticTool from './EstimateDiagnosticTool';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EstimateDetailViewProps {
@@ -49,6 +50,7 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [currentVersion, setCurrentVersion] = useState(1);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   useEffect(() => {
     // Get the current version number
@@ -81,6 +83,27 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
     }
   };
 
+  const handleConvert = () => {
+    console.log('Opening convert dialog from EstimateDetailView for estimate:', data.estimateid);
+    setConvertDialogOpen(true);
+  };
+
+  // Create the estimate object for conversion
+  const estimateForConversion = {
+    id: data.estimateid,
+    client: data.customerid || data.customername || 'Unknown Client',
+    project: data.projectname || `Project from EST-${data.estimateid.substring(0, 8)}`,
+    description: data.job_description,
+    location: {
+      address: data.sitelocationaddress,
+      city: data.sitelocationcity,
+      state: data.sitelocationstate,
+      zip: data.sitelocationzip,
+    },
+    amount: data.estimateamount,
+    status: data.status as StatusType,
+  };
+
   return (
     <div className="space-y-6">
       <EstimateDetailHeader
@@ -88,11 +111,14 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
         currentVersion={currentVersion}
         onEdit={onEdit}
         onDelete={() => setDeleteDialogOpen(true)}
-        onConvert={() => setConvertDialogOpen(true)}
+        onConvert={handleConvert}
         onStatusChange={handleStatusChange}
       />
 
       <EstimateDetailContent data={data} onRefresh={onRefresh} />
+
+      {/* Add diagnostic tool */}
+      <EstimateDiagnosticTool estimateId={data.estimateid} onRefresh={onRefresh} />
 
       <EstimateDeleteDialog
         open={deleteDialogOpen}
@@ -103,20 +129,7 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
       <EstimateConvertDialog
         open={convertDialogOpen}
         onOpenChange={setConvertDialogOpen}
-        estimate={{
-          id: data.estimateid,
-          client: data.customerid || data.customername || 'Unknown Client',
-          project: data.projectname || `Project from EST-${data.estimateid.substring(0, 8)}`,
-          description: data.job_description,
-          location: {
-            address: data.sitelocationaddress,
-            city: data.sitelocationcity,
-            state: data.sitelocationstate,
-            zip: data.sitelocationzip,
-          },
-          amount: data.estimateamount,
-          status: data.status as StatusType,
-        }}
+        estimate={estimateForConversion}
         onStatusChange={onStatusChange}
         onRefresh={onRefresh}
       />

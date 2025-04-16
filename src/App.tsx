@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { forceConsoleLogging } from './utils/debugUtils';
 
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
@@ -32,6 +33,16 @@ const queryClient = new QueryClient();
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Initialize debug logging
+  const cleanupLogging = forceConsoleLogging();
+
+  // Add cleanup on unmount if needed
+  useEffect(() => {
+    return () => {
+      cleanupLogging();
+    };
+  }, []);
 
   return (
     <BrowserRouter>

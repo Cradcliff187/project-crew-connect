@@ -24,6 +24,8 @@ interface CalculationResults {
   totalGrossMargin: number;
   overallMarginPercentage: number;
   contingencyAmount: number;
+  contingencyPercentage: string;
+  setContingencyPercentage: (percentage: string) => void;
   grandTotal: number;
   hasError: boolean;
   errorMessage: string;
@@ -40,6 +42,8 @@ export const useSummaryCalculations = () => {
     totalGrossMargin: 0,
     overallMarginPercentage: 0,
     contingencyAmount: 0,
+    contingencyPercentage: '0',
+    setContingencyPercentage: () => {},
     grandTotal: 0,
     hasError: false,
     errorMessage: '',
@@ -58,9 +62,8 @@ export const useSummaryCalculations = () => {
     defaultValue: '0',
   });
 
-  // Increase debounce time to reduce calculation frequency
+  // Only debounce the items, not the contingency percentage
   const debouncedItems = useDebounce(items, 800);
-  const debouncedContingencyPercentage = useDebounce(contingencyPercentage, 800);
 
   // Normalize calculation items - memoized to prevent recreation
   const normalizeCalculationItems = useCallback((formItems: any[]): any[] => {
@@ -81,7 +84,13 @@ export const useSummaryCalculations = () => {
     }));
   }, []);
 
-  // Effect for calculation with rate limiting
+  // Effect for contingency percentage - run immediately without debounce
+  useEffect(() => {
+    if (calculationLockRef.current) return;
+    performCalculation(true);
+  }, [contingencyPercentage]);
+
+  // Effect for items calculation with rate limiting
   useEffect(() => {
     // Skip calculation if we're in a lock period
     if (calculationLockRef.current) return;
@@ -93,7 +102,7 @@ export const useSummaryCalculations = () => {
       const timeout = setTimeout(() => {
         // Set lock during calculation to prevent recursive updates
         calculationLockRef.current = true;
-        performCalculation();
+        performCalculation(false);
         calculationLockRef.current = false;
       }, timeToWait);
       return () => clearTimeout(timeout);
@@ -101,28 +110,43 @@ export const useSummaryCalculations = () => {
 
     // Set lock during calculation to prevent recursive updates
     calculationLockRef.current = true;
-    performCalculation();
+    performCalculation(false);
     calculationLockRef.current = false;
-  }, [debouncedItems, debouncedContingencyPercentage]);
+  }, [debouncedItems]);
 
-  const performCalculation = () => {
+  const performCalculation = (isContingencyUpdate = false) => {
     try {
-      // Record calculation time
-      lastCalculationTimeRef.current = Date.now();
+      // Record calculation time only for non-contingency updates
+      if (!isContingencyUpdate) {
+        lastCalculationTimeRef.current = Date.now();
+      }
 
-      // Use normalized items
-      const calculationItems = normalizeCalculationItems(debouncedItems);
-
-      // Calculate all the totals
-      const totalCost = calculateTotalCost(calculationItems);
-      const totalMarkup = calculateTotalMarkup(calculationItems);
-      const subtotal = calculateSubtotal(calculationItems);
-      const totalGrossMargin = calculateTotalGrossMargin(calculationItems);
-      const overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
-      const contingencyAmount = calculateContingencyAmount(
-        calculationItems,
-        debouncedContingencyPercentage
+      // Use normalized items - only normalize if not a contingency-only update
+      const calculationItems = normalizeCalculationItems(
+        isContingencyUpdate ? items : debouncedItems
       );
+
+      // Reuse existing calculations for contingency-only updates
+      let totalCost, totalMarkup, subtotal, totalGrossMargin, overallMarginPercentage;
+
+      if (isContingencyUpdate && calculationResults.subtotal > 0) {
+        // For contingency updates, reuse previous calculations
+        totalCost = calculationResults.totalCost;
+        totalMarkup = calculationResults.totalMarkup;
+        subtotal = calculationResults.subtotal;
+        totalGrossMargin = calculationResults.totalGrossMargin;
+        overallMarginPercentage = calculationResults.overallMarginPercentage;
+      } else {
+        // Recalculate everything for item updates
+        totalCost = calculateTotalCost(calculationItems);
+        totalMarkup = calculateTotalMarkup(calculationItems);
+        subtotal = calculateSubtotal(calculationItems);
+        totalGrossMargin = calculateTotalGrossMargin(calculationItems);
+        overallMarginPercentage = calculateOverallGrossMarginPercentage(calculationItems);
+      }
+
+      // Always recalculate contingency and grand total
+      const contingencyAmount = calculateContingencyAmount(calculationItems, contingencyPercentage);
       const grandTotal = calculateGrandTotal(subtotal, contingencyAmount);
 
       // Update state with new values
@@ -133,6 +157,10 @@ export const useSummaryCalculations = () => {
         totalGrossMargin,
         overallMarginPercentage,
         contingencyAmount,
+        contingencyPercentage,
+        setContingencyPercentage: (percentage: string) => {
+          form.setValue('contingency_percentage', percentage);
+        },
         grandTotal,
         hasError: false,
         errorMessage: '',

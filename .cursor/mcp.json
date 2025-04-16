@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "node ./supabase/functions/proxy.js",
+      "name": "Supabase Access",
+      "enabled": true
+    }
+  }
+}

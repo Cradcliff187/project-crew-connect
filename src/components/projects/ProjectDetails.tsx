@@ -9,7 +9,7 @@ import ProjectClientCard from './detail/ProjectClientCard';
 import ProjectBudgetCard from './detail/ProjectBudgetCard';
 import ProjectDescription from './detail/ProjectDescription';
 import ProjectStatusControl from './detail/ProjectStatusControl';
-import ProjectBudget from './detail/ProjectBudget';
+import ProjectBudget from './budget/ProjectBudget';
 import ProjectMilestones from './detail/ProjectMilestones';
 import { ProjectDocumentsList } from './detail';
 import ProjectProgressCard from './progress/ProjectProgressCard';
@@ -120,9 +120,7 @@ const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDet
         <TabsContent value="budget">
           <Card>
             <CardContent className="pt-6">
-              <div className="h-[300px] flex items-center justify-center">
-                <ProjectBudget projectId={project.projectid} />
-              </div>
+              <ProjectBudget projectId={project.projectid} />
             </CardContent>
           </Card>
         </TabsContent>

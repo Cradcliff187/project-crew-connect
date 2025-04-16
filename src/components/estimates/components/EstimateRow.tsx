@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,17 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { StatusType } from '@/types/common';
+import { convertEstimateToProject } from '@/services/estimateService';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface EstimateRowProps {
   estimate: EstimateType;
@@ -23,88 +34,101 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
   onRefreshEstimates,
 }) => {
   const navigate = useNavigate();
+  const [isConverting, setIsConverting] = useState(false);
+
+  // Dialog states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleViewDetails = () => {
     onViewEstimate(estimate);
   };
 
+  // Create a new version of the estimate
   const handleCreateNewVersion = async () => {
     try {
-      if (
-        estimate.status !== 'draft' &&
-        estimate.status !== 'sent' &&
-        estimate.status !== 'pending'
-      ) {
-        toast({
-          title: 'Cannot create new version',
-          description:
-            'New versions can only be created for estimates in draft, sent, or pending state.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       toast({
-        title: 'Creating new revision...',
-        description: 'Please wait while we create a new revision for this estimate.',
+        title: 'Creating new version',
+        description: 'Please wait while we create a new version of this estimate',
       });
 
-      const { data: revisions, error: revisionsError } = await supabase
+      // Get current revision
+      const { data: currentRevision, error: revisionError } = await supabase
         .from('estimate_revisions')
-        .select('version, id')
+        .select('*')
         .eq('estimate_id', estimate.id)
-        .order('version', { ascending: false })
-        .limit(1);
+        .eq('is_current', true)
+        .single();
 
-      if (revisionsError) {
-        throw revisionsError;
+      if (revisionError) {
+        throw new Error(`Could not find current revision: ${revisionError.message}`);
       }
 
-      const currentVersion = revisions && revisions.length > 0 ? revisions[0].version : 0;
-      const newVersion = currentVersion + 1;
-
-      const { data: newRevision, error: revisionError } = await supabase
+      // Create new revision
+      const newVersion = (currentRevision.version || 1) + 1;
+      const { data: newRevision, error: newRevisionError } = await supabase
         .from('estimate_revisions')
         .insert({
           estimate_id: estimate.id,
           version: newVersion,
           is_current: true,
-          status: 'draft',
+          status: currentRevision.status,
           revision_date: new Date().toISOString(),
-          notes: `Version ${newVersion} created as a revision of version ${currentVersion}`,
         })
         .select('id')
         .single();
 
-      if (revisionError || !newRevision) {
-        throw revisionError || new Error('Failed to create new revision');
+      if (newRevisionError) {
+        throw new Error(`Could not create new revision: ${newRevisionError.message}`);
       }
 
-      if (estimate.status === 'sent' || estimate.status === 'pending') {
-        const { error: updateError } = await supabase
-          .from('estimates')
-          .update({
-            status: 'draft',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('estimateid', estimate.id);
+      // Update old revision to not be current
+      const { error: updateError } = await supabase
+        .from('estimate_revisions')
+        .update({ is_current: false })
+        .eq('id', currentRevision.id);
 
-        if (updateError) {
-          throw updateError;
+      if (updateError) {
+        throw new Error(`Could not update old revision: ${updateError.message}`);
+      }
+
+      // Copy items from old revision to new
+      const { data: oldItems, error: itemsError } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('revision_id', currentRevision.id);
+
+      if (itemsError) {
+        throw new Error(`Could not get old items: ${itemsError.message}`);
+      }
+
+      // Prepare new items with new revision ID
+      const newItems = oldItems.map(item => ({
+        ...item,
+        id: undefined, // Let DB generate new ID
+        revision_id: newRevision.id,
+        created_at: new Date().toISOString(),
+      }));
+
+      // Insert new items
+      if (newItems.length > 0) {
+        const { error: insertError } = await supabase.from('estimate_items').insert(newItems);
+        if (insertError) {
+          throw new Error(`Could not copy items: ${insertError.message}`);
         }
       }
 
       toast({
-        title: 'New revision created',
-        description: `Created version ${newVersion} of the estimate.`,
-        variant: 'default',
+        title: 'New version created',
+        description: `Version ${newVersion} has been created successfully`,
       });
 
+      // Refresh data
       if (onRefreshEstimates) {
         onRefreshEstimates();
       }
-    } catch (error: any) {
-      console.error('Error creating new estimate version:', error);
+    } catch (error) {
+      console.error('Error creating new version:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to create new version',
@@ -113,51 +137,91 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
     }
   };
 
+  // Convert estimate to project
+  const handleConvertToProject = async () => {
+    try {
+      setIsConverting(true);
+
+      // Call the service function directly
+      const result = await convertEstimateToProject(estimate.id);
+
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: `Estimate converted to project successfully`,
+        });
+
+        if (onRefreshEstimates) {
+          onRefreshEstimates();
+        }
+      } else {
+        toast({
+          title: 'Error',
+          description: result.message || 'Failed to convert estimate to project',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error converting to project:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to convert estimate to project',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  // Duplicate estimate
   const handleDuplicateEstimate = async () => {
     try {
       toast({
         title: 'Duplicating estimate',
-        description: 'Please wait while we duplicate the estimate...',
+        description: 'Please wait while we duplicate this estimate',
       });
 
-      const { data: originalEstimate, error: estimateError } = await supabase
+      // Get the current estimate data
+      const { data: estimateData, error: estimateError } = await supabase
         .from('estimates')
         .select('*')
         .eq('estimateid', estimate.id)
-        .maybeSingle();
+        .single();
 
-      if (estimateError || !originalEstimate) {
-        throw estimateError || new Error(`No estimate found with ID ${estimate.id}`);
+      if (estimateError) {
+        throw new Error(`Could not find estimate: ${estimateError.message}`);
       }
 
-      const newEstimateData = {
-        projectname: `${originalEstimate.projectname} (Copy)`,
-        'job description': originalEstimate['job description'],
-        customerid: originalEstimate.customerid,
-        customername: originalEstimate.customername,
-        sitelocationaddress: originalEstimate.sitelocationaddress,
-        sitelocationcity: originalEstimate.sitelocationcity,
-        sitelocationstate: originalEstimate.sitelocationstate,
-        sitelocationzip: originalEstimate.sitelocationzip,
-        datecreated: new Date().toISOString(),
-        status: 'draft',
-        contingency_percentage: originalEstimate.contingency_percentage || 0,
-      };
+      // Generate a new ID for the duplicate
+      const estimateIdPrefix = 'EST-';
+      const randomId = Math.floor(Math.random() * 1000000)
+        .toString()
+        .padStart(6, '0');
+      const newEstimateId = estimateIdPrefix + randomId;
 
-      const { data: newEstimate, error: createError } = await supabase
+      // Create new estimate with copied data
+      const { data: newEstimate, error: newEstimateError } = await supabase
         .from('estimates')
-        .insert(newEstimateData as any)
+        .insert({
+          ...estimateData,
+          estimateid: newEstimateId,
+          estimateamount: estimateData.estimateamount || 0,
+          projectname: `${estimateData.projectname || 'Estimate'} (Copy)`,
+          datecreated: new Date().toISOString(),
+          status: 'draft',
+        })
         .select('estimateid')
         .single();
 
-      if (createError || !newEstimate) {
-        throw createError || new Error('Failed to create new estimate');
+      if (newEstimateError) {
+        throw new Error(`Could not create duplicate estimate: ${newEstimateError.message}`);
       }
 
+      // Create a new revision
       const { data: newRevision, error: revisionError } = await supabase
         .from('estimate_revisions')
         .insert({
-          estimate_id: newEstimate.estimateid,
+          estimate_id: newEstimateId,
           version: 1,
           is_current: true,
           status: 'draft',
@@ -166,101 +230,197 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         .select('id')
         .single();
 
-      if (revisionError || !newRevision) {
-        throw revisionError || new Error('Failed to create estimate revision');
+      if (revisionError) {
+        throw new Error(`Could not create revision: ${revisionError.message}`);
       }
 
-      const { data: currentRevision, error: getCurrentError } = await supabase
+      // Get current items from the original estimate's current revision
+      const { data: currentRevision } = await supabase
         .from('estimate_revisions')
         .select('id')
         .eq('estimate_id', estimate.id)
         .eq('is_current', true)
-        .maybeSingle();
+        .single();
 
-      if (getCurrentError) {
-        throw getCurrentError;
-      }
-
-      const currentRevisionId = currentRevision?.id;
-
-      let query = supabase.from('estimate_items').select('*').eq('estimate_id', estimate.id);
-
-      if (currentRevisionId) {
-        query = query.eq('revision_id', currentRevisionId);
-      }
-
-      const { data: originalItems, error: itemsError } = await query;
+      const { data: items, error: itemsError } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('estimate_id', estimate.id)
+        .eq('revision_id', currentRevision.id);
 
       if (itemsError) {
-        throw itemsError;
+        throw new Error(`Could not get estimate items: ${itemsError.message}`);
       }
 
-      const newItems = originalItems.map(item => ({
-        estimate_id: newEstimate.estimateid,
-        revision_id: newRevision.id,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-        cost: item.cost,
-        markup_percentage: item.markup_percentage,
-        markup_amount: item.markup_amount,
-        vendor_id: item.vendor_id,
-        subcontractor_id: item.subcontractor_id,
-        item_type: item.item_type,
-        document_id: item.document_id,
-        gross_margin: item.gross_margin,
-        gross_margin_percentage: item.gross_margin_percentage,
-      }));
+      // Create duplicate items with the new estimate ID and revision ID
+      if (items && items.length > 0) {
+        const newItems = items.map(item => ({
+          ...item,
+          id: undefined, // Let DB generate new ID
+          estimate_id: newEstimateId,
+          revision_id: newRevision.id,
+          created_at: new Date().toISOString(),
+        }));
 
-      const { error: copyItemsError } = await supabase.from('estimate_items').insert(newItems);
-
-      if (copyItemsError) {
-        throw copyItemsError;
-      }
-
-      const { data: documents, error: docsError } = await supabase
-        .from('documents')
-        .select('document_id, file_name, storage_path, category, tags, notes')
-        .eq('entity_type', 'ESTIMATE')
-        .eq('entity_id', estimate.id);
-
-      if (docsError) {
-        throw docsError;
-      }
-
-      const documentsToInsert = documents.map(doc => ({
-        entity_id: newEstimate.estimateid,
-        entity_type: 'ESTIMATE',
-        file_name: doc.file_name,
-        storage_path: doc.storage_path,
-        category: doc.category,
-        tags: doc.tags,
-        notes: doc.notes,
-      }));
-
-      const { error: docInsertError } = await supabase.from('documents').insert(documentsToInsert);
-
-      if (docInsertError) {
-        throw docInsertError;
+        const { error: insertError } = await supabase.from('estimate_items').insert(newItems);
+        if (insertError) {
+          throw new Error(`Could not copy items: ${insertError.message}`);
+        }
       }
 
       toast({
         title: 'Estimate duplicated',
-        description: `A new draft estimate has been created based on ${estimate.id}.`,
-        variant: 'default',
+        description: `A new copy has been created (ID: ${newEstimateId})`,
       });
 
+      // Refresh the estimates list
       if (onRefreshEstimates) {
         onRefreshEstimates();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error duplicating estimate:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to duplicate estimate',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Download PDF
+  const handleDownloadPDF = async () => {
+    try {
+      toast({
+        title: 'Generating PDF',
+        description: 'Please wait while we generate your PDF',
+      });
+
+      // Simulate PDF generation with a timeout
+      // In production, you would call an API endpoint that generates the PDF
+      setTimeout(() => {
+        // Create a fake PDF blob
+        const dummyPdfContent = `
+          %PDF-1.5
+          1 0 obj
+          << /Type /Catalog /Pages 2 0 R >>
+          endobj
+          2 0 obj
+          << /Type /Pages /Kids [3 0 R] /Count 1 >>
+          endobj
+          3 0 obj
+          << /Type /Page /Parent 2 0 R /Resources << >> /Contents 4 0 R /MediaBox [0 0 612 792] >>
+          endobj
+          4 0 obj
+          << /Length 71 >>
+          stream
+          1 0 0 1 50 700 cm
+          BT
+          /F1 12 Tf
+          (Estimate: ${estimate.id} - ${estimate.project || 'No Project'}) Tj
+          ET
+          endstream
+          endobj
+          xref
+          0 5
+          0000000000 65535 f
+          0000000009 00000 n
+          0000000058 00000 n
+          0000000115 00000 n
+          0000000216 00000 n
+          trailer
+          << /Size 5 /Root 1 0 R >>
+          startxref
+          337
+          %%EOF
+        `;
+
+        const blob = new Blob([dummyPdfContent], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Estimate-${estimate.id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up the URL object
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+
+        toast({
+          title: 'PDF Downloaded',
+          description: 'Your estimate PDF has been downloaded',
+        });
+      }, 1500);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to download PDF',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Delete estimate
+  const handleDeleteEstimate = async () => {
+    try {
+      setIsDeleting(true);
+
+      toast({
+        title: 'Deleting estimate',
+        description: 'Please wait while we delete this estimate',
+      });
+
+      // First delete all items for this estimate
+      const { error: itemsError } = await supabase
+        .from('estimate_items')
+        .delete()
+        .eq('estimate_id', estimate.id);
+
+      if (itemsError) {
+        throw new Error(`Error deleting estimate items: ${itemsError.message}`);
+      }
+
+      // Delete all revisions
+      const { error: revisionsError } = await supabase
+        .from('estimate_revisions')
+        .delete()
+        .eq('estimate_id', estimate.id);
+
+      if (revisionsError) {
+        throw new Error(`Error deleting estimate revisions: ${revisionsError.message}`);
+      }
+
+      // Finally delete the estimate itself
+      const { error: estimateError } = await supabase
+        .from('estimates')
+        .delete()
+        .eq('estimateid', estimate.id);
+
+      if (estimateError) {
+        throw new Error(`Error deleting estimate: ${estimateError.message}`);
+      }
+
+      toast({
+        title: 'Estimate deleted',
+        description: 'The estimate has been permanently deleted',
+      });
+
+      // Refresh the estimates list
+      if (onRefreshEstimates) {
+        onRefreshEstimates();
+      }
+    } catch (error) {
+      console.error('Error deleting estimate:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete estimate',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -292,8 +452,9 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         {
           label: 'Convert to Project',
           icon: <ArrowRight className="h-4 w-4" />,
-          onClick: () => console.log('Convert to project', estimate.id),
+          onClick: () => handleConvertToProject(),
           className: 'text-gray-600 hover:text-gray-800',
+          disabled: isConverting,
         },
       ],
     },
@@ -308,7 +469,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         {
           label: 'Download PDF',
           icon: <Download className="h-4 w-4" />,
-          onClick: () => console.log('Download PDF', estimate.id),
+          onClick: () => handleDownloadPDF(),
           className: 'text-gray-600 hover:text-gray-800',
         },
       ],
@@ -318,7 +479,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         {
           label: 'Delete',
           icon: <Trash2 className="h-4 w-4" />,
-          onClick: () => console.log('Delete estimate', estimate.id),
+          onClick: () => setDeleteDialogOpen(true),
           className: 'text-red-600 hover:text-red-800',
         },
       ],
@@ -326,27 +487,51 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
   ];
 
   return (
-    <TableRow
-      key={estimate.id}
-      className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
-      onClick={handleViewDetails}
-    >
-      <TableCell className="font-medium">
-        <Link to={`/estimates/${estimate.id}`} className="text-[#0485ea] hover:underline">
-          {estimate.id.substring(0, 8)}
-        </Link>
-      </TableCell>
-      <TableCell>{estimate.client}</TableCell>
-      <TableCell>{estimate.project}</TableCell>
-      <TableCell>{formatDate(estimate.date)}</TableCell>
-      <TableCell>{formatCurrency(estimate.amount)}</TableCell>
-      <TableCell>
-        <StatusBadge status={estimate.status as StatusType} />
-      </TableCell>
-      <TableCell className="text-right" onClick={e => e.stopPropagation()}>
-        <ActionMenu groups={actionGroups} size="sm" align="end" triggerClassName="ml-auto" />
-      </TableCell>
-    </TableRow>
+    <>
+      <TableRow
+        key={estimate.id}
+        className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
+        onClick={handleViewDetails}
+      >
+        <TableCell className="font-medium">
+          <Link to={`/estimates/${estimate.id}`} className="text-[#0485ea] hover:underline">
+            {estimate.id.substring(0, 8)}
+          </Link>
+        </TableCell>
+        <TableCell>{estimate.client}</TableCell>
+        <TableCell>{estimate.project}</TableCell>
+        <TableCell>{formatDate(estimate.date)}</TableCell>
+        <TableCell>{formatCurrency(estimate.amount)}</TableCell>
+        <TableCell>
+          <StatusBadge status={estimate.status as StatusType} />
+        </TableCell>
+        <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+          <ActionMenu groups={actionGroups} size="sm" align="end" triggerClassName="ml-auto" />
+        </TableCell>
+      </TableRow>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the estimate. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteEstimate}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

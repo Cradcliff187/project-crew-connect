@@ -17,7 +17,6 @@ import { PaperclipIcon, UploadIcon } from 'lucide-react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { toast } from '@/hooks/use-toast';
 import { useEstimateDocuments } from '../../../documents/hooks/useEstimateDocuments';
-import ContingencyInput from '../summary/ContingencyInput';
 
 // Memoize the component to prevent unnecessary re-renders
 const LineItemsStep = memo(() => {
@@ -58,84 +57,67 @@ const LineItemsStep = memo(() => {
     [form, refetchDocuments]
   );
 
-  const handleOpenDocumentUpload = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDocumentUploadOpen(true);
-  }, []);
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
+    <div className="space-y-4">
+      {/* Brief instructions at the top */}
+      <div className="p-3 bg-blue-50 border border-blue-100 rounded-md text-sm">
+        <ul className="list-disc pl-5 space-y-1 text-blue-700">
+          <li>Add each item or service you're providing in your estimate</li>
+          <li>
+            Enter your <strong>cost</strong> and <strong>markup %</strong> to calculate the price,
+            or enter price directly
+          </li>
+          <li>The total will calculate automatically based on quantity × price</li>
+          <li>Use "Hide Financial Details" to simplify the view if needed</li>
+        </ul>
+      </div>
+
+      {/* Full-width line items table */}
+      <div className="w-full">
         <EstimateItemFields />
-
-        {/* Add the contingency input in a card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Contingency</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ContingencyInput />
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="space-y-6">
-        <EstimateSummary />
+      {/* Summary section at the bottom */}
+      <Card>
+        <CardHeader className="py-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-base font-medium">Estimate Summary</CardTitle>
+          <Button
+            size="sm"
+            className="bg-[#0485ea] hover:bg-[#0373ce]"
+            onClick={() => setIsDocumentUploadOpen(true)}
+          >
+            <PaperclipIcon className="h-3.5 w-3.5 mr-1" />
+            Add Document
+          </Button>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <EstimateSummary documents={documents} showContingencyControls={true} />
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center justify-between">
-              Supporting Documents
-              <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    size="sm"
-                    className="bg-[#0485ea] hover:bg-[#0373ce]"
-                    type="button"
-                    onClick={handleOpenDocumentUpload}
-                  >
-                    <UploadIcon className="h-3.5 w-3.5 mr-1" />
-                    Add
-                  </Button>
-                </SheetTrigger>
-
-                <SheetContent
-                  className="w-[90vw] sm:max-w-[600px] p-0"
-                  aria-describedby="document-upload-description"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <SheetHeader className="p-6 pb-2">
-                    <SheetTitle>Add Document to Estimate</SheetTitle>
-                    <SheetDescription id="document-upload-description">
-                      Upload files to attach to this estimate.
-                    </SheetDescription>
-                  </SheetHeader>
-
-                  {tempEstimateId && (
-                    <EnhancedDocumentUpload
-                      entityType="ESTIMATE"
-                      entityId={tempEstimateId}
-                      onSuccess={handleDocumentUploadSuccess}
-                      onCancel={() => setIsDocumentUploadOpen(false)}
-                      preventFormPropagation={true}
-                    />
-                  )}
-                </SheetContent>
-              </Sheet>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {documents && documents.length > 0 ? (
-              <div className="text-sm text-muted-foreground">
-                {documents.length} document{documents.length !== 1 ? 's' : ''} attached
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">No documents attached</div>
+      {/* Document Upload Sheet */}
+      <Sheet open={isDocumentUploadOpen} onOpenChange={setIsDocumentUploadOpen}>
+        <SheetContent side="right" className="w-[450px] sm:w-[500px]">
+          <SheetHeader className="pb-2">
+            <SheetTitle>Add Document to Estimate</SheetTitle>
+            <SheetDescription>
+              Upload files to attach to this estimate. For line item documents, use the menu in each
+              row.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 max-h-[80vh] overflow-y-auto">
+            {tempEstimateId && (
+              <EnhancedDocumentUpload
+                entityType="ESTIMATE"
+                entityId={tempEstimateId}
+                onSuccess={handleDocumentUploadSuccess}
+                onCancel={() => setIsDocumentUploadOpen(false)}
+                preventFormPropagation={true}
+              />
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 });

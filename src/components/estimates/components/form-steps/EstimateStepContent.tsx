@@ -23,6 +23,7 @@ interface EstimateStepContentProps {
     zip?: string;
   }[];
   loading: boolean;
+  onSubmit?: (status: string) => void;
 }
 
 /**
@@ -39,6 +40,7 @@ const EstimateStepContent: React.FC<EstimateStepContentProps> = ({
   selectedCustomerId,
   customers,
   loading,
+  onSubmit,
 }) => {
   const { watch } = useFormContext();
   const formData = watch();
@@ -68,6 +70,7 @@ const EstimateStepContent: React.FC<EstimateStepContentProps> = ({
           selectedCustomerName={selectedCustomerName}
           selectedCustomerAddress={selectedCustomerAddress}
           selectedCustomerId={selectedCustomerId}
+          onSubmit={onSubmit}
         />
       );
     default:

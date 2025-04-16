@@ -5,7 +5,6 @@ export { default as ProjectBudgetCard } from './ProjectBudgetCard';
 export { default as ProjectDescription } from './ProjectDescription';
 export { default as ProjectStatusControl } from './ProjectStatusControl';
 export { default as NoStatusOptions } from './NoStatusOptions';
-export { default as ProjectBudget } from './ProjectBudget';
 export { default as ProjectMilestones } from './ProjectMilestones';
 export { default as ProjectDocumentsList } from './DocumentsList';
 

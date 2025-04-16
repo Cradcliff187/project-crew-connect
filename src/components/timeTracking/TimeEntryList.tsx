@@ -10,12 +10,13 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { formatTime } from './utils/timeUtils';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 import { Edit, Trash } from 'lucide-react';
 import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
 import TimeEntryEditDialog from './TimeEntryEditDialog';
 import { useTimeEntryOperations } from './hooks/useTimeEntryOperations';
 import { supabase } from '@/integrations/supabase/client';
+import { Employee, getEmployeeFullName } from '@/types/common';
 
 interface TimeEntryListProps {
   entries: TimeEntry[];
@@ -44,15 +45,15 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     saveEdit,
     isSaving,
   } = useTimeEntryOperations(onEntryChange);
-  const [employeeMap, setEmployeeMap] = useState<{ [key: string]: string }>({});
+  const [employeeMap, setEmployeeMap] = useState<{ [key: string]: Employee }>({});
 
-  // Fetch employee names for displaying
+  // Fetch employee data using the standardized Employee interface
   useEffect(() => {
-    const fetchEmployeeNames = async () => {
+    const fetchEmployeeData = async () => {
       try {
         const { data, error } = await supabase
           .from('employees')
-          .select('employee_id, first_name, last_name');
+          .select('employee_id, first_name, last_name, role, hourly_rate, status');
 
         if (error) {
           console.error('Error fetching employees:', error);
@@ -60,26 +61,29 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
         }
 
         if (data) {
+          // Store complete employee objects by ID
           const employeeNameMap = data.reduce(
             (acc, emp) => {
-              acc[emp.employee_id] = `${emp.first_name} ${emp.last_name}`;
+              acc[emp.employee_id] = emp;
               return acc;
             },
-            {} as { [key: string]: string }
+            {} as { [key: string]: Employee }
           );
           setEmployeeMap(employeeNameMap);
         }
       } catch (error) {
-        console.error('Error fetching employee names:', error);
+        console.error('Error fetching employee data:', error);
       }
     };
 
-    fetchEmployeeNames();
+    fetchEmployeeData();
   }, []);
 
+  // Use the standardized helper function to get employee names
   const getEmployeeName = (employeeId: string | undefined | null): string => {
     if (!employeeId) return 'Unassigned';
-    return employeeMap[employeeId] || 'Unknown';
+    const employee = employeeMap[employeeId];
+    return employee ? getEmployeeFullName(employee) : 'Unknown';
   };
 
   if (isLoading) {

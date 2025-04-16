@@ -12,7 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info, MapPin, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface BasicInfoStepProps {
   customerTab: 'existing' | 'new';
@@ -41,9 +42,18 @@ const BasicInfoStep = ({
   const form = useFormContext<EstimateFormValues>();
   const showSiteLocation = form.watch('showSiteLocation');
 
+  // Find the currently selected customer to display their address
+  const selectedCustomerId = form.watch('customer');
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+  const customerAddress = selectedCustomer
+    ? `${selectedCustomer.address || ''} ${selectedCustomer.city || ''} ${selectedCustomer.state || ''} ${selectedCustomer.zip || ''}`.trim()
+    : null;
+
+  const hasCustomerAddress = !!customerAddress && customerAddress.length > 0;
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4">
+    <div className="space-y-6 overflow-visible pb-10">
+      <div className="grid grid-cols-1 gap-4 overflow-visible">
         <FormField
           control={form.control}
           name="project"
@@ -75,11 +85,15 @@ const BasicInfoStep = ({
               <FormField
                 control={form.control}
                 name="customer"
-                render={({ field }) => (
+                render={({ field: customerField }) => (
                   <FormItem>
                     <FormLabel>Select Customer</FormLabel>
                     <FormControl>
-                      <Select value={field.value} onValueChange={field.onChange} disabled={loading}>
+                      <Select
+                        value={customerField.value}
+                        onValueChange={customerField.onChange}
+                        disabled={loading}
+                      >
                         <SelectTrigger>
                           <SelectValue
                             placeholder={loading ? 'Loading customers...' : 'Select a customer'}
@@ -106,8 +120,66 @@ const BasicInfoStep = ({
                 )}
               />
 
-              {selectedCustomerAddress && (
-                <div className="mt-2 p-2 bg-gray-50 rounded text-sm">{selectedCustomerAddress}</div>
+              {selectedCustomerId && hasCustomerAddress && (
+                <div className="mt-4 mb-2">
+                  <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-5 w-5 mt-0.5 text-blue-500 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">Customer Address on File:</p>
+                        <p className="text-sm text-gray-700 font-medium">{customerAddress}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center mt-3 gap-2 text-green-600">
+                      <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                      <p className="text-xs">
+                        This address will be used for the job location unless you specify a
+                        different one below
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedCustomerId && !hasCustomerAddress && (
+                <div className="mt-4 mb-2">
+                  <div className="p-4 bg-yellow-50 rounded-md border border-yellow-200">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium mb-1">Customer Address Not Found</p>
+                        <p className="text-sm text-gray-700">
+                          This customer doesn't have an address on file. Please specify a job site
+                          location below.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedCustomerId && (
+                <FormField
+                  control={form.control}
+                  name="showSiteLocation"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-yellow-50 border-yellow-200 mt-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base font-medium">
+                          Different Job Site Location?
+                        </FormLabel>
+                        <div className="text-sm text-muted-foreground">
+                          {hasCustomerAddress
+                            ? 'Toggle this ON if the job will be performed at a location different from the customer address shown above'
+                            : 'Toggle this ON to specify the job site location'}
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value || false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               )}
             </TabsContent>
 
@@ -156,66 +228,121 @@ const BasicInfoStep = ({
                 />
               </div>
 
+              <div className="p-4 rounded-md bg-blue-50 border border-blue-200">
+                <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-blue-500" />
+                  Customer Primary Address
+                </h4>
+                <FormField
+                  control={form.control}
+                  name="newCustomer.address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter address" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+                  <FormField
+                    control={form.control}
+                    name="newCustomer.city"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter city" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="newCustomer.state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <FormControl>
+                          <Input placeholder="State" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="newCustomer.zip"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ZIP</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ZIP code" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
               <FormField
                 control={form.control}
-                name="newCustomer.address"
+                name="showSiteLocation"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-yellow-50 border-yellow-200 mt-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base font-medium">
+                        Different Job Site Location?
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Toggle this ON if the job will be performed at a location different from the
+                        customer address entered above
+                      </div>
+                    </div>
                     <FormControl>
-                      <Input placeholder="Enter address" {...field} />
+                      <Switch checked={field.value || false} onCheckedChange={field.onChange} />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <FormField
-                  control={form.control}
-                  name="newCustomer.city"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter city" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="newCustomer.state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State</FormLabel>
-                      <FormControl>
-                        <Input placeholder="State" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="newCustomer.zip"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ZIP</FormLabel>
-                      <FormControl>
-                        <Input placeholder="ZIP code" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
             </TabsContent>
           </Tabs>
         </div>
+
+        {/* Add standalone job site location option when neither new nor existing tab is selected */}
+        {!form.watch('customer') &&
+          customerTab === 'existing' &&
+          !form.watch('newCustomer.name') && (
+            <FormField
+              control={form.control}
+              name="showSiteLocation"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-gray-50 border-gray-200 mt-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Different Job Site Location?</FormLabel>
+                    <div className="text-xs text-muted-foreground">
+                      Select a customer first, then toggle this if the job site will be at a
+                      different location
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value || false}
+                      onCheckedChange={field.onChange}
+                      disabled={!form.watch('customer') && !form.watch('newCustomer.name')}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          )}
 
         <FormField
           control={form.control}
@@ -235,83 +362,92 @@ const BasicInfoStep = ({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="showSiteLocation"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel>Different Job Site Location</FormLabel>
-                <div className="text-sm text-muted-foreground">
-                  Specify a different location for the job site.
-                </div>
+        {showSiteLocation && (
+          <>
+            <div className="flex justify-center mt-2 mb-2">
+              <span className="text-xs text-blue-500 animate-bounce">
+                ▼ Job Site Location Fields Below ▼
+              </span>
+            </div>
+
+            <div id="job-site-location" className="space-y-4 border-l-2 border-[#0485ea] pl-4 mt-4">
+              <Alert className="bg-blue-50 border-blue-200 mb-4">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="font-medium">
+                  Job Site Location (Different from Customer Address)
+                </AlertDescription>
+              </Alert>
+
+              <FormField
+                control={form.control}
+                name="location.address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Site Address</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter job site address"
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="location.city"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter city" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location.state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State</FormLabel>
+                      <FormControl>
+                        <Input placeholder="State" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location.zip"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ZIP</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ZIP code" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            </div>
+          </>
+        )}
 
         {showSiteLocation && (
-          <div className="space-y-4 border-l-2 border-[#0485ea] pl-4">
-            <FormField
-              control={form.control}
-              name="location.address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Site Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter job site address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <FormField
-                control={form.control}
-                name="location.city"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter city" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="location.state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="State" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="location.zip"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ZIP</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ZIP code" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div className="flex justify-center mt-2 mb-4">
+            <span className="text-xs text-gray-500">
+              ▲ Scroll up to see all job site location fields ▲
+            </span>
           </div>
         )}
       </div>

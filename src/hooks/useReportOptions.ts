@@ -1,4 +1,6 @@
+import { StatusType } from '@/types/common';
 import { EntityType } from '@/types/reports';
+import { formatEmployeeName } from '@/utils/reportUtils';
 
 export const useReportOptions = () => {
   // Get status options based on the selected entity
@@ -72,6 +74,11 @@ export const useReportOptions = () => {
       return fields.map(field => {
         const value = item[field.field];
         if (value === null || value === undefined) return '';
+
+        // Special handling for employee fields
+        if (field.field === 'employee_id' && item.employees) {
+          return formatEmployeeName(item.employees);
+        }
 
         // Format special types for CSV
         if (field.type === 'date' && value) {

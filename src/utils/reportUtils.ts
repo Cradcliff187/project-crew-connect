@@ -56,11 +56,6 @@ export const processEntityData = (entityType: EntityType, data: any[]): any[] =>
         (processed.estimateamount || 0) + (processed.contingencyamount || 0);
     }
 
-    if (entityType === 'employees') {
-      // Add full name field for convenience
-      processed.full_name = `${processed.first_name} ${processed.last_name}`;
-    }
-
     return processed;
   });
 };
@@ -76,6 +71,11 @@ export const generateTableColumns = (fields: FieldDefinition[]) => {
       // Format the value based on its type
       if (value === null || value === undefined) {
         return '—';
+      }
+
+      // Special handling for employee-related fields
+      if (field.field === 'employee_id' && row.original.employees) {
+        return formatEmployeeName(row.original.employees);
       }
 
       switch (field.type) {
@@ -289,4 +289,22 @@ export const generateSqlQuery = (config: any) => {
   }
 
   return query;
+};
+
+/**
+ * Format employee name from employee data
+ * This helper ensures consistent employee name formatting across the application
+ * @param employee - Employee data object which may come from different sources
+ * @returns Formatted employee name string
+ */
+export const formatEmployeeName = (employee: any): string => {
+  if (!employee) return 'Unassigned';
+
+  // If it's a complete employee object with first_name and last_name
+  if (employee.first_name && employee.last_name) {
+    return `${employee.first_name} ${employee.last_name}`;
+  }
+
+  // If it's an employee ID, just return that
+  return employee.employee_id || 'Unknown';
 };

@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 interface EstimateDetailContentProps {
@@ -23,20 +21,22 @@ interface EstimateDetailContentProps {
     sitelocationcity?: string;
     sitelocationstate?: string;
     sitelocationzip?: string;
+    current_revision_id?: string;
+    current_version?: number;
+    total_cost?: number;
     items: {
       id: string;
       description: string;
       quantity: number;
       unit_price: number;
       total_price: number;
+      cost?: number;
     }[];
   };
   onRefresh?: () => void;
 }
 
 const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onRefresh }) => {
-  const [activeTab, setActiveTab] = useState('overview');
-
   const formatLocation = () => {
     const parts = [
       data.sitelocationaddress,
@@ -52,6 +52,18 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
   const subtotal = data.items.reduce((sum, item) => sum + item.total_price, 0);
   const contingencyAmount = data.contingencyamount || 0;
   const total = subtotal + contingencyAmount;
+
+  // Calculate cost and margins
+  const totalCost =
+    data.total_cost ||
+    data.items.reduce((sum, item) => {
+      const itemQuantity = Number(item.quantity) || 0;
+      const itemCost = Number(item.cost) || 0;
+      return sum + itemCost * itemQuantity;
+    }, 0);
+
+  const grossMargin = subtotal - totalCost;
+  const grossMarginPercentage = subtotal > 0 ? (grossMargin / subtotal) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -115,6 +127,25 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
                 <span>Subtotal:</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
+
+              {/* Total Cost */}
+              <div className="flex justify-between text-muted-foreground">
+                <span>Total Cost:</span>
+                <span>{formatCurrency(totalCost)}</span>
+              </div>
+
+              {/* Gross Margin */}
+              <div className="flex justify-between text-muted-foreground">
+                <span>Gross Margin:</span>
+                <span>{formatCurrency(grossMargin)}</span>
+              </div>
+
+              {/* Gross Margin Percentage */}
+              <div className="flex justify-between text-muted-foreground">
+                <span>Gross Margin %:</span>
+                <span>{grossMarginPercentage.toFixed(1)}%</span>
+              </div>
+
               <div className="flex justify-between text-muted-foreground">
                 <span>Contingency ({data.contingency_percentage || 0}%):</span>
                 <span>{formatCurrency(contingencyAmount)}</span>
