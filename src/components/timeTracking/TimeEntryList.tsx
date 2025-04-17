@@ -100,4 +100,6 @@ const TimeEntryList: React.FC<TimeEntryListProps> = ({
   );
 };
 
+// Export both as default and named export for compatibility
 export default TimeEntryList;
+export { TimeEntryList };

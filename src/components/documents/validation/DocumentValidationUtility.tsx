@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Document } from './DocumentTypes';
 
-interface DocumentValidationUtilityProps {
+export interface DocumentValidationUtilityProps {
   document: Document;
 }
 
@@ -67,6 +67,4 @@ const DocumentValidationUtility: React.FC<DocumentValidationUtilityProps> = ({ d
 };
 
 export default DocumentValidationUtility;
-
-// Also export named for compatibility
 export { DocumentValidationUtility };

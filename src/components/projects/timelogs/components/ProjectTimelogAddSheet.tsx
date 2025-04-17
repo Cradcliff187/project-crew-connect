@@ -1,235 +1,228 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Employee } from '@/types/common';
-import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
 
-const formSchema = z.object({
-  employeeId: z.string().min(1, { message: 'Please select an employee' }),
-  dateWorked: z.date({
-    required_error: 'A date is required.',
-  }),
-  hoursWorked: z.number().min(0.1, { message: 'Hours must be greater than 0' }),
-  notes: z.string().optional(),
-});
+import React, { useState } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { format } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Employee } from '@/types/common';
+import { getEmployeeFullName } from '@/utils/employeeAdapter';
 
 interface ProjectTimelogAddSheetProps {
-  projectId: string;
   open: boolean;
-  setOpen?: (open: boolean) => void;
-  onOpenChange?: (open: boolean) => void;
-  onSuccess?: () => void;
-  employees?: { employee_id: string; name: string }[];
+  onOpenChange: (open: boolean) => void;
+  projectId: string;
+  employees: { employee_id: string; name: string }[];
+  onSuccess: () => void;
 }
 
 const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
-  projectId,
   open,
-  setOpen,
   onOpenChange,
+  projectId,
+  employees,
   onSuccess,
-  employees: providedEmployees,
 }) => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('17:00');
+  const [employeeId, setEmployeeId] = useState('');
+  const [notes, setNotes] = useState('');
+  const [hasReceipt, setHasReceipt] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (setOpen) setOpen(newOpen);
-    if (onOpenChange) onOpenChange(newOpen);
+  const calculateHours = () => {
+    if (!startTime || !endTime) return 0;
+
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    const diffMs = end.getTime() - start.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    return diffHours > 0 ? diffHours : 0;
   };
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      employeeId: '',
-      dateWorked: new Date(),
-      hoursWorked: 1,
-      notes: '',
-    },
-  });
-
-  const {
-    handleSubmit,
-    register,
-    formState: { errors },
-    setValue,
-  } = form;
-
-  useEffect(() => {
-    if (providedEmployees && providedEmployees.length > 0) {
-      const formattedEmployees = providedEmployees.map(e => ({
-        id: e.employee_id,
-        employee_id: e.employee_id,
-        name: e.name,
-        firstName: '',
-        lastName: '',
-      }));
-      setEmployees(formattedEmployees);
-    } else {
-      const fetchEmployees = async () => {
-        const { data, error } = await supabase.from('employees').select('employee_id, first_name, last_name, email, phone, role, hourly_rate, status');
-
-        if (error) {
-          toast({
-            title: 'Error',
-            description: 'Failed to load employees',
-            variant: 'destructive',
-          });
-        } else {
-          setEmployees(adaptEmployeesFromDatabase(data || []));
-        }
-      };
-      
-      fetchEmployees();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!employeeId) {
+      toast({
+        title: 'Missing data',
+        description: 'Please select an employee',
+        variant: 'destructive',
+      });
+      return;
     }
-  }, [providedEmployees, toast]);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
+    if (!date) {
+      toast({
+        title: 'Missing data',
+        description: 'Please select a date',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const hoursWorked = calculateHours();
+    if (hoursWorked <= 0) {
+      toast({
+        title: 'Invalid time',
+        description: 'End time must be after start time',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
     try {
-      const { data, error } = await supabase.from('time_entries').insert([
-        {
-          entity_type: 'project',
-          entity_id: projectId,
-          employee_id: values.employeeId,
-          date_worked: format(values.dateWorked, 'yyyy-MM-dd'),
-          hours_worked: values.hoursWorked,
-          notes: values.notes,
-          start_time: '09:00:00',
-          end_time: '17:00:00'
-        },
-      ]);
+      // Get employee rate
+      const { data: employeeData } = await supabase
+        .from('employees')
+        .select('hourly_rate')
+        .eq('employee_id', employeeId)
+        .single();
 
-      if (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to add timelog: ' + error.message,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Success',
-          description: 'Timelog added successfully',
-        });
-        handleOpenChange(false);
-        if (onSuccess) onSuccess();
-      }
+      const hourlyRate = employeeData?.hourly_rate || 75; // Default to $75/hr if not found
+
+      // Insert time entry
+      const { data, error } = await supabase.from('time_entries').insert({
+        entity_type: 'project',
+        entity_id: projectId,
+        employee_id: employeeId,
+        date_worked: date,
+        start_time: startTime,
+        end_time: endTime,
+        hours_worked: hoursWorked,
+        notes: notes,
+        has_receipts: hasReceipt,
+        created_at: new Date().toISOString(),
+        employee_rate: hourlyRate,
+        total_cost: hourlyRate * hoursWorked,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Time entry added',
+        description: 'Time has been logged successfully',
+      });
+
+      // Reset form
+      setDate(format(new Date(), 'yyyy-MM-dd'));
+      setStartTime('09:00');
+      setEndTime('17:00');
+      setEmployeeId('');
+      setNotes('');
+      setHasReceipt(false);
+
+      // Close sheet
+      onOpenChange(false);
+
+      // Trigger refresh of time entries
+      onSuccess();
     } catch (error: any) {
+      console.error('Error adding time entry:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add timelog: ' + error.message,
+        description: error.message || 'Could not add time entry',
         variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add Timelog</DialogTitle>
-          <DialogDescription>Add a timelog to this project</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-          <div>
-            <Label htmlFor="employeeId">Employee</Label>
-            <Select onValueChange={value => setValue('employeeId', value)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select an employee" />
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Log Time</SheetTitle>
+        </SheetHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="employee">Employee</Label>
+            <Select value={employeeId} onValueChange={setEmployeeId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select employee" />
               </SelectTrigger>
               <SelectContent>
-                {employees.map(employee => (
-                  <SelectItem key={employee.id || employee.employee_id} value={employee.id || employee.employee_id || ''}>
+                {employees.map((employee) => (
+                  <SelectItem key={employee.employee_id} value={employee.employee_id}>
                     {employee.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.employeeId && (
-              <p className="text-sm text-red-500">{errors.employeeId.message}</p>
-            )}
           </div>
-          <div>
-            <Label>Date Worked</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={'outline'}
-                  className={cn(
-                    'w-[240px] justify-start text-left font-normal',
-                    !form.getValues('dateWorked') && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {form.getValues('dateWorked') ? (
-                    format(form.getValues('dateWorked'), 'PPP')
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={form.getValues('dateWorked')}
-                  onSelect={date => setValue('dateWorked', date)}
-                  disabled={date => date > new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {errors.dateWorked && (
-              <p className="text-sm text-red-500">{errors.dateWorked.message}</p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="hoursWorked">Hours Worked</Label>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
             <Input
-              id="hoursWorked"
-              type="number"
-              step="0.5"
-              placeholder="Enter hours worked"
-              {...register('hoursWorked', { valueAsNumber: true })}
+              type="date"
+              id="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
             />
-            {errors.hoursWorked && (
-              <p className="text-sm text-red-500">{errors.hoursWorked.message}</p>
-            )}
           </div>
-          <div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Start Time</Label>
+              <Input
+                type="time"
+                id="startTime"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="endTime">End Time</Label>
+              <Input
+                type="time"
+                id="endTime"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
-            <Input id="notes" type="text" placeholder="Enter notes" {...register('notes')} />
+            <Textarea
+              id="notes"
+              placeholder="Details about the work performed"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+            />
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Add Timelog'}
+
+          <div className="flex items-center space-x-2 pt-2">
+            <Switch id="hasReceipt" checked={hasReceipt} onCheckedChange={setHasReceipt} />
+            <Label htmlFor="hasReceipt">Has receipt or documentation</Label>
+          </div>
+
+          <SheetFooter className="pt-4">
+            <Button 
+              type="submit" 
+              className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
+              disabled={submitting}
+            >
+              {submitting ? 'Saving...' : 'Save Time Entry'}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };
 

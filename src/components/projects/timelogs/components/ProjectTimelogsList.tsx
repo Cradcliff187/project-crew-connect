@@ -3,7 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDate } from '@/lib/dates';
+import { formatDate } from '@/lib/utils'; // Changed from @/lib/dates to @/lib/utils
 import { Employee } from '@/types/common';
 import { getEmployeeFullName } from '@/utils/employeeAdapter';
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '@/components/ui/table';

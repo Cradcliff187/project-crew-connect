@@ -13,7 +13,7 @@ const breakpointMap: BreakpointMap = {
   '2xl': 1536,
 };
 
-// Export a named function and a default export for compatibility
+// Export a named function for direct imports
 export function useBreakpoint(breakpoint: Breakpoint = 'md'): boolean {
   const [isAboveBreakpoint, setIsAboveBreakpoint] = useState<boolean>(false);
 
@@ -38,5 +38,5 @@ export function useBreakpoint(breakpoint: Breakpoint = 'md'): boolean {
   return isAboveBreakpoint;
 }
 
-// Export default for direct imports
+// Export default for backward compatibility
 export default useBreakpoint;
