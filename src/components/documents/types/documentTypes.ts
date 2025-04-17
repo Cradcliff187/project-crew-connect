@@ -23,6 +23,18 @@ export interface Document {
   category?: DocumentCategory;
   tags?: string[];
   notes?: string;
+  amount?: number;
+  expense_date?: string;
+  version?: number;
+  is_expense?: boolean;
+  is_latest_version?: boolean;
+  vendor_id?: string;
+  vendor_type?: string;
+  expense_type?: string;
+  budget_item_id?: string;
+  parent_entity_type?: string;
+  parent_entity_id?: string;
+  parent_document_id?: string;
 }
 
 export interface PrefillData {

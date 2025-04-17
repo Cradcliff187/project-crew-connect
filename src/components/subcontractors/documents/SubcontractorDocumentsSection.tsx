@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 import { Plus, GridIcon, ListIcon, Download, ViewIcon, Trash2 } from 'lucide-react';

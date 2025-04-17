@@ -36,19 +36,28 @@ const formSchema = z.object({
 interface ProjectTimelogAddSheetProps {
   projectId: string;
   open: boolean;
-  setOpen: (open: boolean) => void;
-  onTimelogAdded?: () => void;
+  setOpen?: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => void;
+  onSuccess?: () => void;
+  employees?: { employee_id: string; name: string }[];
 }
 
 const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
   projectId,
   open,
   setOpen,
-  onTimelogAdded,
+  onOpenChange,
+  onSuccess,
+  employees: providedEmployees,
 }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (setOpen) setOpen(newOpen);
+    if (onOpenChange) onOpenChange(newOpen);
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -68,22 +77,33 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
   } = form;
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      const { data, error } = await supabase.from('employees').select('employee_id, first_name, last_name, email, phone, role, hourly_rate, status');
+    if (providedEmployees && providedEmployees.length > 0) {
+      const formattedEmployees = providedEmployees.map(e => ({
+        id: e.employee_id,
+        employee_id: e.employee_id,
+        name: e.name,
+        firstName: '',
+        lastName: '',
+      }));
+      setEmployees(formattedEmployees);
+    } else {
+      const fetchEmployees = async () => {
+        const { data, error } = await supabase.from('employees').select('employee_id, first_name, last_name, email, phone, role, hourly_rate, status');
 
-      if (error) {
-        toast({
-          title: 'Error',
-          description: 'Failed to load employees',
-          variant: 'destructive',
-        });
-      } else {
-        setEmployees(adaptEmployeesFromDatabase(data || []));
-      }
-    };
-
-    fetchEmployees();
-  }, [toast]);
+        if (error) {
+          toast({
+            title: 'Error',
+            description: 'Failed to load employees',
+            variant: 'destructive',
+          });
+        } else {
+          setEmployees(adaptEmployeesFromDatabase(data || []));
+        }
+      };
+      
+      fetchEmployees();
+    }
+  }, [providedEmployees, toast]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -112,8 +132,8 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
           title: 'Success',
           description: 'Timelog added successfully',
         });
-        setOpen(false);
-        onTimelogAdded?.();
+        handleOpenChange(false);
+        if (onSuccess) onSuccess();
       }
     } catch (error: any) {
       toast({
@@ -127,7 +147,7 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Timelog</DialogTitle>
@@ -142,7 +162,7 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {employees.map(employee => (
-                  <SelectItem key={employee.id} value={employee.id}>
+                  <SelectItem key={employee.id || employee.employee_id} value={employee.id || employee.employee_id || ''}>
                     {employee.name}
                   </SelectItem>
                 ))}

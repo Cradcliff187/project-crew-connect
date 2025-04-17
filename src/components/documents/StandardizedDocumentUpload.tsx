@@ -17,25 +17,14 @@ import { useDeviceCapabilities } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { EntityType, DocumentCategory } from '@/types/common';
+import { PrefillData } from './types/documentTypes';
 import DropzoneUploader from './components/DropzoneUploader';
 import StandardizedMetadataForm from './components/StandardizedMetadataForm';
 import MobileCaptureWrapper from './components/MobileCaptureWrapper';
 import VendorSelectDialog from '@/components/vendors/VendorSelectDialog';
 import { documentCategories } from './schemas/documentSchema';
 
-type AllowedDocumentCategory = typeof documentCategories[number];
-type AllowedEntityType = 
-  | 'PROJECT'
-  | 'ESTIMATE'
-  | 'WORK_ORDER'
-  | 'VENDOR'
-  | 'SUBCONTRACTOR'
-  | 'TIME_ENTRY'
-  | 'EMPLOYEE'
-  | 'CONTACT'
-  | 'CUSTOMER'
-  | 'EXPENSE'
-  | 'ESTIMATE_ITEM';
+const allowedCategories = documentCategories as unknown as [string, ...string[]];
 
 const documentUploadSchema = z.object({
   files: z.array(z.instanceof(File)).min(1, { message: 'At least one file is required' }),
@@ -47,7 +36,7 @@ const documentUploadSchema = z.object({
       errorMap: () => ({ message: 'Please select a valid entity type' }),
     }),
     entityId: z.string().min(1, { message: 'Entity ID is required' }),
-    category: z.enum(documentCategories as unknown as [string, ...string[]], { 
+    category: z.enum(allowedCategories, { 
       message: 'Please select a valid document category' 
     }),
     isExpense: z.boolean().optional().default(false),
@@ -74,24 +63,7 @@ interface StandardizedDocumentUploadProps {
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
   isReceiptUpload?: boolean;
-  prefillData?: {
-    amount?: number;
-    vendorId?: string;
-    vendorName?: string;
-    materialName?: string;
-    expenseName?: string;
-    notes?: string;
-    category?: string;
-    tags?: string[];
-    budgetItemId?: string;
-    parentEntityType?: string;
-    parentEntityId?: string;
-    expenseType?: string;
-    expenseDate?: Date | string;
-    isExpense?: boolean;
-    subcontractorId?: string;
-    is_expense?: boolean;
-  };
+  prefillData?: PrefillData;
   preventFormPropagation?: boolean;
   allowEntityTypeSelection?: boolean;
   onEntityTypeChange?: (entityType: EntityType) => void;
@@ -119,7 +91,7 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     defaultValues: {
       files: [],
       metadata: {
-        entityType: entityType as AllowedEntityType,
+        entityType: entityType,
         entityId: entityId,
         category: (isReceiptUpload ? 'receipt' : (prefillData?.category || 'other')) as DocumentCategory,
         isExpense: isReceiptUpload || prefillData?.isExpense || prefillData?.is_expense || ['receipt', 'invoice'].includes(prefillData?.category || ''),
@@ -316,7 +288,7 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
   }, [form, onCancel, previewURL]);
 
   useEffect(() => {
-    form.setValue('metadata.entityType', entityType as AllowedEntityType);
+    form.setValue('metadata.entityType', entityType);
     form.setValue('metadata.entityId', entityId);
 
     const category = isReceiptUpload ? 'receipt' : (prefillData?.category || 'other');
@@ -380,7 +352,7 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
   const getTitle = () => {
     if (isReceiptUpload) return 'Upload Receipt';
 
-    switch (watchEntityType) {
+    switch (form.watch('metadata.entityType')) {
       case 'VENDOR':
         return 'Upload Vendor Document';
       case 'SUBCONTRACTOR':
@@ -403,7 +375,7 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
       return 'Upload receipts for expenses related to this work order or project.';
     }
 
-    switch (watchEntityType) {
+    switch (form.watch('metadata.entityType')) {
       case 'VENDOR':
         return 'Upload documents related to this vendor such as certifications or contracts.';
       case 'SUBCONTRACTOR':
@@ -459,10 +431,10 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
                 )}
 
                 <StandardizedMetadataForm
-                  form={form as any}
-                  entityType={watchEntityType as EntityType}
-                  category={watchCategory}
-                  isExpense={watchIsExpense}
+                  form={form}
+                  entityType={form.watch('metadata.entityType') as EntityType}
+                  category={form.watch('metadata.category')}
+                  isExpense={form.watch('metadata.isExpense')}
                   isReceiptUpload={isReceiptUpload}
                   prefillData={prefillData}
                   allowEntityTypeSelection={allowEntityTypeSelection}
@@ -495,7 +467,7 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
                 ? 'Uploading...'
                 : isReceiptUpload
                   ? 'Upload Receipt'
-                  : `Upload ${watchCategory || 'Document'}`}
+                  : `Upload ${form.watch('metadata.category') || 'Document'}`}
             </Button>
           </CardFooter>
         </form>

@@ -1,4 +1,10 @@
-export { default as ProjectTimelogs } from './ProjectTimelogs';
-export { ProjectTimelogsInfoSection } from './components/ProjectTimelogsInfoSection';
-export { ProjectTimelogAddHeader } from './components/ProjectTimelogAddHeader';
-export { ProjectTimelogAddSheet } from './components/ProjectTimelogAddSheet';
+
+import { ProjectTimelogAddHeader } from './components/ProjectTimelogAddHeader';
+import ProjectTimelogsList from './components/ProjectTimelogsList';
+import ProjectTimelogAddSheet from './components/ProjectTimelogAddSheet';
+
+export { 
+  ProjectTimelogAddHeader, 
+  ProjectTimelogsList,
+  ProjectTimelogAddSheet
+};

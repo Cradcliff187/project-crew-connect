@@ -8,6 +8,8 @@ export interface Employee {
   role?: string;
   hourlyRate?: number;
   status?: string;
+  // Add employee_id for backward compatibility with database structures
+  employee_id?: string;
 }
 
 export type EntityType = 
@@ -33,6 +35,7 @@ export type DocumentCategory =
   | 'certification'
   | 'photo';
 
+// Modified to include all status types across the application
 export type StatusType =
   | 'NEW'
   | 'DRAFT'
@@ -59,7 +62,17 @@ export type StatusType =
   | 'cancelled'
   | 'on-hold'
   | 'inactive'
-  | 'unknown';
+  | 'unknown'
+  // UI status values for display
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info'
+  | 'neutral'
+  | 'purple'
+  | 'qualified'
+  | 'verified'
+  | 'in_progress';
 
 export interface StatusOption {
   value: string;
@@ -72,4 +85,25 @@ export interface EntityWithStatus {
   id: string;
   status: StatusType;
   [key: string]: any;
+}
+
+// Add Vendor type needed by VendorSelectDialog
+export interface Vendor {
+  id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  phone?: string;
+  email?: string;
+  status?: string;
+  vendorId?: string; // For backward compatibility with database
+  vendorName?: string; // For backward compatibility with database
+}
+
+// Helper function for employee names
+export function getEmployeeFullName(employee: Employee): string {
+  if (employee.name) return employee.name;
+  return `${employee.firstName || ''} ${employee.lastName || ''}`.trim();
 }

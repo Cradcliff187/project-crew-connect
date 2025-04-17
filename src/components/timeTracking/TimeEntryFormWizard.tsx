@@ -20,8 +20,8 @@ import EmployeeSelect from './form/EmployeeSelect';
 import { calculateHours } from './utils/timeUtils';
 import { DatePicker } from '@/components/ui/date-picker';
 import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
+import { Employee } from '@/types/common';
 
-// Form schema
 const formSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
   entityId: z.string().min(1, 'Please select a work order or project'),
@@ -54,7 +54,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
 
   const { toast } = useToast();
 
-  // Initialize form with default values
   const form = useForm<FormValues>({
     defaultValues: {
       entityType: 'work_order',
@@ -70,23 +69,18 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     resolver: zodResolver(formSchema),
   });
 
-  // Get entity data
   const { workOrders, projects, employees: dbEmployees, isLoadingEntities, getSelectedEntityDetails } =
     useEntityData(form);
 
-  // Convert database employees to the Employee type
   const employees = adaptEmployeesFromDatabase(dbEmployees);
 
-  // Watch form fields
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
   const startTime = form.watch('startTime');
   const endTime = form.watch('endTime');
 
-  // Selected entity details
   const selectedEntity = entityId ? getSelectedEntityDetails() : null;
 
-  // Update hours worked when start or end time changes
   useEffect(() => {
     if (startTime && endTime) {
       try {
@@ -104,19 +98,16 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     }
   }, [startTime, endTime, form]);
 
-  // Update form when receipts are added or removed
   useEffect(() => {
     form.setValue('hasReceipts', selectedFiles.length > 0);
   }, [selectedFiles, form]);
 
-  // Upload receipts function
   const uploadReceipts = async (timeEntryId: string, files: File[]) => {
     for (const file of selectedFiles) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `receipts/time_entries/${timeEntryId}/${fileName}`;
 
-      // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file);
@@ -126,7 +117,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
         continue;
       }
 
-      // Create document record
       const { data: document, error: documentError } = await supabase
         .from('documents')
         .insert({
@@ -153,7 +143,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
         continue;
       }
 
-      // Link document to time entry
       const { error: linkError } = await supabase.from('time_entry_document_links').insert({
         time_entry_id: timeEntryId,
         document_id: document.document_id,
@@ -166,7 +155,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     }
   };
 
-  // Submit time entry
   const submitTimeEntry = async (data: FormValues): Promise<{ id: string }> => {
     const timeEntry = {
       entity_type: data.entityType,
@@ -193,7 +181,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     return result;
   };
 
-  // Form submission handler
   const onSubmit: SubmitHandler<FormValues> = async data => {
     if (timeError) {
       toast({
@@ -207,10 +194,8 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     setIsSubmitting(true);
 
     try {
-      // Submit time entry
       const result = await submitTimeEntry(data);
 
-      // Upload receipts if any
       if (selectedFiles.length > 0) {
         await uploadReceipts(result.id, selectedFiles);
       }
@@ -220,7 +205,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
         description: 'Your time entry has been successfully recorded.',
       });
 
-      // Call success callback if provided
       if (onSuccess) {
         onSuccess();
       }
@@ -236,7 +220,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     }
   };
 
-  // Handle next step
   const handleNext = async () => {
     const currentFields =
       currentStep === 1 ? ['entityType', 'entityId'] : ['startTime', 'endTime', 'hoursWorked'];
@@ -248,18 +231,15 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     }
   };
 
-  // Handle back step
   const handleBack = () => {
     setCurrentStep(prev => prev - 1);
   };
 
-  // Handle receipt file selection
   const handleFileSelect = (files: File[]) => {
     setSelectedFiles(files);
     setHasReceipts(files.length > 0);
   };
 
-  // Handle file removal
   const handleFileClear = (index: number) => {
     const newFiles = [...selectedFiles];
     newFiles.splice(index, 1);
@@ -270,7 +250,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Step 1: Select Entity */}
         {currentStep === 1 && (
           <div className="space-y-4">
             <div className="text-lg font-medium">Select Work Item</div>
@@ -345,7 +324,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
           </div>
         )}
 
-        {/* Step 2: Time Range Selection */}
         {currentStep === 2 && (
           <div className="space-y-4">
             <div className="text-lg font-medium">Time Details</div>
@@ -360,7 +338,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
                 <span className="font-medium">{selectedEntity?.name}</span>
                 {form.watch('employeeId') && employees && (
                   <span className="ml-2 text-sm text-muted-foreground">
-                    ({employees.find(e => e.employee_id === form.watch('employeeId'))?.name})
+                    ({employees.find(e => e.id === form.watch('employeeId') || e.employee_id === form.watch('employeeId'))?.name})
                   </span>
                 )}
               </div>
@@ -399,7 +377,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
           </div>
         )}
 
-        {/* Step 3: Receipts */}
         {currentStep === 3 && (
           <div className="space-y-4">
             <div className="text-lg font-medium">Receipts & Expenses</div>
@@ -425,7 +402,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                   <UserRound className="h-4 w-4 mr-1" />
                   <span>
-                    {employees.find(e => e.employee_id === form.watch('employeeId'))?.name}
+                    {employees.find(e => e.id === form.watch('employeeId') || e.employee_id === form.watch('employeeId'))?.name}
                   </span>
                 </div>
               )}
@@ -461,7 +438,6 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
 
         <Separator />
 
-        {/* Navigation Buttons */}
         <div className="flex justify-between">
           {currentStep === 1 ? (
             <Button type="button" variant="outline" onClick={onCancel}>
