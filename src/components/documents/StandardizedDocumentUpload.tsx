@@ -24,16 +24,25 @@ import VendorSelectDialog from '@/components/vendors/VendorSelectDialog';
 import { documentCategories } from './schemas/documentSchema';
 
 type AllowedDocumentCategory = typeof documentCategories[number];
+type AllowedEntityType = 
+  | 'PROJECT'
+  | 'ESTIMATE'
+  | 'WORK_ORDER'
+  | 'VENDOR'
+  | 'SUBCONTRACTOR'
+  | 'TIME_ENTRY'
+  | 'EMPLOYEE'
+  | 'CONTACT';
 
 const documentUploadSchema = z.object({
   files: z.array(z.instanceof(File)).min(1, { message: 'At least one file is required' }),
   metadata: z.object({
-    entityType: z.enum(
-      ['PROJECT', 'ESTIMATE', 'WORK_ORDER', 'VENDOR', 'SUBCONTRACTOR', 'TIME_ENTRY', 'EMPLOYEE'],
-      {
-        errorMap: () => ({ message: 'Please select a valid entity type' }),
-      }
-    ),
+    entityType: z.enum([
+      'PROJECT', 'ESTIMATE', 'WORK_ORDER', 'VENDOR', 'SUBCONTRACTOR', 
+      'TIME_ENTRY', 'EMPLOYEE', 'CONTACT'
+    ] as const, {
+      errorMap: () => ({ message: 'Please select a valid entity type' }),
+    }),
     entityId: z.string().min(1, { message: 'Entity ID is required' }),
     category: z.enum(documentCategories as unknown as [string, ...string[]], { 
       message: 'Please select a valid document category' 
@@ -77,6 +86,8 @@ interface StandardizedDocumentUploadProps {
     expenseType?: string;
     expenseDate?: Date | string;
     isExpense?: boolean;
+    subcontractorId?: string;
+    is_expense?: boolean;
   };
   preventFormPropagation?: boolean;
   allowEntityTypeSelection?: boolean;
@@ -105,10 +116,10 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     defaultValues: {
       files: [],
       metadata: {
-        entityType: entityType,
+        entityType: entityType as AllowedEntityType,
         entityId: entityId,
         category: (isReceiptUpload ? 'receipt' : (prefillData?.category || 'other')) as AllowedDocumentCategory,
-        isExpense: isReceiptUpload || prefillData?.isExpense || ['receipt', 'invoice'].includes(prefillData?.category || ''),
+        isExpense: isReceiptUpload || prefillData?.isExpense || prefillData?.is_expense || ['receipt', 'invoice'].includes(prefillData?.category || ''),
         tags: prefillData?.tags || [],
         version: 1,
       },
@@ -302,13 +313,13 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
   }, [form, onCancel, previewURL]);
 
   useEffect(() => {
-    form.setValue('metadata.entityType', entityType);
+    form.setValue('metadata.entityType', entityType as AllowedEntityType);
     form.setValue('metadata.entityId', entityId);
 
     const category = isReceiptUpload ? 'receipt' : (prefillData?.category || 'other');
     form.setValue('metadata.category', category as AllowedDocumentCategory);
 
-    const isExpense = isReceiptUpload || prefillData?.isExpense || ['receipt', 'invoice'].includes(category);
+    const isExpense = isReceiptUpload || prefillData?.isExpense || prefillData?.is_expense || ['receipt', 'invoice'].includes(category);
     form.setValue('metadata.isExpense', isExpense);
 
     if (prefillData) {

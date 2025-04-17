@@ -14,7 +14,6 @@ export function adaptEmployeeFromDatabase(dbEmployee: any): Employee {
     role: dbEmployee.role || '',
     hourlyRate: dbEmployee.hourly_rate || 0,
     status: dbEmployee.status || 'ACTIVE',
-    // Add any other required fields
   };
 }
 
@@ -23,4 +22,12 @@ export function adaptEmployeeFromDatabase(dbEmployee: any): Employee {
  */
 export function adaptEmployeesFromDatabase(dbEmployees: any[]): Employee[] {
   return dbEmployees.map(adaptEmployeeFromDatabase);
+}
+
+/**
+ * Helper function to get a full name from an employee
+ */
+export function getEmployeeFullName(employee: Employee): string {
+  if (employee.name) return employee.name;
+  return `${employee.firstName} ${employee.lastName}`.trim();
 }
