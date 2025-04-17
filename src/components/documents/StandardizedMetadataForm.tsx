@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { EntityType, DocumentCategory } from '@/types/common';
 import { FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
 import {
   Select,
@@ -10,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { EntityType } from '@/types/common';
+import { DocumentCategory } from '@/components/documents/schemas/documentSchema';
 
 // Create a simple metadata form component that accepts the types from common.ts
 interface StandardizedMetadataFormProps {

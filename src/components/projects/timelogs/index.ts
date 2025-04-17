@@ -8,3 +8,6 @@ export {
   ProjectTimelogsList,
   ProjectTimelogAddSheet
 };
+
+// Export the ProjectTimelogsList as ProjectTimelogs for backward compatibility
+export const ProjectTimelogs = ProjectTimelogsList;

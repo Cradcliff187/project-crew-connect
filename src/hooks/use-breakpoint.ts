@@ -1,66 +1,42 @@
+
 import { useEffect, useState } from 'react';
 
-type Breakpoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+type BreakpointMap = Record<Breakpoint, number>;
 
-const breakpointValues = {
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
+const breakpointMap: BreakpointMap = {
+  'xs': 0,
+  'sm': 640,
+  'md': 768,
+  'lg': 1024,
+  'xl': 1280,
   '2xl': 1536,
 };
 
-type ReturnType = {
-  isAboveSm: boolean;
-  isAboveMd: boolean;
-  isAboveLg: boolean;
-  isAboveXl: boolean;
-  isAbove2Xl: boolean;
-  current: Breakpoint | null;
-};
-
-export default function useBreakpoint(targetBreakpoint?: Breakpoint): ReturnType {
-  const [windowWidth, setWindowWidth] = useState<number>(
-    typeof window !== 'undefined' ? window.innerWidth : 0
-  );
+// Export a named function and a default export for compatibility
+export function useBreakpoint(breakpoint: Breakpoint = 'md'): boolean {
+  const [isAboveBreakpoint, setIsAboveBreakpoint] = useState<boolean>(false);
 
   useEffect(() => {
-    // Skip this effect when running on server
-    if (typeof window === 'undefined') return;
+    // Function to check if window width is above the specified breakpoint
+    const checkWidth = () => {
+      if (typeof window === 'undefined') return;
+      const width = window.innerWidth;
+      setIsAboveBreakpoint(width >= breakpointMap[breakpoint]);
+    };
 
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
+    // Check initially
+    checkWidth();
 
-    // Set initial size
-    handleResize();
+    // Add resize listener
+    window.addEventListener('resize', checkWidth);
 
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    // Cleanup listener
+    return () => window.removeEventListener('resize', checkWidth);
+  }, [breakpoint]);
 
-  // Determine current breakpoint
-  const getCurrentBreakpoint = (): Breakpoint | null => {
-    if (typeof window === 'undefined') return null;
-
-    if (windowWidth >= breakpointValues['2xl']) return '2xl';
-    if (windowWidth >= breakpointValues.xl) return 'xl';
-    if (windowWidth >= breakpointValues.lg) return 'lg';
-    if (windowWidth >= breakpointValues.md) return 'md';
-    if (windowWidth >= breakpointValues.sm) return 'sm';
-    return null;
-  };
-
-  // Check if we're above a specific breakpoint
-  const isAbove = (breakpoint: Breakpoint): boolean => {
-    if (typeof window === 'undefined') return false;
-    return windowWidth >= breakpointValues[breakpoint];
-  };
-
-  return {
-    isAboveSm: isAbove('sm'),
-    isAboveMd: isAbove('md'),
-    isAboveLg: isAbove('lg'),
-    isAboveXl: isAbove('xl'),
-    isAbove2Xl: isAbove('2xl'),
-    current: getCurrentBreakpoint(),
-  };
+  return isAboveBreakpoint;
 }
+
+// Export default for direct imports
+export default useBreakpoint;

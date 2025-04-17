@@ -32,7 +32,7 @@ export const ProjectTimelogAddHeader = ({
 
       <ProjectTimelogAddSheet
         open={showAddSheet}
-        setOpen={setShowAddSheet}
+        onOpenChange={setShowAddSheet}
         projectId={projectId}
         employees={employees}
         onSuccess={onTimeLogAdded}

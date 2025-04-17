@@ -1,14 +1,72 @@
 
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Document } from './DocumentTypes';
 
-// Fix the issue with url property
-// Replace document.file_url with document.url
-// In the openDocument or similar function:
+interface DocumentValidationUtilityProps {
+  document: Document;
+}
 
-const openDocument = (document: Document) => {
-  if (document.url || document.file_url) { // Check for both url and file_url
-    window.open(document.url || document.file_url, '_blank');
-  } else {
-    console.error('Document URL not available');
-  }
+const DocumentValidationUtility: React.FC<DocumentValidationUtilityProps> = ({ document }) => {
+  const validateDocument = (doc: Document) => {
+    const errors: string[] = [];
+
+    // Check required fields
+    if (!doc.file_name) errors.push('Missing file name');
+    if (!doc.entity_type) errors.push('Missing entity type');
+    if (!doc.entity_id) errors.push('Missing entity ID');
+
+    // Check expense consistency
+    if (doc.is_expense) {
+      if (doc.category !== 'receipt' && doc.category !== 'invoice') {
+        errors.push('Expense documents should have category "receipt" or "invoice"');
+      }
+
+      if (!doc.amount && doc.amount !== 0) {
+        errors.push('Expense documents should have an amount');
+      }
+    }
+
+    // Check version consistency
+    if (doc.parent_document_id && !doc.version) {
+      errors.push('Documents with a parent should have a version number');
+    }
+
+    return errors;
+  };
+
+  const errors = validateDocument(document);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Document Validation</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {errors.length > 0 ? (
+          <Alert variant="destructive">
+            <AlertTitle>Validation Errors</AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc pl-4">
+                {errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert>
+            <AlertTitle>Document is valid</AlertTitle>
+            <AlertDescription>All required fields are present and consistent.</AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
+
+export default DocumentValidationUtility;
+
+// Also export named for compatibility
+export { DocumentValidationUtility };

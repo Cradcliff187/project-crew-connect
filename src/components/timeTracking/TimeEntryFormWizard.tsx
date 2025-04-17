@@ -19,7 +19,7 @@ import { useEntityData } from './hooks/useEntityData';
 import EmployeeSelect from './form/EmployeeSelect';
 import { calculateHours } from './utils/timeUtils';
 import { DatePicker } from '@/components/ui/date-picker';
-import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
+import { adaptEmployeesFromDatabase, getEmployeeFullName } from '@/utils/employeeAdapter';
 import { Employee } from '@/types/common';
 
 const formSchema = z.object({

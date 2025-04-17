@@ -72,7 +72,8 @@ export type StatusType =
   | 'purple'
   | 'qualified'
   | 'verified'
-  | 'in_progress';
+  | 'in_progress'
+  | 'on_hold';
 
 export interface StatusOption {
   value: string;
@@ -103,7 +104,10 @@ export interface Vendor {
 }
 
 // Helper function for employee names
-export function getEmployeeFullName(employee: Employee): string {
+export function getEmployeeFullName(employee: Employee | null | undefined): string {
+  if (!employee) return '';
+  
   if (employee.name) return employee.name;
+  
   return `${employee.firstName || ''} ${employee.lastName || ''}`.trim();
 }
