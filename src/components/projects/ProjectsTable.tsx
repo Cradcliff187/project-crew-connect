@@ -1,3 +1,4 @@
+
 import { Briefcase } from 'lucide-react';
 import { Table, TableBody } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -32,15 +33,15 @@ interface ProjectsTableProps {
 // Map database status to StatusBadge component status
 export const mapStatusToStatusBadge = (status: string | null): StatusType => {
   const statusMap: Record<string, StatusType> = {
-    active: 'active',
-    pending: 'pending',
-    completed: 'completed',
-    cancelled: 'cancelled',
+    active: 'ACTIVE',
+    pending: 'PENDING',
+    completed: 'COMPLETED',
+    cancelled: 'CANCELLED',
     unknown: 'unknown',
-    new: 'pending',
-    in_progress: 'active',
-    on_hold: 'on-hold',
-    archived: 'inactive',
+    new: 'PENDING',
+    in_progress: 'ACTIVE',
+    on_hold: 'ON_HOLD',
+    archived: 'INACTIVE',
   };
 
   if (!status) return 'unknown';

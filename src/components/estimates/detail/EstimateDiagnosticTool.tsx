@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,7 +42,9 @@ const EstimateDiagnosticTool: React.FC<EstimateDiagnosticToolProps> = ({ estimat
 
         // Check for description fields
         // Note: Fix the field names, using square bracket notation for fields with spaces
-        if (!estimate['job description'] && !estimate.jobdescription && !estimate.description) {
+        const fieldDescriptionMissing = !estimate['job description'];
+
+        if (fieldDescriptionMissing) {
           results.push({
             test: 'Description',
             status: 'warning',

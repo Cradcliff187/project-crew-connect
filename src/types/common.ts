@@ -33,7 +33,6 @@ export type DocumentCategory =
   | 'certification'
   | 'photo';
 
-// Add the missing StatusType that's being imported by many components
 export type StatusType =
   | 'NEW'
   | 'DRAFT'
@@ -53,7 +52,14 @@ export type StatusType =
   | 'sent'
   | 'approved'
   | 'rejected'
-  | 'converted';
+  | 'converted'
+  | 'active'
+  | 'pending'
+  | 'completed'
+  | 'cancelled'
+  | 'on-hold'
+  | 'inactive'
+  | 'unknown';
 
 export interface StatusOption {
   value: string;

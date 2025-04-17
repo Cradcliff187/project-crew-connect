@@ -32,14 +32,17 @@ type AllowedEntityType =
   | 'SUBCONTRACTOR'
   | 'TIME_ENTRY'
   | 'EMPLOYEE'
-  | 'CONTACT';
+  | 'CONTACT'
+  | 'CUSTOMER'
+  | 'EXPENSE'
+  | 'ESTIMATE_ITEM';
 
 const documentUploadSchema = z.object({
   files: z.array(z.instanceof(File)).min(1, { message: 'At least one file is required' }),
   metadata: z.object({
     entityType: z.enum([
       'PROJECT', 'ESTIMATE', 'WORK_ORDER', 'VENDOR', 'SUBCONTRACTOR', 
-      'TIME_ENTRY', 'EMPLOYEE', 'CONTACT'
+      'TIME_ENTRY', 'EMPLOYEE', 'CONTACT', 'CUSTOMER', 'EXPENSE', 'ESTIMATE_ITEM'
     ] as const, {
       errorMap: () => ({ message: 'Please select a valid entity type' }),
     }),
@@ -118,7 +121,7 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
       metadata: {
         entityType: entityType as AllowedEntityType,
         entityId: entityId,
-        category: (isReceiptUpload ? 'receipt' : (prefillData?.category || 'other')) as AllowedDocumentCategory,
+        category: (isReceiptUpload ? 'receipt' : (prefillData?.category || 'other')) as DocumentCategory,
         isExpense: isReceiptUpload || prefillData?.isExpense || prefillData?.is_expense || ['receipt', 'invoice'].includes(prefillData?.category || ''),
         tags: prefillData?.tags || [],
         version: 1,
@@ -317,7 +320,7 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     form.setValue('metadata.entityId', entityId);
 
     const category = isReceiptUpload ? 'receipt' : (prefillData?.category || 'other');
-    form.setValue('metadata.category', category as AllowedDocumentCategory);
+    form.setValue('metadata.category', category as DocumentCategory);
 
     const isExpense = isReceiptUpload || prefillData?.isExpense || prefillData?.is_expense || ['receipt', 'invoice'].includes(category);
     form.setValue('metadata.isExpense', isExpense);

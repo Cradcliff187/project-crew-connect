@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Clock } from 'lucide-react';
-import { ProjectTimelogAddSheet } from './ProjectTimelogAddSheet';
+import ProjectTimelogAddSheet from './ProjectTimelogAddSheet';
 
 interface ProjectTimelogAddHeaderProps {
   projectId: string;

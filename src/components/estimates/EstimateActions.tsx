@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   MoreHorizontal,
@@ -55,6 +56,9 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
     }
   };
 
+  const isCancelled = status === 'CANCELLED' || status === 'cancelled';
+  const isConverted = status === 'CONVERTED' || status === 'converted';
+
   return direction === 'horizontal' ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -80,7 +84,7 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
           </DropdownMenuItem>
         )}
 
-        {status !== 'cancelled' && status !== 'converted' && onConvert && (
+        {!isCancelled && !isConverted && onConvert && (
           <DropdownMenuItem onClick={onConvert}>
             <ArrowRightLeft className="mr-2 h-4 w-4" />
             Convert to Project
@@ -114,7 +118,7 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
         </Button>
       )}
 
-      {status !== 'cancelled' && status !== 'converted' && onConvert && (
+      {!isCancelled && !isConverted && onConvert && (
         <Button size={size} variant="outline" className="justify-start" onClick={onConvert}>
           <ArrowRightLeft className="mr-2 h-4 w-4" />
           Convert to Project

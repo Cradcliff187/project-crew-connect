@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -89,20 +88,23 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.from('project_timelogs').insert([
+      const { data, error } = await supabase.from('time_entries').insert([
         {
-          project_id: projectId,
+          entity_type: 'project',
+          entity_id: projectId,
           employee_id: values.employeeId,
           date_worked: format(values.dateWorked, 'yyyy-MM-dd'),
           hours_worked: values.hoursWorked,
           notes: values.notes,
+          start_time: '09:00:00',
+          end_time: '17:00:00'
         },
       ]);
 
       if (error) {
         toast({
           title: 'Error',
-          description: 'Failed to add timelog',
+          description: 'Failed to add timelog: ' + error.message,
           variant: 'destructive',
         });
       } else {
@@ -113,10 +115,10 @@ const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
         setOpen(false);
         onTimelogAdded?.();
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to add timelog',
+        description: 'Failed to add timelog: ' + error.message,
         variant: 'destructive',
       });
     } finally {
