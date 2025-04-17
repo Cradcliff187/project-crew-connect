@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDate, formatCurrency } from '@/lib/utils';
@@ -51,6 +52,10 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
   const [viewType, setViewType] = useState<'timeline' | 'table'>('table'); // Default to table view
   const [revisionItems, setRevisionItems] = useState<Record<string, any[]>>({});
+  const [revisionFinancials, setRevisionFinancials] = useState<Record<string, {
+    grossMargin: number;
+    grossMarginPercentage: number;
+  }>>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -61,7 +66,12 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
       setExpandedRevision(currentRevisionId);
       fetchRevisionItems(currentRevisionId);
     }
-  }, [currentRevisionId]);
+
+    // Fetch financial data for all revisions
+    sortedRevisions.forEach(revision => {
+      fetchRevisionFinancials(revision.id);
+    });
+  }, [currentRevisionId, revisions]);
 
   const fetchRevisionItems = async (revisionId: string) => {
     if (revisionItems[revisionId]) return; // Already fetched
@@ -89,6 +99,35 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRevisionFinancials = async (revisionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('estimate_items')
+        .select('cost, total_price')
+        .eq('revision_id', revisionId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Calculate financial metrics
+        const totalCost = data.reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
+        const totalRevenue = data.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0);
+        const grossMargin = totalRevenue - totalCost;
+        const grossMarginPercentage = totalRevenue > 0 ? (grossMargin / totalRevenue) * 100 : 0;
+
+        setRevisionFinancials(prev => ({
+          ...prev,
+          [revisionId]: {
+            grossMargin,
+            grossMarginPercentage,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching revision financials:', error);
     }
   };
 
@@ -364,12 +403,15 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Amount</TableHead>
+              <TableHead>Gross Margin</TableHead>
+              <TableHead>Gross Margin %</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedRevisions.map(revision => {
               const isCurrent = revision.id === currentRevisionId;
+              const financials = revisionFinancials[revision.id] || { grossMargin: 0, grossMarginPercentage: 0 };
 
               return (
                 <TableRow key={revision.id} className={isCurrent ? 'bg-[#0485ea]/5' : ''}>
@@ -396,6 +438,8 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                     </Badge>
                   </TableCell>
                   <TableCell>{formatCurrency(revision.amount || 0)}</TableCell>
+                  <TableCell>{formatCurrency(financials.grossMargin)}</TableCell>
+                  <TableCell>{financials.grossMarginPercentage.toFixed(2)}%</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       {revision.pdf_document_id && (
