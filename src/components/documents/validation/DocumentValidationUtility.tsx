@@ -191,7 +191,8 @@ export default function DocumentValidationUtility() {
           }
 
           // 3. Check for missing URL
-          if (!doc.file_url) {
+          const fileUrl = document.url || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/construction_documents/${doc.storage_path}`;
+          if (!fileUrl) {
             addIssue({
               document_id: doc.document_id,
               file_name: doc.file_name,

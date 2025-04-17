@@ -19,6 +19,7 @@ import { useEntityData } from './hooks/useEntityData';
 import EmployeeSelect from './form/EmployeeSelect';
 import { calculateHours } from './utils/timeUtils';
 import { DatePicker } from '@/components/ui/date-picker';
+import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
 
 // Form schema
 const formSchema = z.object({
@@ -70,8 +71,11 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
   });
 
   // Get entity data
-  const { workOrders, projects, employees, isLoadingEntities, getSelectedEntityDetails } =
+  const { workOrders, projects, employees: dbEmployees, isLoadingEntities, getSelectedEntityDetails } =
     useEntityData(form);
+
+  // Convert database employees to the Employee type
+  const employees = adaptEmployeesFromDatabase(dbEmployees);
 
   // Watch form fields
   const entityType = form.watch('entityType');

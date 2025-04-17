@@ -143,6 +143,12 @@ export default function SubcontractorDocumentsSection({
     },
   ];
 
+  const prefillData = {
+    vendorId: subcontractorId,
+    vendorType: 'subcontractor',
+    category: 'certification',
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -203,10 +209,7 @@ export default function SubcontractorDocumentsSection({
                 fetchDocuments();
               }}
               onCancel={() => setUploadOpen(false)}
-              prefillData={{
-                subcontractorId: subcontractorId,
-                subcontractorName: subcontractorName,
-              }}
+              prefillData={prefillData}
               preventFormPropagation={true}
             />
           </div>

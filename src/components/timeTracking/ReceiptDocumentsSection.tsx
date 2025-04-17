@@ -279,8 +279,8 @@ export default function ReceiptDocumentsSection({
               onCancel={() => setUploadOpen(false)}
               prefillData={{
                 category: 'receipt',
+                isExpense: true,
                 tags: ['receipt', 'time-entry'],
-                is_expense: true,
               }}
               preventFormPropagation={true}
             />

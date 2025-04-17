@@ -89,7 +89,7 @@ const EstimateDiagnosticTool: React.FC<EstimateDiagnosticToolProps> = ({
         // Field names might vary - check both conventions
         jobdescription:
           estimate.job_description ||
-          estimate.jobdescription ||
+          estimate['jobdescription'] ||
           estimate.description ||
           'Test project',
         status: 'active',

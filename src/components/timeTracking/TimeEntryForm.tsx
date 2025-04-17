@@ -10,6 +10,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { format, parse } from 'date-fns';
 import { Employee, getEmployeeFullName } from '@/types/common';
 import { Label } from '@/components/ui/label';
+import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
 
 interface TimeEntryFormProps {
   initialValues?: Partial<TimeEntry>;
@@ -39,7 +40,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   );
   const [timeError, setTimeError] = useState('');
 
-  // Fetch employees using the standardized Employee interface
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
@@ -54,7 +54,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
         }
 
         if (data) {
-          setEmployees(data);
+          setEmployees(adaptEmployeesFromDatabase(data || []));
         }
       } catch (error) {
         console.error('Exception when fetching employees:', error);
@@ -64,9 +64,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
     fetchEmployees();
   }, []);
 
-  // Use the useEffect hook to ensure correct employee data handling
   useEffect(() => {
-    // Calculate hours worked when start or end time changes
     if (startTime && endTime) {
       try {
         const hours = calculateHours(startTime, endTime);
@@ -81,7 +79,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate the form
     if (!workDate) {
       return;
     }
@@ -90,10 +87,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       return;
     }
 
-    // Format the date
     const formattedDate = format(workDate, 'yyyy-MM-dd');
 
-    // Prepare the data for submission
     const formData: Partial<TimeEntry> = {
       ...initialValues,
       date_worked: formattedDate,
@@ -104,7 +99,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       employee_id: employeeId === 'none' ? null : employeeId,
     };
 
-    // Submit the form
     await onSubmit(formData);
   };
 

@@ -180,8 +180,9 @@ const EstimateConvertDialog: React.FC<EstimateConvertDialogProps> = ({
       setDebugInfo(`${debugInfo}\nEstimate updated successfully.`);
 
       toast({
-        title: 'Success',
-        description: 'Simple project created and linked to estimate',
+        title: 'Project created successfully',
+        description: `Project "${projectData.projectname}" has been created from this estimate.`,
+        variant: 'default',
       });
 
       if (onStatusChange) {
