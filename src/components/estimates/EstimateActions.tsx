@@ -80,6 +80,8 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
     }
   };
 
+  const isCancelled = status === 'CANCELLED' || status === 'cancelled';
+
   return direction === 'horizontal' ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -105,30 +107,10 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
           </DropdownMenuItem>
         )}
 
-        {!isConverted && onConvert && (
-          <DropdownMenuItem
-            onClick={() => {
-              console.log(
-                'EstimateActions: Convert option clicked from dropdown for estimate:',
-                estimateId
-              );
-              onConvert();
-            }}
-            disabled={isCheckingStatus}
-          >
-            {isCheckingStatus ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <ArrowRightLeft className="mr-2 h-4 w-4" />
-            )}
-            {isCheckingStatus ? 'Checking status...' : 'Convert to Project'}
-          </DropdownMenuItem>
-        )}
-
-        {isConverted && (
-          <DropdownMenuItem disabled>
-            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-            Already Converted
+        {!isCancelled && !isConverted && onConvert && (
+          <DropdownMenuItem onClick={onConvert}>
+            <ArrowRightLeft className="mr-2 h-4 w-4" />
+            Convert to Project
           </DropdownMenuItem>
         )}
 
@@ -159,33 +141,10 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
         </Button>
       )}
 
-      {!isConverted && onConvert && (
-        <Button
-          size={size}
-          variant="outline"
-          className="justify-start"
-          onClick={() => {
-            console.log(
-              'EstimateActions: Convert button clicked from vertical menu for estimate:',
-              estimateId
-            );
-            onConvert();
-          }}
-          disabled={isCheckingStatus}
-        >
-          {isCheckingStatus ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <ArrowRightLeft className="mr-2 h-4 w-4" />
-          )}
-          {isCheckingStatus ? 'Checking status...' : 'Convert to Project'}
-        </Button>
-      )}
-
-      {isConverted && (
-        <Button size={size} variant="outline" className="justify-start text-green-600" disabled>
-          <CheckCircle className="mr-2 h-4 w-4" />
-          Already Converted
+      {!isCancelled && !isConverted && onConvert && (
+        <Button size={size} variant="outline" className="justify-start" onClick={onConvert}>
+          <ArrowRightLeft className="mr-2 h-4 w-4" />
+          Convert to Project
         </Button>
       )}
 

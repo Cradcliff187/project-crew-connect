@@ -77,10 +77,20 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   contingencyPercentage,
 }) => {
   const [expandedRevision, setExpandedRevision] = useState<string | null>(null);
-  const [viewType, setViewType] = useState<'timeline' | 'table' | 'grid'>('table'); // Added grid view
+  const [viewType, setViewType] = useState<'timeline' | 'table' | 'grid'>('table');
   const [revisionItemsMap, setRevisionItemsMap] = useState<Record<string, EstimateItem[]>>({});
   const [loadingItems, setLoadingItems] = useState<Record<string, boolean>>({});
   const [convertingRevisions, setConvertingRevisions] = useState<Record<string, boolean>>({});
+  const [revisionFinancials, setRevisionFinancials] = useState<
+    Record<
+      string,
+      {
+        grossMargin: number;
+        grossMarginPercentage: number;
+      }
+    >
+  >({});
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   // DEBUG: Log the revisions prop as received by the component
@@ -149,6 +159,13 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
       setHighestVersion(sortedRevisions[0].version); // Assuming sortedRevisions[0] is latest
     }
   }, [sortedRevisions]);
+
+  useEffect(() => {
+    // Fetch financial data for all revisions
+    sortedRevisions.forEach(revision => {
+      fetchRevisionFinancials(revision.id);
+    });
+  }, [currentRevisionId, revisions]);
 
   const fetchRevisionItems = async (revisionId: string) => {
     // Avoid refetching if already loading or already fetched
@@ -231,6 +248,35 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
     } finally {
       // Unmark this revision as converting
       setConvertingRevisions(prev => ({ ...prev, [revisionId]: false }));
+    }
+  };
+
+  const fetchRevisionFinancials = async (revisionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('estimate_items')
+        .select('cost, total_price')
+        .eq('revision_id', revisionId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        // Calculate financial metrics
+        const totalCost = data.reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
+        const totalRevenue = data.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0);
+        const grossMargin = totalRevenue - totalCost;
+        const grossMarginPercentage = totalRevenue > 0 ? (grossMargin / totalRevenue) * 100 : 0;
+
+        setRevisionFinancials(prev => ({
+          ...prev,
+          [revisionId]: {
+            grossMargin,
+            grossMarginPercentage,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching revision financials:', error);
     }
   };
 
@@ -575,7 +621,7 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
       <ToggleGroup
         type="single"
         value={viewType === 'grid' ? 'table' : viewType}
-        onValueChange={value => value && setViewType(value as 'timeline' | 'table')}
+        onValueChange={value => value && setViewType(value as 'timeline' | 'table' | 'grid')}
       >
         <ToggleGroupItem value="table" aria-label="Table View">
           <ListIcon className="h-4 w-4" />
@@ -621,10 +667,8 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
               const isSelectedForCompareA = compareRevisionAId === revision.id;
               const isSelectedForCompareB = compareRevisionBId === revision.id;
 
-              // Get items for this specific revision from state
               const items = revisionItemsMap[revision.id] || [];
 
-              // Calculate financials locally
               const localSubtotal = items.reduce(
                 (sum, item) => sum + (Number(item.total_price) || 0),
                 0
@@ -637,10 +681,9 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
               const localMarginPercent =
                 localSubtotal > 0 ? (localMargin / localSubtotal) * 100 : 0;
 
-              // Calculate contingency amount based on passed percentage and local subtotal
               const localContingencyAmount = localSubtotal * ((contingencyPercentage || 0) / 100);
 
-              // --- BEGIN DEBUG LOG ---
+              // DEBUG LOGS (kept from HEAD)
               console.log(`[DEBUG RevisionsTab Render] Rendering revision ID: ${revision.id}`);
               console.log(
                 `[DEBUG RevisionsTab Render] Items used for calculation for ${revision.id}:`,
@@ -655,7 +698,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
               console.log(
                 `[DEBUG RevisionsTab Render] Calculated localMarginPercent for ${revision.id}: ${localMarginPercent}`
               );
-              // --- END DEBUG LOG ---
 
               return (
                 <TableRow

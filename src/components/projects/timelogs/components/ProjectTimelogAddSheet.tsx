@@ -1,10 +1,19 @@
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import React, { useState } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { format } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DatePicker } from '@/components/ui/date-picker';
 import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector';
@@ -20,227 +29,209 @@ interface ProjectTimelogAddSheetProps {
   onSuccess: () => void;
 }
 
-export const ProjectTimelogAddSheet = ({
+const ProjectTimelogAddSheet: React.FC<ProjectTimelogAddSheetProps> = ({
   open,
   onOpenChange,
   projectId,
   employees,
   onSuccess,
-}: ProjectTimelogAddSheetProps) => {
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hours, setHours] = useState(0);
-  const [employeeId, setEmployeeId] = useState('none');
-  const [notes, setNotes] = useState('');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+}) => {
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
-  const [timeError, setTimeError] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
+  const [notes, setNotes] = useState('');
+  const [hasReceipt, setHasReceipt] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Handle time changes and calculate hours
-  const handleStartTimeChange = (value: string) => {
-    setStartTime(value);
-    updateHoursWorked(value, endTime);
-  };
+  const calculateHours = () => {
+    if (!startTime || !endTime) return 0;
 
-  const handleEndTimeChange = (value: string) => {
-    setEndTime(value);
-    updateHoursWorked(startTime, value);
-  };
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    const diffMs = end.getTime() - start.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
 
-  const updateHoursWorked = (start: string, end: string) => {
-    try {
-      const calculatedHours = calculateHours(start, end);
-      if (calculatedHours <= 0) {
-        setTimeError('End time must be after start time');
-        setHours(0);
-      } else {
-        setTimeError('');
-        setHours(calculatedHours);
-      }
-    } catch (error) {
-      console.error('Error calculating hours:', error);
-    }
-  };
-
-  // Reset form
-  const resetForm = () => {
-    setHours(0);
-    setEmployeeId('none');
-    setNotes('');
-    setSelectedDate(new Date());
-    setStartTime('09:00');
-    setEndTime('17:00');
-    setTimeError('');
+    return diffHours > 0 ? diffHours : 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (timeError) {
+    if (!employeeId) {
       toast({
-        title: 'Invalid time range',
-        description: timeError,
+        title: 'Missing data',
+        description: 'Please select an employee',
         variant: 'destructive',
       });
       return;
     }
 
-    if (hours <= 0) {
+    if (!date) {
       toast({
-        title: 'Invalid hours',
-        description: 'Please enter a valid number of hours worked.',
+        title: 'Missing data',
+        description: 'Please select a date',
         variant: 'destructive',
       });
       return;
     }
 
-    setIsSubmitting(true);
+    const hoursWorked = calculateHours();
+    if (hoursWorked <= 0) {
+      toast({
+        title: 'Invalid time',
+        description: 'End time must be after start time',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
-      // Format date
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      // Get employee rate
+      const { data: employeeData } = await supabase
+        .from('employees')
+        .select('hourly_rate')
+        .eq('employee_id', employeeId)
+        .single();
 
-      // Check for "none" special value that means no employee is selected
-      const actualEmployeeId = employeeId === 'none' ? null : employeeId;
+      const hourlyRate = employeeData?.hourly_rate || 75; // Default to $75/hr if not found
 
-      let employeeRate = null;
-      if (actualEmployeeId) {
-        // Get employee rate if available
-        const { data: empData } = await supabase
-          .from('employees')
-          .select('hourly_rate')
-          .eq('employee_id', actualEmployeeId)
-          .maybeSingle();
-
-        employeeRate = empData?.hourly_rate;
-      }
-
-      // Calculate total cost
-      const hourlyRate = employeeRate || 75; // Default rate
-      const totalCost = hours * hourlyRate;
-
-      const timelogEntry = {
+      // Insert time entry
+      const { data, error } = await supabase.from('time_entries').insert({
         entity_type: 'project',
         entity_id: projectId,
-        employee_id: actualEmployeeId,
-        hours_worked: hours,
-        date_worked: formattedDate,
+        employee_id: employeeId,
+        date_worked: date,
         start_time: startTime,
         end_time: endTime,
-        employee_rate: hourlyRate,
-        total_cost: totalCost,
-        notes: notes || null,
+        hours_worked: hoursWorked,
+        notes: notes,
+        has_receipts: hasReceipt,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data: insertedEntry, error } = await supabase
-        .from('time_entries')
-        .insert(timelogEntry)
-        .select('id')
-        .single();
+        employee_rate: hourlyRate,
+        total_cost: hourlyRate * hoursWorked,
+      });
 
       if (error) throw error;
 
-      // Create expense entry for labor time
-      if (insertedEntry?.id) {
-        const laborExpenseData = {
-          entity_type: 'PROJECT',
-          entity_id: projectId,
-          description: `Labor: ${hours} hours`,
-          expense_type: 'LABOR',
-          amount: totalCost,
-          time_entry_id: insertedEntry.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          quantity: hours,
-          unit_price: hourlyRate,
-          vendor_id: null,
-        };
-
-        await supabase.from('expenses').insert(laborExpenseData);
-      }
-
       toast({
         title: 'Time entry added',
-        description: `${hours} hours have been logged successfully.`,
+        description: 'Time has been logged successfully',
       });
 
-      // Reset form and close sheet
-      resetForm();
+      // Reset form
+      setDate(format(new Date(), 'yyyy-MM-dd'));
+      setStartTime('09:00');
+      setEndTime('17:00');
+      setEmployeeId('');
+      setNotes('');
+      setHasReceipt(false);
+
+      // Close sheet
+      onOpenChange(false);
+
+      // Trigger refresh of time entries
       onSuccess();
     } catch (error: any) {
       console.error('Error adding time entry:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to add time entry.',
+        description: error.message || 'Could not add time entry',
         variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
+      <SheetContent className="sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Log Project Time</SheetTitle>
+          <SheetTitle>Log Time</SheetTitle>
         </SheetHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <DatePicker date={selectedDate} setDate={date => date && setSelectedDate(date)} />
+            <Label htmlFor="employee">Employee</Label>
+            <Select value={employeeId} onValueChange={setEmployeeId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select employee" />
+              </SelectTrigger>
+              <SelectContent>
+                {employees.map(employee => (
+                  <SelectItem key={employee.employee_id} value={employee.employee_id}>
+                    {employee.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <TimeRangeSelector
-            startTime={startTime}
-            endTime={endTime}
-            onStartTimeChange={handleStartTimeChange}
-            onEndTimeChange={handleEndTimeChange}
-            error={timeError}
-            hoursWorked={hours}
-          />
-
-          <EmployeeSelect
-            value={employeeId}
-            onChange={setEmployeeId}
-            employees={employees}
-            label="Employee"
-          />
-
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Add notes about work performed..."
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              rows={4}
+            <Label htmlFor="date">Date</Label>
+            <Input
+              type="date"
+              id="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              required
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startTime">Start Time</Label>
+              <Input
+                type="time"
+                id="startTime"
+                value={startTime}
+                onChange={e => setStartTime(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="endTime">End Time</Label>
+              <Input
+                type="time"
+                id="endTime"
+                value={endTime}
+                onChange={e => setEndTime(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              placeholder="Details about the work performed"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2 pt-2">
+            <Switch id="hasReceipt" checked={hasReceipt} onCheckedChange={setHasReceipt} />
+            <Label htmlFor="hasReceipt">Has receipt or documentation</Label>
+          </div>
+
+          <SheetFooter className="pt-4">
             <Button
               type="submit"
-              disabled={isSubmitting || hours <= 0}
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
+              className="w-full bg-[#0485ea] hover:bg-[#0375d1]"
+              disabled={submitting}
             >
-              {isSubmitting ? 'Saving...' : 'Log Time'}
+              {submitting ? 'Saving...' : 'Save Time Entry'}
             </Button>
-          </div>
+          </SheetFooter>
         </form>
       </SheetContent>
     </Sheet>
   );
 };
+
+export default ProjectTimelogAddSheet;

@@ -1079,6 +1079,7 @@ export type Database = {
           approveddate: string | null;
           contingency_percentage: number | null;
           contingencyamount: number | null;
+          converted_revision_id: string | null;
           created_at: string;
           createdby: string | null;
           customerid: string | null;
@@ -1105,6 +1106,7 @@ export type Database = {
           approveddate?: string | null;
           contingency_percentage?: number | null;
           contingencyamount?: number | null;
+          converted_revision_id?: string | null;
           created_at?: string;
           createdby?: string | null;
           customerid?: string | null;
@@ -1131,6 +1133,7 @@ export type Database = {
           approveddate?: string | null;
           contingency_percentage?: number | null;
           contingencyamount?: number | null;
+          converted_revision_id?: string | null;
           created_at?: string;
           createdby?: string | null;
           customerid?: string | null;
@@ -1377,6 +1380,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'project_budget_items_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['projectid'];
+          },
+        ];
+      };
+      project_documents: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          document_id: string | null;
+          document_type: string | null;
+          id: string;
+          project_id: string | null;
+          title: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          document_id?: string | null;
+          document_type?: string | null;
+          id?: string;
+          project_id?: string | null;
+          title?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          document_id?: string | null;
+          document_type?: string | null;
+          id?: string;
+          project_id?: string | null;
+          title?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_documents_project_id_fkey';
             columns: ['project_id'];
             isOneToOne: false;
             referencedRelation: 'projects';
@@ -2388,6 +2432,10 @@ export type Database = {
         };
         Returns: number;
       };
+      convert_estimate_to_project: {
+        Args: { p_estimate_id: string; p_revision_id?: string };
+        Returns: string;
+      };
       convertestimateitemstobudgetitems: {
         Args: { estimateid: string; projectid: string };
         Returns: Json;
@@ -2425,6 +2473,23 @@ export type Database = {
           to_status: string;
           label: string;
           description: string;
+        }[];
+      };
+      get_revisions_with_margin: {
+        Args: { estimate_id_param: string };
+        Returns: {
+          id: string;
+          estimate_id: string;
+          version: number;
+          revision_date: string;
+          amount: number;
+          notes: string;
+          is_current: boolean;
+          status: string;
+          created_at: string;
+          updated_at: string;
+          gross_margin: number;
+          gross_margin_percentage: number;
         }[];
       };
       get_status_label: {

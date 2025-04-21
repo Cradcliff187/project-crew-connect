@@ -9,6 +9,8 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { format, parse } from 'date-fns';
 import { Employee, getEmployeeFullName } from '@/types/common';
 import { Label } from '@/components/ui/label';
+import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TimeEntryFormProps {
   initialValues?: Partial<TimeEntry>;
@@ -38,6 +40,31 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       : new Date()
   );
   const [timeError, setTimeError] = useState('');
+  const [internalEmployees, setInternalEmployees] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('employees')
+          .select('employee_id, first_name, last_name, email, phone, role, hourly_rate, status')
+          .order('last_name');
+
+        if (error) {
+          console.error('Error fetching employees:', error);
+          return;
+        }
+
+        if (data) {
+          setInternalEmployees(adaptEmployeesFromDatabase(data || []));
+        }
+      } catch (error) {
+        console.error('Exception when fetching employees:', error);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   useEffect(() => {
     if (startTime && endTime) {
@@ -55,6 +82,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
     e.preventDefault();
     if (!workDate || timeError) return;
     const formattedDate = format(workDate, 'yyyy-MM-dd');
+
     const formData: Partial<TimeEntry> = {
       ...initialValues,
       date_worked: formattedDate,
@@ -66,6 +94,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
     };
     await onSubmit(formData);
   };
+
+  const employeesToUse = employees.length > 0 ? employees : internalEmployees;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,7 +119,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
           hoursWorked={hoursWorked}
         />
 
-        <EmployeeSelect value={employeeId} onChange={setEmployeeId} employees={employees} />
+        <EmployeeSelect value={employeeId} onChange={setEmployeeId} employees={employeesToUse} />
 
         <div className="space-y-2">
           <Label htmlFor="notes">Notes (Optional)</Label>

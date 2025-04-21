@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogTitle,
-  AlertDialogHeader,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { convertEstimateToProject, updateEstimateStatus } from '@/services/estimateService';
 import { StatusType } from '@/types/common';
 import { AlertCircle, Loader2, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { convertEstimateToProject } from '@/services/estimateService';
 import {
   Select,
   SelectContent,
@@ -59,6 +60,7 @@ const EstimateConvertDialog: React.FC<EstimateConvertDialogProps> = ({
   onRefresh,
 }) => {
   const { toast } = useToast();
+  const [projectName, setProjectName] = useState(estimate.project);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [conversionComplete, setConversionComplete] = useState(false);
@@ -170,108 +172,42 @@ const EstimateConvertDialog: React.FC<EstimateConvertDialogProps> = ({
     } catch (error: any) {
       console.error('EstimateConvertDialog: Error during conversion:', error);
       setError(error.message || 'Unknown error during conversion');
-    } finally {
-      setIsConverting(false);
     }
   };
 
   return (
-    <AlertDialog
-      open={open}
-      onOpenChange={isOpen => {
-        // Only allow closing if not in the middle of converting
-        if (!isConverting) {
-          onOpenChange(isOpen);
-        }
-      }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Convert to Project</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will create a new project based on this estimate. The estimate will be marked as
-            converted and linked to the new project.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md flex items-start mb-4">
-            <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-            <span>{error}</span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Convert Estimate to Project</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to convert this estimate to a project? This action is
+            irreversible.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Project Name
+            </Label>
+            <Input
+              id="name"
+              value={projectName}
+              onChange={e => setProjectName(e.target.value)}
+              className="col-span-3"
+            />
           </div>
-        )}
-
-        {conversionComplete && conversionResult?.success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-md flex flex-col gap-2 mb-4">
-            <div className="flex items-start">
-              <Check className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <span className="font-semibold">Successfully converted!</span>
-            </div>
-            <p className="ml-7 text-sm">
-              The estimate has been converted to project{' '}
-              <span className="font-medium">{conversionResult.projectId}</span>. You can now manage
-              it in the Projects section.
-            </p>
-          </div>
-        )}
-
-        <div className="mb-6 space-y-3">
-          <h4 className="text-sm font-medium">Select Revision to Convert</h4>
-          {loadingRevisions ? (
-            <div className="flex items-center justify-center p-4 border rounded-md bg-slate-50">
-              <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
-              <span>Loading revisions...</span>
-            </div>
-          ) : (
-            <Select
-              value={selectedRevision || undefined}
-              onValueChange={setSelectedRevision}
-              disabled={true}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Using current revision" />
-              </SelectTrigger>
-              <SelectContent>
-                {revisions.map(revision => (
-                  <SelectItem key={revision.id} value={revision.id}>
-                    Version {revision.version}
-                    {revision.is_selected_for_view ? ' (Selected View)' : ''} -{' '}
-                    {formatDate(revision.revision_date)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
         </div>
-
-        <AlertDialogFooter>
-          <div className="flex gap-2 w-full justify-end">
-            <AlertDialogCancel disabled={isConverting || conversionComplete}>
-              Cancel
-            </AlertDialogCancel>
-            <Button
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-              onClick={handleConvertToProject}
-              disabled={isConverting || conversionComplete}
-            >
-              {isConverting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Converting...
-                </>
-              ) : conversionComplete ? (
-                <>
-                  <Check className="h-4 w-4 mr-2" />
-                  Converted
-                </>
-              ) : (
-                'Convert to Project'
-              )}
-            </Button>
-          </div>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" onClick={handleConvertToProject} disabled={isConverting}>
+            {isConverting ? 'Converting...' : 'Convert to Project'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

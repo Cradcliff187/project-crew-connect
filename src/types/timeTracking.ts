@@ -1,38 +1,47 @@
-// Time Entry Interfaces
+import { EntityType } from './common';
+
 export interface TimeEntry {
   id: string;
-  entity_type: 'work_order' | 'project'; // Using string literal types for consistency
+  entity_type: 'work_order' | 'project';
   entity_id: string;
-  entity_name?: string;
-  entity_location?: string;
+  employee_id: string;
+  employee_name?: string;
   date_worked: string;
   start_time: string;
   end_time: string;
   hours_worked: number;
-  notes?: string;
-  employee_id?: string;
-  employee_name?: string;
-  employee_rate?: number;
-  cost?: number;
-  total_cost?: number;
-  has_receipts?: boolean;
-  location_data?: any;
+  notes: string;
+  has_receipts: boolean;
   created_at: string;
-  updated_at: string;
-  documents?: any[];
+  updated_at?: string;
+  total_cost?: number;
+  employee_rate?: number;
+  employees?: {
+    first_name: string;
+    last_name: string;
+    hourly_rate: number;
+  };
 }
 
-// Form data for creating/updating time entries
-export interface TimeEntryFormValues {
-  entityType: 'work_order' | 'project';
+export interface TimeEntryFormData {
+  entityType: EntityType;
   entityId: string;
-  workDate: Date;
+  entityName?: string;
+  employeeId: string;
+  date: string;
   startTime: string;
   endTime: string;
-  hoursWorked: number;
-  notes?: string;
+  notes: string;
+  hasReceipt: boolean;
+}
+
+export interface TimeEntryFilter {
+  startDate?: string;
+  endDate?: string;
   employeeId?: string;
-  hasReceipts: boolean;
+  entityType?: EntityType;
+  entityId?: string;
+  hasReceipts?: boolean;
 }
 
 export type QuickLogFormValues = {

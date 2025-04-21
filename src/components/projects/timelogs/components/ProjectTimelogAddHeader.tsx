@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Clock } from 'lucide-react';
-import { ProjectTimelogAddSheet } from './ProjectTimelogAddSheet';
+import ProjectTimelogAddSheet from './ProjectTimelogAddSheet';
 import { Employee } from '@/types/common';
 
 interface ProjectTimelogAddHeaderProps {
@@ -35,11 +35,10 @@ export const ProjectTimelogAddHeader = ({
         onOpenChange={setShowAddSheet}
         projectId={projectId}
         employees={employees}
-        onSuccess={() => {
-          setShowAddSheet(false);
-          onTimeLogAdded();
-        }}
+        onSuccess={onTimeLogAdded}
       />
     </CardHeader>
   );
 };
+
+export default ProjectTimelogAddHeader;

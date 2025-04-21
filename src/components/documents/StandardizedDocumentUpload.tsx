@@ -16,24 +16,29 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { EntityType } from '@/types/common';
+import { EntityType, DocumentCategory } from '@/types/common';
+import { PrefillData } from './types/documentTypes';
 import DropzoneUploader from './components/DropzoneUploader';
 import StandardizedMetadataForm from './components/StandardizedMetadataForm';
 import MobileCaptureWrapper from './components/MobileCaptureWrapper';
 import VendorSelectDialog from '@/components/vendors/VendorSelectDialog';
+import { documentCategories } from './schemas/documentSchema';
 
-// Define schema for document upload
+const allowedCategories = documentCategories as unknown as [string, ...string[]];
+
 const documentUploadSchema = z.object({
-  files: z.array(z.any()).min(1, { message: 'At least one file is required' }),
+  files: z.array(z.instanceof(File)).min(1, { message: 'At least one file is required' }),
   metadata: z.object({
-    entityType: z.enum(
-      ['PROJECT', 'ESTIMATE', 'WORK_ORDER', 'VENDOR', 'SUBCONTRACTOR', 'TIME_ENTRY', 'EMPLOYEE'],
-      {
-        errorMap: () => ({ message: 'Please select a valid entity type' }),
-      }
-    ),
+    entityType: z.enum([
+      'PROJECT', 'ESTIMATE', 'WORK_ORDER', 'VENDOR', 'SUBCONTRACTOR', 
+      'TIME_ENTRY', 'EMPLOYEE', 'CONTACT', 'CUSTOMER', 'EXPENSE', 'ESTIMATE_ITEM'
+    ] as const, {
+      errorMap: () => ({ message: 'Please select a valid entity type' }),
+    }),
     entityId: z.string().min(1, { message: 'Entity ID is required' }),
-    category: z.string().min(1, { message: 'Category is required' }),
+    category: z.enum(allowedCategories, { 
+      message: 'Please select a valid document category' 
+    }),
     isExpense: z.boolean().optional().default(false),
     tags: z.array(z.string()).optional().default([]),
     notes: z.string().optional(),
@@ -46,6 +51,7 @@ const documentUploadSchema = z.object({
     budgetItemId: z.string().optional(),
     parentEntityType: z.string().optional(),
     parentEntityId: z.string().optional(),
+    version: z.number().optional().default(1),
   }),
 });
 
@@ -57,21 +63,7 @@ interface StandardizedDocumentUploadProps {
   onSuccess?: (documentId?: string) => void;
   onCancel?: () => void;
   isReceiptUpload?: boolean;
-  prefillData?: {
-    amount?: number;
-    vendorId?: string;
-    vendorName?: string;
-    materialName?: string;
-    expenseName?: string;
-    notes?: string;
-    category?: string;
-    tags?: string[];
-    budgetItemId?: string;
-    parentEntityType?: string;
-    parentEntityId?: string;
-    expenseType?: string;
-    expenseDate?: Date | string;
-  };
+  prefillData?: PrefillData;
   preventFormPropagation?: boolean;
   allowEntityTypeSelection?: boolean;
   onEntityTypeChange?: (entityType: EntityType) => void;
@@ -94,7 +86,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
   const [showVendorSelector, setShowVendorSelector] = useState(false);
   const { isMobile, hasCamera } = useDeviceCapabilities();
 
-  // Initialize form
   const form = useForm<DocumentUploadFormValues>({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
@@ -102,25 +93,23 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
       metadata: {
         entityType: entityType,
         entityId: entityId,
-        category: isReceiptUpload ? 'receipt' : prefillData?.category || 'other',
-        isExpense: isReceiptUpload || ['receipt', 'invoice'].includes(prefillData?.category || ''),
+        category: (isReceiptUpload ? 'receipt' : (prefillData?.category || 'other')) as DocumentCategory,
+        isExpense: isReceiptUpload || prefillData?.isExpense || prefillData?.is_expense || ['receipt', 'invoice'].includes(prefillData?.category || ''),
         tags: prefillData?.tags || [],
+        version: 1,
       },
     },
   });
 
-  // Watch important form values
   const watchCategory = form.watch('metadata.category');
   const watchEntityType = form.watch('metadata.entityType');
   const watchIsExpense = form.watch('metadata.isExpense');
   const watchFiles = form.watch('files');
 
-  // Handle file selection
   const handleFileSelect = useCallback(
     (files: File[]) => {
       form.setValue('files', files);
 
-      // Create preview URL for the first file if it's an image
       if (files.length > 0 && files[0].type.startsWith('image/')) {
         const url = URL.createObjectURL(files[0]);
         setPreviewURL(url);
@@ -131,7 +120,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     [form]
   );
 
-  // Handle mobile camera capture
   const handleMobileCapture = useCallback(
     (file: File) => {
       handleFileSelect([file]);
@@ -140,7 +128,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     [handleFileSelect]
   );
 
-  // Handle vendor selection
   const handleVendorSelect = useCallback(
     (vendor: any) => {
       form.setValue('metadata.vendorId', vendor.id);
@@ -151,26 +138,22 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     [form]
   );
 
-  // Upload document to Supabase
   const uploadDocument = async (
     data: DocumentUploadFormValues
   ): Promise<{ success: boolean; documentId?: string; error?: any }> => {
     try {
-      const file = data.files[0]; // Currently only handling single files
+      const file = data.files[0];
       const metadata = data.metadata;
 
-      // Generate unique filename
       const timestamp = new Date().getTime();
       const randomString = Math.random().toString(36).substring(2, 10);
       const fileExt = file.name.split('.').pop();
       const fileName = `${timestamp}-${randomString}.${fileExt}`;
 
-      // Create storage path based on entity type and ID
       const entityTypePath = metadata.entityType.toLowerCase().replace('_', '-');
       const entityIdPath = metadata.entityId || 'general';
       const filePath = `${entityTypePath}/${entityIdPath}/${fileName}`;
 
-      // Upload file to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('construction_documents')
         .upload(filePath, file);
@@ -180,7 +163,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
         return { success: false, error: uploadError };
       }
 
-      // Format the expense date if provided
       let expenseDate = null;
       if (metadata.expenseDate) {
         expenseDate =
@@ -189,7 +171,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
             : new Date(metadata.expenseDate).toISOString();
       }
 
-      // Prepare document data for database
       const docData = {
         file_name: file.name,
         file_type: file.type,
@@ -211,7 +192,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
         is_latest_version: true,
       };
 
-      // Insert document record
       const { data: insertedDoc, error: documentError } = await supabase
         .from('documents')
         .insert(docData)
@@ -220,12 +200,10 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
 
       if (documentError) {
         console.error('Document insert error:', documentError);
-        // Try to delete uploaded file on error
         await supabase.storage.from('construction_documents').remove([filePath]);
         return { success: false, error: documentError };
       }
 
-      // Create parent entity relationship if applicable
       if (metadata.parentEntityType && metadata.parentEntityId) {
         await supabase.from('document_relationships').insert({
           source_document_id: insertedDoc.document_id,
@@ -249,34 +227,28 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     }
   };
 
-  // Handle form submission
   const onSubmit = async (data: DocumentUploadFormValues) => {
     try {
       setIsUploading(true);
 
-      // Upload document
       const result = await uploadDocument(data);
 
       if (!result.success) {
         throw new Error(result.error?.message || 'Upload failed');
       }
 
-      // Show success message
       toast({
         title: isReceiptUpload ? 'Receipt uploaded successfully' : 'Document uploaded successfully',
         description: `${data.files[0].name} has been uploaded.`,
         variant: 'default',
       });
 
-      // Clean up preview URL
       if (previewURL) {
         URL.revokeObjectURL(previewURL);
       }
 
-      // Reset form
       form.reset();
 
-      // Call success callback
       if (onSuccess) {
         onSuccess(result.documentId);
       }
@@ -293,7 +265,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     }
   };
 
-  // Handle form submission with propagation prevention
   const handleFormSubmit = useCallback(
     (e: React.FormEvent) => {
       if (preventFormPropagation) {
@@ -304,37 +275,28 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     [form, onSubmit, preventFormPropagation]
   );
 
-  // Handle cancel button
   const handleCancel = useCallback(() => {
-    // Clean up preview URL
     if (previewURL) {
       URL.revokeObjectURL(previewURL);
     }
 
-    // Reset form
     form.reset();
 
-    // Call cancel callback
     if (onCancel) {
       onCancel();
     }
   }, [form, onCancel, previewURL]);
 
-  // Initialize form with prefill data
   useEffect(() => {
-    // Set entity info
     form.setValue('metadata.entityType', entityType);
     form.setValue('metadata.entityId', entityId);
 
-    // Set category based on receipt upload flag or prefill data
-    const category = isReceiptUpload ? 'receipt' : prefillData?.category || 'other';
-    form.setValue('metadata.category', category);
+    const category = isReceiptUpload ? 'receipt' : (prefillData?.category || 'other');
+    form.setValue('metadata.category', category as DocumentCategory);
 
-    // Set expense flag based on category or receipt flag
-    const isExpense = isReceiptUpload || ['receipt', 'invoice'].includes(category);
+    const isExpense = isReceiptUpload || prefillData?.isExpense || prefillData?.is_expense || ['receipt', 'invoice'].includes(category);
     form.setValue('metadata.isExpense', isExpense);
 
-    // Set prefill data if available
     if (prefillData) {
       if (prefillData.amount !== undefined) {
         form.setValue('metadata.amount', prefillData.amount);
@@ -373,14 +335,12 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     }
   }, [form, entityType, entityId, isReceiptUpload, prefillData]);
 
-  // Notify parent of entity type changes
   useEffect(() => {
     if (onEntityTypeChange && watchEntityType) {
       onEntityTypeChange(watchEntityType as EntityType);
     }
   }, [watchEntityType, onEntityTypeChange]);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (previewURL) {
@@ -389,11 +349,10 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     };
   }, [previewURL]);
 
-  // Get appropriate title based on context
   const getTitle = () => {
     if (isReceiptUpload) return 'Upload Receipt';
 
-    switch (watchEntityType) {
+    switch (form.watch('metadata.entityType')) {
       case 'VENDOR':
         return 'Upload Vendor Document';
       case 'SUBCONTRACTOR':
@@ -411,13 +370,12 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     }
   };
 
-  // Get appropriate description based on context
   const getDescription = () => {
     if (isReceiptUpload) {
       return 'Upload receipts for expenses related to this work order or project.';
     }
 
-    switch (watchEntityType) {
+    switch (form.watch('metadata.entityType')) {
       case 'VENDOR':
         return 'Upload documents related to this vendor such as certifications or contracts.';
       case 'SUBCONTRACTOR':
@@ -435,7 +393,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
     }
   };
 
-  // Check if this is a simplified upload (for receipts with prefilled data)
   const simplifiedUpload = isReceiptUpload && prefillData;
 
   return (
@@ -455,7 +412,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
           <CardContent className="p-0">
             <ScrollArea className="h-[60vh] px-6 py-4 md:max-h-[500px]">
               <div className="space-y-6">
-                {/* File Uploader Component */}
                 <DropzoneUploader
                   control={form.control}
                   onFileSelect={handleFileSelect}
@@ -464,7 +420,6 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
                   label={getTitle()}
                 />
 
-                {/* Mobile Capture Component */}
                 {isMobile && hasCamera && (
                   <MobileCaptureWrapper
                     onCapture={handleMobileCapture}
@@ -475,12 +430,11 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
                   />
                 )}
 
-                {/* Metadata Form Component */}
                 <StandardizedMetadataForm
                   form={form}
-                  entityType={watchEntityType as EntityType}
-                  category={watchCategory}
-                  isExpense={watchIsExpense}
+                  entityType={form.watch('metadata.entityType') as EntityType}
+                  category={form.watch('metadata.category')}
+                  isExpense={form.watch('metadata.isExpense')}
                   isReceiptUpload={isReceiptUpload}
                   prefillData={prefillData}
                   allowEntityTypeSelection={allowEntityTypeSelection}
@@ -513,17 +467,15 @@ const StandardizedDocumentUpload: React.FC<StandardizedDocumentUploadProps> = ({
                 ? 'Uploading...'
                 : isReceiptUpload
                   ? 'Upload Receipt'
-                  : `Upload ${watchCategory || 'Document'}`}
+                  : `Upload ${form.watch('metadata.category') || 'Document'}`}
             </Button>
           </CardFooter>
         </form>
       </Form>
 
-      {/* Vendor Selector Dialog */}
       <VendorSelectDialog
         open={showVendorSelector}
         onOpenChange={open => {
-          // Safely update state and prevent potential bubbling issues
           setShowVendorSelector(open);
         }}
         onVendorSelected={handleVendorSelect}

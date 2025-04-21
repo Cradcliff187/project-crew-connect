@@ -1,131 +1,94 @@
-// Script to add database validations for estimate status transitions
-import { supabase } from '../integrations/supabase/client';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
-async function executeSQL(sql: string): Promise<boolean> {
-  console.log(`Executing SQL of length: ${sql.length} characters`);
-
+// Function to execute custom SQL scripts from the database
+export const executeDbValidation = async (
+  functionName: string,
+  params: Record<string, any> = {}
+) => {
   try {
-    const { error } = await supabase.rpc('exec_sql', { sql_string: sql });
+    // List of valid function names that can be called
+    const validFunctions = [
+      'attach_document_to_time_entry',
+      'calculate_vendor_score',
+      'convert_estimate_to_project',
+      'convertestimateitemstobudgetitems',
+      'generate_change_order_number',
+      'generate_customer_id',
+      'generate_estimate_id',
+      'generate_project_id',
+      'generate_subcontractor_id',
+      'generate_vendor_id',
+      'get_document_count_by_entity',
+      'get_document_url',
+      'get_entity_documents',
+      'get_estimate_total',
+      'get_project_document_count',
+      'get_project_progress',
+      'normalize_entity_type',
+      'update_change_order_status',
+      'update_project_status',
+      'update_subcontractor_status',
+      'update_vendor_status',
+      'validate_entity_status_transition',
+      'validate_work_order_status_transition',
+    ] as const;
 
-    if (error) {
-      console.error('Error executing SQL:', error);
-      return false;
+    // Type guard to ensure functionName is valid
+    if (!validFunctions.includes(functionName as any)) {
+      throw new Error(`Invalid function name: ${functionName}`);
     }
 
-    console.log('SQL executed successfully');
-    return true;
-  } catch (err) {
-    console.error('Exception executing SQL:', err);
-    return false;
+    // Call the stored procedure
+    const { data, error } = await supabase.rpc(functionName as any, params);
+
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error(`Error executing ${functionName}:`, error);
+    toast({
+      title: 'Database Error',
+      description: error.message || 'An error occurred while executing database validation',
+      variant: 'destructive',
+    });
+    return null;
   }
-}
+};
 
-async function createStatusValidation(): Promise<boolean> {
-  try {
-    // First check if exec_sql function exists - this is required to run arbitrary SQL
-    try {
-      await supabase
-        .rpc('exec_sql', {
-          sql_string: 'SELECT 1',
-        })
-        .catch(async () => {
-          // If exec_sql doesn't exist, we'll create it directly
-          console.log('Creating exec_sql function...');
-          const { error } = await supabase.from('_exec_sql').select('*').limit(1);
-          if (error) {
-            console.log(
-              'Could not create exec_sql function directly. Please run this SQL in the Supabase SQL editor:'
-            );
-            console.log(`
-            -- Create a function to execute arbitrary SQL (admin only)
-            CREATE OR REPLACE FUNCTION exec_sql(sql_string text) RETURNS void AS $$
-            BEGIN
-              EXECUTE sql_string;
-            END;
-            $$ LANGUAGE plpgsql SECURITY DEFINER;
-          `);
-            return false;
-          }
-        });
-    } catch (err) {
-      console.error('Error checking exec_sql function:', err);
-      return false;
-    }
-
-    // Load the migration file from the db/migrations directory
-    const migrationPath = path.join(
-      process.cwd(),
-      'db',
-      'migrations',
-      '001_convert_estimate_function.sql'
-    );
-
-    try {
-      // Check if the migration file exists
-      if (!fs.existsSync(migrationPath)) {
-        console.error(`Migration file not found: ${migrationPath}`);
-        return false;
-      }
-
-      // Read the migration file content
-      const sqlContent = fs.readFileSync(migrationPath, 'utf8');
-
-      // Execute the migration
-      const success = await executeSQL(sqlContent);
-
-      if (success) {
-        console.log('Migration successful!');
-
-        // Verify that the function exists
-        try {
-          const { data, error } = await supabase.rpc('convert_estimate_to_project', {
-            p_estimate_id: 'TEST-ID-NOT-FOUND',
-          });
-
-          // We expect an error because the test ID doesn't exist,
-          // but the error should be about the estimate not being found,
-          // not about the function not existing.
-          if (error && error.message.includes('Estimate not found')) {
-            console.log('Function exists and is working correctly!');
-            return true;
-          } else if (error && error.message.includes('function')) {
-            console.error('Function was not created properly:', error);
-            return false;
-          }
-        } catch (verifyErr) {
-          console.error('Error verifying function:', verifyErr);
-          return false;
-        }
-      }
-
-      return success;
-    } catch (fileErr) {
-      console.error('Error reading migration file:', fileErr);
-      return false;
-    }
-  } catch (err) {
-    console.error('Error creating validations:', err);
-    return false;
-  }
-
-  return false;
-}
-
-// Execute the function
-createStatusValidation()
-  .then(success => {
-    if (success) {
-      console.log('Database validations created successfully!');
-      console.log('You can now convert estimates to projects with a single call:');
-      console.log('supabase.rpc("convert_estimate_to_project", { p_estimate_id: "EST-364978" })');
-    } else {
-      console.log('Failed to create all validations.');
-    }
-  })
-  .catch(err => {
-    console.error('Error:', err);
+// Sample function to get document count by entity type
+export const getDocumentCountByEntity = async (entityType: string, entityId: string) => {
+  return executeDbValidation('get_document_count_by_entity', {
+    p_entity_type: entityType,
+    p_entity_id: entityId,
   });
+};
 
-export {};
+// Sample function to get all entity documents
+export const getEntityDocuments = async (entityType: string, entityId: string) => {
+  return executeDbValidation('get_entity_documents', {
+    p_entity_type: entityType,
+    p_entity_id: entityId,
+  });
+};
+
+// Generate utilities to test validators
+export const testValidators = async () => {
+  const testFunctions = [
+    {
+      name: 'validate_entity_status_transition',
+      params: { p_entity_type: 'PROJECT', p_current_status: 'draft', p_new_status: 'active' },
+    },
+    {
+      name: 'get_document_count_by_entity',
+      params: { p_entity_type: 'PROJECT', p_entity_id: 'test-project-1' },
+    },
+  ];
+
+  const results: Record<string, any> = {};
+
+  for (const func of testFunctions) {
+    results[func.name] = await executeDbValidation(func.name, func.params);
+  }
+
+  return results;
+};

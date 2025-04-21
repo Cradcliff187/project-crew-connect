@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import EmployeeSelect from './form/EmployeeSelect';
 import { QuickLogFormValues } from '@/types/timeTracking';
+import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -273,7 +274,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             </select>
           </div>
 
-          <EmployeeSelect value={employeeId} onChange={setEmployeeId} employees={employees} />
+          <EmployeeSelect value={employeeId} onChange={setEmployeeId} employees={adaptEmployeesFromDatabase(employees)} />
 
           <TimeRangeSelector
             startTime={startTime}

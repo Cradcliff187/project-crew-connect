@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { TimeEntry } from '@/types/timeTracking';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -11,23 +10,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatTime } from './utils/timeUtils';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { Edit, Trash } from 'lucide-react';
+import { Edit, Trash, Receipt } from 'lucide-react';
 import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
 import TimeEntryEditDialog from './TimeEntryEditDialog';
 import { useTimeEntryOperations } from './hooks/useTimeEntryOperations';
+import { format } from 'date-fns';
+import { Card, CardContent } from '@/components/ui/card';
+import { Employee } from '@/types/common';
+import { getEmployeeFullName } from '@/utils/employeeAdapter';
+import { TimeEntry } from '@/types/timeTracking';
 
 interface TimeEntryListProps {
-  entries: TimeEntry[];
-  isLoading: boolean;
-  onEntryChange: () => void;
-  isMobile?: boolean;
+  timeEntries: TimeEntry[];
+  employees: Employee[];
+  showDate?: boolean;
+  onEntryChange?: () => void;
 }
 
-export const TimeEntryList: React.FC<TimeEntryListProps> = ({
-  entries,
-  isLoading,
+const TimeEntryList: React.FC<TimeEntryListProps> = ({
+  timeEntries,
+  employees,
+  showDate = true,
   onEntryChange,
-  isMobile = false,
 }) => {
   const {
     showDeleteDialog,
@@ -44,76 +48,17 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     isSaving,
   } = useTimeEntryOperations(onEntryChange);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#0485ea]"></div>
-      </div>
-    );
-  }
+  const sortedEntries = [...timeEntries].sort(
+    (a, b) => new Date(b.date_worked).getTime() - new Date(a.date_worked).getTime()
+  );
 
-  if (entries.length === 0) {
-    return (
-      <div className="text-center p-8 text-gray-500">
-        <p>No time entries found for this period.</p>
-        <p className="text-sm mt-2">Click "Add Entry" to log your time.</p>
-      </div>
-    );
-  }
+  const getEmployeeById = (employeeId: string): Employee | undefined => {
+    if (!employeeId) return undefined;
+    return employees.find(emp => emp.id === employeeId || emp.employee_id === employeeId);
+  };
 
-  if (isMobile) {
-    return (
-      <div className="space-y-4">
-        {entries.map(entry => (
-          <div key={entry.id} className="bg-white border rounded-lg p-4 shadow-sm">
-            <div className="flex justify-between">
-              <div>
-                <div className="font-medium">{formatDate(entry.date_worked)}</div>
-                <div className="text-sm text-gray-600">
-                  {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-medium">{entry.hours_worked.toFixed(1)} hrs</div>
-                <div className="text-sm text-gray-600">{entry.employee_name || 'Unassigned'}</div>
-              </div>
-            </div>
-
-            {entry.notes && <div className="mt-2 text-sm border-t pt-2">{entry.notes}</div>}
-
-            <div className="mt-3 flex justify-end space-x-2">
-              <Button variant="outline" size="sm" className="h-8" onClick={() => startEdit(entry)}>
-                <Edit className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-red-500 hover:text-red-700"
-                onClick={() => startDelete(entry)}
-              >
-                <Trash className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        ))}
-
-        <TimeEntryDeleteDialog
-          timeEntry={entryToDelete}
-          open={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          onConfirm={confirmDelete}
-          isDeleting={isDeleting}
-        />
-
-        <TimeEntryEditDialog
-          timeEntry={entryToEdit}
-          open={showEditDialog}
-          onOpenChange={setShowEditDialog}
-          onSave={saveEdit}
-          isSaving={isSaving}
-        />
-      </div>
-    );
+  if (sortedEntries.length === 0) {
+    return <div className="text-center py-4 text-muted-foreground">No time entries found</div>;
   }
 
   return (
@@ -121,46 +66,58 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
+            {showDate && <TableHead>Date</TableHead>}
+            <TableHead>Employee</TableHead>
             <TableHead>Time</TableHead>
             <TableHead>Hours</TableHead>
-            <TableHead>Employee</TableHead>
             <TableHead>Notes</TableHead>
+            <TableHead>Receipts</TableHead>
             <TableHead className="w-24 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {entries.map(entry => (
-            <TableRow key={entry.id}>
-              <TableCell>{formatDate(entry.date_worked)}</TableCell>
-              <TableCell>
-                {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
-              </TableCell>
-              <TableCell>{entry.hours_worked.toFixed(1)}</TableCell>
-              <TableCell>{entry.employee_name || 'Unassigned'}</TableCell>
-              <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end space-x-2">
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(entry)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-red-500 hover:text-red-700"
-                    onClick={() => startDelete(entry)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+          {sortedEntries.map(entry => {
+            const employee = getEmployeeById(entry.employee_id);
+            const fullEntry: TimeEntry = {
+              entity_type: 'unknown',
+              entity_id: 'unknown',
+              ...entry,
+            };
+            return (
+              <TableRow key={fullEntry.id}>
+                {showDate && <TableCell>{formatDate(entry.date_worked)}</TableCell>}
+                <TableCell>{employee ? getEmployeeFullName(employee) : 'Unknown'}</TableCell>
+                <TableCell>
+                  {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
+                </TableCell>
+                <TableCell>{entry.hours_worked.toFixed(1)}</TableCell>
+                <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
+                <TableCell>
+                  {fullEntry.has_receipts && <Receipt className="h-4 w-4 text-green-600" />}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="ghost" size="icon" onClick={() => startEdit(fullEntry)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-700"
+                      onClick={() => startDelete(fullEntry)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 
       <TimeEntryDeleteDialog
-        timeEntry={entryToDelete}
+        timeEntry={entryToDelete as TimeEntry}
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         onConfirm={confirmDelete}
@@ -168,7 +125,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
       />
 
       <TimeEntryEditDialog
-        timeEntry={entryToEdit}
+        timeEntry={entryToEdit as TimeEntry}
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         onSave={saveEdit}
@@ -177,3 +134,6 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     </div>
   );
 };
+
+export default TimeEntryList;
+export { TimeEntryList };
