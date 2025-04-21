@@ -7,19 +7,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { StatusType } from '@/types/common';
 
 import EstimateDetailContent from '@/components/estimates/detail/EstimateDetailContent';
 import EstimateDocumentsTab from '@/components/estimates/details/EstimateDocumentsTab';
 import EstimateEmailTab from '@/components/estimates/detail/EstimateEmailTab';
 import EstimateRevisionsTab from '@/components/estimates/details/EstimateRevisionsTab';
-import EstimateDetailLayout from '@/components/estimates/detail/EstimateDetailLayout';
 import { useEstimateDetails } from '@/components/estimates/hooks/useEstimateDetails';
 import DocumentShareDialog from '@/components/estimates/detail/dialogs/DocumentShareDialog';
 import EstimateStatusControl from '@/components/estimates/detail/EstimateStatusControl';
 import EstimateActions from '@/components/estimates/EstimateActions';
-import CompactEstimateSidebar from '@/components/estimates/detail/CompactEstimateSidebar';
 import EstimateRevisionDialog from '@/components/estimates/detail/dialogs/EstimateRevisionDialog';
 import PDFExportButton from '@/components/estimates/detail/PDFExportButton';
+import EstimateConvertDialog from '@/components/estimates/detail/dialogs/EstimateConvertDialog';
+import { isEstimateConverted } from '@/services/estimateService';
 
 const EstimateDetailPage = () => {
   const { estimateId } = useParams();
@@ -33,6 +34,7 @@ const EstimateDetailPage = () => {
   const [revisions, setRevisions] = useState<any[]>([]);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
 
   // Use the custom hook for fetching estimate details
   const {
@@ -103,133 +105,145 @@ const EstimateDetailPage = () => {
   };
 
   const fetchEstimateData = async (id: string) => {
-    try {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
+    let determinedRevision: any = null; // Store the revision to be displayed
+    let allRevisionsData: any[] = []; // Store all revisions for the list
 
-      // Fetch the estimate data with error handling
+    try {
+      // 1. Fetch base estimate data
       const { data: estimateData, error: estimateError } = await supabase
         .from('estimates')
         .select('*')
         .eq('estimateid', id)
         .single();
 
-      if (estimateError) {
-        throw estimateError;
-      }
+      if (estimateError) throw estimateError;
 
-      // Fetch the current revision
-      const { data: revisionData, error: revisionError } = await supabase
+      // 2. Try find already selected revision
+      const { data: selectedRevisionData, error: selectedRevisionError } = await supabase
         .from('estimate_revisions')
         .select('*')
         .eq('estimate_id', id)
-        .eq('is_current', true)
-        .order('created_at', { ascending: false })
-        .single();
+        .eq('is_selected_for_view', true)
+        .maybeSingle(); // Use maybeSingle to handle zero or one result
 
-      if (revisionError && revisionError.code !== 'PGRST116') {
-        console.error('Error fetching current revision:', revisionError);
-        // If we couldn't find a revision marked as current, try to get the latest one
-        const { data: latestRevision, error: latestRevisionError } = await supabase
+      if (selectedRevisionError && selectedRevisionError.code !== 'PGRST116') {
+        // Ignore PGRST116 (No rows found), but throw other errors
+        throw selectedRevisionError;
+      }
+
+      if (selectedRevisionData) {
+        console.log('Found pre-selected revision:', selectedRevisionData.id);
+        determinedRevision = selectedRevisionData;
+      } else {
+        // 3. If none selected, find the latest revision by version
+        console.log('No revision selected, finding latest...');
+        const { data: latestRevisionData, error: latestRevisionError } = await supabase
           .from('estimate_revisions')
           .select('*')
           .eq('estimate_id', id)
           .order('version', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
-        if (!latestRevisionError) {
-          setCurrentRevision(latestRevision);
+        if (latestRevisionError && latestRevisionError.code !== 'PGRST116') {
+          throw latestRevisionError;
+        }
 
-          // Mark this revision as current
-          await supabase
+        if (latestRevisionData) {
+          // 4. Latest found, ensure it's marked selected
+          console.log('Found latest revision:', latestRevisionData.id, 'Marking as selected...');
+          determinedRevision = latestRevisionData;
+          // Ensure only this one is marked selected (atomic if possible, otherwise two steps)
+          // Using the hook function which handles this logic
+          await setRevisionAsCurrent(determinedRevision.id, id);
+          // Update local object in case the hook doesnt immediately reflect state
+          determinedRevision.is_selected_for_view = true;
+        } else {
+          // 5. No revisions exist, create the first one
+          console.log('No revisions exist, creating initial V1...');
+          const { data: newRevision, error: newRevisionError } = await supabase
             .from('estimate_revisions')
-            .update({ is_current: true })
-            .eq('id', latestRevision.id);
+            .insert({
+              estimate_id: id,
+              version: 1,
+              is_selected_for_view: true,
+              revision_date: new Date().toISOString(),
+              amount: estimateData.estimateamount,
+              status: estimateData.status || 'draft', // Default to draft if estimate status is null
+            })
+            .select()
+            .single();
 
-          // Update the amount if needed
-          await updateRevisionAmountsIfNeeded(latestRevision.id);
-
+          if (newRevisionError) throw newRevisionError;
+          console.log('Created initial revision:', newRevision.id);
+          determinedRevision = newRevision;
           toast({
-            title: 'Revision Updated',
-            description: 'The latest revision has been marked as current.',
+            title: 'New Revision Created',
+            description: 'Initial revision V1 created for this estimate.',
             variant: 'default',
           });
-        } else {
-          // Create a new revision if none exists
-          if (latestRevisionError.code === 'PGRST116') {
-            const { data: newRevision, error: newRevisionError } = await supabase
-              .from('estimate_revisions')
-              .insert({
-                estimate_id: id,
-                version: 1,
-                is_current: true,
-                revision_date: new Date().toISOString(),
-                amount: estimateData.estimateamount,
-                status: estimateData.status,
-              })
-              .select()
-              .single();
-
-            if (newRevisionError) {
-              console.error('Error creating new revision:', newRevisionError);
-            } else {
-              setCurrentRevision(newRevision);
-
-              toast({
-                title: 'New Revision Created',
-                description: 'A new revision has been created for this estimate.',
-                variant: 'default',
-              });
-            }
-          }
-        }
-      } else if (revisionData) {
-        setCurrentRevision(revisionData);
-
-        // Update the amount if needed
-        if (revisionData.id) {
-          await updateRevisionAmountsIfNeeded(revisionData.id);
         }
       }
 
-      // Fetch the estimate items (for the current revision if available)
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('estimate_items')
-        .select('*')
-        .eq('estimate_id', id)
-        .eq('revision_id', currentRevision?.id || revisionData?.id)
-        .order('created_at', { ascending: true });
+      // 6. We now have a determinedRevision, fetch its items
+      let itemsData: any[] = [];
+      let itemsError: any = null;
+      if (determinedRevision && determinedRevision.id) {
+        console.log('Fetching items for determined revision ID:', determinedRevision.id);
+        const { data, error } = await supabase
+          .from('estimate_items')
+          .select('*')
+          .eq('estimate_id', id)
+          .eq('revision_id', determinedRevision.id)
+          .order('created_at', { ascending: true });
+        itemsData = data || [];
+        itemsError = error;
+      } else {
+        // This case should ideally not be reached with the new logic
+        console.error('Critical error: Could not determine a revision ID to fetch items for.');
+      }
 
       if (itemsError) {
         console.error('Error fetching estimate items:', itemsError);
+        // Optionally, inform the user, but don't crash
       }
 
-      // Fetch all revisions for this estimate
-      const { data: allRevisions, error: revisionsError } = await supabase
+      // 7. Fetch all revisions for the history list
+      const { data: allRevisionsResult, error: revisionsError } = await supabase
         .from('estimate_revisions')
         .select('*')
         .eq('estimate_id', id)
         .order('version', { ascending: false });
 
       if (revisionsError) {
-        console.error('Error fetching estimate revisions:', revisionsError);
+        console.error('Error fetching estimate revisions list:', revisionsError);
       } else {
-        setRevisions(allRevisions || []);
-
-        // Update amounts for all revisions
-        if (allRevisions && allRevisions.length > 0) {
-          for (const revision of allRevisions) {
-            await updateRevisionAmountsIfNeeded(revision.id);
-          }
-        }
+        allRevisionsData = allRevisionsResult || [];
+        // Ensure the determinedRevision in the list reflects the selected state
+        allRevisionsData = allRevisionsData.map(rev => ({
+          ...rev,
+          is_selected_for_view: rev.id === determinedRevision?.id,
+        }));
       }
 
-      // Set the data
+      // 8. Set component states
+      setCurrentRevision(determinedRevision);
+      setRevisions(allRevisionsData);
       setEstimate({
         ...estimateData,
-        items: itemsData || [],
-        currentRevision: currentRevision || revisionData,
+        items: itemsData,
+        // Pass the determined revision data for consistency
+        currentRevision: determinedRevision,
+      });
+
+      // 9. Update revision amounts if needed (can run async without blocking UI)
+      updateRevisionAmountsIfNeeded(determinedRevision.id);
+      allRevisionsData.forEach(rev => {
+        if (rev.id !== determinedRevision.id) {
+          updateRevisionAmountsIfNeeded(rev.id);
+        }
       });
     } catch (error: any) {
       console.error('Error fetching estimate data:', error);
@@ -250,7 +264,20 @@ const EstimateDetailPage = () => {
     navigate('/estimates');
   };
 
-  const handleStatusChange = () => {
+  const handleStatusChange = (id?: string, newStatus?: string) => {
+    if (newStatus === 'converted') {
+      toast({
+        title: 'Conversion Successful',
+        description: 'Estimate has been successfully converted to a project.',
+        variant: 'success',
+      });
+    } else if (newStatus) {
+      toast({
+        title: 'Status Updated',
+        description: `Estimate status has been updated to ${newStatus}.`,
+      });
+    }
+
     handleRefresh();
   };
 
@@ -261,9 +288,9 @@ const EstimateDetailPage = () => {
   };
 
   const handleConvert = async () => {
-    // Implementation for converting the estimate to a project would go here
-    // After successful conversion, refresh the data
-    handleRefresh();
+    console.log('EstimateDetailPage: Convert button clicked, opening dialog...');
+    // Open the conversion dialog with the current revision
+    setConvertDialogOpen(true);
   };
 
   const handleRevisionSelect = async (revisionId: string) => {
@@ -274,26 +301,26 @@ const EstimateDetailPage = () => {
     if (selectedRevision) {
       setCurrentRevision(selectedRevision);
 
-      if (!selectedRevision.is_current && estimateId) {
+      // We still call setRevisionAsCurrent to ensure flags are correctly set in DB
+      // even if the selected one might already appear selected locally.
+      if (estimateId) {
         // First set this as the current revision in database
         await setRevisionAsCurrent(revisionId, estimateId);
       }
 
       toast({
         title: `Viewing Revision ${selectedRevision.version}`,
-        description: selectedRevision.is_current
-          ? 'This is the current revision'
-          : 'This revision is now set as current',
+        description: 'Now viewing this revision. Use the History tab to change selection.',
       });
 
       // Fetch items for this specific revision
-      if (estimateId) {
+      if (estimateId && selectedRevision.id) {
         // Fetch items for this specific revision
         supabase
           .from('estimate_items')
           .select('*')
           .eq('estimate_id', estimateId)
-          .eq('revision_id', revisionId)
+          .eq('revision_id', selectedRevision.id)
           .order('created_at', { ascending: true })
           .then(({ data, error }) => {
             if (error) {
@@ -369,11 +396,6 @@ const EstimateDetailPage = () => {
                 <h1 className="text-xl font-bold">
                   Estimate #{estimate.estimateid.substring(4, 10)}
                 </h1>
-                <EstimateStatusControl
-                  estimateId={estimate.estimateid}
-                  currentStatus={estimate.status}
-                  onStatusChange={handleStatusChange}
-                />
               </div>
               <p className="text-sm text-muted-foreground hidden sm:block">
                 {estimate.customername || 'No customer'} • Created{' '}
@@ -388,6 +410,8 @@ const EstimateDetailPage = () => {
               <PDFExportButton
                 estimateId={estimate.estimateid}
                 revisionId={currentRevision.id}
+                revisionVersion={currentRevision.version}
+                viewType="internal"
                 className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
               />
             )}
@@ -416,63 +440,57 @@ const EstimateDetailPage = () => {
           </div>
         </div>
 
-        {/* Main Content */}
-        <EstimateDetailLayout
-          sidebar={
-            <CompactEstimateSidebar
-              estimate={estimate}
-              revisions={displayRevisions}
-              currentRevisionId={currentRevision?.id}
-              onRevisionSelect={handleRevisionSelect}
-            />
-          }
-          main={
-            <Card>
-              <CardContent className="p-0">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid grid-cols-4 w-full rounded-none border-b">
-                    <TabsTrigger value="overview">Details</TabsTrigger>
-                    <TabsTrigger value="documents">Documents</TabsTrigger>
-                    <TabsTrigger value="email">Communication</TabsTrigger>
-                    <TabsTrigger value="history">History</TabsTrigger>
-                  </TabsList>
+        {/* Main Content - Remove Layout Wrapper and Sidebar */}
+        {/* Render Tabs directly, taking full width */}
+        <Card>
+          <CardContent className="p-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-4 w-full rounded-none border-b">
+                <TabsTrigger value="overview">Details</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="email">Communication</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
+              </TabsList>
 
-                  <div className="p-6">
-                    <TabsContent value="overview" className="mt-0">
-                      <EstimateDetailContent data={estimate} onRefresh={handleRefresh} />
-                    </TabsContent>
+              <div className="p-6">
+                <TabsContent value="overview" className="mt-0">
+                  <EstimateDetailContent data={estimate} onRefresh={handleRefresh} />
+                </TabsContent>
 
-                    <TabsContent value="documents" className="mt-0">
-                      <EstimateDocumentsTab
-                        estimateId={estimate.estimateid}
-                        estimateName={
-                          estimate.projectname || `Estimate #${estimate.estimateid.substring(0, 6)}`
-                        }
-                        currentRevisionId={currentRevision?.id}
-                        currentVersion={currentRevision?.version}
-                        onShareDocument={() => {}} // This will be implemented in the component
-                      />
-                    </TabsContent>
+                <TabsContent value="documents" className="mt-0">
+                  <EstimateDocumentsTab
+                    estimateId={estimate.estimateid}
+                    estimateName={
+                      estimate.projectname || `Estimate #${estimate.estimateid.substring(0, 6)}`
+                    }
+                    currentRevisionId={currentRevision?.id}
+                    currentVersion={currentRevision?.version}
+                    onShareDocument={() => {}} // This will be implemented in the component
+                  />
+                </TabsContent>
 
-                    <TabsContent value="email" className="mt-0">
-                      <EstimateEmailTab estimate={estimate} onEmailSent={handleRefresh} />
-                    </TabsContent>
+                <TabsContent value="email" className="mt-0">
+                  <EstimateEmailTab estimate={estimate} onEmailSent={handleRefresh} />
+                </TabsContent>
 
-                    <TabsContent value="history" className="mt-0">
-                      <EstimateRevisionsTab
-                        estimateId={estimate.estimateid}
-                        revisions={displayRevisions}
-                        currentRevisionId={currentRevision?.id}
-                        onRevisionSelect={handleRevisionSelect}
-                      />
-                    </TabsContent>
-                  </div>
-                </Tabs>
-              </CardContent>
-            </Card>
-          }
-        />
+                <TabsContent value="history" className="mt-0">
+                  <EstimateRevisionsTab
+                    estimateId={estimate.estimateid}
+                    revisions={displayRevisions}
+                    currentRevisionId={currentRevision?.id}
+                    onRevisionSelect={handleRevisionSelect}
+                    projectId={estimate?.projectid}
+                    convertedRevisionId={estimate?.converted_revision_id}
+                    onRefresh={handleRefresh}
+                    contingencyPercentage={estimate?.contingency_percentage}
+                  />
+                </TabsContent>
+              </div>
+            </Tabs>
+          </CardContent>
+        </Card>
 
+        {/* Dialogs remain unchanged */}
         {/* Document share dialog */}
         <DocumentShareDialog
           open={shareDialogOpen}
@@ -495,6 +513,28 @@ const EstimateDetailPage = () => {
           estimateId={estimate.estimateid}
           currentVersion={currentRevision?.version || 1}
           onSuccess={handleRefresh}
+        />
+
+        {/* Convert to Project dialog */}
+        <EstimateConvertDialog
+          open={convertDialogOpen}
+          onOpenChange={setConvertDialogOpen}
+          estimate={{
+            id: estimate.estimateid,
+            client: estimate.customername,
+            project: estimate.projectname,
+            description: estimate.jobdescription,
+            location: {
+              address: estimate.sitelocationaddress,
+              city: estimate.sitelocationcity,
+              state: estimate.sitelocationstate,
+              zip: estimate.sitelocationzip,
+            },
+            amount: estimate.estimateamount,
+            status: estimate.status,
+          }}
+          onStatusChange={handleStatusChange}
+          onRefresh={handleRefresh}
         />
       </div>
     </PageTransition>

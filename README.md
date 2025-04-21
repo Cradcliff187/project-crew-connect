@@ -81,6 +81,34 @@ This project is built with .
 
 Simply open [Lovable](https://lovable.dev/projects/af57cde4-ad57-433e-815c-c17780578b75) and click on Share -> Publish.
 
+## Database Structure
+
+This project uses a structured approach to database management, with all database-related files organized in the `db` directory:
+
+- `/db/migrations` - Sequentially numbered migration files to apply changes to the database
+- `/db/functions` - Production-ready database function definitions
+- `/db/scripts` - Utility scripts for database maintenance and validation
+- `/db/tests` - Test scripts for database functionality
+- `/db/archive` - Historical versions of database objects for reference
+
+### Key Database Functions
+
+- `convert_estimate_to_project` - Converts an estimate to a project with all associated data
+
+### Applying Migrations
+
+You can apply database migrations by running:
+
+```sh
+# Install dependencies
+npm install
+
+# Run the migration script
+node db/scripts/apply-migrations.js
+```
+
+For more detailed information, see the [Database Documentation](./db/README.md).
+
 ## I want to use a custom domain - is that possible?
 
 We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)

@@ -2,11 +2,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { formatDate, formatHours, formatCurrency } from '@/lib/utils';
 import { ProjectTimelogAddHeader } from './ProjectTimelogAddHeader';
+import { Employee } from '@/types/common';
 
 interface ProjectTimelogsInfoSectionProps {
   timelogs: any[];
   loading: boolean;
-  employees: { employee_id: string; name: string }[];
+  employees: Employee[];
   projectId: string;
   onDelete: (id: string) => void;
   onTimeLogAdded: () => void;

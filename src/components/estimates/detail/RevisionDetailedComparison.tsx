@@ -20,7 +20,7 @@ import {
   ChevronUp,
   Filter,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import { EstimateItem, EstimateRevision, RevisionComparisonField } from '../types/estimateTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -599,6 +599,25 @@ const RevisionDetailedComparison: React.FC<RevisionDetailedComparisonProps> = ({
               </CollapsibleContent>
             </Collapsible>
           )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <div className="text-sm font-medium mb-1">
+              Current Revision (Version {currentRevision.version})
+            </div>
+            <div className="text-xs text-muted-foreground mb-2">
+              {formatDate(currentRevision.revision_date)}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm font-medium mb-1">
+              Comparison Revision (Version {compareRevision.version})
+            </div>
+            <div className="text-xs text-muted-foreground mb-2">
+              {formatDate(compareRevision.revision_date)}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

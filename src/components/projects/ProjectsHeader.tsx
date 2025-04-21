@@ -1,7 +1,7 @@
 import { PlusCircle, Search, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import ProjectDialog from './ProjectDialog';
+import CreateProjectWizard from './createWizard/CreateProjectWizard';
 
 interface ProjectsHeaderProps {
   searchQuery: string;
@@ -60,10 +60,13 @@ const ProjectsHeader = ({
       </div>
 
       {showAddDialog && (
-        <ProjectDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
-          onProjectSaved={onProjectAdded}
+        <CreateProjectWizard
+          isOpen={showAddDialog}
+          onClose={closeAddDialog}
+          onProjectCreated={() => {
+            onProjectAdded();
+            closeAddDialog();
+          }}
         />
       )}
     </div>

@@ -69,6 +69,8 @@ interface EstimateRevisionDialogProps {
   estimateId: string;
   currentVersion: number;
   onSuccess?: () => void;
+  sourceRevisionId?: string;
+  sourceRevisionVersion?: number;
 }
 
 interface RevisionFormValues {
@@ -91,6 +93,8 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
   estimateId,
   currentVersion,
   onSuccess,
+  sourceRevisionId,
+  sourceRevisionVersion,
 }) => {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
@@ -112,6 +116,8 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100);
   const printableContentRef = useRef<HTMLDivElement>(null);
+
+  const [sourceRevisionIdUsed, setSourceRevisionIdUsed] = useState<string | null>(null);
 
   const form = useForm<RevisionFormValues>({
     defaultValues: {
@@ -188,25 +194,32 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
     }
   }, [validateCurrentStep, goToNextStep]);
 
-  // Fetch estimate data when the dialog opens
+  // Determine the version number for the new revision
+  const newRevisionVersion = currentVersion + 1;
+
+  // Fetch estimate data and potentially source revision items when the dialog opens
   useEffect(() => {
     if (open && estimateId) {
       console.log('Loading estimate data for ID:', estimateId);
-      // Get estimate data
+      // Store the source ID used when opening, to prevent re-fetching if props change while open
+      setSourceRevisionIdUsed(sourceRevisionId || null);
+      const revisionIdToFetchItemsFrom = sourceRevisionId || null;
+
+      // Get estimate data (needed for location, etc.)
       supabase
         .from('estimates')
         .select('*, customers(customername, address, city, state, zip)')
         .eq('estimateid', estimateId)
         .single()
-        .then(({ data: estimateData, error }) => {
+        .then(async ({ data: estimateData, error }) => {
           if (!error && estimateData) {
             console.log('Loaded estimate data:', estimateData);
             setEstimateData(estimateData);
 
-            // Set form defaults
+            // Set form defaults (excluding items for now)
             form.reset({
-              notes: '',
-              revisionItems: [],
+              notes: sourceRevisionId ? `Revision based on v${sourceRevisionVersion}` : '',
+              revisionItems: [], // Items will be loaded below
               contingencyPercentage: estimateData.contingency_percentage || 0,
               updateLocation: false,
               location: {
@@ -227,54 +240,105 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
               });
             }
 
-            // Get current revision ID
-            supabase
-              .from('estimate_revisions')
-              .select('id')
-              .eq('estimate_id', estimateId)
-              .eq('is_current', true)
-              .single()
-              .then(({ data: revData, error }) => {
-                if (!error && revData) {
-                  console.log('Found current revision ID:', revData.id);
-                  setCurrentRevisionId(revData.id);
+            let revisionIdForItems: string | null = null;
+            // Determine which revision ID to use for fetching items
+            if (revisionIdToFetchItemsFrom) {
+              // Use the explicitly provided source revision ID
+              console.log(
+                'Fetching items based on provided sourceRevisionId:',
+                revisionIdToFetchItemsFrom
+              );
+              revisionIdForItems = revisionIdToFetchItemsFrom;
+            } else {
+              // If no source ID provided, find the ID of the currently selected revision
+              console.log('No sourceRevisionId provided, finding currently selected revision...');
+              const { data: selectedRevData, error: selectedRevError } = await supabase
+                .from('estimate_revisions')
+                .select('id')
+                .eq('estimate_id', estimateId)
+                .eq('is_selected_for_view', true)
+                .single();
 
-                  // Get current items for this revision
-                  supabase
-                    .from('estimate_items')
-                    .select('*')
-                    .eq('estimate_id', estimateId)
-                    .eq('revision_id', revData.id)
-                    .then(({ data: itemsData, error: itemsError }) => {
-                      if (!itemsError && itemsData) {
-                        console.log('Loaded items for revision:', itemsData.length, 'items');
-                        setCurrentItems(itemsData);
+              if (!selectedRevError && selectedRevData) {
+                console.log('Found selected revision ID:', selectedRevData.id);
+                revisionIdForItems = selectedRevData.id;
+              } else {
+                console.error('Error finding selected revision:', selectedRevError);
+                // Fallback: Maybe try latest if selected fails?
+                // For now, proceed without items if no source/selected found
+              }
+            }
 
-                        // Pre-populate the revision items
-                        const transformedItems = itemsData.map(item => ({
-                          ...item,
-                          // Store the original ID as a separate property, not replacing the real ID
-                          original_id: item.id, // Keep reference to the original item ID
-                          id: `new-${Date.now()}-${Math.random()}`, // Temporary ID for the form
-                          revision_id: undefined, // Will be set on save
-                        }));
+            // Store the ID of the revision whose items are being copied
+            // (which might be different from the *previously* selected revision if using sourceRevisionId)
+            setCurrentRevisionId(revisionIdForItems);
 
-                        form.setValue('revisionItems', transformedItems);
-                        console.log('Set form revision items:', transformedItems.length, 'items');
-                      } else {
-                        console.error('Error loading items:', itemsError);
-                      }
+            // Fetch items if we have a valid ID
+            if (revisionIdForItems) {
+              console.log('Fetching items for revision ID:', revisionIdForItems);
+              supabase
+                .from('estimate_items')
+                .select('*')
+                .eq('estimate_id', estimateId)
+                .eq('revision_id', revisionIdForItems)
+                .then(({ data: itemsData, error: itemsError }) => {
+                  if (!itemsError && itemsData) {
+                    console.log('Loaded items for revision:', itemsData.length, 'items');
+                    setCurrentItems(itemsData);
+
+                    // Pre-populate the revision items
+                    const transformedItems = itemsData.map(item => ({
+                      ...item,
+                      original_id: item.id, // Keep reference to the source item ID
+                      id: `new-${Date.now()}-${Math.random()}`, // Temporary ID for the form
+                      revision_id: undefined,
+                    }));
+
+                    form.setValue('revisionItems', transformedItems);
+                    console.log('Set form revision items:', transformedItems.length, 'items');
+
+                    // Explicitly calculate initial totals after setting items
+                    const initialSubtotal = transformedItems.reduce(
+                      (sum, item) => sum + (Number(item.total_price) || 0),
+                      0
+                    );
+                    const initialTotalCost = transformedItems.reduce(
+                      (sum, item) => sum + (Number(item.cost) || 0) * (Number(item.quantity) || 0),
+                      0
+                    );
+                    setSubtotal(initialSubtotal);
+                    setTotalCost(initialTotalCost);
+                    console.log(
+                      `Initial calculation: Subtotal=${initialSubtotal}, TotalCost=${initialTotalCost}`
+                    );
+                  } else {
+                    console.error('Error loading items:', itemsError);
+                    toast({
+                      title: 'Error loading items',
+                      description: 'Could not load items from the source revision.',
+                      variant: 'destructive',
                     });
-                } else {
-                  console.error('Error finding current revision:', error);
-                }
-              });
+                    form.setValue('revisionItems', []); // Ensure items are empty if load fails
+                  }
+                });
+            } else {
+              console.warn(
+                'Proceeding without pre-populating items as no valid source revision ID was determined.'
+              );
+              form.setValue('revisionItems', []); // Ensure items are empty
+            }
           } else {
             console.error('Error loading estimate:', error);
+            toast({
+              title: 'Error Loading Estimate',
+              description: 'Could not load base estimate data.',
+              variant: 'destructive',
+            });
+            onOpenChange(false); // Close dialog if base estimate fails
           }
         });
     }
-  }, [open, estimateId, form]);
+  }, [open, estimateId, sourceRevisionId, sourceRevisionVersion, form, toast, onOpenChange]);
 
   useEffect(() => {
     // Create style element
@@ -369,7 +433,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       }
 
       // Calculate new version number
-      const newVersion = currentVersion + 1;
+      const newVersion = newRevisionVersion;
 
       // Check if version already exists to prevent duplicates
       const { data: existingVersion, error: versionCheckError } = await supabase
@@ -394,7 +458,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
           estimate_id: estimateId,
           version: newVersion,
           revision_date: new Date().toISOString(),
-          is_current: true,
+          is_selected_for_view: true,
           notes: values.notes,
           status: values.status || 'draft',
           amount: totalAmount, // Include the amount in the revision record
@@ -408,7 +472,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       if (currentRevisionId) {
         await supabase
           .from('estimate_revisions')
-          .update({ is_current: false })
+          .update({ is_selected_for_view: false })
           .eq('id', currentRevisionId);
       }
 
@@ -620,7 +684,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
     const originalTitle = document.title;
 
     // Set a specific title for the printed document
-    document.title = `Estimate-Revision-${currentVersion + 1}-${new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}`;
+    document.title = `Estimate-Revision-${newRevisionVersion}-${new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}`;
 
     // Print the document
     window.print();
@@ -644,6 +708,14 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       handlePrint();
     }, 500);
   };
+
+  // Update Dialog Title/Description based on source
+  const dialogTitle = sourceRevisionIdUsed
+    ? `Create Revision (Based on V${sourceRevisionVersion})`
+    : 'Create New Revision';
+  const dialogDescription = sourceRevisionIdUsed
+    ? `Creating Version ${newRevisionVersion} based on items from Version ${sourceRevisionVersion}.`
+    : `Create Version ${newRevisionVersion} of this estimate. The current highest version is ${currentVersion}.`;
 
   // Content for each step
   const detailsContent = (
@@ -862,7 +934,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
               <div className="flex justify-between mb-4 border-b pb-3">
                 <div>
                   <h2 className="text-xl font-bold text-[#0485ea]">ESTIMATE REVISION</h2>
-                  <p className="text-sm text-gray-600">Version: {currentVersion + 1}</p>
+                  <p className="text-sm text-gray-600">Version: {newRevisionVersion}</p>
                   <p className="text-sm text-gray-600">
                     Date: {formatDate(new Date().toISOString())}
                   </p>
@@ -1084,7 +1156,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
       <div className="flex justify-between mb-4 border-b pb-3">
         <div>
           <h2 className="text-xl font-bold text-[#0485ea]">ESTIMATE REVISION</h2>
-          <p className="text-sm text-gray-600">Version: {currentVersion + 1}</p>
+          <p className="text-sm text-gray-600">Version: {newRevisionVersion}</p>
           <p className="text-sm text-gray-600">Date: {formatDate(new Date().toISOString())}</p>
         </div>
         <div className="text-right">
@@ -1203,7 +1275,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
         <DialogContent className="max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[90vh] p-0 flex flex-col overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-2">
             <DialogTitle className="text-2xl font-semibold text-[#0485ea] flex items-center">
-              Create New Revision
+              {dialogTitle}
               {!isFirstStep && (
                 <Button
                   type="button"
@@ -1217,9 +1289,7 @@ const EstimateRevisionDialog: React.FC<EstimateRevisionDialogProps> = ({
                 </Button>
               )}
             </DialogTitle>
-            <DialogDescription>
-              Create a new revision of this estimate. The current version is {currentVersion}.
-            </DialogDescription>
+            <DialogDescription>{dialogDescription}</DialogDescription>
           </DialogHeader>
 
           <FormProvider {...form}>

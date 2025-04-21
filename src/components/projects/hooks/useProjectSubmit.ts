@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ProjectFormValues } from '../schemas/projectFormSchema';
+import { ProjectFormValues as BaseProjectFormValues } from '../schemas/projectFormSchema';
+import { BudgetItemFormValues } from '../createWizard/Step2_BudgetLineItems'; // Import budget item type
+
+// Extend the base form values to include budget items
+export interface ProjectFormValues extends BaseProjectFormValues {
+  budgetItems?: BudgetItemFormValues[];
+}
 
 export const useProjectSubmit = (onSuccess: () => void) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,6 +96,48 @@ export const useProjectSubmit = (onSuccess: () => void) => {
       }
 
       console.log('Project created successfully:', project[0]);
+      const newProjectId = project[0]?.projectid;
+
+      if (!newProjectId) {
+        throw new Error('Failed to get project ID after creation.');
+      }
+
+      // --- Add logic to save budget items ---
+      if (data.budgetItems && data.budgetItems.length > 0) {
+        console.log(
+          `Attempting to save ${data.budgetItems.length} budget items for project ${newProjectId}`
+        );
+        const itemsToInsert = data.budgetItems.map(item => ({
+          project_id: newProjectId,
+          category: item.category,
+          description: item.description,
+          estimated_amount: item.estimated_amount || 0,
+          actual_amount: 0, // Default actual to 0
+          // Map other fields if they exist in both types and the table
+          // cost: item.cost,
+          // markup_percentage: item.markup_percentage,
+          // quantity: item.quantity,
+          // document_id: item.document_id,
+        }));
+
+        const { error: budgetInsertError } = await supabase
+          .from('project_budget_items')
+          .insert(itemsToInsert);
+
+        if (budgetInsertError) {
+          console.error('Error saving project budget items:', budgetInsertError);
+          // Don't throw error here, project was created, but warn the user
+          toast({
+            title: 'Warning: Budget Items Not Saved',
+            description: `Project ${data.projectName} created, but budget items failed to save: ${budgetInsertError.message}`,
+            variant: 'destructive',
+            duration: 7000, // Longer duration for warning
+          });
+        } else {
+          console.log('Budget items saved successfully.');
+        }
+      }
+      // --- End budget item logic ---
 
       // If this project came from an estimate, update the estimate with the project ID
       if (data.estimateId) {

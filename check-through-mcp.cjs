@@ -26,16 +26,11 @@ proxy.stdout.on('data', data => {
     if (response.type === 'pong') {
       console.log('MCP ping successful! Now checking tables...');
 
-      // Query for project_documents table
+      // Use direct SQL query instead
       proxy.stdin.write(
         JSON.stringify({
           type: 'query',
-          table: 'information_schema.tables',
-          filter: {
-            table_schema: 'public',
-            table_name: 'project_documents',
-          },
-          select: '*',
+          sql: "SELECT * FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'project_documents'",
         }) + '\n'
       );
     } else if (response.data !== undefined) {
@@ -45,16 +40,11 @@ proxy.stdout.on('data', data => {
       } else {
         console.log('Table does not exist or is empty');
 
-        // Next check the function
+        // Next check the function with direct SQL
         proxy.stdin.write(
           JSON.stringify({
             type: 'query',
-            table: 'information_schema.routines',
-            filter: {
-              routine_schema: 'public',
-              routine_name: 'convert_estimate_to_project',
-            },
-            select: '*',
+            sql: "SELECT * FROM information_schema.routines WHERE routine_schema = 'public' AND routine_name = 'convert_estimate_to_project'",
           }) + '\n'
         );
       }

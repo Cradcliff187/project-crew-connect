@@ -1,3 +1,4 @@
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkOrder } from '@/types/workOrder';
@@ -14,7 +15,6 @@ import WorkOrderTimelogs from '../WorkOrderTimelogs';
 import WorkOrderExpenses from '../WorkOrderExpenses';
 import WorkOrderMaterials from '../WorkOrderMaterials';
 import ChangeOrdersList from '@/components/changeOrders/WorkOrderChangeOrdersList';
-import WorkOrderProjectLink from '../WorkOrderProjectLink';
 
 interface WorkOrderDetailContentProps {
   workOrder: WorkOrder;
@@ -80,54 +80,11 @@ const WorkOrderDetailContent = ({
           <Card>
             <CardContent className="pt-6">
               <WorkOrderDescription description={workOrder.description} />
-
-              <div className="my-6 border-t pt-6">
-                <WorkOrderProgressCard workOrder={workOrder} onProgressUpdate={onStatusChange} />
-              </div>
+              <WorkOrderProgressCard workOrder={workOrder} onProgressUpdate={onStatusChange} />
             </CardContent>
           </Card>
 
-          <div className="md:grid md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-base font-medium mb-4">Summary</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This work order is currently{' '}
-                    <span className="font-medium">{workOrder.progress || 0}% complete</span>.
-                    {workOrder.status === 'COMPLETED'
-                      ? ' The work has been completed.'
-                      : workOrder.progress && workOrder.progress > 0
-                        ? ' Work is in progress.'
-                        : ' Work has not started yet.'}
-                  </p>
-
-                  {workOrder.scheduled_date && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Scheduled for completion by{' '}
-                      {new Date(workOrder.scheduled_date).toLocaleDateString()}.
-                    </p>
-                  )}
-
-                  {workOrder.actual_hours > 0 && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Total hours worked:{' '}
-                      <span className="font-medium">{workOrder.actual_hours.toFixed(1)} hrs</span>
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-            <div>
-              <WorkOrderCostSummary workOrder={workOrder} />
-            </div>
-          </div>
-
-          {/* Add Project Link component */}
-          <WorkOrderProjectLink
-            workOrderId={workOrder.work_order_id}
-            onLinkComplete={onStatusChange}
-          />
+          <WorkOrderCostSummary workOrder={workOrder} />
         </TabsContent>
 
         <TabsContent value="documents">

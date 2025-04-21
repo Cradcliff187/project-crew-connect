@@ -28,43 +28,52 @@ export function useTimeEntries() {
   // Function to fetch time entries for the specified date range
   const fetchEntriesForDateRange = useCallback(async (range: DateRange) => {
     setLoading(true);
-
     try {
       const start = format(range.startDate, 'yyyy-MM-dd');
       const end = format(range.endDate, 'yyyy-MM-dd');
 
-      console.log(`Fetching time entries from ${start} to ${end}`);
+      console.log(`Fetching time entries (using IMPLICIT JOIN) from ${start} to ${end}`);
 
+      // Revert to using the implicit join syntax (like the detail hooks)
       const { data, error } = await supabase
         .from('time_entries')
-        .select('*, employees(first_name, last_name, hourly_rate)')
+        .select('*, employees(first_name, last_name, hourly_rate)') // Implicit join
         .gte('date_worked', start)
         .lte('date_worked', end)
         .order('date_worked', { ascending: false });
 
       if (error) {
+        console.error('Supabase error fetching time entries:', error);
         throw error;
       }
 
-      // Process the data to include employee names and ensure types
+      // Restore standard mapping logic
       const enhancedData = (data || []).map(entry => {
-        // Get employee name from joined table if available
         let employeeName = 'Unassigned';
-        if (entry.employees) {
-          employeeName = `${entry.employees.first_name} ${entry.employees.last_name}`;
+        const empData = entry.employees as any;
+        if (empData && empData.first_name && empData.last_name) {
+          employeeName = `${empData.first_name} ${empData.last_name}`;
+        } else {
+          // REMOVE this empty block
+          // if (entry.employee_id) {
+          // }
         }
 
-        // Format the entity type to match our TimeEntry type
-        return {
+        // Ensure the final object matches the TimeEntry type
+        const timeEntryResult: TimeEntry = {
           ...entry,
           entity_type: entry.entity_type as 'work_order' | 'project',
           employee_name: employeeName,
         };
+        // Remove the nested employees field AFTER spreading
+        delete (timeEntryResult as any).employees;
+
+        return timeEntryResult;
       });
 
       setEntries(enhancedData);
     } catch (error) {
-      console.error('Error fetching time entries:', error);
+      console.error('Error fetching time entries catch block:', error);
       setEntries([]);
     } finally {
       setLoading(false);

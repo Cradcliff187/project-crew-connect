@@ -32,7 +32,7 @@ export interface EstimateRevision {
   revision_date: string;
   amount?: number;
   notes?: string;
-  is_current: boolean;
+  is_selected_for_view: boolean;
   pdf_document_id?: string;
   status?: string;
   created_at?: string;
@@ -62,6 +62,36 @@ export interface Estimate {
   sitelocationzip?: string;
   items: EstimateItem[];
   currentRevision?: EstimateRevision;
+}
+
+// --- Types for Revision Comparison ---
+export interface ItemChange {
+  field: keyof EstimateItem | string;
+  previousValue: any;
+  currentValue: any;
+}
+
+export interface ChangedItemDetail {
+  current: EstimateItem;
+  previous: EstimateItem;
+  changes: ItemChange[];
+  priceDifference: number;
+  percentageDifference: number;
+}
+
+export interface RevisionComparisonResult {
+  revisionA: EstimateRevision;
+  revisionB: EstimateRevision;
+  addedItems: EstimateItem[];
+  removedItems: EstimateItem[];
+  changedItems: ChangedItemDetail[];
+  summary: {
+    totalItemsAdded: number;
+    totalItemsRemoved: number;
+    totalItemsChanged: number;
+    netAmountChange: number;
+    netItemsPriceChange: number;
+  };
 }
 
 export interface RevisionComparisonField {

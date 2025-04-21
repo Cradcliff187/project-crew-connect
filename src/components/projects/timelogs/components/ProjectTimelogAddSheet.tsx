@@ -10,12 +10,13 @@ import { DatePicker } from '@/components/ui/date-picker';
 import TimeRangeSelector from '@/components/timeTracking/form/TimeRangeSelector';
 import { calculateHours } from '@/components/timeTracking/utils/timeUtils';
 import EmployeeSelect from '@/components/timeTracking/form/EmployeeSelect';
+import { Employee } from '@/types/common';
 
 interface ProjectTimelogAddSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
-  employees: { employee_id: string; name: string }[];
+  employees: Employee[];
   onSuccess: () => void;
 }
 

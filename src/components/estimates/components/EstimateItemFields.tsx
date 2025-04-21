@@ -54,6 +54,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+// Function to generate UUID (use browser crypto if available)
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  } else {
+    // Fallback for environments without crypto.randomUUID (less robust)
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0,
+        v = c == 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+};
+
 const ITEMS_PER_PAGE = 10;
 
 type SortDirection = 'asc' | 'desc';
@@ -86,9 +100,10 @@ const EstimateItemFields = memo(() => {
     shouldUnregister: false,
   });
 
-  // Function to add a new item with default values
+  // Function to add a new item with default values and a temporary ID
   const addNewItem = useCallback(() => {
     append({
+      temp_item_id: generateUUID(), // Add temporary UUID for linking
       description: '',
       item_type: 'none',
       cost: '0',
@@ -744,11 +759,12 @@ const EstimateItemFields = memo(() => {
             {activeItemIndex !== null && (
               <>
                 <div className="text-xs text-gray-500 mb-2">
-                  Using temp ID: {form.getValues('temp_id') || 'pending'}
+                  Using item temp ID:{' '}
+                  {form.getValues(`items.${activeItemIndex}.temp_item_id`) || 'pending'}
                 </div>
                 <EnhancedDocumentUpload
                   entityType="ESTIMATE_ITEM"
-                  entityId={form.getValues('temp_id') || 'pending'}
+                  entityId={form.getValues(`items.${activeItemIndex}.temp_item_id`) || 'pending'}
                   onSuccess={handleDocumentUploadSuccess}
                   onCancel={() => setShowDocumentDialog(false)}
                   preventFormPropagation={true}

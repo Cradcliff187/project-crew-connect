@@ -15,8 +15,6 @@ import { Edit, Trash } from 'lucide-react';
 import TimeEntryDeleteDialog from './TimeEntryDeleteDialog';
 import TimeEntryEditDialog from './TimeEntryEditDialog';
 import { useTimeEntryOperations } from './hooks/useTimeEntryOperations';
-import { supabase } from '@/integrations/supabase/client';
-import { Employee, getEmployeeFullName } from '@/types/common';
 
 interface TimeEntryListProps {
   entries: TimeEntry[];
@@ -45,46 +43,6 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
     saveEdit,
     isSaving,
   } = useTimeEntryOperations(onEntryChange);
-  const [employeeMap, setEmployeeMap] = useState<{ [key: string]: Employee }>({});
-
-  // Fetch employee data using the standardized Employee interface
-  useEffect(() => {
-    const fetchEmployeeData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('employees')
-          .select('employee_id, first_name, last_name, role, hourly_rate, status');
-
-        if (error) {
-          console.error('Error fetching employees:', error);
-          return;
-        }
-
-        if (data) {
-          // Store complete employee objects by ID
-          const employeeNameMap = data.reduce(
-            (acc, emp) => {
-              acc[emp.employee_id] = emp;
-              return acc;
-            },
-            {} as { [key: string]: Employee }
-          );
-          setEmployeeMap(employeeNameMap);
-        }
-      } catch (error) {
-        console.error('Error fetching employee data:', error);
-      }
-    };
-
-    fetchEmployeeData();
-  }, []);
-
-  // Use the standardized helper function to get employee names
-  const getEmployeeName = (employeeId: string | undefined | null): string => {
-    if (!employeeId) return 'Unassigned';
-    const employee = employeeMap[employeeId];
-    return employee ? getEmployeeFullName(employee) : 'Unknown';
-  };
 
   if (isLoading) {
     return (
@@ -117,7 +75,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
               </div>
               <div className="text-right">
                 <div className="font-medium">{entry.hours_worked.toFixed(1)} hrs</div>
-                <div className="text-sm text-gray-600">{getEmployeeName(entry.employee_id)}</div>
+                <div className="text-sm text-gray-600">{entry.employee_name || 'Unassigned'}</div>
               </div>
             </div>
 
@@ -179,7 +137,7 @@ export const TimeEntryList: React.FC<TimeEntryListProps> = ({
                 {formatTime(entry.start_time)} - {formatTime(entry.end_time)}
               </TableCell>
               <TableCell>{entry.hours_worked.toFixed(1)}</TableCell>
-              <TableCell>{getEmployeeName(entry.employee_id)}</TableCell>
+              <TableCell>{entry.employee_name || 'Unassigned'}</TableCell>
               <TableCell className="max-w-xs truncate">{entry.notes}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end space-x-2">

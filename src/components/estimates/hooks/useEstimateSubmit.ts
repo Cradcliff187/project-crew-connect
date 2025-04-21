@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { EstimateFormValues } from '../schemas/estimateFormSchema';
+import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
 import { useNavigate } from 'react-router-dom';
+
+// Interface for items being processed, extending the named EstimateItem type
+interface ProcessingItem extends EstimateItem {
+  // No need to redefine temp_item_id as it's now in the base EstimateItem type
+}
 
 // Keep track of active submissions to prevent duplicates
 const activeSubmissions = new Set();
@@ -156,7 +161,7 @@ export const useEstimateSubmit = () => {
         .insert({
           estimate_id: estimateId,
           version: 1,
-          is_current: true,
+          is_selected_for_view: true,
           status: status, // Use the provided status here too
         })
         .select('id')
@@ -171,13 +176,18 @@ export const useEstimateSubmit = () => {
 
       // Create the line items
       console.log('Creating line items for estimate');
-      const lineItems = data.items.map(item => {
-        console.log('Processing line item:', item);
-        const cost = parseFloat(item.cost) || 0;
-        const markup_percentage = parseFloat(item.markup_percentage) || 0;
+      // Keep track of temporary IDs and item data
+      const itemsWithTempIds: ProcessingItem[] = data.items;
+      const lineItemsToInsert = itemsWithTempIds.map(item => {
+        // Exclude temp_item_id from the object sent to DB
+        const { temp_item_id, ...dbItem } = item;
+
+        console.log('Processing line item:', dbItem);
+        const cost = parseFloat(dbItem.cost) || 0;
+        const markup_percentage = parseFloat(dbItem.markup_percentage) || 0;
         const markup_amount = cost * (markup_percentage / 100);
         const unit_price = cost + markup_amount;
-        const quantity = parseFloat(item.quantity || '1') || 1;
+        const quantity = parseFloat(dbItem.quantity || '1') || 1;
         const total_price = unit_price * quantity;
         const gross_margin = markup_amount * quantity;
         const gross_margin_percentage = cost > 0 ? (markup_amount / cost) * 100 : 0;
@@ -185,8 +195,8 @@ export const useEstimateSubmit = () => {
         return {
           estimate_id: estimateId,
           revision_id: revisionId,
-          description: item.description,
-          item_type: item.item_type,
+          description: dbItem.description,
+          item_type: dbItem.item_type,
           cost: cost,
           markup_percentage: markup_percentage,
           markup_amount: markup_amount,
@@ -195,22 +205,70 @@ export const useEstimateSubmit = () => {
           total_price: total_price,
           gross_margin: gross_margin,
           gross_margin_percentage: gross_margin_percentage,
-          vendor_id: item.vendor_id || null,
-          subcontractor_id: item.subcontractor_id || null,
-          document_id: item.document_id || null,
+          vendor_id: dbItem.vendor_id || null,
+          subcontractor_id: dbItem.subcontractor_id || null,
+          document_id: dbItem.document_id || null, // Include document_id attached to item
         };
       });
 
       // Insert the line items
-      console.log(`Inserting ${lineItems.length} line items`);
-      const { error: itemsError } = await supabase.from('estimate_items').insert(lineItems);
+      console.log(`Inserting ${lineItemsToInsert.length} line items`);
+      const { error: itemsError } = await supabase.from('estimate_items').insert(lineItemsToInsert);
 
       if (itemsError) {
         console.error('Error creating estimate items:', itemsError);
         throw new Error(`Error creating estimate items: ${itemsError.message}`);
       }
 
-      // Get the temp ID used for documents
+      // --- START: New logic to update item document links ---
+      // Fetch the inserted items back to get their permanent IDs
+      console.log('[Document Update] Fetching inserted items to map temp IDs...');
+      const { data: insertedItems, error: fetchInsertedError } = await supabase
+        .from('estimate_items')
+        .select('id, description') // Select permanent ID and description (or other unique identifier)
+        .eq('revision_id', revisionId);
+
+      if (fetchInsertedError) {
+        console.error('[Document Update] Error fetching inserted items:', fetchInsertedError);
+        // Non-critical error, proceed without updating item doc links
+      } else if (insertedItems && insertedItems.length > 0) {
+        console.log('[Document Update] Found inserted items:', insertedItems);
+        // Create a map from temp_item_id to permanent DB id
+        const tempToPermanentIdMap = new Map<string, string>();
+        itemsWithTempIds.forEach(originalItem => {
+          // Find the corresponding inserted item (matching by description might be fragile, improve if possible)
+          const insertedMatch = insertedItems.find(
+            inserted => inserted.description === originalItem.description
+          );
+          if (insertedMatch && originalItem.temp_item_id) {
+            tempToPermanentIdMap.set(originalItem.temp_item_id, insertedMatch.id);
+          }
+        });
+        console.log('[Document Update] Temp ID to Permanent ID map:', tempToPermanentIdMap);
+
+        // Update documents linked via temporary item IDs
+        for (const [tempItemId, permanentItemId] of tempToPermanentIdMap.entries()) {
+          console.log(
+            `[Document Update] Updating documents linked to temp item ID ${tempItemId} to use permanent ID ${permanentItemId}`
+          );
+          const { error: updateDocError } = await supabase
+            .from('documents')
+            .update({ entity_id: permanentItemId })
+            .eq('entity_type', 'ESTIMATE_ITEM')
+            .eq('entity_id', tempItemId); // Find docs linked via temp ID
+
+          if (updateDocError) {
+            console.error(
+              `[Document Update] Error updating documents for temp ID ${tempItemId}:`,
+              updateDocError
+            );
+            // Log error but continue processing other items
+          }
+        }
+      }
+      // --- END: New logic to update item document links ---
+
+      // Get the temp ID used for estimate-level documents
       const tempId = data.temp_id || '';
       console.log('[Document Update] Using temp ID for document updates:', tempId);
 
@@ -257,7 +315,7 @@ export const useEstimateSubmit = () => {
       }
 
       // Calculate total amount
-      const total = lineItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
+      const total = lineItemsToInsert.reduce((sum, item) => sum + (item.total_price || 0), 0);
       const contingencyAmount = total * (parseFloat(data.contingency_percentage || '0') / 100);
       const estimateTotal = total + contingencyAmount;
 

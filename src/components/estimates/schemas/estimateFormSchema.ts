@@ -14,6 +14,7 @@ export const estimateFormSchema = z.object({
   items: z
     .array(
       z.object({
+        temp_item_id: z.string().optional(),
         description: z.string().min(1, { message: 'Description is required' }),
         quantity: z.string().default('1'),
         unit_price: z.string().default('0'),
@@ -63,4 +64,5 @@ export type EstimateItem = {
   document_id?: string;
   description?: string;
   notes?: string;
+  temp_item_id?: string; // Added temporary item ID
 };

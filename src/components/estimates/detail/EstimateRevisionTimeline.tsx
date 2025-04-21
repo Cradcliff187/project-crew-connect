@@ -89,12 +89,12 @@ const EstimateRevisionTimeline: React.FC<EstimateRevisionTimelineProps> = ({
                       v{revision.version}
                     </Badge>
 
-                    {revision.is_current && !isCurrent && (
+                    {revision.is_selected_for_view && !isCurrent && (
                       <Badge
                         variant="outline"
                         className="ml-2 bg-blue-50 text-blue-800 border-blue-200"
                       >
-                        Current
+                        Selected View
                       </Badge>
                     )}
                   </div>

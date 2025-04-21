@@ -84,7 +84,12 @@ const EstimateDetailView: React.FC<EstimateDetailViewProps> = ({
   };
 
   const handleConvert = () => {
-    console.log('Opening convert dialog from EstimateDetailView for estimate:', data.estimateid);
+    console.log(
+      'EstimateDetailView: Opening convert dialog for estimate:',
+      data.estimateid,
+      'with status:',
+      data.status
+    );
     setConvertDialogOpen(true);
   };
 

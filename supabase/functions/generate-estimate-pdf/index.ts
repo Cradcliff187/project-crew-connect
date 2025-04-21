@@ -9,7 +9,8 @@ serve(async req => {
   }
 
   try {
-    const { estimate_id, revision_id, items } = await req.json();
+    // Only need estimate_id and revision_id from request body now
+    const { estimate_id, revision_id } = await req.json();
 
     if (!estimate_id || !revision_id) {
       return new Response(
@@ -35,9 +36,24 @@ serve(async req => {
       }
     );
 
+    // Fetch the specific revision details to get the version number
+    const { data: revisionData, error: revisionError } = await supabaseClient
+      .from('estimate_revisions')
+      .select('version')
+      .eq('id', revision_id)
+      .eq('estimate_id', estimate_id) // Ensure revision belongs to estimate
+      .single();
+
+    if (revisionError) {
+      console.error('Error fetching revision data:', revisionError);
+      throw new Error(`Could not find revision ${revision_id}: ${revisionError.message}`);
+    }
+
+    const revisionVersion = revisionData?.version || 1; // Default to 1 if version not found (shouldn't happen)
+
     // Generate a unique storage path for the PDF
     const timestamp = new Date().getTime();
-    const fileName = `estimate-${estimate_id}-v${items[0]?.revision_version || '1'}-${timestamp}.pdf`;
+    const fileName = `estimate-${estimate_id}-v${revisionVersion}-${timestamp}.pdf`;
     const storagePath = `estimates/${estimate_id}/${fileName}`;
 
     // Since we can't generate a PDF on the server in this example, we'll create a placeholder document

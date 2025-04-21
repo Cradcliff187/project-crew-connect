@@ -13,6 +13,7 @@ export type EstimateType = {
   client: string;
   project: string;
   date: string;
+  latestRevisionDate?: string;
   amount: number;
   status: StatusType | string;
   versions: number;

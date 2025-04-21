@@ -17,9 +17,9 @@ const EstimateDetailLayout: React.FC<EstimateDetailLayoutProps> = ({
   compact = false,
 }) => {
   return (
-    <div className={`grid grid-cols-1 lg:grid-cols-3 gap-4 ${compact ? 'lg:gap-3' : 'lg:gap-6'}`}>
+    <div className={`grid grid-cols-1 lg:grid-cols-4 gap-4 ${compact ? 'lg:gap-3' : 'lg:gap-6'}`}>
       <div className="lg:col-span-1 space-y-3">{sidebar}</div>
-      <div className="lg:col-span-2">{main}</div>
+      <div className="lg:col-span-3">{main}</div>
     </div>
   );
 };

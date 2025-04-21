@@ -1003,7 +1003,7 @@ export type Database = {
           document_id: string | null;
           estimate_id: string;
           id: string;
-          is_current: boolean | null;
+          is_selected_for_view: boolean | null;
           notes: string | null;
           pdf_document_id: string | null;
           revision_by: string | null;
@@ -1021,7 +1021,7 @@ export type Database = {
           document_id?: string | null;
           estimate_id: string;
           id?: string;
-          is_current?: boolean | null;
+          is_selected_for_view?: boolean | null;
           notes?: string | null;
           pdf_document_id?: string | null;
           revision_by?: string | null;
@@ -1039,7 +1039,7 @@ export type Database = {
           document_id?: string | null;
           estimate_id?: string;
           id?: string;
-          is_current?: boolean | null;
+          is_selected_for_view?: boolean | null;
           notes?: string | null;
           pdf_document_id?: string | null;
           revision_by?: string | null;

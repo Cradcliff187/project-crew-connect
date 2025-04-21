@@ -10,7 +10,8 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRightLeft, Loader2 } from 'lucide-react';
 import useRevisionComparison from '../hooks/useRevisionComparison';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { EstimateRevision } from '../types/estimateTypes';
 
 interface RevisionComparePanelProps {
   estimateId: string;
@@ -44,6 +45,10 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
       setCompareRevisionId(temp);
     }
   };
+
+  // Extract information from current selections
+  const currentRevision = revisions.find(rev => rev.id === currentRevisionId);
+  const comparisonRevision = revisions.find(rev => rev.id === compareRevisionId);
 
   if (revisions.length < 2) {
     return (

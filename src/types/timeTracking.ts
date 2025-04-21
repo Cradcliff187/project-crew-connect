@@ -85,12 +85,6 @@ export interface Entity {
   status?: string;
 }
 
-export interface Employee {
-  employee_id: string;
-  name: string;
-  hourly_rate?: number;
-}
-
 export interface EntityDetails {
   name: string;
   type: 'work_order' | 'project';

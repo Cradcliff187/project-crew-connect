@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MoreHorizontal,
   FileEdit,
@@ -8,6 +8,7 @@ import {
   XCircle,
   ArrowRightLeft,
   Share2,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { StatusType } from '@/types/common';
 import { useNavigate } from 'react-router-dom';
+import { isEstimateConverted } from '@/services/estimateService';
 
 interface EstimateActionsProps {
   status: StatusType;
@@ -45,6 +47,29 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
   estimateId,
 }) => {
   const navigate = useNavigate();
+  const [isConverted, setIsConverted] = useState<boolean>(
+    status === 'converted' // Initial value based on status
+  );
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+
+  useEffect(() => {
+    // Check if the estimate is already converted when the component mounts
+    const checkConversionStatus = async () => {
+      if (estimateId) {
+        setIsCheckingStatus(true);
+        try {
+          const converted = await isEstimateConverted(estimateId);
+          setIsConverted(converted);
+        } catch (error) {
+          console.error('Error checking conversion status:', error);
+        } finally {
+          setIsCheckingStatus(false);
+        }
+      }
+    };
+
+    checkConversionStatus();
+  }, [estimateId, status]);
 
   const handleEdit = () => {
     if (onEdit) {
@@ -80,10 +105,30 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
           </DropdownMenuItem>
         )}
 
-        {status !== 'cancelled' && status !== 'converted' && onConvert && (
-          <DropdownMenuItem onClick={onConvert}>
-            <ArrowRightLeft className="mr-2 h-4 w-4" />
-            Convert to Project
+        {!isConverted && onConvert && (
+          <DropdownMenuItem
+            onClick={() => {
+              console.log(
+                'EstimateActions: Convert option clicked from dropdown for estimate:',
+                estimateId
+              );
+              onConvert();
+            }}
+            disabled={isCheckingStatus}
+          >
+            {isCheckingStatus ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRightLeft className="mr-2 h-4 w-4" />
+            )}
+            {isCheckingStatus ? 'Checking status...' : 'Convert to Project'}
+          </DropdownMenuItem>
+        )}
+
+        {isConverted && (
+          <DropdownMenuItem disabled>
+            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+            Already Converted
           </DropdownMenuItem>
         )}
 
@@ -114,10 +159,33 @@ const EstimateActions: React.FC<EstimateActionsProps> = ({
         </Button>
       )}
 
-      {status !== 'cancelled' && status !== 'converted' && onConvert && (
-        <Button size={size} variant="outline" className="justify-start" onClick={onConvert}>
-          <ArrowRightLeft className="mr-2 h-4 w-4" />
-          Convert to Project
+      {!isConverted && onConvert && (
+        <Button
+          size={size}
+          variant="outline"
+          className="justify-start"
+          onClick={() => {
+            console.log(
+              'EstimateActions: Convert button clicked from vertical menu for estimate:',
+              estimateId
+            );
+            onConvert();
+          }}
+          disabled={isCheckingStatus}
+        >
+          {isCheckingStatus ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowRightLeft className="mr-2 h-4 w-4" />
+          )}
+          {isCheckingStatus ? 'Checking status...' : 'Convert to Project'}
+        </Button>
+      )}
+
+      {isConverted && (
+        <Button size={size} variant="outline" className="justify-start text-green-600" disabled>
+          <CheckCircle className="mr-2 h-4 w-4" />
+          Already Converted
         </Button>
       )}
 

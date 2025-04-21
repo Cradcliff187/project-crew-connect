@@ -4,6 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { EstimateType } from '../EstimatesTable';
 import { toast } from '@/hooks/use-toast';
 
+// Define the expected structure from the RPC call
+interface EstimateWithLatestRevision extends EstimateType {
+  latest_revision_date?: string;
+}
+
 export const useEstimates = () => {
   const [estimates, setEstimates] = useState<EstimateType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,63 +19,37 @@ export const useEstimates = () => {
       setLoading(true);
       setError(null);
 
-      // Get all estimates with their current revision version
-      const { data, error } = await supabase
-        .from('estimates')
-        .select(
-          `
-          estimateid,
-          customerid,
-          customername,
-          projectname,
-          "job description",
-          estimateamount,
-          contingencyamount,
-          contingency_percentage,
-          datecreated,
-          sentdate,
-          approveddate,
-          status,
-          sitelocationaddress,
-          sitelocationcity,
-          sitelocationstate,
-          sitelocationzip
-        `
-        )
-        .order('datecreated', { ascending: false });
+      // Call the database function to get estimates with the latest revision date
+      // Specify 'any' for the return type initially, as we will map it manually
+      const { data, error } = await supabase.rpc('get_estimates_with_latest_revision_date');
+      // Note: We will need to create the 'get_estimates_with_latest_revision_date'
+      // function in the database separately.
 
       if (error) {
         throw error;
       }
 
-      // Get revision counts for each estimate
-      const revisionsPromises = data.map(async estimate => {
-        const { count, error: countError } = await supabase
-          .from('estimate_revisions')
-          .select('id', { count: 'exact', head: true })
-          .eq('estimate_id', estimate.estimateid);
+      // Ensure data is an array before mapping
+      if (!data || !Array.isArray(data)) {
+        console.warn('RPC call did not return an array:', data);
+        setEstimates([]);
+        return;
+      }
 
-        if (countError) {
-          console.error('Error fetching revision count:', countError);
-          return 0;
-        }
-
-        return count || 0;
-      });
-
-      const revisionCounts = await Promise.all(revisionsPromises);
-
-      // Format the data for the UI, preserving both ID and name separately
-      const formattedEstimates: EstimateType[] = data.map((estimate, index) => ({
-        id: estimate.estimateid,
-        customerId: estimate.customerid || '', // Store customer ID separately
-        client: estimate.customername || 'Unknown Client', // Use name for display
-        project: estimate.projectname || `Estimate ${estimate.estimateid}`,
-        date: estimate.datecreated || new Date().toISOString(),
+      // Format the data for the UI
+      // Assume the RPC function returns an array of objects matching EstimateWithLatestRevision structure
+      const formattedEstimates: EstimateType[] = data.map((estimate: any) => ({
+        id: estimate.id || estimate.estimateid, // Handle potential id variations
+        customerId: estimate.customerid || '',
+        client: estimate.customername || 'Unknown Client',
+        project: estimate.projectname || `Estimate ${estimate.id || estimate.estimateid}`,
+        date: estimate.datecreated || new Date().toISOString(), // Use original creation date
+        latestRevisionDate:
+          estimate.latest_revision_date || estimate.datecreated || new Date().toISOString(), // Use latest revision date, fallback to creation date
         amount: estimate.estimateamount || 0,
         status: (estimate.status as StatusType) || 'draft',
-        versions: revisionCounts[index],
-        description: estimate['job description'],
+        versions: estimate.versions || 0, // Assuming RPC returns version count
+        description: estimate['job description'] || estimate.description,
         location: {
           address: estimate.sitelocationaddress,
           city: estimate.sitelocationcity,
@@ -78,6 +57,13 @@ export const useEstimates = () => {
           zip: estimate.sitelocationzip,
         },
       }));
+
+      // Sort by latest revision date descending before setting state
+      formattedEstimates.sort((a, b) => {
+        const dateA = a.latestRevisionDate ? new Date(a.latestRevisionDate).getTime() : 0;
+        const dateB = b.latestRevisionDate ? new Date(b.latestRevisionDate).getTime() : 0;
+        return dateB - dateA; // Descending order
+      });
 
       setEstimates(formattedEstimates);
     } catch (error: any) {

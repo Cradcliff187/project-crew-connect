@@ -3,10 +3,11 @@ import { CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Clock } from 'lucide-react';
 import { ProjectTimelogAddSheet } from './ProjectTimelogAddSheet';
+import { Employee } from '@/types/common';
 
 interface ProjectTimelogAddHeaderProps {
   projectId: string;
-  employees: { employee_id: string; name: string }[];
+  employees: Employee[];
   onTimeLogAdded: () => void;
 }
 

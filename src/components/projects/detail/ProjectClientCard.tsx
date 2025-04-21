@@ -1,14 +1,12 @@
 import { User } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ProjectDetails } from '../ProjectDetails';
 
 interface ProjectClientCardProps {
-  project: ProjectDetails;
   customerName: string | null;
   customerId: string | null;
 }
 
-const ProjectClientCard = ({ project, customerName, customerId }: ProjectClientCardProps) => {
+const ProjectClientCard = ({ customerName, customerId }: ProjectClientCardProps) => {
   return (
     <Card>
       <CardContent className="pt-6">

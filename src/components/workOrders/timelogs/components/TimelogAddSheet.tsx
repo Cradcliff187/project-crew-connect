@@ -4,12 +4,13 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import TimeEntryForm from '@/components/timeTracking/TimeEntryForm';
 import { TimeEntry } from '@/types/timeTracking';
+import { Employee } from '@/types/common';
 
 interface TimelogAddSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workOrderId: string;
-  employees: { employee_id: string; name: string }[];
+  employees: Employee[];
   onSuccess: () => void;
 }
 
@@ -124,6 +125,7 @@ export const TimelogAddSheet = ({
             onCancel={() => onOpenChange(false)}
             isSubmitting={isSubmitting}
             title="Log Work Order Time"
+            employees={employees}
           />
         </div>
       </SheetContent>

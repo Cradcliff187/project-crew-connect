@@ -15,9 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MoreHorizontal, FileClock, Building, Receipt, Trash } from 'lucide-react';
+import { MoreHorizontal, FileClock, Receipt, Trash } from 'lucide-react';
 import { TimeEntry } from '@/types/timeTracking';
-import { formatDate, formatCurrency } from '@/lib/utils';
+import { formatDate, formatCurrency, formatHours } from '@/lib/utils';
 import TimeEntryReceipts from './TimeEntryReceipts';
 
 interface TimeTrackingTableProps {
@@ -36,32 +36,9 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
 
-  const formatEntityTypeIcon = (type: string) => {
-    switch (type) {
-      case 'work_order':
-        return <FileClock className="h-4 w-4 text-[#0485ea]" />;
-      case 'project':
-        return <Building className="h-4 w-4 text-green-500" />;
-      default:
-        return <FileClock className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
   const handleViewReceipts = (id: string) => {
     setSelectedEntryId(id);
     setShowReceiptsDialog(true);
-  };
-
-  // Calculate entry cost properly
-  const calculateEntryCost = (entry: TimeEntry) => {
-    // Use total_cost if already calculated
-    if (entry.total_cost) {
-      return entry.total_cost;
-    }
-
-    // Calculate based on hours and rate
-    const hourlyRate = entry.employee_rate || 75; // Default to $75/hr if no rate
-    return entry.hours_worked * hourlyRate;
   };
 
   if (entries.length === 0) {
@@ -84,86 +61,83 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
         <Table>
           <TableHeader className="bg-[#0485ea]/10">
             <TableRow>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea]">Date</TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea]">Type</TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea]">Name</TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea]">Hours</TableHead>
+              <TableHead className="w-[120px] font-montserrat font-semibold text-[#0485ea]">
+                Date
+              </TableHead>
               <TableHead className="font-montserrat font-semibold text-[#0485ea]">
                 Employee
               </TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea] text-right">
-                Cost
+              <TableHead className="font-montserrat font-semibold text-[#0485ea]">
+                Work Item
               </TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea] text-right">
+              <TableHead className="w-[100px] font-montserrat font-semibold text-[#0485ea] text-right">
+                Hours
+              </TableHead>
+              <TableHead className="w-[100px] font-montserrat font-semibold text-[#0485ea] text-right">
                 Actions
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map(entry => (
-              <TableRow key={entry.id} className="hover:bg-[#0485ea]/5 transition-colors">
-                <TableCell>{formatDate(entry.date_worked)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    {formatEntityTypeIcon(entry.entity_type)}
-                    <span className="ml-2 capitalize">{entry.entity_type.replace('_', ' ')}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">
-                  {entry.entity_name || entry.entity_id.substring(0, 8)}
-                  {entry.entity_location && (
-                    <span className="text-xs text-muted-foreground block">
-                      {entry.entity_location}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>{entry.hours_worked.toFixed(2)}</TableCell>
-                <TableCell>{entry.employee_name || 'Unassigned'}</TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(calculateEntryCost(entry))}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end items-center space-x-2">
-                    {entry.has_receipts && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleViewReceipts(entry.id)}
-                      >
-                        <Receipt className="h-4 w-4 text-green-600" />
-                      </Button>
-                    )}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onView(entry.id)}>
-                          View {entry.entity_type === 'work_order' ? 'Work Order' : 'Project'}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleViewReceipts(entry.id)}>
-                          {entry.has_receipts ? 'View Receipts' : 'Add Receipt'}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => onDelete(entry.id)}
+            {entries.map(entry => {
+              console.log(
+                `[TimeTrackingTable] Rendering entry: ${entry.id}, employee_name:`,
+                entry.employee_name
+              );
+
+              return (
+                <TableRow key={entry.id} className="hover:bg-[#0485ea]/5 transition-colors">
+                  <TableCell>{formatDate(entry.date_worked)}</TableCell>
+                  <TableCell>{entry.employee_name || 'Unassigned'}</TableCell>
+                  <TableCell className="font-medium">
+                    {entry.entity_name || entry.entity_id}
+                  </TableCell>
+                  <TableCell className="text-right">{formatHours(entry.hours_worked)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end items-center space-x-1">
+                      {entry.has_receipts && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewReceipts(entry.id)}
+                          title="View Receipts"
+                          className="h-8 w-8"
                         >
-                          <Trash className="h-4 w-4 mr-2" />
-                          Delete Entry
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                          <Receipt className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onView(entry.id)}>
+                            View {entry.entity_type === 'work_order' ? 'Work Order' : 'Project'}{' '}
+                            Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewReceipts(entry.id)}>
+                            {entry.has_receipts ? 'View Receipts' : 'Add Receipt'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                            onClick={() => onDelete(entry.id)}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete Entry
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
 
-      {/* Receipts Dialog */}
       <Dialog open={showReceiptsDialog} onOpenChange={setShowReceiptsDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>

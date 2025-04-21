@@ -28,7 +28,8 @@ export const useEstimateDetails = () => {
         setEstimateRevisions(revisionsData || []);
 
         // Find the current revision
-        const current = revisionsData?.find(rev => rev.is_current) || revisionsData?.[0] || null;
+        const current =
+          revisionsData?.find(rev => rev.is_selected_for_view) || revisionsData?.[0] || null;
         setCurrentRevision(current);
 
         return {
@@ -67,13 +68,13 @@ export const useEstimateDetails = () => {
         // First, set all revisions to not current
         await supabase
           .from('estimate_revisions')
-          .update({ is_current: false })
+          .update({ is_selected_for_view: false })
           .eq('estimate_id', estimateId);
 
         // Then set the selected revision as current
         const { error } = await supabase
           .from('estimate_revisions')
-          .update({ is_current: true })
+          .update({ is_selected_for_view: true })
           .eq('id', revisionId);
 
         if (error) throw error;

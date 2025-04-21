@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { StatusType } from '@/types/common';
-import { convertEstimateToProject } from '@/services/estimateService';
+import { convertEstimateToProject, isEstimateConverted } from '@/services/estimateService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +34,6 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
   onRefreshEstimates,
 }) => {
   const navigate = useNavigate();
-  const [isConverting, setIsConverting] = useState(false);
 
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -57,7 +56,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         .from('estimate_revisions')
         .select('*')
         .eq('estimate_id', estimate.id)
-        .eq('is_current', true)
+        .eq('is_selected_for_view', true)
         .single();
 
       if (revisionError) {
@@ -71,7 +70,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         .insert({
           estimate_id: estimate.id,
           version: newVersion,
-          is_current: true,
+          is_selected_for_view: true,
           status: currentRevision.status,
           revision_date: new Date().toISOString(),
         })
@@ -85,7 +84,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
       // Update old revision to not be current
       const { error: updateError } = await supabase
         .from('estimate_revisions')
-        .update({ is_current: false })
+        .update({ is_selected_for_view: false })
         .eq('id', currentRevision.id);
 
       if (updateError) {
@@ -108,6 +107,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         id: undefined, // Let DB generate new ID
         revision_id: newRevision.id,
         created_at: new Date().toISOString(),
+        original_item_id: item.id, // Link back to the item in the source revision
       }));
 
       // Insert new items
@@ -134,42 +134,6 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         description: error.message || 'Failed to create new version',
         variant: 'destructive',
       });
-    }
-  };
-
-  // Convert estimate to project
-  const handleConvertToProject = async () => {
-    try {
-      setIsConverting(true);
-
-      // Call the service function directly
-      const result = await convertEstimateToProject(estimate.id);
-
-      if (result.success) {
-        toast({
-          title: 'Success',
-          description: `Estimate converted to project successfully`,
-        });
-
-        if (onRefreshEstimates) {
-          onRefreshEstimates();
-        }
-      } else {
-        toast({
-          title: 'Error',
-          description: result.message || 'Failed to convert estimate to project',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error converting to project:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to convert estimate to project',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsConverting(false);
     }
   };
 
@@ -223,7 +187,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         .insert({
           estimate_id: newEstimateId,
           version: 1,
-          is_current: true,
+          is_selected_for_view: true,
           status: 'draft',
           revision_date: new Date().toISOString(),
         })
@@ -239,7 +203,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         .from('estimate_revisions')
         .select('id')
         .eq('estimate_id', estimate.id)
-        .eq('is_current', true)
+        .eq('is_selected_for_view', true)
         .single();
 
       const { data: items, error: itemsError } = await supabase
@@ -260,6 +224,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
           estimate_id: newEstimateId,
           revision_id: newRevision.id,
           created_at: new Date().toISOString(),
+          original_item_id: item.id, // Link back to the item in the source revision
         }));
 
         const { error: insertError } = await supabase.from('estimate_items').insert(newItems);
@@ -449,13 +414,6 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
           onClick: () => handleCreateNewVersion(),
           className: 'text-gray-600 hover:text-gray-800',
         },
-        {
-          label: 'Convert to Project',
-          icon: <ArrowRight className="h-4 w-4" />,
-          onClick: () => handleConvertToProject(),
-          className: 'text-gray-600 hover:text-gray-800',
-          disabled: isConverting,
-        },
       ],
     },
     {
@@ -500,7 +458,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         </TableCell>
         <TableCell>{estimate.client}</TableCell>
         <TableCell>{estimate.project}</TableCell>
-        <TableCell>{formatDate(estimate.date)}</TableCell>
+        <TableCell>{formatDate(estimate.latestRevisionDate || estimate.date)}</TableCell>
         <TableCell>{formatCurrency(estimate.amount)}</TableCell>
         <TableCell>
           <StatusBadge status={estimate.status as StatusType} />

@@ -1,10 +1,13 @@
+// Supabase Functions Proxy for Windows PowerShell
+// This script allows running supabase functions locally on Windows
+
 import { createClient } from '@supabase/supabase-js';
 import readline from 'readline';
 
 // Initialize Supabase client
 const supabaseUrl = 'https://zrxezqllmpdlhiudutme.supabase.co';
 const supabaseKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0ODcyMzIsImV4cCI6MjA1NzA2MzIzMn0.zbmttNoNRALsW1aRV4VjodpitI_3opfNGhDgydcGhmQ';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeGV6cWxsbXBkbGhpdWR1dG1lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTQ4NzIzMiwiZXhwIjoyMDU3MDYzMjMyfQ.4kv7pOUS551zS8DoA12lFw_4BVA0ByuQC76bRRMAkWY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Create interface for reading from stdin
@@ -28,6 +31,10 @@ rl.on('line', async line => {
       await handleSchemaRequest();
     } else if (request.type === 'ping') {
       sendResponse({ type: 'pong' });
+    } else if (request.type === 'list_projects') {
+      await handleListProjects();
+    } else if (request.type === 'get_project') {
+      await handleGetProject(request);
     } else {
       sendResponse({
         error: `Unsupported request type: ${request.type}`,
@@ -76,39 +83,54 @@ async function handleQuery(request) {
 
 async function handleSchemaRequest() {
   try {
-    // Get list of tables
-    const { data: tables, error: tablesError } = await supabase
-      .from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public');
+    // Simple implementation to just list available tables
+    const { data, error } = await supabase.from('_tables').select('name, comment').order('name');
 
-    if (tablesError) {
-      throw tablesError;
+    if (error) {
+      throw error;
     }
 
     const schema = {};
-
-    // For each table, get its columns
-    for (const { table_name } of tables) {
-      const { data: columns, error: columnsError } = await supabase
-        .from('information_schema.columns')
-        .select('column_name, data_type, is_nullable')
-        .eq('table_schema', 'public')
-        .eq('table_name', table_name);
-
-      if (columnsError) {
-        console.error(`Error fetching columns for table ${table_name}:`, columnsError);
-        continue;
-      }
-
-      schema[table_name] = columns.map(col => ({
-        name: col.column_name,
-        type: col.data_type,
-        nullable: col.is_nullable === 'YES',
-      }));
+    for (const table of data) {
+      schema[table.name] = [];
     }
 
     sendResponse({ schema });
+  } catch (error) {
+    sendResponse({ error: error.message });
+  }
+}
+
+async function handleListProjects() {
+  try {
+    sendResponse({
+      data: [
+        {
+          id: 'zrxezqllmpdlhiudutme',
+          name: 'AKC Revisions',
+          organization_id: 'example-org-id',
+          region: 'us-east-1',
+        },
+      ],
+    });
+  } catch (error) {
+    sendResponse({ error: error.message });
+  }
+}
+
+async function handleGetProject(request) {
+  try {
+    const { id } = request;
+
+    sendResponse({
+      data: {
+        id: id || 'zrxezqllmpdlhiudutme',
+        name: 'AKC Revisions',
+        organization_id: 'example-org-id',
+        region: 'us-east-1',
+        status: 'active',
+      },
+    });
   } catch (error) {
     sendResponse({ error: error.message });
   }

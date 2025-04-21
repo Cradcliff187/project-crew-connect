@@ -7,6 +7,8 @@ import usePdfGeneration from '../hooks/usePdfGeneration';
 interface PDFExportButtonProps {
   estimateId: string;
   revisionId?: string;
+  revisionVersion?: number;
+  viewType?: 'internal' | 'external';
   contentRef?: React.RefObject<HTMLDivElement>;
   onSuccess?: (documentId: string) => void;
   className?: string;
@@ -26,6 +28,8 @@ interface PDFExportButtonProps {
 const PDFExportButton: React.FC<PDFExportButtonProps> = ({
   estimateId,
   revisionId,
+  revisionVersion,
+  viewType = 'internal',
   contentRef,
   onSuccess,
   className = '',
@@ -48,27 +52,21 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
 
   const handleGeneratePdf = async () => {
     try {
-      // Check if we're using a revision ID
       if (revisionId) {
-        // Check if PDF already exists
         const existingPdfId = await checkRevisionPdf(revisionId);
-
         if (existingPdfId) {
-          // If PDF exists and we're regenerating, inform the user
           toast({
             title: 'Regenerating PDF',
-            description: 'Creating a new PDF version for this revision',
+            description: `Creating a new ${viewType} PDF version for this revision`,
           });
         }
-
-        await generatePdf(estimateId, revisionId);
+        await generatePdf(estimateId, revisionId, viewType);
       } else if (contentRef && contentRef.current) {
-        // Use client-side generation with the ref
         await generateClientSidePdf(contentRef);
       } else {
         toast({
           title: 'Missing Parameters',
-          description: 'Either a revision ID or content reference is required',
+          description: 'Revision ID or content ref required',
           variant: 'destructive',
         });
       }
@@ -76,7 +74,7 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       console.error('Error in PDF export:', error);
       toast({
         title: 'PDF Generation Failed',
-        description: error.message || 'An unexpected error occurred',
+        description: error.message || 'Unexpected error',
         variant: 'destructive',
       });
     }
@@ -93,6 +91,23 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
     }
   }, [error, toast]);
 
+  // Determine button text dynamically
+  let buttonText = children || 'Generate PDF';
+  let generatingText = children || 'Generating...';
+  let retryText = children || 'Retry PDF';
+
+  if (!children) {
+    if (viewType === 'external') {
+      buttonText = revisionVersion ? `Customer PDF (V${revisionVersion})` : 'Customer PDF';
+      generatingText = `Generating Customer PDF...`;
+      retryText = `Retry Customer PDF`;
+    } else {
+      buttonText = revisionVersion ? `Internal PDF (V${revisionVersion})` : 'Internal PDF';
+      generatingText = `Generating Internal PDF...`;
+      retryText = `Retry Internal PDF`;
+    }
+  }
+
   return (
     <Button
       onClick={handleGeneratePdf}
@@ -104,17 +119,17 @@ const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       {isGenerating ? (
         <>
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          {children || 'Generating...'}
+          {generatingText}
         </>
       ) : error ? (
         <>
           <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
-          {children || 'Retry PDF'}
+          {retryText}
         </>
       ) : (
         <>
           <FileText className="h-4 w-4 mr-2" />
-          {children || 'Generate PDF'}
+          {buttonText}
         </>
       )}
     </Button>

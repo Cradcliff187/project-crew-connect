@@ -2,39 +2,66 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+
+import ProjectHeader from '@/components/projects/detail/ProjectHeader';
+import ProjectInfoCard from '@/components/projects/detail/ProjectInfoCard';
+import ProjectClientCard from '@/components/projects/detail/ProjectClientCard';
+import ProjectBudgetCard from '@/components/projects/detail/ProjectBudgetCard';
+import ProjectDescription from '@/components/projects/detail/ProjectDescription';
+import ProjectBudgetTab from '@/components/projects/detail/tabs/ProjectBudgetTab';
+import ProjectMilestones from '@/components/projects/detail/ProjectMilestones';
 
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState<any>(null);
+  const [budgetItems, setBudgetItems] = useState<any[]>([]);
+  const [milestones, setMilestones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (projectId) {
       fetchProjectData(projectId);
+    } else {
+      setError('Project ID is missing');
+      setLoading(false);
     }
   }, [projectId]);
 
   const fetchProjectData = async (id: string) => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
+      const [projectResult, budgetItemsResult, milestonesResult] = await Promise.all([
+        supabase.from('projects').select('*').eq('projectid', id).single(),
+        supabase.from('project_budget_items').select('*').eq('project_id', id).order('created_at'),
+        supabase.from('project_milestones').select('*').eq('projectid', id).order('due_date'),
+      ]);
 
-      // Fetch the project data
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('projectid', id)
-        .single();
+      if (projectResult.error) throw projectResult.error;
+      if (!projectResult.data) throw new Error('Project not found');
+      setProject(projectResult.data);
 
-      if (error) {
-        throw error;
+      if (budgetItemsResult.error) {
+        console.warn('Error fetching budget items:', budgetItemsResult.error);
+        setBudgetItems([]);
+      } else {
+        setBudgetItems(budgetItemsResult.data || []);
       }
 
-      setProject(data);
+      if (milestonesResult.error) {
+        console.warn('Error fetching milestones:', milestonesResult.error);
+        setMilestones([]);
+      } else {
+        setMilestones(milestonesResult.data || []);
+      }
     } catch (error: any) {
       console.error('Error fetching project data:', error);
       setError(error.message || 'Error fetching project data');
@@ -57,14 +84,24 @@ const ProjectDetail = () => {
     return (
       <PageTransition>
         <div className="space-y-4">
-          <h1 className="text-2xl font-bold">Error Loading Project</h1>
-          <p className="text-red-500">{error || 'Project not found'}</p>
-          <button
-            onClick={() => navigate('/projects')}
-            className="px-4 py-2 bg-[#0485ea] text-white rounded-md hover:bg-[#0373ce]"
-          >
+          <Button variant="outline" onClick={() => navigate('/projects')} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Projects
-          </button>
+          </Button>
+          <Card>
+            <CardContent className="py-8">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-red-500">Error Loading Project</h1>
+                <p className="mt-2 text-gray-600">{error || 'Project not found'}</p>
+                <Button
+                  onClick={() => navigate('/projects')}
+                  className="mt-4 bg-[#0485ea] hover:bg-[#0373ce]"
+                >
+                  Return to Projects
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </PageTransition>
     );
@@ -74,7 +111,13 @@ const ProjectDetail = () => {
     <PageTransition>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{project.projectname || 'Project Details'}</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate('/projects')} size="sm">
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            <h1 className="text-xl font-bold">{project.projectname || 'Project Details'}</h1>
+          </div>
           <Badge
             variant={project.status === 'ACTIVE' ? 'default' : 'outline'}
             className="capitalize"
@@ -83,51 +126,53 @@ const ProjectDetail = () => {
           </Badge>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Project Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Project ID</h3>
-                <p>{project.projectid}</p>
-              </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-5 w-full rounded-lg border p-1">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="budget">Budget</TabsTrigger>
+            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+            <TabsTrigger value="changes">Change Orders</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          </TabsList>
 
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Customer</h3>
-                <p>{project.customername || 'Not specified'}</p>
+          <div className="mt-4">
+            <TabsContent value="overview" className="mt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-6">
+                  <ProjectInfoCard project={project} />
+                  <ProjectDescription description={project.jobdescription} />
+                </div>
+                <div className="lg:col-span-1 space-y-6">
+                  <ProjectClientCard
+                    customerName={project.customername}
+                    customerId={project.customerid}
+                  />
+                  <ProjectBudgetCard project={project} />
+                </div>
               </div>
+            </TabsContent>
 
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
-                <p>{project.jobdescription || 'No description'}</p>
-              </div>
-            </CardContent>
-          </Card>
+            <TabsContent value="budget" className="mt-0">
+              <ProjectBudgetTab budgetItems={budgetItems} totalBudget={project.total_budget} />
+            </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Budget Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Total Budget</h3>
-                <p>${project.total_budget?.toLocaleString() || '0'}</p>
-              </div>
+            <TabsContent value="schedule" className="mt-0">
+              <ProjectMilestones projectId={project.projectid} />
+            </TabsContent>
 
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Current Expenses</h3>
-                <p>${project.current_expenses?.toLocaleString() || '0'}</p>
-              </div>
+            <TabsContent value="changes" className="mt-0">
+              <Card>
+                <CardContent className="p-6">Change Orders Content</CardContent>
+              </Card>
+            </TabsContent>
 
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Budget Status</h3>
-                <p className="capitalize">{project.budget_status || 'Not set'}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <TabsContent value="documents" className="mt-0">
+              <Card>
+                <CardContent className="p-6">Documents Content</CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+        </Tabs>
       </div>
     </PageTransition>
   );

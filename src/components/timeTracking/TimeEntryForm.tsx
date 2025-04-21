@@ -4,7 +4,6 @@ import { Textarea } from '@/components/ui/textarea';
 import TimeRangeSelector from './form/TimeRangeSelector';
 import EmployeeSelect from './form/EmployeeSelect';
 import { TimeEntry } from '@/types/timeTracking';
-import { supabase } from '@/integrations/supabase/client';
 import { calculateHours } from './utils/timeUtils';
 import { DatePicker } from '@/components/ui/date-picker';
 import { format, parse } from 'date-fns';
@@ -17,6 +16,7 @@ interface TimeEntryFormProps {
   onCancel: () => void;
   isSubmitting: boolean;
   title?: string;
+  employees: Employee[];
 }
 
 const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
@@ -25,13 +25,13 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   onCancel,
   isSubmitting,
   title = 'Time Entry',
+  employees,
 }) => {
   const [startTime, setStartTime] = useState(initialValues?.start_time || '09:00');
   const [endTime, setEndTime] = useState(initialValues?.end_time || '17:00');
   const [hoursWorked, setHoursWorked] = useState(initialValues?.hours_worked || 0);
   const [notes, setNotes] = useState(initialValues?.notes || '');
   const [employeeId, setEmployeeId] = useState<string>(initialValues?.employee_id || 'none');
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [workDate, setWorkDate] = useState<Date>(
     initialValues?.date_worked
       ? parse(initialValues.date_worked, 'yyyy-MM-dd', new Date())
@@ -39,34 +39,7 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   );
   const [timeError, setTimeError] = useState('');
 
-  // Fetch employees using the standardized Employee interface
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('employees')
-          .select('employee_id, first_name, last_name, email, phone, role, hourly_rate, status')
-          .order('last_name');
-
-        if (error) {
-          console.error('Error fetching employees:', error);
-          return;
-        }
-
-        if (data) {
-          setEmployees(data);
-        }
-      } catch (error) {
-        console.error('Exception when fetching employees:', error);
-      }
-    };
-
-    fetchEmployees();
-  }, []);
-
-  // Use the useEffect hook to ensure correct employee data handling
-  useEffect(() => {
-    // Calculate hours worked when start or end time changes
     if (startTime && endTime) {
       try {
         const hours = calculateHours(startTime, endTime);
@@ -80,20 +53,8 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate the form
-    if (!workDate) {
-      return;
-    }
-
-    if (timeError) {
-      return;
-    }
-
-    // Format the date
+    if (!workDate || timeError) return;
     const formattedDate = format(workDate, 'yyyy-MM-dd');
-
-    // Prepare the data for submission
     const formData: Partial<TimeEntry> = {
       ...initialValues,
       date_worked: formattedDate,
@@ -103,8 +64,6 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       notes: notes,
       employee_id: employeeId === 'none' ? null : employeeId,
     };
-
-    // Submit the form
     await onSubmit(formData);
   };
 

@@ -73,11 +73,11 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
       // 3. If user wants to create a revision, create a new one
       if (createRevision) {
         // Find the current revision
-        const { data: currentRevision, error: revisionError } = await supabase
+        const { data: selectedRevision, error: revisionError } = await supabase
           .from('estimate_revisions')
           .select('*')
           .eq('estimate_id', estimateId)
-          .eq('is_current', true)
+          .eq('is_selected_for_view', true)
           .single();
 
         if (revisionError && revisionError.code !== 'PGRST116') {
@@ -85,11 +85,11 @@ const EstimateRejectDialog: React.FC<EstimateRejectDialogProps> = ({
         }
 
         // Create a new revision with incremented version number
-        const currentVersion = currentRevision?.version || 1;
+        const currentVersion = selectedRevision?.version || 1;
         const { error: newRevisionError } = await supabase.from('estimate_revisions').insert({
           estimate_id: estimateId,
           version: currentVersion + 1,
-          is_current: true,
+          is_selected_for_view: true,
           status: 'draft',
           notes: `Revision created after rejection. Reason: ${rejectionReason}`,
           revision_date: new Date().toISOString(),

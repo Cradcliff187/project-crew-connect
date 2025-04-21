@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { EstimateRevision } from '../types/estimateTypes';
-import EstimateRevisionTimeline from './EstimateRevisionTimeline';
 import EstimateRevisionSummary from './EstimateRevisionSummary';
 
 interface CompactEstimateSidebarProps {
@@ -48,7 +47,7 @@ const CompactEstimateSidebar: React.FC<CompactEstimateSidebarProps> = ({
         <Card className="bg-[#0485ea]/5 border-[#0485ea]/20">
           <CardContent className="p-4">
             <div className="space-y-3">
-              <h3 className="text-sm font-medium">Current Revision</h3>
+              <h3 className="text-sm font-medium">Selected Revision View</h3>
               <EstimateRevisionSummary
                 revision={currentRevision}
                 previousRevision={previousRevision}
@@ -57,17 +56,6 @@ const CompactEstimateSidebar: React.FC<CompactEstimateSidebarProps> = ({
           </CardContent>
         </Card>
       )}
-
-      {/* Timeline */}
-      <Card>
-        <CardContent className="p-4">
-          <EstimateRevisionTimeline
-            revisions={revisions}
-            currentRevisionId={currentRevisionId}
-            onSelectRevision={onRevisionSelect}
-          />
-        </CardContent>
-      </Card>
     </div>
   );
 };

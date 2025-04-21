@@ -56,9 +56,9 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
       setRevisions(data || []);
 
       // Find current version
-      const currentRevision = data?.find(rev => rev.is_current);
-      if (currentRevision) {
-        setCurrentVersion(currentRevision.version);
+      const selectedRevision = data?.find(rev => rev.is_selected_for_view);
+      if (selectedRevision) {
+        setCurrentVersion(selectedRevision.version);
       } else if (data && data.length > 0) {
         setCurrentVersion(data[0].version);
       }
@@ -83,13 +83,13 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
       // First, set all revisions to not current
       await supabase
         .from('estimate_revisions')
-        .update({ is_current: false })
+        .update({ is_selected_for_view: false })
         .eq('estimate_id', estimateId);
 
       // Then set the selected revision as current
       const { error } = await supabase
         .from('estimate_revisions')
-        .update({ is_current: true })
+        .update({ is_selected_for_view: true })
         .eq('id', revisionId);
 
       if (error) {
@@ -148,13 +148,13 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     Loading revisions...
                   </TableCell>
                 </TableRow>
               ) : revisions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     No revisions found. Create your first revision.
                   </TableCell>
                 </TableRow>
@@ -171,10 +171,10 @@ const EstimateRevisionsList: React.FC<EstimateRevisionsListProps> = ({
                     <TableCell>{formatCurrency(revision.amount || 0)}</TableCell>
                     <TableCell className="max-w-xs truncate">{revision.notes || '-'}</TableCell>
                     <TableCell>
-                      {revision.is_current ? (
+                      {revision.is_selected_for_view ? (
                         <Badge className="bg-green-500">
                           <Check className="h-3 w-3 mr-1" />
-                          Current
+                          Selected View
                         </Badge>
                       ) : (
                         <Button

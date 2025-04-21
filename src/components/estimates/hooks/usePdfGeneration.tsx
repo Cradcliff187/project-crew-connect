@@ -42,7 +42,11 @@ const usePdfGeneration = ({ onSuccess, onError }: UsePdfGenerationProps = {}) =>
    * Generate a PDF on the server using Supabase RPC
    */
   const generatePdf = useCallback(
-    async (estimateId: string, revisionId?: string) => {
+    async (
+      estimateId: string,
+      revisionId?: string,
+      viewType: 'internal' | 'external' = 'internal'
+    ) => {
       setIsGenerating(true);
       setError(null);
 
@@ -52,36 +56,7 @@ const usePdfGeneration = ({ onSuccess, onError }: UsePdfGenerationProps = {}) =>
           throw new Error('Revision ID is required for server-side PDF generation');
         }
 
-        // Get estimate and revision data
-        const { data: estimateData, error: estimateError } = await supabase
-          .from('estimates')
-          .select(
-            `
-          estimateid,
-          projectname,
-          customername,
-          job_description,
-          sitelocationaddress,
-          sitelocationcity,
-          sitelocationstate,
-          sitelocationzip,
-          contingency_percentage
-        `
-          )
-          .eq('estimateid', estimateId)
-          .single();
-
-        if (estimateError) throw estimateError;
-
-        // Get revision items
-        const { data: revisionItems, error: itemsError } = await supabase
-          .from('estimate_items')
-          .select('*')
-          .eq('revision_id', revisionId);
-
-        if (itemsError) throw itemsError;
-
-        // Get revision details
+        // Get revision details (needed for updating pdf_document_id)
         const { data: revision, error: revError } = await supabase
           .from('estimate_revisions')
           .select('*')
@@ -90,14 +65,14 @@ const usePdfGeneration = ({ onSuccess, onError }: UsePdfGenerationProps = {}) =>
 
         if (revError) throw revError;
 
-        // Use fetch to call the function directly since RPC isn't working correctly
+        // Call the function, passing the view type in the body
         const { data: pdfResult, error: pdfError } = await supabase.functions.invoke<PdfResult>(
           'generate-estimate-pdf',
           {
             body: {
               estimate_id: estimateId,
               revision_id: revisionId,
-              items: revisionItems || [],
+              view_type: viewType, // Pass the view type
             },
           }
         );

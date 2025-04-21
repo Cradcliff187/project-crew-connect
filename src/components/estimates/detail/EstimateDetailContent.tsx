@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Eye, DollarSign } from 'lucide-react';
 
 interface EstimateDetailContentProps {
   data: {
@@ -31,12 +34,15 @@ interface EstimateDetailContentProps {
       unit_price: number;
       total_price: number;
       cost?: number;
+      markup_percentage?: number;
     }[];
   };
   onRefresh?: () => void;
 }
 
 const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onRefresh }) => {
+  const [detailViewMode, setDetailViewMode] = useState<'internal' | 'customer'>('internal');
+
   const formatLocation = () => {
     const parts = [
       data.sitelocationaddress,
@@ -49,21 +55,28 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
   };
 
   // Calculate totals
-  const subtotal = data.items.reduce((sum, item) => sum + item.total_price, 0);
+  const subtotal = data.items.reduce((sum, item) => sum + (Number(item.total_price) || 0), 0);
   const contingencyAmount = data.contingencyamount || 0;
   const total = subtotal + contingencyAmount;
 
-  // Calculate cost and margins
-  const totalCost =
-    data.total_cost ||
-    data.items.reduce((sum, item) => {
-      const itemQuantity = Number(item.quantity) || 0;
-      const itemCost = Number(item.cost) || 0;
-      return sum + itemCost * itemQuantity;
-    }, 0);
+  // Check if item data seems complete for cost calculation
+  const hasItemData = data.items && data.items.length > 0;
+  // Optionally, be more specific: check if at least one item has a non-zero cost
+  // const hasCostData = hasItemData && data.items.some(item => Number(item.cost) > 0);
+  // For now, just checking if items array exists and is not empty
 
-  const grossMargin = subtotal - totalCost;
-  const grossMarginPercentage = subtotal > 0 ? (grossMargin / subtotal) * 100 : 0;
+  // Calculate cost and margins only if item data is present
+  const totalCost = hasItemData
+    ? data.total_cost ||
+      data.items.reduce((sum, item) => {
+        const itemQuantity = Number(item.quantity) || 0;
+        const itemCost = Number(item.cost) || 0;
+        return sum + itemCost * itemQuantity;
+      }, 0)
+    : 0; // Default to 0 if no items
+
+  const grossMargin = hasItemData ? subtotal - totalCost : 0;
+  const grossMarginPercentage = hasItemData && subtotal > 0 ? (grossMargin / subtotal) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -118,50 +131,37 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
               </div>
             </div>
           </div>
-
-          {/* Financial Summary */}
-          <div className="mt-6 border-t pt-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Financial Summary</h3>
-            <div className="space-y-1">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-
-              {/* Total Cost */}
-              <div className="flex justify-between text-muted-foreground">
-                <span>Total Cost:</span>
-                <span>{formatCurrency(totalCost)}</span>
-              </div>
-
-              {/* Gross Margin */}
-              <div className="flex justify-between text-muted-foreground">
-                <span>Gross Margin:</span>
-                <span>{formatCurrency(grossMargin)}</span>
-              </div>
-
-              {/* Gross Margin Percentage */}
-              <div className="flex justify-between text-muted-foreground">
-                <span>Gross Margin %:</span>
-                <span>{grossMarginPercentage.toFixed(1)}%</span>
-              </div>
-
-              <div className="flex justify-between text-muted-foreground">
-                <span>Contingency ({data.contingency_percentage || 0}%):</span>
-                <span>{formatCurrency(contingencyAmount)}</span>
-              </div>
-              <div className="flex justify-between font-semibold border-t border-dashed pt-2 mt-2">
-                <span>Total:</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle>Line Items</CardTitle>
+          <div className="flex items-center space-x-2">
+            <DollarSign
+              className={`h-4 w-4 ${detailViewMode === 'internal' ? 'text-primary' : 'text-muted-foreground'}`}
+            />
+            <Label
+              htmlFor="view-mode-toggle"
+              className={`text-sm font-medium ${detailViewMode === 'internal' ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              Internal View
+            </Label>
+            <Switch
+              id="view-mode-toggle"
+              checked={detailViewMode === 'customer'}
+              onCheckedChange={checked => setDetailViewMode(checked ? 'customer' : 'internal')}
+            />
+            <Label
+              htmlFor="view-mode-toggle"
+              className={`text-sm font-medium ${detailViewMode === 'customer' ? 'text-primary' : 'text-muted-foreground'}`}
+            >
+              Customer View
+            </Label>
+            <Eye
+              className={`h-4 w-4 ${detailViewMode === 'customer' ? 'text-primary' : 'text-muted-foreground'}`}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           {data.items.length === 0 ? (
@@ -173,29 +173,120 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
                   <tr>
                     <th className="p-2 text-left font-medium">Description</th>
                     <th className="p-2 text-right font-medium">Quantity</th>
+                    {/* Conditionally show internal financial headers */}
+                    {detailViewMode === 'internal' && (
+                      <>
+                        <th className="p-2 text-right font-medium">Cost</th>
+                        <th className="p-2 text-right font-medium">Markup %</th>
+                      </>
+                    )}
                     <th className="p-2 text-right font-medium">Unit Price</th>
+                    {/* Conditionally show internal financial headers */}
+                    {detailViewMode === 'internal' && (
+                      <>
+                        <th className="p-2 text-right font-medium">Margin</th>
+                        <th className="p-2 text-right font-medium">Margin %</th>
+                      </>
+                    )}
                     <th className="p-2 text-right font-medium">Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.items.map((item, index) => (
-                    <tr key={item.id || index} className="border-t">
-                      <td className="p-2">{item.description}</td>
-                      <td className="p-2 text-right">{item.quantity}</td>
-                      <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
-                      <td className="p-2 text-right">{formatCurrency(item.total_price)}</td>
-                    </tr>
-                  ))}
+                  {data.items.map((item, index) => {
+                    // Calculate per-item margin
+                    const itemCost = Number(item.cost) || 0;
+                    const itemQuantity = Number(item.quantity) || 0;
+                    const itemTotalPrice = Number(item.total_price) || 0;
+                    const itemTotalCost = itemCost * itemQuantity;
+                    const itemMargin = itemTotalPrice - itemTotalCost;
+                    const itemMarginPercent =
+                      itemTotalPrice > 0 ? (itemMargin / itemTotalPrice) * 100 : 0;
+                    const itemMarkupPercent = item.markup_percentage; // Assuming markup % is directly available
 
-                  {/* Summary rows */}
+                    return (
+                      <tr key={item.id || index} className="border-t">
+                        <td className="p-2">{item.description}</td>
+                        <td className="p-2 text-right">{itemQuantity}</td>
+                        {/* Conditionally show internal financial cells */}
+                        {detailViewMode === 'internal' && (
+                          <>
+                            <td className="p-2 text-right">{formatCurrency(itemCost)}</td>
+                            <td className="p-2 text-right">
+                              {itemMarkupPercent !== undefined ? `${itemMarkupPercent}%` : 'N/A'}
+                            </td>
+                          </>
+                        )}
+                        <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
+                        {/* Conditionally show internal financial cells */}
+                        {detailViewMode === 'internal' && (
+                          <>
+                            <td className="p-2 text-right">{formatCurrency(itemMargin)}</td>
+                            <td className="p-2 text-right">{`${itemMarginPercent.toFixed(1)}%`}</td>
+                          </>
+                        )}
+                        <td className="p-2 text-right">{formatCurrency(itemTotalPrice)}</td>
+                      </tr>
+                    );
+                  })}
+
+                  {/* Summary rows - Conditional Rendering based on view mode */}
                   <tr className="border-t">
-                    <td colSpan={3} className="p-2 text-right font-medium">
+                    {/* Adjust colspan based on view mode */}
+                    <td
+                      colSpan={detailViewMode === 'internal' ? 6 : 3}
+                      className="p-2 text-right font-medium"
+                    >
                       Subtotal:
                     </td>
                     <td className="p-2 text-right">{formatCurrency(subtotal)}</td>
                   </tr>
+
+                  {/* Internal Only Rows */}
+                  {detailViewMode === 'internal' && (
+                    <>
+                      {/* Total Cost */}
+                      <tr className="border-t border-dashed">
+                        {/* Adjust colspan based on view mode */}
+                        <td colSpan={6} className="p-2 text-right text-sm text-muted-foreground">
+                          Total Cost:
+                        </td>
+                        <td className="p-2 text-right text-sm text-muted-foreground">
+                          {hasItemData ? formatCurrency(totalCost) : 'Calculating...'}
+                        </td>
+                      </tr>
+                      {/* Gross Margin */}
+                      <tr className="border-t border-dashed">
+                        {/* Adjust colspan based on view mode */}
+                        <td colSpan={6} className="p-2 text-right text-sm text-muted-foreground">
+                          Gross Margin:
+                        </td>
+                        <td className="p-2 text-right text-sm text-muted-foreground">
+                          {hasItemData ? formatCurrency(grossMargin) : 'Calculating...'}
+                        </td>
+                      </tr>
+                      {/* Gross Margin Percentage */}
+                      <tr>
+                        {/* Adjust colspan based on view mode */}
+                        <td
+                          colSpan={6}
+                          className="p-2 pt-0 text-right text-xs text-muted-foreground"
+                        >
+                          Gross Margin %:
+                        </td>
+                        <td className="p-2 pt-0 text-right text-xs text-muted-foreground">
+                          {hasItemData ? `${grossMarginPercentage.toFixed(1)}%` : 'Calculating...'}
+                        </td>
+                      </tr>
+                    </>
+                  )}
+
+                  {/* Always Visible Rows */}
                   <tr>
-                    <td colSpan={3} className="p-2 text-right text-muted-foreground">
+                    {/* Adjust colspan based on view mode */}
+                    <td
+                      colSpan={detailViewMode === 'internal' ? 6 : 3}
+                      className="p-2 text-right text-muted-foreground"
+                    >
                       Contingency ({data.contingency_percentage || 0}%):
                     </td>
                     <td className="p-2 text-right text-muted-foreground">
@@ -203,7 +294,11 @@ const EstimateDetailContent: React.FC<EstimateDetailContentProps> = ({ data, onR
                     </td>
                   </tr>
                   <tr className="bg-muted/50">
-                    <td colSpan={3} className="p-2 text-right font-medium">
+                    {/* Adjust colspan based on view mode */}
+                    <td
+                      colSpan={detailViewMode === 'internal' ? 6 : 3}
+                      className="p-2 text-right font-medium"
+                    >
                       Total:
                     </td>
                     <td className="p-2 text-right font-medium">{formatCurrency(total)}</td>

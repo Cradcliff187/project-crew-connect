@@ -67,10 +67,11 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
   };
 
   useEffect(() => {
-    const currentRevision = revisions.find(rev => rev.is_current);
-    if (currentRevision) {
-      setCurrentVersion(currentRevision.version);
-      setSelectedRevisionId(currentRevision.id);
+    // Find the selected revision based on the new flag
+    const selectedRevision = revisions.find(rev => rev.is_selected_for_view);
+    if (selectedRevision) {
+      setCurrentVersion(selectedRevision.version);
+      setSelectedRevisionId(selectedRevision.id);
     }
   }, [revisions]);
 
@@ -180,8 +181,8 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
     versions: revisions.length,
   };
 
-  // Get current revision
-  const currentRevision = revisions.find(rev => rev.is_current);
+  // Find the selected revision for display purposes
+  const selectedRevisionForDisplay = revisions.find(rev => rev.is_selected_for_view);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -196,12 +197,12 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
                 <span className="mr-2">
                   {estimate.description || `View and manage estimate details`}
                 </span>
-                {currentRevision && (
+                {selectedRevisionForDisplay && (
                   <Badge
                     variant="outline"
                     className="ml-2 bg-blue-50 text-blue-800 border-blue-200"
                   >
-                    Version {currentRevision.version}
+                    Version {selectedRevisionForDisplay.version} (Selected)
                   </Badge>
                 )}
               </DialogDescription>
@@ -209,10 +210,10 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
 
             {/* Streamlined action buttons */}
             <div className="flex items-center gap-2">
-              {currentRevision && (
+              {selectedRevisionForDisplay && (
                 <PDFExportButton
                   estimateId={estimate.id}
-                  revisionId={currentRevision?.id || ''}
+                  revisionId={selectedRevisionForDisplay?.id || ''}
                   contentRef={contentRef}
                   className="bg-[#0485ea] text-white hover:bg-[#0373d1]"
                 />
@@ -226,7 +227,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
               <EstimateActions
                 status={estimate.status}
                 onShare={() => setShareDialogOpen(true)}
-                currentRevision={currentRevision}
+                currentRevision={selectedRevisionForDisplay}
                 estimateId={estimate.id}
               />
             </div>
@@ -261,7 +262,7 @@ const EstimateDetailsDialog: React.FC<EstimateDetailsProps> = ({
                 <EstimateRevisionsTab
                   revisions={mappedRevisions}
                   estimateId={estimate.id}
-                  currentRevisionId={revisions.find(rev => rev.is_current)?.id}
+                  currentRevisionId={selectedRevisionId}
                   onRevisionSelect={handleRevisionSelect}
                 />
               </TabsContent>

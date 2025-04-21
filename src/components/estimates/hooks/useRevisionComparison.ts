@@ -29,16 +29,16 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
       if (error) throw error;
       setRevisions(data || []);
 
-      // Set current revision as the one marked "is_current"
-      const currentRevision = data?.find(rev => rev.is_current);
-      if (currentRevision) {
-        setCurrentRevisionId(currentRevision.id);
+      // Set initially selected revision based on the DB flag
+      const selectedRevision = data?.find(rev => rev.is_selected_for_view);
+      if (selectedRevision) {
+        setCurrentRevisionId(selectedRevision.id);
 
         // Set compare revision as the previous version if available
         if (data && data.length > 1) {
-          const currentIndex = data.findIndex(rev => rev.id === currentRevision.id);
-          const compareIndex = currentIndex < data.length - 1 ? currentIndex + 1 : 0;
-          if (currentIndex !== compareIndex) {
+          const selectedIndex = data.findIndex(rev => rev.id === selectedRevision.id);
+          const compareIndex = selectedIndex < data.length - 1 ? selectedIndex + 1 : 0;
+          if (selectedIndex !== compareIndex) {
             setCompareRevisionId(data[compareIndex].id);
           }
         }
@@ -223,18 +223,21 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
       // First, clear current flag from all revisions for this estimate
       await supabase
         .from('estimate_revisions')
-        .update({ is_current: false })
+        .update({ is_selected_for_view: false })
         .eq('estimate_id', estimateId);
 
       // Then set the new current revision
-      await supabase.from('estimate_revisions').update({ is_current: true }).eq('id', revisionId);
+      await supabase
+        .from('estimate_revisions')
+        .update({ is_selected_for_view: true })
+        .eq('id', revisionId);
 
       // Update local state
       setCurrentRevisionId(revisionId);
       setRevisions(prev =>
         prev.map(rev => ({
           ...rev,
-          is_current: rev.id === revisionId,
+          is_selected_for_view: rev.id === revisionId,
         }))
       );
 

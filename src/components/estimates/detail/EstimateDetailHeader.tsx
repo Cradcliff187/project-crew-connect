@@ -47,7 +47,12 @@ const EstimateDetailHeader: React.FC<EstimateDetailHeaderProps> = ({
   );
 
   const handleConvert = () => {
-    console.log('Convert button clicked in header. Status:', data.status);
+    console.log(
+      'EstimateDetailHeader: Convert button clicked for estimate',
+      data.estimateid,
+      'with status:',
+      data.status
+    );
     onConvert();
   };
 
