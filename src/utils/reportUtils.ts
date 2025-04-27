@@ -12,7 +12,7 @@ export const formatDateForQuery = (date: Date): string => {
 export const getDateFieldForEntity = (entityType: EntityType): string => {
   switch (entityType) {
     case 'projects':
-      return 'createdon';
+      return 'created_at';
     case 'customers':
       return 'createdon';
     case 'vendors':

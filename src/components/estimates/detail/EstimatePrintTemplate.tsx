@@ -32,8 +32,15 @@ const EstimatePrintTemplate: React.FC<EstimatePrintTemplateProps> = ({
 
   // Calculate totals
   const subtotal = items.reduce((sum, item) => sum + item.total_price, 0);
-  const contingencyPercentage = 10; // Example - could be pulled from estimate
-  const contingencyAmount = subtotal * (contingencyPercentage / 100);
+
+  // Use the contingency percentage from the revision, estimate, or default to 0
+  const contingencyPercentage =
+    revision?.contingency_percentage ?? estimate.contingency_percentage ?? 0;
+
+  console.log(`EstimatePrintTemplate using contingency: ${contingencyPercentage}%`);
+
+  // Calculate contingency amount based on actual percentage
+  const contingencyAmount = subtotal * (Number(contingencyPercentage) / 100);
   const total = subtotal + contingencyAmount;
 
   return (

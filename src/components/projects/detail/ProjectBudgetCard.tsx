@@ -1,17 +1,19 @@
 import { DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ProjectDetails } from '../ProjectDetails';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { StatusType } from '@/types/common';
 import { formatCurrency } from '@/lib/utils';
+import { Database } from '@/integrations/supabase/types';
+
+type Project = Database['public']['Tables']['projects']['Row'];
 
 interface ProjectBudgetCardProps {
-  project: ProjectDetails;
+  project: Project;
 }
 
 const ProjectBudgetCard = ({ project }: ProjectBudgetCardProps) => {
   // Format currency
-  const getBudgetAmount = (amount: number | null) => {
+  const getBudgetAmount = (amount: number | null | undefined) => {
     if (amount === null || amount === undefined) return '$0';
     return formatCurrency(amount);
   };
@@ -26,7 +28,7 @@ const ProjectBudgetCard = ({ project }: ProjectBudgetCardProps) => {
               <div>
                 <p className="font-medium">Budget</p>
                 <p className="text-sm font-medium">{getBudgetAmount(project.total_budget)}</p>
-                {project.current_expenses ? (
+                {project.current_expenses !== null && project.current_expenses !== undefined ? (
                   <p className="text-xs text-muted-foreground">
                     Spent: {getBudgetAmount(project.current_expenses)}
                   </p>

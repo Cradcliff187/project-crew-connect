@@ -1,8 +1,15 @@
 {
   "mcpServers": {
     "supabase": {
-      "command": "node",
-      "args": ["./supabase/functions/proxy.js"]
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_390d6a50eb879c8d69348ab355a0faebdfabe76c"
+      ]
     }
   }
 }

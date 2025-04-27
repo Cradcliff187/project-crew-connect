@@ -1,14 +1,14 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useEffect } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -21,143 +21,122 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
-interface BudgetItem {
-  id: string;
-  project_id: string;
-  category: string;
-  description: string;
-  estimated_amount: number;
-  actual_amount: number;
-}
+type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
 
-interface BudgetItemFormDialogProps {
-  projectId: string;
-  item: BudgetItem | null;
-  onSave: () => void;
-  onCancel: () => void;
-}
-
-// Form schema
+// Define the form schema using Zod
 const budgetItemSchema = z.object({
   category: z.string().min(1, { message: 'Category is required' }),
-  description: z.string().optional(),
-  estimated_amount: z.preprocess(
-    val => (val === '' ? 0 : Number(val)),
-    z.number().min(0, { message: 'Amount must be a positive number' })
-  ),
+  description: z.string().min(1, { message: 'Description is required' }),
+  estimated_cost: z.number().min(0, { message: 'Estimated cost must be zero or positive' }),
+  // Add other fields as needed (e.g., quantity, unit cost)
 });
 
 type BudgetItemFormValues = z.infer<typeof budgetItemSchema>;
 
-// Budget category options
-const BUDGET_CATEGORIES = [
-  { value: 'materials', label: 'Materials' },
-  { value: 'labor', label: 'Labor' },
-  { value: 'subcontractors', label: 'Subcontractors' },
-  { value: 'equipment', label: 'Equipment Rental' },
-  { value: 'permits', label: 'Permits & Fees' },
-  { value: 'overhead', label: 'Overhead' },
-  { value: 'contingency', label: 'Contingency' },
-  { value: 'other', label: 'Other' },
-];
+interface BudgetItemFormDialogProps {
+  projectId: string;
+  budgetItem: BudgetItem | null; // Pass null for adding, existing item for editing
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: () => void; // Callback to trigger data refresh
+}
 
 const BudgetItemFormDialog: React.FC<BudgetItemFormDialogProps> = ({
   projectId,
-  item,
+  budgetItem,
+  open,
+  onOpenChange,
   onSave,
-  onCancel,
 }) => {
-  const isEditing = !!item;
+  const isEditing = !!budgetItem;
 
   const form = useForm<BudgetItemFormValues>({
     resolver: zodResolver(budgetItemSchema),
     defaultValues: {
-      category: item?.category || 'materials',
-      description: item?.description || '',
-      estimated_amount: item?.estimated_amount || 0,
+      category: budgetItem?.category || '',
+      description: budgetItem?.description || '',
+      estimated_cost: budgetItem?.estimated_cost || 0,
+      // Set other defaults
     },
   });
 
+  // Reset form when budgetItem changes (e.g., opening for edit vs add)
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        category: budgetItem?.category || '',
+        description: budgetItem?.description || '',
+        estimated_cost: budgetItem?.estimated_cost || 0,
+        // Reset other fields
+      });
+    }
+  }, [budgetItem, open, form]);
+
   const onSubmit = async (values: BudgetItemFormValues) => {
     try {
-      if (isEditing) {
-        // Update existing budget item
-        const { error } = await supabase
+      const dataToSave = {
+        ...values,
+        project_id: projectId,
+      };
+
+      let error;
+      if (isEditing && budgetItem?.id) {
+        ({ error } = await supabase
           .from('project_budget_items')
-          .update({
-            category: values.category,
-            description: values.description,
-            estimated_amount: values.estimated_amount,
-          })
-          .eq('id', item.id);
-
-        if (error) throw error;
+          .update(dataToSave)
+          .eq('id', budgetItem.id));
       } else {
-        // Insert new budget item
-        const { error } = await supabase.from('project_budget_items').insert({
-          project_id: projectId,
-          category: values.category,
-          description: values.description,
-          estimated_amount: values.estimated_amount,
-        });
-
-        if (error) throw error;
+        ({ error } = await supabase.from('project_budget_items').insert(dataToSave));
       }
 
-      onSave();
-    } catch (error: any) {
-      console.error('Error saving budget item:', error);
+      if (error) throw error;
+
       toast({
-        title: 'Error saving budget item',
-        description: error.message,
+        title: `Budget item ${isEditing ? 'updated' : 'added'}`,
+        description: 'Budget item saved successfully.',
+      });
+      onSave(); // Trigger refresh
+      onOpenChange(false); // Close dialog
+    } catch (err: any) {
+      console.error('Error saving budget item:', err);
+      toast({
+        title: 'Error',
+        description: `Failed to save budget item: ${err.message}`,
         variant: 'destructive',
       });
     }
   };
 
   return (
-    <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Budget Item' : 'Add Budget Item'}</DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Update details for this budget item.'
+              : 'Add a new item to the project budget.'}
+          </DialogDescription>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormProvider {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
             <FormField
               control={form.control}
               name="category"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {BUDGET_CATEGORIES.map(category => (
-                        <SelectItem key={category.value} value={category.value}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Input placeholder="e.g., Materials, Labor, Permits" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="description"
@@ -165,51 +144,43 @@ const BudgetItemFormDialog: React.FC<BudgetItemFormDialogProps> = ({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter a description for this budget item" {...field} />
+                    <Textarea placeholder="Detailed description of the budget item" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
-              name="estimated_amount"
+              name="estimated_cost"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Estimated Amount</FormLabel>
+                  <FormLabel>Estimated Cost ($)</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                        $
-                      </span>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        className="pl-8"
-                        {...field}
-                        onChange={e => {
-                          field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value));
-                        }}
-                      />
-                    </div>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      {...field}
+                      onChange={e => field.onChange(parseFloat(e.target.value) || 0)} // Ensure value is number
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {/* TODO: Add fields for quantity, unit cost, etc. if needed */}
 
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={onCancel}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" className="bg-[#0485ea] hover:bg-[#0375d1]">
-                {isEditing ? 'Update' : 'Create'} Budget Item
+                {isEditing ? 'Update' : 'Add'} Item
               </Button>
             </DialogFooter>
           </form>
-        </Form>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );

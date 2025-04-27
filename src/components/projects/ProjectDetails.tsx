@@ -23,7 +23,7 @@ export interface ProjectDetails {
   customerid: string | null;
   jobdescription: string;
   status: string;
-  createdon: string;
+  created_at: string;
   sitelocationaddress: string | null;
   sitelocationcity: string | null;
   sitelocationstate: string | null;

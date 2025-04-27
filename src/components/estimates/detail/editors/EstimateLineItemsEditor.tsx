@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useState, useEffect, useMemo, useRef, memo } from 'react';
 import { useFieldArray, UseFormReturn, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,7 +74,6 @@ interface EstimateLineItemsEditorProps {
   form: UseFormReturn<any>;
   name: string;
   estimateId: string;
-  onSubtotalChange?: (subtotal: number) => void;
   hideFinancialSummary?: boolean;
 }
 
@@ -82,12 +81,26 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
   form,
   name,
   estimateId,
-  onSubtotalChange,
   hideFinancialSummary = false,
 }) => {
-  const { fields, append, remove, update } = useFieldArray({
+  const {
+    control,
+    watch,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = form;
+
+  const defaultMarkupPercentage = 30; // Default markup percentage for new items
+
+  const { fields, append, remove, update } = useFieldArray<
+    any, // Keep the form values type as any for now, unless a specific form type is available
+    string, // Keep the field array name type as string
+    'id' // Key name defaults to 'id'
+  >({
     control: form.control,
     name: name,
+    // No need to specify keyName if it's 'id'
   });
 
   // UI State
@@ -106,41 +119,29 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
   const [documentUploadError, setDocumentUploadError] = useState<string | null>(null);
 
-  // Fetch vendors and subcontractors
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoadingData(true);
-      try {
-        // Fetch vendors
-        const { data: vendorData, error: vendorError } = await supabase
-          .from('vendors')
-          .select('vendorid, vendorname')
-          .order('vendorname');
+  // Calculate totals for the line items
+  const calculateTotals = useCallback(() => {
+    const currentItems = getValues(name) || [];
+    const { subtotal, totalCost } = currentItems.reduce(
+      (acc, item) => {
+        const quantity = Number(item.quantity) || 0;
+        const unitCost = Number(item.unit_cost) || 0;
+        const markupPercentage = Number(item.markup_percentage) || 0;
 
-        if (!vendorError && vendorData) {
-          setVendors(vendorData);
-        }
+        const itemCost = quantity * unitCost;
+        const itemPrice = itemCost * (1 + markupPercentage / 100);
 
-        // Fetch subcontractors
-        const { data: subData, error: subError } = await supabase
-          .from('subcontractors')
-          .select('subid, subname')
-          .order('subname');
+        return {
+          subtotal: acc.subtotal + itemPrice,
+          totalCost: acc.totalCost + itemCost,
+        };
+      },
+      { subtotal: 0, totalCost: 0 }
+    );
 
-        if (!subError && subData) {
-          setSubcontractors(subData);
-        }
-      } catch (error) {
-        if (DEBUG) {
-          console.error('Error fetching vendor/subcontractor data:', error);
-        }
-      } finally {
-        setLoadingData(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    // Trigger financial update counter
+    setFinancialUpdateCounter(prev => prev + 1);
+  }, [getValues, name]);
 
   // Calculate item values when input changes - only for fields that affect calculations
   const calculateItemValues = useCallback(
@@ -151,29 +152,17 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
 
       // Calculate totals
       const totalPrice = quantity * unitPrice;
-      const totalCost = quantity * cost;
-      const grossMargin = totalPrice - totalCost;
-      const grossMarginPercentage = totalPrice > 0 ? (grossMargin / totalPrice) * 100 : 0;
 
-      // Instead of updating the entire item, just set the calculated fields
-      form.setValue(`${name}.${index}.total_price`, totalPrice);
-      form.setValue(`${name}.${index}.gross_margin`, grossMargin);
-      form.setValue(`${name}.${index}.gross_margin_percentage`, grossMarginPercentage);
+      // Only set total price directly from here, others are handled elsewhere
+      form.setValue(`${name}.${index}.total_price`, totalPrice.toFixed(2), {
+        shouldValidate: false,
+        shouldDirty: true,
+      });
 
-      // Notify parent of updated subtotal
-      if (onSubtotalChange) {
-        const subtotal = fields.reduce((sum, item: any, idx) => {
-          // Use the form values to calculate subtotal to ensure latest values
-          const itemTotal = Number(form.getValues(`${name}.${idx}.total_price`)) || 0;
-          return sum + itemTotal;
-        }, 0);
-        onSubtotalChange(subtotal);
-      }
-
-      // Trigger a financial update to refresh the summary
+      // Trigger a financial update to refresh the summary if needed by parent
       setFinancialUpdateCounter(prev => prev + 1);
     },
-    [fields, form, name, onSubtotalChange]
+    [form, name, setFinancialUpdateCounter]
   );
 
   // Update unit price when cost or markup changes
@@ -186,28 +175,23 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
       const unitPrice = cost + markupAmount;
 
       // Format to 2 decimal places for consistency
-      form.setValue(`${name}.${index}.unit_price`, unitPrice.toFixed(2));
+      form.setValue(`${name}.${index}.unit_price`, unitPrice.toFixed(2), {
+        shouldValidate: false,
+        shouldDirty: true,
+      });
 
-      // Don't call calculateItemValues here to avoid circular updates
-      // Instead, we'll calculate total_price directly
+      // Also update total price immediately after unit price changes
       const quantity = Number(form.getValues(`${name}.${index}.quantity`)) || 0;
       const totalPrice = quantity * unitPrice;
-      form.setValue(`${name}.${index}.total_price`, totalPrice);
+      form.setValue(`${name}.${index}.total_price`, totalPrice.toFixed(2), {
+        shouldValidate: false,
+        shouldDirty: true,
+      });
 
-      // Notify parent of updated subtotal after price update
-      if (onSubtotalChange) {
-        const subtotal = fields.reduce((sum, item: any, idx) => {
-          const itemTotal =
-            idx === index ? totalPrice : Number(form.getValues(`${name}.${idx}.total_price`)) || 0;
-          return sum + itemTotal;
-        }, 0);
-        onSubtotalChange(subtotal);
-      }
-
-      // Trigger a financial update to refresh the summary
+      // Trigger a financial update to refresh the summary if needed by parent
       setFinancialUpdateCounter(prev => prev + 1);
     },
-    [form, name, fields, onSubtotalChange]
+    [form, name, setFinancialUpdateCounter]
   );
 
   // Calculate markup from price (reverse calculation)
@@ -218,58 +202,131 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
 
       // Avoid division by zero
       if (cost > 0) {
-        // Calculate markup percentage: (Price - Cost) / Cost * 100
         const markupPercentage = ((unitPrice - cost) / cost) * 100;
-
-        // Format to one decimal place and update the form
         form.setValue(
           `${name}.${index}.markup_percentage`,
-          Math.max(0, markupPercentage).toFixed(1)
+          Math.max(0, markupPercentage).toFixed(1), // Format to 1 decimal
+          { shouldValidate: false, shouldDirty: true }
         );
+      } else {
+        form.setValue(`${name}.${index}.markup_percentage`, '0', {
+          // Set to string '0' for consistency if needed
+          shouldValidate: false,
+          shouldDirty: true,
+        });
       }
-
-      // Trigger a financial update to refresh the summary
-      setFinancialUpdateCounter(prev => prev + 1);
     },
     [form, name]
   );
 
-  const handleAddItem = useCallback(() => {
+  // Add new item handler
+  const handleAddItem = () => {
+    // Generate IDs for the new item
+    const newId = `new-${Date.now()}-${Math.random()}`;
+
+    // Create a new empty item with string values (important for form handling)
     const newItem = {
-      id: `new-${Date.now()}`,
-      description: '',
-      item_type: 'none',
-      quantity: 1,
-      unit_price: 0,
-      cost: 0,
-      markup_percentage: 20,
+      id: newId,
+      description: '', // Empty description that user will fill in
+      category: '',
+      quantity: '1', // String values for form compatibility
+      unit_price: '0',
       total_price: 0,
-      gross_margin: 0,
-      gross_margin_percentage: 0,
+      cost: '0',
+      markup_percentage: String(defaultMarkupPercentage || 0),
+      item_type: 'none',
       estimate_id: estimateId,
+      _isNewlyAdded: true,
     };
 
+    // Add the item to the field array without triggering validation
     append(newItem);
 
-    // Trigger a financial update to refresh the summary
-    setFinancialUpdateCounter(prev => prev + 1);
-  }, [append, estimateId]);
+    // Force update calculation - but wait a moment to avoid rerender collision
+    setTimeout(() => {
+      calculateTotals();
+    }, 10);
+
+    // Log for debugging
+    if (DEBUG) {
+      console.log('Added new item:', newItem);
+      console.log('Current fields length:', fields.length);
+    }
+
+    // Focus on the new item after rendering - with slightly longer delay
+    setTimeout(() => {
+      try {
+        // We need to use DOM query since the fields array isn't updated immediately
+        const rows = document.querySelectorAll('[data-row-index]');
+        if (rows && rows.length > 0) {
+          // Target the last row (most recently added)
+          const lastRowIndex = rows.length - 1;
+          const lastRow = rows[lastRowIndex];
+
+          if (lastRow) {
+            // Find and focus the textarea in this row
+            const textarea = lastRow.querySelector('textarea');
+            if (textarea) {
+              // Set focus and position cursor
+              textarea.focus();
+              // Place cursor at the end
+              const len = textarea.value?.length || 0;
+              textarea.setSelectionRange(len, len);
+              // Clear activeRow to avoid selection interference
+              setActiveRow(null);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error focusing new row:', error);
+      }
+    }, 150);
+  };
 
   // Handle item selection
-  const handleSelectItem = useCallback((id: string) => {
-    setSelectedItems(prev =>
-      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
-    );
+  const handleSelectItem = useCallback((id: string, e?: React.MouseEvent) => {
+    // Stop event propagation to prevent focus issues
+    if (e) {
+      e.stopPropagation();
+    }
+
+    // Update selected items - do this in a way that guarantees state update
+    setSelectedItems(prev => {
+      const isCurrentlySelected = prev.includes(id);
+      const newSelection = isCurrentlySelected
+        ? prev.filter(itemId => itemId !== id)
+        : [...prev, id];
+
+      if (DEBUG) {
+        console.log(
+          'Selection changed:',
+          id,
+          isCurrentlySelected ? 'removed' : 'added',
+          'New selection:',
+          newSelection
+        );
+      }
+
+      return newSelection;
+    });
   }, []);
 
   // Handle select all
   const handleSelectAll = useCallback(() => {
-    if (selectedItems.length === fields.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(fields.map((item: any) => item.id));
-    }
-  }, [fields, selectedItems]);
+    setSelectedItems(prev => {
+      // If all items are currently selected, clear selection
+      if (fields.length > 0 && prev.length === fields.length) {
+        if (DEBUG) console.log('Deselecting all items');
+        return [];
+      }
+      // Otherwise select all items
+      else {
+        const allIds = fields.map((item: any) => item.id);
+        if (DEBUG) console.log('Selecting all items:', allIds);
+        return allIds;
+      }
+    });
+  }, [fields]);
 
   // Handle bulk delete
   const handleBulkDelete = useCallback(() => {
@@ -295,9 +352,33 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
     setFinancialUpdateCounter(prev => prev + 1);
   }, [selectedItems, fields, remove]);
 
-  const handleRowClick = useCallback((index: number) => {
-    setActiveRow(index);
-  }, []);
+  const handleRowClick = useCallback(
+    (index: number, e: React.MouseEvent) => {
+      // Don't trigger row selection when clicking on form elements
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLSelectElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement).closest('input') ||
+        (e.target as HTMLElement).closest('select') ||
+        (e.target as HTMLElement).closest('textarea') ||
+        (e.target as HTMLElement).closest('button')
+      ) {
+        return;
+      }
+
+      setActiveRow(index);
+    },
+    [setActiveRow]
+  );
+
+  // New function to directly set active row without click checks
+  const handleSetActiveRow = useCallback(
+    (index: number) => {
+      setActiveRow(index === activeRow ? null : index);
+    },
+    [activeRow, setActiveRow]
+  );
 
   const handleRemoveItem = useCallback(
     (e: React.MouseEvent, index: number) => {
@@ -312,16 +393,6 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
       setFinancialUpdateCounter(prev => prev + 1);
     },
     [remove]
-  );
-
-  // Custom handler for description changes that doesn't trigger financial calculations
-  const handleDescriptionChange = useCallback(
-    (index: number, value: string) => {
-      form.setValue(`${name}.${index}.description`, value, {
-        shouldDirty: true,
-      });
-    },
-    [form, name]
   );
 
   // Calculate financial summary - memoize to prevent recalculation on every render
@@ -535,147 +606,117 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
                 </TableHeader>
                 <TableBody>
                   {fields.length > 0 ? (
-                    fields.map((field, index) => {
+                    fields.map((field: EstimateItem, index) => {
                       const isSelected = selectedItems.includes(field.id);
                       const itemType = form.watch(`${name}.${index}.item_type`) || 'none';
                       const isVendor = itemType === 'material';
                       const isSubcontractor = itemType === 'subcontractor';
                       const hasDocument = Boolean(form.watch(`${name}.${index}.document_id`));
 
-                      // Get description directly to avoid form field watching
-                      const description = form.getValues(`${name}.${index}.description`) || '';
-
                       return (
                         <TableRow
                           key={field.id}
+                          data-row-index={index}
                           className={
                             isSelected ? 'bg-blue-50' : activeRow === index ? 'bg-muted/20' : ''
                           }
-                          onClick={() => handleRowClick(index)}
                         >
-                          <TableCell>
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => handleSelectItem(field.id)}
-                              aria-label={`Select item ${index + 1}`}
-                              onClick={e => e.stopPropagation()}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {/* Use controlled component for description to avoid triggering calculations */}
-                              <Textarea
-                                value={description}
-                                onChange={e => handleDescriptionChange(index, e.target.value)}
-                                rows={2}
-                                className="resize-none"
-                                placeholder="Item description"
+                          <TableCell className="relative">
+                            <div className="z-10 flex items-center gap-1">
+                              <Checkbox
+                                checked={selectedItems.includes(field.id)}
+                                onCheckedChange={() => handleSelectItem(field.id)}
+                                aria-label={`Select item ${index + 1}`}
                               />
-                              {hasDocument && (
-                                <Badge
-                                  variant="outline"
-                                  className="bg-blue-50 text-blue-700 hover:bg-blue-100"
-                                >
-                                  <Paperclip className="h-3 w-3 mr-1" />
-                                  Doc
-                                </Badge>
-                              )}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 rounded-full"
+                                onClick={() => handleSetActiveRow(index)}
+                              >
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                              </Button>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <Select
-                              value={itemType || 'none'}
-                              onValueChange={value =>
-                                form.setValue(`${name}.${index}.item_type`, value)
-                              }
+                          <TableCell className="text-left">
+                            <Textarea
+                              rows={2}
+                              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                              placeholder="Item description (required)"
+                              {...form.register(`${name}.${index}.description`)}
+                              onClick={e => e.stopPropagation()}
+                              onMouseDown={e => e.stopPropagation()}
+                              onKeyDown={e => e.stopPropagation()}
+                            />
+                          </TableCell>
+                          <TableCell className="text-left">
+                            <div
+                              onClick={e => e.stopPropagation()}
+                              onMouseDown={e => e.stopPropagation()}
                             >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">Select type</SelectItem>
-                                <SelectItem value="labor">Labor</SelectItem>
-                                <SelectItem value="material">Material</SelectItem>
-                                <SelectItem value="subcontractor">Subcontractor</SelectItem>
-                                <SelectItem value="fee">Fee</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            {isVendor && vendors.length > 0 && (
                               <Select
-                                value={form.watch(`${name}.${index}.vendor_id`) || ''}
-                                onValueChange={value =>
-                                  form.setValue(`${name}.${index}.vendor_id`, value)
-                                }
+                                value={itemType}
+                                onValueChange={value => {
+                                  form.setValue(`${name}.${index}.item_type`, value);
+                                }}
                               >
-                                <SelectTrigger className="w-full mt-2">
-                                  <SelectValue placeholder="Select vendor" />
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue placeholder="Select item type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {vendors.map(vendor => (
-                                    <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                                      {vendor.vendorname}
-                                    </SelectItem>
-                                  ))}
+                                  <SelectItem value="material">Material</SelectItem>
+                                  <SelectItem value="subcontractor">Subcontractor</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
                                 </SelectContent>
                               </Select>
-                            )}
-
-                            {isSubcontractor && subcontractors.length > 0 && (
-                              <Select
-                                value={form.watch(`${name}.${index}.subcontractor_id`) || ''}
-                                onValueChange={value =>
-                                  form.setValue(`${name}.${index}.subcontractor_id`, value)
-                                }
-                              >
-                                <SelectTrigger className="w-full mt-2">
-                                  <SelectValue placeholder="Select subcontractor" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {subcontractors.map(sub => (
-                                    <SelectItem key={sub.subid} value={sub.subid}>
-                                      {sub.subname}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
+                            </div>
                           </TableCell>
                           {!isCompactView && (
                             <TableCell className="text-right">
                               <Input
-                                {...form.register(`${name}.${index}.quantity`)}
                                 type="number"
-                                min="1"
+                                {...form.register(`${name}.${index}.quantity`, {
+                                  valueAsNumber: true,
+                                })}
                                 step="1"
-                                className="text-right"
-                                onBlur={() => calculateItemValues(index)}
+                                min="0"
+                                onClick={e => e.stopPropagation()}
+                                onMouseDown={e => e.stopPropagation()}
+                                onBlur={() => {
+                                  calculateItemValues(index);
+                                }}
+                                className="w-[80px] text-right"
                               />
                             </TableCell>
                           )}
                           {!isCompactView && (
                             <TableCell className="text-right">
                               <div className="relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
                                   $
                                 </span>
                                 <Input
-                                  {...form.register(`${name}.${index}.cost`)}
                                   type="number"
-                                  min="0"
+                                  {...form.register(`${name}.${index}.cost`, {
+                                    valueAsNumber: true,
+                                  })}
                                   step="0.01"
-                                  className="text-right font-medium text-base pl-6"
+                                  min="0"
                                   placeholder="0.00"
+                                  onClick={e => e.stopPropagation()}
+                                  onMouseDown={e => e.stopPropagation()}
                                   onBlur={e => {
-                                    // Format to 2 decimal places on blur
                                     const value = parseFloat(e.target.value);
                                     if (!isNaN(value)) {
-                                      const formatted = value.toFixed(2);
-                                      form.setValue(`${name}.${index}.cost`, formatted);
+                                      form.setValue(`${name}.${index}.cost`, value.toFixed(2), {
+                                        shouldValidate: false,
+                                        shouldDirty: true,
+                                      });
                                     }
                                     updateUnitPriceFromMarkup(index);
                                   }}
+                                  className="w-[100px] text-right pl-6"
                                 />
                               </div>
                             </TableCell>
@@ -683,98 +724,87 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
                           {!isCompactView && (
                             <TableCell className="text-right">
                               <Input
-                                {...form.register(`${name}.${index}.markup_percentage`)}
                                 type="number"
-                                min="0"
+                                {...form.register(`${name}.${index}.markup_percentage`, {
+                                  valueAsNumber: true,
+                                })}
                                 step="0.1"
-                                className="text-right"
-                                placeholder="Markup %"
+                                min="0"
+                                placeholder="0.0"
+                                onClick={e => e.stopPropagation()}
+                                onMouseDown={e => e.stopPropagation()}
                                 onBlur={e => {
-                                  // Format to 1 decimal place on blur
                                   const value = parseFloat(e.target.value);
                                   if (!isNaN(value)) {
-                                    const formatted = value.toFixed(1);
-                                    form.setValue(`${name}.${index}.markup_percentage`, formatted);
+                                    form.setValue(
+                                      `${name}.${index}.markup_percentage`,
+                                      value.toFixed(1),
+                                      { shouldValidate: false, shouldDirty: true }
+                                    );
                                   }
                                   updateUnitPriceFromMarkup(index);
                                 }}
+                                className="w-[80px] text-right"
                               />
                             </TableCell>
                           )}
                           <TableCell className="text-right">
                             <div className="relative">
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
                                 $
                               </span>
                               <Input
-                                {...form.register(`${name}.${index}.unit_price`)}
                                 type="number"
-                                min="0"
+                                {...form.register(`${name}.${index}.unit_price`, {
+                                  valueAsNumber: true,
+                                })}
                                 step="0.01"
-                                className="text-right font-medium text-base pl-6"
+                                min="0"
                                 placeholder="0.00"
+                                onClick={e => e.stopPropagation()}
+                                onMouseDown={e => e.stopPropagation()}
                                 onBlur={e => {
-                                  // Format to 2 decimal places on blur
                                   const value = parseFloat(e.target.value);
                                   if (!isNaN(value)) {
-                                    const formatted = value.toFixed(2);
-                                    form.setValue(`${name}.${index}.unit_price`, formatted);
-
-                                    // When price changes directly, update the markup percentage
-                                    updateMarkupFromPrice(index);
+                                    form.setValue(`${name}.${index}.unit_price`, value.toFixed(2), {
+                                      shouldValidate: false,
+                                      shouldDirty: true,
+                                    });
                                   }
+                                  updateMarkupFromPrice(index);
                                   calculateItemValues(index);
                                 }}
+                                className="w-[100px] text-right pl-6"
                               />
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-medium text-base pr-4">
-                            <div className="inline-flex items-center justify-end">
-                              <span className="text-gray-500 mr-0.5">$</span>
-                              {(
-                                Number(form.getValues(`${name}.${index}.total_price`)) || 0
-                              ).toFixed(2)}
+                          <TableCell className="text-right">
+                            <div className="px-3 py-2 text-sm text-right">
+                              {formatCurrency(form.watch(`${name}.${index}.total_price`) || 0)}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-end gap-1">
+                          <TableCell className="w-[50px]">
+                            {hasDocument && (
                               <Button
                                 type="button"
                                 variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-50"
-                                title={hasDocument ? 'Replace Document' : 'Attach Document'}
-                                onClick={() => handleOpenDocumentDialog(index)}
+                                size="icon"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleOpenDocumentDialog(index);
+                                }}
                               >
                                 <Paperclip className="h-4 w-4" />
                               </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"
-                                title="Delete Item"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleRemoveItem(e, index);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={isCompactView ? 5 : 8} className="h-24 text-center">
-                        No items
-                        <div className="mt-2">
-                          <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
-                            Add your first item
-                          </Button>
-                        </div>
+                      <TableCell colSpan={12} className="text-center">
+                        No items added yet. Click "Add Item" to begin.
                       </TableCell>
                     </TableRow>
                   )}
@@ -782,91 +812,10 @@ const EstimateLineItemsEditor: React.FC<EstimateLineItemsEditorProps> = ({
               </Table>
             </TooltipProvider>
           </div>
-
-          {fields.length > 0 && !hideFinancialSummary && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2 bg-slate-50 p-3 border rounded-md">
-                <h4 className="text-sm font-medium text-[#0485ea] mb-2">Financial Summary</h4>
-                <div className="grid grid-cols-4 gap-4">
-                  <div>
-                    <div className="text-xs text-muted-foreground">Total Cost</div>
-                    <div className="text-sm font-medium">
-                      {formatCurrency(financialSummary.totalCost)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">Total Revenue</div>
-                    <div className="text-sm font-medium">
-                      {formatCurrency(financialSummary.totalRevenue)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">Gross Margin</div>
-                    <div className="text-sm font-medium">
-                      {formatCurrency(financialSummary.grossMargin)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">Margin %</div>
-                    <div className="text-sm font-medium">
-                      {financialSummary.grossMarginPercentage.toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
-
-      {/* Document Upload Dialog */}
-      <Dialog
-        open={showDocumentDialog}
-        onOpenChange={open => {
-          if (!open) {
-            setDocumentUploadError(null);
-            // Only reset active item index when dialog is closed by user
-            // not when it's closed programmatically after success
-            if (showDocumentDialog) {
-              setActiveItemIndex(null);
-            }
-          }
-          setShowDocumentDialog(open);
-        }}
-      >
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Attach Document to Line Item</DialogTitle>
-            <DialogDescription>Upload a document to attach to this line item.</DialogDescription>
-          </DialogHeader>
-
-          {documentUploadError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{documentUploadError}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="max-h-[60vh] overflow-y-auto">
-            {activeItemIndex !== null && (
-              <>
-                <div className="text-xs text-gray-500 mb-2">
-                  Using estimate ID: {estimateId || 'pending'}
-                </div>
-                <EnhancedDocumentUpload
-                  entityType="ESTIMATE_ITEM"
-                  entityId={estimateId}
-                  onSuccess={handleDocumentAttached}
-                  onCancel={() => setShowDocumentDialog(false)}
-                  preventFormPropagation={true}
-                />
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
 
-export default React.memo(EstimateLineItemsEditor);
+export default EstimateLineItemsEditor;

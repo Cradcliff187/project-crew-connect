@@ -1,6 +1,12 @@
 import React, { useEffect } from 'react';
 import { UseFormReturn, Control } from 'react-hook-form';
-import { DocumentUploadFormValues, EntityType, entityTypes } from '../schemas/documentSchema';
+import {
+  DocumentUploadFormValues,
+  EntityType,
+  entityTypes,
+  expenseTypeRequiresVendor,
+  expenseTypeAllowsSubcontractor,
+} from '../schemas/documentSchema';
 import EntitySelector from './EntitySelector';
 import ExpenseTypeSelector from './ExpenseTypeSelector';
 import DocumentCategorySelector from './DocumentCategorySelector';
@@ -63,6 +69,21 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
   // Helper to determine if we should show budget selector
   const showBudgetSelector =
     (watchEntityType === 'PROJECT' || watchEntityType === 'WORK_ORDER') && showExpenseFields;
+
+  // Get current expense type
+  const watchExpenseType = form.watch('metadata.expenseType');
+
+  // Set vendor type when expense type changes
+  useEffect(() => {
+    if (!watchExpenseType || watchVendorType) return;
+
+    // Auto-select vendor type based on expense type
+    if (expenseTypeRequiresVendor(watchExpenseType)) {
+      form.setValue('metadata.vendorType', 'vendor');
+    } else if (expenseTypeAllowsSubcontractor(watchExpenseType)) {
+      form.setValue('metadata.vendorType', 'subcontractor');
+    }
+  }, [watchExpenseType, watchVendorType, form]);
 
   // Handle entity type changes
   const handleEntityTypeChange = (value: string) => {
@@ -158,7 +179,9 @@ const MetadataForm: React.FC<MetadataFormProps> = ({
         entityType={watchEntityType}
       />
 
-      {!isReceiptUpload && showExpenseFields && <VendorTypeSelector control={control} />}
+      {!isReceiptUpload && showExpenseFields && (
+        <VendorTypeSelector control={control} watchExpenseType={watchExpenseType} />
+      )}
 
       {showVendorSelector && watchVendorType && (
         <VendorSelector

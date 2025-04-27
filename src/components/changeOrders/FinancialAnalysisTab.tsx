@@ -6,6 +6,8 @@ import FinancialImpactSummary from './FinancialImpactSummary';
 import BudgetImpactAnalysis from './BudgetImpactAnalysis';
 import ScheduleImpactVisualization from './ScheduleImpactVisualization';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 interface FinancialAnalysisTabProps {
   form: UseFormReturn<ChangeOrder>;
@@ -78,6 +80,79 @@ const FinancialAnalysisTab: React.FC<FinancialAnalysisTabProps> = ({
         changeOrder={changeOrder}
         originalContractValue={originalContractValue}
       />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end border rounded-md p-4 bg-muted/20">
+        <FormField
+          control={form.control}
+          name="cost_impact"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cost Impact ($)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  value={field.value || ''}
+                  onChange={e =>
+                    field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))
+                  }
+                />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">Estimated change to project cost.</p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="revenue_impact"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Revenue Impact ($)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  value={field.value || ''}
+                  onChange={e =>
+                    field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))
+                  }
+                />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">
+                Change to contract value/selling price.
+              </p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="impact_days"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Schedule Impact (Days)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="1"
+                  placeholder="0"
+                  {...field}
+                  value={field.value || ''}
+                  onChange={e =>
+                    field.onChange(e.target.value === '' ? null : parseInt(e.target.value, 10))
+                  }
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="md:col-span-2">

@@ -25,6 +25,10 @@ interface BudgetItem {
   estimated_amount: number;
   actual_amount: number;
   created_at: string;
+  vendor_id?: string;
+  subcontractor_id?: string;
+  vendorname?: string;
+  subname?: string;
 }
 
 interface BudgetItemsProps {
@@ -36,7 +40,7 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState<BudgetItem | null>(null);
 
-  // Fetch budget items
+  // Fetch budget items with vendor/subcontractor info
   const {
     data: budgetItems = [],
     isLoading,
@@ -45,14 +49,56 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
   } = useQuery({
     queryKey: ['budget-items', projectId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get all budget items
+      const { data: itemsData, error: itemsError } = await supabase
         .from('project_budget_items')
         .select('*')
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as BudgetItem[];
+      if (itemsError) throw itemsError;
+
+      // Process items to include vendor and subcontractor names
+      const processedItems = await Promise.all(
+        (itemsData || []).map(async (item: any) => {
+          let vendorName = null;
+          let subcontractorName = null;
+
+          // Get vendor name if vendor_id exists
+          if (item.vendor_id) {
+            const { data: vendorData } = await supabase
+              .from('vendors')
+              .select('vendorname')
+              .eq('vendorid', item.vendor_id)
+              .single();
+
+            if (vendorData) {
+              vendorName = vendorData.vendorname;
+            }
+          }
+
+          // Get subcontractor name if subcontractor_id exists
+          if (item.subcontractor_id) {
+            const { data: subData } = await supabase
+              .from('subcontractors')
+              .select('subname')
+              .eq('subid', item.subcontractor_id)
+              .single();
+
+            if (subData) {
+              subcontractorName = subData.subname;
+            }
+          }
+
+          return {
+            ...item,
+            vendorname: vendorName,
+            subname: subcontractorName,
+          };
+        })
+      );
+
+      return processedItems as BudgetItem[];
     },
     meta: {
       onError: (error: any) => {
@@ -156,6 +202,7 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
               <TableRow>
                 <TableHead>Category</TableHead>
                 <TableHead>Description</TableHead>
+                <TableHead>Provider</TableHead>
                 <TableHead className="text-right">Estimated Amount</TableHead>
                 <TableHead className="text-right">Actual Amount</TableHead>
                 <TableHead className="text-right">Variance</TableHead>
@@ -176,6 +223,10 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
                   <TableRow key={item.id}>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.description}</TableCell>
+                    <TableCell>
+                      {item.vendorname && <span className="text-blue-600">{item.vendorname}</span>}
+                      {item.subname && <span className="text-green-600">{item.subname}</span>}
+                    </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(item.estimated_amount)}
                     </TableCell>
@@ -194,12 +245,17 @@ const BudgetItems: React.FC<BudgetItemsProps> = ({ projectId, onRefresh }) => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditItem(item)}>
+                      <div className="flex justify-end gap-2">
+                        <Button size="icon" variant="ghost" onClick={() => handleEditItem(item)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)}>
-                          <Trash className="h-4 w-4 text-red-500" />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDeleteItem(item)}
+                        >
+                          <Trash className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

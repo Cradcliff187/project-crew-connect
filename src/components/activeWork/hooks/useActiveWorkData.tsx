@@ -16,13 +16,13 @@ export function useActiveWorkData(limit?: number) {
     queryFn: async () => {
       let query = supabase
         .from('projects')
-        .select('projectid, projectname, customername, customerid, status, createdon, due_date');
+        .select('projectid, projectname, customername, customerid, status, created_at, due_date');
 
       // If limit is provided, order by due_date and limit results
       if (limit) {
         query = query.order('due_date', { ascending: true, nullsFirst: false }).limit(limit);
       } else {
-        query = query.order('createdon', { ascending: false });
+        query = query.order('created_at', { ascending: false });
       }
 
       const { data, error } = await query;
@@ -31,6 +31,7 @@ export function useActiveWorkData(limit?: number) {
 
       return data.map(project => ({
         ...project,
+        createdon: project.created_at, // Map created_at to createdon for backward compatibility
         budget: Math.floor(Math.random() * 200000) + 50000,
         spent: Math.floor(Math.random() * 150000),
         progress: Math.floor(Math.random() * 100),

@@ -8,7 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import CustomerDetail from './pages/CustomerDetail';
 import Projects from './pages/Projects';
-import ProjectDetailRefactored from './components/projects/ProjectDetailRefactored';
+import ProjectDetail from './pages/ProjectDetail';
 import Estimates from './pages/Estimates';
 import EstimateDetailPage from './pages/EstimateDetailPage';
 import WorkOrders from './pages/WorkOrders';
@@ -55,7 +55,7 @@ function App() {
               <Route path="customers" element={<Customers />} />
               <Route path="customers/:customerId" element={<CustomerDetail />} />
               <Route path="projects" element={<Projects />} />
-              <Route path="projects/:projectId" element={<ProjectDetailRefactored />} />
+              <Route path="projects/:projectId" element={<ProjectDetail />} />
               <Route path="estimates" element={<Estimates />} />
               <Route path="estimates/settings" element={<EstimateEmailSettings />} />
               <Route path="estimates/:estimateId" element={<EstimateDetailPage />} />

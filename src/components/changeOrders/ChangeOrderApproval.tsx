@@ -27,14 +27,17 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [statusOptions, setStatusOptions] = useState<any[]>([]);
+  const [loadingStatus, setLoadingStatus] = useState(true);
 
   // Safely access form fields
   const currentStatus = form?.watch ? (form.watch('status') as ChangeOrderStatus) : 'DRAFT';
 
   useEffect(() => {
     if (changeOrderId) {
-      fetchHistory();
+      fetchStatusData();
       fetchApprovalNotes();
+    } else {
+      setLoadingStatus(false);
     }
   }, [changeOrderId]);
 
@@ -58,50 +61,81 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
     }
   };
 
-  const fetchHistory = async () => {
+  const fetchStatusData = async () => {
     if (!changeOrderId) return;
+    console.log(`[ChangeOrderApproval] Fetching status data for CO: ${changeOrderId}`);
+    setLoadingStatus(true);
+    setHistory([]);
+    setStatusOptions([]);
 
     try {
-      // First fetch status definitions for change orders
+      // Fetch status definitions first
+      console.log('[ChangeOrderApproval] Fetching status definitions...');
       const { data: statusDefs, error: statusError } = await supabase
         .from('status_definitions')
         .select('*')
         .eq('entity_type', 'CHANGE_ORDER' as any);
 
-      if (!statusError && statusDefs) {
-        setStatusOptions(
-          statusDefs.map(def => ({
-            value: def.status_code,
-            label: def.label,
-            color: def.color,
-          }))
-        );
+      if (statusError) {
+        console.error('[ChangeOrderApproval] Error fetching status definitions:', statusError);
+        toast({
+          title: 'Error',
+          description: 'Could not load status options.',
+          variant: 'destructive',
+        });
+        setStatusOptions([]);
+      } else {
+        console.log('[ChangeOrderApproval] Fetched status definitions:', statusDefs);
+        const mappedOptions = (statusDefs || []).map(def => ({
+          value: def.status_code,
+          label: def.label,
+          color: def.color,
+        }));
+        console.log('[ChangeOrderApproval] Mapped status options:', mappedOptions);
+        setStatusOptions(mappedOptions);
       }
 
       // Then fetch the history
-      const { data, error } = await supabase
+      console.log('[ChangeOrderApproval] Fetching history...');
+      const { data: historyData, error: historyError } = await supabase
         .from('activitylog')
         .select('*')
         .eq('referenceid', changeOrderId)
         .eq('moduletype', 'CHANGE_ORDER')
         .order('timestamp', { ascending: false });
 
-      if (error) throw error;
-
-      // Transform the data to match our expected format
-      const formattedHistory =
-        data?.map(item => ({
+      if (historyError) {
+        console.error('[ChangeOrderApproval] Error fetching history:', historyError);
+        toast({
+          title: 'Error',
+          description: 'Could not load status history.',
+          variant: 'destructive',
+        });
+        setHistory([]);
+      } else {
+        console.log('[ChangeOrderApproval] Fetched history data:', historyData);
+        const formattedHistory = (historyData || []).map(item => ({
           status: item.status,
           previous_status: item.previousstatus,
           changed_date: item.timestamp,
           changed_by: item.useremail,
-          notes: item.detailsjson ? JSON.parse(item.detailsjson).notes : undefined,
-        })) || [];
-
-      setHistory(formattedHistory);
+          notes: item.detailsjson ? JSON.parse(item.detailsjson)?.notes : item.action,
+        }));
+        console.log('[ChangeOrderApproval] Formatted history:', formattedHistory);
+        setHistory(formattedHistory);
+      }
     } catch (error: any) {
-      console.error('Error fetching status history:', error);
+      console.error('[ChangeOrderApproval] Error in fetchStatusData catch block:', error);
       setHistory([]);
+      setStatusOptions([]);
+      toast({
+        title: 'Error',
+        description: 'Could not load status details.',
+        variant: 'destructive',
+      });
+    } finally {
+      console.log('[ChangeOrderApproval] fetchStatusData finished.');
+      setLoadingStatus(false);
     }
   };
 
@@ -150,7 +184,7 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
   };
 
   const handleStatusChange = async () => {
-    await fetchHistory();
+    await fetchStatusData();
     onUpdated();
   };
 
@@ -193,21 +227,34 @@ const ChangeOrderApproval: React.FC<ChangeOrderApprovalProps> = ({
           <CardTitle>Status History</CardTitle>
         </CardHeader>
         <CardContent>
-          <StatusHistoryView
-            history={history}
-            statusOptions={statusOptions}
-            currentStatus={currentStatus}
-          />
+          {loadingStatus ? (
+            <div className="flex justify-center items-center p-4">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <StatusHistoryView
+              history={history}
+              statusOptions={statusOptions}
+              currentStatus={currentStatus}
+            />
+          )}
         </CardContent>
       </Card>
 
       {changeOrderId && (
         <div className="flex justify-end mt-4">
-          <ChangeOrderStatusControl
-            changeOrderId={changeOrderId}
-            currentStatus={currentStatus}
-            onStatusChange={handleStatusChange}
-          />
+          {loadingStatus ? (
+            <div className="h-10 flex items-center text-sm text-muted-foreground">
+              Loading status options...
+            </div>
+          ) : (
+            <ChangeOrderStatusControl
+              changeOrderId={changeOrderId}
+              currentStatus={currentStatus}
+              onStatusChange={handleStatusChange}
+              statusOptions={statusOptions}
+            />
+          )}
         </div>
       )}
     </div>

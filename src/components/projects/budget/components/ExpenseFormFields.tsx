@@ -22,8 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { ExpenseFormValues } from '../hooks/useExpenseForm';
+import { EXPENSE_TYPES, expenseTypeRequiresVendor } from '@/constants/expenseTypes';
+
+// Filter out expense types that should not be manually added (e.g., Labor)
+const MANUAL_EXPENSE_CATEGORIES = EXPENSE_TYPES.filter(
+  type => type.value !== 'labor' // Exclude 'labor'
+  // Add other exclusions like 'subcontractor' if needed:
+  // && type.value !== 'subcontractor'
+);
 
 interface ExpenseFormFieldsProps {
   form: UseFormReturn<ExpenseFormValues>;
@@ -40,6 +48,11 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
   onAttachReceipt,
   hasAttachedReceipt,
 }) => {
+  // Watch the *category* field now for vendor logic
+  const watchCategory = form.watch('category');
+  // Use the watched category to determine if vendor is required
+  const requiresVendor = expenseTypeRequiresVendor(watchCategory || '');
+
   return (
     <div className="space-y-4">
       <FormField
@@ -51,6 +64,35 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
             <FormControl>
               <Textarea placeholder="Describe this expense" {...field} />
             </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="category"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Expense Category</FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              defaultValue={field.value || ''}
+              value={field.value || ''}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select the main expense category..." />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {MANUAL_EXPENSE_CATEGORIES.map(type => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}
@@ -122,22 +164,43 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
         name="budget_item_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Budget Category</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+            <FormLabel>Link to Budget Item</FormLabel>
+            <Select
+              onValueChange={val => field.onChange(val === 'none' ? null : val)}
+              defaultValue={field.value || 'none'}
+              value={field.value || 'none'}
+            >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a budget category" />
+                  <SelectValue placeholder="Link expense to a specific budget line item..." />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">Uncategorized</SelectItem>
-                {budgetItems.map(item => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.category} {item.description ? `- ${item.description}` : ''}
-                  </SelectItem>
-                ))}
+                <SelectItem value="none">Do not link to a specific item</SelectItem>
+                {(budgetItems || []).map((item, index) => {
+                  try {
+                    console.log(`[ExpenseFormFields] Processing budget item ${index}:`, item);
+                    const label = `${item?.category || 'Uncat.'}: ${item?.description || '(No desc.)'} (${formatCurrency(item?.estimated_amount || 0)})`;
+                    console.log(`[ExpenseFormFields] Generated label for item ${index}:`, label);
+                    return (
+                      <SelectItem key={item?.id || `item-${index}`} value={item?.id}>
+                        {label}
+                      </SelectItem>
+                    );
+                  } catch (error) {
+                    console.error(
+                      `[ExpenseFormFields] Error processing budget item at index ${index}:`,
+                      item,
+                      error
+                    );
+                    return null;
+                  }
+                })}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Linking helps track variance against specific budget lines.
+            </p>
             <FormMessage />
           </FormItem>
         )}
@@ -148,15 +211,23 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
         name="vendor_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Vendor</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
+            <FormLabel>{requiresVendor ? 'Vendor (Required)' : 'Vendor'}</FormLabel>
+            <Select
+              onValueChange={val => field.onChange(val === 'none' ? null : val)}
+              defaultValue={field.value || 'none'}
+              value={field.value || 'none'}
+            >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a vendor" />
+                  <SelectValue
+                    placeholder={
+                      requiresVendor ? 'Choose a vendor (required)' : 'Choose a vendor (optional)'
+                    }
+                  />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="">No Vendor</SelectItem>
+                <SelectItem value="none">No Vendor</SelectItem>
                 {vendors.map(vendor => (
                   <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
                     {vendor.vendorname}
@@ -164,6 +235,11 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            {requiresVendor && (
+              <p className="text-sm text-muted-foreground">
+                This expense category requires a vendor
+              </p>
+            )}
             <FormMessage />
           </FormItem>
         )}

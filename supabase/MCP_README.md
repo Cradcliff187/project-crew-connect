@@ -2,12 +2,14 @@
 
 This integration allows Cursor AI to interact directly with the Supabase database using the Model Context Protocol (MCP).
 
-## Overview
+## Verified Capabilities
 
-The setup consists of:
+The following capabilities have been tested and confirmed working:
 
-- A proxy script (`supabase/functions/proxy.js`) that connects to Supabase
-- An MCP configuration (`.cursor/mcp.json`) that tells Cursor to use this proxy
+- ✅ Basic connectivity (ping/pong)
+- ✅ Reading data from tables (querying)
+- ✅ Listing projects and getting project details
+- ✅ SQL execution via existing database functions
 
 ## How to Launch
 
@@ -16,56 +18,103 @@ To start the Supabase MCP integration:
 1. Open a terminal in the project root directory
 2. Run the command:
    ```
-   node ./supabase/functions/proxy.js
+   node start-mcp.js
    ```
-3. You should see the message: "Supabase MCP proxy started..."
+3. You should see a successful connection message
 4. Leave this terminal window open while using Cursor
 
-## Verifying It's Working
+## For AI Agents: Available Operations
 
-When properly configured, you should see:
+The MCP proxy supports the following operations:
 
-1. The "Supabase MCP proxy started..." message in the terminal
-2. In Cursor, no MCP configuration errors should appear
-3. Cursor AI should be able to reference and work with your Supabase data
+| Operation       | Description                         | Example Usage                                                                 | Status     |
+| --------------- | ----------------------------------- | ----------------------------------------------------------------------------- | ---------- |
+| `ping`          | Check server responsiveness         | `{"type":"ping"}`                                                             | ✅ Working |
+| `query`         | Query a table with optional filters | `{"type":"query","table":"projects","filter":{"status":"active"},"limit":10}` | ✅ Working |
+| `list_projects` | List Supabase projects              | `{"type":"list_projects"}`                                                    | ✅ Working |
+| `get_project`   | Get project details                 | `{"type":"get_project","id":"zrxezqllmpdlhiudutme"}`                          | ✅ Working |
+| `exec_sql`      | Execute arbitrary SQL statements    | `{"type":"exec_sql","sql":"SELECT * FROM projects LIMIT 5"}`                  | ✅ Working |
 
-## Troubleshooting
+## Database Details
 
-If you encounter issues:
+The Supabase project this MCP connects to:
 
-1. **Proxy Script Errors**:
+- **Project ID**: zrxezqllmpdlhiudutme
+- **Project Name**: AKC Revisions
 
-   - Check that the Supabase URL and API key in `proxy.js` are correct
-   - Ensure `@supabase/supabase-js` is installed: `npm install @supabase/supabase-js`
+## What You Can Do as an AI Agent
 
-2. **MCP Configuration Errors**:
+As an AI assistant, you can help with:
 
-   - Verify `.cursor/mcp.json` has the correct path to the proxy script
-   - Make sure the "enabled" property is set to true
+1. **Database Querying**:
 
-3. **Cursor Connection Issues**:
-   - Restart Cursor after making changes to the MCP configuration
-   - Check that no other process is using the same port
+   - Query data from tables using the `query` operation
+   - Execute SQL queries directly using the `exec_sql` operation
+   - Analyze and interpret results from database queries
 
-## Common Tasks
+2. **Project Information**:
 
-### Accessing Estimate Versions
+   - View basic project details using the `get_project` operation
+   - List all projects with the `list_projects` operation
 
-Cursor AI can now help with:
+3. **Database Analysis and Maintenance**:
+   - Execute SQL to examine database structure
+   - Run maintenance operations like VACUUM and ANALYZE
+   - Make schema changes when necessary
+   - Optimize database performance
 
-- Creating new estimate versions
-- Converting estimates to projects
-- Querying estimate revision history
-- Troubleshooting database-related issues
+## Existing Database Functions
 
-### Modifying the Proxy
+The database already has the following useful functions:
 
-If you need to add functionality to the proxy:
+1. **execute_sql_query** - For executing SQL queries that return data:
 
-1. Edit `supabase/functions/proxy.js`
-2. Add new request handlers as needed
-3. Restart the proxy script
+   ```sql
+   -- This function takes a SQL query and returns results as JSON
+   -- Parameter: p_sql text
+   -- Returns: SETOF json
+   -- Example: SELECT * FROM execute_sql_query('SELECT * FROM projects LIMIT 5');
+   ```
+
+2. **execute_sql_command** - For executing SQL commands that don't return data:
+   ```sql
+   -- This function executes SQL commands that don't return data
+   -- Parameter: p_sql text
+   -- Returns: void
+   -- Example: SELECT execute_sql_command('CREATE INDEX IF NOT EXISTS idx_project_name ON projects(name)');
+   ```
 
 ## Security Note
 
-The proxy script contains your Supabase API key. Ensure this repository remains private and don't commit any changes to the API key to public repositories.
+The MCP integration uses a Supabase API key with service_role permissions, which grants significant access to the database. Ensure this repository remains private.
+
+## Troubleshooting
+
+1. If the connection fails:
+
+   - Make sure you've run `node start-mcp.js` and the terminal shows a successful connection
+   - Restart Cursor after starting the MCP server
+   - Check that your network allows connections to the Supabase API
+
+2. If SQL execution fails:
+   - For SELECT queries, use the `execute_sql_query` function
+   - For non-SELECT statements (CREATE, INSERT, etc.), use the `execute_sql_command` function
+   - Complex SQL might need to be simplified
+
+## Quick Reference for Cursor AI
+
+To access the database in your conversations with Cursor AI:
+
+1. Start the MCP server with `node start-mcp.js`
+2. Keep the terminal window open
+3. Cursor AI can now query the database and execute SQL commands
+
+## For Developers
+
+To verify the MCP connection is working:
+
+```
+node test-mcp-connection.js  # Tests basic connectivity
+node test-query.js           # Tests querying data
+node test-existing-functions.js  # Tests SQL execution via database functions
+```

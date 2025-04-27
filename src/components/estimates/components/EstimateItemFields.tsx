@@ -68,6 +68,29 @@ const generateUUID = () => {
   }
 };
 
+// Add this type to support the additional tracking properties we're adding
+interface ExtendedEstimateItem {
+  original_id?: string;
+  _isDeleted?: boolean;
+  _isModified?: boolean;
+  _isNewlyAdded?: boolean;
+  description?: string;
+  item_type?: string;
+  quantity?: string;
+  cost?: string;
+  markup_percentage?: string;
+  unit_price?: string;
+  temp_item_id?: string;
+  vendor_id?: string;
+  subcontractor_id?: string;
+  document_id?: string;
+  trade_type?: string;
+  expense_type?: string;
+  custom_type?: string;
+  notes?: string;
+  total_price?: number;
+}
+
 const ITEMS_PER_PAGE = 10;
 
 type SortDirection = 'asc' | 'desc';
@@ -100,6 +123,9 @@ const EstimateItemFields = memo(() => {
     shouldUnregister: false,
   });
 
+  // Cast fields to our extended type for proper type checking
+  const typedFields = fields as unknown as Array<ExtendedEstimateItem & { id: string }>;
+
   // Function to add a new item with default values and a temporary ID
   const addNewItem = useCallback(() => {
     append({
@@ -116,7 +142,11 @@ const EstimateItemFields = memo(() => {
       trade_type: '',
       expense_type: undefined,
       custom_type: '',
-    });
+      // Add tracking fields
+      _isNewlyAdded: true,
+      _isModified: false,
+      _isDeleted: false,
+    } as ExtendedEstimateItem);
     // Navigate to the last page when adding a new item
     const newTotalPages = Math.ceil((fields.length + 1) / ITEMS_PER_PAGE);
     setCurrentPage(newTotalPages);
@@ -135,6 +165,41 @@ const EstimateItemFields = memo(() => {
     [form]
   );
 
+  // Add comprehensive recalculation function to keep all values in sync
+  const recalculateItemValues = useCallback(
+    (index: number) => {
+      try {
+        // Get all current values
+        const quantity = Number(form.getValues(`items.${index}.quantity`)) || 0;
+        const cost = Number(form.getValues(`items.${index}.cost`)) || 0;
+        const unitPrice = Number(form.getValues(`items.${index}.unit_price`)) || 0;
+        const markupPercentage = Number(form.getValues(`items.${index}.markup_percentage`)) || 0;
+
+        // Calculate derived values
+        const totalPrice = quantity * unitPrice;
+        const totalCost = quantity * cost;
+        const margin = totalPrice - totalCost;
+
+        // Update the item values - use 'as any' for TypeScript compatibility with dynamic paths
+        form.setValue(`items.${index}.total_price` as any, parseFloat(totalPrice.toFixed(2)));
+
+        // Mark item as modified if it has an original_id
+        const item = form.getValues(`items.${index}`) as ExtendedEstimateItem;
+        if (item.original_id) {
+          form.setValue(`items.${index}._isModified` as any, true);
+        }
+
+        // Log calculation for debugging
+        console.log(
+          `Recalculated item ${index}: total $${totalPrice.toFixed(2)}, margin $${margin.toFixed(2)}`
+        );
+      } catch (error) {
+        console.error('Error in recalculation:', error);
+      }
+    },
+    [form]
+  );
+
   // Update unit price when cost or markup changes
   const updateUnitPriceFromMarkup = useCallback(
     (index: number) => {
@@ -146,8 +211,11 @@ const EstimateItemFields = memo(() => {
 
       // Format to 2 decimal places for consistency
       form.setValue(`items.${index}.unit_price`, unitPrice.toFixed(2));
+
+      // Now recalculate all values for consistency
+      recalculateItemValues(index);
     },
-    [form]
+    [form, recalculateItemValues]
   );
 
   // Calculate gross margin for an item
@@ -175,10 +243,23 @@ const EstimateItemFields = memo(() => {
   const handleDocumentUploadSuccess = useCallback(
     (documentId: string) => {
       if (activeItemIndex !== null && documentId) {
-        const tempId = form.getValues('temp_id');
+        // Get the temp_item_id from the current item in the form
+        const tempItemId = form.getValues(`items.${activeItemIndex}.temp_item_id`);
+
+        // Log with the correct temp_item_id
         console.log(
-          `[Line Item Doc] Attaching document ${documentId} to line item ${activeItemIndex} with temp_id ${tempId}`
+          `[Line Item Doc] Attaching document ${documentId} to line item ${activeItemIndex} with temp_item_id ${tempItemId}`
         );
+
+        // Ensure temp_item_id exists - generate one if needed
+        if (!tempItemId) {
+          const newTempId = generateUUID();
+          form.setValue(`items.${activeItemIndex}.temp_item_id`, newTempId, {
+            shouldDirty: true,
+            shouldTouch: true,
+          });
+          console.log(`Generated new temp_item_id ${newTempId} for line item ${activeItemIndex}`);
+        }
 
         // Update the line item with the document ID
         form.setValue(`items.${activeItemIndex}.document_id`, documentId, {
@@ -212,26 +293,53 @@ const EstimateItemFields = memo(() => {
   // Handle item deletion
   const handleDeleteItem = useCallback(
     (index: number) => {
-      if (index >= 0 && index < fields.length) {
-        remove(index);
-        toast({
-          title: 'Item deleted',
-          description: 'The line item has been removed from the estimate',
-        });
+      if (index >= 0 && index < typedFields.length) {
+        const item = form.getValues(`items.${index}`) as ExtendedEstimateItem;
+
+        // If it's an existing item (has original_id), mark as deleted rather than removing
+        if (item.original_id) {
+          // Mark the item as deleted but keep it in the form for tracking
+          try {
+            form.setValue(`items.${index}._isDeleted` as any, true, { shouldDirty: true });
+
+            // Create a clone of the fields array to trigger UI update
+            const currentItems = [...typedFields];
+            if (currentItems[index]) {
+              currentItems[index]._isDeleted = true;
+            }
+
+            toast({
+              title: 'Item marked for deletion',
+              description: 'This item will be removed when you save the revision',
+            });
+          } catch (error) {
+            console.error('Error marking item as deleted:', error);
+            // Fallback to removal if marking fails
+            remove(index);
+          }
+        } else {
+          // For newly added items, remove them completely
+          remove(index);
+          toast({
+            title: 'Item deleted',
+            description: 'The line item has been removed from the estimate',
+          });
+        }
       }
     },
-    [fields.length, remove]
+    [typedFields, form, remove]
   );
 
   // All items (no filtering now)
   const currentPageItems = useMemo(() => {
-    const result = [...fields];
+    // Filter out items marked for deletion for display purposes
+    const visibleItems = typedFields.filter(item => !item._isDeleted);
 
     // Pagination
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return result.slice(startIndex, endIndex);
-  }, [fields, currentPage]);
+    return visibleItems.slice(startIndex, endIndex);
+  }, [typedFields, currentPage]);
 
   // Calculate total pages
   const totalPages = Math.max(1, Math.ceil(fields.length / ITEMS_PER_PAGE));
@@ -508,10 +616,10 @@ const EstimateItemFields = memo(() => {
                             }
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select type" />
+                              <SelectValue placeholder="Choose item type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">Select type</SelectItem>
+                              <SelectItem value="none">Choose item type</SelectItem>
                               <SelectItem value="labor">Labor</SelectItem>
                               <SelectItem value="material">Material</SelectItem>
                               <SelectItem value="subcontractor">Subcontractor</SelectItem>
@@ -522,15 +630,19 @@ const EstimateItemFields = memo(() => {
 
                           {isVendor && !loading && vendors.length > 0 && (
                             <Select
-                              value={form.watch(`items.${index}.vendor_id`) || ''}
+                              value={form.watch(`items.${index}.vendor_id`) || 'none'}
                               onValueChange={value =>
-                                form.setValue(`items.${index}.vendor_id`, value)
+                                form.setValue(
+                                  `items.${index}.vendor_id`,
+                                  value === 'none' ? null : value
+                                )
                               }
                             >
                               <SelectTrigger className="w-full mt-2">
-                                <SelectValue placeholder="Select vendor" />
+                                <SelectValue placeholder="Choose vendor" />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="none">Choose vendor</SelectItem>
                                 {vendors.map(vendor => (
                                   <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
                                     {vendor.vendorname}
@@ -569,8 +681,8 @@ const EstimateItemFields = memo(() => {
                               step="1"
                               className="text-right"
                               onBlur={() => {
-                                const total = calculateTotalPrice(index);
-                                form.setValue(`items.${index}.total_price` as any, total);
+                                // Use our comprehensive recalculation function
+                                recalculateItemValues(index);
                               }}
                             />
                           </TableCell>
@@ -638,8 +750,8 @@ const EstimateItemFields = memo(() => {
                                   // When price changes directly, update the markup percentage
                                   updateMarkupFromPrice(index);
                                 }
-                                const total = calculateTotalPrice(index);
-                                form.setValue(`items.${index}.total_price` as any, total);
+                                // Finally, recalculate everything
+                                recalculateItemValues(index);
                               }}
                             />
                           </div>

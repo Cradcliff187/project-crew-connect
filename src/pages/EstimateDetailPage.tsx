@@ -111,14 +111,22 @@ const EstimateDetailPage = () => {
     let allRevisionsData: any[] = []; // Store all revisions for the list
 
     try {
-      // 1. Fetch base estimate data
+      // 1. Fetch base estimate data with customer join
       const { data: estimateData, error: estimateError } = await supabase
         .from('estimates')
-        .select('*')
+        .select('*, customers:customerid(customername, contactemail)')
         .eq('estimateid', id)
         .single();
 
       if (estimateError) throw estimateError;
+
+      // Add customer information from the join to the estimate object
+      const estimateWithCustomer = {
+        ...estimateData,
+        customername:
+          estimateData.customers?.customername || estimateData.customername || 'No Customer',
+        // We'll use customer information in the component directly from customers property
+      };
 
       // 2. Try find already selected revision
       const { data: selectedRevisionData, error: selectedRevisionError } = await supabase
@@ -134,11 +142,9 @@ const EstimateDetailPage = () => {
       }
 
       if (selectedRevisionData) {
-        console.log('Found pre-selected revision:', selectedRevisionData.id);
         determinedRevision = selectedRevisionData;
       } else {
         // 3. If none selected, find the latest revision by version
-        console.log('No revision selected, finding latest...');
         const { data: latestRevisionData, error: latestRevisionError } = await supabase
           .from('estimate_revisions')
           .select('*')
@@ -153,7 +159,6 @@ const EstimateDetailPage = () => {
 
         if (latestRevisionData) {
           // 4. Latest found, ensure it's marked selected
-          console.log('Found latest revision:', latestRevisionData.id, 'Marking as selected...');
           determinedRevision = latestRevisionData;
           // Ensure only this one is marked selected (atomic if possible, otherwise two steps)
           // Using the hook function which handles this logic
@@ -162,7 +167,6 @@ const EstimateDetailPage = () => {
           determinedRevision.is_selected_for_view = true;
         } else {
           // 5. No revisions exist, create the first one
-          console.log('No revisions exist, creating initial V1...');
           const { data: newRevision, error: newRevisionError } = await supabase
             .from('estimate_revisions')
             .insert({
@@ -170,14 +174,13 @@ const EstimateDetailPage = () => {
               version: 1,
               is_selected_for_view: true,
               revision_date: new Date().toISOString(),
-              amount: estimateData.estimateamount,
-              status: estimateData.status || 'draft', // Default to draft if estimate status is null
+              amount: estimateWithCustomer.estimateamount,
+              status: estimateWithCustomer.status || 'draft', // Default to draft if estimate status is null
             })
             .select()
             .single();
 
           if (newRevisionError) throw newRevisionError;
-          console.log('Created initial revision:', newRevision.id);
           determinedRevision = newRevision;
           toast({
             title: 'New Revision Created',
@@ -191,7 +194,6 @@ const EstimateDetailPage = () => {
       let itemsData: any[] = [];
       let itemsError: any = null;
       if (determinedRevision && determinedRevision.id) {
-        console.log('Fetching items for determined revision ID:', determinedRevision.id);
         const { data, error } = await supabase
           .from('estimate_items')
           .select('*')
@@ -232,7 +234,7 @@ const EstimateDetailPage = () => {
       setCurrentRevision(determinedRevision);
       setRevisions(allRevisionsData);
       setEstimate({
-        ...estimateData,
+        ...estimateWithCustomer,
         items: itemsData,
         // Pass the determined revision data for consistency
         currentRevision: determinedRevision,
@@ -523,7 +525,7 @@ const EstimateDetailPage = () => {
             id: estimate.estimateid,
             client: estimate.customername,
             project: estimate.projectname,
-            description: estimate.jobdescription,
+            description: estimate['job description'],
             location: {
               address: estimate.sitelocationaddress,
               city: estimate.sitelocationcity,

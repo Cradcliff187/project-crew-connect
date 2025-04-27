@@ -16,6 +16,8 @@ import ChangeOrderBasicInfo from './ChangeOrderBasicInfo';
 import ChangeOrderItems from './ChangeOrderItems';
 import ChangeOrderApproval from './ChangeOrderApproval';
 import FinancialAnalysisTab from './FinancialAnalysisTab';
+import ChangeOrderStatusControl from './ChangeOrderStatusControl';
+import { StatusOption } from '@/components/common/status/UniversalStatusControl';
 
 interface ChangeOrderDialogProps {
   isOpen: boolean;
@@ -38,6 +40,8 @@ const ChangeOrderDialog = ({
 }: ChangeOrderDialogProps) => {
   const [activeTab, setActiveTab] = useState('basic-info');
   const [saving, setSaving] = useState(false);
+  const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
+  const [loadingStatus, setLoadingStatus] = useState(false);
   const isEditing = !!changeOrder;
   const entityId = entityType === 'PROJECT' ? projectId : workOrderId;
 
@@ -55,6 +59,8 @@ const ChangeOrderDialog = ({
       items: [],
     },
   });
+
+  const currentStatus = form.watch('status') as ChangeOrderStatus;
 
   useEffect(() => {
     if (changeOrder) {
@@ -77,6 +83,41 @@ const ChangeOrderDialog = ({
     }
   }, [changeOrder, entityType, entityId, form]);
 
+  useEffect(() => {
+    if (isEditing && isOpen) {
+      fetchStatusDefinitions();
+    }
+  }, [isEditing, isOpen]);
+
+  const fetchStatusDefinitions = async () => {
+    setLoadingStatus(true);
+    try {
+      const { data: statusDefs, error: statusError } = await supabase
+        .from('status_definitions')
+        .select('*')
+        .eq('entity_type', 'CHANGE_ORDER' as any);
+
+      if (statusError) throw statusError;
+
+      const mappedOptions = (statusDefs || []).map(def => ({
+        value: def.status_code,
+        label: def.label,
+        color: def.color,
+      }));
+      setStatusOptions(mappedOptions);
+    } catch (error: any) {
+      console.error('Error fetching status definitions:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not load status options.',
+        variant: 'destructive',
+      });
+      setStatusOptions([]);
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
+
   const handleSubmit = async (data: ChangeOrder) => {
     if (!entityId) {
       toast({
@@ -89,12 +130,16 @@ const ChangeOrderDialog = ({
 
     setSaving(true);
     try {
-      // Prepare data for saving
+      // Prepare data for saving, EXCLUDING the 'items' field
+      const { items, ...dataToSave } = data; // Destructure to separate items
+
       const changeOrderData = {
-        ...data,
+        ...dataToSave, // Spread only the fields meant for the change_orders table
         entity_type: entityType,
         entity_id: entityId,
       };
+
+      console.log('[ChangeOrderDialog] Saving data:', changeOrderData); // Log the actual data being sent
 
       let result;
 
@@ -102,9 +147,12 @@ const ChangeOrderDialog = ({
         // Update existing change order
         const { data: updatedChangeOrder, error } = await supabase
           .from('change_orders')
-          .update(changeOrderData)
+          .update(changeOrderData) // Pass the filtered data
           .eq('id', changeOrder.id)
-          .select()
+          // Explicitly select only columns from change_orders table
+          .select(
+            'id, entity_type, entity_id, title, description, requested_by, requested_date, status, approved_by, approved_date, approval_notes, total_amount, cost_impact, revenue_impact, impact_days, original_completion_date, new_completion_date, change_order_number, document_id, created_at, updated_at'
+          )
           .single();
 
         if (error) throw error;
@@ -119,7 +167,10 @@ const ChangeOrderDialog = ({
         const { data: newChangeOrder, error } = await supabase
           .from('change_orders')
           .insert(changeOrderData)
-          .select()
+          // Explicitly select only columns from change_orders table
+          .select(
+            'id, entity_type, entity_id, title, description, requested_by, requested_date, status, approved_by, approved_date, approval_notes, total_amount, cost_impact, revenue_impact, impact_days, original_completion_date, new_completion_date, change_order_number, document_id, created_at, updated_at'
+          )
           .single();
 
         if (error) throw error;
@@ -147,8 +198,24 @@ const ChangeOrderDialog = ({
 
   // Preserve form context when switching tabs
   const handleTabChange = (value: string) => {
+    console.log('[ChangeOrderDialog] Tab changed to:', value);
+    console.log('[ChangeOrderDialog] Current form values:', form.getValues());
+    console.log('[ChangeOrderDialog] Form state errors:', form.formState.errors);
+    // Check if the form is valid before allowing tab switch (optional, but good practice)
+    // form.trigger(); // Optionally trigger validation on all fields
+    // if (!form.formState.isValid) {
+    //    console.log('[ChangeOrderDialog] Form invalid, preventing tab switch for now.');
+    //    // Maybe show a toast? Preventing switch might be confusing.
+    //    // return;
+    // }
     setActiveTab(value);
   };
+
+  // Log disabled states right before rendering
+  console.log('[ChangeOrderDialog] Tab Disabled States (Pre-Render):', {
+    financial: !isEditing && !form.getValues().items?.length,
+    approval: !isEditing,
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -164,20 +231,27 @@ const ChangeOrderDialog = ({
           </DialogDescription>
         </DialogHeader>
 
+        {isEditing && changeOrder?.id && !loadingStatus && (
+          <div className="my-4">
+            <ChangeOrderStatusControl
+              changeOrderId={changeOrder.id}
+              currentStatus={currentStatus}
+              statusOptions={statusOptions}
+              onStatusChange={onSaved}
+              className="justify-end"
+            />
+          </div>
+        )}
+        {isEditing && loadingStatus && (
+          <div className="my-4 text-sm text-muted-foreground text-right">Loading status...</div>
+        )}
+
         <FormProvider {...form}>
           <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="basic-info">
-            <TabsList className="grid grid-cols-4">
+            <TabsList className="grid grid-cols-3">
               <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
               <TabsTrigger value="items">Items</TabsTrigger>
-              <TabsTrigger
-                value="financial-analysis"
-                disabled={!isEditing && !form.getValues().items?.length}
-              >
-                Financial Impact
-              </TabsTrigger>
-              <TabsTrigger value="approval" disabled={!isEditing}>
-                Approval
-              </TabsTrigger>
+              <TabsTrigger value="financial-analysis">Financial Impact</TabsTrigger>
             </TabsList>
 
             <form onSubmit={form.handleSubmit(handleSubmit)}>
@@ -224,27 +298,6 @@ const ChangeOrderDialog = ({
                 {entityId && (
                   <FinancialAnalysisTab form={form} entityType={entityType} entityId={entityId} />
                 )}
-
-                <div className="flex justify-end mt-6 space-x-2">
-                  <Button type="button" variant="outline" onClick={onClose}>
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="bg-[#0485ea] hover:bg-[#0375d1]"
-                    disabled={saving}
-                  >
-                    {saving ? 'Saving...' : 'Save Change Order'}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="approval" className="py-4">
-                <ChangeOrderApproval
-                  form={form}
-                  changeOrderId={changeOrder?.id}
-                  onUpdated={onSaved}
-                />
 
                 <div className="flex justify-end mt-6 space-x-2">
                   <Button type="button" variant="outline" onClick={onClose}>

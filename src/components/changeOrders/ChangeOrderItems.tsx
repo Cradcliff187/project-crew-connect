@@ -26,6 +26,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChangeOrder, ChangeOrderItem } from '@/types/changeOrders';
 import { formatCurrency } from '@/lib/utils';
 
+// Define types for fetched data
+type Vendor = { vendorid: string; vendorname: string };
+type Subcontractor = { subid: string; subname: string };
+
 interface ChangeOrderItemsProps {
   form: UseFormReturn<ChangeOrder>;
   changeOrderId?: string;
@@ -42,9 +46,15 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
     unit_price: 0,
     impact_days: 0,
     item_type: 'LABOR',
+    vendor_id: null,
+    subcontractor_id: null,
   });
   const [totalAmount, setTotalAmount] = useState(0);
   const [impactDays, setImpactDays] = useState(0);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
+  const [loadingVendors, setLoadingVendors] = useState(false);
+  const [loadingSubcontractors, setLoadingSubcontractors] = useState(false);
 
   // Define item types
   const itemTypes = [
@@ -59,6 +69,11 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
     // If we have a change order ID, fetch its items
     if (changeOrderId) {
       fetchItems();
+      fetchVendors();
+      fetchSubcontractors();
+    } else {
+      setVendors([]);
+      setSubcontractors([]);
     }
   }, [changeOrderId]);
 
@@ -100,6 +115,46 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVendors = async () => {
+    if (vendors.length > 0) return;
+    setLoadingVendors(true);
+    try {
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('vendorid, vendorname')
+        .order('vendorname');
+      if (error) throw error;
+      setVendors(data || []);
+    } catch (error: any) {
+      console.error('Error fetching vendors:', error);
+      toast({ title: 'Error loading vendors', description: error.message, variant: 'destructive' });
+    } finally {
+      setLoadingVendors(false);
+    }
+  };
+
+  const fetchSubcontractors = async () => {
+    if (subcontractors.length > 0) return;
+    setLoadingSubcontractors(true);
+    try {
+      const { data, error } = await supabase
+        .from('subcontractors')
+        .select('subid, subname')
+        .order('subname');
+      if (error) throw error;
+      setSubcontractors(data || []);
+    } catch (error: any) {
+      console.error('Error fetching subcontractors:', error);
+      toast({
+        title: 'Error loading subcontractors',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingSubcontractors(false);
     }
   };
 
@@ -149,6 +204,15 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
       return;
     }
 
+    let vendorIdToSave = newItem.vendor_id;
+    let subIdToSave = newItem.subcontractor_id;
+    if (newItem.item_type !== 'MATERIAL') {
+      vendorIdToSave = null;
+    }
+    if (newItem.item_type !== 'SUBCONTRACTOR') {
+      subIdToSave = null;
+    }
+
     setLoading(true);
     try {
       // Calculate total price
@@ -164,6 +228,8 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
           total_price: totalPrice,
           item_type: newItem.item_type,
           impact_days: newItem.impact_days || 0,
+          vendor_id: vendorIdToSave,
+          subcontractor_id: subIdToSave,
         })
         .select()
         .single();
@@ -180,6 +246,8 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
         unit_price: 0,
         impact_days: 0,
         item_type: 'LABOR',
+        vendor_id: null,
+        subcontractor_id: null,
       });
 
       // Recalculate totals
@@ -281,6 +349,70 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Conditional Vendor Select */}
+                {newItem.item_type === 'MATERIAL' && (
+                  <div className="lg:col-span-2">
+                    <Label htmlFor="vendor_id">Vendor</Label>
+                    <Select
+                      value={newItem.vendor_id || 'none'}
+                      onValueChange={value =>
+                        setNewItem(prev => ({
+                          ...prev,
+                          vendor_id: value === 'none' ? null : value,
+                        }))
+                      }
+                      disabled={loadingVendors}
+                    >
+                      <SelectTrigger id="vendor_id">
+                        <SelectValue
+                          placeholder={loadingVendors ? 'Loading...' : 'Select Vendor'}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Vendor</SelectItem>
+                        {vendors.map(vendor => (
+                          <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
+                            {vendor.vendorname}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Conditional Subcontractor Select */}
+                {newItem.item_type === 'SUBCONTRACTOR' && (
+                  <div className="lg:col-span-2">
+                    <Label htmlFor="subcontractor_id">Subcontractor</Label>
+                    <Select
+                      value={newItem.subcontractor_id || 'none'}
+                      onValueChange={value =>
+                        setNewItem(prev => ({
+                          ...prev,
+                          subcontractor_id: value === 'none' ? null : value,
+                        }))
+                      }
+                      disabled={loadingSubcontractors}
+                    >
+                      <SelectTrigger id="subcontractor_id">
+                        <SelectValue
+                          placeholder={
+                            loadingSubcontractors ? 'Loading...' : 'Select Subcontractor'
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Subcontractor</SelectItem>
+                        {subcontractors.map(sub => (
+                          <SelectItem key={sub.subid} value={sub.subid}>
+                            {sub.subname}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="quantity">Quantity</Label>

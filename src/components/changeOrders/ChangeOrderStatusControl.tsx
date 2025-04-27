@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
 import { ChangeOrderStatus, ChangeOrderEntityType } from '@/types/changeOrders';
-import { useStatusOptions } from '@/hooks/useStatusOptions';
 import UniversalStatusControl, {
   StatusOption,
 } from '@/components/common/status/UniversalStatusControl';
@@ -15,6 +14,7 @@ interface ChangeOrderStatusControlProps {
   changeOrderId: string;
   currentStatus: ChangeOrderStatus;
   onStatusChange: () => void;
+  statusOptions: StatusOption[];
   className?: string;
 }
 
@@ -22,10 +22,9 @@ const ChangeOrderStatusControl: React.FC<ChangeOrderStatusControlProps> = ({
   changeOrderId,
   currentStatus,
   onStatusChange,
+  statusOptions,
   className,
 }) => {
-  const { statusOptions } = useStatusOptions('CHANGE_ORDER', currentStatus);
-
   // Handle status-specific actions after the status is updated
   const handleAfterStatusChange = useCallback(
     async (newStatus: string) => {

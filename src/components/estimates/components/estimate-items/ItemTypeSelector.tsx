@@ -26,9 +26,9 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
           <FormItem>
             <FormLabel>Type*</FormLabel>
             <Select
-              value={field.value}
+              value={field.value || 'none'}
               onValueChange={value => {
-                field.onChange(value);
+                field.onChange(value === 'none' ? null : value);
                 // Reset type-specific fields when type changes
                 if (value === 'vendor') {
                   form.setValue(`items.${index}.subcontractor_id`, '');
@@ -38,7 +38,7 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
                   form.setValue(`items.${index}.vendor_id`, '');
                   form.setValue(`items.${index}.expense_type`, undefined);
                   form.setValue(`items.${index}.custom_type`, '');
-                } else {
+                } else if (value !== 'none') {
                   // For labor, reset all vendor and subcontractor specific fields
                   form.setValue(`items.${index}.vendor_id`, '');
                   form.setValue(`items.${index}.subcontractor_id`, '');
@@ -54,6 +54,7 @@ const ItemTypeSelector: React.FC<ItemTypeSelectorProps> = ({ index }) => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
+                <SelectItem value="none">Choose item type</SelectItem>
                 <SelectItem value="labor">Labor</SelectItem>
                 <SelectItem value="vendor">Material (Vendor)</SelectItem>
                 <SelectItem value="subcontractor">Subcontractor</SelectItem>

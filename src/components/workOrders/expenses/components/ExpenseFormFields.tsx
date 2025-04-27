@@ -9,7 +9,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import { expenseTypes } from '@/components/documents/schemas/documentSchema';
+import { EXPENSE_TYPES } from '@/constants/expenseTypes';
+
+// Filter out expense types that should not be manually added (e.g., Labor)
+const MANUAL_EXPENSE_CATEGORIES = EXPENSE_TYPES.filter(
+  type => type.value !== 'labor' // Exclude 'labor'
+  // Add other exclusions like 'subcontractor' if needed:
+  // && type.value !== 'subcontractor'
+);
 
 interface ExpenseFormFieldsProps {
   expenseName: string;
@@ -20,8 +27,8 @@ interface ExpenseFormFieldsProps {
   setUnitPrice: (value: string) => void;
   selectedVendor: string | null;
   setSelectedVendor: (value: string | null) => void;
-  expenseType: string;
-  setExpenseType: (value: string) => void;
+  selectedCategory: string;
+  setSelectedCategory: (value: string) => void;
   vendors: { vendorid: string; vendorname: string }[];
   onAddVendorClick: () => void;
 }
@@ -35,8 +42,8 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
   setUnitPrice,
   selectedVendor,
   setSelectedVendor,
-  expenseType,
-  setExpenseType,
+  selectedCategory,
+  setSelectedCategory,
   vendors,
   onAddVendorClick,
 }) => {
@@ -53,15 +60,15 @@ const ExpenseFormFields: React.FC<ExpenseFormFieldsProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="expense-type">Expense Type</Label>
-        <Select value={expenseType} onValueChange={setExpenseType}>
-          <SelectTrigger id="expense-type">
-            <SelectValue placeholder="Choose expense type" />
+        <Label htmlFor="expense-category">Expense Category</Label>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
+          <SelectTrigger id="expense-category">
+            <SelectValue placeholder="Choose expense category" />
           </SelectTrigger>
           <SelectContent>
-            {expenseTypes.map(type => (
-              <SelectItem key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+            {MANUAL_EXPENSE_CATEGORIES.map(category => (
+              <SelectItem key={category.value} value={category.value}>
+                {category.label}
               </SelectItem>
             ))}
           </SelectContent>

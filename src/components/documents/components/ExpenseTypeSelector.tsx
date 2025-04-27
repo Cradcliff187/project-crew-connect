@@ -9,22 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Control } from 'react-hook-form';
 import { DocumentUploadFormValues } from '../schemas/documentSchema';
-
-// Define expense type options
-export const expenseTypes = [
-  { value: 'material', label: 'Material' },
-  { value: 'tools', label: 'Tools & Equipment' },
-  { value: 'labor', label: 'Labor' },
-  { value: 'subcontractor', label: 'Subcontractor' },
-  { value: 'permit', label: 'Permit Fees' },
-  { value: 'travel', label: 'Travel & Transportation' },
-  { value: 'office', label: 'Office Expense' },
-  { value: 'utility', label: 'Utilities' },
-  { value: 'other', label: 'Other' },
-] as const;
-
-// Type for expense type values
-export type ExpenseType = (typeof expenseTypes)[number]['value'];
+import { EXPENSE_TYPES, ExpenseType } from '@/constants/expenseTypes';
 
 interface ExpenseTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
@@ -38,14 +23,19 @@ const ExpenseTypeSelector: React.FC<ExpenseTypeSelectorProps> = ({ control }) =>
       render={({ field }) => (
         <FormItem>
           <FormLabel>Expense Category</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value || 'material'}>
+          <Select
+            onValueChange={field.onChange}
+            defaultValue={field.value || 'none'}
+            value={field.value || 'none'}
+          >
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Select expense category" />
+                <SelectValue placeholder="Choose expense category" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {expenseTypes.map(type => (
+              <SelectItem value="none">Choose expense category</SelectItem>
+              {EXPENSE_TYPES.map(type => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
                 </SelectItem>

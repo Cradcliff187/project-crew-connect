@@ -1,4 +1,11 @@
 import * as z from 'zod';
+import {
+  EXPENSE_TYPE_VALUES,
+  EXPENSE_TYPE_RELATIONS,
+  expenseTypeRequiresVendor as requiresVendor,
+  expenseTypeAllowsSubcontractor as allowsSubcontractor,
+  DOCUMENT_CATEGORIES,
+} from '@/constants/expenseTypes';
 
 // Define the category options
 export const documentCategories = [
@@ -9,6 +16,11 @@ export const documentCategories = [
   'insurance',
   'certification',
   'photo',
+  'drawing',
+  'specification',
+  'permit_document',
+  'correspondence',
+  'report',
   'other',
 ] as const;
 
@@ -30,21 +42,51 @@ export const entityTypes = [
 // Define vendor types
 export const vendorTypes = ['vendor', 'subcontractor', 'other'] as const;
 
-// Define expense types for receipts
-export const expenseTypes = ['materials', 'equipment', 'supplies', 'other'] as const;
+// Define expense types from central constants but as a readonly array
+export const expenseTypes = [
+  'material',
+  'equipment',
+  'tools',
+  'supplies',
+  'labor',
+  'subcontractor',
+  'permit',
+  'travel',
+  'office',
+  'utility',
+  'other',
+] as const;
 
 // For backward compatibility - alias expenseTypes as costTypes
 export const costTypes = expenseTypes;
 
+// Define which expense types are associated with vendors or subcontractors
+// Using the relations from central constants
+export const expenseTypeRelations = EXPENSE_TYPE_RELATIONS;
+
+// Helper function to determine if expense type requires/allows a vendor
+export const expenseTypeRequiresVendor = requiresVendor;
+export const expenseTypeAllowsSubcontractor = allowsSubcontractor;
+
 // Entity-specific category mapping
 export const entityCategoryMap: Record<string, string[]> = {
-  PROJECT: ['contract', 'photo', 'certification', 'receipt', 'invoice', 'other'],
-  CUSTOMER: ['contract', 'invoice', 'other'],
-  ESTIMATE: ['3rd_party_estimate', 'contract', 'other'],
-  WORK_ORDER: ['receipt', 'photo', 'invoice', 'other'],
+  PROJECT: [
+    'contract',
+    'photo',
+    'certification',
+    'receipt',
+    'invoice',
+    'drawing',
+    'specification',
+    'permit_document',
+    'other',
+  ],
+  CUSTOMER: ['contract', 'invoice', 'other', 'correspondence'],
+  ESTIMATE: ['3rd_party_estimate', 'contract', 'drawing', 'specification', 'other'],
+  WORK_ORDER: ['receipt', 'photo', 'invoice', 'report', 'other'],
   VENDOR: ['invoice', 'certification', 'contract', 'receipt', 'other'],
   SUBCONTRACTOR: ['certification', 'insurance', 'contract', 'invoice', 'other'],
-  CONTACT: ['contract', 'certification', 'other'],
+  CONTACT: ['contract', 'certification', 'other', 'correspondence'],
   EXPENSE: ['receipt', 'invoice', 'other'],
   TIME_ENTRY: ['receipt', 'photo', 'other'],
   ESTIMATE_ITEM: ['receipt', 'invoice', '3rd_party_estimate', 'other'],
@@ -127,6 +169,7 @@ export const documentSchema = z.object({
   mime_type: z.string().default('application/octet-stream'),
 });
 
+// Export types using our central constants
 export type DocumentCategory = (typeof documentCategories)[number];
 export type EntityType = (typeof entityTypes)[number];
 export type VendorType = (typeof vendorTypes)[number];

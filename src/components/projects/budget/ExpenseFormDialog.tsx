@@ -17,6 +17,8 @@ interface ExpenseFormDialogProps {
   expense: any | null;
   onSave: () => void;
   onCancel: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
@@ -24,6 +26,8 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
   expense,
   onSave,
   onCancel,
+  open,
+  onOpenChange,
 }) => {
   const {
     form,
@@ -36,8 +40,13 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
     isEditing,
   } = useExpenseForm({ projectId, expense, onSave });
 
+  const handleCancel = () => {
+    onOpenChange(false);
+    onCancel();
+  };
+
   return (
-    <Dialog open={true} onOpenChange={onCancel}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
@@ -65,7 +74,7 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
               />
 
               <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={onCancel}>
+                <Button type="button" variant="outline" onClick={handleCancel}>
                   Cancel
                 </Button>
                 <Button type="submit" className="bg-[#0485ea] hover:bg-[#0375d1]">

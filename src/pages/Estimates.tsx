@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
 import EstimatesTable, { EstimateType } from '@/components/estimates/EstimatesTable';
@@ -17,6 +17,11 @@ const Estimates = () => {
   const navigate = useNavigate();
 
   const { estimates, loading, error, fetchEstimates } = useEstimates();
+
+  // Refresh estimates when component mounts or is revisited
+  useEffect(() => {
+    fetchEstimates();
+  }, []);
 
   const handleViewEstimate = (estimate: EstimateType) => {
     navigate(`/estimates/${estimate.id}`);

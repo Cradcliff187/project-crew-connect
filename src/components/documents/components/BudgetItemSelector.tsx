@@ -105,9 +105,9 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
         <FormItem>
           <FormLabel>Budget Item</FormLabel>
           <Select
-            onValueChange={field.onChange}
-            defaultValue={field.value}
-            value={field.value}
+            onValueChange={val => field.onChange(val === 'none' ? null : val)}
+            defaultValue={field.value || 'none'}
+            value={field.value || 'none'}
             disabled={loading}
           >
             <FormControl>
@@ -116,7 +116,7 @@ const BudgetItemSelector: React.FC<BudgetItemSelectorProps> = ({
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">Choose a budget item</SelectItem>
               {budgetItems.map(item => (
                 <SelectItem key={item.id} value={item.id}>
                   {item.description} ({item.category})

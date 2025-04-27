@@ -1,47 +1,56 @@
 import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Control } from 'react-hook-form';
-import { DocumentUploadFormValues, vendorTypes } from '../schemas/documentSchema';
+import {
+  DocumentUploadFormValues,
+  vendorTypes,
+  expenseTypeRequiresVendor,
+  expenseTypeAllowsSubcontractor,
+} from '../schemas/documentSchema';
 
 interface VendorTypeSelectorProps {
   control: Control<DocumentUploadFormValues>;
+  watchExpenseType?: string;
 }
 
-const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control }) => {
+const VendorTypeSelector: React.FC<VendorTypeSelectorProps> = ({ control, watchExpenseType }) => {
   return (
     <FormField
       control={control}
       name="metadata.vendorType"
       render={({ field }) => (
-        <FormItem className="space-y-1">
+        <FormItem>
           <FormLabel>Vendor Type</FormLabel>
-          <FormControl>
-            <RadioGroup
-              onValueChange={field.onChange}
-              defaultValue={field.value}
-              className="flex flex-col space-y-1"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="vendor" id="vendor-type" />
-                <label htmlFor="vendor-type" className="text-sm font-normal cursor-pointer">
-                  Vendor
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="subcontractor" id="subcontractor-type" />
-                <label htmlFor="subcontractor-type" className="text-sm font-normal cursor-pointer">
-                  Subcontractor
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="other" id="other-type" />
-                <label htmlFor="other-type" className="text-sm font-normal cursor-pointer">
-                  Other
-                </label>
-              </div>
-            </RadioGroup>
-          </FormControl>
+          <Select onValueChange={field.onChange} defaultValue={field.value || 'vendor'}>
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder="Select vendor type" />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {vendorTypes.map(type => (
+                <SelectItem
+                  key={type}
+                  value={type}
+                  disabled={
+                    watchExpenseType &&
+                    ((type === 'vendor' && !expenseTypeRequiresVendor(watchExpenseType)) ||
+                      (type === 'subcontractor' &&
+                        !expenseTypeAllowsSubcontractor(watchExpenseType)))
+                  }
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <FormMessage />
         </FormItem>
       )}

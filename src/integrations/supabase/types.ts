@@ -171,6 +171,7 @@ export type Database = {
           approved_by: string | null;
           approved_date: string | null;
           change_order_number: string | null;
+          cost_impact: number | null;
           created_at: string;
           description: string | null;
           document_id: string | null;
@@ -182,6 +183,7 @@ export type Database = {
           original_completion_date: string | null;
           requested_by: string | null;
           requested_date: string | null;
+          revenue_impact: number | null;
           status: string;
           title: string;
           total_amount: number | null;
@@ -192,6 +194,7 @@ export type Database = {
           approved_by?: string | null;
           approved_date?: string | null;
           change_order_number?: string | null;
+          cost_impact?: number | null;
           created_at?: string;
           description?: string | null;
           document_id?: string | null;
@@ -203,6 +206,7 @@ export type Database = {
           original_completion_date?: string | null;
           requested_by?: string | null;
           requested_date?: string | null;
+          revenue_impact?: number | null;
           status?: string;
           title: string;
           total_amount?: number | null;
@@ -213,6 +217,7 @@ export type Database = {
           approved_by?: string | null;
           approved_date?: string | null;
           change_order_number?: string | null;
+          cost_impact?: number | null;
           created_at?: string;
           description?: string | null;
           document_id?: string | null;
@@ -224,6 +229,7 @@ export type Database = {
           original_completion_date?: string | null;
           requested_by?: string | null;
           requested_date?: string | null;
+          revenue_impact?: number | null;
           status?: string;
           title?: string;
           total_amount?: number | null;
@@ -478,6 +484,65 @@ export type Database = {
         };
         Relationships: [];
       };
+      cost_categories: {
+        Row: {
+          category_id: string;
+          created_at: string;
+          description: string | null;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          category_id?: string;
+          created_at?: string;
+          description?: string | null;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          category_id?: string;
+          created_at?: string;
+          description?: string | null;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      cost_codes: {
+        Row: {
+          category_id: string | null;
+          code: string;
+          cost_code_id: string;
+          created_at: string;
+          description: string;
+          updated_at: string;
+        };
+        Insert: {
+          category_id?: string | null;
+          code: string;
+          cost_code_id?: string;
+          created_at?: string;
+          description: string;
+          updated_at?: string;
+        };
+        Update: {
+          category_id?: string | null;
+          code?: string;
+          cost_code_id?: string;
+          created_at?: string;
+          description?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cost_codes_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'cost_categories';
+            referencedColumns: ['category_id'];
+          },
+        ];
+      };
       customers: {
         Row: {
           address: string | null;
@@ -525,6 +590,41 @@ export type Database = {
           zip?: string | null;
         };
         Relationships: [];
+      };
+      discounts: {
+        Row: {
+          amount: number;
+          applied_date: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          project_id: string | null;
+        };
+        Insert: {
+          amount: number;
+          applied_date?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          project_id?: string | null;
+        };
+        Update: {
+          amount?: number;
+          applied_date?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          project_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'discounts_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['projectid'];
+          },
+        ];
       };
       document_access_logs: {
         Row: {
@@ -894,6 +994,72 @@ export type Database = {
         };
         Relationships: [];
       };
+      estimate_item_lineage: {
+        Row: {
+          created_at: string | null;
+          current_item_id: string;
+          estimate_id: string;
+          id: string;
+          original_item_id: string;
+          revision_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          current_item_id: string;
+          estimate_id: string;
+          id?: string;
+          original_item_id: string;
+          revision_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          current_item_id?: string;
+          estimate_id?: string;
+          id?: string;
+          original_item_id?: string;
+          revision_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'estimate_item_lineage_estimate_id_fkey';
+            columns: ['estimate_id'];
+            isOneToOne: false;
+            referencedRelation: 'estimates';
+            referencedColumns: ['estimateid'];
+          },
+          {
+            foreignKeyName: 'estimate_item_lineage_revision_id_fkey';
+            columns: ['revision_id'];
+            isOneToOne: false;
+            referencedRelation: 'estimate_revisions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'estimate_item_lineage_revision_id_fkey';
+            columns: ['revision_id'];
+            isOneToOne: false;
+            referencedRelation: 'estimate_revisions_with_costs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_current_item';
+            columns: ['current_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'estimate_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fk_original_item';
+            columns: ['original_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'estimate_items';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       estimate_items: {
         Row: {
           cost: number | null;
@@ -912,6 +1078,7 @@ export type Database = {
           original_item_id: string | null;
           quantity: number;
           revision_id: string | null;
+          source_item_id: string | null;
           subcontractor_id: string | null;
           total_price: number;
           unit_price: number;
@@ -935,6 +1102,7 @@ export type Database = {
           original_item_id?: string | null;
           quantity?: number;
           revision_id?: string | null;
+          source_item_id?: string | null;
           subcontractor_id?: string | null;
           total_price: number;
           unit_price: number;
@@ -958,6 +1126,7 @@ export type Database = {
           original_item_id?: string | null;
           quantity?: number;
           revision_id?: string | null;
+          source_item_id?: string | null;
           subcontractor_id?: string | null;
           total_price?: number;
           unit_price?: number;
@@ -977,6 +1146,13 @@ export type Database = {
             columns: ['revision_id'];
             isOneToOne: false;
             referencedRelation: 'estimate_revisions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'estimate_items_revision_id_fkey';
+            columns: ['revision_id'];
+            isOneToOne: false;
+            referencedRelation: 'estimate_revisions_with_costs';
             referencedColumns: ['id'];
           },
           {
@@ -1177,6 +1353,7 @@ export type Database = {
         Row: {
           amount: number;
           budget_item_id: string | null;
+          category: string | null;
           created_at: string;
           created_by: string | null;
           description: string;
@@ -1200,6 +1377,7 @@ export type Database = {
         Insert: {
           amount: number;
           budget_item_id?: string | null;
+          category?: string | null;
           created_at?: string;
           created_by?: string | null;
           description: string;
@@ -1223,6 +1401,7 @@ export type Database = {
         Update: {
           amount?: number;
           budget_item_id?: string | null;
+          category?: string | null;
           created_at?: string;
           created_by?: string | null;
           description?: string;
@@ -1243,7 +1422,15 @@ export type Database = {
           updated_at?: string;
           vendor_id?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'fk_expenses_budget_item';
+            columns: ['budget_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_budget_items';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       maintenance_work_orders: {
         Row: {
@@ -1349,35 +1536,111 @@ export type Database = {
       project_budget_items: {
         Row: {
           actual_amount: number | null;
+          base_cost: number | null;
           category: string;
+          category_id: string | null;
+          change_order_id: string | null;
+          cost_code_id: string | null;
           created_at: string | null;
           description: string | null;
+          estimate_item_origin_id: string | null;
           estimated_amount: number;
+          estimated_cost: number | null;
+          gross_margin_amount: number | null;
+          gross_margin_percentage: number | null;
           id: string;
+          is_contingency: boolean | null;
+          markup_amount: number | null;
+          markup_percentage: number | null;
           project_id: string;
+          quantity: number | null;
+          selling_total_price: number | null;
+          selling_unit_price: number | null;
+          subcontractor_id: string | null;
           updated_at: string | null;
+          vendor_id: string | null;
         };
         Insert: {
           actual_amount?: number | null;
+          base_cost?: number | null;
           category: string;
+          category_id?: string | null;
+          change_order_id?: string | null;
+          cost_code_id?: string | null;
           created_at?: string | null;
           description?: string | null;
+          estimate_item_origin_id?: string | null;
           estimated_amount?: number;
+          estimated_cost?: number | null;
+          gross_margin_amount?: number | null;
+          gross_margin_percentage?: number | null;
           id?: string;
+          is_contingency?: boolean | null;
+          markup_amount?: number | null;
+          markup_percentage?: number | null;
           project_id: string;
+          quantity?: number | null;
+          selling_total_price?: number | null;
+          selling_unit_price?: number | null;
+          subcontractor_id?: string | null;
           updated_at?: string | null;
+          vendor_id?: string | null;
         };
         Update: {
           actual_amount?: number | null;
+          base_cost?: number | null;
           category?: string;
+          category_id?: string | null;
+          change_order_id?: string | null;
+          cost_code_id?: string | null;
           created_at?: string | null;
           description?: string | null;
+          estimate_item_origin_id?: string | null;
           estimated_amount?: number;
+          estimated_cost?: number | null;
+          gross_margin_amount?: number | null;
+          gross_margin_percentage?: number | null;
           id?: string;
+          is_contingency?: boolean | null;
+          markup_amount?: number | null;
+          markup_percentage?: number | null;
           project_id?: string;
+          quantity?: number | null;
+          selling_total_price?: number | null;
+          selling_unit_price?: number | null;
+          subcontractor_id?: string | null;
           updated_at?: string | null;
+          vendor_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'fk_subcontractor_id';
+            columns: ['subcontractor_id'];
+            isOneToOne: false;
+            referencedRelation: 'subcontractors';
+            referencedColumns: ['subid'];
+          },
+          {
+            foreignKeyName: 'fk_vendor_id';
+            columns: ['vendor_id'];
+            isOneToOne: false;
+            referencedRelation: 'vendors';
+            referencedColumns: ['vendorid'];
+          },
+          {
+            foreignKeyName: 'project_budget_items_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'cost_categories';
+            referencedColumns: ['category_id'];
+          },
+          {
+            foreignKeyName: 'project_budget_items_cost_code_id_fkey';
+            columns: ['cost_code_id'];
+            isOneToOne: false;
+            referencedRelation: 'cost_codes';
+            referencedColumns: ['cost_code_id'];
+          },
           {
             foreignKeyName: 'project_budget_items_project_id_fkey';
             columns: ['project_id'];
@@ -1387,40 +1650,153 @@ export type Database = {
           },
         ];
       };
-      project_documents: {
+      project_change_orders: {
         Row: {
-          created_at: string | null;
-          description: string | null;
-          document_id: string | null;
-          document_type: string | null;
+          co_number: string;
+          cost_impact: number;
+          created_at: string;
+          date_issued: string | null;
+          description: string;
           id: string;
-          project_id: string | null;
-          title: string | null;
-          updated_at: string | null;
+          project_id: string;
+          selling_price_impact: number;
+          status: string;
+          updated_at: string;
         };
         Insert: {
-          created_at?: string | null;
-          description?: string | null;
-          document_id?: string | null;
-          document_type?: string | null;
+          co_number: string;
+          cost_impact?: number;
+          created_at?: string;
+          date_issued?: string | null;
+          description: string;
           id?: string;
-          project_id?: string | null;
-          title?: string | null;
-          updated_at?: string | null;
+          project_id: string;
+          selling_price_impact?: number;
+          status?: string;
+          updated_at?: string;
         };
         Update: {
-          created_at?: string | null;
-          description?: string | null;
-          document_id?: string | null;
-          document_type?: string | null;
+          co_number?: string;
+          cost_impact?: number;
+          created_at?: string;
+          date_issued?: string | null;
+          description?: string;
           id?: string;
-          project_id?: string | null;
-          title?: string | null;
-          updated_at?: string | null;
+          project_id?: string;
+          selling_price_impact?: number;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_change_orders_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['projectid'];
+          },
+        ];
+      };
+      project_documents: {
+        Row: {
+          created_at: string;
+          file_name: string;
+          file_size: number | null;
+          id: string;
+          linked_record_id: string | null;
+          linked_record_type: string | null;
+          mime_type: string | null;
+          project_id: string;
+          storage_path: string;
+          upload_date: string;
+          uploaded_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          file_name: string;
+          file_size?: number | null;
+          id?: string;
+          linked_record_id?: string | null;
+          linked_record_type?: string | null;
+          mime_type?: string | null;
+          project_id: string;
+          storage_path: string;
+          upload_date?: string;
+          uploaded_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          file_name?: string;
+          file_size?: number | null;
+          id?: string;
+          linked_record_id?: string | null;
+          linked_record_type?: string | null;
+          mime_type?: string | null;
+          project_id?: string;
+          storage_path?: string;
+          upload_date?: string;
+          uploaded_by?: string | null;
         };
         Relationships: [
           {
             foreignKeyName: 'project_documents_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['projectid'];
+          },
+        ];
+      };
+      project_expenses: {
+        Row: {
+          amount: number;
+          category: string | null;
+          created_at: string;
+          description: string;
+          expense_date: string;
+          id: string;
+          project_budget_item_id: string | null;
+          project_id: string;
+          receipt_document_ids: string[] | null;
+          updated_at: string;
+          vendor_name: string | null;
+        };
+        Insert: {
+          amount: number;
+          category?: string | null;
+          created_at?: string;
+          description: string;
+          expense_date?: string;
+          id?: string;
+          project_budget_item_id?: string | null;
+          project_id: string;
+          receipt_document_ids?: string[] | null;
+          updated_at?: string;
+          vendor_name?: string | null;
+        };
+        Update: {
+          amount?: number;
+          category?: string | null;
+          created_at?: string;
+          description?: string;
+          expense_date?: string;
+          id?: string;
+          project_budget_item_id?: string | null;
+          project_id?: string;
+          receipt_document_ids?: string[] | null;
+          updated_at?: string;
+          vendor_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_expenses_project_budget_item_id_fkey';
+            columns: ['project_budget_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_budget_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_expenses_project_id_fkey';
             columns: ['project_id'];
             isOneToOne: false;
             referencedRelation: 'projects';
@@ -1537,88 +1913,145 @@ export type Database = {
         };
         Relationships: [];
       };
+      project_tasks: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          duration: number | null;
+          end_date: string | null;
+          name: string;
+          parent_task_id: string | null;
+          project_id: string;
+          sort_order: number;
+          start_date: string | null;
+          status: string;
+          task_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          duration?: number | null;
+          end_date?: string | null;
+          name: string;
+          parent_task_id?: string | null;
+          project_id: string;
+          sort_order?: number;
+          start_date?: string | null;
+          status?: string;
+          task_id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          duration?: number | null;
+          end_date?: string | null;
+          name?: string;
+          parent_task_id?: string | null;
+          project_id?: string;
+          sort_order?: number;
+          start_date?: string | null;
+          status?: string;
+          task_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_tasks_parent_task_id_fkey';
+            columns: ['parent_task_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_tasks';
+            referencedColumns: ['task_id'];
+          },
+          {
+            foreignKeyName: 'project_tasks_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['projectid'];
+          },
+        ];
+      };
       projects: {
         Row: {
+          actual_revenue: number | null;
           budget_status: string | null;
+          change_order_cost_impact: number | null;
+          change_order_selling_price_impact: number | null;
+          contract_value: number | null;
           created_at: string;
           createdby: string | null;
-          createdon: string | null;
           current_expenses: number | null;
           customerid: string | null;
-          customername: string | null;
-          docurl: string | null;
-          due_date: string | null;
-          estimatesfolderid: string | null;
-          folderid: string | null;
-          jobdescription: string | null;
-          jobid: string | null;
-          lastmodified: string | null;
-          lastmodifiedby: string | null;
-          materialsfolderid: string | null;
+          description: string | null;
+          original_base_cost: number | null;
+          original_contingency_amount: number | null;
+          original_selling_price: number | null;
           projectid: string;
           projectname: string | null;
-          sitelocationaddress: string | null;
-          sitelocationcity: string | null;
-          sitelocationstate: string | null;
-          sitelocationzip: string | null;
+          site_address: string | null;
+          site_city: string | null;
+          site_state: string | null;
+          site_zip: string | null;
+          start_date: string | null;
           status: string | null;
-          subinvoicesfolderid: string | null;
+          target_end_date: string | null;
+          total_actual_expenses: number | null;
           total_budget: number | null;
           updated_at: string;
         };
         Insert: {
+          actual_revenue?: number | null;
           budget_status?: string | null;
+          change_order_cost_impact?: number | null;
+          change_order_selling_price_impact?: number | null;
+          contract_value?: number | null;
           created_at?: string;
           createdby?: string | null;
-          createdon?: string | null;
           current_expenses?: number | null;
           customerid?: string | null;
-          customername?: string | null;
-          docurl?: string | null;
-          due_date?: string | null;
-          estimatesfolderid?: string | null;
-          folderid?: string | null;
-          jobdescription?: string | null;
-          jobid?: string | null;
-          lastmodified?: string | null;
-          lastmodifiedby?: string | null;
-          materialsfolderid?: string | null;
+          description?: string | null;
+          original_base_cost?: number | null;
+          original_contingency_amount?: number | null;
+          original_selling_price?: number | null;
           projectid: string;
           projectname?: string | null;
-          sitelocationaddress?: string | null;
-          sitelocationcity?: string | null;
-          sitelocationstate?: string | null;
-          sitelocationzip?: string | null;
+          site_address?: string | null;
+          site_city?: string | null;
+          site_state?: string | null;
+          site_zip?: string | null;
+          start_date?: string | null;
           status?: string | null;
-          subinvoicesfolderid?: string | null;
+          target_end_date?: string | null;
+          total_actual_expenses?: number | null;
           total_budget?: number | null;
           updated_at?: string;
         };
         Update: {
+          actual_revenue?: number | null;
           budget_status?: string | null;
+          change_order_cost_impact?: number | null;
+          change_order_selling_price_impact?: number | null;
+          contract_value?: number | null;
           created_at?: string;
           createdby?: string | null;
-          createdon?: string | null;
           current_expenses?: number | null;
           customerid?: string | null;
-          customername?: string | null;
-          docurl?: string | null;
-          due_date?: string | null;
-          estimatesfolderid?: string | null;
-          folderid?: string | null;
-          jobdescription?: string | null;
-          jobid?: string | null;
-          lastmodified?: string | null;
-          lastmodifiedby?: string | null;
-          materialsfolderid?: string | null;
+          description?: string | null;
+          original_base_cost?: number | null;
+          original_contingency_amount?: number | null;
+          original_selling_price?: number | null;
           projectid?: string;
           projectname?: string | null;
-          sitelocationaddress?: string | null;
-          sitelocationcity?: string | null;
-          sitelocationstate?: string | null;
-          sitelocationzip?: string | null;
+          site_address?: string | null;
+          site_city?: string | null;
+          site_state?: string | null;
+          site_zip?: string | null;
+          start_date?: string | null;
           status?: string | null;
-          subinvoicesfolderid?: string | null;
+          target_end_date?: string | null;
+          total_actual_expenses?: number | null;
           total_budget?: number | null;
           updated_at?: string;
         };
@@ -1943,6 +2376,7 @@ export type Database = {
           id: string;
           location_data: Json | null;
           notes: string | null;
+          project_budget_item_id: string | null;
           start_time: string;
           total_cost: number | null;
           updated_at: string;
@@ -1960,6 +2394,7 @@ export type Database = {
           id?: string;
           location_data?: Json | null;
           notes?: string | null;
+          project_budget_item_id?: string | null;
           start_time: string;
           total_cost?: number | null;
           updated_at?: string;
@@ -1977,6 +2412,7 @@ export type Database = {
           id?: string;
           location_data?: Json | null;
           notes?: string | null;
+          project_budget_item_id?: string | null;
           start_time?: string;
           total_cost?: number | null;
           updated_at?: string;
@@ -1988,6 +2424,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'employees';
             referencedColumns: ['employee_id'];
+          },
+          {
+            foreignKeyName: 'time_entries_project_budget_item_id_fkey';
+            columns: ['project_budget_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_budget_items';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -2329,6 +2772,51 @@ export type Database = {
           },
         ];
       };
+      estimate_revisions_with_costs: {
+        Row: {
+          amount: number | null;
+          count: number | null;
+          created_at: string | null;
+          document_id: string | null;
+          estimate_id: string | null;
+          id: string | null;
+          is_selected_for_view: boolean | null;
+          notes: string | null;
+          pdf_document_id: string | null;
+          revision_by: string | null;
+          revision_date: string | null;
+          sent_date: string | null;
+          sent_to: string | null;
+          status: string | null;
+          subtotal: number | null;
+          total_cost: number | null;
+          updated_at: string | null;
+          version: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'estimate_revisions_pdf_document_id_fkey';
+            columns: ['pdf_document_id'];
+            isOneToOne: false;
+            referencedRelation: 'documents';
+            referencedColumns: ['document_id'];
+          },
+          {
+            foreignKeyName: 'estimate_revisions_pdf_document_id_fkey';
+            columns: ['pdf_document_id'];
+            isOneToOne: false;
+            referencedRelation: 'documents_with_urls';
+            referencedColumns: ['document_id'];
+          },
+          {
+            foreignKeyName: 'fk_estimate_revisions_estimateid';
+            columns: ['estimate_id'];
+            isOneToOne: false;
+            referencedRelation: 'estimates';
+            referencedColumns: ['estimateid'];
+          },
+        ];
+      };
       unified_work_order_expenses: {
         Row: {
           created_at: string | null;
@@ -2433,12 +2921,20 @@ export type Database = {
         Returns: number;
       };
       convert_estimate_to_project: {
-        Args: { p_estimate_id: string; p_revision_id?: string };
+        Args: { p_estimate_id: string };
         Returns: string;
       };
       convertestimateitemstobudgetitems: {
         Args: { estimateid: string; projectid: string };
         Returns: Json;
+      };
+      execute_sql_command: {
+        Args: { p_sql: string };
+        Returns: undefined;
+      };
+      execute_sql_query: {
+        Args: { p_sql: string };
+        Returns: Json[];
       };
       generate_change_order_number: {
         Args: { entity_type: string; entity_id: string };
@@ -2463,6 +2959,29 @@ export type Database = {
       generate_vendor_id: {
         Args: Record<PropertyKey, never>;
         Returns: string;
+      };
+      get_estimates_with_latest_revision_date: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          customerid: string;
+          customername: string;
+          projectname: string;
+          'job description': string;
+          estimateamount: number;
+          contingencyamount: number;
+          contingency_percentage: number;
+          datecreated: string;
+          sentdate: string;
+          approveddate: string;
+          status: string;
+          sitelocationaddress: string;
+          sitelocationcity: string;
+          sitelocationstate: string;
+          sitelocationzip: string;
+          latest_revision_date: string;
+          versions: number;
+        }[];
       };
       get_next_possible_transitions: {
         Args: {
@@ -2490,6 +3009,14 @@ export type Database = {
           updated_at: string;
           gross_margin: number;
           gross_margin_percentage: number;
+        }[];
+      };
+      get_schema_tables: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          table_name: string;
+          table_comment: string;
+          columns: Json;
         }[];
       };
       get_status_label: {
@@ -2543,6 +3070,10 @@ export type Database = {
           budget_item_id: string;
         }[];
       };
+      increment_project_co_impact: {
+        Args: { p_id: string; cost_inc: number; sell_inc: number };
+        Returns: undefined;
+      };
       link_work_order_to_project: {
         Args: {
           p_work_order_id: string;
@@ -2554,6 +3085,10 @@ export type Database = {
       migrate_estimate_items_from_documents: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
+      };
+      test_rpc_two_text_args: {
+        Args: { arg1: string; arg2: string };
+        Returns: string;
       };
       validate_customers_status_transition: {
         Args: { current_status: string; new_status: string };
@@ -2586,6 +3121,18 @@ export type Database = {
         | 'CONTACT'
         | 'TIME_ENTRY'
         | 'EMPLOYEE';
+      expense_type_enum:
+        | 'MATERIAL'
+        | 'EQUIPMENT'
+        | 'TOOLS'
+        | 'SUPPLIES'
+        | 'LABOR'
+        | 'SUBCONTRACTOR'
+        | 'PERMIT'
+        | 'TRAVEL'
+        | 'OFFICE'
+        | 'UTILITY'
+        | 'OTHER';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -2706,6 +3253,19 @@ export const Constants = {
         'CONTACT',
         'TIME_ENTRY',
         'EMPLOYEE',
+      ],
+      expense_type_enum: [
+        'MATERIAL',
+        'EQUIPMENT',
+        'TOOLS',
+        'SUPPLIES',
+        'LABOR',
+        'SUBCONTRACTOR',
+        'PERMIT',
+        'TRAVEL',
+        'OFFICE',
+        'UTILITY',
+        'OTHER',
       ],
     },
   },

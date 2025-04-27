@@ -16,7 +16,7 @@ interface AddExpenseFormProps {
     quantity: number;
     unitPrice: number;
     vendorId: string | null;
-    expenseType: string;
+    category: string;
   }) => void;
   onVendorAdded?: () => void;
   onSuccess?: () => void; // Optional callback for when form submission succeeds
@@ -37,7 +37,7 @@ const AddExpenseForm = ({
   const [quantity, setQuantity] = useState('1');
   const [unitPrice, setUnitPrice] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
-  const [expenseType, setExpenseType] = useState('MATERIAL'); // Default to materials
+  const [selectedCategory, setSelectedCategory] = useState('material'); // Default to material
   const [showVendorDialog, setShowVendorDialog] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,6 +53,18 @@ const AddExpenseForm = ({
       return;
     }
 
+    // Basic category validation (ensure something is selected)
+    if (!selectedCategory) {
+      toast({
+        title: 'Error',
+        description: 'Please select an expense category',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // NOTE: Vendor validation might need adjustment based on category
+    // This likely belongs in a Zod schema if using react-hook-form later
     if (!selectedVendor) {
       toast({
         title: 'Error',
@@ -79,7 +91,7 @@ const AddExpenseForm = ({
       quantity: qtyValue,
       unitPrice: priceValue,
       vendorId: selectedVendor,
-      expenseType,
+      category: selectedCategory,
     };
 
     // Submit the form data
@@ -123,8 +135,8 @@ const AddExpenseForm = ({
             setUnitPrice={setUnitPrice}
             selectedVendor={selectedVendor}
             setSelectedVendor={setSelectedVendor}
-            expenseType={expenseType}
-            setExpenseType={setExpenseType}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
             vendors={vendors}
             onAddVendorClick={() => setShowVendorDialog(true)}
           />

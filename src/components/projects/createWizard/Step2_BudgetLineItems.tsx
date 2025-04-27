@@ -32,8 +32,20 @@ import {
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  mapExpenseTypeToBudgetCategory,
+  expenseTypeRequiresVendor,
+  expenseTypeAllowsSubcontractor,
+} from '@/constants/expenseTypes';
 
 // --- Define Budget Item Schema ---
 const budgetItemSchema = z.object({
@@ -56,6 +68,8 @@ const budgetItemSchema = z.object({
   unit_price: z.number().default(0),
   estimated_amount: z.number().default(0), // This is the key value (total_price in estimates)
   document_id: z.string().optional().nullable(),
+  vendor_id: z.string().optional().nullable(),
+  subcontractor_id: z.string().optional().nullable(),
 });
 
 export type BudgetItemFormValues = z.infer<typeof budgetItemSchema>;
@@ -67,17 +81,25 @@ const step2Schema = z.object({
 
 export type Step2FormValues = z.infer<typeof step2Schema>;
 
-// --- Budget Categories (Example - fetch dynamically later?) ---
+// --- Budget Categories aligned with expense types ---
 const BUDGET_CATEGORIES = [
   { value: 'Materials', label: 'Materials' },
   { value: 'Labor', label: 'Labor' },
   { value: 'Subcontractors', label: 'Subcontractors' },
   { value: 'Equipment', label: 'Equipment Rental' },
+  { value: 'Tools', label: 'Tools' },
+  { value: 'Supplies', label: 'Supplies' },
   { value: 'Permits', label: 'Permits & Fees' },
-  { value: 'Overhead', label: 'Overhead' },
-  { value: 'Contingency', label: 'Contingency' },
+  { value: 'Travel', label: 'Travel' },
+  { value: 'Office', label: 'Office' },
+  { value: 'Utilities', label: 'Utilities' },
   { value: 'Other', label: 'Other' },
 ];
+
+// Categories that require a vendor
+const VENDOR_CATEGORIES = ['Materials', 'Equipment', 'Tools', 'Supplies', 'Utilities'];
+// Categories that require a subcontractor
+const SUBCONTRACTOR_CATEGORIES = ['Subcontractors'];
 
 interface Step2Props {
   formData: any; // Contains data from Step 1
@@ -104,6 +126,51 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
   const [documentUploadError, setDocumentUploadError] = useState<string | null>(null);
+
+  const [vendors, setVendors] = useState<{ vendorid: string; vendorname: string }[]>([]);
+  const [subcontractors, setSubcontractors] = useState<{ subid: string; subname: string }[]>([]);
+  const [loadingVendors, setLoadingVendors] = useState(false);
+  const [loadingSubcontractors, setLoadingSubcontractors] = useState(false);
+
+  // Fetch vendors and subcontractors on component mount
+  useEffect(() => {
+    const fetchVendorsAndSubcontractors = async () => {
+      setLoadingVendors(true);
+      setLoadingSubcontractors(true);
+
+      try {
+        // Fetch vendors
+        const { data: vendorData, error: vendorError } = await supabase
+          .from('vendors')
+          .select('vendorid, vendorname')
+          .order('vendorname');
+
+        if (vendorError) throw vendorError;
+        setVendors(vendorData || []);
+
+        // Fetch subcontractors
+        const { data: subData, error: subError } = await supabase
+          .from('subcontractors')
+          .select('subid, subname')
+          .order('subname');
+
+        if (subError) throw subError;
+        setSubcontractors(subData || []);
+      } catch (error) {
+        console.error('Error fetching vendors/subcontractors:', error);
+        toast({
+          title: 'Error loading data',
+          description: 'Could not load vendors or subcontractors.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoadingVendors(false);
+        setLoadingSubcontractors(false);
+      }
+    };
+
+    fetchVendorsAndSubcontractors();
+  }, []);
 
   // --- Calculation Logic (adapted from Estimate Editor) ---
   const calculateItemTotals = useCallback(
@@ -161,6 +228,8 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
       unit_price: 0, // Will be calculated
       estimated_amount: 0, // Will be calculated
       document_id: null,
+      vendor_id: null,
+      subcontractor_id: null,
     });
   }, [append]);
 
@@ -241,6 +310,15 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
     });
   }, [fields, updateUnitPriceFromMarkup]);
 
+  // Helper to determine whether to show vendor/subcontractor fields
+  const shouldShowVendorField = useCallback((category: string) => {
+    return VENDOR_CATEGORIES.includes(category);
+  }, []);
+
+  const shouldShowSubcontractorField = useCallback((category: string) => {
+    return SUBCONTRACTOR_CATEGORIES.includes(category);
+  }, []);
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onNext)} className="space-y-4">
@@ -291,6 +369,7 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
                       Description
                     </TableHead>
                     <TableHead className="w-[15%]">Category</TableHead>
+                    <TableHead className="w-[15%]">Provider</TableHead>
                     <TableHead className="text-right w-[7%]">Qty</TableHead>
                     <TableHead className="text-right w-[10%]">Cost</TableHead>
                     <TableHead className="text-right w-[10%]">Markup %</TableHead>
@@ -301,178 +380,238 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {fields.map((item, index) => (
-                    <TableRow key={item.id} className="hover:bg-muted/10">
-                      <TableCell className="pl-2 sticky left-0 bg-background z-10">
-                        <Checkbox
-                          checked={selectedItems.includes(item.id)}
-                          onCheckedChange={() => {
-                            setSelectedItems(prev =>
-                              prev.includes(item.id)
-                                ? prev.filter(id => id !== item.id)
-                                : [...prev, item.id]
-                            );
-                          }}
-                          aria-label={`Select item ${index + 1}`}
-                        />
-                      </TableCell>
-                      <TableCell className="sticky left-[40px] bg-background z-10">
-                        <Textarea
-                          {...form.register(`budgetItems.${index}.description`)}
-                          placeholder="Item description..."
-                          className="min-h-[60px] resize-y border shadow-sm"
-                          rows={2}
-                        />
-                        <Controller
-                          name={`budgetItems.${index}.description`}
-                          control={form.control}
-                          render={({ fieldState: { error } }) =>
-                            error ? (
-                              <p className="text-xs text-destructive mt-1">{error.message}</p>
-                            ) : null
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Controller
-                          control={form.control}
-                          name={`budgetItems.${index}.category`}
-                          render={({ field, fieldState: { error } }) => (
-                            <>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select Category..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {BUDGET_CATEGORIES.map(cat => (
-                                    <SelectItem key={cat.value} value={cat.value}>
-                                      {cat.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {error && (
-                                <p className="text-xs text-destructive mt-1">{error.message}</p>
-                              )}
-                            </>
-                          )}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Input
-                          {...form.register(`budgetItems.${index}.quantity`)}
-                          type="number"
-                          min="0.01"
-                          step="any"
-                          className="text-right w-16"
-                          onBlur={() => updateUnitPriceFromMarkup(index)}
-                        />
-                        <Controller
-                          name={`budgetItems.${index}.quantity`}
-                          control={form.control}
-                          render={({ fieldState: { error } }) =>
-                            error ? (
-                              <p className="text-xs text-destructive mt-1">{error.message}</p>
-                            ) : null
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Input
-                          {...form.register(`budgetItems.${index}.cost`)}
-                          type="number"
-                          min="0"
-                          step="any"
-                          className="text-right w-24"
-                          placeholder="0.00"
-                          onBlur={() => updateUnitPriceFromMarkup(index)}
-                        />
-                        <Controller
-                          name={`budgetItems.${index}.cost`}
-                          control={form.control}
-                          render={({ fieldState: { error } }) =>
-                            error ? (
-                              <p className="text-xs text-destructive mt-1">{error.message}</p>
-                            ) : null
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Input
-                          {...form.register(`budgetItems.${index}.markup_percentage`)}
-                          type="number"
-                          min="0"
-                          step="any"
-                          className="text-right w-20"
-                          placeholder="%"
-                          onBlur={() => updateUnitPriceFromMarkup(index)}
-                        />
-                        <Controller
-                          name={`budgetItems.${index}.markup_percentage`}
-                          control={form.control}
-                          render={({ fieldState: { error } }) =>
-                            error ? (
-                              <p className="text-xs text-destructive mt-1">{error.message}</p>
-                            ) : null
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="relative w-24 mx-auto">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">
-                            $
-                          </span>
-                          <Input
-                            {...form.register(`budgetItems.${index}.unit_price`)}
-                            type="number"
-                            className="text-right pl-6 bg-muted/50 border-none w-full"
-                            readOnly
-                            tabIndex={-1}
+                  {fields.map((item, index) => {
+                    const category = form.watch(`budgetItems.${index}.category`);
+                    const showVendor = shouldShowVendorField(category);
+                    const showSubcontractor = shouldShowSubcontractorField(category);
+
+                    return (
+                      <TableRow key={item.id} className="hover:bg-muted/10">
+                        <TableCell className="pl-2 sticky left-0 bg-background z-10">
+                          <Checkbox
+                            checked={selectedItems.includes(item.id)}
+                            onCheckedChange={checked => {
+                              if (checked) {
+                                setSelectedItems(prev => [...prev, item.id]);
+                              } else {
+                                setSelectedItems(prev => prev.filter(id => id !== item.id));
+                              }
+                            }}
+                            aria-label={`Select item ${index + 1}`}
                           />
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-medium pr-4">
-                        <span className="inline-block w-24 text-right">
-                          {formatCurrency(form.watch(`budgetItems.${index}.estimated_amount`) || 0)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenDocumentDialog(index)}
-                          className={
-                            form.watch(`budgetItems.${index}.document_id`)
-                              ? 'text-green-600 hover:text-green-700'
-                              : 'text-muted-foreground'
-                          }
-                          title={
-                            form.watch(`budgetItems.${index}.document_id`)
-                              ? 'Document attached'
-                              : 'Attach document'
-                          }
-                        >
-                          {form.watch(`budgetItems.${index}.document_id`) ? (
-                            <Paperclip className="h-4 w-4 stroke-current stroke-2" />
-                          ) : (
-                            <Paperclip className="h-4 w-4" />
+                        </TableCell>
+                        <TableCell className="sticky left-[40px] bg-background z-10">
+                          <Textarea
+                            {...form.register(`budgetItems.${index}.description`)}
+                            placeholder="Item description..."
+                            className="min-h-[60px] resize-y border shadow-sm"
+                            rows={2}
+                          />
+                          <Controller
+                            name={`budgetItems.${index}.description`}
+                            control={form.control}
+                            render={({ fieldState: { error } }) =>
+                              error ? (
+                                <p className="text-xs text-destructive mt-1">{error.message}</p>
+                              ) : null
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Controller
+                            control={form.control}
+                            name={`budgetItems.${index}.category`}
+                            render={({ field, fieldState: { error } }) => (
+                              <>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Category..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {BUDGET_CATEGORIES.map(cat => (
+                                      <SelectItem key={cat.value} value={cat.value}>
+                                        {cat.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                {error && (
+                                  <p className="text-xs text-destructive mt-1">{error.message}</p>
+                                )}
+                              </>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {showVendor && (
+                            <Controller
+                              control={form.control}
+                              name={`budgetItems.${index}.vendor_id`}
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value || 'none'}
+                                  onValueChange={val => field.onChange(val === 'none' ? null : val)}
+                                  disabled={loadingVendors}
+                                >
+                                  <SelectTrigger className="w-[140px]">
+                                    <SelectValue placeholder="Select vendor" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">No Vendor</SelectItem>
+                                    {vendors.map(vendor => (
+                                      <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
+                                        {vendor.vendorname}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
                           )}
-                        </Button>
-                      </TableCell>
-                      <TableCell className="text-center pr-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveItem(index)}
-                          title="Delete item"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          {showSubcontractor && (
+                            <Controller
+                              control={form.control}
+                              name={`budgetItems.${index}.subcontractor_id`}
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value || 'none'}
+                                  onValueChange={val => field.onChange(val === 'none' ? null : val)}
+                                  disabled={loadingSubcontractors}
+                                >
+                                  <SelectTrigger className="w-[140px]">
+                                    <SelectValue placeholder="Select sub" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">No Subcontractor</SelectItem>
+                                    {subcontractors.map(sub => (
+                                      <SelectItem key={sub.subid} value={sub.subid}>
+                                        {sub.subname}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            {...form.register(`budgetItems.${index}.quantity`)}
+                            type="number"
+                            min="0.01"
+                            step="any"
+                            className="text-right w-16"
+                            onBlur={() => updateUnitPriceFromMarkup(index)}
+                          />
+                          <Controller
+                            name={`budgetItems.${index}.quantity`}
+                            control={form.control}
+                            render={({ fieldState: { error } }) =>
+                              error ? (
+                                <p className="text-xs text-destructive mt-1">{error.message}</p>
+                              ) : null
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            {...form.register(`budgetItems.${index}.cost`)}
+                            type="number"
+                            min="0"
+                            step="any"
+                            className="text-right w-24"
+                            placeholder="0.00"
+                            onBlur={() => updateUnitPriceFromMarkup(index)}
+                          />
+                          <Controller
+                            name={`budgetItems.${index}.cost`}
+                            control={form.control}
+                            render={({ fieldState: { error } }) =>
+                              error ? (
+                                <p className="text-xs text-destructive mt-1">{error.message}</p>
+                              ) : null
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            {...form.register(`budgetItems.${index}.markup_percentage`)}
+                            type="number"
+                            min="0"
+                            step="any"
+                            className="text-right w-20"
+                            placeholder="%"
+                            onBlur={() => updateUnitPriceFromMarkup(index)}
+                          />
+                          <Controller
+                            name={`budgetItems.${index}.markup_percentage`}
+                            control={form.control}
+                            render={({ fieldState: { error } }) =>
+                              error ? (
+                                <p className="text-xs text-destructive mt-1">{error.message}</p>
+                              ) : null
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="relative w-24 mx-auto">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">
+                              $
+                            </span>
+                            <Input
+                              {...form.register(`budgetItems.${index}.unit_price`)}
+                              type="number"
+                              className="text-right pl-6 bg-muted/50 border-none w-full"
+                              readOnly
+                              tabIndex={-1}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium pr-4">
+                          <span className="inline-block w-24 text-right">
+                            {formatCurrency(
+                              form.watch(`budgetItems.${index}.estimated_amount`) || 0
+                            )}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenDocumentDialog(index)}
+                            className={
+                              form.watch(`budgetItems.${index}.document_id`)
+                                ? 'text-green-600 hover:text-green-700'
+                                : 'text-muted-foreground'
+                            }
+                            title={
+                              form.watch(`budgetItems.${index}.document_id`)
+                                ? 'Document attached'
+                                : 'Attach document'
+                            }
+                          >
+                            {form.watch(`budgetItems.${index}.document_id`) ? (
+                              <Paperclip className="h-4 w-4 stroke-current stroke-2" />
+                            ) : (
+                              <Paperclip className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell className="text-center pr-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveItem(index)}
+                            title="Delete item"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TooltipProvider>
@@ -519,6 +658,9 @@ const Step2_BudgetLineItems: React.FC<Step2Props> = ({ formData, onNext, wizardF
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Attach Document to Line Item #{activeItemIndex + 1}</DialogTitle>
+              <DialogDescription>
+                Upload a document to attach to this budget line item.
+              </DialogDescription>
             </DialogHeader>
             <div className="mt-4">
               <EnhancedDocumentUpload

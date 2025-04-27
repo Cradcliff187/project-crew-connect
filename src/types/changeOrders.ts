@@ -35,20 +35,22 @@ export interface ChangeOrder {
   title: string;
   description?: string;
   requested_by?: string;
-  requested_date: string;
+  requested_date?: string;
   status: ChangeOrderStatus;
   approved_by?: string;
   approved_date?: string;
   approval_notes?: string;
-  total_amount: number;
-  impact_days: number;
+  total_amount?: number;
+  cost_impact?: number;
+  revenue_impact?: number;
+  impact_days?: number;
   original_completion_date?: string;
   new_completion_date?: string;
-  change_order_number: string;
+  change_order_number?: string;
   document_id?: string;
-  created_at: string;
-  updated_at: string;
   items?: ChangeOrderItem[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ChangeOrderStatusHistory {

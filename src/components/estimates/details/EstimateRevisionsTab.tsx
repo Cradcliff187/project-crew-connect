@@ -93,9 +93,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // DEBUG: Log the revisions prop as received by the component
-  console.log('[DEBUG RevisionsTab Prop] Received revisions:', revisions);
-
   // State for comparison
   const [compareRevisionAId, setCompareRevisionAId] = useState<string | null>(null);
   const [compareRevisionBId, setCompareRevisionBId] = useState<string | null>(null);
@@ -307,7 +304,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
   };
 
   const handleRevisionClick = (revision: EstimateRevision) => {
-    console.log(`[DEBUG RevisionsTab] handleRevisionClick called for revision ID: ${revision.id}`);
     if (expandedRevision === revision.id) {
       setExpandedRevision(null);
     } else {
@@ -682,22 +678,6 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
                 localSubtotal > 0 ? (localMargin / localSubtotal) * 100 : 0;
 
               const localContingencyAmount = localSubtotal * ((contingencyPercentage || 0) / 100);
-
-              // DEBUG LOGS (kept from HEAD)
-              console.log(`[DEBUG RevisionsTab Render] Rendering revision ID: ${revision.id}`);
-              console.log(
-                `[DEBUG RevisionsTab Render] Items used for calculation for ${revision.id}:`,
-                items
-              ); // Log the items array used
-              console.log(
-                `[DEBUG RevisionsTab Render] Calculated localTotalCost for ${revision.id}: ${localTotalCost}`
-              );
-              console.log(
-                `[DEBUG RevisionsTab Render] Calculated localMargin for ${revision.id}: ${localMargin}`
-              );
-              console.log(
-                `[DEBUG RevisionsTab Render] Calculated localMarginPercent for ${revision.id}: ${localMarginPercent}`
-              );
 
               return (
                 <TableRow

@@ -12,9 +12,9 @@ const fetchProjects = async () => {
   const { data: projectsData, error: projectsError } = await supabase
     .from('projects')
     .select(
-      'projectid, projectname, customername, customerid, status, createdon, total_budget, current_expenses, budget_status'
+      'projectid, projectname, customerid, status, created_at, total_budget, current_expenses, budget_status'
     )
-    .order('createdon', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (projectsError) {
     throw projectsError;
@@ -38,13 +38,36 @@ const fetchProjects = async () => {
     });
   }
 
+  // Collect all customerIds from projects
+  const customerIds = projectsData.map(project => project.customerid).filter(id => id !== null);
+
+  // If there are any customerIds, fetch customer data
+  let customerMap = new Map();
+  if (customerIds.length > 0) {
+    const { data: customersData, error: customersError } = await supabase
+      .from('customers')
+      .select('customerid, customername')
+      .in('customerid', customerIds);
+
+    if (customersError) {
+      console.warn('Error fetching customer data:', customersError);
+    } else if (customersData) {
+      // Create a map of customer ID to customer name
+      customerMap = new Map(
+        customersData.map(customer => [customer.customerid, customer.customername])
+      );
+    }
+  }
+
   // Transform data to match our UI requirements
   return projectsData.map(project => ({
     ...project,
-    // Default values for budget fields
+    createdon: project.created_at,
+    customername: project.customerid
+      ? customerMap.get(project.customerid) || 'Unknown Customer'
+      : 'No Customer',
     budget: project.total_budget || 0,
     spent: project.current_expenses || 0,
-    // Use actual progress from database if available, otherwise default to 0
     progress: progressMap.has(project.projectid) ? progressMap.get(project.projectid) : 0,
   }));
 };
