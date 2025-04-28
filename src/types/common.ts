@@ -1,4 +1,3 @@
-
 export interface Employee {
   id: string;
   firstName: string;
@@ -10,9 +9,12 @@ export interface Employee {
   status?: string;
   // Add employee_id for backward compatibility with database structures
   employee_id?: string;
+  phone?: string;
+  cost_rate?: number | null;
+  bill_rate?: number | null;
 }
 
-export type EntityType = 
+export type EntityType =
   | 'PROJECT'
   | 'ESTIMATE'
   | 'WORK_ORDER'
@@ -25,7 +27,7 @@ export type EntityType =
   | 'EXPENSE'
   | 'ESTIMATE_ITEM';
 
-export type DocumentCategory = 
+export type DocumentCategory =
   | 'other'
   | 'invoice'
   | 'receipt'
@@ -106,8 +108,8 @@ export interface Vendor {
 // Helper function for employee names
 export function getEmployeeFullName(employee: Employee | null | undefined): string {
   if (!employee) return '';
-  
+
   if (employee.name) return employee.name;
-  
+
   return `${employee.firstName || ''} ${employee.lastName || ''}`.trim();
 }

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getBudgetItemCategory } from '../utils/expenseUtils';
+import { Database } from '@/integrations/supabase/types';
 
 export interface Expense {
   id: string;
@@ -15,6 +16,16 @@ export interface Expense {
   created_at: string;
   budget_item_category?: string;
   vendor_name?: string;
+  employee_name?: string;
+  hours_worked?: number | null;
+  expense_type?: string | null;
+  time_entry_id?: string | null;
+  timeEntryDetails?: {
+    date: string | null;
+    start: string | null;
+    end: string | null;
+    notes: string | null;
+  } | null;
 }
 
 export interface Document {
@@ -23,30 +34,78 @@ export interface Document {
   storage_path: string;
 }
 
+// Define the expected shape of the data returned by the query
+// This should align with your actual DB schema and the select query
+interface ProjectBudgetItemStub {
+  id: string;
+  category: string | null;
+}
+
+interface FetchedExpenseData {
+  id: string;
+  entity_id: string; // Use entity_id as per schema
+  entity_type: string; // Include entity_type if needed for clarity/filtering
+  budget_item_id: string | null;
+  expense_date: string;
+  amount: number;
+  vendor_id: string | null;
+  description: string;
+  document_id: string | null;
+  created_at: string;
+  expense_type: string | null; // Add expense_type to fetch
+  time_entry_id: string | null;
+  project_budget_items: ProjectBudgetItemStub | null; // Nested object for related item
+  // Add structure for nested time entry data
+  time_entries: {
+    hours_worked: number | null;
+    date_worked: string | null;
+    start_time: string | null;
+    end_time: string | null;
+    notes: string | null;
+    employees: {
+      first_name: string | null;
+      last_name: string | null;
+    } | null;
+  } | null;
+}
+
 /**
  * Hook to fetch and manage project expenses with improved error handling and performance
  */
 export const useProjectExpenses = (projectId: string) => {
-  const fetchExpenses = async () => {
+  const fetchExpenses = async (): Promise<Expense[]> => {
     try {
-      // Get all expenses in a single query with budget item information
-      const { data: expenses, error } = await supabase
+      // Fetch expenses directly from the table
+      const { data: expensesData, error } = await supabase
         .from('expenses')
         .select(
           `
-          *,
-          budget_item:budget_item_id(category)
+          id,
+          entity_id, entity_type,
+          time_entry_id,
+          budget_item_id,
+          expense_date,
+          amount,
+          vendor_id,
+          description,
+          document_id,
+          created_at,
+          expense_type,
+          project_budget_items ( id, category ),
+          time_entries ( date_worked, start_time, end_time, hours_worked, notes, employees (first_name, last_name) )
         `
         )
-        .eq('entity_type', 'PROJECT')
         .eq('entity_id', projectId)
-        .order('expense_date', { ascending: false });
+        .eq('entity_type', 'project');
 
       if (error) throw error;
 
+      // Force cast via unknown due to persistent linter issues
+      const fetchedData = (expensesData as unknown as FetchedExpenseData[]) ?? [];
+
       // Create a Set of unique vendor IDs for batch fetching
       const vendorIds = new Set<string>();
-      expenses.forEach(expense => {
+      fetchedData.forEach(expense => {
         if (expense.vendor_id) {
           vendorIds.add(expense.vendor_id);
         }
@@ -70,19 +129,42 @@ export const useProjectExpenses = (projectId: string) => {
       }
 
       // Map the expenses with vendor names and budget categories
-      return expenses.map(expense => ({
-        id: expense.id,
-        project_id: expense.entity_id,
-        budget_item_id: expense.budget_item_id,
-        expense_date: expense.expense_date,
-        amount: expense.amount,
-        vendor_id: expense.vendor_id,
-        description: expense.description,
-        document_id: expense.document_id,
-        created_at: expense.created_at,
-        budget_item_category: getBudgetItemCategory(expense.budget_item),
-        vendor_name: expense.vendor_id ? vendorMap.get(expense.vendor_id) || null : null,
-      }));
+      return fetchedData.map(expense => {
+        const employeeName =
+          expense.time_entries?.employees?.first_name && expense.time_entries?.employees?.last_name
+            ? `${expense.time_entries.employees.first_name} ${expense.time_entries.employees.last_name}`
+            : null;
+        const hoursWorked = expense.time_entries?.hours_worked ?? null;
+
+        // Extract time entry details for potential use
+        const timeEntryDetails = expense.time_entries
+          ? {
+              date: expense.time_entries.date_worked,
+              start: expense.time_entries.start_time,
+              end: expense.time_entries.end_time,
+              notes: expense.time_entries.notes,
+            }
+          : null;
+
+        return {
+          id: expense.id,
+          project_id: expense.entity_id, // Map entity_id to project_id
+          budget_item_id: expense.budget_item_id,
+          time_entry_id: expense.time_entry_id,
+          expense_date: expense.expense_date,
+          amount: expense.amount,
+          vendor_id: expense.vendor_id,
+          description: expense.description,
+          document_id: expense.document_id,
+          created_at: expense.created_at,
+          budget_item_category: getBudgetItemCategory(expense.project_budget_items),
+          vendor_name: expense.vendor_id ? vendorMap.get(expense.vendor_id) || null : null,
+          employee_name: employeeName,
+          hours_worked: hoursWorked,
+          expense_type: expense.expense_type,
+          timeEntryDetails: timeEntryDetails, // Pass nested details
+        };
+      });
     } catch (error) {
       console.error('Error in fetchExpenses:', error);
       throw error;

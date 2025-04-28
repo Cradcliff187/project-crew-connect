@@ -32,14 +32,24 @@ const FinancialImpactSummary: React.FC<FinancialImpactSummaryProps> = ({
         <CardTitle className="text-lg font-medium">Financial Impact</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="flex items-center">
             <div className="bg-[#0485ea]/10 p-2 rounded-full mr-3">
               <DollarSign className="h-5 w-5 text-[#0485ea]" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Change Amount</p>
+              <p className="text-sm text-muted-foreground">Revenue Impact</p>
               <p className="text-lg font-semibold">{formatCurrency(changeOrder.total_amount)}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <div className="bg-red-500/10 p-2 rounded-full mr-3">
+              <DollarSign className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Cost Impact</p>
+              <p className="text-lg font-semibold">{formatCurrency(changeOrder.cost_impact)}</p>
             </div>
           </div>
 

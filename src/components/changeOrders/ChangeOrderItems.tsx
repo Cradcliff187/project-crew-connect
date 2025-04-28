@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, useFieldArray, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -32,31 +33,19 @@ type Subcontractor = { subid: string; subname: string };
 
 interface ChangeOrderItemsProps {
   form: UseFormReturn<ChangeOrder>;
-  changeOrderId?: string;
-  isEditing: boolean;
-  onUpdated: () => void;
 }
 
-const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeOrderItemsProps) => {
-  const [items, setItems] = useState<ChangeOrderItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [newItem, setNewItem] = useState<Partial<ChangeOrderItem>>({
-    description: '',
-    quantity: 1,
-    unit_price: 0,
-    impact_days: 0,
-    item_type: 'LABOR',
-    vendor_id: null,
-    subcontractor_id: null,
+const ChangeOrderItems = ({ form }: ChangeOrderItemsProps) => {
+  const { fields, append, remove } = useFieldArray<ChangeOrder>({
+    control: form.control,
+    name: 'items',
   });
-  const [totalAmount, setTotalAmount] = useState(0);
-  const [impactDays, setImpactDays] = useState(0);
+
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
   const [loadingVendors, setLoadingVendors] = useState(false);
   const [loadingSubcontractors, setLoadingSubcontractors] = useState(false);
 
-  // Define item types
   const itemTypes = [
     { value: 'LABOR', label: 'Labor' },
     { value: 'MATERIAL', label: 'Material' },
@@ -66,57 +55,12 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
   ];
 
   useEffect(() => {
-    // If we have a change order ID, fetch its items
-    if (changeOrderId) {
-      fetchItems();
-      fetchVendors();
-      fetchSubcontractors();
-    } else {
-      setVendors([]);
-      setSubcontractors([]);
-    }
-  }, [changeOrderId]);
+    fetchVendors();
+    fetchSubcontractors();
+  }, []);
 
-  useEffect(() => {
-    // Update the form with the calculated totals
-    form.setValue('total_amount', totalAmount);
-    form.setValue('impact_days', impactDays);
-  }, [totalAmount, impactDays, form]);
-
-  const fetchItems = async () => {
-    if (!changeOrderId) return;
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('change_order_items')
-        .select('*')
-        .eq('change_order_id', changeOrderId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      setItems(data || []);
-
-      // Calculate totals
-      const total = data?.reduce((sum, item) => sum + (item.total_price || 0), 0) || 0;
-      setTotalAmount(total);
-
-      // Calculate maximum impact days
-      const maxImpactDays =
-        data?.reduce((max, item) => Math.max(max, item.impact_days || 0), 0) || 0;
-      setImpactDays(maxImpactDays);
-    } catch (error: any) {
-      console.error('Error fetching change order items:', error);
-      toast({
-        title: 'Error loading items',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const currentItems = form.watch('items') || [];
+  const totalAmount = currentItems.reduce((sum, item) => sum + (item?.total_price || 0), 0);
 
   const fetchVendors = async () => {
     if (vendors.length > 0) return;
@@ -158,389 +102,287 @@ const ChangeOrderItems = ({ form, changeOrderId, isEditing, onUpdated }: ChangeO
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-
-    if (name === 'quantity' || name === 'unit_price' || name === 'impact_days') {
-      // Convert to number and ensure it's not negative
-      const numValue = Math.max(0, parseFloat(value) || 0);
-      setNewItem(prev => ({
-        ...prev,
-        [name]: numValue,
-        // Auto-calculate total price if quantity or unit_price changes
-        ...(name === 'quantity' || name === 'unit_price'
-          ? {
-              total_price:
-                (name === 'quantity' ? numValue : prev.quantity || 0) *
-                (name === 'unit_price' ? numValue : prev.unit_price || 0),
-            }
-          : {}),
-      }));
-    } else {
-      setNewItem(prev => ({ ...prev, [name]: value }));
-    }
+  const addNewItemRow = () => {
+    append({
+      description: '',
+      quantity: 1,
+      unit_price: 0,
+      total_price: 0,
+      cost: 0,
+      markup_percentage: 0,
+      markup_amount: 0,
+      gross_margin: 0,
+      gross_margin_percentage: 0,
+      item_type: 'LABOR',
+      vendor_id: null,
+      subcontractor_id: null,
+      custom_type: null,
+      document_id: null,
+      expense_type: null,
+      trade_type: null,
+      change_order_id: '',
+    } as ChangeOrderItem);
   };
 
-  const handleSelectChange = (value: string) => {
-    setNewItem(prev => ({ ...prev, item_type: value }));
+  const removeItemRow = (index: number) => {
+    remove(index);
   };
 
-  const addItem = async () => {
-    if (!changeOrderId) {
-      toast({
-        title: 'Error',
-        description: 'Please save the change order first before adding items',
-        variant: 'destructive',
-      });
-      return;
+  const handleItemValueChange = (index: number, field: keyof ChangeOrderItem, value: any) => {
+    const currentItem = form.getValues(`items.${index}`);
+    let updatedValue = value;
+    let quantity = currentItem.quantity || 0;
+    let cost = currentItem.cost || 0;
+    let markup_percentage = currentItem.markup_percentage || 0;
+
+    if (field === 'quantity' || field === 'cost' || field === 'markup_percentage') {
+      updatedValue = Math.max(0, parseFloat(value) || 0);
+      if (field === 'quantity') quantity = updatedValue;
+      if (field === 'cost') cost = updatedValue;
+      if (field === 'markup_percentage') markup_percentage = updatedValue;
     }
 
-    if (!newItem.description || !newItem.quantity || !newItem.unit_price) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please provide a description, quantity, and unit price',
-        variant: 'destructive',
-      });
-      return;
-    }
+    form.setValue(`items.${index}.${field}`, updatedValue);
 
-    let vendorIdToSave = newItem.vendor_id;
-    let subIdToSave = newItem.subcontractor_id;
-    if (newItem.item_type !== 'MATERIAL') {
-      vendorIdToSave = null;
-    }
-    if (newItem.item_type !== 'SUBCONTRACTOR') {
-      subIdToSave = null;
-    }
+    const markup_amount = cost * (markup_percentage / 100);
+    const unit_price = cost + markup_amount;
+    const total_price = quantity * unit_price;
+    const total_cost = quantity * cost;
+    const gross_margin = total_price - total_cost;
+    const gross_margin_percentage = total_price > 0 ? (gross_margin / total_price) * 100 : 0;
 
-    setLoading(true);
-    try {
-      // Calculate total price
-      const totalPrice = (newItem.quantity || 0) * (newItem.unit_price || 0);
+    form.setValue(`items.${index}.markup_amount`, parseFloat(markup_amount.toFixed(2)));
+    form.setValue(`items.${index}.unit_price`, parseFloat(unit_price.toFixed(2)));
+    form.setValue(`items.${index}.total_price`, parseFloat(total_price.toFixed(2)));
+    form.setValue(`items.${index}.gross_margin`, parseFloat(gross_margin.toFixed(2)));
+    form.setValue(
+      `items.${index}.gross_margin_percentage`,
+      parseFloat(gross_margin_percentage.toFixed(2))
+    );
 
-      const { data, error } = await supabase
-        .from('change_order_items')
-        .insert({
-          change_order_id: changeOrderId,
-          description: newItem.description,
-          quantity: newItem.quantity,
-          unit_price: newItem.unit_price,
-          total_price: totalPrice,
-          item_type: newItem.item_type,
-          impact_days: newItem.impact_days || 0,
-          vendor_id: vendorIdToSave,
-          subcontractor_id: subIdToSave,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Add the new item to the list
-      setItems(prev => [...prev, data as ChangeOrderItem]);
-
-      // Reset the form
-      setNewItem({
-        description: '',
-        quantity: 1,
-        unit_price: 0,
-        impact_days: 0,
-        item_type: 'LABOR',
-        vendor_id: null,
-        subcontractor_id: null,
-      });
-
-      // Recalculate totals
-      await fetchItems();
-      onUpdated();
-
-      toast({
-        title: 'Item added',
-        description: 'The item has been added to the change order',
-      });
-    } catch (error: any) {
-      console.error('Error adding change order item:', error);
-      toast({
-        title: 'Error adding item',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteItem = async (itemId: string) => {
-    if (!changeOrderId || !itemId) return;
-
-    if (!confirm('Are you sure you want to delete this item?')) return;
-
-    setLoading(true);
-    try {
-      const { error } = await supabase.from('change_order_items').delete().eq('id', itemId);
-
-      if (error) throw error;
-
-      // Remove the item from the list
-      setItems(prev => prev.filter(item => item.id !== itemId));
-
-      // Recalculate totals
-      await fetchItems();
-      onUpdated();
-
-      toast({
-        title: 'Item deleted',
-        description: 'The item has been removed from the change order',
-      });
-    } catch (error: any) {
-      console.error('Error deleting change order item:', error);
-      toast({
-        title: 'Error deleting item',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+    form.trigger(`items.${index}`);
   };
 
   return (
-    <div className="space-y-6">
-      {!isEditing && !changeOrderId && (
-        <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200 text-yellow-800">
-          Please save the basic information first before adding items.
-        </div>
-      )}
-
-      {changeOrderId && (
-        <>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-                <div className="lg:col-span-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={newItem.description || ''}
-                    onChange={handleInputChange}
-                    placeholder="Item description"
-                    className="h-10"
-                    disabled={loading}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="item_type">Type</Label>
-                  <Select
-                    value={newItem.item_type}
-                    onValueChange={handleSelectChange}
-                    disabled={loading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {itemTypes.map(type => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Conditional Vendor Select */}
-                {newItem.item_type === 'MATERIAL' && (
-                  <div className="lg:col-span-2">
-                    <Label htmlFor="vendor_id">Vendor</Label>
-                    <Select
-                      value={newItem.vendor_id || 'none'}
-                      onValueChange={value =>
-                        setNewItem(prev => ({
-                          ...prev,
-                          vendor_id: value === 'none' ? null : value,
-                        }))
-                      }
-                      disabled={loadingVendors}
-                    >
-                      <SelectTrigger id="vendor_id">
-                        <SelectValue
-                          placeholder={loadingVendors ? 'Loading...' : 'Select Vendor'}
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="pt-6">
+          {fields.length === 0 ? (
+            <p className="text-sm text-center text-muted-foreground py-4">No items added yet.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[25%]">Description</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Vendor/Sub</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-right">Cost</TableHead>
+                  <TableHead className="text-right">Markup %</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Margin %</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {fields.map((field, index) => {
+                  const itemType = form.watch(`items.${index}.item_type`);
+                  return (
+                    <TableRow key={field.id}>
+                      <TableCell>
+                        <Input
+                          {...form.register(`items.${index}.description`)}
+                          placeholder="Item description"
+                          className="h-8"
                         />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Vendor</SelectItem>
-                        {vendors.map(vendor => (
-                          <SelectItem key={vendor.vendorid} value={vendor.vendorid}>
-                            {vendor.vendorname}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Conditional Subcontractor Select */}
-                {newItem.item_type === 'SUBCONTRACTOR' && (
-                  <div className="lg:col-span-2">
-                    <Label htmlFor="subcontractor_id">Subcontractor</Label>
-                    <Select
-                      value={newItem.subcontractor_id || 'none'}
-                      onValueChange={value =>
-                        setNewItem(prev => ({
-                          ...prev,
-                          subcontractor_id: value === 'none' ? null : value,
-                        }))
-                      }
-                      disabled={loadingSubcontractors}
-                    >
-                      <SelectTrigger id="subcontractor_id">
-                        <SelectValue
-                          placeholder={
-                            loadingSubcontractors ? 'Loading...' : 'Select Subcontractor'
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Subcontractor</SelectItem>
-                        {subcontractors.map(sub => (
-                          <SelectItem key={sub.subid} value={sub.subid}>
-                            {sub.subname}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    name="quantity"
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={newItem.quantity || ''}
-                    onChange={handleInputChange}
-                    disabled={loading}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="unit_price">Unit Price</Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="unit_price"
-                      name="unit_price"
-                      type="number"
-                      min={0}
-                      step={0.01}
-                      value={newItem.unit_price || ''}
-                      onChange={handleInputChange}
-                      className="pl-8"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <Label htmlFor="impact_days">Schedule Impact (days)</Label>
-                  <Input
-                    id="impact_days"
-                    name="impact_days"
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={newItem.impact_days || ''}
-                    onChange={handleInputChange}
-                    disabled={loading}
-                  />
-                </div>
-
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    onClick={addItem}
-                    disabled={
-                      loading || !newItem.description || !newItem.quantity || !newItem.unit_price
-                    }
-                    className="bg-[#0485ea] hover:bg-[#0375d1]"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Item
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div>
-            <h3 className="text-lg font-medium mb-4">Items List</h3>
-
-            {items.length === 0 ? (
-              <div className="text-center py-6 bg-gray-50 rounded-md">
-                <p className="text-muted-foreground">No items added yet</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Quantity</TableHead>
-                      <TableHead className="text-right">Unit Price</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-right">Impact (days)</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {items.map((item, index) => (
-                      <TableRow key={item.id || index}>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell>{item.item_type}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.unit_price)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.total_price)}
-                        </TableCell>
-                        <TableCell className="text-right">{item.impact_days}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteItem(item.id)}
-                            disabled={loading}
-                          >
-                            <Trash className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {/* Summary row */}
-                    <TableRow className="font-medium">
-                      <TableCell colSpan={4} className="text-right">
-                        Total:
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrency(totalAmount)}</TableCell>
-                      <TableCell className="text-right">{impactDays}</TableCell>
-                      <TableCell></TableCell>
+                      <TableCell>
+                        <Controller
+                          name={`items.${index}.item_type`}
+                          control={form.control}
+                          render={({ field: controllerField }) => (
+                            <Select
+                              value={controllerField.value || ''}
+                              onValueChange={value =>
+                                handleItemValueChange(index, 'item_type', value)
+                              }
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {itemTypes.map(type => (
+                                  <SelectItem key={type.value} value={type.value}>
+                                    {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {itemType === 'MATERIAL' && (
+                          <Controller
+                            name={`items.${index}.vendor_id`}
+                            control={form.control}
+                            render={({ field: controllerField }) => (
+                              <Select
+                                value={controllerField.value || 'none'}
+                                onValueChange={value =>
+                                  handleItemValueChange(
+                                    index,
+                                    'vendor_id',
+                                    value === 'none' ? null : value
+                                  )
+                                }
+                                disabled={loadingVendors}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue
+                                    placeholder={loadingVendors ? 'Loading...' : 'Vendor'}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  {vendors.map(v => (
+                                    <SelectItem key={v.vendorid} value={v.vendorid}>
+                                      {v.vendorname}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        )}
+                        {itemType === 'SUBCONTRACTOR' && (
+                          <Controller
+                            name={`items.${index}.subcontractor_id`}
+                            control={form.control}
+                            render={({ field: controllerField }) => (
+                              <Select
+                                value={controllerField.value || 'none'}
+                                onValueChange={value =>
+                                  handleItemValueChange(
+                                    index,
+                                    'subcontractor_id',
+                                    value === 'none' ? null : value
+                                  )
+                                }
+                                disabled={loadingSubcontractors}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue
+                                    placeholder={loadingSubcontractors ? 'Loading...' : 'Sub'}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">None</SelectItem>
+                                  {subcontractors.map(s => (
+                                    <SelectItem key={s.subid} value={s.subid}>
+                                      {s.subname}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        )}
+                        {itemType !== 'MATERIAL' && itemType !== 'SUBCONTRACTOR' && <span>-</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={1}
+                          step={1}
+                          {...form.register(`items.${index}.quantity`, {
+                            setValueAs: v => parseInt(v) || 1,
+                          })}
+                          onChange={e => handleItemValueChange(index, 'quantity', e.target.value)}
+                          className="h-8 w-16 text-right"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="relative">
+                          <DollarSign className="absolute left-1 top-2 h-3 w-3 text-muted-foreground" />
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            {...form.register(`items.${index}.cost`, {
+                              setValueAs: v => (v === '' ? null : parseFloat(v)),
+                            })}
+                            onChange={e => handleItemValueChange(index, 'cost', e.target.value)}
+                            className="h-8 w-24 pl-5 text-right"
+                            placeholder="0.00"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.1}
+                            {...form.register(`items.${index}.markup_percentage`, {
+                              setValueAs: v => (v === '' ? null : parseFloat(v)),
+                            })}
+                            onChange={e =>
+                              handleItemValueChange(index, 'markup_percentage', e.target.value)
+                            }
+                            className="h-8 w-20 pr-5 text-right"
+                            placeholder="0.0"
+                          />
+                          <span className="absolute right-2 top-2 h-4 w-4 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(form.watch(`items.${index}.total_price`) || 0)}
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
+                        {`${(form.watch(`items.${index}.gross_margin_percentage`) || 0).toFixed(1)}%`}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeItemRow(index)}
+                          className="h-8 w-8"
+                        >
+                          <Trash className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+                  );
+                })}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={6} className="text-right font-semibold">
+                    Total Amount:
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {formatCurrency(totalAmount)}
+                  </TableCell>
+                  <TableCell colSpan={2}></TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addNewItemRow}
+            className="mt-4"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Item
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };

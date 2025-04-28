@@ -26,7 +26,7 @@ export const projectToWorkItem = (project: any): WorkItem => {
     title: project.projectname,
     type: 'project',
     status: project.status || 'active',
-    dueDate: project.due_date,
+    dueDate: project.target_end_date || project.due_date,
     customerName: project.customername || '',
     progress: project.progress || 0,
     href: `/projects/${project.projectid}`,

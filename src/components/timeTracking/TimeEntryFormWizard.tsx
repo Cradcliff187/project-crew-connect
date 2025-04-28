@@ -16,11 +16,11 @@ import TimeRangeSelector from './form/TimeRangeSelector';
 import ReceiptUploader from './form/ReceiptUploader';
 import ReceiptMetadataForm from './form/ReceiptMetadataForm';
 import { useEntityData } from './hooks/useEntityData';
-import EmployeeSelect from './form/EmployeeSelect';
 import { calculateHours } from './utils/timeUtils';
 import { DatePicker } from '@/components/ui/date-picker';
-import { adaptEmployeesFromDatabase, getEmployeeFullName } from '@/utils/employeeAdapter';
 import { Employee } from '@/types/common';
+import EmployeeSelect from './form/EmployeeSelect';
+import { TimeEntry } from '@/types/timeTracking';
 
 const formSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -40,9 +40,15 @@ interface TimeEntryFormWizardProps {
   onSuccess: () => void;
   onCancel?: () => void;
   date: Date;
+  initialData?: TimeEntry | null;
 }
 
-const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, onCancel, date }) => {
+const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
+  onSuccess,
+  onCancel,
+  date,
+  initialData,
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [hasReceipts, setHasReceipts] = useState(false);
@@ -56,23 +62,23 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
 
   const form = useForm<FormValues>({
     defaultValues: {
-      entityType: 'work_order',
-      entityId: '',
-      workDate: date,
-      startTime: '09:00',
-      endTime: '17:00',
-      hoursWorked: 8,
-      notes: '',
-      employeeId: '',
-      hasReceipts: false,
+      entityType: initialData?.entity_type || 'work_order',
+      entityId: initialData?.entity_id || '',
+      workDate: initialData ? new Date(initialData.date_worked) : date,
+      startTime: initialData?.start_time || '09:00',
+      endTime: initialData?.end_time || '17:00',
+      hoursWorked: initialData?.hours_worked || 8,
+      notes: initialData?.notes || '',
+      employeeId: initialData?.employee_id || '',
+      hasReceipts: initialData?.has_receipts || false,
     },
     resolver: zodResolver(formSchema),
   });
 
-  const { workOrders, projects, employees: dbEmployees, isLoadingEntities, getSelectedEntityDetails } =
+  const { workOrders, projects, employees, isLoadingEntities, getSelectedEntityDetails } =
     useEntityData(form);
 
-  const employees = adaptEmployeesFromDatabase(dbEmployees);
+  console.log('[TimeEntryFormWizard] Employees received from useEntityData:', employees);
 
   const entityType = form.watch('entityType');
   const entityId = form.watch('entityId');
@@ -155,8 +161,10 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     }
   };
 
-  const submitTimeEntry = async (data: FormValues): Promise<{ id: string }> => {
-    const timeEntry = {
+  // Function to prepare data for DB insert/update
+  const prepareTimeEntryData = (data: FormValues) => {
+    const employeeData = employees.find(e => e.id === data.employeeId);
+    return {
       entity_type: data.entityType,
       entity_id: data.entityId,
       employee_id: data.employeeId || null,
@@ -166,19 +174,11 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
       hours_worked: data.hoursWorked,
       notes: data.notes || '',
       has_receipts: selectedFiles.length > 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      cost_rate: employeeData?.cost_rate ?? null, // Get rate from fetched employee data
+      bill_rate: employeeData?.bill_rate ?? null,
+      updated_at: new Date().toISOString(), // Always set updated_at
       location_data: null,
     };
-
-    const { data: result, error } = await supabase
-      .from('time_entries')
-      .insert(timeEntry)
-      .select('id')
-      .single();
-
-    if (error) throw error;
-    return result;
   };
 
   const onSubmit: SubmitHandler<FormValues> = async data => {
@@ -194,16 +194,48 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
     setIsSubmitting(true);
 
     try {
-      const result = await submitTimeEntry(data);
+      if (initialData?.id) {
+        // --- UPDATE ---
+        const updateData = prepareTimeEntryData(data);
+        // Remove fields that shouldn't be updated directly or are immutable
+        delete (updateData as any).created_at;
 
-      if (selectedFiles.length > 0) {
-        await uploadReceipts(result.id, selectedFiles);
+        console.log('[TimeEntryFormWizard] Updating Time Entry:', initialData.id, updateData);
+        const { error } = await supabase
+          .from('time_entries')
+          .update(updateData)
+          .eq('id', initialData.id);
+
+        if (error) throw error;
+
+        // TODO: Handle receipt updates/deletions - more complex logic needed here
+        // For now, assume receipts are only added on create
+
+        toast({
+          title: 'Time entry updated',
+          description: 'Your time entry has been successfully updated.',
+        });
+      } else {
+        // --- INSERT ---
+        const insertData = prepareTimeEntryData(data);
+        console.log('[TimeEntryFormWizard] Submitting Time Entry Data:', insertData);
+
+        const { data: result, error } = await supabase
+          .from('time_entries')
+          .insert(insertData)
+          .select('id')
+          .single();
+
+        if (error) throw error;
+
+        if (selectedFiles.length > 0) {
+          await uploadReceipts(result.id, selectedFiles);
+        }
+        toast({
+          title: 'Time entry submitted',
+          description: 'Your time entry has been successfully recorded.',
+        });
       }
-
-      toast({
-        title: 'Time entry submitted',
-        description: 'Your time entry has been successfully recorded.',
-      });
 
       if (onSuccess) {
         onSuccess();
@@ -289,6 +321,7 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
               onChange={value => form.setValue('employeeId', value)}
               employees={employees}
               label="Employee"
+              disabled={isLoadingEntities || isSubmitting}
             />
 
             {projects.length === 0 && workOrders.length === 0 && !isLoadingEntities && (
@@ -338,7 +371,15 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
                 <span className="font-medium">{selectedEntity?.name}</span>
                 {form.watch('employeeId') && employees && (
                   <span className="ml-2 text-sm text-muted-foreground">
-                    ({employees.find(e => e.id === form.watch('employeeId') || e.employee_id === form.watch('employeeId'))?.name})
+                    (
+                    {
+                      employees.find(
+                        e =>
+                          e.id === form.watch('employeeId') ||
+                          e.employee_id === form.watch('employeeId')
+                      )?.name
+                    }
+                    )
                   </span>
                 )}
               </div>
@@ -402,7 +443,13 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({ onSuccess, on
                 <div className="flex items-center text-sm text-muted-foreground mt-1">
                   <UserRound className="h-4 w-4 mr-1" />
                   <span>
-                    {employees.find(e => e.id === form.watch('employeeId') || e.employee_id === form.watch('employeeId'))?.name}
+                    {
+                      employees.find(
+                        e =>
+                          e.id === form.watch('employeeId') ||
+                          e.employee_id === form.watch('employeeId')
+                      )?.name
+                    }
                   </span>
                 </div>
               )}

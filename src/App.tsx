@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { forceConsoleLogging } from './utils/debugUtils';
+import RouteGuard from '@/components/auth/RouteGuard';
+import Settings from './pages/Settings';
+import EstimateEmailSettings from './pages/EstimateEmailSettings';
+import EmployeesPage from './pages/Employees';
+import TimeTracking from './pages/TimeTracking';
+import ActiveWork from './pages/ActiveWork';
+import Reports from './pages/Reports';
+import ReportBuilder from './pages/ReportBuilder';
+import Login from './pages/Login';
 
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
@@ -9,6 +18,7 @@ import Customers from './pages/Customers';
 import CustomerDetail from './pages/CustomerDetail';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
+import ProjectEdit from './components/projects/ProjectEdit';
 import Estimates from './pages/Estimates';
 import EstimateDetailPage from './pages/EstimateDetailPage';
 import WorkOrders from './pages/WorkOrders';
@@ -20,14 +30,7 @@ import Vendors from './pages/Vendors';
 import VendorDetail from './components/vendors/detail/VendorDetail';
 import Subcontractors from './pages/Subcontractors';
 import SubcontractorDetail from './components/subcontractors/SubcontractorDetail';
-import Settings from './pages/Settings';
-import Login from './pages/Login';
-import RouteGuard from './components/auth/RouteGuard';
-import EstimateEmailSettings from './pages/EstimateEmailSettings';
-import TimeTracking from './pages/TimeTracking';
-import ActiveWork from './pages/ActiveWork';
-import Reports from './pages/Reports';
-import ReportBuilder from './pages/ReportBuilder';
+import { Toaster } from '@/components/ui/toaster';
 
 const queryClient = new QueryClient();
 
@@ -56,6 +59,7 @@ function App() {
               <Route path="customers/:customerId" element={<CustomerDetail />} />
               <Route path="projects" element={<Projects />} />
               <Route path="projects/:projectId" element={<ProjectDetail />} />
+              <Route path="projects/:projectId/edit" element={<ProjectEdit />} />
               <Route path="estimates" element={<Estimates />} />
               <Route path="estimates/settings" element={<EstimateEmailSettings />} />
               <Route path="estimates/:estimateId" element={<EstimateDetailPage />} />
@@ -69,6 +73,7 @@ function App() {
               <Route path="subcontractors" element={<Subcontractors />} />
               <Route path="subcontractors/:subcontractorId" element={<SubcontractorDetail />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="employees" element={<EmployeesPage />} />
               <Route path="time-tracking" element={<TimeTracking />} />
               <Route path="active-work" element={<ActiveWork />} />
               <Route path="reports" element={<Reports />} />
@@ -80,6 +85,7 @@ function App() {
           </Routes>
         </RouteGuard>
       </QueryClientProvider>
+      <Toaster />
     </BrowserRouter>
   );
 }

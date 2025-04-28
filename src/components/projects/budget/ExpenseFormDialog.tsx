@@ -38,6 +38,8 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
     onSubmit,
     handleDocumentUploaded,
     isEditing,
+    requireTimeEntryForLabor,
+    isLoadingSettings,
   } = useExpenseForm({ projectId, expense, onSave });
 
   const handleCancel = () => {
@@ -71,6 +73,8 @@ const ExpenseFormDialog: React.FC<ExpenseFormDialogProps> = ({
                 vendors={vendors}
                 onAttachReceipt={() => setShowDocumentUpload(true)}
                 hasAttachedReceipt={!!form.watch('document_id')}
+                requireTimeEntryForLabor={requireTimeEntryForLabor}
+                isLoadingSettings={isLoadingSettings}
               />
 
               <DialogFooter className="mt-6">

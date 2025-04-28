@@ -30,6 +30,9 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   className = '',
   placeholder = 'Select employee',
 }) => {
+  // Log the received employees prop
+  console.log('[EmployeeSelect] Received employees:', employees);
+
   return (
     <div className={`space-y-2 ${className}`}>
       <Label>
@@ -42,11 +45,19 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">Not assigned</SelectItem>
-          {employees.map(employee => (
-            <SelectItem key={employee.id} value={employee.id}>
-              {getEmployeeFullName(employee)}
-            </SelectItem>
-          ))}
+          {Array.isArray(employees) &&
+            employees.map((employee, index) => {
+              // Add more detailed logging inside the map
+              const fullName = getEmployeeFullName(employee);
+              console.log(
+                `[EmployeeSelect] Mapping item ${index}: ID=${employee?.id}, Name=${fullName}`
+              );
+              return employee && employee.id ? (
+                <SelectItem key={employee.id} value={employee.id}>
+                  {fullName}
+                </SelectItem>
+              ) : null;
+            })}
         </SelectContent>
       </Select>
     </div>

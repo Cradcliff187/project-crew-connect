@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Discount } from '@/services/discountService';
 import { Database } from '@/integrations/supabase/types';
 import { formatCurrency, formatDate } from '@/lib/utils'; // Assuming formatDate exists
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -32,12 +31,12 @@ import {
 // Define types based on generated Supabase types
 type Project = Database['public']['Tables']['projects']['Row'];
 type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
+type Discount = Database['public']['Tables']['discounts']['Row']; // Keep local definition
 
 // Define FetchedChangeOrder type locally
 type FetchedChangeOrder = {
   id: string;
   title: string | null;
-  status: string;
   cost_impact: number | null;
   revenue_impact: number | null;
 };

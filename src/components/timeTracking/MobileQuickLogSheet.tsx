@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import EmployeeSelect from './form/EmployeeSelect';
 import { QuickLogFormValues } from '@/types/timeTracking';
-import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
+import { useEmployees } from '@/hooks/useEmployees';
+import { getEmployeeFullName } from '@/utils/employeeAdapter';
 
 interface MobileQuickLogSheetProps {
   open: boolean;
@@ -33,8 +34,9 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
   const [entityType, setEntityType] = useState<'work_order' | 'project'>('work_order');
   const [entityId, setEntityId] = useState('');
   const [entityOptions, setEntityOptions] = useState<Array<{ id: string; name: string }>>([]);
-  const [employeeId, setEmployeeId] = useState('none'); // Default to 'none' instead of empty string
-  const [employees, setEmployees] = useState<{ employee_id: string; name: string }[]>([]);
+  const [employeeId, setEmployeeId] = useState('none');
+
+  const { employees, isLoadingEmployees } = useEmployees();
 
   const { toast } = useToast();
 
@@ -92,34 +94,6 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     fetchRecentEntities();
   }, [entityType]);
 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('employees')
-          .select('employee_id, first_name, last_name')
-          .order('last_name');
-
-        if (error) {
-          console.error('Error fetching employees:', error);
-          return;
-        }
-
-        if (data) {
-          const formattedEmployees = data.map(emp => ({
-            employee_id: emp.employee_id,
-            name: `${emp.first_name} ${emp.last_name}`,
-          }));
-          setEmployees(formattedEmployees);
-        }
-      } catch (error) {
-        console.error('Exception when fetching employees:', error);
-      }
-    };
-
-    fetchEmployees();
-  }, []);
-
   const handleSubmit = async () => {
     if (!entityId) {
       toast({
@@ -147,13 +121,8 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
       const actualEmployeeId = employeeId === 'none' ? null : employeeId;
 
       if (actualEmployeeId) {
-        const { data: empData } = await supabase
-          .from('employees')
-          .select('hourly_rate')
-          .eq('employee_id', actualEmployeeId)
-          .maybeSingle();
-
-        hourlyRate = empData?.hourly_rate;
+        const selectedEmployee = employees.find(emp => emp.id === actualEmployeeId);
+        hourlyRate = selectedEmployee?.hourlyRate;
       }
 
       const rate = hourlyRate || 75;
@@ -221,7 +190,7 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
     setHoursWorked(8);
     setNotes('');
     setTimeError('');
-    setEmployeeId('none'); // Reset to 'none' not empty string
+    setEmployeeId('none');
     setEntityId('');
   };
 
@@ -274,7 +243,38 @@ const MobileQuickLogSheet: React.FC<MobileQuickLogSheetProps> = ({
             </select>
           </div>
 
-          <EmployeeSelect value={employeeId} onChange={setEmployeeId} employees={adaptEmployeesFromDatabase(employees)} />
+          {/* TEMPORARY: Use native select for debugging */}
+          <div className="space-y-2">
+            <label htmlFor="nativeEmployeeSelect" className="text-sm font-medium">
+              Employee (Native)
+            </label>
+            <select
+              id="nativeEmployeeSelect"
+              value={employeeId}
+              onChange={e => setEmployeeId(e.target.value)}
+              disabled={isLoadingEmployees || isSubmitting}
+              className="w-full border border-input bg-background px-3 py-2 rounded-md h-10"
+            >
+              <option value="none">Not Assigned</option>
+              {Array.isArray(employees) &&
+                employees.map((emp, idx) => {
+                  console.log(`[MobileQuickLogSheet] Mapping employee ${idx}:`, emp);
+                  return emp && emp.id ? (
+                    <option key={emp.id} value={emp.id}>
+                      {getEmployeeFullName(emp)}
+                    </option>
+                  ) : null;
+                })}
+            </select>
+          </div>
+
+          {/* Restore EmployeeSelect component */}
+          <EmployeeSelect
+            value={employeeId}
+            onChange={setEmployeeId}
+            employees={employees} // Use employees from useEmployees hook
+            disabled={isLoadingEmployees || isSubmitting}
+          />
 
           <TimeRangeSelector
             startTime={startTime}

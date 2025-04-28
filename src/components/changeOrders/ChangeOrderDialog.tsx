@@ -16,7 +16,6 @@ import ChangeOrderBasicInfo from './ChangeOrderBasicInfo';
 import ChangeOrderItems from './ChangeOrderItems';
 import ChangeOrderApproval from './ChangeOrderApproval';
 import FinancialAnalysisTab from './FinancialAnalysisTab';
-import ChangeOrderStatusControl from './ChangeOrderStatusControl';
 import { StatusOption } from '@/components/common/status/UniversalStatusControl';
 
 interface ChangeOrderDialogProps {
@@ -40,8 +39,6 @@ const ChangeOrderDialog = ({
 }: ChangeOrderDialogProps) => {
   const [activeTab, setActiveTab] = useState('basic-info');
   const [saving, setSaving] = useState(false);
-  const [statusOptions, setStatusOptions] = useState<StatusOption[]>([]);
-  const [loadingStatus, setLoadingStatus] = useState(false);
   const isEditing = !!changeOrder;
   const entityId = entityType === 'PROJECT' ? projectId : workOrderId;
 
@@ -53,21 +50,19 @@ const ChangeOrderDialog = ({
       description: '',
       requested_by: '',
       requested_date: new Date().toISOString(),
-      status: 'DRAFT' as ChangeOrderStatus,
       total_amount: 0,
-      impact_days: 0,
       items: [],
     },
   });
 
-  const currentStatus = form.watch('status') as ChangeOrderStatus;
-
   useEffect(() => {
     if (changeOrder) {
-      // Reset form with the changeOrder data
-      form.reset(changeOrder);
+      form.reset({
+        ...changeOrder,
+        entity_type: changeOrder.entity_type,
+        entity_id: changeOrder.entity_id,
+      });
     } else {
-      // Reset form with default values
       form.reset({
         entity_type: entityType,
         entity_id: entityId || '',
@@ -75,48 +70,11 @@ const ChangeOrderDialog = ({
         description: '',
         requested_by: '',
         requested_date: new Date().toISOString(),
-        status: 'DRAFT' as ChangeOrderStatus,
         total_amount: 0,
-        impact_days: 0,
         items: [],
       });
     }
   }, [changeOrder, entityType, entityId, form]);
-
-  useEffect(() => {
-    if (isEditing && isOpen) {
-      fetchStatusDefinitions();
-    }
-  }, [isEditing, isOpen]);
-
-  const fetchStatusDefinitions = async () => {
-    setLoadingStatus(true);
-    try {
-      const { data: statusDefs, error: statusError } = await supabase
-        .from('status_definitions')
-        .select('*')
-        .eq('entity_type', 'CHANGE_ORDER' as any);
-
-      if (statusError) throw statusError;
-
-      const mappedOptions = (statusDefs || []).map(def => ({
-        value: def.status_code,
-        label: def.label,
-        color: def.color,
-      }));
-      setStatusOptions(mappedOptions);
-    } catch (error: any) {
-      console.error('Error fetching status definitions:', error);
-      toast({
-        title: 'Error',
-        description: 'Could not load status options.',
-        variant: 'destructive',
-      });
-      setStatusOptions([]);
-    } finally {
-      setLoadingStatus(false);
-    }
-  };
 
   const handleSubmit = async (data: ChangeOrder) => {
     if (!entityId) {
@@ -129,59 +87,106 @@ const ChangeOrderDialog = ({
     }
 
     setSaving(true);
-    try {
-      // Prepare data for saving, EXCLUDING the 'items' field
-      const { items, ...dataToSave } = data; // Destructure to separate items
+    console.log('[ChangeOrderDialog] Starting submission with form data:', data);
 
-      const changeOrderData = {
-        ...dataToSave, // Spread only the fields meant for the change_orders table
+    try {
+      // 1. Prepare and Save Main Change Order Data
+      const { items, ...coDataToSave } = data;
+      const changeOrderPayload = {
+        ...coDataToSave,
         entity_type: entityType,
         entity_id: entityId,
+        id: isEditing ? changeOrder?.id : undefined,
+        // Totals will be updated by trigger later
+        total_amount: items?.reduce((sum, item) => sum + (item?.total_price || 0), 0) || 0,
+        cost_impact:
+          items?.reduce((sum, item) => sum + (item?.cost || 0) * (item?.quantity || 0), 0) || 0,
       };
+      delete changeOrderPayload.items;
+      delete changeOrderPayload.created_at;
+      delete changeOrderPayload.updated_at;
+      delete (changeOrderPayload as any).status;
 
-      console.log('[ChangeOrderDialog] Saving data:', changeOrderData); // Log the actual data being sent
+      console.log('[ChangeOrderDialog] Upserting change_orders table with:', changeOrderPayload);
+      const { data: savedCO, error: coError } = await supabase
+        .from('change_orders')
+        .upsert(changeOrderPayload)
+        .select('id')
+        .single();
 
-      let result;
+      if (coError) throw coError;
 
-      if (isEditing && changeOrder?.id) {
-        // Update existing change order
-        const { data: updatedChangeOrder, error } = await supabase
-          .from('change_orders')
-          .update(changeOrderData) // Pass the filtered data
-          .eq('id', changeOrder.id)
-          // Explicitly select only columns from change_orders table
-          .select(
-            'id, entity_type, entity_id, title, description, requested_by, requested_date, status, approved_by, approved_date, approval_notes, total_amount, cost_impact, revenue_impact, impact_days, original_completion_date, new_completion_date, change_order_number, document_id, created_at, updated_at'
-          )
-          .single();
+      const savedCoId = savedCO.id;
+      console.log('[ChangeOrderDialog] Main CO saved/updated. ID:', savedCoId);
 
-        if (error) throw error;
-        result = updatedChangeOrder;
+      // 2. Process Change Order Items (Delete existing then Insert current)
+      const currentItems = items || [];
 
-        toast({
-          title: 'Change order updated',
-          description: 'The change order has been updated successfully.',
-        });
-      } else {
-        // Create new change order
-        const { data: newChangeOrder, error } = await supabase
-          .from('change_orders')
-          .insert(changeOrderData)
-          // Explicitly select only columns from change_orders table
-          .select(
-            'id, entity_type, entity_id, title, description, requested_by, requested_date, status, approved_by, approved_date, approval_notes, total_amount, cost_impact, revenue_impact, impact_days, original_completion_date, new_completion_date, change_order_number, document_id, created_at, updated_at'
-          )
-          .single();
-
-        if (error) throw error;
-        result = newChangeOrder;
-
-        toast({
-          title: 'Change order created',
-          description: 'The change order has been created successfully.',
-        });
+      // Delete existing items if editing
+      if (isEditing) {
+        console.log(`[ChangeOrderDialog] Deleting existing items for CO ID: ${savedCoId}`);
+        const { error: deleteError } = await supabase
+          .from('change_order_items')
+          .delete()
+          .eq('change_order_id', savedCoId);
+        // Log error but don't necessarily fail the whole operation
+        if (deleteError)
+          console.error('[ChangeOrderDialog] Error deleting existing items:', deleteError);
       }
 
+      // Insert current items from form state
+      if (currentItems.length > 0) {
+        console.log(`[ChangeOrderDialog] Inserting ${currentItems.length} items...`);
+        const itemInsertPromises = currentItems.map(item => {
+          // Recalculate financials
+          const cost = item.cost || 0;
+          const quantity = item.quantity || 0;
+          const markup_percentage = item.markup_percentage || 0;
+          const markup_amount = cost * (markup_percentage / 100);
+          const unit_price = cost + markup_amount; // Selling Price per unit
+          const total_price = quantity * unit_price; // Total Selling Price
+          const total_cost = quantity * cost;
+          const gross_margin = total_price - total_cost;
+          const gross_margin_percentage = total_price > 0 ? (gross_margin / total_price) * 100 : 0;
+
+          const itemPayload = {
+            ...item, // Spread first to potentially include fields not explicitly listed
+            change_order_id: savedCoId, // Link to parent CO
+            // Overwrite calculated values
+            unit_price: parseFloat(unit_price.toFixed(2)),
+            total_price: parseFloat(total_price.toFixed(2)),
+            markup_amount: parseFloat(markup_amount.toFixed(2)),
+            gross_margin: parseFloat(gross_margin.toFixed(2)),
+            gross_margin_percentage: parseFloat(gross_margin_percentage.toFixed(2)),
+            // Ensure required/defaulted values are correct
+            cost: cost,
+            quantity: quantity,
+          };
+          // Remove fields that shouldn't be inserted/updated
+          delete (itemPayload as any).id; // Let DB generate ID
+          delete (itemPayload as any).created_at;
+          delete (itemPayload as any).updated_at;
+
+          return supabase.from('change_order_items').insert(itemPayload);
+        });
+
+        const itemResults = await Promise.all(itemInsertPromises);
+        const itemErrors = itemResults.map(res => res.error).filter(Boolean);
+
+        if (itemErrors.length > 0) {
+          console.error('[ChangeOrderDialog] Errors inserting items:', itemErrors);
+          throw new Error(`Failed to save ${itemErrors.length} item(s).`);
+        }
+        console.log('[ChangeOrderDialog] Items processed successfully.');
+      } else {
+        console.log('[ChangeOrderDialog] No items to insert.');
+      }
+
+      // 3. Toast & Callbacks (Success)
+      toast({
+        title: isEditing ? 'Change Order Updated' : 'Change Order Created',
+        description: `${changeOrderPayload.title} and its items have been saved.`,
+      });
       onSaved();
       onClose();
     } catch (error: any) {
@@ -196,22 +201,13 @@ const ChangeOrderDialog = ({
     }
   };
 
-  // Preserve form context when switching tabs
   const handleTabChange = (value: string) => {
     console.log('[ChangeOrderDialog] Tab changed to:', value);
     console.log('[ChangeOrderDialog] Current form values:', form.getValues());
     console.log('[ChangeOrderDialog] Form state errors:', form.formState.errors);
-    // Check if the form is valid before allowing tab switch (optional, but good practice)
-    // form.trigger(); // Optionally trigger validation on all fields
-    // if (!form.formState.isValid) {
-    //    console.log('[ChangeOrderDialog] Form invalid, preventing tab switch for now.');
-    //    // Maybe show a toast? Preventing switch might be confusing.
-    //    // return;
-    // }
     setActiveTab(value);
   };
 
-  // Log disabled states right before rendering
   console.log('[ChangeOrderDialog] Tab Disabled States (Pre-Render):', {
     financial: !isEditing && !form.getValues().items?.length,
     approval: !isEditing,
@@ -219,7 +215,7 @@ const ChangeOrderDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-auto">
+      <DialogContent className="max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle className="text-[#0485ea]">
             {isEditing ? 'Edit Change Order' : 'New Change Order'}
@@ -230,21 +226,6 @@ const ChangeOrderDialog = ({
               : 'Create a new change order for your project or work order'}
           </DialogDescription>
         </DialogHeader>
-
-        {isEditing && changeOrder?.id && !loadingStatus && (
-          <div className="my-4">
-            <ChangeOrderStatusControl
-              changeOrderId={changeOrder.id}
-              currentStatus={currentStatus}
-              statusOptions={statusOptions}
-              onStatusChange={onSaved}
-              className="justify-end"
-            />
-          </div>
-        )}
-        {isEditing && loadingStatus && (
-          <div className="my-4 text-sm text-muted-foreground text-right">Loading status...</div>
-        )}
 
         <FormProvider {...form}>
           <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="basic-info">

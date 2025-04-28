@@ -24,6 +24,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { EXPENSE_TYPES } from '@/constants/expenseTypes';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
 
@@ -77,19 +85,40 @@ const BudgetItemFormDialog: React.FC<BudgetItemFormDialogProps> = ({
   }, [budgetItem, open, form]);
 
   const onSubmit = async (values: BudgetItemFormValues) => {
+    // Ensure category is treated as non-optional string after validation
+    if (!values.category) {
+      toast({
+        title: 'Error',
+        description: 'Category is missing despite validation. Please try again.',
+        variant: 'destructive',
+      });
+      return; // Prevent submission if category is somehow missing
+    }
+
     try {
       const dataToSave = {
-        ...values,
         project_id: projectId,
+        category: values.category, // Now guaranteed to be string
+        description: values.description,
+        estimated_cost: values.estimated_cost,
+        // Include other relevant fields from values if they exist in the schema
       };
 
       let error;
       if (isEditing && budgetItem?.id) {
-        ({ error } = await supabase
+        // Ensure category is passed for update as well
+        const { error: updateError } = await supabase
           .from('project_budget_items')
-          .update(dataToSave)
-          .eq('id', budgetItem.id));
+          .update({
+            category: values.category,
+            description: values.description,
+            estimated_cost: values.estimated_cost,
+            // Add other fields being updated
+          })
+          .eq('id', budgetItem.id);
+        error = updateError;
       } else {
+        // Insert uses the spread dataToSave which now has required category
         ({ error } = await supabase.from('project_budget_items').insert(dataToSave));
       }
 
@@ -130,9 +159,24 @@ const BudgetItemFormDialog: React.FC<BudgetItemFormDialogProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Materials, Labor, Permits" {...field} />
-                  </FormControl>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value || ''}
+                    value={field.value || ''}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a budget category..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {EXPENSE_TYPES.map(type => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

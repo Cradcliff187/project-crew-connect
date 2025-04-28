@@ -12,6 +12,8 @@ import DateNavigation from './DateNavigation';
 import { useDeviceCapabilities } from '@/hooks/use-mobile';
 import MobileQuickLogSheet from './MobileQuickLogSheet';
 import { DateRange } from './hooks/useTimeEntries';
+import { Employee } from '@/types/common';
+import AddReceiptSheet from './AddReceiptSheet';
 
 interface MobileTimeEntryViewProps {
   dateRange: DateRange;
@@ -20,11 +22,12 @@ interface MobileTimeEntryViewProps {
   onPrevWeek: () => void;
   onCurrentWeek: () => void;
   timeEntries: TimeEntry[];
+  employees: Employee[];
   isLoading: boolean;
   onAddSuccess: () => void;
-  showAddForm: boolean;
-  setShowAddForm: (show: boolean) => void;
   totalHours: number;
+  onEditEntry: (entry: TimeEntry) => void;
+  onDeleteEntry: (entry: TimeEntry) => void;
 }
 
 const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
@@ -34,18 +37,25 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
   onPrevWeek,
   onCurrentWeek,
   timeEntries,
+  employees,
   isLoading,
   onAddSuccess,
-  showAddForm,
-  setShowAddForm,
   totalHours,
+  onEditEntry,
+  onDeleteEntry,
 }) => {
   const [showQuickLog, setShowQuickLog] = useState(false);
+  const [showAddReceiptSheet, setShowAddReceiptSheet] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const { hasCamera, isMobile } = useDeviceCapabilities();
 
   const handleQuickLogSuccess = () => {
     setShowQuickLog(false);
     onAddSuccess();
+  };
+
+  const handleAddReceiptSuccess = () => {
+    setShowAddReceiptSheet(false);
   };
 
   return (
@@ -77,7 +87,9 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 gap-3 mb-4">
+          {/* Remove Detailed Log button */}
+          {/*
           <Button
             variant="outline"
             size="sm"
@@ -87,13 +99,15 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
             <Plus className="h-4 w-4 mr-1" />
             Detailed Log
           </Button>
+          */}
 
+          {/* Keep Add Receipt button */}
           {hasCamera && (
             <Button
               variant="outline"
               size="sm"
               className="justify-start"
-              onClick={() => setShowAddForm(true)}
+              onClick={() => setShowAddReceiptSheet(true)}
             >
               <Camera className="h-4 w-4 mr-1" />
               Add Receipt
@@ -108,10 +122,11 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           </CardHeader>
           <CardContent>
             <TimeEntryList
-              entries={timeEntries}
-              isLoading={isLoading}
-              onEntryChange={onAddSuccess}
-              isMobile={true}
+              timeEntries={timeEntries}
+              employees={employees}
+              onEditEntry={onEditEntry}
+              onDeleteEntry={onDeleteEntry}
+              viewMode="field"
             />
           </CardContent>
         </Card>
@@ -140,6 +155,13 @@ const MobileTimeEntryView: React.FC<MobileTimeEntryViewProps> = ({
           onOpenChange={setShowQuickLog}
           onSuccess={handleQuickLogSuccess}
           date={new Date()}
+        />
+
+        {/* Add Receipt Sheet */}
+        <AddReceiptSheet
+          open={showAddReceiptSheet}
+          onOpenChange={setShowAddReceiptSheet}
+          onSuccess={handleAddReceiptSuccess}
         />
       </div>
     </PageTransition>

@@ -28,9 +28,10 @@ const ProjectBudgetCard = ({ project }: ProjectBudgetCardProps) => {
               <div>
                 <p className="font-medium">Budget</p>
                 <p className="text-sm font-medium">{getBudgetAmount(project.total_budget)}</p>
-                {project.current_expenses !== null && project.current_expenses !== undefined ? (
+                {project.total_actual_expenses !== null &&
+                project.total_actual_expenses !== undefined ? (
                   <p className="text-xs text-muted-foreground">
-                    Spent: {getBudgetAmount(project.current_expenses)}
+                    Spent: {getBudgetAmount(project.total_actual_expenses)}
                   </p>
                 ) : null}
               </div>

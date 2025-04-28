@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Briefcase,
   BarChart,
+  UserSquare,
 } from 'lucide-react';
 
 import {
@@ -94,6 +95,11 @@ const mainNav = [
     title: 'Reports',
     href: '/reports',
     icon: <BarChart className="h-5 w-5" />,
+  },
+  {
+    title: 'Employees',
+    href: '/employees',
+    icon: <UserSquare className="h-5 w-5" />,
   },
 ];
 

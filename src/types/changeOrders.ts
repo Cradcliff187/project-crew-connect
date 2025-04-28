@@ -10,22 +10,26 @@ export type ChangeOrderStatus =
 export type ChangeOrderEntityType = 'PROJECT' | 'WORK_ORDER';
 
 export interface ChangeOrderItem {
-  id: string;
+  id?: string;
   change_order_id: string;
   description: string;
   quantity: number;
   unit_price: number;
   total_price: number;
-  item_type?: string;
-  vendor_id?: string;
-  subcontractor_id?: string;
-  document_id?: string;
-  trade_type?: string;
-  expense_type?: string;
-  custom_type?: string;
-  impact_days: number;
-  created_at: string;
-  updated_at: string;
+  cost: number;
+  markup_percentage?: number | null;
+  markup_amount?: number | null;
+  gross_margin?: number | null;
+  gross_margin_percentage?: number | null;
+  item_type: string;
+  vendor_id?: string | null;
+  subcontractor_id?: string | null;
+  custom_type?: string | null;
+  document_id?: string | null;
+  expense_type?: string | null;
+  trade_type?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ChangeOrder {
@@ -36,14 +40,13 @@ export interface ChangeOrder {
   description?: string;
   requested_by?: string;
   requested_date?: string;
-  status: ChangeOrderStatus;
+  status?: ChangeOrderStatus;
   approved_by?: string;
   approved_date?: string;
   approval_notes?: string;
-  total_amount?: number;
-  cost_impact?: number;
-  revenue_impact?: number;
-  impact_days?: number;
+  total_amount?: number | null;
+  cost_impact?: number | null;
+  revenue_impact?: number | null;
   original_completion_date?: string;
   new_completion_date?: string;
   change_order_number?: string;

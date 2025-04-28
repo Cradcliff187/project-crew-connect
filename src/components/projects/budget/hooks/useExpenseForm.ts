@@ -53,6 +53,8 @@ export const useExpenseForm = ({ projectId, expense, onSave }: UseExpenseFormPro
   const [budgetItems, setBudgetItems] = useState<any[]>([]);
   const [vendors, setVendors] = useState<any[]>([]);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  const [requireTimeEntryForLabor, setRequireTimeEntryForLabor] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   const defaultValues: ExpenseFormValues = {
     budget_item_id: expense?.budget_item_id || null,
@@ -70,48 +72,49 @@ export const useExpenseForm = ({ projectId, expense, onSave }: UseExpenseFormPro
   });
 
   useEffect(() => {
-    const fetchBudgetItems = async () => {
+    const fetchInitialData = async () => {
+      setIsLoadingSettings(true);
       try {
-        const { data, error } = await supabase
-          .from('project_budget_items')
-          .select('id, category, description, estimated_amount')
-          .eq('project_id', projectId)
-          .order('category', { ascending: true })
-          .order('description', { ascending: true });
+        const [budgetItemsRes, vendorsRes, settingRes] = await Promise.all([
+          supabase
+            .from('project_budget_items')
+            .select('id, category, description, estimated_amount')
+            .eq('project_id', projectId)
+            .order('category', { ascending: true })
+            .order('description', { ascending: true }),
+          supabase.from('vendors').select('vendorid, vendorname').order('vendorname'),
+          supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'require_time_entry_for_labor_expense')
+            .maybeSingle(),
+        ]);
 
-        if (error) throw error;
-        setBudgetItems(data || []);
+        if (budgetItemsRes.error) throw budgetItemsRes.error;
+        setBudgetItems(budgetItemsRes.data || []);
+
+        if (vendorsRes.error) throw vendorsRes.error;
+        setVendors(vendorsRes.data || []);
+
+        if (settingRes.error) {
+          console.error('Error fetching labor setting:', settingRes.error);
+          setRequireTimeEntryForLabor(false);
+        } else {
+          setRequireTimeEntryForLabor(settingRes.data?.value === 'true');
+        }
       } catch (error: any) {
-        console.error('Error fetching budget items:', error);
+        console.error('Error fetching initial expense form data:', error);
         toast({
-          title: 'Error loading budget items',
-          description: error.message,
+          title: 'Error Loading Data',
+          description: error.message || 'Could not load necessary data for the form.',
           variant: 'destructive',
         });
+      } finally {
+        setIsLoadingSettings(false);
       }
     };
 
-    const fetchVendors = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('vendors')
-          .select('vendorid, vendorname')
-          .order('vendorname');
-
-        if (error) throw error;
-        setVendors(data);
-      } catch (error: any) {
-        console.error('Error fetching vendors:', error);
-        toast({
-          title: 'Error loading vendors',
-          description: error.message,
-          variant: 'destructive',
-        });
-      }
-    };
-
-    fetchBudgetItems();
-    fetchVendors();
+    fetchInitialData();
   }, [projectId]);
 
   const onSubmit = async (values: ExpenseFormValues) => {
@@ -170,5 +173,7 @@ export const useExpenseForm = ({ projectId, expense, onSave }: UseExpenseFormPro
     onSubmit: form.handleSubmit(onSubmit),
     handleDocumentUploaded,
     isEditing: !!expense,
+    requireTimeEntryForLabor,
+    isLoadingSettings,
   };
 };

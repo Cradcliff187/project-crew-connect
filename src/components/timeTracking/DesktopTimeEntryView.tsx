@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Clock } from 'lucide-react';
 import { TimeEntry } from '@/types/timeTracking';
+import { Employee } from '@/types/common';
+import { useEmployees } from '@/hooks/useEmployees';
 
 import { TimeEntryList } from './TimeEntryList';
 import TimeEntryFormWizard from './TimeEntryFormWizard';
@@ -17,9 +19,12 @@ interface DesktopTimeEntryViewProps {
   onPrevWeek: () => void;
   onCurrentWeek: () => void;
   timeEntries: TimeEntry[];
+  employees: Employee[];
   isLoading: boolean;
   onAddSuccess: () => void;
   totalHours: number;
+  onEditEntry: (entry: TimeEntry) => void;
+  onDeleteEntry: (entry: TimeEntry) => void;
 }
 
 const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
@@ -29,13 +34,15 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
   onPrevWeek,
   onCurrentWeek,
   timeEntries,
+  employees,
   isLoading,
   onAddSuccess,
   totalHours,
+  onEditEntry,
+  onDeleteEntry,
 }) => {
   const [activeTab, setActiveTab] = useState('entries');
 
-  // Effect to trigger data loading when component mounts or dateRange changes
   useEffect(() => {
     // No specific action needed here, just ensuring the component re-renders
     // when date range changes since we're now passing timeEntries as props
@@ -71,9 +78,10 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
               </TabsList>
               <TabsContent value="entries" className="mt-4">
                 <TimeEntryList
-                  entries={timeEntries}
-                  isLoading={isLoading}
-                  onEntryChange={onAddSuccess}
+                  timeEntries={timeEntries}
+                  employees={employees}
+                  onEditEntry={onEditEntry}
+                  onDeleteEntry={onDeleteEntry}
                 />
               </TabsContent>
               <TabsContent value="add" className="mt-4">

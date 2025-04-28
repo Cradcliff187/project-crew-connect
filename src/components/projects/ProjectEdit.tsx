@@ -33,6 +33,7 @@ import {
 import { projectFormSchema, type ProjectFormValues } from './schemas/projectFormSchema';
 import { statusOptions } from './ProjectConstants';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const ProjectEdit = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -50,6 +51,7 @@ const ProjectEdit = () => {
       customerId: '',
       jobDescription: '',
       status: 'active',
+      start_date: undefined,
       dueDate: undefined,
       siteLocationSameAsCustomer: true,
       siteLocation: {
@@ -113,6 +115,7 @@ const ProjectEdit = () => {
           customerId: projectData.customerid || '',
           jobDescription: projectData.jobdescription || '',
           status: projectData.status || 'active',
+          start_date: projectData.start_date || undefined,
           dueDate: projectData.due_date || undefined,
           siteLocationSameAsCustomer: !hasSiteLocation,
           siteLocation: {
@@ -162,19 +165,24 @@ const ProjectEdit = () => {
 
     setSubmitting(true);
     try {
+      const updatePayload = {
+        projectname: data.projectName,
+        customerid: data.customerId,
+        description: data.jobDescription,
+        status: data.status,
+        start_date: data.start_date || null,
+        target_end_date: data.dueDate || null,
+        site_address: data.siteLocationSameAsCustomer ? null : data.siteLocation.address,
+        site_city: data.siteLocationSameAsCustomer ? null : data.siteLocation.city,
+        site_state: data.siteLocationSameAsCustomer ? null : data.siteLocation.state,
+        site_zip: data.siteLocationSameAsCustomer ? null : data.siteLocation.zip,
+      };
+
+      console.log('Updating project with payload:', updatePayload);
+
       const { error } = await supabase
         .from('projects')
-        .update({
-          projectname: data.projectName,
-          customerid: data.customerId,
-          jobdescription: data.jobDescription,
-          status: data.status,
-          due_date: data.dueDate,
-          sitelocationaddress: data.siteLocationSameAsCustomer ? null : data.siteLocation.address,
-          sitelocationcity: data.siteLocationSameAsCustomer ? null : data.siteLocation.city,
-          sitelocationstate: data.siteLocationSameAsCustomer ? null : data.siteLocation.state,
-          sitelocationzip: data.siteLocationSameAsCustomer ? null : data.siteLocation.zip,
-        })
+        .update(updatePayload)
         .eq('projectid', projectId);
 
       if (error) throw error;
@@ -285,19 +293,63 @@ const ProjectEdit = () => {
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
-                      name="dueDate"
+                      name="start_date"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Project Due Date</FormLabel>
+                          <FormLabel>Start Date</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
                                 <Button
                                   variant="outline"
-                                  className={`w-full pl-3 text-left font-normal ${!field.value && 'text-muted-foreground'}`}
+                                  className={cn(
+                                    'w-full pl-3 text-left font-normal',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(new Date(field.value), 'PPP')
+                                  ) : (
+                                    <span>Select a date</span>
+                                  )}
+                                  <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={field.value ? new Date(field.value) : undefined}
+                                onSelect={date =>
+                                  field.onChange(date ? date.toISOString() : undefined)
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Target End Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    'w-full pl-3 text-left font-normal',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
                                 >
                                   {field.value ? (
                                     format(new Date(field.value), 'PPP')

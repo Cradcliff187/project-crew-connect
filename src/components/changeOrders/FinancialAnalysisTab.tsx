@@ -23,7 +23,15 @@ const FinancialAnalysisTab: React.FC<FinancialAnalysisTabProps> = ({
   const [originalContractValue, setOriginalContractValue] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const changeOrder = form.getValues();
+  // Watch the items field array for real-time updates
+  const items = form.watch('items') || [];
+
+  // Calculate current impacts based on watched items
+  const currentCostImpact = items.reduce(
+    (sum, item) => sum + (item?.cost || 0) * (item?.quantity || 0),
+    0
+  );
+  const currentTotalAmount = items.reduce((sum, item) => sum + (item?.total_price || 0), 0);
 
   // Fetch the original contract value from the project or work order
   useEffect(() => {
@@ -65,6 +73,14 @@ const FinancialAnalysisTab: React.FC<FinancialAnalysisTabProps> = ({
     }
   }, [entityId, entityType]);
 
+  // Pass the WATCHED/CALCULATED values to the summary component
+  const changeOrderForSummary = {
+    ...form.getValues(), // Get other CO fields
+    cost_impact: currentCostImpact, // Override with calculated value
+    total_amount: currentTotalAmount, // Override with calculated value
+    items: items, // Pass current items array
+  };
+
   if (loading) {
     return (
       <div className="space-y-4 my-4">
@@ -77,90 +93,13 @@ const FinancialAnalysisTab: React.FC<FinancialAnalysisTabProps> = ({
   return (
     <div className="space-y-6 my-4">
       <FinancialImpactSummary
-        changeOrder={changeOrder}
+        changeOrder={changeOrderForSummary}
         originalContractValue={originalContractValue}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end border rounded-md p-4 bg-muted/20">
-        <FormField
-          control={form.control}
-          name="cost_impact"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cost Impact ($)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                  value={field.value || ''}
-                  onChange={e =>
-                    field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))
-                  }
-                />
-              </FormControl>
-              <p className="text-xs text-muted-foreground">Estimated change to project cost.</p>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="revenue_impact"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Revenue Impact ($)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                  value={field.value || ''}
-                  onChange={e =>
-                    field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))
-                  }
-                />
-              </FormControl>
-              <p className="text-xs text-muted-foreground">
-                Change to contract value/selling price.
-              </p>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="impact_days"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Schedule Impact (Days)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="1"
-                  placeholder="0"
-                  {...field}
-                  value={field.value || ''}
-                  onChange={e =>
-                    field.onChange(e.target.value === '' ? null : parseInt(e.target.value, 10))
-                  }
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="md:col-span-2">
-          <ScheduleImpactVisualization changeOrder={changeOrder} />
-        </div>
-
-        <div className="md:col-span-2">
-          <BudgetImpactAnalysis items={changeOrder.items || []} />
+          <BudgetImpactAnalysis items={changeOrderForSummary.items || []} />
         </div>
       </div>
     </div>

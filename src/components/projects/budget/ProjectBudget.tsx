@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -10,7 +10,9 @@ import BudgetItemsTable from './components/BudgetItemsTable';
 import ExpensesTable from './components/ExpensesTable';
 import BudgetFormDialog from './BudgetFormDialog';
 import BudgetItemFormDialog from './BudgetItemFormDialog';
-import { DollarSign, Plus } from 'lucide-react';
+import ExpenseFormDialog from './ExpenseFormDialog';
+import BudgetItemDetailModal from './components/BudgetItemDetailModal';
+import { DollarSign, Plus, Filter } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 import { useProjectExpenses, Expense as ProjectExpenseType } from './hooks/useProjectExpenses';
 import {
@@ -23,10 +25,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
 type Expense = Database['public']['Tables']['expenses']['Row'];
+
+// Type definitions now need to potentially include joined names AND document_id
+type BudgetItemWithDetails = BudgetItem & {
+  document_id?: string | null; // Add document_id
+  vendors: { vendorname: string | null } | null;
+  subcontractors: { subname: string | null } | null;
+};
 
 interface ProjectBudgetProps {
   projectId: string;
@@ -37,6 +53,11 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
   const [showBudgetItemDialog, setShowBudgetItemDialog] = useState(false);
   const [editingBudgetItem, setEditingBudgetItem] = useState<BudgetItem | null>(null);
   const [deletingBudgetItem, setDeletingBudgetItem] = useState<BudgetItem | null>(null);
+  const [showExpenseDialog, setShowExpenseDialog] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ProjectExpenseType | null>(null);
+  const [expenseFilter, setExpenseFilter] = useState<string>('all');
+  const [selectedBudgetItemDetail, setSelectedBudgetItemDetail] = useState<BudgetItem | null>(null);
+  const [isBudgetItemDetailModalOpen, setIsBudgetItemDetailModalOpen] = useState(false);
 
   // Fetch project summary and budget items
   const {
@@ -55,7 +76,14 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
           .single(),
         supabase
           .from('project_budget_items')
-          .select('*') // Select all for table display
+          .select(
+            `
+            *,
+            document_id,
+            vendors ( vendorname ),
+            subcontractors ( subname )
+          `
+          )
           .eq('project_id', projectId)
           .order('category')
           .order('description'),
@@ -68,7 +96,7 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
 
       return {
         project: projectResult.data as Project,
-        budgetItems: (budgetItemsResult.data || []) as BudgetItem[],
+        budgetItems: (budgetItemsResult.data || []) as BudgetItemWithDetails[],
       };
     },
     meta: {
@@ -97,8 +125,32 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
   const error = projectError || expensesError;
 
   const projectData = projectSummaryData?.project;
-  const budgetItemsData = projectSummaryData?.budgetItems || [];
-  const expensesData = expenses || []; // Use expenses from the hook
+  // Use the extended type here too
+  const budgetItemsData = (projectSummaryData?.budgetItems || []) as BudgetItemWithDetails[];
+  const expensesData = expenses || [];
+
+  // Calculate filtered expenses
+  const filteredExpenses = useMemo(() => {
+    if (expenseFilter === 'all') {
+      return expensesData;
+    }
+    // Assuming expense_type stores 'LABOR', 'MATERIAL', etc.
+    // Adjust logic if category is stored differently
+    return expensesData.filter(
+      exp => exp.expense_type?.toUpperCase() === expenseFilter.toUpperCase()
+    );
+  }, [expensesData, expenseFilter]);
+
+  // Derive unique expense types for filter dropdown
+  const expenseTypes = useMemo(() => {
+    const types = new Set<string>();
+    expensesData.forEach(exp => {
+      if (exp.expense_type) {
+        types.add(exp.expense_type.toUpperCase());
+      }
+    });
+    return Array.from(types);
+  }, [expensesData]);
 
   // Combined refetch function
   const refetchAll = useCallback(() => {
@@ -165,6 +217,40 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
     }
   };
 
+  // --- Expense CRUD Handlers ---
+  const handleEditExpense = (expense: ProjectExpenseType) => {
+    setEditingExpense(expense);
+    setShowExpenseDialog(true);
+  };
+
+  const handleExpenseSaved = () => {
+    setShowExpenseDialog(false);
+    setEditingExpense(null);
+    refetchAll();
+  };
+
+  const handleExpenseDialogCancel = () => {
+    setShowExpenseDialog(false);
+    setEditingExpense(null);
+  };
+
+  // Handler to open the Add Expense dialog (without pre-filling data)
+  const handleAddExpense = () => {
+    setEditingExpense(null);
+    setShowExpenseDialog(true);
+  };
+
+  // Add handlers for budget item detail modal
+  const handleBudgetItemRowClick = (item: BudgetItem) => {
+    setSelectedBudgetItemDetail(item);
+    setIsBudgetItemDetailModalOpen(true);
+  };
+
+  const handleCloseBudgetItemDetailModal = () => {
+    setIsBudgetItemDetailModalOpen(false);
+    setSelectedBudgetItemDetail(null); // Clear selection on close
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -188,10 +274,6 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Budget & Expenses</h2>
         <div>
-          <Button size="sm" variant="outline" onClick={handleAddBudgetItem} className="mr-2">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Budget Item
-          </Button>
           <Button
             size="sm"
             onClick={() => setShowBudgetDialog(true)}
@@ -211,29 +293,60 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Budget Details</CardTitle>
-          <CardDescription>Plan vs Actual Costs</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Budget Details</CardTitle>
+              <CardDescription>Plan vs Actual Costs</CardDescription>
+            </div>
+            <Button size="sm" variant="outline" onClick={handleAddBudgetItem}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Budget Item
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <BudgetItemsTable
-            items={budgetItemsData}
+            items={budgetItemsData as BudgetItem[]}
             onEditItem={handleEditBudgetItem}
             onDeleteItem={openDeleteConfirmation}
+            onRowClick={handleBudgetItemRowClick}
           />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Expense Log</CardTitle>
-          <CardDescription>All expenses logged against this project.</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Expense Log</CardTitle>
+              <CardDescription>All expenses logged against this project.</CardDescription>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={expenseFilter} onValueChange={setExpenseFilter}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="Filter by category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {expenseTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      {(type.charAt(0) + type.slice(1).toLowerCase()).replace('_', ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={handleAddExpense}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <ExpensesTable
-            expenses={expensesData}
-            onEditExpense={() => {
-              console.warn('Edit Expense needs reimplementation');
-            }}
+            expenses={filteredExpenses}
+            onEditExpense={handleEditExpense}
             onDeleteExpense={async exp => {
               const deleted = await handleDeleteExpense(exp);
               if (deleted) refetchAll();
@@ -259,6 +372,26 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
           open={showBudgetItemDialog}
           onOpenChange={setShowBudgetItemDialog}
           onSave={handleBudgetItemSaved}
+        />
+      )}
+
+      {showExpenseDialog && (
+        <ExpenseFormDialog
+          projectId={projectId}
+          expense={editingExpense}
+          onSave={handleExpenseSaved}
+          onCancel={handleExpenseDialogCancel}
+          open={showExpenseDialog}
+          onOpenChange={setShowExpenseDialog}
+        />
+      )}
+
+      {isBudgetItemDetailModalOpen && (
+        <BudgetItemDetailModal
+          item={selectedBudgetItemDetail}
+          isOpen={isBudgetItemDetailModalOpen}
+          onClose={handleCloseBudgetItemDetailModal}
+          onViewDocument={handleViewDocument}
         />
       )}
 

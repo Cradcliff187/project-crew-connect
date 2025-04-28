@@ -11,7 +11,25 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(dateString: string | undefined | null): string {
   if (!dateString) return 'N/A';
 
-  const date = new Date(dateString);
+  let dateToParse = dateString;
+  // Check if the string includes time/timezone info (e.g., contains 'T' or '+')
+  if (dateString.includes('T') || dateString.includes('+')) {
+    // Extract only the date part (YYYY-MM-DD)
+    dateToParse = dateString.split('T')[0];
+  }
+
+  // Now parse the guaranteed date-only string, adding T12:00:00 for local context
+  const date = new Date(`${dateToParse}T12:00:00`);
+
+  // Check if date parsing was successful
+  if (isNaN(date.getTime())) {
+    console.error(
+      `[formatDate] Failed to parse date string after extraction: ${dateToParse} (original: ${dateString})`
+    );
+    return 'Invalid Date';
+  }
+
+  // Format the valid date object
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',

@@ -70,6 +70,7 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
         state: estimateData?.location?.state || '',
         zip: estimateData?.location?.zip || '',
       },
+      start_date: undefined,
       dueDate: undefined,
       newCustomer: {
         customerName: estimateData?.customerName || '',
@@ -198,13 +199,49 @@ const ProjectForm = ({ onSubmit, isSubmitting, estimateData }: ProjectFormProps)
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField
+            control={form.control}
+            name="start_date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Start Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={`w-full pl-3 text-left font-normal ${!field.value && 'text-muted-foreground'}`}
+                      >
+                        {field.value ? (
+                          format(new Date(field.value), 'PPP')
+                        ) : (
+                          <span>Select a date</span>
+                        )}
+                        <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={field.value ? new Date(field.value) : undefined}
+                      onSelect={date => field.onChange(date ? date.toISOString() : undefined)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="dueDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Project Due Date</FormLabel>
+                <FormLabel>Target End Date</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>

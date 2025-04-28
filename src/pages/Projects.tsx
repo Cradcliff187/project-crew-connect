@@ -8,11 +8,12 @@ import { useQuery } from '@tanstack/react-query';
 import PageHeader from '@/components/layout/PageHeader';
 
 const fetchProjects = async () => {
-  // First, fetch all projects
+  // Fetch projects and related customer data directly
   const { data: projectsData, error: projectsError } = await supabase
     .from('projects')
     .select(
-      'projectid, projectname, customerid, status, created_at, total_budget, current_expenses, budget_status'
+      // Select all project fields and embed customer name
+      '*, customers(customerid, customername)'
     )
     .order('created_at', { ascending: false });
 
@@ -38,37 +39,18 @@ const fetchProjects = async () => {
     });
   }
 
-  // Collect all customerIds from projects
-  const customerIds = projectsData.map(project => project.customerid).filter(id => id !== null);
-
-  // If there are any customerIds, fetch customer data
-  let customerMap = new Map();
-  if (customerIds.length > 0) {
-    const { data: customersData, error: customersError } = await supabase
-      .from('customers')
-      .select('customerid, customername')
-      .in('customerid', customerIds);
-
-    if (customersError) {
-      console.warn('Error fetching customer data:', customersError);
-    } else if (customersData) {
-      // Create a map of customer ID to customer name
-      customerMap = new Map(
-        customersData.map(customer => [customer.customerid, customer.customername])
-      );
-    }
-  }
-
-  // Transform data to match our UI requirements
+  // Transform data
   return projectsData.map(project => ({
     ...project,
     createdon: project.created_at,
-    customername: project.customerid
-      ? customerMap.get(project.customerid) || 'Unknown Customer'
-      : 'No Customer',
+    // Access embedded customer name directly
+    customername:
+      project.customers?.customername || (project.customerid ? 'Unknown Customer' : 'No Customer'),
     budget: project.total_budget || 0,
     spent: project.current_expenses || 0,
     progress: progressMap.has(project.projectid) ? progressMap.get(project.projectid) : 0,
+    // Add other needed fields explicitly if `*` doesn't cover them
+    // e.g., target_end_date: project.target_end_date
   }));
 };
 

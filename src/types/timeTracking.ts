@@ -14,13 +14,13 @@ export interface TimeEntry {
   has_receipts: boolean;
   created_at: string;
   updated_at?: string;
-  total_cost?: number;
-  employee_rate?: number;
-  employees?: {
-    first_name: string;
-    last_name: string;
-    hourly_rate: number;
-  };
+  cost_rate?: number | null;
+  bill_rate?: number | null;
+  total_cost?: number | null;
+  total_billable?: number | null;
+  employee_rate?: number | null;
+  project_budget_item_id?: string | null;
+  entity_name?: string;
 }
 
 export interface TimeEntryFormData {

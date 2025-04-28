@@ -17,12 +17,17 @@ type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
 
 interface BudgetItemsTableProps {
   items: BudgetItem[];
-  // Add handlers later if needed
-  // onEditItem: (item: BudgetItem) => void;
-  // onDeleteItem: (item: BudgetItem) => void;
+  onEditItem: (item: BudgetItem) => void;
+  onDeleteItem: (item: BudgetItem) => void;
+  onRowClick: (item: BudgetItem) => void;
 }
 
-const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({ items }) => {
+const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
+  items,
+  onEditItem,
+  onDeleteItem,
+  onRowClick,
+}) => {
   if (!items || items.length === 0) {
     return (
       <div className="p-4 text-center text-muted-foreground border rounded-md">
@@ -38,7 +43,7 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({ items }) => {
   const totalVariance = totalEstCost - totalActualAmount; // Assuming actual_amount tracks COST
 
   return (
-    <div className="rounded-md border overflow-hidden">
+    <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
@@ -60,7 +65,11 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({ items }) => {
             const isContingency = item.is_contingency;
 
             return (
-              <TableRow key={item.id} className={isContingency ? 'bg-blue-50' : ''}>
+              <TableRow
+                key={item.id}
+                className={`cursor-pointer hover:bg-muted/50 ${isContingency ? 'bg-blue-50' : ''}`}
+                onClick={() => onRowClick(item)}
+              >
                 <TableCell className="font-medium">{item.category || 'Uncat.'}</TableCell>
                 <TableCell>{item.description || '-'}</TableCell>
                 <TableCell className="text-right">{formatCurrency(estAmount)}</TableCell>
@@ -77,7 +86,10 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({ items }) => {
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0"
-                      onClick={() => console.log('Edit TBD', item.id)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        onEditItem(item);
+                      }}
                     >
                       {' '}
                       <Edit className="h-3 w-3" />
@@ -86,7 +98,10 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({ items }) => {
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                      onClick={() => console.log('Delete TBD', item.id)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        onDeleteItem(item);
+                      }}
                     >
                       {' '}
                       <Trash2 className="h-3 w-3" />

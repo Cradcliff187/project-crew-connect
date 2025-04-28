@@ -45,7 +45,9 @@ BEGIN
     site_city,
     site_state,
     site_zip,
-    created_at,  -- Use the stored creation date
+    created_at,
+    start_date,
+    target_end_date,
     total_budget
   ) VALUES (
     v_estimate.customerid,
@@ -56,7 +58,9 @@ BEGIN
     v_estimate.sitelocationcity,
     v_estimate.sitelocationstate,
     v_estimate.sitelocationzip,
-    v_creation_date,  -- Use the stored creation date
+    v_creation_date,
+    NULL,
+    NULL,
     v_estimate.estimateamount
   ) RETURNING projectid INTO v_project_id;
 
@@ -101,7 +105,7 @@ BEGIN
       )
       VALUES (
         v_project_id,
-        v_item.item_type,
+        COALESCE(v_item.item_type, 'Uncategorized'), -- Use COALESCE for category
         v_item.description,
         v_item.total_price,
         v_item.id,

@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import { ChangeOrder } from '@/types/changeOrders';
 import ChangeOrderDialog from '@/components/changeOrders/ChangeOrderDialog';
-import ChangeOrderStatusBadge from '@/components/changeOrders/ChangeOrderStatusBadge';
 
 interface ChangeOrdersListProps {
   projectId: string;
@@ -130,7 +129,6 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
                       {changeOrder.change_order_number}
                     </p>
                   </div>
-                  <ChangeOrderStatusBadge status={changeOrder.status} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mt-3">

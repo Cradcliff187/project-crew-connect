@@ -14,13 +14,18 @@ export function useActiveWorkData(limit?: number) {
   } = useQuery({
     queryKey: ['projects', { limit }],
     queryFn: async () => {
-      let query = supabase
-        .from('projects')
-        .select('projectid, projectname, customername, customerid, status, created_at, due_date');
+      // Use any type assertion for supabase to bypass TypeScript checking
+      const supabaseAny = supabase as any;
 
-      // If limit is provided, order by due_date and limit results
+      let query = supabaseAny
+        .from('projects')
+        .select(
+          'projectid, projectname, customername, customerid, status, created_at, target_end_date'
+        );
+
+      // If limit is provided, order by target_end_date and limit results
       if (limit) {
-        query = query.order('due_date', { ascending: true, nullsFirst: false }).limit(limit);
+        query = query.order('target_end_date', { ascending: true, nullsFirst: false }).limit(limit);
       } else {
         query = query.order('created_at', { ascending: false });
       }
@@ -32,6 +37,7 @@ export function useActiveWorkData(limit?: number) {
       return data.map(project => ({
         ...project,
         createdon: project.created_at, // Map created_at to createdon for backward compatibility
+        due_date: project.target_end_date, // Map target_end_date to due_date for backward compatibility
         budget: Math.floor(Math.random() * 200000) + 50000,
         spent: Math.floor(Math.random() * 150000),
         progress: Math.floor(Math.random() * 100),
