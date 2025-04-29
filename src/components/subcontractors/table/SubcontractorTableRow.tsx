@@ -1,6 +1,6 @@
 import { TableRow, TableCell } from '@/components/ui/table';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import { Subcontractor } from '../utils/types';
-import StatusBadge from '@/components/ui/StatusBadge';
 import useSpecialties from '../hooks/useSpecialties';
 import SubcontractorInfo from './components/SubcontractorInfo';
 import SubcontractorContact from './components/SubcontractorContact';

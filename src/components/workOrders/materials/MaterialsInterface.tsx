@@ -101,7 +101,7 @@ const MaterialsInterface: React.FC<MaterialsInterfaceProps> = ({
       <div>
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
           <MaterialsTable

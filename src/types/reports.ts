@@ -30,6 +30,7 @@ export interface FieldDefinition {
   type: FieldType;
   entity?: EntityType;
   name?: string; // For compatibility with ReportBuilder
+  description?: string; // For tooltips when hovering over column headers
 }
 
 // Define filter structure

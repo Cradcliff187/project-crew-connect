@@ -22,28 +22,10 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({ vendor, onViewDetails, 
     navigate(`/vendors/${vendor.vendorid}`);
   };
 
-  // Get vendor status color
-  const getStatusColor = (status: string | undefined): string => {
-    if (!status) return 'neutral';
-
-    switch (status.toLowerCase()) {
-      case 'active':
-        return 'success';
-      case 'inactive':
-        return 'neutral';
-      case 'approved':
-        return 'info';
-      case 'potential':
-        return 'warning';
-      default:
-        return 'neutral';
-    }
-  };
-
   return (
     <TableRow
       onClick={handleRowClick}
-      className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors"
+      className="cursor-pointer hover:bg-muted/50 transition-colors"
     >
       <TableCell className="font-medium py-3">
         <VendorInfo vendor={vendor} />
@@ -57,9 +39,8 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({ vendor, onViewDetails, 
       <TableCell className="py-3 text-center">
         <div className="flex justify-center">
           <StatusBadge
-            color={getStatusColor(vendor.status)}
+            status={vendor.status?.toLowerCase() || 'unknown'}
             label={vendor.status || 'Unknown'}
-            showIcon={true}
           />
         </div>
       </TableCell>

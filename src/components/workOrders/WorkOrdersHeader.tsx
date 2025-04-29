@@ -42,11 +42,7 @@ const WorkOrdersHeader = ({
             Filter
             <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
           </Button>
-          <Button
-            size="sm"
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
-            onClick={() => setShowAddDialog(true)}
-          >
+          <Button size="sm" variant="default" onClick={() => setShowAddDialog(true)}>
             <Plus className="h-4 w-4 mr-1" />
             New Work Order
           </Button>

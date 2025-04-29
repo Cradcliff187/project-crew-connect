@@ -17,19 +17,15 @@ const SubcontractorsErrorState = ({ error }: SubcontractorsErrorStateProps) => {
   return (
     <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
-        <TableHeader className="bg-[#0485ea]/10">
+        <TableHeader>
           <TableRow>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Name</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">
-              Specialties
-            </TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Details</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-            <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
-              Actions
-            </TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Specialties</TableHead>
+            <TableHead>Contact</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Details</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -39,11 +35,7 @@ const SubcontractorsErrorState = ({ error }: SubcontractorsErrorStateProps) => {
                 <AlertCircle className="h-8 w-8 text-red-500 mb-2" />
                 <h3 className="font-semibold text-lg mb-1">Error Loading Subcontractors</h3>
                 <p className="text-muted-foreground mb-4">{error}</p>
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                  className="border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea] hover:text-white"
-                >
+                <Button variant="outline" onClick={() => window.location.reload()}>
                   Try Again
                 </Button>
               </div>

@@ -69,12 +69,12 @@ const WorkOrderLocationFields = ({
       <CustomerSelect form={form} customers={customers} />
 
       {selectedCustomerAddress && !useCustomAddress && (
-        <Card className="border-[#0485ea]/20 bg-[#0485ea]/5">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex gap-2 items-start">
-              <AlertCircle className="h-5 w-5 text-[#0485ea] shrink-0 mt-0.5" />
+        <Card className="border-info/20 bg-info/5">
+          <CardContent className="p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-info shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-[#0485ea]">
+                <p className="text-sm font-medium text-info">
                   Customer address for {selectedCustomerName}:
                 </p>
                 <p className="text-sm text-gray-700">{selectedCustomerAddress}</p>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import { Subcontractor } from '../utils/types';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface ContactInformationCardProps {
   subcontractor: Subcontractor;
@@ -8,10 +9,10 @@ interface ContactInformationCardProps {
 
 const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) => {
   return (
-    <div>
-      <h3 className="text-lg font-montserrat font-semibold mb-3 text-[#0485ea]">
-        Contact Information
-      </h3>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg text-primary">Contact Information</CardTitle>
+      </CardHeader>
       <div className="space-y-3">
         {subcontractor.subname && (
           <div className="text-foreground">
@@ -82,7 +83,7 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
             <div className="text-muted-foreground italic">No contact information available</div>
           )}
       </div>
-    </div>
+    </Card>
   );
 };
 

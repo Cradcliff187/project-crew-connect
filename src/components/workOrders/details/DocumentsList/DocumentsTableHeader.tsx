@@ -2,15 +2,13 @@ import { TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const DocumentsTableHeader = () => {
   return (
-    <TableHeader className="bg-[#0485ea]/10">
+    <TableHeader>
       <TableRow>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">File Name</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Category</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Date Added</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Size</TableHead>
-        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
-          Actions
-        </TableHead>
+        <TableHead>File Name</TableHead>
+        <TableHead>Category</TableHead>
+        <TableHead>Date Added</TableHead>
+        <TableHead>Size</TableHead>
+        <TableHead className="text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

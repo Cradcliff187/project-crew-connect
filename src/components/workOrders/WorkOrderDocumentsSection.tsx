@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import useBreakpoint from '@/hooks/use-breakpoint';
-import { Plus, GridIcon, ListIcon, Download, ViewIcon, Trash2 } from 'lucide-react';
+import { Plus, GridIcon, ListIcon, Download, ViewIcon, Trash2, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import DocumentsDataTable from '@/components/documents/DocumentsDataTable';
@@ -184,9 +184,9 @@ export default function WorkOrderDocumentsSection({
                 Add Receipt
               </Button>
             )}
-            <Button onClick={() => setUploadOpen(true)} className="bg-[#0485ea] hover:bg-[#0375d1]">
-              <Plus className="h-4 w-4 mr-1" />
-              Add Document
+            <Button onClick={() => setUploadOpen(true)} size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Document
             </Button>
           </div>
         </div>

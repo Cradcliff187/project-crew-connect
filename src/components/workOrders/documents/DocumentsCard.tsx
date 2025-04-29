@@ -11,13 +11,8 @@ const DocumentsCard = ({ onUploadClick }: DocumentsCardProps) => {
     <Card className="shadow-md">
       <CardHeader className="bg-warmgray-50/50">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-base font-montserrat">Documents</CardTitle>
-          <Button
-            onClick={onUploadClick}
-            size="sm"
-            variant="outline"
-            className="border-[#0485ea] text-[#0485ea] hover:bg-[#0485ea]/10"
-          >
+          <CardTitle className="text-base">Documents</CardTitle>
+          <Button onClick={onUploadClick} size="sm" variant="outline">
             <Upload className="h-4 w-4 mr-2" />
             Upload Document
           </Button>

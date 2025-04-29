@@ -17,7 +17,7 @@ const ExpensesTableContent = ({
   onReceiptClick,
 }: ExpensesTableContentProps) => {
   return (
-    <Card className="shadow-sm border-[#0485ea]/10">
+    <Card className="shadow-sm border-primary/10">
       <CardContent className="p-0">
         <div className="w-full overflow-x-auto">
           <Table>

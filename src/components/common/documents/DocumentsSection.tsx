@@ -5,25 +5,14 @@ import { Upload, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
 import { EntityType } from '@/components/documents/schemas/documentSchema';
-import DocumentCard from '../../workOrders/details/DocumentsList/DocumentCard';
-import DocumentViewer from '../../workOrders/details/DocumentsList/DocumentViewer';
+import DocumentCard from './DocumentCard';
+import DocumentViewer from './DocumentViewer';
+import { Database } from '@/integrations/supabase/types';
 
-export interface BaseDocument {
-  document_id: string;
-  file_name: string;
-  category?: string;
-  created_at: string;
-  updated_at: string;
-  file_type: string;
-  storage_path: string;
-  entity_id: string;
-  entity_type: string;
-  url: string; // Changed from optional to required
-  file_size?: number; // Added to match WorkOrderDocument
-}
+type DocumentRow = Database['public']['Tables']['documents']['Row'];
 
 interface DocumentsSectionProps {
-  documents: BaseDocument[];
+  documents: DocumentRow[];
   loading: boolean;
   entityId: string;
   entityType: EntityType;
@@ -41,9 +30,9 @@ const DocumentsSection = memo(
     emptyStateMessage = 'No documents have been attached',
   }: DocumentsSectionProps) => {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
-    const [viewDocument, setViewDocument] = useState<BaseDocument | null>(null);
+    const [viewDocument, setViewDocument] = useState<DocumentRow | null>(null);
 
-    const handleViewDocument = (doc: BaseDocument) => {
+    const handleViewDocument = (doc: DocumentRow) => {
       setViewDocument(doc);
     };
 
@@ -56,10 +45,10 @@ const DocumentsSection = memo(
       <Card className="shadow-sm">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-montserrat text-[#0485ea]">Documents</CardTitle>
+            <CardTitle className="text-lg font-montserrat text-primary">Documents</CardTitle>
             <Button
               variant="outline"
-              className="text-[#0485ea] border-[#0485ea] hover:bg-[#0485ea]/10"
+              className="text-primary border-primary hover:bg-primary/10"
               onClick={() => setIsUploadOpen(true)}
             >
               <Upload className="h-4 w-4 mr-1" />
@@ -80,7 +69,7 @@ const DocumentsSection = memo(
               {documents.map(doc => (
                 <DocumentCard
                   key={doc.document_id}
-                  document={doc as any} // We'll cast to any here as a temporary fix
+                  document={doc}
                   onViewDocument={() => handleViewDocument(doc)}
                 />
               ))}
@@ -91,7 +80,7 @@ const DocumentsSection = memo(
               <p className="text-muted-foreground">{emptyStateMessage}</p>
               <Button
                 variant="outline"
-                className="mt-4 text-[#0485ea] border-[#0485ea] hover:bg-[#0485ea]/10"
+                className="mt-4 text-primary border-primary hover:bg-primary/10"
                 onClick={() => setIsUploadOpen(true)}
               >
                 <Upload className="h-4 w-4 mr-1" />
@@ -122,7 +111,7 @@ const DocumentsSection = memo(
             </DialogHeader>
             {viewDocument && (
               <DocumentViewer
-                document={viewDocument as any} // We'll cast to any here as a temporary fix
+                document={viewDocument}
                 open={!!viewDocument}
                 onOpenChange={open => !open && setViewDocument(null)}
               />

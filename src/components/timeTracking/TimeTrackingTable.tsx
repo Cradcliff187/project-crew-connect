@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MoreHorizontal, FileClock, Receipt, Trash } from 'lucide-react';
+import { MoreHorizontal, FileClock, Receipt, Trash, Edit } from 'lucide-react';
 import { TimeEntry } from '@/types/timeTracking';
 import { formatDate, formatCurrency, formatHours } from '@/lib/utils';
 import TimeEntryReceipts from './TimeEntryReceipts';
@@ -25,6 +25,7 @@ interface TimeTrackingTableProps {
   onDelete: (id: string) => void;
   onView: (id: string) => void;
   onViewReceipts: (id: string) => void;
+  onEdit: (entry: TimeEntry) => void;
 }
 
 const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
@@ -32,6 +33,7 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
   onDelete,
   onView,
   onViewReceipts,
+  onEdit,
 }) => {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [showReceiptsDialog, setShowReceiptsDialog] = useState(false);
@@ -59,21 +61,19 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
     <>
       <div className="rounded-md border overflow-hidden">
         <Table>
-          <TableHeader className="bg-[#0485ea]/10">
+          <TableHeader>
             <TableRow>
-              <TableHead className="w-[120px] font-montserrat font-semibold text-[#0485ea]">
+              <TableHead className="w-[120px] font-montserrat font-semibold text-primary">
                 Date
               </TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea]">
-                Employee
-              </TableHead>
-              <TableHead className="font-montserrat font-semibold text-[#0485ea]">
+              <TableHead className="font-montserrat font-semibold text-primary">Employee</TableHead>
+              <TableHead className="font-montserrat font-semibold text-primary">
                 Work Item
               </TableHead>
-              <TableHead className="w-[100px] font-montserrat font-semibold text-[#0485ea] text-right">
+              <TableHead className="w-[100px] font-montserrat font-semibold text-primary text-right">
                 Hours
               </TableHead>
-              <TableHead className="w-[100px] font-montserrat font-semibold text-[#0485ea] text-right">
+              <TableHead className="w-[100px] font-montserrat font-semibold text-primary text-right">
                 Actions
               </TableHead>
             </TableRow>
@@ -86,7 +86,7 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
               );
 
               return (
-                <TableRow key={entry.id} className="hover:bg-[#0485ea]/5 transition-colors">
+                <TableRow key={entry.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell>{formatDate(entry.date_worked)}</TableCell>
                   <TableCell>{entry.employee_name || 'Unassigned'}</TableCell>
                   <TableCell className="font-medium">
@@ -116,6 +116,10 @@ const TimeTrackingTable: React.FC<TimeTrackingTableProps> = ({
                           <DropdownMenuItem onClick={() => onView(entry.id)}>
                             View {entry.entity_type === 'work_order' ? 'Work Order' : 'Project'}{' '}
                             Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit(entry)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Entry
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleViewReceipts(entry.id)}>
                             {entry.has_receipts ? 'View Receipts' : 'Add Receipt'}

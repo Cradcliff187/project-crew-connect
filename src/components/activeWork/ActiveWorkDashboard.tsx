@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import {
   CalendarClock,
   Clock,
@@ -18,6 +24,9 @@ import { formatDate, formatCurrency } from '@/lib/utils';
 import { WorkItem } from '@/types/activeWork';
 import { WorkOrder } from '@/types/workOrder';
 import WorkOrderDetailDialog from '@/components/workOrders/WorkOrderDetailDialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNavigate } from 'react-router-dom';
+import { Progress } from '@/components/ui/progress';
 
 interface ActiveWorkDashboardProps {
   items: WorkItem[];
@@ -47,23 +56,36 @@ const ActiveWorkDashboard = ({
   };
 
   const handleViewWorkOrder = (workOrderItem: WorkItem) => {
-    // Convert from WorkItem back to WorkOrder format for the dialog
-    const workOrder: any = {
+    // Convert WorkItem to WorkOrder format, ensuring all required fields are present
+    const workOrder: WorkOrder = {
       work_order_id: workOrderItem.id,
       title: workOrderItem.title,
-      description: workOrderItem.description,
-      status: workOrderItem.status,
-      priority: workOrderItem.priority,
-      scheduled_date: workOrderItem.dueDate,
-      customer_id: workOrderItem.customerId,
-      location_id: workOrderItem.location,
-      created_at: workOrderItem.createdAt,
-      po_number: workOrderItem.poNumber,
-      assigned_to: workOrderItem.assignedTo,
-      progress: workOrderItem.progress,
+      description: workOrderItem.description || null,
+      // Assuming WorkItem.status is compatible with WorkOrder status enum
+      status: workOrderItem.status as WorkOrder['status'],
+      // Assuming WorkItem.priority is compatible, provide default if not
+      priority: (workOrderItem.priority as WorkOrder['priority']) || 'MEDIUM',
+      customer_id: workOrderItem.customerId || null,
+      location_id: workOrderItem.location || null, // Assuming location is the ID
+      scheduled_date: workOrderItem.dueDate || null,
+      due_by_date: null, // Not available in WorkItem
+      completed_date: null, // Not available in WorkItem
+      time_estimate: null, // Not available in WorkItem
+      actual_hours: 0, // Default value, dialog might need actual data if displayed
+      materials_cost: 0, // Default value
+      total_cost: 0, // Default value
+      expenses_cost: 0, // Default value for optional field
+      progress: workOrderItem.progress || 0,
+      created_at: workOrderItem.createdAt || new Date().toISOString(),
+      updated_at: new Date().toISOString(), // Provide a default value
+      po_number: workOrderItem.poNumber || null,
+      work_order_number: null, // Not available in WorkItem
+      assigned_to: workOrderItem.assignedTo || null,
+      project_id: null, // Not directly available, maybe link later?
     };
 
-    setSelectedWorkOrder(workOrder as WorkOrder);
+    // No need to cast `workOrder as WorkOrder` now
+    setSelectedWorkOrder(workOrder);
     setDetailOpen(true);
   };
 
@@ -99,11 +121,11 @@ const ActiveWorkDashboard = ({
 
     return projectItems.map(item => (
       <Card key={item.id} className="overflow-hidden">
-        <div className="h-2 bg-[#0485ea]"></div>
+        <div className="h-2 bg-primary"></div>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-1">
-            <Briefcase className="h-4 w-4 text-[#0485ea]" />
-            <h4 className="font-semibold text-[#0485ea]">{item.title}</h4>
+            <Briefcase className="h-4 w-4 text-primary" />
+            <h4 className="font-semibold text-primary">{item.title}</h4>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
             Client: {item.customerName || 'No Client'}
@@ -188,11 +210,11 @@ const ActiveWorkDashboard = ({
 
     return workOrderItems.map(item => (
       <Card key={item.id} className="overflow-hidden">
-        <div className="h-2 bg-[#0485ea]"></div>
+        <div className="h-2 bg-primary"></div>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-1">
-            <Wrench className="h-4 w-4 text-[#0485ea]" />
-            <h4 className="font-semibold text-[#0485ea]">{item.title}</h4>
+            <Wrench className="h-4 w-4 text-primary" />
+            <h4 className="font-semibold text-primary">{item.title}</h4>
           </div>
           <div className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
             <div>ID: {item.id}</div>

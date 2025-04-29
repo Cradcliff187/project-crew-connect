@@ -6,6 +6,14 @@ import { Loader2, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 const Customers = () => {
   const navigate = useNavigate();
@@ -72,61 +80,59 @@ const Customers = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+          <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : error ? (
           <div className="p-4 border border-red-200 rounded-md bg-red-50 text-red-700">{error}</div>
         ) : (
           <div className="border rounded-md overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Email</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Phone</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                    Location
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filteredCustomers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
                       {searchTerm ? 'No customers match your search' : 'No customers found'}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   filteredCustomers.map(customer => (
-                    <tr
+                    <TableRow
                       key={customer.customerid}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-muted/50 cursor-pointer"
                       onClick={() => navigate(`/customers/${customer.customerid}`)}
                     >
-                      <td className="px-4 py-3">{customer.customername}</td>
-                      <td className="px-4 py-3 text-sm">{customer.contactemail || '—'}</td>
-                      <td className="px-4 py-3 text-sm">{customer.phone || '—'}</td>
-                      <td className="px-4 py-3 text-sm">
+                      <TableCell className="font-medium">{customer.customername}</TableCell>
+                      <TableCell>{customer.contactemail || '—'}</TableCell>
+                      <TableCell>{customer.phone || '—'}</TableCell>
+                      <TableCell>
                         {customer.city || ''}
                         {customer.city && customer.state ? ', ' : ''}
                         {customer.state || ''}
                         {!customer.city && !customer.state && '—'}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         <Badge
-                          variant={customer.status === 'ACTIVE' ? 'default' : 'outline'}
+                          variant={customer.status === 'ACTIVE' ? 'success' : 'outline'}
                           className="capitalize"
                         >
                           {customer.status || 'Inactive'}
                         </Badge>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>

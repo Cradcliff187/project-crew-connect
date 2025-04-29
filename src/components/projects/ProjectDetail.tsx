@@ -1,14 +1,27 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Edit, MoreHorizontal, Trash } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PageTransition from '@/components/layout/PageTransition';
-import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+import {
+  Loader2,
+  ArrowLeft,
+  FileText,
+  BarChart3,
+  Banknote,
+  FileDown,
+  MoreHorizontal,
+  Edit,
+  Trash,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import StatusBadge from '@/components/ui/StatusBadge';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mapStatusToStatusBadge, formatDate } from './ProjectsTable';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { formatCurrency, formatDate, cn } from '@/lib/utils';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,55 +34,77 @@ import ProjectProgress from './progress/ProjectProgress';
 import ProjectBudget from './budget/ProjectBudget';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusType } from '@/types/common';
+import ProjectHeader from '@/components/projects/detail/ProjectHeader';
+import ProjectInfoCard from '@/components/projects/detail/ProjectInfoCard';
+import ProjectClientCard from '@/components/projects/detail/ProjectClientCard';
+import FinancialSummaryTab from '@/components/projects/detail/tabs/FinancialSummaryTab';
+import ExpenseFormDialog from '@/components/projects/budget/ExpenseFormDialog';
+import ChangeOrderDialog from '@/components/changeOrders/ChangeOrderDialog';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Discount } from '@/services/discountService';
+import FinancialSnapshotCard from '@/components/projects/detail/cards/FinancialSnapshotCard';
+import ProjectHealthCard from '@/components/projects/detail/cards/ProjectHealthCard';
+import UpcomingDatesCard from '@/components/projects/detail/cards/UpcomingDatesCard';
+import { useToast } from '@/hooks/use-toast';
 
-interface ProjectDetails {
-  projectid: string;
-  projectname: string;
-  customername: string | null;
-  customerid: string | null;
-  jobdescription: string;
-  status: string;
-  createdon: string;
-  sitelocationaddress: string | null;
-  sitelocationcity: string | null;
-  sitelocationstate: string | null;
-  sitelocationzip: string | null;
-  total_budget: number | null;
-  current_expenses: number | null;
-  budget_status: string | null;
-}
+type Project = Database['public']['Tables']['projects']['Row'];
+type Customer = Database['public']['Tables']['customers']['Row'];
+type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
+type Milestone = Database['public']['Tables']['project_milestones']['Row'];
+type FetchedChangeOrder = Pick<
+  Database['public']['Tables']['change_orders']['Row'],
+  'id' | 'title' | 'cost_impact' | 'revenue_impact'
+>;
 
-interface CustomerDetails {
-  customerid: string;
-  customername: string;
+interface ProjectDetailData {
+  project: Project | null;
+  customer: Customer | null;
+  budgetItems: BudgetItem[];
+  milestones: Milestone[];
+  approvedChangeOrders: FetchedChangeOrder[];
+  discounts: Discount[];
 }
 
 const ProjectDetail = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const [project, setProject] = useState<ProjectDetails | null>(null);
-  const [customerDetails, setCustomerDetails] = useState<CustomerDetails | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [customerDetails, setCustomerDetails] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProjectDetails = async () => {
-      setLoading(true);
+  const {
+    data: projectDetailData,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useQuery<ProjectDetailData, Error>({
+    queryKey: ['project-detail', projectId],
+    queryFn: async () => {
       try {
-        // Fetch the project data
-        const { data, error } = await supabase
+        if (!projectId) throw new Error('Project ID is missing');
+
+        const { data: projectData, error: projectError } = await supabase
           .from('projects')
           .select('*')
           .eq('projectid', projectId)
-          .single();
+          .maybeSingle();
 
-        if (error) throw error;
+        if (projectError && projectError.code !== 'PGRST116') throw projectError;
+        if (!projectData) throw new Error('Project not found');
 
-        const projectData = data as ProjectDetails;
-        setProject(projectData);
+        setProject(projectData as Project);
 
-        // If there's a customerid but no customername (or customername is empty),
-        // fetch the customer details directly
         if (
           projectData.customerid &&
           (!projectData.customername || projectData.customername.trim() === '')
@@ -85,9 +120,8 @@ const ProjectDetail = () => {
             console.warn('Error fetching customer details:', customerError);
           } else if (customerData) {
             console.log('Found customer details:', customerData);
-            setCustomerDetails(customerData as CustomerDetails);
+            setCustomerDetails(customerData as Customer);
 
-            // Update the project data with the customer name
             setProject(prev =>
               prev
                 ? {
@@ -98,6 +132,44 @@ const ProjectDetail = () => {
             );
           }
         }
+
+        const customerId = projectData.customerid;
+        const [
+          customerResult,
+          budgetItemsResult,
+          milestonesResult,
+          changeOrdersResult,
+          discountsResult,
+        ] = await Promise.all([
+          customerId
+            ? supabase.from('customers').select('*').eq('customerid', customerId).single()
+            : Promise.resolve({ data: null, error: null }),
+          supabase
+            .from('project_budget_items')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('created_at'),
+          supabase
+            .from('project_milestones')
+            .select('*')
+            .eq('projectid', projectId)
+            .order('due_date'),
+          supabase
+            .from('change_orders')
+            .select('id, title, cost_impact, revenue_impact')
+            .eq('entity_type', 'PROJECT')
+            .eq('entity_id', projectId),
+          supabase.from('discounts').select('*').eq('project_id', projectId),
+        ]);
+
+        return {
+          project: projectData as Project | null,
+          customer: customerResult?.data as Customer | null,
+          budgetItems: (budgetItemsResult.data ?? []) as BudgetItem[],
+          milestones: (milestonesResult.data ?? []) as Milestone[],
+          approvedChangeOrders: (changeOrdersResult.data ?? []) as FetchedChangeOrder[],
+          discounts: (discountsResult.data ?? []) as Discount[],
+        };
       } catch (error: any) {
         console.error('Error fetching project details:', error);
         setError(error.message);
@@ -106,15 +178,12 @@ const ProjectDetail = () => {
           description: error.message,
           variant: 'destructive',
         });
-      } finally {
-        setLoading(false);
+        throw error;
       }
-    };
-
-    if (projectId) {
-      fetchProjectDetails();
-    }
-  }, [projectId]);
+    },
+    enabled: !!projectId,
+    staleTime: 1000 * 60 * 5,
+  });
 
   const handleBackClick = () => {
     navigate('/projects');
@@ -148,28 +217,12 @@ const ProjectDetail = () => {
     }
   };
 
-  // Format currency
-  const formatCurrency = (amount: number | null) => {
-    if (amount === null || amount === undefined) return '$0';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Get customer display name - use details if available, otherwise fallback
   const getCustomerName = () => {
-    if (customerDetails?.customername) {
-      return customerDetails.customername;
-    }
-    return project?.customername || 'No Customer';
+    return projectDetailData?.customer?.customername || 'No Customer';
   };
 
-  // Get customer ID with proper formatting
   const getCustomerId = () => {
-    return customerDetails?.customerid || project?.customerid || '';
+    return projectDetailData?.customer?.customerid || projectDetailData?.project?.customerid || '';
   };
 
   return (
@@ -196,9 +249,9 @@ const ProjectDetail = () => {
                 <Skeleton className="h-32" />
               </div>
             </>
-          ) : error ? (
+          ) : queryError ? (
             <div className="text-center py-12">
-              <p className="text-red-500 mb-4">{error}</p>
+              <p className="text-red-500 mb-4">{queryError.message}</p>
               <Button onClick={handleBackClick}>Return to Projects</Button>
             </div>
           ) : project ? (
@@ -209,12 +262,12 @@ const ProjectDetail = () => {
                   <div className="flex items-center mt-2 text-muted-foreground">
                     <span className="mr-2">{project.projectid}</span>
                     <span className="mx-2">•</span>
-                    <span>Created on {formatDate(project.createdon)}</span>
+                    <span>Created on {formatDate(project.created_at)}</span>
                   </div>
                 </div>
 
                 <div className="mt-4 md:mt-0 flex items-center">
-                  <StatusBadge status={mapStatusToStatusBadge(project.status)} className="mr-4" />
+                  <StatusBadge status={project.status as StatusType} className="mr-4" />
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -259,12 +312,11 @@ const ProjectDetail = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {project.sitelocationaddress ? (
+                    {project.site_address ? (
                       <div>
-                        <div>{project.sitelocationaddress}</div>
+                        <div>{project.site_address}</div>
                         <div>
-                          {project.sitelocationcity}, {project.sitelocationstate}{' '}
-                          {project.sitelocationzip}
+                          {project.site_city}, {project.site_state} {project.site_zip}
                         </div>
                       </div>
                     ) : (
@@ -304,8 +356,8 @@ const ProjectDetail = () => {
                   <CardTitle>Job Description</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {project.jobdescription ? (
-                    <p>{project.jobdescription}</p>
+                  {project.description ? (
+                    <p>{project.description}</p>
                   ) : (
                     <p className="text-muted-foreground">No job description provided.</p>
                   )}

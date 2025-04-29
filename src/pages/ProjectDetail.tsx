@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PageTransition from '@/components/layout/PageTransition';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 import { Loader2, ArrowLeft, FileText, BarChart3, Banknote, FileDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,54 +38,15 @@ import FinancialSnapshotCard from '@/components/projects/detail/cards/FinancialS
 import ProjectHealthCard from '@/components/projects/detail/cards/ProjectHealthCard';
 import UpcomingDatesCard from '@/components/projects/detail/cards/UpcomingDatesCard';
 
-// Define project types manually to avoid TypeScript errors
-interface Project {
-  projectid: string;
-  projectname?: string | null;
-  description?: string | null;
-  status?: string | null;
-  customerid?: string | null;
-  total_budget?: number | null;
-  current_expenses?: number | null;
-  contract_value?: number | null;
-  start_date?: string | null;
-  target_end_date?: string | null;
-  // Add other fields as needed
-}
-
-interface BudgetItem {
-  id: string;
-  project_id: string;
-  description?: string | null;
-  category: string;
-  estimated_amount: number;
-  actual_amount?: number | null;
-  document_id?: string | null;
-  // Add other fields as needed
-}
-
-interface Milestone {
-  id: string;
-  projectid: string;
-  title: string;
-  description?: string | null;
-  due_date?: string | null;
-  is_completed: boolean;
-  // Add other fields as needed
-}
-
-type FetchedChangeOrder = {
-  id: string;
-  title: string | null;
-  cost_impact: number | null;
-  revenue_impact: number | null;
-};
-
-interface Customer {
-  customerid: string;
-  customername?: string | null;
-  // Add other fields as needed
-}
+// Define type aliases using generated types
+type Project = Database['public']['Tables']['projects']['Row'];
+type Customer = Database['public']['Tables']['customers']['Row'];
+type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
+type Milestone = Database['public']['Tables']['project_milestones']['Row'];
+type FetchedChangeOrder = Pick<
+  Database['public']['Tables']['change_orders']['Row'],
+  'id' | 'title' | 'cost_impact' | 'revenue_impact'
+>; // Use Pick for specific columns
 
 interface ProjectDetailData {
   project: Project | null;
@@ -116,12 +78,10 @@ const ProjectDetail = () => {
     queryFn: async () => {
       if (!projectId) throw new Error('Project ID is missing');
 
-      console.log(`[useQuery ProjectDetail] Fetching project with id: ${projectId}`);
+      // console.log(`[useQuery ProjectDetail] Fetching project with id: ${projectId}`);
 
-      // Use any type assertion for supabase to bypass TypeScript checking
-      const supabaseAny = supabase as any;
-
-      const { data: projectData, error: projectError } = await supabaseAny
+      // Use typed client calls
+      const { data: projectData, error: projectError } = await supabase
         .from('projects')
         .select('*')
         .eq('projectid', projectId)
@@ -140,24 +100,24 @@ const ProjectDetail = () => {
         discountsResult,
       ] = await Promise.all([
         customerId
-          ? supabaseAny.from('customers').select('*').eq('customerid', customerId).single()
+          ? supabase.from('customers').select('*').eq('customerid', customerId).single()
           : Promise.resolve({ data: null, error: null }),
-        supabaseAny
+        supabase
           .from('project_budget_items')
           .select('*')
           .eq('project_id', projectId)
           .order('created_at'),
-        supabaseAny
+        supabase
           .from('project_milestones')
           .select('*')
           .eq('projectid', projectId)
           .order('due_date'),
-        supabaseAny
-          .from('change_orders')
+        supabase
+          .from('change_orders') // Ensure type matches FetchedChangeOrder definition
           .select('id, title, cost_impact, revenue_impact')
           .eq('entity_type', 'PROJECT')
           .eq('entity_id', projectId),
-        supabaseAny.from('discounts').select('*').eq('project_id', projectId),
+        supabase.from('discounts').select('*').eq('project_id', projectId), // Assuming Discount type is compatible
       ]);
 
       if (customerResult?.error) console.warn('Error fetching customer:', customerResult.error);
@@ -170,12 +130,12 @@ const ProjectDetail = () => {
       if (discountsResult.error) console.warn('Error fetching discounts:', discountsResult.error);
 
       return {
-        project: projectData as Project,
-        customer: customerResult?.data as Customer | null,
-        budgetItems: (budgetItemsResult.data as BudgetItem[]) || [],
-        milestones: (milestonesResult.data as Milestone[]) || [],
-        approvedChangeOrders: (changeOrdersResult.data as FetchedChangeOrder[]) || [],
-        discounts: discountsResult.data || [],
+        project: projectData, // No cast needed
+        customer: customerResult?.data ?? null, // No cast needed
+        budgetItems: budgetItemsResult.data ?? [], // No cast needed
+        milestones: milestonesResult.data ?? [], // No cast needed
+        approvedChangeOrders: changeOrdersResult.data ?? [], // No cast needed
+        discounts: discountsResult.data ?? [], // Assuming Discount type is correct
       };
     },
     enabled: !!projectId,
@@ -264,11 +224,9 @@ const ProjectDetail = () => {
 
   if (isLoading) {
     return (
-      <PageTransition>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
-        </div>
-      </PageTransition>
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
@@ -283,11 +241,11 @@ const ProjectDetail = () => {
           <Card>
             <CardContent className="py-8">
               <div className="text-center">
-                <h1 className="text-2xl font-bold text-red-500">Error Loading Project</h1>
-                <p className="mt-2 text-gray-600">
+                <h1 className="text-2xl font-bold text-destructive">Error Loading Project</h1>
+                <p className="mt-2 text-muted-foreground">
                   {(error as Error).message || 'Could not load project data'}
                 </p>
-                <Button onClick={() => refetch()} className="mt-4 bg-[#0485ea] hover:bg-[#0373ce]">
+                <Button onClick={() => refetch()} className="mt-4">
                   Retry
                 </Button>
               </div>
@@ -308,8 +266,8 @@ const ProjectDetail = () => {
           </Button>
           <Card>
             <CardContent className="py-8 text-center">
-              <h1 className="text-2xl font-bold text-orange-500">Project Not Found</h1>
-              <p className="mt-2 text-gray-600">
+              <h1 className="text-2xl font-bold text-destructive">Project Not Found</h1>
+              <p className="mt-2 text-muted-foreground">
                 The requested project (ID: {projectId}) could not be found.
               </p>
             </CardContent>

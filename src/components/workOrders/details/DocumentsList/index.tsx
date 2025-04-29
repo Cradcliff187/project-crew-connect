@@ -3,8 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, X } from 'lucide-react';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
-import { EntityType } from '@/components/documents/schemas/documentSchema';
-import DocumentViewer from './DocumentViewer';
+import { EntityType, Document } from '@/components/documents/schemas/documentSchema';
+import DocumentViewer from '@/components/common/documents/DocumentViewer';
 import { useWorkOrderDocuments } from './useWorkOrderDocuments';
 import { WorkOrderDocument } from './types';
 import DocumentsTableContent from './DocumentsTableContent';
@@ -47,11 +47,7 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
         <h3 className="text-lg font-semibold">Documents & Receipts</h3>
         <Button
           variant={showUploadForm ? 'outline' : 'default'}
-          className={
-            showUploadForm
-              ? 'text-[#0485ea] border-[#0485ea]/30 hover:bg-blue-50'
-              : 'bg-[#0485ea] hover:bg-[#0375d1]'
-          }
+          size="sm"
           onClick={toggleUploadForm}
         >
           {showUploadForm ? (
@@ -105,7 +101,6 @@ const WorkOrderDocumentsList = ({ workOrderId }: WorkOrderDocumentsListProps) =>
             <DocumentVersionHistoryCard
               documentId={viewDocument.document_id}
               onVersionChange={document => {
-                // Cast the Document type to WorkOrderDocument
                 handleViewDocument(document as unknown as WorkOrderDocument);
               }}
             />

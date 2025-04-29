@@ -25,14 +25,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { updateContactStatus } from './detail/util/contactTransitions';
 import { useQueryClient } from '@tanstack/react-query';
+import StatusBadge from '@/components/common/status/StatusBadge';
+import ActivityLog from '@/components/common/activity/ActivityLog';
+import ActionMenu from '@/components/ui/action-menu';
+import { formatCurrency, formatDate } from '@/lib/utils';
+// Import the specific Contact type
+import { Contact } from '@/pages/Contacts';
 
 interface ContactDetailProps {
-  contact: any;
+  // Use the specific Contact type
+  contact: Contact;
   onClose: () => void;
-  onStatusChange?: (contact: any, newStatus: string) => void;
+  onEdit: (contact: Contact) => void;
+  onDelete: (contact: Contact) => void;
+  onStatusChange: (contact: Contact, newStatus: string) => void;
 }
 
-const ContactDetail = ({ contact, onClose, onStatusChange }: ContactDetailProps) => {
+const ContactDetail = ({
+  contact,
+  onClose,
+  onEdit,
+  onDelete,
+  onStatusChange,
+}: ContactDetailProps) => {
   const [activeTab, setActiveTab] = useState('interactions');
   const [conversations, setConversations] = useState<Conversation[]>([
     {

@@ -8,6 +8,20 @@ import TotalPriceDisplay from './components/TotalPriceDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
 import MaterialReceiptUpload from './components/MaterialReceiptUpload';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form } from '@/components/ui/form';
+
+// Define Zod schema
+const materialFormSchema = z.object({
+  materialName: z.string().min(1, { message: 'Material name is required' }),
+  quantity: z.number().min(0.01, { message: 'Quantity must be positive' }),
+  unitPrice: z.number().min(0.01, { message: 'Unit price must be positive' }),
+  vendorId: z.string().nullable(),
+  // Add fields for receipt if needed by MaterialFormFields or handled separately
+});
+type MaterialFormValues = z.infer<typeof materialFormSchema>;
 
 interface EnhancedAddMaterialFormProps {
   workOrderId: string;
@@ -21,6 +35,7 @@ interface EnhancedAddMaterialFormProps {
   }) => void;
   onVendorAdded?: () => void;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 const EnhancedAddMaterialForm = ({
@@ -30,13 +45,20 @@ const EnhancedAddMaterialForm = ({
   onMaterialPrompt,
   onVendorAdded,
   onSuccess,
+  onCancel,
 }: EnhancedAddMaterialFormProps) => {
-  // Form state
-  const [materialName, setMaterialName] = useState('');
-  const [quantity, setQuantity] = useState('1');
-  const [unitPrice, setUnitPrice] = useState('');
-  const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
+
+  // Setup react-hook-form
+  const form = useForm<MaterialFormValues>({
+    resolver: zodResolver(materialFormSchema),
+    defaultValues: {
+      materialName: '',
+      quantity: 1,
+      unitPrice: undefined, // Use undefined for optional number
+      vendorId: null,
+    },
+  });
 
   // Receipt upload state
   const [includeReceipt, setIncludeReceipt] = useState(false);
@@ -46,31 +68,18 @@ const EnhancedAddMaterialForm = ({
   // Track if receipt should be uploaded immediately after material is added
   const [willUploadReceipt, setWillUploadReceipt] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const qtyValue = parseFloat(quantity);
-    const priceValue = parseFloat(unitPrice);
-
+  const handleSubmit = async (values: MaterialFormValues) => {
     const materialData = {
-      materialName,
-      quantity: qtyValue,
-      unitPrice: priceValue,
-      vendorId: selectedVendor,
+      materialName: values.materialName,
+      quantity: values.quantity,
+      unitPrice: values.unitPrice,
+      vendorId: values.vendorId,
     };
-
-    // Submit the form data
     onMaterialPrompt(materialData);
-
-    // If receipt upload is toggled ON, we'll set the flag
-    // but the actual upload will happen in onSuccess
-    if (includeReceipt) {
-      setWillUploadReceipt(true);
-    } else {
-      // If we're not uploading a receipt, we can call onSuccess directly
-      if (onSuccess) {
-        onSuccess();
-      }
+    form.reset(); // Reset form after submission
+    // Handle receipt logic if needed
+    if (onSuccess) {
+      onSuccess();
     }
   };
 
@@ -110,110 +119,112 @@ const EnhancedAddMaterialForm = ({
       <CardHeader>
         <CardTitle className="text-base">Add Material</CardTitle>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <div className="border-b px-4 pb-2">
-          <Toggle
-            pressed={includeReceipt}
-            onPressedChange={toggleReceiptUpload}
-            className="border data-[state=on]:bg-green-50 data-[state=on]:text-green-700 data-[state=on]:border-green-200"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <div className="border-b px-4 pb-2">
+            <Toggle
+              pressed={includeReceipt}
+              onPressedChange={toggleReceiptUpload}
+              className="border data-[state=on]:bg-green-50 data-[state=on]:text-green-700 data-[state=on]:border-green-200"
+            >
+              {includeReceipt ? (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Include Receipt
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Receipt
+                </>
+              )}
+            </Toggle>
+          </div>
+
+          <Tabs
+            value={receiptTab}
+            onValueChange={value => setReceiptTab(value as 'material' | 'receipt')}
           >
-            {includeReceipt ? (
-              <>
-                <FileText className="h-4 w-4 mr-2" />
-                Include Receipt
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Receipt
-              </>
-            )}
-          </Toggle>
-        </div>
-
-        <Tabs
-          value={receiptTab}
-          onValueChange={value => setReceiptTab(value as 'material' | 'receipt')}
-        >
-          <TabsList className="w-full">
-            <TabsTrigger value="material" className="flex-1">
-              Material Details
-            </TabsTrigger>
-            {includeReceipt && (
-              <TabsTrigger value="receipt" className="flex-1">
-                Receipt Upload
+            <TabsList className="w-full">
+              <TabsTrigger value="material" className="flex-1">
+                Material Details
               </TabsTrigger>
-            )}
-          </TabsList>
+              {includeReceipt && (
+                <TabsTrigger value="receipt" className="flex-1">
+                  Receipt Upload
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-          <TabsContent value="material">
-            <CardContent className="pt-4">
-              <MaterialFormFields
-                materialName={materialName}
-                setMaterialName={setMaterialName}
-                quantity={quantity}
-                setQuantity={setQuantity}
-                unitPrice={unitPrice}
-                setUnitPrice={setUnitPrice}
-                selectedVendor={selectedVendor}
-                setSelectedVendor={setSelectedVendor}
-                vendors={vendors}
-                onAddVendorClick={() => setShowVendorDialog(true)}
-              />
-
-              <TotalPriceDisplay unitPrice={unitPrice} quantity={quantity} />
-            </CardContent>
-          </TabsContent>
-
-          {includeReceipt && (
-            <TabsContent value="receipt">
+            <TabsContent value="material">
               <CardContent className="pt-4">
-                {pendingMaterial ? (
-                  <MaterialReceiptUpload
-                    workOrderId={workOrderId}
-                    material={pendingMaterial}
-                    vendorName={
-                      selectedVendor
-                        ? vendors.find(v => v.vendorid === selectedVendor)?.vendorname || ''
-                        : ''
-                    }
-                    onSuccess={handleReceiptSuccess}
-                    onCancel={() => setReceiptTab('material')}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                    <Receipt className="h-12 w-12 mb-3 opacity-40" />
-                    <p>Add material details first, then upload a receipt.</p>
-                    <p className="text-sm mt-2">
-                      Click on the "Material Details" tab to fill in the information.
-                    </p>
-                  </div>
-                )}
+                <MaterialFormFields
+                  form={form}
+                  vendors={vendors}
+                  onAddVendorClick={() => setShowVendorDialog(true)}
+                  showVendorDialog={showVendorDialog}
+                  setShowVendorDialog={setShowVendorDialog}
+                  onVendorAdded={handleVendorAdded}
+                />
+
+                <TotalPriceDisplay
+                  unitPrice={form.watch('unitPrice')?.toString() || ''}
+                  quantity={form.watch('quantity')?.toString() || ''}
+                />
               </CardContent>
             </TabsContent>
-          )}
-        </Tabs>
 
-        <CardFooter>
-          <Button
-            type="submit"
-            className="w-full md:w-auto bg-[#0485ea] hover:bg-[#0375d1]"
-            disabled={submitting}
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Submit
-              </>
+            {includeReceipt && (
+              <TabsContent value="receipt">
+                <CardContent className="pt-4">
+                  {pendingMaterial ? (
+                    <MaterialReceiptUpload
+                      workOrderId={workOrderId}
+                      material={pendingMaterial}
+                      vendorName={
+                        form.watch('vendorId')
+                          ? vendors.find(v => v.vendorid === form.watch('vendorId'))?.vendorname ||
+                            ''
+                          : ''
+                      }
+                      onSuccess={handleReceiptSuccess}
+                      onCancel={() => setReceiptTab('material')}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                      <Receipt className="h-12 w-12 mb-3 opacity-40" />
+                      <p>Add material details first, then upload a receipt.</p>
+                      <p className="text-sm mt-2">
+                        Click on the "Material Details" tab to fill in the information.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </TabsContent>
             )}
-          </Button>
-        </CardFooter>
-      </form>
+          </Tabs>
+
+          <CardFooter>
+            <div className="flex justify-end gap-2">
+              {onCancel && (
+                <Button variant="outline" onClick={onCancel} disabled={submitting}>
+                  Cancel
+                </Button>
+              )}
+              <Button type="submit" className="w-full md:w-auto" disabled={submitting}>
+                {submitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Submit
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardFooter>
+        </form>
+      </Form>
 
       {/* Vendor Dialog */}
       <VendorDialog

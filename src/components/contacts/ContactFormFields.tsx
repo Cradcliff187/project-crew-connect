@@ -10,8 +10,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import { ContactFormData } from '@/pages/Contacts';
+import { useFormContext } from 'react-hook-form';
+import { Contact } from '@/pages/Contacts';
+import { StatusType } from '@/types/common';
 
 interface ContactFormFieldsProps {
   form: UseFormReturn<any>;
@@ -26,6 +29,10 @@ const ContactFormFields = ({
   getStatusOptions,
   handleTypeChange,
 }: ContactFormFieldsProps) => {
+  const { watch } = useFormContext<Contact>();
+
+  const currentStatus = watch('status');
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -102,7 +109,7 @@ const ContactFormFields = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value as string}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status">

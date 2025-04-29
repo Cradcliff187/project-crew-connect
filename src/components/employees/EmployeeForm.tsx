@@ -200,9 +200,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ employeeToEdit, onSuccess, 
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isSaving} className="bg-[#0485ea] hover:bg-[#0373ce]">
-          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {employeeToEdit ? 'Save Changes' : 'Create Employee'}
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : employeeToEdit ? (
+            'Save Changes'
+          ) : (
+            'Create Employee'
+          )}
         </Button>
       </DialogFooter>
     </form>

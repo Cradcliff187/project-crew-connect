@@ -12,24 +12,20 @@ const SubcontractorsLoadingState = () => {
   return (
     <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
       <Table>
-        <TableHeader className="bg-[#0485ea]/10">
+        <TableHeader>
           <TableRow>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Name</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">
-              Specialties
-            </TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Contact</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Location</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Details</TableHead>
-            <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-            <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
-              Actions
-            </TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Specialties</TableHead>
+            <TableHead>Contact</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Details</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {[...Array(5)].map((_, i) => (
-            <TableRow key={i} className="hover:bg-[#0485ea]/5">
+            <TableRow key={i} className="hover:bg-muted/50">
               <TableCell>
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-[120px]" />

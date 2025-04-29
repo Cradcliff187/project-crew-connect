@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { WorkOrder } from '@/types/workOrder';
 import WorkOrderDetails from './WorkOrderDetails';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,11 +30,16 @@ const WorkOrderDetailDialog = ({
     onStatusChange();
   };
 
+  if (!workOrder) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={isMobile ? 'max-w-[95vw] p-4 h-[90vh]' : 'max-w-[900px] h-[80vh]'}>
         <DialogHeader>
-          <DialogTitle className="text-[#0485ea]">Work Order: {workOrder.title}</DialogTitle>
+          <DialogTitle className="text-primary">Work Order: {workOrder.title}</DialogTitle>
+          <DialogDescription>
+            Detailed view of work order {workOrder.work_order_id}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-auto mt-4">

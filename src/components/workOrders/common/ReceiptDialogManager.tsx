@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Document } from '@/components/documents/schemas/documentSchema';
 import { Receipt, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import DocumentViewer from '../details/DocumentsList/DocumentViewer';
+import DocumentViewer from '@/components/common/documents/DocumentViewer';
 
 interface ReceiptUploadDialogProps {
   open: boolean;

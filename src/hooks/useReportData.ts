@@ -21,15 +21,31 @@ export const useReportData = (initialEntity: EntityType) => {
     return () => clearTimeout(timer);
   }, [filters]);
 
-  // Fetch data using React Query
-  const { data, isLoading, isError } = useQuery({
+  // Fetch data using React Query with better error handling
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['reports', selectedEntity, debouncedFilters],
     queryFn: () => fetchReportData(selectedEntity, debouncedFilters),
+    // Add retry logic to handle temporary errors
+    retry: 1,
   });
+
+  // Log errors but don't block UI
+  useEffect(() => {
+    if (error) {
+      console.error(`Error in report query for ${selectedEntity}:`, error);
+    }
+  }, [error, selectedEntity]);
 
   // Handle entity change
   const handleEntityChange = (entity: EntityType) => {
     setSelectedEntity(entity);
+    // Reset filters when changing entity type
+    setFilters({
+      search: '',
+      dateRange: undefined,
+      status: 'all',
+      role: 'all',
+    });
   };
 
   // Handle filter changes
@@ -41,6 +57,7 @@ export const useReportData = (initialEntity: EntityType) => {
     data,
     loading: isLoading,
     error: isError,
+    errorDetails: error,
     selectedEntity,
     filters,
     handleEntityChange,

@@ -119,7 +119,7 @@ const VendorDetail = () => {
 
   // Actions for the page header
   const headerActions = (
-    <Button onClick={handleEdit} className="bg-[#0485ea] hover:bg-[#0370c9]">
+    <Button onClick={handleEdit}>
       <Edit className="h-4 w-4 mr-2" />
       Edit Vendor
     </Button>
@@ -141,7 +141,7 @@ const VendorDetail = () => {
           {/* Vendor Information Card */}
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#0485ea]">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Building className="h-5 w-5" />
                 Vendor Information
               </CardTitle>
@@ -181,7 +181,7 @@ const VendorDetail = () => {
           {/* Contact Information Card */}
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#0485ea]">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <MapPin className="h-5 w-5" />
                 Contact Information
               </CardTitle>
@@ -218,10 +218,9 @@ const VendorDetail = () => {
           </Card>
         </div>
 
-        {/* Associated Projects & Work Orders */}
+        {/* Associated Projects & Work Orders - Render components directly */}
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <AssociatedProjects projects={projects} loading={loadingAssociations} />
-
           <AssociatedWorkOrders workOrders={workOrders} loading={loadingAssociations} />
         </div>
 

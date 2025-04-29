@@ -34,33 +34,27 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   console.log('[EmployeeSelect] Received employees:', employees);
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      <Label>
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </Label>
-      <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Not assigned</SelectItem>
-          {Array.isArray(employees) &&
-            employees.map((employee, index) => {
-              // Add more detailed logging inside the map
-              const fullName = getEmployeeFullName(employee);
-              console.log(
-                `[EmployeeSelect] Mapping item ${index}: ID=${employee?.id}, Name=${fullName}`
-              );
-              return employee && employee.id ? (
-                <SelectItem key={employee.id} value={employee.id}>
-                  {fullName}
-                </SelectItem>
-              ) : null;
-            })}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">Not assigned</SelectItem>
+        {Array.isArray(employees) &&
+          employees.map((employee, index) => {
+            // Add more detailed logging inside the map
+            const fullName = getEmployeeFullName(employee);
+            console.log(
+              `[EmployeeSelect] Mapping item ${index}: ID=${employee?.id}, Name=${fullName}`
+            );
+            return employee && employee.id ? (
+              <SelectItem key={employee.id} value={employee.id}>
+                {fullName}
+              </SelectItem>
+            ) : null;
+          })}
+      </SelectContent>
+    </Select>
   );
 };
 

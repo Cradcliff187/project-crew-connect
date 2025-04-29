@@ -2,19 +2,15 @@ import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 const WorkOrderTableHeader = () => {
   return (
-    <TableHeader className="bg-[#0485ea]/10">
+    <TableHeader>
       <TableRow>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">WO Number</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">PO Number</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Due Date</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">
-          Days Until Due
-        </TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Priority</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
-          Actions
-        </TableHead>
+        <TableHead>WO Number</TableHead>
+        <TableHead>PO Number</TableHead>
+        <TableHead>Due Date</TableHead>
+        <TableHead>Title</TableHead>
+        <TableHead>Priority</TableHead>
+        <TableHead>Status</TableHead>
+        <TableHead className="text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

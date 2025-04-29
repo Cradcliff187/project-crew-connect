@@ -40,11 +40,7 @@ const SubcontractorsTable = ({
     <div className="rounded-md border shadow-sm animate-fade-in">
       <div className="overflow-x-auto">
         <Table className="w-full table-fixed">
-          <TableHeader className="bg-[#0485ea]/10">
-            <TableRow>
-              <SubcontractorsTableHeader />
-            </TableRow>
-          </TableHeader>
+          <SubcontractorsTableHeader />
           <TableBody>
             <SubcontractorsTableBody
               subcontractors={filteredSubcontractors}

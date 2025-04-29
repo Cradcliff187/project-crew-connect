@@ -8,7 +8,8 @@ import ContactDetailCard from './ContactDetailCard';
 import ContactActivitySection from './ContactActivitySection';
 import ContactOptionsMenu from './ContactOptionsMenu';
 import ContactDocuments from './ContactDocuments';
-import EditContactSheet from './EditContactSheet';
+import ContactDetailHeader from './detail/ContactDetailHeader';
+import ContactTabs from './detail/ContactTabs';
 import LoadingContactDetailPage from './LoadingContactDetailPage';
 import PageTransition from '@/components/layout/PageTransition';
 
@@ -101,13 +102,6 @@ const ContactDetailPage: React.FC = () => {
             <ContactActivitySection contactId={contact.contact_id} />
           </TabsContent>
         </Tabs>
-
-        <EditContactSheet
-          contact={contact}
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          onSubmit={refreshContact}
-        />
       </div>
     </PageTransition>
   );

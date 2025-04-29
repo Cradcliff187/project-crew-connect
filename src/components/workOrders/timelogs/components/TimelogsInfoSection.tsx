@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { TimelogAddSheet } from './TimelogAddSheet';
 import { Button } from '@/components/ui/button';
 import { formatTime, formatHoursToDuration } from '@/components/timeTracking/utils/timeUtils';
 import { Employee } from '@/types/common';
+import { Plus } from 'lucide-react';
 
 interface TimelogsInfoSectionProps {
   timelogs: any[];
@@ -34,18 +35,14 @@ export const TimelogsInfoSection = ({
     <Card>
       <div className="flex justify-between items-center p-4 border-b">
         <h3 className="text-lg font-medium">Time Entries</h3>
-        <Button
-          size="sm"
-          onClick={() => setShowAddSheet(true)}
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-        >
+        <Button size="sm" onClick={() => setShowAddSheet(true)}>
           Add Time
         </Button>
       </div>
       <CardContent className="pt-4">
         {loading ? (
           <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-[#0485ea]" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : timelogs.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">

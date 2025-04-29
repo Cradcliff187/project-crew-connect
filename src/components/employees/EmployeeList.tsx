@@ -31,17 +31,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle>Employees</CardTitle>
-        <Button size="sm" onClick={onAddEmployee}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Employee
-        </Button>
       </CardHeader>
       <CardContent>
         {isLoadingEmployees ? (
           <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : employees.length === 0 ? (
           <p className="text-center text-muted-foreground py-4">No employees found.</p>
@@ -86,7 +82,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-red-600 hover:text-red-700"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
                         onClick={() => onDeleteEmployee(employee)}
                       >
                         <Trash className="h-4 w-4" />

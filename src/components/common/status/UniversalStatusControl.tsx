@@ -13,6 +13,7 @@ import StatusBadge from './StatusBadge';
 import StatusHistoryDialog from './StatusHistoryDialog';
 import StatusTransitionPrompt from './StatusTransitionPrompt';
 import { toast } from '@/hooks/use-toast';
+import { StatusType } from '@/types/common';
 
 // Restore StatusOption interface definition
 export interface StatusOption {
@@ -226,12 +227,6 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
     return option?.label || status;
   };
 
-  const getStatusColor = (status: string): string => {
-    if (!status) return 'neutral';
-    const option = safeStatusOptions.find(opt => opt?.value === status);
-    return option?.color || 'neutral';
-  };
-
   // If no entity ID is provided, don't render the control
   if (!entityId) {
     return null;
@@ -240,7 +235,7 @@ const UniversalStatusControl: React.FC<StatusControlProps> = ({
   return (
     <div className={`flex items-center ${className}`}>
       {showStatusBadge && (
-        <StatusBadge label={getStatusLabel(currentStatus)} color={getStatusColor(currentStatus)} />
+        <StatusBadge status={currentStatus as StatusType} label={getStatusLabel(currentStatus)} />
       )}
 
       {/* Use DropdownMenu */}

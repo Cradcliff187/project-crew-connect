@@ -30,7 +30,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </Button>
         )}
         <div>
-          <h1 className="text-2xl font-bold font-montserrat text-[#0485ea]">{title}</h1>
+          <h1 className="text-2xl font-bold text-primary">{title}</h1>
           {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
         </div>
       </div>

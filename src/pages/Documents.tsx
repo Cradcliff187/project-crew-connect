@@ -1,193 +1,150 @@
 // src/pages/Documents.tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, Upload } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Document } from '@/components/documents/schemas/documentSchema';
-import { supabase } from '@/integrations/supabase/client';
-import EnhancedDocumentUploadDialog from '@/components/documents/EnhancedDocumentUploadDialog';
-import DocumentCard from '@/components/workOrders/details/DocumentsList/DocumentCard';
-import DocumentViewer from '@/components/workOrders/details/DocumentsList/DocumentViewer';
-import { formatDate } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import DocumentVersionHistoryCard from '@/components/documents/DocumentVersionHistoryCard';
-import DocumentRelationshipsView from '@/components/documents/DocumentRelationshipsView';
-import { convertToWorkOrderDocument } from '@/components/documents/utils/documentTypeUtils';
-import { WorkOrderDocument } from '@/components/workOrders/details/DocumentsList/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Loader2, FileText } from 'lucide-react';
+import PageTransition from '@/components/layout/PageTransition';
+import PageHeader from '@/components/common/layout/PageHeader';
+import DocumentCard from '@/components/common/documents/DocumentCard';
+import DocumentViewer from '@/components/common/documents/DocumentViewer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
+import { EntityType } from '@/components/documents/schemas/documentSchema';
 
-const DocumentsPage: React.FC = () => {
+// Use generated type alias
+type DocumentRow = Database['public']['Tables']['documents']['Row'];
+
+const Documents = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [viewDocument, setViewDocument] = useState<WorkOrderDocument | null>(null);
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const [filterEntityType, setFilterEntityType] = useState('ALL');
+  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [viewDocument, setViewDocument] = useState<DocumentRow | null>(null);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-  const {
-    data: recentDocuments,
-    isLoading,
-    refetch: refreshRecentDocuments,
-  } = useQuery({
-    queryKey: ['recentDocuments'],
+  const { data: documents, isLoading } = useQuery<DocumentRow[]>({
+    queryKey: ['documents'],
     queryFn: async () => {
+      // Fetch documents using generated types
       const { data, error } = await supabase
-        .from('documents_with_urls')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error fetching recent documents:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load recent documents.',
-          variant: 'destructive',
-        });
-        return [];
-      }
-
-      return data as Document[];
+        .from('documents_with_urls') // Assuming view exists and returns DocumentRow compatible data
+        .select('*');
+      if (error) throw error;
+      return data || [];
     },
   });
 
-  const handleSearch = async () => {
-    if (!searchTerm) return;
+  const filteredDocuments = useMemo(() => {
+    return (documents ?? [])
+      .filter(doc => doc.file_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter(doc => (filterEntityType === 'ALL' ? true : doc.entity_type === filterEntityType))
+      .filter(doc => (filterCategory === 'ALL' ? true : doc.category === filterCategory));
+  }, [documents, searchTerm, filterEntityType, filterCategory]);
 
-    navigate(`/documents?search=${searchTerm}`);
-  };
+  const entityTypes = useMemo(() => {
+    const types = new Set(documents?.map(doc => doc.entity_type) || []);
+    return ['ALL', ...Array.from(types)];
+  }, [documents]);
 
-  const handleDocumentUploadSuccess = (documentId?: string) => {
-    refreshRecentDocuments();
-    setIsUploadModalOpen(false);
-
-    if (documentId) {
-      // Navigate to the document detail view
-      navigate(`/documents/${documentId}`);
-    }
-  };
-
-  const handleViewDocument = (doc: Document) => {
-    // Convert Document to WorkOrderDocument for viewer
-    const workOrderDoc = convertToWorkOrderDocument(doc);
-    setViewDocument(workOrderDoc);
-  };
-
-  const handleCloseViewer = () => {
-    setViewDocument(null);
-  };
+  const categories = useMemo(() => {
+    const cats = new Set(documents?.map(doc => doc.category || 'Uncategorized') || []);
+    return ['ALL', ...Array.from(cats)];
+  }, [documents]);
 
   return (
-    <div className="container max-w-7xl mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Documents</h1>
-        <Button
-          onClick={() => setIsUploadModalOpen(true)}
-          className="bg-[#0485ea] hover:bg-[#0375d1]"
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          Upload Document
-        </Button>
-      </div>
+    <PageTransition>
+      <div className="space-y-4">
+        <PageHeader title="Documents" actions={null /* Add upload button here if needed */} />
 
-      <div className="flex items-center space-x-2">
-        <Input
-          type="text"
-          placeholder="Search documents..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSearch()}
-        />
-        <Button onClick={handleSearch}>
-          <Search className="h-4 w-4 mr-2" />
-          Search
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Documents</CardTitle>
-              <CardDescription>
-                Here's a list of your most recently uploaded documents.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[500px]">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                  {isLoading ? (
-                    <>
-                      {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="space-y-2">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-24 w-full" />
-                        </div>
-                      ))}
-                    </>
-                  ) : recentDocuments && recentDocuments.length > 0 ? (
-                    recentDocuments.map(doc => (
-                      <DocumentCard
-                        key={doc.document_id}
-                        document={convertToWorkOrderDocument(doc)}
-                        onViewDocument={() => handleViewDocument(doc)}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-center p-6">
-                      <p className="text-muted-foreground">No documents found.</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <Input
+            placeholder="Search documents..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="max-w-sm"
+          />
+          <Select value={filterEntityType} onValueChange={setFilterEntityType}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Type..." />
+            </SelectTrigger>
+            <SelectContent>
+              {entityTypes.map(type => (
+                <SelectItem key={type} value={type}>
+                  {' '}
+                  {type === 'ALL' ? 'All Types' : type}{' '}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Category..." />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map(cat => (
+                <SelectItem key={cat} value={cat}>
+                  {cat === 'ALL' ? 'All Categories' : cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {viewDocument && viewDocument.document_id && (
-          <div className="md:col-span-1 space-y-4">
-            <DocumentVersionHistoryCard
-              documentId={viewDocument.document_id}
-              onVersionChange={document => {
-                // Convert Document to WorkOrderDocument
-                const workOrderDoc = convertToWorkOrderDocument(document);
-                setViewDocument(workOrderDoc);
-              }}
-            />
-
-            <DocumentRelationshipsView
-              document={viewDocument}
-              onViewDocument={doc => {
-                setViewDocument(convertToWorkOrderDocument(doc));
-              }}
-              showManagementButton={false}
-            />
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filteredDocuments.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredDocuments.map(doc => (
+              <DocumentCard
+                key={doc.document_id}
+                document={doc} // Type should match
+                onViewDocument={() => setViewDocument(doc)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-10 border rounded-md">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground/50" />
+            <p className="mt-4 text-muted-foreground">No documents found matching your criteria.</p>
           </div>
         )}
       </div>
 
-      <EnhancedDocumentUploadDialog
-        open={isUploadModalOpen}
-        onOpenChange={setIsUploadModalOpen}
-        onSuccess={handleDocumentUploadSuccess}
-        onCancel={() => setIsUploadModalOpen(false)}
-        title="Upload New Document"
-        description="Upload and categorize your document for easy access later"
-        allowEntityTypeSelection={true}
-      />
+      <Dialog open={!!viewDocument} onOpenChange={open => !open && setViewDocument(null)}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>{viewDocument?.file_name}</DialogTitle>
+          </DialogHeader>
+          {viewDocument && (
+            <DocumentViewer
+              document={viewDocument} // Type should match
+              open={!!viewDocument}
+              onOpenChange={open => !open && setViewDocument(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {viewDocument && (
-        <DocumentViewer
-          document={viewDocument}
-          open={!!viewDocument}
-          onOpenChange={open => !open && handleCloseViewer()}
-        />
-      )}
-    </div>
+      {/* Consider adding a floating action button or similar for upload if not in header */}
+      {/* <Button
+        className="fixed bottom-4 right-4 z-50"
+        onClick={() => setIsUploadOpen(true)}
+      >
+        Upload New Document
+      </Button> */}
+    </PageTransition>
   );
 };
 
-export default DocumentsPage;
+export default Documents;

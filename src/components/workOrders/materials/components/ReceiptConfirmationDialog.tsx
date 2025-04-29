@@ -73,7 +73,7 @@ const ReceiptConfirmationDialog = ({
 
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onConfirmWithoutReceipt}>No Receipt</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirmWithReceipt} className="bg-[#0485ea] text-white">
+          <AlertDialogAction onClick={onConfirmWithReceipt} className="text-white">
             <Receipt className="h-4 w-4 mr-2" />
             Upload Receipt
           </AlertDialogAction>

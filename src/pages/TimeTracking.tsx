@@ -11,6 +11,14 @@ import { Helmet } from 'react-helmet-async';
 import TimeEntryFormWizard from '@/components/timeTracking/TimeEntryFormWizard';
 import { TimeEntry } from '@/types/timeTracking';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 
 const TimeTracking = () => {
   const location = useLocation();
@@ -96,6 +104,12 @@ const TimeTracking = () => {
 
   const showTimeEntryForm = !!editingEntry;
 
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  // Add state for Sheet control
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [sheetMode, setSheetMode] = useState<'add' | 'edit'>('add');
+  const [currentEntry, setCurrentEntry] = useState<TimeEntry | null>(null);
+
   // If on mobile, show a simplified view
   if (isMobile) {
     return (
@@ -116,6 +130,18 @@ const TimeTracking = () => {
           onEditEntry={handleEditRequest}
           onDeleteEntry={handleDeleteTimeEntry}
           totalHours={totalHours}
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+          onOpenAddSheet={() => {
+            setCurrentEntry(null);
+            setSheetMode('add');
+            setIsSheetOpen(true);
+          }}
+          onOpenEditSheet={entry => {
+            setCurrentEntry(entry);
+            setSheetMode('edit');
+            setIsSheetOpen(true);
+          }}
         />
       </PageTransition>
     );
@@ -127,31 +153,66 @@ const TimeTracking = () => {
       <Helmet>
         <title>Time Tracking | AKC LLC</title>
       </Helmet>
-      {showTimeEntryForm && (
-        <TimeEntryFormWizard
-          key={editingEntry?.id || 'new'}
-          initialData={editingEntry}
-          onSuccess={() => {
-            handleAddSuccess(editingEntry || undefined);
+      <div className="flex flex-col h-full">
+        <DesktopTimeEntryView
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          onNextWeek={goToNextWeek}
+          onPrevWeek={goToPrevWeek}
+          onCurrentWeek={goToCurrentWeek}
+          timeEntries={entries}
+          employees={employees}
+          isLoading={loading || isLoadingEmployees}
+          onAddSuccess={refreshEntries}
+          onEditEntry={handleEditRequest}
+          onDeleteEntry={handleDeleteTimeEntry}
+          totalHours={totalHours}
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+          onOpenAddSheet={() => {
+            setCurrentEntry(null);
+            setSheetMode('add');
+            setIsSheetOpen(true);
           }}
-          onCancel={handleFormCancel}
-          date={editingEntry ? new Date(editingEntry.date_worked) : new Date()}
+          onOpenEditSheet={entry => {
+            setCurrentEntry(entry);
+            setSheetMode('edit');
+            setIsSheetOpen(true);
+          }}
         />
-      )}
-      <DesktopTimeEntryView
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-        onNextWeek={goToNextWeek}
-        onPrevWeek={goToPrevWeek}
-        onCurrentWeek={goToCurrentWeek}
-        timeEntries={entries}
-        employees={employees}
-        isLoading={loading || isLoadingEmployees}
-        onAddSuccess={refreshEntries}
-        onEditEntry={handleEditRequest}
-        onDeleteEntry={handleDeleteTimeEntry}
-        totalHours={totalHours}
-      />
+      </div>
+
+      {/* Sheet for Add/Edit Time Entry */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="sm:max-w-xl w-[90vw] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>
+              {sheetMode === 'add' ? 'Log New Time Entry' : 'Edit Time Entry'}
+            </SheetTitle>
+            <SheetDescription>
+              {sheetMode === 'add'
+                ? 'Fill in the details for your work time.'
+                : 'Update the details for this time entry.'}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-4">
+            <TimeEntryFormWizard
+              date={selectedDate}
+              initialData={currentEntry}
+              onSuccess={() => {
+                handleAddSuccess(currentEntry || undefined);
+                setIsSheetOpen(false);
+              }}
+              onCancel={() => {
+                setIsSheetOpen(false);
+                queryClient.invalidateQueries({
+                  queryKey: ['timeEntries', selectedDate.toISOString().split('T')[0]],
+                });
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </PageTransition>
   );
 };

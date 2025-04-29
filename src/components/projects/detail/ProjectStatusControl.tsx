@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import { ProjectDetails } from '../ProjectDetails';
 import { useStatusOptions } from '@/hooks/useStatusOptions';
 import UniversalStatusControl from '@/components/common/status/UniversalStatusControl';

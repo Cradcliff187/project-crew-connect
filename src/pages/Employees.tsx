@@ -19,13 +19,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Employee, getEmployeeFullName } from '@/types/common';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import PageHeader from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/button';
 
 const EmployeesPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -97,12 +98,14 @@ const EmployeesPage = () => {
         <title>Employees | AKC LLC</title>
       </Helmet>
       <div className="container mx-auto py-6 px-4 md:px-6">
-        <h1 className="text-2xl font-bold mb-6 text-[#0485ea]">Employee Management</h1>
-        <EmployeeList
-          onAddEmployee={handleAddEmployee}
-          onEditEmployee={handleEditEmployee}
-          onDeleteEmployee={startDeleteEmployee}
-        />
+        <PageHeader title="Employee Management">
+          <Button size="sm" onClick={handleAddEmployee}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Employee
+          </Button>
+        </PageHeader>
+
+        <EmployeeList onEditEmployee={handleEditEmployee} onDeleteEmployee={startDeleteEmployee} />
 
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogContent className="sm:max-w-[600px]">

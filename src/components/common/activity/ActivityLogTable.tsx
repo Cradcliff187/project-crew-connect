@@ -8,20 +8,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatusType } from '@/types/common';
+import { Database } from '@/integrations/supabase/types'; // Import Database types
 
-export interface ActivityLogEntry {
-  id: string;
-  action: string;
-  moduletype?: string;
-  timestamp: string;
-  status?: string;
-  previousstatus?: string;
-  useremail?: string;
-  referenceid?: string;
-  detailsjson?: string;
-}
+// Use generated type for ActivityLogEntry
+export type ActivityLogEntry = Database['public']['Tables']['activitylog']['Row'];
+
+// Remove manual ActivityLogEntry interface
+// export interface ActivityLogEntry {
+//   id: string; // logid is string | null in generated type
+//   action: string | null;
+//   moduletype?: string | null;
+//   timestamp: string | null;
+//   status?: string | null;
+//   previousstatus?: string | null;
+//   useremail?: string | null;
+//   referenceid?: string | null;
+//   detailsjson?: string | null;
+// }
 
 interface ActivityLogTableProps {
   activities: ActivityLogEntry[];
@@ -82,27 +88,34 @@ const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {activities.map(activity => (
-              <TableRow key={activity.id}>
-                <TableCell className="font-medium">
-                  {format(new Date(activity.timestamp), 'MM/dd/yyyy h:mm a')}
-                </TableCell>
-                <TableCell>{activity.action}</TableCell>
-                <TableCell>
-                  {activity.status && (
-                    <div className="flex flex-col gap-1">
-                      <StatusBadge status={activity.status as any} />
-                      {activity.previousstatus && (
-                        <span className="text-xs text-muted-foreground">
-                          from <StatusBadge status={activity.previousstatus as any} size="sm" />
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>{activity.useremail || 'System'}</TableCell>
-              </TableRow>
-            ))}
+            {/* Ensure activities is an array before mapping */}
+            {Array.isArray(activities) &&
+              activities.map(activity => (
+                // Use logid if available and unique, otherwise index or another stable key
+                <TableRow key={activity.logid || activity.created_at}>
+                  <TableCell className="font-medium">
+                    {/* Handle potentially null timestamp */}
+                    {activity.timestamp
+                      ? format(new Date(activity.timestamp), 'MM/dd/yyyy h:mm a')
+                      : '-'}
+                  </TableCell>
+                  <TableCell>{activity.action || 'N/A'}</TableCell>
+                  <TableCell>
+                    {activity.status && (
+                      <div className="flex flex-col gap-1">
+                        {/* Pass status directly. StatusBadge handles string | StatusType */}
+                        <StatusBadge status={activity.status} />
+                        {activity.previousstatus && (
+                          <span className="text-xs text-muted-foreground">
+                            from <StatusBadge status={activity.previousstatus} size="sm" />
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>{activity.useremail || 'System'}</TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </CardContent>

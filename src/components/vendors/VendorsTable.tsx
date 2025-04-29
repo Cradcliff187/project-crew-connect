@@ -1,4 +1,4 @@
-import { Table, TableBody, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody } from '@/components/ui/table';
 import VendorsTableHeader from './table/VendorsTableHeader';
 import VendorsTableBody from './table/VendorsTableBody';
 import VendorsLoadingState from './table/VendorsLoadingState';
@@ -47,11 +47,7 @@ const VendorsTable = ({
     <div className="rounded-md border shadow-sm animate-fade-in">
       <div className="overflow-x-auto">
         <Table className="w-full table-fixed">
-          <TableHeader className="bg-[#0485ea]/10">
-            <TableRow>
-              <VendorsTableHeader />
-            </TableRow>
-          </TableHeader>
+          <VendorsTableHeader />
           <TableBody>
             <VendorsTableBody
               vendors={filteredVendors}

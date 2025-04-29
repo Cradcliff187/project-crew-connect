@@ -104,7 +104,14 @@ const EstimateDetailPage = () => {
     }
   };
 
-  const fetchEstimateData = async (id: string) => {
+  const fetchEstimateData = async (id: string | undefined) => {
+    if (!id) {
+      console.error('fetchEstimateData called with undefined ID. Aborting fetch.');
+      setLoading(false);
+      setError('Estimate ID is missing.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     let determinedRevision: any = null; // Store the revision to be displayed
@@ -343,8 +350,8 @@ const EstimateDetailPage = () => {
   if (loading) {
     return (
       <PageTransition>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </PageTransition>
     );

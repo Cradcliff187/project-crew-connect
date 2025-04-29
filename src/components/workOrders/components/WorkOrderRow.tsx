@@ -4,9 +4,10 @@ import { formatDate, calculateDaysUntilDue } from '@/lib/utils';
 import { Pencil, MessageSquare, CalendarClock, Eye } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { WorkOrder } from '@/types/workOrder';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import DueStatusBadge from './DueStatusBadge';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
+import PriorityBadge from '@/components/common/status/PriorityBadge';
 
 interface WorkOrderRowProps {
   workOrder: WorkOrder;
@@ -58,13 +59,13 @@ const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
   return (
     <TableRow
       key={workOrder.work_order_id}
-      className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
+      className="hover:bg-primary/5 transition-colors cursor-pointer"
       onClick={handleViewDetails}
     >
       <TableCell className="font-medium">
         <Link
           to={`/work-orders/${workOrder.work_order_id}`}
-          className="text-[#0485ea] hover:underline"
+          className="text-primary hover:underline"
           onClick={e => e.stopPropagation()}
         >
           {workOrder.work_order_number || '-'}
@@ -82,17 +83,7 @@ const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
         <DueStatusBadge daysUntilDue={daysUntilDue} />
       </TableCell>
       <TableCell>
-        <span
-          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-            workOrder.priority === 'HIGH'
-              ? 'bg-red-100 text-red-800'
-              : workOrder.priority === 'MEDIUM'
-                ? 'bg-amber-100 text-amber-800'
-                : 'bg-blue-100 text-blue-800'
-          }`}
-        >
-          {workOrder.priority || 'MEDIUM'}
-        </span>
+        <PriorityBadge priority={workOrder.priority} />
       </TableCell>
       <TableCell>
         <StatusBadge status={workOrder.status} />

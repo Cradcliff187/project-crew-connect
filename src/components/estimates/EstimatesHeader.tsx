@@ -40,7 +40,7 @@ const EstimatesHeader = ({
               <Input
                 type="search"
                 placeholder="Search estimates..."
-                className="pl-9 subtle-input rounded-md"
+                className="pl-9 rounded-md"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -60,11 +60,7 @@ const EstimatesHeader = ({
                 </Button>
               </Link>
 
-              <Button
-                onClick={openEstimateForm}
-                size="sm"
-                className="bg-[#0485ea] hover:bg-[#0373ce]"
-              >
+              <Button onClick={openEstimateForm} size="sm">
                 <Plus className="h-4 w-4 mr-1" />
                 New Estimate
               </Button>

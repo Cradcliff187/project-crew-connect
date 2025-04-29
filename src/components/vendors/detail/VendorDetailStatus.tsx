@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Vendor } from '../types/vendorTypes';
 import VendorStatusControl from '../status/VendorStatusControl';
 import StatusHistoryView from '@/components/common/status/StatusHistoryView';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { getStatusColorClass, getStatusDisplayName } from '@/utils/statusTransitions';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,19 +53,6 @@ const VendorDetailStatus: React.FC<VendorDetailStatusProps> = ({ vendor, onStatu
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'inactive':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
   const getStatusDescription = (status: string) => {
     switch (status) {
       case 'active':
@@ -93,10 +81,7 @@ const VendorDetailStatus: React.FC<VendorDetailStatusProps> = ({ vendor, onStatu
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
-            <Badge className={getStatusColorClass('VENDOR', currentStatus)}>
-              {getStatusDisplayName('VENDOR', currentStatus)}
-            </Badge>
-
+            <StatusBadge status={currentStatus.toLowerCase()} />
             <div className="text-sm text-muted-foreground">
               {getStatusDescription(currentStatus)}
             </div>

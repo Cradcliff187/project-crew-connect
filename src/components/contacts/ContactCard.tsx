@@ -10,37 +10,24 @@ import {
   Send,
   CalendarClock,
 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
+import { Badge, badgeVariants } from '@/components/ui/badge';
+import type { VariantProps } from 'class-variance-authority';
+import { Contact } from '@/pages/Contacts';
 
 interface ContactCardProps {
-  contact: any;
-  onView: (contact: any) => void;
-  onEdit: (contact: any) => void;
-  onDelete: (contact: any) => void;
-  onStatusChange?: (contact: any, newStatus: string) => void;
+  contact: Contact;
+  onView: (contact: Contact) => void;
+  onEdit: (contact: Contact) => void;
+  onDelete: (contact: Contact) => void;
+  onStatusChange?: (contact: Contact, newStatus: string) => void;
 }
 
 const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: ContactCardProps) => {
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'client':
-        return 'text-blue-700 bg-blue-50';
-      case 'customer':
-        return 'text-green-700 bg-green-50';
-      case 'supplier':
-        return 'text-amber-700 bg-amber-50';
-      case 'subcontractor':
-        return 'text-purple-700 bg-purple-50';
-      case 'employee':
-        return 'text-[#0485ea] bg-blue-50';
-      default:
-        return 'text-gray-700 bg-gray-50';
-    }
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -187,7 +174,7 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
           label: 'Delete',
           icon: <Trash2 className="h-4 w-4" />,
           onClick: () => onDelete(contact),
-          className: 'text-red-600',
+          className: 'text-destructive hover:bg-destructive/10',
         },
       ],
     };
@@ -209,6 +196,23 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
     return groups;
   };
 
+  const getTypeVariant = (type: string): VariantProps<typeof badgeVariants>['variant'] => {
+    switch (type) {
+      case 'client':
+        return 'default';
+      case 'customer':
+        return 'success';
+      case 'supplier':
+        return 'warning';
+      case 'subcontractor':
+        return 'info';
+      case 'employee':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <Card className="premium-card overflow-hidden">
       <div className="p-5">
@@ -220,24 +224,14 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
               <span>{contact.company || 'Internal'}</span>
             </div>
             <div className="flex flex-wrap gap-1 mt-1">
-              {contact.role && (
-                <p className="text-xs rounded-full bg-construction-50 inline-block px-2 py-0.5 text-construction-700">
-                  {contact.role}
-                </p>
-              )}
-              <p
-                className={`text-xs rounded-full px-2 py-0.5 capitalize ${getTypeColor(contact.type)}`}
-              >
+              {contact.role && <Badge variant="secondary">{contact.role}</Badge>}
+              <Badge variant={getTypeVariant(contact.type)} className="capitalize">
                 {contact.type}
-              </p>
+              </Badge>
               {contact.status && (
                 <StatusBadge size="sm" status={contact.status.toLowerCase() as any} />
               )}
-              {contact.hourlyRate && (
-                <p className="text-xs rounded-full bg-green-50 inline-block px-2 py-0.5 text-green-700">
-                  ${contact.hourlyRate}/hr
-                </p>
-              )}
+              {contact.hourlyRate && <Badge variant="success">${contact.hourlyRate}/hr</Badge>}
             </div>
           </div>
 
@@ -247,13 +241,13 @@ const ContactCard = ({ contact, onView, onEdit, onDelete, onStatusChange }: Cont
         <div className="mt-4 space-y-2 text-sm">
           <div className="flex items-center">
             <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-            <a href={`mailto:${contact.email}`} className="text-[#0485ea] hover:underline">
+            <a href={`mailto:${contact.email}`} className="text-primary hover:underline">
               {contact.email}
             </a>
           </div>
           <div className="flex items-center">
             <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-            <a href={`tel:${contact.phone}`} className="hover:text-[#0485ea]">
+            <a href={`tel:${contact.phone}`} className="hover:text-primary">
               {contact.phone}
             </a>
           </div>

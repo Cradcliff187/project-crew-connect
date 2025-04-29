@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Link } from 'lucide-react';
+import { DialogFooter } from '@/components/ui/dialog';
 
 // Define the type for the RPC response
 interface WorkOrderProjectLinkResponse {
@@ -231,7 +232,7 @@ const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Project Link</CardTitle>
-        {hasLink && currentProjectId && <Link className="h-5 w-5 text-[#0485ea]" />}
+        {hasLink && currentProjectId && <Link className="h-5 w-5 text-primary" />}
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -317,7 +318,7 @@ const WorkOrderProjectLink: React.FC<WorkOrderProjectLinkProps> = ({
             </div>
 
             <Button
-              className="mt-6 w-full bg-[#0485ea] hover:bg-[#0375d1]"
+              className="mt-6 w-full"
               onClick={hasLink ? handleUpdate : handleSave}
               disabled={isSaving || !currentProjectId}
             >

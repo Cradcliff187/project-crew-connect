@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Building, Briefcase, CreditCard, Clock, Loader2, UserRound } from 'lucide-react';
+import {
+  Building,
+  Briefcase,
+  CreditCard,
+  Clock,
+  Loader2,
+  UserRound,
+  CalendarIcon,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +29,18 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Employee } from '@/types/common';
 import EmployeeSelect from './form/EmployeeSelect';
 import { TimeEntry } from '@/types/timeTracking';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+} from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   entityType: z.enum(['work_order', 'project']),
@@ -281,241 +301,313 @@ const TimeEntryFormWizard: React.FC<TimeEntryFormWizardProps> = ({
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {currentStep === 1 && (
-          <div className="space-y-4">
-            <div className="text-lg font-medium">Select Work Item</div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {currentStep === 1 && (
+            <div className="space-y-4">
+              <div className="text-lg font-medium">Select Work Item</div>
 
-            <EntityTypeSelector
-              value={entityType}
-              onChange={value => {
-                form.setValue('entityType', value);
-                form.setValue('entityId', '');
-                console.log(`Entity type changed to: ${value}`);
-              }}
-            />
-
-            <EntitySelector
-              entityType={entityType}
-              entityId={entityId}
-              workOrders={workOrders}
-              projects={projects}
-              isLoading={isLoadingEntities}
-              onChange={value => {
-                form.setValue('entityId', value);
-                console.log(`Selected entity ID: ${value}`);
-              }}
-              error={form.formState.errors.entityId?.message}
-              selectedEntity={
-                selectedEntity
-                  ? {
-                      name: selectedEntity.name,
-                      location: selectedEntity.type === 'work_order' ? 'Location info' : undefined,
-                    }
-                  : null
-              }
-            />
-
-            <EmployeeSelect
-              value={form.watch('employeeId') || ''}
-              onChange={value => form.setValue('employeeId', value)}
-              employees={employees}
-              label="Employee"
-              disabled={isLoadingEntities || isSubmitting}
-            />
-
-            {projects.length === 0 && workOrders.length === 0 && !isLoadingEntities && (
-              <div className="rounded-md bg-yellow-50 p-4 text-sm">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-5 w-5 text-yellow-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
+              <FormField
+                control={form.control}
+                name="entityType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <EntityTypeSelector
+                        value={field.value}
+                        onChange={value => {
+                          field.onChange(value);
+                          form.setValue('entityId', '');
+                          console.log(`Entity type changed to: ${value}`);
+                        }}
                       />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="font-medium text-yellow-800">No work items found</h3>
-                    <div className="mt-2 text-yellow-700">
-                      There are no active projects or work orders in the database. Please create at
-                      least one project or work order first.
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="entityId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <EntitySelector
+                        entityType={entityType}
+                        entityId={field.value}
+                        workOrders={workOrders}
+                        projects={projects}
+                        isLoading={isLoadingEntities}
+                        onChange={value => {
+                          field.onChange(value);
+                          console.log(`Selected entity ID: ${value}`);
+                        }}
+                        error={form.formState.errors.entityId?.message}
+                        selectedEntity={
+                          selectedEntity
+                            ? {
+                                name: selectedEntity.name,
+                                location:
+                                  selectedEntity.type === 'work_order'
+                                    ? 'Location info'
+                                    : undefined,
+                              }
+                            : null
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="employeeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Employee</FormLabel>
+                    <FormControl>
+                      <EmployeeSelect
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        employees={employees}
+                        disabled={isLoadingEntities || isSubmitting}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {projects.length === 0 && workOrders.length === 0 && !isLoadingEntities && (
+                <div className="rounded-md bg-warning-50 p-4 text-sm">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg
+                        className="h-5 w-5 text-warning-500"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="font-medium text-warning-800">No work items found</h3>
+                      <div className="mt-2 text-warning-700">
+                        There are no active projects or work orders in the database. Please create
+                        at least one project or work order first.
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {form.formState.errors.entityId && (
-              <div className="text-sm text-red-500">{form.formState.errors.entityId.message}</div>
-            )}
-          </div>
-        )}
+              {form.formState.errors.entityId && (
+                <div className="text-sm text-red-500">{form.formState.errors.entityId.message}</div>
+              )}
+            </div>
+          )}
 
-        {currentStep === 2 && (
-          <div className="space-y-4">
-            <div className="text-lg font-medium">Time Details</div>
+          {currentStep === 2 && (
+            <div className="space-y-4">
+              <div className="text-lg font-medium">Time Details</div>
 
-            <div className="rounded-md border p-4">
-              <div className="flex items-center mb-3">
-                {entityType === 'work_order' ? (
-                  <Briefcase className="h-5 w-5 mr-2 text-[#0485ea]" />
-                ) : (
-                  <Building className="h-5 w-5 mr-2 text-[#0485ea]" />
-                )}
-                <span className="font-medium">{selectedEntity?.name}</span>
-                {form.watch('employeeId') && employees && (
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    (
-                    {
-                      employees.find(
-                        e =>
-                          e.id === form.watch('employeeId') ||
-                          e.employee_id === form.watch('employeeId')
-                      )?.name
-                    }
-                    )
-                  </span>
-                )}
-              </div>
+              <div className="rounded-md border p-4">
+                <div className="flex items-center mb-3">
+                  {entityType === 'work_order' ? (
+                    <Briefcase className="h-5 w-5 mr-2 text-primary" />
+                  ) : (
+                    <Building className="h-5 w-5 mr-2 text-primary" />
+                  )}
+                  <span className="font-medium">{selectedEntity?.name}</span>
+                  {form.watch('employeeId') && employees && (
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      (
+                      {
+                        employees.find(
+                          e =>
+                            e.id === form.watch('employeeId') ||
+                            e.employee_id === form.watch('employeeId')
+                        )?.name
+                      }
+                      )
+                    </span>
+                  )}
+                </div>
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="workDate">Date</Label>
-                  <div className="mt-1">
-                    <DatePicker
-                      date={form.watch('workDate')}
-                      setDate={newDate => newDate && form.setValue('workDate', newDate)}
-                    />
-                  </div>
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="workDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  'w-full justify-start text-left font-normal',
+                                  !field.value && 'text-muted-foreground'
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? (
+                                  format(field.value, 'PPP')
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
-            </div>
 
-            <TimeRangeSelector
-              startTime={startTime}
-              endTime={endTime}
-              onStartTimeChange={value => form.setValue('startTime', value)}
-              onEndTimeChange={value => form.setValue('endTime', value)}
-              error={timeError}
-              hoursWorked={form.watch('hoursWorked')}
-            />
+              <TimeRangeSelector
+                startTime={startTime}
+                endTime={endTime}
+                onStartTimeChange={value => form.setValue('startTime', value)}
+                onEndTimeChange={value => form.setValue('endTime', value)}
+                error={timeError}
+                hoursWorked={form.watch('hoursWorked')}
+              />
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any additional details about this time entry"
-                {...form.register('notes')}
-                className="h-24"
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="notes"
+                        placeholder="Add any additional details about this time entry"
+                        className="h-24"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
-        )}
+          )}
 
-        {currentStep === 3 && (
-          <div className="space-y-4">
-            <div className="text-lg font-medium">Receipts & Expenses</div>
+          {currentStep === 3 && (
+            <div className="space-y-4">
+              <div className="text-lg font-medium">Receipts & Expenses</div>
 
-            <div className="rounded-md border p-4">
-              <div className="flex items-center mb-3">
-                {entityType === 'work_order' ? (
-                  <Briefcase className="h-5 w-5 mr-2 text-[#0485ea]" />
-                ) : (
-                  <Building className="h-5 w-5 mr-2 text-[#0485ea]" />
-                )}
-                <span className="font-medium">{selectedEntity?.name}</span>
-              </div>
+              <div className="rounded-md border p-4">
+                <div className="flex items-center mb-3">
+                  {entityType === 'work_order' ? (
+                    <Briefcase className="h-5 w-5 mr-2 text-primary" />
+                  ) : (
+                    <Building className="h-5 w-5 mr-2 text-primary" />
+                  )}
+                  <span className="font-medium">{selectedEntity?.name}</span>
+                </div>
 
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 mr-1" />
-                <span>
-                  {startTime} - {endTime} ({form.watch('hoursWorked')} hrs)
-                </span>
-              </div>
-
-              {form.watch('employeeId') && (
-                <div className="flex items-center text-sm text-muted-foreground mt-1">
-                  <UserRound className="h-4 w-4 mr-1" />
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4 mr-1" />
                   <span>
-                    {
-                      employees.find(
-                        e =>
-                          e.id === form.watch('employeeId') ||
-                          e.employee_id === form.watch('employeeId')
-                      )?.name
-                    }
+                    {startTime} - {endTime} ({form.watch('hoursWorked')} hrs)
                   </span>
+                </div>
+
+                {form.watch('employeeId') && (
+                  <div className="flex items-center text-sm text-muted-foreground mt-1">
+                    <UserRound className="h-4 w-4 mr-1" />
+                    <span>
+                      {
+                        employees.find(
+                          e =>
+                            e.id === form.watch('employeeId') ||
+                            e.employee_id === form.watch('employeeId')
+                        )?.name
+                      }
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border p-4 pb-0">
+                <ReceiptUploader
+                  onFilesSelected={handleFileSelect}
+                  selectedFiles={selectedFiles}
+                  onFileClear={handleFileClear}
+                />
+              </div>
+
+              {hasReceipts && (
+                <div className="rounded-md border p-4">
+                  <div className="mb-3 font-medium flex items-center">
+                    <CreditCard className="h-4 w-4 mr-2 text-primary" />
+                    Receipt Details
+                  </div>
+
+                  <ReceiptMetadataForm
+                    vendor={vendor}
+                    expenseType={expenseType}
+                    amount={expenseAmount}
+                    onVendorChange={setVendor}
+                    onExpenseTypeChange={setExpenseType}
+                    onAmountChange={setExpenseAmount}
+                  />
                 </div>
               )}
             </div>
+          )}
 
-            <div className="rounded-md border p-4 pb-0">
-              <ReceiptUploader
-                onFilesSelected={handleFileSelect}
-                selectedFiles={selectedFiles}
-                onFileClear={handleFileClear}
-              />
-            </div>
+          <Separator />
 
-            {hasReceipts && (
-              <div className="rounded-md border p-4">
-                <div className="mb-3 font-medium flex items-center">
-                  <CreditCard className="h-4 w-4 mr-2 text-[#0485ea]" />
-                  Receipt Details
-                </div>
+          <div className="flex justify-between">
+            {currentStep === 1 ? (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+            ) : (
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+            )}
 
-                <ReceiptMetadataForm
-                  vendor={vendor}
-                  expenseType={expenseType}
-                  amount={expenseAmount}
-                  onVendorChange={setVendor}
-                  onExpenseTypeChange={setExpenseType}
-                  onAmountChange={setExpenseAmount}
-                />
-              </div>
+            {currentStep < 3 ? (
+              <Button
+                type="button"
+                onClick={handleNext}
+                disabled={isSubmitting || (currentStep === 2 && !!timeError)}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit
+              </Button>
             )}
           </div>
-        )}
-
-        <Separator />
-
-        <div className="flex justify-between">
-          {currentStep === 1 ? (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          ) : (
-            <Button type="button" variant="outline" onClick={handleBack}>
-              Back
-            </Button>
-          )}
-
-          {currentStep < 3 ? (
-            <Button
-              type="button"
-              onClick={handleNext}
-              disabled={isSubmitting || (currentStep === 2 && !!timeError)}
-            >
-              Next
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-[#0485ea] hover:bg-[#0375d1]"
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit
-            </Button>
-          )}
-        </div>
-      </form>
+        </form>
+      </Form>
     </FormProvider>
   );
 };

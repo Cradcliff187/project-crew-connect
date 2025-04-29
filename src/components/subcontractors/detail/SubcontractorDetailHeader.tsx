@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import PageHeader from '@/components/common/layout/PageHeader';
+import { Subcontractor } from '../utils/types';
 
 interface SubcontractorDetailHeaderProps {
-  subcontractor: any;
+  subcontractor: Subcontractor | null;
   loading: boolean;
   onEdit: () => void;
 }
@@ -15,42 +17,36 @@ const SubcontractorDetailHeader = ({
   loading,
   onEdit,
 }: SubcontractorDetailHeaderProps) => {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    navigate('/subcontractors');
-  };
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onEdit();
-  };
+  const headerActions = (
+    <Button onClick={onEdit} size="sm">
+      <Edit className="h-4 w-4 mr-2" />
+      Edit Subcontractor
+    </Button>
+  );
 
   if (loading) {
     return (
       <div className="flex justify-between items-center mb-6">
-        <Button variant="ghost" size="sm" onClick={handleBack} className="mr-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <Skeleton className="h-8 w-64" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-9" />
+          <Skeleton className="h-8 w-48" />
+        </div>
+        <Skeleton className="h-9 w-32" />
       </div>
     );
   }
 
+  if (!subcontractor) {
+    return <PageHeader title="Subcontractor Not Found" backLink="/subcontractors" />;
+  }
+
   return (
-    <div className="flex justify-between items-center mb-6">
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-2xl font-bold">{subcontractor.subname}</h1>
-      </div>
-      <Button onClick={handleEdit} className="bg-[#0485ea] hover:bg-[#0375d1] text-white">
-        <Edit className="h-4 w-4 mr-2" />
-        Edit Subcontractor
-      </Button>
-    </div>
+    <PageHeader
+      title={subcontractor.subname || 'Subcontractor Detail'}
+      backLink="/subcontractors"
+      backText="Back to Subcontractors"
+      actions={headerActions}
+    />
   );
 };
 

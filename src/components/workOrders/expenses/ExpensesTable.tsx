@@ -2,9 +2,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderExpense } from '@/types/workOrder';
 import { ExpensesTableContent } from './components';
-import { Card, CardContent } from '@/components/ui/card';
-import { DollarSign, Info } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { DollarSign, Info, ReceiptText } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 
 interface ExpensesTableProps {
   expenses: WorkOrderExpense[];
@@ -15,6 +17,7 @@ interface ExpensesTableProps {
   totalCost: number;
   workOrderId: string;
   onReceiptClick: (expense: WorkOrderExpense) => void;
+  onAddExpenseClick: () => void;
 }
 
 const ExpensesTable = ({
@@ -26,6 +29,7 @@ const ExpensesTable = ({
   totalCost,
   workOrderId,
   onReceiptClick,
+  onAddExpenseClick,
 }: ExpensesTableProps) => {
   if (loading) {
     return (
@@ -41,7 +45,18 @@ const ExpensesTable = ({
   const timeEntryExpenses = expenses.filter(e => e.source_type === 'time_entry');
 
   return (
-    <Card className="shadow-sm border-[#0485ea]/10">
+    <Card className="shadow-sm border-primary/10">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <ReceiptText className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg">Expenses ({expenses.length})</CardTitle>
+          </div>
+          <Button variant="outline" size="sm" onClick={onAddExpenseClick}>
+            Add Expense
+          </Button>
+        </div>
+      </CardHeader>
       <CardContent className="p-0">
         <ExpensesTableContent
           expenses={expenses}
@@ -61,7 +76,7 @@ const ExpensesTable = ({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="ml-2 inline-flex items-center">
-                          <Info className="h-4 w-4 text-[#0485ea]" />
+                          <Info className="h-4 w-4 text-primary" />
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -73,13 +88,28 @@ const ExpensesTable = ({
                 )}
               </span>
             </div>
-            <div className="bg-[#0485ea]/10 px-4 py-2 rounded-md flex items-center gap-2">
+            <div className="bg-primary/10 px-4 py-2 rounded-md flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700">Total Expenses Cost:</span>
-              <span className="text-lg font-bold text-[#0485ea]">{formatCurrency(totalCost)}</span>
+              <span className="text-lg font-bold text-primary">{formatCurrency(totalCost)}</span>
             </div>
           </div>
         ) : null}
       </CardContent>
+      <CardFooter className="border-t">
+        <Alert className="w-full bg-blue-50 border-blue-200 mt-4">
+          <AlertDescription className="flex items-start gap-2 text-blue-800">
+            <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              This section logs miscellaneous expenses related to the work order. Receipts can be
+              uploaded here.
+            </div>
+          </AlertDescription>
+        </Alert>
+        <div className="bg-primary/10 px-4 py-2 rounded-md flex items-center gap-2 mt-4 ml-auto">
+          <span className="text-sm font-medium text-gray-700">Total Expenses:</span>
+          <span className="text-lg font-bold text-primary">{formatCurrency(totalCost)}</span>
+        </div>
+      </CardFooter>
     </Card>
   );
 };

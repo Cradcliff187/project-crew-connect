@@ -9,8 +9,9 @@ import { useEmployees } from '@/hooks/useEmployees';
 
 import { TimeEntryList } from './TimeEntryList';
 import TimeEntryFormWizard from './TimeEntryFormWizard';
-import DateNavigation from './DateNavigation';
+import DateNavigation from '@/components/timeTracking/DateNavigation';
 import { DateRange } from './hooks/useTimeEntries';
+import TimeTrackingTable from '@/components/timeTracking/TimeTrackingTable';
 
 interface DesktopTimeEntryViewProps {
   dateRange: DateRange;
@@ -25,6 +26,10 @@ interface DesktopTimeEntryViewProps {
   totalHours: number;
   onEditEntry: (entry: TimeEntry) => void;
   onDeleteEntry: (entry: TimeEntry) => void;
+  selectedDate: Date;
+  onDateChange: (date: Date | undefined) => void;
+  onOpenAddSheet: () => void;
+  onOpenEditSheet: (entry: TimeEntry) => void;
 }
 
 const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
@@ -40,8 +45,20 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
   totalHours,
   onEditEntry,
   onDeleteEntry,
-}) => {
+  onOpenAddSheet,
+  onOpenEditSheet,
+}: DesktopTimeEntryViewProps) => {
   const [activeTab, setActiveTab] = useState('entries');
+
+  // Adapter function for onDelete prop
+  const handleDeleteById = (id: string) => {
+    const entryToDelete = timeEntries.find(entry => entry.id === id);
+    if (entryToDelete) {
+      onDeleteEntry(entryToDelete); // Call the parent's onDelete with the entry
+    } else {
+      console.error('Could not find time entry to delete with ID:', id);
+    }
+  };
 
   useEffect(() => {
     // No specific action needed here, just ensuring the component re-renders
@@ -76,12 +93,13 @@ const DesktopTimeEntryView: React.FC<DesktopTimeEntryViewProps> = ({
                 <TabsTrigger value="entries">Time Entries</TabsTrigger>
                 <TabsTrigger value="add">Add Entry</TabsTrigger>
               </TabsList>
-              <TabsContent value="entries" className="mt-4">
-                <TimeEntryList
-                  timeEntries={timeEntries}
-                  employees={employees}
-                  onEditEntry={onEditEntry}
-                  onDeleteEntry={onDeleteEntry}
+              <TabsContent value="entries" className="mt-4 flex-1 overflow-auto">
+                <TimeTrackingTable
+                  entries={timeEntries}
+                  onDelete={handleDeleteById}
+                  onEdit={onOpenEditSheet}
+                  onView={() => {}}
+                  onViewReceipts={() => {}}
                 />
               </TabsContent>
               <TabsContent value="add" className="mt-4">

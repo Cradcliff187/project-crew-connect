@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkOrder } from '@/types/workOrder'; // Using the correct import
 
@@ -10,65 +10,68 @@ interface Project {
 }
 
 export const useSubcontractorAssociatedData = () => {
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<any[]>([]); // Replace any later
+  const [workOrders, setWorkOrders] = useState<any[]>([]); // Replace any later
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAssociatedData = async (subcontractorId: string) => {
+  const fetchAssociatedData = useCallback(async (subcontractorId: string | undefined) => {
     if (!subcontractorId) return;
 
     setLoading(true);
     setError(null);
+    setProjects([]);
+    setWorkOrders([]);
 
     try {
-      // Fetch work orders associated with the subcontractor
-      const { data: workOrderData, error: workOrderError } = await supabase
-        .from('maintenance_work_orders')
-        .select('work_order_id, title, status, due_by_date, progress, project_id')
-        .eq('assigned_to', subcontractorId);
+      // Fetch associated entity IDs from subcontractor_associations
+      const { data: associations, error: assocError } = await supabase
+        .from('subcontractor_associations')
+        .select('entity_id, entity_type')
+        .eq('subcontractor_id', subcontractorId);
 
-      if (workOrderError) throw workOrderError;
+      if (assocError) throw assocError;
 
-      // Convert to WorkOrder type with required fields and proper status typing
-      const typedWorkOrders: WorkOrder[] = (workOrderData || []).map(wo => ({
-        work_order_id: wo.work_order_id,
-        title: wo.title,
-        status: wo.status as WorkOrder['status'], // Type assertion to match allowed statuses
-        due_by_date: wo.due_by_date,
-        progress: wo.progress,
-        actual_hours: 0, // Default value
-        materials_cost: 0, // Default value
-        total_cost: 0, // Default value
-        created_at: '', // Default value
-        updated_at: '', // Default value
-        priority: 'MEDIUM', // Default value
-      }));
+      const projectIds = associations
+        ?.filter(a => a.entity_type === 'PROJECT')
+        .map(a => a.entity_id);
+      const workOrderIds = associations
+        ?.filter(a => a.entity_type === 'WORK_ORDER')
+        .map(a => a.entity_id);
 
-      // Fetch projects associated with the subcontractor through work orders
-      const projectIds = (workOrderData || []).filter(wo => wo.project_id).map(wo => wo.project_id);
-
-      if (projectIds.length > 0) {
-        const { data: projectData, error: projectError } = await supabase
+      // Fetch Projects based on associated IDs
+      if (projectIds && projectIds.length > 0) {
+        const { data: projectData, error: projError } = await supabase
           .from('projects')
-          .select('projectid, projectname, status')
+          .select('*') // Select specific fields later if needed
           .in('projectid', projectIds);
-
-        if (projectError) throw projectError;
-
+        if (projError) throw projError;
         setProjects(projectData || []);
       } else {
         setProjects([]);
       }
 
-      setWorkOrders(typedWorkOrders);
+      // Fetch Work Orders based on associated IDs
+      if (workOrderIds && workOrderIds.length > 0) {
+        const { data: woData, error: woError } = await supabase
+          .from('maintenance_work_orders')
+          .select('work_order_id, title, status, due_by_date, progress, project_id') // Keep required fields
+          .in('work_order_id', workOrderIds); // Filter by work_order_id
+
+        if (woError) throw woError;
+        setWorkOrders(woData || []);
+      } else {
+        setWorkOrders([]);
+      }
     } catch (err: any) {
       console.error('Error fetching subcontractor associated data:', err);
-      setError(err.message);
+      setError(err.message || 'Failed to load associated data');
+      setProjects([]);
+      setWorkOrders([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  return { workOrders, projects, loading, error, fetchAssociatedData };
+  return { projects, workOrders, loading, error, fetchAssociatedData };
 };

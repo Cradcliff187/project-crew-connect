@@ -37,7 +37,7 @@ export type DocumentCategory =
   | 'certification'
   | 'photo';
 
-// Modified to include all status types across the application
+// Consolidated StatusType using UPPERCASE_SNAKE_CASE
 export type StatusType =
   | 'NEW'
   | 'DRAFT'
@@ -48,37 +48,22 @@ export type StatusType =
   | 'APPROVED'
   | 'REJECTED'
   | 'SENT'
-  | 'READY'
+  | 'READY' // Assuming this is distinct
   | 'PENDING'
   | 'ACTIVE'
   | 'INACTIVE'
   | 'CONVERTED'
-  | 'draft'
-  | 'sent'
-  | 'approved'
-  | 'rejected'
-  | 'converted'
-  | 'active'
-  | 'pending'
-  | 'completed'
-  | 'cancelled'
-  | 'on-hold'
-  | 'inactive'
-  | 'unknown'
-  // UI status values for display
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'info'
-  | 'neutral'
-  | 'purple'
-  | 'qualified'
-  | 'verified'
-  | 'in_progress'
-  | 'on_hold';
+  | 'SUBMITTED' // From ChangeOrder map
+  | 'REVIEW' // From ChangeOrder map
+  | 'IMPLEMENTED' // From ChangeOrder map
+  | 'QUALIFIED' // Keep potentially unique statuses
+  | 'VERIFIED' // Keep potentially unique statuses
+  | 'UNKNOWN'; // Keep unknown
+// Removed lowercase duplicates and UI hints (success, warning, error, etc.)
+// Color/icon mapping should happen in the component based on these semantic statuses.
 
 export interface StatusOption {
-  value: string;
+  value: string; // Should ideally be StatusType, but UniversalStatusControl uses string keys
   label: string;
   color: string;
   description?: string;

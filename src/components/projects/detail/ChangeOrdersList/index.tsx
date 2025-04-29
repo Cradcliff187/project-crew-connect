@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
 import { ChangeOrder } from '@/types/changeOrders';
 import ChangeOrderDialog from '@/components/changeOrders/ChangeOrderDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ChangeOrdersListProps {
   projectId: string;
@@ -81,8 +82,8 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <div className="h-12 bg-gray-100 animate-pulse rounded-md"></div>
-            <div className="h-12 bg-gray-100 animate-pulse rounded-md"></div>
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
           </div>
         </CardContent>
       </Card>
@@ -119,7 +120,7 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
             {changeOrders.map(changeOrder => (
               <div
                 key={changeOrder.id}
-                className="border rounded-lg p-3 hover:bg-[#0485ea]/5 cursor-pointer transition-colors"
+                className="border rounded-lg p-3 hover:bg-muted/50 cursor-pointer transition-colors"
                 onClick={() => handleViewChangeOrder(changeOrder)}
               >
                 <div className="flex justify-between items-start">
@@ -137,18 +138,18 @@ const ChangeOrdersList = ({ projectId, onChangeOrderAdded }: ChangeOrdersListPro
                     <span>Requested: {formatDate(changeOrder.requested_date)}</span>
                   </div>
                   <div className="flex items-center text-sm">
-                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>Impact: {changeOrder.impact_days} days</span>
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span>New Completion: {formatDate(changeOrder.new_completion_date)}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between mt-3">
                   <div className="font-semibold flex items-center">
-                    <DollarSign className="h-4 w-4 mr-1 text-[#0485ea]" />
+                    <DollarSign className="h-4 w-4 mr-1 text-primary" />
                     {formatCurrency(changeOrder.total_amount)}
                   </div>
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <Badge variant="outline" className="bg-[#0485ea]/5 border-[#0485ea]/20">
+                    <Badge variant="outline" className="bg-primary/5 border-primary/20">
                       {changeOrder.items?.length || 0} items
                     </Badge>
                   </div>

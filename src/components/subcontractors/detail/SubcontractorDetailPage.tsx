@@ -31,11 +31,14 @@ const SubcontractorDetailPage = () => {
   const {
     subcontractor,
     loading,
+    notFound,
     specialtyIds,
     projects,
     workOrders,
     loadingAssociations,
     fetchSubcontractor,
+    documents,
+    loadingDocuments,
   } = useSubcontractorData(subcontractorId);
 
   const handleEdit = () => {
@@ -79,63 +82,26 @@ const SubcontractorDetailPage = () => {
         />
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Main Info Card */}
-          <Card>
-            <SubcontractorDetailCard subcontractor={subcontractor} />
-            <CardContent>
-              <div className="space-y-4">
-                {subcontractor.tax_id && (
-                  <div>
-                    <p className="text-sm font-medium">Tax ID</p>
-                    <p>{subcontractor.tax_id}</p>
-                  </div>
-                )}
-
-                {subcontractor.payment_terms && (
-                  <div>
-                    <p className="text-sm font-medium">Payment Terms</p>
-                    <p>{getPaymentTermsLabel(subcontractor.payment_terms)}</p>
-                  </div>
-                )}
-
-                {subcontractor.notes && (
-                  <>
-                    <Separator />
-                    <div>
-                      <p className="text-sm font-medium">Notes</p>
-                      <p className="whitespace-pre-wrap">{subcontractor.notes}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Contact Information Card */}
-          <Card>
-            <CardContent className="pt-6">
-              <ContactInformationCard subcontractor={subcontractor} />
-            </CardContent>
-          </Card>
+          {/* Render self-contained cards directly in the grid */}
+          <SubcontractorDetailCard subcontractor={subcontractor} />
+          <ContactInformationCard subcontractor={subcontractor} />
         </div>
 
-        {/* Compliance Information */}
-        <div className="mt-6">
-          <Card>
-            <CardContent className="pt-6">
-              <ComplianceInformationCard subcontractor={subcontractor} />
-            </CardContent>
-          </Card>
+        {/* Group Compliance and Specialties (if present) */}
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <ComplianceInformationCard subcontractor={subcontractor} />
+          {subcontractor.specialty_ids && subcontractor.specialty_ids.length > 0 && (
+            <SpecialtiesSection subcontractor={subcontractor} specialtyIds={specialtyIds} />
+          )}
         </div>
 
-        {/* Associated Projects & Work Orders */}
+        {/* Associated Projects & Work Orders - Add Card wrappers back */}
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <Card>
             <CardContent className="pt-6">
               <AssociatedProjects projects={projects} loading={loadingAssociations} />
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="pt-6">
               <AssociatedWorkOrders workOrders={workOrders} loading={loadingAssociations} />
@@ -143,24 +109,14 @@ const SubcontractorDetailPage = () => {
           </Card>
         </div>
 
-        {/* Specialties */}
-        {subcontractor.specialty_ids && subcontractor.specialty_ids.length > 0 && (
-          <div className="mt-6">
-            <Card>
-              <CardContent className="pt-6">
-                <SpecialtiesSection subcontractor={subcontractor} specialtyIds={specialtyIds} />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         {/* Documents Section */}
         <div className="mt-6">
-          <Card>
-            <CardContent className="pt-6">
-              <SubcontractorDocuments subcontractorId={subcontractor.subid} />
-            </CardContent>
-          </Card>
+          <SubcontractorDocuments
+            subcontractorId={subcontractor.subid}
+            documents={documents || []}
+            loading={loadingDocuments}
+            onUploadSuccess={fetchSubcontractor}
+          />
         </div>
 
         {/* Edit Subcontractor Sheet */}

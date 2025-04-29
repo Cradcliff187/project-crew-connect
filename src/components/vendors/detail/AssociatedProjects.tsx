@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableCell } from '@/components/ui/table';
 import { Link, useNavigate } from 'react-router-dom';
 import { VendorProject } from './types';
+import { Briefcase } from 'lucide-react';
 
 interface AssociatedProjectsProps {
   projects: VendorProject[];
@@ -30,7 +31,10 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Associated Projects</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2 text-primary">
+          <Briefcase className="h-5 w-5" />
+          Associated Projects
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -54,7 +58,7 @@ const AssociatedProjects: React.FC<AssociatedProjectsProps> = ({ projects, loadi
                   <TableCell>
                     <Link
                       to={`/projects/${project.projectid}`}
-                      className="text-[#0485ea] hover:underline"
+                      className="text-primary hover:underline"
                     >
                       {project.projectname || 'Unnamed Project'}
                     </Link>

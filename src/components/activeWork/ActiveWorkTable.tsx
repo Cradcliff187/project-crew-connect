@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import { WorkItem } from '@/types/activeWork';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import WorkOrderDetailDialog from '@/components/workOrders/WorkOrderDetailDialog';
@@ -50,7 +50,10 @@ const ActiveWorkTable = ({
 
   if (loading) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+      <div
+        className="rounded-lg border border-border bg-card shadow-sm overflow-hidden animate-in"
+        style={{ animationDelay: '0.2s' }}
+      >
         <Table>
           <TableHeader>
             <TableRow>
@@ -107,7 +110,10 @@ const ActiveWorkTable = ({
 
   if (projectsError && workOrdersError) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+      <div
+        className="rounded-lg border border-border bg-card shadow-sm overflow-hidden animate-in"
+        style={{ animationDelay: '0.2s' }}
+      >
         <div className="text-center py-10 text-red-500">
           <p>Error loading data:</p>
           <p>{projectsError}</p>
@@ -127,7 +133,10 @@ const ActiveWorkTable = ({
 
   if (items.length === 0) {
     return (
-      <div className="premium-card animate-in" style={{ animationDelay: '0.2s' }}>
+      <div
+        className="rounded-lg border border-border bg-card shadow-sm overflow-hidden animate-in"
+        style={{ animationDelay: '0.2s' }}
+      >
         <div className="text-center py-10 text-muted-foreground">
           <div className="flex justify-center mb-3">
             <Briefcase className="h-8 w-8 mr-2 opacity-50" />

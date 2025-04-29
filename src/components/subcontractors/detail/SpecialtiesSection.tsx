@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Subcontractor } from '../utils/types';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface SpecialtiesSectionProps {
   subcontractor: Subcontractor;
@@ -76,10 +77,14 @@ const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionP
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Specialties</h3>
-      <div>{renderSpecialties()}</div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg text-primary">Specialties</CardTitle>
+      </CardHeader>
+      <div className="space-y-4">
+        <div>{renderSpecialties()}</div>
+      </div>
+    </Card>
   );
 };
 

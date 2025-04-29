@@ -20,6 +20,7 @@ import { FormData } from './hooks/useWorkOrderData';
 import { UseFormReturn, Controller } from 'react-hook-form';
 import { WorkOrderFormValues } from './WorkOrderFormSchema';
 import CreateLocationToggle from './fields/CreateLocationToggle';
+import { ChevronRight, Loader2, Save } from 'lucide-react';
 
 // Define the steps in the work order creation process
 export const WORK_ORDER_STEPS = [
@@ -50,7 +51,7 @@ export const WorkOrderStepTabs = ({
             className={cn(
               'py-2 text-xs',
               currentStep === step.id &&
-                'bg-[#0485ea] text-white data-[state=active]:bg-[#0485ea] data-[state=active]:text-white'
+                'bg-primary text-primary-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
             )}
             onClick={() => !isDisabled && setCurrentStep(step.id)}
             disabled={isDisabled}
@@ -626,18 +627,24 @@ export const WorkOrderDialogFooter = ({
             type="button"
             onClick={onNext}
             disabled={isButtonDisabled}
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
+            className="bg-primary hover:bg-primary-foreground"
           >
             Next
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         ) : (
           <Button
             type="button"
             onClick={onSubmit}
             disabled={isButtonDisabled}
-            className="bg-[#0485ea] hover:bg-[#0375d1]"
+            className="bg-primary hover:bg-primary-foreground"
           >
-            {isSubmitting ? 'Creating...' : 'Create Work Order'}
+            {isSubmitting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4 mr-2" />
+            )}
+            Submit Work Order
           </Button>
         )}
       </div>

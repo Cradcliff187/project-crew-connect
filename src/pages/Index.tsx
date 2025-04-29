@@ -45,28 +45,28 @@ const Dashboard = () => {
           <DashboardCard
             title="Active Projects"
             value={isLoading ? '...' : counts.projects.toString()}
-            icon={<ClipboardList className="h-4 w-4 text-[#0485ea]" />}
+            icon={<ClipboardList className="h-4 w-4 text-primary" />}
             description="Total active projects"
           />
 
           <DashboardCard
             title="Work Orders"
             value={isLoading ? '...' : counts.workOrders.toString()}
-            icon={<CheckCircle className="h-4 w-4 text-[#0485ea]" />}
+            icon={<CheckCircle className="h-4 w-4 text-primary" />}
             description="Pending work orders"
           />
 
           <DashboardCard
             title="Vendors"
             value={isLoading ? '...' : counts.vendors.toString()}
-            icon={<CalendarDays className="h-4 w-4 text-[#0485ea]" />}
+            icon={<CalendarDays className="h-4 w-4 text-primary" />}
             description="Approved vendors"
           />
 
           <DashboardCard
             title="Invoices"
             value={isLoading ? '...' : counts.invoices.toString()}
-            icon={<DollarSign className="h-4 w-4 text-[#0485ea]" />}
+            icon={<DollarSign className="h-4 w-4 text-primary" />}
             description="Pending payments"
           />
         </div>

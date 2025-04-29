@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Eye, Edit, FileUp, Copy, ArrowRight, Download, Trash2 } from 'lucide-react';
 import { EstimateType } from '../EstimatesTable';
-import StatusBadge from '@/components/ui/StatusBadge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Link } from 'react-router-dom';
 import { StatusType } from '@/types/common';
 import { convertEstimateToProject, isEstimateConverted } from '@/services/estimateService';
 import {
@@ -24,15 +23,13 @@ import {
 
 interface EstimateRowProps {
   estimate: EstimateType;
-  onViewEstimate: (estimate: EstimateType) => void;
   onRefreshEstimates?: () => void;
 }
 
 const EstimateRow: React.FC<EstimateRowProps> = ({
   estimate,
-  onViewEstimate,
   onRefreshEstimates,
-}) => {
+}): React.ReactElement | null => {
   const navigate = useNavigate();
 
   // Dialog states
@@ -40,11 +37,24 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleViewDetails = () => {
-    onViewEstimate(estimate);
+    if (estimate.id) {
+      navigate(`/estimates/${estimate.id}`);
+    } else {
+      console.error('Attempted to navigate with undefined estimate ID:', estimate);
+      toast({
+        title: 'Navigation Error',
+        description: 'Cannot view details: Estimate ID is missing.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Create a new version of the estimate
   const handleCreateNewVersion = async () => {
+    if (!estimate.id) {
+      toast({ title: 'Error', description: 'Estimate ID missing.', variant: 'destructive' });
+      return;
+    }
     try {
       toast({
         title: 'Creating new version',
@@ -139,6 +149,10 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
 
   // Duplicate estimate
   const handleDuplicateEstimate = async () => {
+    if (!estimate.id) {
+      toast({ title: 'Error', description: 'Estimate ID missing.', variant: 'destructive' });
+      return;
+    }
     try {
       toast({
         title: 'Duplicating estimate',
@@ -199,18 +213,21 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
       }
 
       // Get current items from the original estimate's current revision
-      const { data: currentRevision } = await supabase
+      const { data: currentRevisionData } = await supabase
         .from('estimate_revisions')
         .select('id')
         .eq('estimate_id', estimate.id)
         .eq('is_selected_for_view', true)
         .single();
 
+      if (!currentRevisionData) {
+        throw new Error('Could not find the current revision for the original estimate.');
+      }
+
       const { data: items, error: itemsError } = await supabase
         .from('estimate_items')
         .select('*')
-        .eq('estimate_id', estimate.id)
-        .eq('revision_id', currentRevision.id);
+        .eq('revision_id', currentRevisionData.id);
 
       if (itemsError) {
         throw new Error(`Could not get estimate items: ${itemsError.message}`);
@@ -254,6 +271,10 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
 
   // Download PDF
   const handleDownloadPDF = async () => {
+    if (!estimate.id) {
+      toast({ title: 'Error', description: 'Estimate ID missing.', variant: 'destructive' });
+      return;
+    }
     try {
       toast({
         title: 'Generating PDF',
@@ -329,35 +350,38 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
 
   // Delete estimate
   const handleDeleteEstimate = async () => {
+    if (!estimate.id) {
+      toast({ title: 'Error', description: 'Estimate ID missing.', variant: 'destructive' });
+      return;
+    }
     try {
       setIsDeleting(true);
+      toast({ title: 'Deleting estimate' });
 
-      toast({
-        title: 'Deleting estimate',
-        description: 'Please wait while we delete this estimate',
-      });
-
-      // First delete all items for this estimate
-      const { error: itemsError } = await supabase
-        .from('estimate_items')
-        .delete()
-        .eq('estimate_id', estimate.id);
-
-      if (itemsError) {
-        throw new Error(`Error deleting estimate items: ${itemsError.message}`);
-      }
-
-      // Delete all revisions
-      const { error: revisionsError } = await supabase
+      // Delete items for all revisions of this estimate
+      const { data: revisions, error: revError } = await supabase
         .from('estimate_revisions')
-        .delete()
+        .select('id')
         .eq('estimate_id', estimate.id);
 
-      if (revisionsError) {
-        throw new Error(`Error deleting estimate revisions: ${revisionsError.message}`);
+      if (revError) throw new Error(`Error fetching revisions: ${revError.message}`);
+
+      if (revisions && revisions.length > 0) {
+        const revisionIds = revisions.map(r => r.id);
+        const { error: itemsError } = await supabase
+          .from('estimate_items')
+          .delete()
+          .in('revision_id', revisionIds);
+        if (itemsError) throw new Error(`Error deleting items: ${itemsError.message}`);
+
+        const { error: revDelError } = await supabase
+          .from('estimate_revisions')
+          .delete()
+          .in('id', revisionIds);
+        if (revDelError) throw new Error(`Error deleting revisions: ${revDelError.message}`);
       }
 
-      // Finally delete the estimate itself
+      // Delete the main estimate
       const { error: estimateError } = await supabase
         .from('estimates')
         .delete()
@@ -367,68 +391,37 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         throw new Error(`Error deleting estimate: ${estimateError.message}`);
       }
 
-      toast({
-        title: 'Estimate deleted',
-        description: 'The estimate has been permanently deleted',
-      });
-
-      // Refresh the estimates list
-      if (onRefreshEstimates) {
-        onRefreshEstimates();
-      }
-    } catch (error) {
+      toast({ title: 'Estimate deleted' });
+      if (onRefreshEstimates) onRefreshEstimates();
+    } catch (error: any) {
       console.error('Error deleting estimate:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete estimate',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
     }
   };
 
+  // Define actionGroups *before* the return statement
   const actionGroups: ActionGroup[] = [
     {
       items: [
+        { label: 'View Details', icon: <Eye className="h-4 w-4" />, onClick: handleViewDetails },
+        { label: 'Edit', icon: <Edit className="h-4 w-4" />, onClick: handleViewDetails },
         {
-          label: 'View Details',
-          icon: <Eye className="h-4 w-4" />,
-          onClick: handleViewDetails,
-          className: 'text-[#0485ea] hover:text-[#0375d1]',
-        },
-        {
-          label: 'Edit',
-          icon: <Edit className="h-4 w-4" />,
-          onClick: handleViewDetails,
-          className: 'text-gray-600 hover:text-gray-800',
-        },
-      ],
-    },
-    {
-      items: [
-        {
-          label: 'Create New Version',
+          label: 'New Version',
           icon: <FileUp className="h-4 w-4" />,
-          onClick: () => handleCreateNewVersion(),
-          className: 'text-gray-600 hover:text-gray-800',
+          onClick: handleCreateNewVersion,
         },
-      ],
-    },
-    {
-      items: [
         {
           label: 'Duplicate',
           icon: <Copy className="h-4 w-4" />,
-          onClick: () => handleDuplicateEstimate(),
-          className: 'text-gray-600 hover:text-gray-800',
+          onClick: handleDuplicateEstimate,
         },
         {
           label: 'Download PDF',
           icon: <Download className="h-4 w-4" />,
-          onClick: () => handleDownloadPDF(),
-          className: 'text-gray-600 hover:text-gray-800',
+          onClick: handleDownloadPDF,
         },
       ],
     },
@@ -438,7 +431,7 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
           label: 'Delete',
           icon: <Trash2 className="h-4 w-4" />,
           onClick: () => setDeleteDialogOpen(true),
-          className: 'text-red-600 hover:text-red-800',
+          className: 'text-destructive',
         },
       ],
     },
@@ -448,16 +441,24 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
     <>
       <TableRow
         key={estimate.id}
-        className="hover:bg-[#0485ea]/5 transition-colors cursor-pointer"
+        className="hover:bg-primary/5 transition-colors cursor-pointer"
         onClick={handleViewDetails}
       >
         <TableCell className="font-medium">
-          <Link to={`/estimates/${estimate.id}`} className="text-[#0485ea] hover:underline">
-            {estimate.id.substring(0, 8)}
-          </Link>
+          {estimate.id ? (
+            <Link
+              to={`/estimates/${estimate.id}`}
+              className="text-primary hover:underline"
+              onClick={e => e.stopPropagation()}
+            >
+              {estimate.id.substring(0, 8)}
+            </Link>
+          ) : (
+            'N/A'
+          )}
         </TableCell>
-        <TableCell>{estimate.client}</TableCell>
-        <TableCell>{estimate.project}</TableCell>
+        <TableCell>{estimate.client || 'No Client'}</TableCell>
+        <TableCell>{estimate.project || 'No Project'}</TableCell>
         <TableCell>{formatDate(estimate.latestRevisionDate || estimate.date)}</TableCell>
         <TableCell>{formatCurrency(estimate.amount)}</TableCell>
         <TableCell>
@@ -468,13 +469,13 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         </TableCell>
       </TableRow>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the estimate. This action cannot be undone.
+              This action cannot be undone. This will permanently delete the estimate and all
+              associated revisions and items.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,83 +1,121 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, AlertCircle, CircleDashed, Clock } from 'lucide-react';
+import { StatusType } from '@/types/common';
+import {
+  CheckCircle2,
+  AlertCircle,
+  CircleDashed,
+  Clock,
+  XCircle,
+  Check,
+  Send,
+  Eye,
+  FileCheck,
+  MinusCircle,
+  Info,
+  HelpCircle,
+  Archive,
+  ThumbsUp,
+  ThumbsDown,
+  Truck,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StatusBadgeProps {
-  status?: string;
-  label: string;
-  color?: string;
+  status: StatusType | string | null | undefined;
+  label?: string;
   size?: 'sm' | 'default';
   className?: string;
-  showIcon?: boolean;
 }
 
-/**
- * Universal status badge component aligned with AKC LLC brand guidelines
- */
 const StatusBadge: React.FC<StatusBadgeProps> = ({
   status,
   label,
-  color = 'neutral',
   size = 'default',
   className = '',
-  showIcon = true,
 }) => {
-  // Get status icon
-  const getStatusIcon = () => {
-    if (!showIcon) return null;
+  const safeStatus = status ? status.toUpperCase().replace(/-/g, '_') : 'UNKNOWN';
 
-    switch (color) {
-      case 'green':
-      case 'success':
-        return <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />;
-      case 'blue':
-      case 'info':
-      case 'primary':
-        return <Clock className="mr-1.5 h-3.5 w-3.5" />;
-      case 'amber':
-      case 'warning':
-        return <AlertCircle className="mr-1.5 h-3.5 w-3.5" />;
-      case 'red':
-      case 'error':
-        return <AlertCircle className="mr-1.5 h-3.5 w-3.5" />;
+  const getStatusDetails = (currentStatus: string): { icon: React.ReactNode; classes: string } => {
+    switch (currentStatus) {
+      // Success / Positive States
+      case 'COMPLETED':
+      case 'APPROVED':
+      case 'ACTIVE':
+      case 'VERIFIED':
+      case 'IMPLEMENTED':
+        return { icon: <CheckCircle2 />, classes: 'bg-green-50 text-green-700 border-green-200' };
+      case 'CONVERTED':
+        return { icon: <FileCheck />, classes: 'bg-green-50 text-green-700 border-green-200' };
+      case 'SENT':
+        return { icon: <Send />, classes: 'bg-blue-50 text-blue-700 border-blue-200' };
+      case 'READY':
+      case 'QUALIFIED':
+        return { icon: <ThumbsUp />, classes: 'bg-teal-50 text-teal-700 border-teal-200' };
+
+      // In Progress / Neutral States
+      case 'IN_PROGRESS':
+      case 'SUBMITTED':
+      case 'REVIEW':
+        return { icon: <Clock />, classes: 'bg-primary/10 text-primary border-primary/20' };
+      case 'PENDING':
+        return { icon: <Info />, classes: 'bg-yellow-50 text-yellow-700 border-yellow-200' };
+      case 'NEW':
+        return { icon: <Info />, classes: 'bg-sky-50 text-sky-700 border-sky-200' };
+      case 'DRAFT':
+        return { icon: <CircleDashed />, classes: 'bg-gray-50 text-gray-700 border-gray-200' };
+
+      // Warning / Hold States
+      case 'ON_HOLD':
+        return { icon: <MinusCircle />, classes: 'bg-orange-50 text-orange-700 border-orange-200' };
+
+      // Negative / Error States
+      case 'REJECTED':
+      case 'CANCELLED':
+        return { icon: <XCircle />, classes: 'bg-red-50 text-red-700 border-red-200' };
+      case 'INACTIVE':
+        return { icon: <Archive />, classes: 'bg-gray-50 text-gray-600 border-gray-200' }; // Muted gray
+
+      // Unknown / Default
+      case 'UNKNOWN':
       default:
-        return <CircleDashed className="mr-1.5 h-3.5 w-3.5" />;
+        return { icon: <HelpCircle />, classes: 'bg-gray-50 text-gray-500 border-gray-200' };
     }
   };
 
-  // Get status class based on status type
-  const getStatusClass = () => {
-    switch (color) {
-      case 'green':
-      case 'success':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'blue':
-      case 'info':
-      case 'primary':
-        return 'bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]';
-      case 'amber':
-      case 'warning':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'red':
-      case 'error':
-        return 'bg-red-50 text-red-700 border-red-200';
-      case 'purple':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'neutral':
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
+  // Generate a display label from the status if none provided
+  const getDisplayLabel = () => {
+    if (label) return label;
+    if (!safeStatus || safeStatus === 'UNKNOWN') return 'Unknown';
+
+    // Convert status to readable format (e.g., IN_PROGRESS -> In Progress)
+    return safeStatus
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
-  const sizeClasses = size === 'sm' ? 'px-1.5 py-0 text-[10px]' : 'px-2.5 py-0.5 text-xs';
+  const { icon, classes } = getStatusDetails(safeStatus);
+  const sizeClasses =
+    size === 'sm' ? 'px-1.5 py-0 text-[10px] h-[18px]' : 'px-2.5 py-0.5 text-xs h-[22px]'; // Adjusted height for better alignment
+  const iconClasses = 'mr-1 h-3 w-3'; // Adjusted icon size
 
   return (
     <Badge
       variant="outline"
-      className={`font-medium flex items-center ${getStatusClass()} ${sizeClasses} ${className}`}
+      className={cn(
+        'font-medium flex items-center whitespace-nowrap',
+        classes,
+        sizeClasses,
+        className
+      )}
     >
-      {getStatusIcon()}
-      <span>{label}</span>
+      {React.isValidElement(icon)
+        ? React.cloneElement(icon as React.ReactElement, { className: iconClasses })
+        : null}
+      <span>{getDisplayLabel()}</span>
     </Badge>
   );
 };

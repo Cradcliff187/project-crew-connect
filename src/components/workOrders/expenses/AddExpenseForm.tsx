@@ -148,12 +148,9 @@ const AddExpenseForm = ({
             <X className="h-4 w-4 mr-2" />
             Cancel
           </Button>
-          <Button type="submit" className="bg-[#0485ea] hover:bg-[#0375d1]" disabled={submitting}>
+          <Button type="submit" disabled={submitting}>
             {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Processing...
-              </>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <>
                 Continue to Receipt

@@ -36,7 +36,7 @@ const WorkOrderSummary = ({ form }: WorkOrderSummaryProps) => {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="font-medium text-[#0485ea]">Basic Information</h4>
+              <h4 className="font-medium text-primary mb-2">Basic Information</h4>
               <div className="mt-2 space-y-2">
                 <div>
                   <span className="text-sm font-medium">Title:</span>
@@ -66,7 +66,7 @@ const WorkOrderSummary = ({ form }: WorkOrderSummaryProps) => {
             </div>
 
             <div>
-              <h4 className="font-medium text-[#0485ea]">Schedule Information</h4>
+              <h4 className="font-medium text-primary mb-2">Schedule Information</h4>
               <div className="mt-2 space-y-2">
                 <div>
                   <span className="text-sm font-medium">Estimated Hours:</span>
@@ -87,7 +87,7 @@ const WorkOrderSummary = ({ form }: WorkOrderSummaryProps) => {
           </div>
 
           <div className="mt-6">
-            <h4 className="font-medium text-[#0485ea]">Location Information</h4>
+            <h4 className="font-medium text-primary mb-2">Location Information</h4>
 
             {values.useCustomAddress ? (
               <div className="mt-2 space-y-2">

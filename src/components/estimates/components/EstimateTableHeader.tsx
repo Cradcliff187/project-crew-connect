@@ -2,17 +2,15 @@ import { TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 const EstimateTableHeader = () => {
   return (
-    <TableHeader className="bg-[#0485ea]/10">
+    <TableHeader>
       <TableRow>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Estimate #</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Client</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Project</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Last Updated</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Amount</TableHead>
-        <TableHead className="font-montserrat font-semibold text-[#0485ea]">Status</TableHead>
-        <TableHead className="text-right font-montserrat font-semibold text-[#0485ea]">
-          Actions
-        </TableHead>
+        <TableHead>Estimate #</TableHead>
+        <TableHead>Client</TableHead>
+        <TableHead>Project</TableHead>
+        <TableHead>Last Updated</TableHead>
+        <TableHead>Amount</TableHead>
+        <TableHead>Status</TableHead>
+        <TableHead className="text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );

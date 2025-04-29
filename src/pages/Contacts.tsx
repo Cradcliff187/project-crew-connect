@@ -12,6 +12,15 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { StatusType } from '@/types/common';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+  SheetClose,
+} from '@/components/ui/sheet';
 
 export type Contact = {
   id: string;
@@ -88,9 +97,9 @@ const fetchContacts = async (): Promise<Contact[]> => {
 const Contacts = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [showForm, setShowForm] = useState(false);
-  const [editingContact, setEditingContact] = useState<Contact | null>(null);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [sheetMode, setSheetMode] = useState<'add' | 'edit' | 'view'>('add');
+  const [currentContact, setCurrentContact] = useState<Contact | null>(null);
 
   const queryClient = useQueryClient();
   const {
@@ -137,7 +146,7 @@ const Contacts = () => {
         title: 'Contact Added',
         description: 'The contact has been added successfully.',
       });
-      setShowForm(false);
+      setIsSheetOpen(false);
     },
     onError: error => {
       console.error('Error adding contact:', error);
@@ -187,7 +196,7 @@ const Contacts = () => {
         title: 'Contact Updated',
         description: 'The contact has been updated successfully.',
       });
-      setEditingContact(null);
+      setIsSheetOpen(false);
     },
     onError: error => {
       console.error('Error updating contact:', error);
@@ -254,6 +263,24 @@ const Contacts = () => {
     },
   });
 
+  const handleOpenAddSheet = () => {
+    setCurrentContact(null);
+    setSheetMode('add');
+    setIsSheetOpen(true);
+  };
+
+  const handleOpenEditSheet = (contact: Contact) => {
+    setCurrentContact(contact);
+    setSheetMode('edit');
+    setIsSheetOpen(true);
+  };
+
+  const handleOpenViewSheet = (contact: Contact) => {
+    setCurrentContact(contact);
+    setSheetMode('view');
+    setIsSheetOpen(true);
+  };
+
   const filteredContacts = contacts
     .filter(
       contact =>
@@ -263,14 +290,6 @@ const Contacts = () => {
         (contact.specialty && contact.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
     )
     .filter(contact => activeTab === 'all' || contact.type === activeTab);
-
-  const handleAddContact = (data: ContactFormData) => {
-    addContactMutation.mutate(data);
-  };
-
-  const handleEditContact = (data: Contact) => {
-    updateContactMutation.mutate(data);
-  };
 
   const handleDeleteContact = (contact: Contact) => {
     deleteContactMutation.mutate(contact.id);
@@ -300,7 +319,7 @@ const Contacts = () => {
             <Input
               type="search"
               placeholder="Search contacts..."
-              className="pl-9 subtle-input rounded-md"
+              className="pl-9 rounded-md"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -312,11 +331,7 @@ const Contacts = () => {
               Filter
               <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
             </Button>
-            <Button
-              size="sm"
-              className="flex-1 md:flex-auto bg-[#0485ea] hover:bg-[#0375d1]"
-              onClick={() => setShowForm(true)}
-            >
+            <Button size="sm" className="flex-1 md:flex-auto" onClick={handleOpenAddSheet}>
               <Plus className="h-4 w-4 mr-1" />
               Add Contact
             </Button>
@@ -357,7 +372,10 @@ const Contacts = () => {
         >
           {isLoading ? (
             Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="premium-card h-[250px] animate-pulse">
+              <div
+                key={index}
+                className="rounded-lg border border-border bg-card shadow-sm h-[250px] animate-pulse overflow-hidden"
+              >
                 <div className="p-5 space-y-4">
                   <div className="h-5 bg-gray-200 rounded w-2/3"></div>
                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -375,8 +393,8 @@ const Contacts = () => {
               <ContactCard
                 key={contact.id}
                 contact={contact}
-                onView={contact => setSelectedContact(contact)}
-                onEdit={contact => setEditingContact(contact)}
+                onView={handleOpenViewSheet}
+                onEdit={handleOpenEditSheet}
                 onDelete={handleDeleteContact}
                 onStatusChange={handleStatusChange}
               />
@@ -386,7 +404,7 @@ const Contacts = () => {
               <Users className="h-16 w-16 text-muted-foreground/30 mb-4" />
               <h3 className="text-lg font-medium mb-1">No contacts found</h3>
               <p className="text-muted-foreground mb-4">Try adjusting your search or filters</p>
-              <Button className="bg-[#0485ea] hover:bg-[#0375d1]" onClick={() => setShowForm(true)}>
+              <Button onClick={handleOpenAddSheet}>
                 <Plus className="h-4 w-4 mr-1" />
                 Add Your First Contact
               </Button>
@@ -394,6 +412,48 @@ const Contacts = () => {
           )}
         </div>
       </div>
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="sm:max-w-lg w-[90vw] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>
+              {sheetMode === 'add' && 'Add New Contact'}
+              {sheetMode === 'edit' && 'Edit Contact'}
+              {sheetMode === 'view' && 'Contact Details'}
+            </SheetTitle>
+            {sheetMode !== 'view' && (
+              <SheetDescription>
+                {sheetMode === 'add'
+                  ? 'Enter details for the new contact.'
+                  : 'Update the contact information.'}
+              </SheetDescription>
+            )}
+          </SheetHeader>
+
+          <div className="py-4">
+            {sheetMode === 'view' && currentContact && (
+              <ContactDetail
+                contact={currentContact}
+                onClose={() => setIsSheetOpen(false)}
+                onEdit={handleOpenEditSheet}
+                onDelete={handleDeleteContact}
+                onStatusChange={handleStatusChange}
+              />
+            )}
+
+            {(sheetMode === 'add' || sheetMode === 'edit') && (
+              <ContactForm
+                initialData={sheetMode === 'edit' ? currentContact : null}
+                onSubmit={
+                  sheetMode === 'add' ? addContactMutation.mutate : updateContactMutation.mutate
+                }
+                onCancel={() => setIsSheetOpen(false)}
+                isSubmitting={addContactMutation.isPending || updateContactMutation.isPending}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </PageTransition>
   );
 };

@@ -3,6 +3,8 @@ import { Trash2, Upload, FileText, Edit } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { WorkOrderMaterial } from '@/types/workOrder';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
+import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface MaterialTableRowProps {
   material: WorkOrderMaterial;
@@ -54,9 +56,25 @@ const MaterialTableRow = ({
   ];
 
   return (
-    <TableRow className="hover:bg-[#0485ea]/5 transition-colors">
+    <TableRow className="hover:bg-muted/50 transition-colors">
       <TableCell className="font-medium">{material.material_name}</TableCell>
-      <TableCell>{vendorName}</TableCell>
+      <TableCell>
+        <Link
+          to={`/vendors/${material.vendor_id}`}
+          onClick={e => {
+            e.stopPropagation();
+            console.log('Vendor clicked:', material.vendor_id);
+          }}
+          className={cn(
+            'hover:underline',
+            vendorName !== 'Unknown'
+              ? 'text-primary hover:text-primary/80'
+              : 'text-muted-foreground'
+          )}
+        >
+          {vendorName}
+        </Link>
+      </TableCell>
       <TableCell>{material.quantity}</TableCell>
       <TableCell>{formatCurrency(material.unit_price)}</TableCell>
       <TableCell className="font-semibold">{formatCurrency(material.total_price)}</TableCell>

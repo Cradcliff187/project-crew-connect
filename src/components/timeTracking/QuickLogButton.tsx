@@ -6,11 +6,12 @@ interface QuickLogButtonProps {
   onQuickLog: () => void;
 }
 
-const QuickLogButton: React.FC<QuickLogButtonProps> = ({ onQuickLog }) => {
+const QuickLogButton = ({ onQuickLog }: QuickLogButtonProps) => {
   return (
     <Button
+      className="w-full flex items-center justify-center gap-2 font-medium"
+      size="lg"
       onClick={onQuickLog}
-      className="w-full flex items-center justify-center gap-2 bg-[#0485ea] hover:bg-[#0375d1] font-medium"
     >
       <Clock className="h-4 w-4" />
       Quick Time Entry

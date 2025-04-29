@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import EmailTemplatesManager from '@/components/estimates/email/EmailTemplatesManager';
 import EmailConfigurationCard from '@/components/estimates/email/EmailConfigurationCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const EstimateEmailSettings = () => {
   const navigate = useNavigate();
@@ -29,8 +30,15 @@ const EstimateEmailSettings = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-medium flex items-center gap-1.5">
-                <Info className="h-4 w-4 text-[#0485ea]" />
-                Available Template Variables
+                <Alert className="bg-blue-50 border-blue-200">
+                  <AlertDescription className="flex items-start gap-2">
+                    <Info className="h-4 w-4 text-primary mt-1" />
+                    <div>
+                      These settings control the default sender name, reply-to address, subject
+                      line, and
+                    </div>
+                  </AlertDescription>
+                </Alert>
               </CardTitle>
             </CardHeader>
             <CardContent>

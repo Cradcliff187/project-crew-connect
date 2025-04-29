@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
+import PageHeader from '@/components/layout/PageHeader';
+import { Textarea } from '@/components/ui/textarea';
 
 // Type definition for individual settings (adjust if needed)
 type SettingRow = {
@@ -193,7 +195,7 @@ const Settings = () => {
   return (
     <PageTransition>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <PageHeader title="Settings" />
 
         <Tabs defaultValue="email" className="w-full">
           <TabsList>
@@ -213,7 +215,7 @@ const Settings = () => {
               <CardContent className="space-y-6">
                 {isLoading ? (
                   <div className="flex items-center justify-center h-32">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
                   <>
@@ -272,9 +274,9 @@ const Settings = () => {
 
                     <div className="space-y-2">
                       <Label htmlFor="signature">Email Signature</Label>
-                      <textarea
+                      <Textarea
                         id="signature"
-                        className="w-full h-32 p-2 border rounded-md"
+                        className="h-32"
                         value={emailConfig.signature || ''}
                         onChange={e =>
                           setEmailConfig({ ...emailConfig, signature: e.target.value })
@@ -285,7 +287,7 @@ const Settings = () => {
 
                     <Button
                       onClick={handleSaveEmailConfig}
-                      className="bg-[#0485ea] hover:bg-[#0373ce]"
+                      variant="default"
                       disabled={savingEmail}
                     >
                       {savingEmail ? (
@@ -317,7 +319,7 @@ const Settings = () => {
               <CardContent className="space-y-6">
                 {loadingLabor ? (
                   <div className="flex items-center justify-center h-32">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
                   <>
@@ -365,7 +367,7 @@ const Settings = () => {
 
                     <Button
                       onClick={handleSaveLaborSettings}
-                      className="bg-[#0485ea] hover:bg-[#0373ce]"
+                      variant="default"
                       disabled={savingLabor}
                     >
                       {savingLabor ? (

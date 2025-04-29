@@ -56,7 +56,7 @@ const TimeEntryList: React.FC<TimeEntryListProps> = ({
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0485ea]" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -84,7 +84,7 @@ const TimeEntryList: React.FC<TimeEntryListProps> = ({
                     <span>{entry.entity_name || 'Unknown Entity'}</span>
                   </div>
                   <div className="flex-shrink-0">
-                    {entry.has_receipts && <Receipt className="h-4 w-4 text-green-500" />}
+                    {entry.has_receipts && <Receipt className="h-4 w-4 text-success" />}
                   </div>
                 </div>
 
@@ -183,7 +183,7 @@ const TimeEntryList: React.FC<TimeEntryListProps> = ({
                 )}
                 {viewMode === 'admin' && (
                   <TableCell>
-                    {fullEntry.has_receipts && <Receipt className="h-4 w-4 text-green-600" />}
+                    {fullEntry.has_receipts && <Receipt className="h-4 w-4 text-success" />}
                   </TableCell>
                 )}
                 {viewMode === 'admin' && (
@@ -200,7 +200,7 @@ const TimeEntryList: React.FC<TimeEntryListProps> = ({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-red-600 hover:text-red-700"
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => onDeleteEntry(fullEntry)}
                       >
                         <Trash className="h-4 w-4" />

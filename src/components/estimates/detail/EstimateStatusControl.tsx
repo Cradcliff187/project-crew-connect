@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import StatusBadge from '@/components/ui/StatusBadge';
+import { Badge } from '@/components/ui/badge';
+import StatusBadge from '@/components/common/status/StatusBadge';
 import { StatusType } from '@/types/common';
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CheckIcon, ChevronDownIcon, XIcon, SendIcon, FileIcon, InfoIcon } from 'lucide-react';
 import EstimateRejectDialog from './dialogs/EstimateRejectDialog';
+import { Database } from '@/integrations/supabase/types';
 
 interface EstimateStatusControlProps {
   estimateId: string;
@@ -28,6 +30,9 @@ interface EstimateUpdateData {
   sentdate?: string;
   [key: string]: any; // Allow other properties if needed
 }
+
+// Type for the update payload
+type RevisionUpdatePayload = Partial<Database['public']['Tables']['estimate_revisions']['Update']>;
 
 const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
   estimateId,
@@ -177,19 +182,24 @@ const EstimateStatusControl: React.FC<EstimateStatusControlProps> = ({
 
   const updateRevision = async (status: string) => {
     try {
+      // Explicitly type the update payload
+      const updatePayload: RevisionUpdatePayload = {
+        status: status,
+        updated_at: new Date().toISOString(),
+      };
+
+      const estimateIdValue = estimateId; // Assign to variable for clarity in query
+      const isCurrentValue = true; // Assign to variable
+
       const { error } = await supabase
         .from('estimate_revisions')
-        .update({
-          status: status,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('estimate_id', estimateId)
-        .eq('is_current', true);
+        .update(updatePayload) // Use typed payload
+        .eq('estimate_id', estimateIdValue)
+        .eq('is_current', isCurrentValue);
 
       if (error) throw error;
     } catch (err) {
       console.warn('Error updating revision status:', err);
-      // Don't fail the overall operation if revision update fails
     }
   };
 

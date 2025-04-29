@@ -1,6 +1,6 @@
 import React from 'react';
 import { Briefcase } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
@@ -30,8 +30,10 @@ const AssociatedProjects = ({ projects, loading }: AssociatedProjectsProps) => {
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Associated Projects</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg text-primary">Associated Projects</CardTitle>
+      </CardHeader>
       <div className="grid gap-2">
         {loading ? (
           <Skeleton className="h-16 w-full" />
@@ -58,7 +60,7 @@ const AssociatedProjects = ({ projects, loading }: AssociatedProjectsProps) => {
           ))
         )}
       </div>
-    </div>
+    </Card>
   );
 };
 

@@ -1,4 +1,4 @@
-import WorkOrderDocumentsSection from '@/components/work-orders/documents/WorkOrderDocumentsSection';
+import WorkOrderDocumentsSection from '@/components/workOrders/WorkOrderDocumentsSection';
 
 interface WorkOrderDocumentsProps {
   workOrderId: string;

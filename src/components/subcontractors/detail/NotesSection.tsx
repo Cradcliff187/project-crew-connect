@@ -1,4 +1,5 @@
 import React from 'react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface NotesSectionProps {
   notes: string | null;
@@ -8,10 +9,12 @@ const NotesSection = ({ notes }: NotesSectionProps) => {
   if (!notes) return null;
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-montserrat font-semibold text-[#0485ea]">Notes</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg text-primary">Notes</CardTitle>
+      </CardHeader>
       <div className="whitespace-pre-line bg-muted p-4 rounded-md">{notes}</div>
-    </div>
+    </Card>
   );
 };
 
