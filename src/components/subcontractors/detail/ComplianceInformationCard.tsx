@@ -3,7 +3,7 @@ import { Shield, FileText } from 'lucide-react';
 import { Subcontractor } from '../utils/types';
 import InsuranceStatus from '../InsuranceStatus';
 import { format } from 'date-fns';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface ComplianceInformationCardProps {
   subcontractor: Subcontractor;
@@ -22,13 +22,16 @@ const ComplianceInformationCard = ({ subcontractor }: ComplianceInformationCardP
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg text-primary">Compliance & Insurance</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-primary">
+          <Shield className="h-5 w-5" />
+          Compliance & Insurance
+        </CardTitle>
       </CardHeader>
-      <div className="space-y-4">
+      <CardContent className="space-y-4">
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-[#0485ea]" />
+              <Shield className="h-4 w-4 text-primary" />
               <span className="font-medium">Insurance: </span>
               <InsuranceStatus expirationDate={subcontractor.insurance_expiration} showText />
             </div>
@@ -53,7 +56,7 @@ const ComplianceInformationCard = ({ subcontractor }: ComplianceInformationCardP
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-[#0485ea]" />
+              <FileText className="h-4 w-4 text-primary" />
               <span className="font-medium">
                 Contract on File: {subcontractor.contract_on_file ? 'Yes' : 'No'}
               </span>
@@ -67,7 +70,7 @@ const ComplianceInformationCard = ({ subcontractor }: ComplianceInformationCardP
             )}
           </div>
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 };

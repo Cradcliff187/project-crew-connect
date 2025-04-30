@@ -1,7 +1,7 @@
 import React from 'react';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import { Subcontractor } from '../utils/types';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface ContactInformationCardProps {
   subcontractor: Subcontractor;
@@ -11,44 +11,43 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg text-primary">Contact Information</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-primary">
+          <MapPin className="h-5 w-5" />
+          Contact Information
+        </CardTitle>
       </CardHeader>
-      <div className="space-y-3">
+      <CardContent className="space-y-4">
         {subcontractor.subname && (
-          <div className="text-foreground">
-            <span className="font-medium">Contact Name:</span>
-            <div className="text-foreground">{subcontractor.subname}</div>
+          <div>
+            <p className="text-sm font-medium">Contact Name</p>
+            <p>{subcontractor.subname}</p>
           </div>
         )}
 
         {subcontractor.contactemail && (
-          <div className="flex items-start gap-2">
-            <Mail className="h-4 w-4 mt-1 text-[#0485ea]" />
-            <div>
-              <span className="font-medium">Email:</span>
-              <div>
-                <a
-                  href={`mailto:${subcontractor.contactemail}`}
-                  className="text-[#0485ea] hover:text-[#0375d1] hover:underline"
-                >
-                  {subcontractor.contactemail}
-                </a>
-              </div>
-            </div>
+          <div>
+            <p className="text-sm font-medium">Email</p>
+            <p className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <a
+                href={`mailto:${subcontractor.contactemail}`}
+                className="text-primary hover:text-primary/90 hover:underline"
+              >
+                {subcontractor.contactemail}
+              </a>
+            </p>
           </div>
         )}
 
         {subcontractor.phone && (
-          <div className="flex items-start gap-2">
-            <Phone className="h-4 w-4 mt-1 text-[#0485ea]" />
-            <div>
-              <span className="font-medium">Phone:</span>
-              <div className="text-foreground">
-                <a href={`tel:${subcontractor.phone}`} className="hover:text-[#0485ea]">
-                  {subcontractor.phone}
-                </a>
-              </div>
-            </div>
+          <div>
+            <p className="text-sm font-medium">Phone</p>
+            <p className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              <a href={`tel:${subcontractor.phone}`} className="hover:text-primary">
+                {subcontractor.phone}
+              </a>
+            </p>
           </div>
         )}
 
@@ -56,21 +55,16 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
           subcontractor.city ||
           subcontractor.state ||
           subcontractor.zip) && (
-          <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 mt-1 text-[#0485ea]" />
-            <div>
-              <span className="font-medium">Address:</span>
-              <div className="text-foreground">
-                {subcontractor.address && <div>{subcontractor.address}</div>}
-                {(subcontractor.city || subcontractor.state || subcontractor.zip) && (
-                  <div>
-                    {[subcontractor.city, subcontractor.state, subcontractor.zip]
-                      .filter(Boolean)
-                      .join(', ')}
-                  </div>
-                )}
-              </div>
-            </div>
+          <div>
+            <p className="text-sm font-medium">Address</p>
+            {subcontractor.address && <p>{subcontractor.address}</p>}
+            {(subcontractor.city || subcontractor.state || subcontractor.zip) && (
+              <p>
+                {[subcontractor.city, subcontractor.state, subcontractor.zip]
+                  .filter(Boolean)
+                  .join(', ')}
+              </p>
+            )}
           </div>
         )}
 
@@ -82,7 +76,7 @@ const ContactInformationCard = ({ subcontractor }: ContactInformationCardProps) 
           !subcontractor.zip && (
             <div className="text-muted-foreground italic">No contact information available</div>
           )}
-      </div>
+      </CardContent>
     </Card>
   );
 };

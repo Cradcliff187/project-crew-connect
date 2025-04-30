@@ -218,10 +218,18 @@ const VendorDetail = () => {
           </Card>
         </div>
 
-        {/* Associated Projects & Work Orders - Render components directly */}
+        {/* Associated Projects & Work Orders - Use Card wrappers for consistency with Subcontractor view */}
         <div className="mt-6 grid gap-6 md:grid-cols-2">
-          <AssociatedProjects projects={projects} loading={loadingAssociations} />
-          <AssociatedWorkOrders workOrders={workOrders} loading={loadingAssociations} />
+          <Card>
+            <CardContent className="pt-6">
+              <AssociatedProjects projects={projects} loading={loadingAssociations} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <AssociatedWorkOrders workOrders={workOrders} loading={loadingAssociations} />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="mt-6">

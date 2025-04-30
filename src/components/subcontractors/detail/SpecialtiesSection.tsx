@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Subcontractor } from '../utils/types';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tags } from 'lucide-react';
 
 interface SpecialtiesSectionProps {
   subcontractor: Subcontractor;
@@ -66,7 +67,7 @@ const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionP
             <Badge
               key={id}
               variant="secondary"
-              className="text-xs font-medium bg-[#f0f7fe] text-[#0485ea] border-[#dcedfd]"
+              className="text-xs font-medium bg-primary/10 text-primary border-primary/20"
             >
               {specialty.specialty}
             </Badge>
@@ -79,11 +80,12 @@ const SpecialtiesSection = ({ subcontractor, specialtyIds }: SpecialtiesSectionP
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg text-primary">Specialties</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-primary">
+          <Tags className="h-5 w-5" />
+          Specialties
+        </CardTitle>
       </CardHeader>
-      <div className="space-y-4">
-        <div>{renderSpecialties()}</div>
-      </div>
+      <CardContent className="space-y-4">{renderSpecialties()}</CardContent>
     </Card>
   );
 };
