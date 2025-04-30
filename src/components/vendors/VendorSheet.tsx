@@ -89,7 +89,7 @@ const VendorSheet = ({
             <Button
               type="submit"
               form="vendor-form"
-              className="bg-[#0485ea] hover:bg-[#0375d1] w-full sm:w-auto"
+              className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
               disabled={isSubmitting}
             >
               <Check className="h-4 w-4 mr-1" />

@@ -1,4 +1,4 @@
-import { Table, TableBody, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody } from '@/components/ui/table';
 import { filterSubcontractors } from '../utils/filterUtils';
 import { Subcontractor } from '../utils/types';
 import SubcontractorsTableHeader from './SubcontractorsTableHeader';
@@ -37,19 +37,15 @@ const SubcontractorsTable = ({
   }
 
   return (
-    <div className="rounded-md border shadow-sm animate-fade-in">
-      <div className="overflow-x-auto">
-        <Table className="w-full table-fixed">
-          <SubcontractorsTableHeader />
-          <TableBody>
-            <SubcontractorsTableBody
-              subcontractors={filteredSubcontractors}
-              onEditSubcontractor={onEditSubcontractor}
-            />
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <Table className="border rounded-md">
+      <SubcontractorsTableHeader />
+      <TableBody>
+        <SubcontractorsTableBody
+          subcontractors={filteredSubcontractors}
+          onEditSubcontractor={onEditSubcontractor}
+        />
+      </TableBody>
+    </Table>
   );
 };
 

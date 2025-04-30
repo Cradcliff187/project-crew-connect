@@ -25,7 +25,7 @@ const VendorTableRow: React.FC<VendorTableRowProps> = ({ vendor, onViewDetails, 
   return (
     <TableRow
       onClick={handleRowClick}
-      className="cursor-pointer hover:bg-muted/50 transition-colors"
+      className="cursor-pointer hover:bg-primary/5 transition-colors"
     >
       <TableCell className="font-medium py-3">
         <VendorInfo vendor={vendor} />

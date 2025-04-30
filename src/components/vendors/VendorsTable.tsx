@@ -44,20 +44,16 @@ const VendorsTable = ({
   }
 
   return (
-    <div className="rounded-md border shadow-sm animate-fade-in">
-      <div className="overflow-x-auto">
-        <Table className="w-full table-fixed">
-          <VendorsTableHeader />
-          <TableBody>
-            <VendorsTableBody
-              vendors={filteredVendors}
-              onViewDetails={onViewDetails}
-              onEditVendor={onEditVendor}
-            />
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <Table className="border rounded-md">
+      <VendorsTableHeader />
+      <TableBody>
+        <VendorsTableBody
+          vendors={filteredVendors}
+          onViewDetails={onViewDetails}
+          onEditVendor={onEditVendor}
+        />
+      </TableBody>
+    </Table>
   );
 };
 

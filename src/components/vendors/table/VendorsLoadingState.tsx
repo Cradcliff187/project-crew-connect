@@ -1,56 +1,7 @@
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { TableLoading } from '@/components/ui/table-loading';
 
 const VendorsLoadingState = () => {
-  return (
-    <div className="rounded-md border shadow-sm animate-in" style={{ animationDelay: '0.2s' }}>
-      <Table>
-        <TableHeader className="bg-[#0485ea]/10">
-          <TableRow>
-            <TableHead>Vendor</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {Array.from({ length: 5 }).map((_, index) => (
-            <TableRow key={index}>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-4 w-32" />
-              </TableCell>
-              <TableCell>
-                <Skeleton className="h-5 w-16 rounded-full" />
-              </TableCell>
-              <TableCell className="text-right">
-                <Skeleton className="h-8 w-8 rounded-full ml-auto" />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  return <TableLoading rowCount={5} />;
 };
 
 export default VendorsLoadingState;

@@ -17,6 +17,17 @@ This document outlines the step-by-step implementation plan to address all UI/UX
 | 9    | Improve Accessibility                 | - Add aria-labels to icon buttons<br>- Ensure proper focus states                                                                                              | - Update: `src/components/estimates/EstimatesHeader.tsx`<br>- Update: `src/components/projects/ProjectsHeader.tsx`<br>- Update: `src/components/workOrders/WorkOrdersHeader.tsx`                                                              | `--ring`                                                                           |
 | 10   | Standardize Status Badge Styling      | - Ensure StatusBadge used consistently<br>- Map status values correctly                                                                                        | - Update: `src/components/estimates/components/EstimateRow.tsx`<br>- Update: `src/components/projects/components/ProjectRow.tsx`<br>- Update: `src/components/workOrders/components/WorkOrderRow.tsx`                                         | Various status colors                                                              |
 
+## Vendor-Subcontractor Alignment Steps
+
+| Step | Goal                                              | Key Tasks                                                                                                              | Affected Files                                                                                                                                                                                                                                                     | Design Token Refs                               |
+| ---- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| VS-1 | Apply SearchInput to Vendor & Subcontractor pages | - Replace custom search implementations with shared SearchInput component<br>- Ensure consistent styling and behavior  | - Update: `src/components/vendors/VendorsHeader.tsx`<br>- Update: `src/components/subcontractors/SubcontractorsHeader.tsx`                                                                                                                                         | `--input`<br>`--border`<br>`--muted-foreground` |
+| VS-2 | Replace hardcoded colors with design tokens       | - Update hardcoded color references (`bg-[#0485ea]`, `hover:bg-[#0375d1]`)<br>- Standardize hover states in table rows | - Update: `src/components/vendors/VendorSheet.tsx`<br>- Update: `src/components/subcontractors/SubcontractorSheet.tsx`<br>- Update: `src/components/vendors/table/VendorTableRow.tsx`<br>- Update: `src/components/subcontractors/table/SubcontractorTableRow.tsx` | `--primary`<br>`--primary-foreground`           |
+| VS-3 | Standardize loading states                        | - Apply TableLoading component to both sections<br>- Ensure consistent skeleton implementation                         | - Update: `src/components/vendors/table/VendorsLoadingState.tsx`<br>- Update: `src/components/subcontractors/SubcontractorLoadingState.tsx`                                                                                                                        | `--muted`                                       |
+| VS-4 | Normalize empty state components                  | - Implement consistent empty state pattern for both<br>- Apply shared UI structure                                     | - Update: `src/components/vendors/table/VendorsEmptyState.tsx`<br>- Update: `src/components/subcontractors/table/SubcontractorsEmptyState.tsx`                                                                                                                     | `--muted-foreground`<br>`--foreground`          |
+| VS-5 | Align error state handling                        | - Create unified error state approach<br>- Ensure consistent styling/messaging                                         | - Create: `src/components/ui/table-error.tsx`<br>- Update: `src/components/vendors/table/VendorsErrorState.tsx`<br>- Update: `src/components/subcontractors/table/SubcontractorsErrorState.tsx`                                                                    | `--destructive`<br>`--destructive-foreground`   |
+| VS-6 | Improve accessibility                             | - Add aria-labels to all icon buttons<br>- Ensure proper focus states on interactive elements                          | - Update various vendor and subcontractor components                                                                                                                                                                                                               | `--ring`                                        |
+
 ## Acceptance Criteria
 
 For each completed step, the following criteria must be met:
@@ -28,6 +39,15 @@ For each completed step, the following criteria must be met:
 - [x] Responsive behavior preserved
 - [x] Accessibility maintained or improved
 - [x] Existing functionality preserved
+
+### Additional Criteria for Vendor-Subcontractor Alignment
+
+- [x] Visual consistency between Vendor and Subcontractor pages
+- [x] SearchInput component used consistently
+- [x] No hardcoded color values, only semantic design tokens
+- [x] Consistent hover states in table rows
+- [x] Standardized loading, empty, and error states
+- [x] Accessible icon buttons with proper aria-labels
 
 ## Testing Notes
 
@@ -57,3 +77,12 @@ For each completed step, the following criteria must be met:
 - [x] Step 8: Normalize Table Styling
 - [x] Step 9: Improve Accessibility
 - [x] Step 10: Standardize Status Badge Styling
+
+### Vendor-Subcontractor Alignment Progress
+
+- [x] VS-1: Apply SearchInput to Vendor & Subcontractor pages
+- [x] VS-2: Replace hardcoded colors with design tokens
+- [x] VS-3: Standardize loading states
+- [x] VS-4: Normalize empty state components
+- [x] VS-5: Align error state handling
+- [x] VS-6: Improve accessibility

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Search, Tag } from 'lucide-react';
+import { Plus, Tag } from 'lucide-react';
 import SubcontractorSheet from './SubcontractorSheet';
 import SpecialtyDialog from './SpecialtyDialog';
 import PageHeader from '@/components/layout/PageHeader';
+import { SearchInput } from '@/components/ui/search-input';
 
 interface SubcontractorsHeaderProps {
   searchQuery: string;
@@ -26,23 +26,19 @@ const SubcontractorsHeader = ({
     <>
       <PageHeader title="Subcontractors">
         <div className="flex gap-2 items-center flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search subcontractors..."
-              className="w-[180px] sm:w-[300px] pl-8"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchInput
+            placeholder="Search subcontractors..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            containerClassName="w-[180px] sm:w-[300px]"
+          />
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => setSpecialtyDialogOpen(true)}>
-              <Tag className="h-4 w-4 mr-2" />
+              <Tag className="h-4 w-4 mr-1" aria-hidden="true" />
               Add Specialty
             </Button>
             <Button size="sm" variant="default" onClick={() => setAddSubcontractorOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
               Add Subcontractor
             </Button>
           </div>

@@ -34,7 +34,7 @@ const SubcontractorTableRow = ({
   return (
     <TableRow
       onClick={handleRowClick}
-      className="cursor-pointer hover:bg-[#0485ea]/5 transition-colors"
+      className="cursor-pointer hover:bg-primary/5 transition-colors"
     >
       <TableCell>
         <SubcontractorInfo name={subcontractor.subname} id={subcontractor.subid} />
