@@ -52,6 +52,11 @@ const EstimatesTable = ({
       estimate.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Added Logs
+  console.log('[EstimatesTable] searchQuery:', searchQuery);
+  console.log('[EstimatesTable] Estimates received:', estimates.length, estimates);
+  console.log('[EstimatesTable] Filtered estimates:', filteredEstimates.length, filteredEstimates);
+
   // Handle error state
   if (error) {
     return (
@@ -64,27 +69,25 @@ const EstimatesTable = ({
   }
 
   return (
-    <div className="bg-white border rounded-lg shadow-sm animate-in">
-      <Table>
-        <EstimateTableHeader />
-        <TableBody>
-          {loading ? (
-            <EstimateLoadingState />
-          ) : filteredEstimates.length > 0 ? (
-            filteredEstimates.map(estimate => (
-              <EstimateRow
-                key={estimate.id}
-                estimate={estimate}
-                onViewEstimate={onViewEstimate}
-                onRefreshEstimates={onRefreshEstimates}
-              />
-            ))
-          ) : (
-            <EstimateEmptyState />
-          )}
-        </TableBody>
-      </Table>
-    </div>
+    <Table className="border rounded-md">
+      <EstimateTableHeader />
+      <TableBody>
+        {loading ? (
+          <EstimateLoadingState />
+        ) : filteredEstimates.length > 0 ? (
+          filteredEstimates.map(estimate => (
+            <EstimateRow
+              key={estimate.id}
+              estimate={estimate}
+              onViewEstimate={onViewEstimate}
+              onRefreshEstimates={onRefreshEstimates}
+            />
+          ))
+        ) : (
+          <EstimateEmptyState />
+        )}
+      </TableBody>
+    </Table>
   );
 };
 

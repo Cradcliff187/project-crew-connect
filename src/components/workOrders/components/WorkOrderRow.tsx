@@ -28,7 +28,7 @@ const WorkOrderRow: React.FC<WorkOrderRowProps> = ({ workOrder }) => {
           label: 'View Details',
           icon: <Eye className="h-4 w-4" />,
           onClick: handleViewDetails,
-          className: 'text-[#0485ea] hover:text-[#0375d1]',
+          className: 'text-primary hover:text-primary/80',
         },
         {
           label: 'Edit',

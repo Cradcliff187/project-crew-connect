@@ -1,7 +1,8 @@
-import { PlusCircle, Search, CalendarClock } from 'lucide-react';
+import { PlusCircle, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import CreateProjectWizard from './createWizard/CreateProjectWizard';
+import PageHeader from '@/components/layout/PageHeader';
 
 interface ProjectsHeaderProps {
   searchQuery: string;
@@ -31,33 +32,32 @@ const ProjectsHeader = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div className="relative w-full sm:w-auto flex-1 max-w-sm">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
+    <>
+      <PageHeader title="Projects" description="Manage construction and maintenance projects">
+        <SearchInput
           placeholder="Search projects..."
-          className="pl-8 bg-white w-full"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
+          containerClassName="w-full sm:w-auto flex-1 max-w-sm"
         />
-      </div>
 
-      <div className="flex items-center gap-2 self-end sm:self-auto">
-        <Button
-          variant="outline"
-          onClick={() => console.log('View schedule')}
-          className="hidden md:flex"
-        >
-          <CalendarClock className="mr-2 h-4 w-4" />
-          Schedule
-        </Button>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => console.log('View schedule')}
+            className="hidden md:flex"
+          >
+            <CalendarClock className="mr-1 h-4 w-4" aria-hidden="true" />
+            Schedule
+          </Button>
 
-        <Button onClick={openAddDialog} className="bg-[#0485ea] hover:bg-[#0375d1]">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Project
-        </Button>
-      </div>
+          <Button onClick={openAddDialog} size="sm" variant="default">
+            <PlusCircle className="mr-1 h-4 w-4" aria-hidden="true" />
+            New Project
+          </Button>
+        </div>
+      </PageHeader>
 
       {showAddDialog && (
         <CreateProjectWizard
@@ -69,7 +69,7 @@ const ProjectsHeader = ({
           }}
         />
       )}
-    </div>
+    </>
   );
 };
 

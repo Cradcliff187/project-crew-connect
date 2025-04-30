@@ -7,7 +7,8 @@ const ProjectTableHeader = () => {
         <TableHead>Project</TableHead>
         <TableHead>Client</TableHead>
         <TableHead>Created</TableHead>
-        <TableHead>Budget</TableHead>
+        <TableHead>Cost Budget</TableHead>
+        <TableHead className="text-right">Est. Revenue</TableHead>
         <TableHead>Progress</TableHead>
         <TableHead>Status</TableHead>
         <TableHead className="text-right">Actions</TableHead>

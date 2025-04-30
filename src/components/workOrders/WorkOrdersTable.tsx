@@ -4,8 +4,10 @@ import { WorkOrder } from '@/types/workOrder';
 import WorkOrderRow from './components/WorkOrderRow';
 import WorkOrderTableHeader from './components/WorkOrderTableHeader';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Wrench } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableLoading } from '@/components/ui/table-loading';
 
 interface WorkOrdersTableProps {
   workOrders: WorkOrder[];
@@ -50,28 +52,21 @@ const WorkOrdersTable = ({
 
   // Handle loading state
   if (loading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-      </div>
-    );
+    return <TableLoading rowCount={5} />;
   }
 
   // Empty state when no work orders found
   if (filteredWorkOrders.length === 0) {
     return (
-      <div className="text-center py-10">
-        <h3 className="text-lg font-medium text-gray-600">No work orders found</h3>
-        <p className="text-sm text-gray-500 mt-2">
-          {searchQuery
+      <EmptyState
+        icon={<Wrench className="h-12 w-12 text-muted-foreground/50" />}
+        title="No work orders found"
+        description={
+          searchQuery
             ? 'Try changing your search query.'
-            : 'Create a new work order to get started.'}
-        </p>
-      </div>
+            : 'Create a new work order to get started.'
+        }
+      />
     );
   }
 

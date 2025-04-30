@@ -10,6 +10,28 @@ import {
  * Service for handling estimate operations
  */
 
+// Helper function for robust item matching across revisions
+const findMatchingItem = (
+  itemToMatch: EstimateItem,
+  itemList: EstimateItem[]
+): EstimateItem | undefined => {
+  // Priority 1 & 2: Match by ID linking (original_item_id <-> id)
+  let match = itemList.find(
+    otherItem =>
+      (itemToMatch.original_item_id && otherItem.id === itemToMatch.original_item_id) ||
+      (otherItem.original_item_id && otherItem.original_item_id === itemToMatch.id)
+  );
+
+  // Priority 3: Fallback to description match ONLY if no ID link found
+  if (!match) {
+    // Optional: Add console warning here if relying on description match
+    // console.warn(`[compareEstimateRevisions] No ID match for item "${itemToMatch.description}", falling back to description match.`);
+    match = itemList.find(otherItem => otherItem.description === itemToMatch.description);
+  }
+
+  return match;
+};
+
 /**
  * Convert an estimate to a project using the database function
  * This uses the convert_estimate_to_project database function
@@ -148,10 +170,10 @@ export async function compareEstimateRevisions(
     return null;
   }
 
-  console.log(`Comparing revisions: ${revisionIdA} (A) vs ${revisionIdB} (B)`);
+  console.log(`Comparing revisions: ${revisionIdB} (RevB/Newer) vs ${revisionIdA} (RevA/Older)`);
 
   try {
-    // 1. Fetch revision details and items concurrently
+    // 1. Fetch data (ensure correct IDs are used for A and B)
     const [revisionAResult, revisionBResult, itemsAResult, itemsBResult] = await Promise.all([
       supabase.from('estimate_revisions').select('*').eq('id', revisionIdA).single(),
       supabase.from('estimate_revisions').select('*').eq('id', revisionIdB).single(),
@@ -176,7 +198,6 @@ export async function compareEstimateRevisions(
       throw new Error(
         `Failed to fetch revision B (${revisionIdB}): ${revisionBResult.error.message}`
       );
-    // Cast to EstimateRevision; assumes DB schema matches type
     const revisionA = revisionAResult.data as unknown as EstimateRevision;
     const revisionB = revisionBResult.data as unknown as EstimateRevision;
 
@@ -189,52 +210,25 @@ export async function compareEstimateRevisions(
       throw new Error(
         `Failed to fetch items for revision B (${revisionIdB}): ${itemsBResult.error.message}`
       );
-    // Cast to EstimateItem array; assumes DB schema matches type
     const itemsA = (itemsAResult.data || []) as unknown as EstimateItem[];
     const itemsB = (itemsBResult.data || []) as unknown as EstimateItem[];
 
-    console.log(`Fetched ${itemsA.length} items for Rev A, ${itemsB.length} for Rev B`);
+    console.log(`Fetched ${itemsB.length} items for Rev B, ${itemsA.length} for Rev A`);
 
-    // 2. Item Matching and Comparison Logic
-    const itemsAMap = new Map<string, EstimateItem>(itemsA.map(item => [item.id, item]));
-    const itemsBMap = new Map<string, EstimateItem>(itemsB.map(item => [item.id, item]));
-    const matchedAIds = new Set<string>(); // Track IDs from itemsA that have been matched
+    // --- CORRECTED Item Matching and Comparison Logic ---
 
-    const addedItems: EstimateItem[] = [];
+    // Added: Items in B (Newer) that have no match in A (Older)
+    const addedItems = itemsB.filter(itemB => !findMatchingItem(itemB, itemsA));
+
+    // Removed: Items in A (Older) that have no match in B (Newer)
+    const removedItems = itemsA.filter(itemA => !findMatchingItem(itemA, itemsB));
+
+    // Changed: Items that have a match in both, but differ in specified fields
     const changedItems: ChangedItemDetail[] = [];
-
-    for (const itemB of itemsB) {
-      let matchFound = false;
-      let previousItem: EstimateItem | null = null;
-
-      // Primary match: original_item_id link pointing from B to A
-      if (itemB.original_item_id && itemsAMap.has(itemB.original_item_id)) {
-        previousItem = itemsAMap.get(itemB.original_item_id)!;
-        if (previousItem) {
-          matchedAIds.add(previousItem.id); // Mark the corresponding item in A as matched
-          matchFound = true;
-          console.log(`Matched itemB ${itemB.id} to itemA ${previousItem.id} via original_item_id`);
-        }
-      }
-
-      // If no primary match, consider other matching strategies (optional)
-      // Example: Secondary match based on description (use with caution, can be unreliable)
-      /*
-            if (!matchFound) {
-                for (const itemA of itemsA) {
-                    if (!matchedAIds.has(itemA.id) && itemA.description === itemB.description) {
-                        previousItem = itemA;
-                        matchedAIds.add(itemA.id);
-                        matchFound = true;
-                        console.log(`Matched itemB ${itemB.id} to itemA ${itemA.id} via description (Secondary)`);
-                        break;
-                    }
-                }
-            }
-            */
-
-      if (matchFound && previousItem) {
-        // Item exists in both, compare fields for changes
+    itemsB.forEach(itemB => {
+      const previousItem = findMatchingItem(itemB, itemsA); // Find corresponding item in Rev A
+      if (previousItem) {
+        // Only if item exists in both
         const changes: ItemChange[] = [];
         const fieldsToCompare: (keyof EstimateItem)[] = [
           'description',
@@ -247,20 +241,16 @@ export async function compareEstimateRevisions(
           'notes',
           'item_type',
           'vendor_id',
-          'subcontractor_id', // Add other relevant fields
+          'subcontractor_id',
+          'document_id',
         ];
 
         fieldsToCompare.forEach(field => {
-          // Handle potential null/undefined comparisons carefully
-          const valA = previousItem![field as keyof EstimateItem];
-          const valB = itemB[field as keyof EstimateItem];
-          if (valA !== valB && !(valA == null && valB == null)) {
-            // Basic check, allows null != undefined
-            changes.push({
-              field,
-              previousValue: valA,
-              currentValue: valB,
-            });
+          const valA = previousItem[field as keyof EstimateItem]; // Value from older revision
+          const valB = itemB[field as keyof EstimateItem]; // Value from newer revision
+          if (String(valA ?? '') !== String(valB ?? '')) {
+            // Compare string representations after handling null/undefined
+            changes.push({ field, previousValue: valA, currentValue: valB });
           }
         });
 
@@ -271,7 +261,7 @@ export async function compareEstimateRevisions(
               ? (priceDifference / previousItem.total_price) * 100
               : priceDifference !== 0
                 ? Infinity
-                : 0; // Handle division by zero or zero base
+                : 0;
 
           changedItems.push({
             current: itemB,
@@ -280,34 +270,36 @@ export async function compareEstimateRevisions(
             priceDifference,
             percentageDifference,
           });
-          console.log(`Detected changes for item pair (A:${previousItem.id}, B:${itemB.id})`);
         }
-      } else {
-        // Item in B has no match in A -> Added item
-        addedItems.push(itemB);
-        console.log(`ItemB ${itemB.id} identified as ADDED`);
       }
-    }
+    });
 
-    // Find removed items: Items in A whose IDs were not marked as matched
-    const removedItems = itemsA.filter(itemA => !matchedAIds.has(itemA.id));
-    removedItems.forEach(item => console.log(`ItemA ${item.id} identified as REMOVED`));
-
-    // DEBUG: Log array lengths before returning
+    // --- Debug Logging ---
+    addedItems.forEach(item =>
+      console.log(`[Service DEBUG] ItemB ${item.id} (${item.description}) marked as ADDED`)
+    );
+    removedItems.forEach(item =>
+      console.log(`[Service DEBUG] ItemA ${item.id} (${item.description}) marked as REMOVED`)
+    );
+    changedItems.forEach(item =>
+      console.log(
+        `[Service DEBUG] ItemPair (A:${item.previous.id}, B:${item.current.id}) marked as CHANGED`
+      )
+    );
     console.log(
-      `[DEBUG Compare Logic] Added: ${addedItems.length}, Removed: ${removedItems.length}, Changed: ${changedItems.length}`
+      `[Service DEBUG Final Counts] Added: ${addedItems.length}, Removed: ${removedItems.length}, Changed: ${changedItems.length}`
     );
 
-    // 3. Calculate Summary
-    const netAmountChange = (revisionB.amount || 0) - (revisionA.amount || 0);
+    // --- CORRECTED Summary Calculation ---
+    const netAmountChange = (revisionB.amount || 0) - (revisionA.amount || 0); // Newer - Older
     let netItemsPriceChange = 0;
     addedItems.forEach(item => (netItemsPriceChange += item.total_price || 0));
     removedItems.forEach(item => (netItemsPriceChange -= item.total_price || 0));
     changedItems.forEach(detail => (netItemsPriceChange += detail.priceDifference));
 
     const result: RevisionComparisonResult = {
-      revisionA,
-      revisionB,
+      revisionA, // Older
+      revisionB, // Newer
       addedItems,
       removedItems,
       changedItems,
@@ -315,16 +307,15 @@ export async function compareEstimateRevisions(
         totalItemsAdded: addedItems.length,
         totalItemsRemoved: removedItems.length,
         totalItemsChanged: changedItems.length,
-        netAmountChange,
+        netAmountChange, // Should be positive if Rev B > Rev A
         netItemsPriceChange,
       },
     };
 
-    console.log('Comparison generated:', result.summary);
+    console.log('Comparison generated:', result.summary); // Log the calculated summary
     return result;
   } catch (error: any) {
     console.error('Error comparing estimate revisions:', error);
-    // Depending on desired behavior, could toast here or let caller handle
     return null;
   }
 }

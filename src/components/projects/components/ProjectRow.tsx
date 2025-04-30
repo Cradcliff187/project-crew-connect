@@ -27,15 +27,14 @@ type ProjectRowDisplayData = Database['public']['Tables']['projects']['Row'] & {
 
 const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
   const navigate = useNavigate();
-  const projectData = project as ProjectRowDisplayData;
 
   const handleViewDetails = () => {
-    navigate(`/projects/${projectData.projectid}`);
+    navigate(`/projects/${project.projectid}`);
   };
 
   const handleEditProject = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/projects/${projectData.projectid}/edit`);
+    navigate(`/projects/${project.projectid}/edit`);
   };
 
   const actionGroups: ActionGroup[] = [
@@ -59,12 +58,12 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
         {
           label: 'Schedule',
           icon: <Calendar className="w-4 h-4" />,
-          onClick: () => console.log('Schedule project', projectData.projectid),
+          onClick: () => console.log('Schedule project', project.projectid),
         },
         {
           label: 'View time logs',
           icon: <Clock className="w-4 h-4" />,
-          onClick: () => console.log('View time logs', projectData.projectid),
+          onClick: () => console.log('View time logs', project.projectid),
         },
       ],
     },
@@ -73,40 +72,42 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
         {
           label: 'Generate report',
           icon: <FileText className="w-4 h-4" />,
-          onClick: () => console.log('Generate report', projectData.projectid),
+          onClick: () => console.log('Generate report', project.projectid),
         },
         {
           label: 'Archive project',
           icon: <Archive className="w-4 h-4" />,
-          onClick: () => console.log('Archive project', projectData.projectid),
+          onClick: () => console.log('Archive project', project.projectid),
           className: 'text-destructive hover:text-destructive/80',
         },
       ],
     },
   ];
 
-  const budgetValue = projectData.total_budget ?? 0;
-  const spentValue = projectData.current_expenses ?? 0;
-  const progressValue = budgetValue > 0 ? Math.round((spentValue / budgetValue) * 100) : 0;
+  const budgetValue = project.total_budget ?? 0;
+  const spentValue = project.current_expenses ?? 0;
+  const progressValue =
+    project.progress ?? (budgetValue > 0 ? Math.round((spentValue / budgetValue) * 100) : 0);
 
   return (
     <TableRow
-      key={projectData.projectid}
+      key={project.projectid}
       className="hover:bg-primary/5 transition-colors cursor-pointer"
-      onClick={() => navigate(`/projects/${projectData.projectid}`)}
+      onClick={handleViewDetails}
     >
       <TableCell>
-        <div className="font-medium text-primary">
-          {projectData.projectname || 'Unnamed Project'}
-        </div>
-        <div className="text-xs text-muted-foreground">{projectData.projectid}</div>
+        <div className="font-medium text-primary">{project.projectname || 'Unnamed Project'}</div>
+        <div className="text-xs text-muted-foreground">{project.projectid}</div>
       </TableCell>
-      <TableCell>{projectData.customer_name || 'No Client'}</TableCell>
-      <TableCell>{formatDate(projectData.created_at)}</TableCell>
+      <TableCell>{project.customername || 'No Client'}</TableCell>
+      <TableCell>{formatDate(project.created_at)}</TableCell>
       <TableCell>
         <div className="font-medium">{formatCurrency(spentValue)}</div>
-        <div className="text-xs text-muted-foreground">of {formatCurrency(budgetValue)}</div>
+        <div className="text-xs text-muted-foreground">
+          of {formatCurrency(project.total_estimated_cost_budget ?? 0)}
+        </div>
       </TableCell>
+      <TableCell className="text-right">{formatCurrency(budgetValue)}</TableCell>
       <TableCell>
         <div className="flex items-center space-x-2">
           <Progress value={progressValue} className="h-2 w-[100px]" />
@@ -114,7 +115,7 @@ const ProjectRow: React.FC<ProjectRowProps> = ({ project }) => {
         </div>
       </TableCell>
       <TableCell>
-        <StatusBadge status={mapStatusToStatusBadge(projectData.status)} />
+        <StatusBadge status={mapStatusToStatusBadge(project.status)} />
       </TableCell>
       <TableCell className="text-right" onClick={e => e.stopPropagation()}>
         <ActionMenu

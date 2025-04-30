@@ -254,15 +254,22 @@ export const fetchReportData = async (entityType: EntityType, filters: ReportFil
     // Build a query - use type assertion to work around the TypeScript type checking
     let query;
 
-    // Create a simple query without complex joins for all entity types
-    query = supabase.from(tableName as any).select('*');
+    // Specific query construction based on entity type
+    if (entityType === 'projects') {
+      query = supabase
+        .from(tableName as 'projects')
+        .select('*, customers!left(customerid, customername)'); // Join customers and select name
+    } else {
+      // Default query for other types
+      query = supabase.from(tableName as any).select('*');
+    }
 
     // Apply filters
     if (filters.search) {
       // Apply search filter logic based on entity type
       if (entityType === 'projects') {
         query = query.or(
-          `projectid.ilike.%${filters.search}%,projectname.ilike.%${filters.search}%`
+          `projectid.ilike.%${filters.search}%,projectname.ilike.%${filters.search}%,customers.customername.ilike.%${filters.search}%` // Add customer name search
         );
       } else if (entityType === 'customers') {
         query = query.or(
@@ -330,7 +337,17 @@ export const fetchReportData = async (entityType: EntityType, filters: ReportFil
     }
 
     // Process data with derived fields based on entity type
-    return processEntityData(entityType, data || []);
+    // Use the joined customer name if available
+    const processedData =
+      data?.map(item => {
+        if (entityType === 'projects' && item.customers) {
+          item.customer_name = item.customers.customername; // Use joined name
+          // delete item.customers; // Optional: remove the nested customers object
+        }
+        return item;
+      }) || [];
+
+    return processEntityData(entityType, processedData);
   } catch (error) {
     console.error(`Error in fetchData for ${entityType}:`, error);
     // Return mock data to ensure the UI still works

@@ -8,6 +8,28 @@ interface UseRevisionComparisonOptions {
   onError?: (error: Error) => void;
 }
 
+// Helper function for robust item matching across revisions
+const findMatchingItem = (
+  itemToMatch: EstimateItem,
+  itemList: EstimateItem[]
+): EstimateItem | undefined => {
+  // Priority 1 & 2: Match by ID linking (original_item_id <-> id)
+  let match = itemList.find(
+    otherItem =>
+      (itemToMatch.original_item_id && otherItem.id === itemToMatch.original_item_id) ||
+      (otherItem.original_item_id && otherItem.original_item_id === itemToMatch.id)
+  );
+
+  // Priority 3: Fallback to description match ONLY if no ID link found
+  // Be cautious with description matching, ensure descriptions are reasonably unique or stable.
+  // Consider making this stricter if descriptions change often.
+  if (!match) {
+    match = itemList.find(otherItem => otherItem.description === itemToMatch.description);
+  }
+
+  return match;
+};
+
 const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOptions) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentRevisionId, setCurrentRevisionId] = useState<string | null>(null);
@@ -85,40 +107,22 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
       const compareItems = (compareItemsResult.data || []) as any as EstimateItem[];
 
       // Process comparison data
-      const addedItems = currentItems.filter(
-        item =>
-          !compareItems.some(
-            ci =>
-              ci.description === item.description ||
-              ci.id === item.original_item_id ||
-              item.id === ci.original_item_id
-          )
-      );
+      const addedItems = currentItems.filter(item => !findMatchingItem(item, compareItems));
 
-      const removedItems = compareItems.filter(
-        item =>
-          !currentItems.some(
-            ci =>
-              ci.description === item.description ||
-              ci.id === item.original_item_id ||
-              item.id === ci.original_item_id
-          )
-      );
+      const removedItems = compareItems.filter(item => !findMatchingItem(item, currentItems));
 
       const changedItems = currentItems
         .map(currentItem => {
-          const previousItem = compareItems.find(
-            ci =>
-              ci.description === currentItem.description ||
-              ci.id === currentItem.original_item_id ||
-              currentItem.original_item_id === ci.id
-          );
+          const previousItem = findMatchingItem(currentItem, compareItems);
 
           if (
             previousItem &&
             (currentItem.quantity !== previousItem.quantity ||
               currentItem.unit_price !== previousItem.unit_price ||
-              currentItem.total_price !== previousItem.total_price)
+              currentItem.total_price !== previousItem.total_price ||
+              currentItem.description !== previousItem.description ||
+              currentItem.cost !== previousItem.cost ||
+              currentItem.markup_percentage !== previousItem.markup_percentage)
           ) {
             // Calculate differences
             const priceDifference = currentItem.total_price - previousItem.total_price;
@@ -135,7 +139,8 @@ const useRevisionComparison = ({ estimateId, onError }: UseRevisionComparisonOpt
                   key !== 'id' &&
                   key !== 'created_at' &&
                   key !== 'updated_at' &&
-                  key !== 'revision_id'
+                  key !== 'revision_id' &&
+                  key !== 'original_item_id'
               )
               .map(key => ({
                 field: key,

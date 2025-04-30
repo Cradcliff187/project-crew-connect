@@ -22,10 +22,24 @@ import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
 import { useNavigate } from 'react-router-dom';
 import ProjectTableHeader from './components/ProjectTableHeader';
 import ProjectRow from './components/ProjectRow';
+import { EmptyState } from '@/components/ui/empty-state';
+import { TableLoading } from '@/components/ui/table-loading';
 
-export type Project = Database['public']['Tables']['projects']['Row'] & {
-  customer_name?: string | null;
-  work_orders_count?: number | null;
+// Adjust type to match fetched and calculated data
+export type Project = {
+  projectid: string;
+  projectname: string | null;
+  status: string | null;
+  created_at: string; // Base type has this
+  createdon?: string; // Alias added in fetchProjects
+  customerid: string | null;
+  total_budget: number | null; // Represents Est. Revenue / Contract Value
+  current_expenses: number | null;
+  original_base_cost: number | null; // Added fetch
+  total_estimated_cost_budget?: number; // Calculated in fetchProjects
+  customername?: string | null; // Added via join/transform
+  progress?: number; // Added via join/transform
+  // Add any other fields from the 'projects' table if they are explicitly used downstream
 };
 
 interface ProjectsTableProps {
@@ -63,7 +77,7 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
     project =>
       project.projectname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.projectid.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.customername?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.status?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -73,10 +87,10 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
 
     const aValue =
       a[sortConfig.key as keyof Project] ??
-      (sortConfig.key === 'customer_name' ? a.customer_name : null);
+      (sortConfig.key === 'customer_name' ? a.customername : null);
     const bValue =
       b[sortConfig.key as keyof Project] ??
-      (sortConfig.key === 'customer_name' ? b.customer_name : null);
+      (sortConfig.key === 'customer_name' ? b.customername : null);
 
     if (aValue === null || aValue === undefined) return 1;
     if (bValue === null || bValue === undefined) return -1;
@@ -104,27 +118,19 @@ const ProjectsTable = ({ projects, loading, error, searchQuery }: ProjectsTableP
 
   // Handle loading state
   if (loading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-      </div>
-    );
+    return <TableLoading rowCount={5} />;
   }
 
   // Empty state when no projects found
   if (filteredProjects.length === 0) {
     return (
-      <div className="text-center py-10">
-        <Briefcase className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-        <h3 className="text-lg font-medium text-gray-600">No projects found</h3>
-        <p className="text-sm text-gray-500 mt-2">
-          {searchQuery ? 'Try changing your search query.' : 'Create a new project to get started.'}
-        </p>
-      </div>
+      <EmptyState
+        icon={<Briefcase className="h-12 w-12 text-muted-foreground/50" />}
+        title="No projects found"
+        description={
+          searchQuery ? 'Try changing your search query.' : 'Create a new project to get started.'
+        }
+      />
     );
   }
 

@@ -8,7 +8,7 @@ const EstimateTableHeader = () => {
         <TableHead>Client</TableHead>
         <TableHead>Project</TableHead>
         <TableHead>Last Updated</TableHead>
-        <TableHead>Amount</TableHead>
+        <TableHead>Latest Amount</TableHead>
         <TableHead>Status</TableHead>
         <TableHead className="text-right">Actions</TableHead>
       </TableRow>

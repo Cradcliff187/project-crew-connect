@@ -59,16 +59,17 @@ const RevisionComparisonView: React.FC<RevisionComparisonViewProps> = ({ compari
 
   const renderFieldChange = (change: ItemChange) => {
     const formatValue = (val: any) => {
+      if (val === null || val === undefined || val === '') {
+        return <span className="text-gray-400 italic">empty</span>;
+      }
       if (
         typeof val === 'number' &&
-        (change.field.includes('price') ||
-          change.field.includes('amount') ||
-          change.field.includes('cost'))
+        (String(change.field).includes('price') ||
+          String(change.field).includes('amount') ||
+          String(change.field).includes('cost'))
       ) {
         return formatCurrency(val);
       }
-      if (val === null || val === undefined || val === '')
-        return <span className="text-gray-400 italic">empty</span>;
       return String(val);
     };
 
@@ -127,7 +128,10 @@ const RevisionComparisonView: React.FC<RevisionComparisonViewProps> = ({ compari
                 <TableHeader>
                   <TableRow>
                     <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Cost (USD)</TableHead>
+                    <TableHead className="text-right">Markup %</TableHead>
                     <TableHead className="text-right">Unit Price</TableHead>
                     <TableHead className="text-right">Total Price</TableHead>
                   </TableRow>
@@ -141,11 +145,39 @@ const RevisionComparisonView: React.FC<RevisionComparisonViewProps> = ({ compari
                           {detail.changes.map(renderFieldChange)}
                         </ul>
                       </TableCell>
+                      <TableCell className="capitalize">
+                        {detail.current.item_type}
+                        {detail.changes.some(c => c.field === 'item_type') && (
+                          <div className="text-xs text-gray-500 line-through capitalize">
+                            {detail.previous.item_type}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         {detail.current.quantity}
                         {detail.changes.some(c => c.field === 'quantity') && (
                           <div className="text-xs text-gray-500 line-through">
                             {detail.previous.quantity}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(detail.current.cost || 0)}
+                        {detail.changes.some(c => c.field === 'cost') && (
+                          <div className="text-xs text-gray-500 line-through">
+                            {formatCurrency(detail.previous.cost || 0)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {detail.current.markup_percentage !== null
+                          ? `${detail.current.markup_percentage}%`
+                          : '-'}
+                        {detail.changes.some(c => c.field === 'markup_percentage') && (
+                          <div className="text-xs text-gray-500 line-through">
+                            {detail.previous.markup_percentage !== null
+                              ? `${detail.previous.markup_percentage}%`
+                              : '-'}
                           </div>
                         )}
                       </TableCell>
@@ -183,7 +215,10 @@ const RevisionComparisonView: React.FC<RevisionComparisonViewProps> = ({ compari
                 <TableHeader>
                   <TableRow>
                     <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Cost (USD)</TableHead>
+                    <TableHead className="text-right">Markup %</TableHead>
                     <TableHead className="text-right">Unit Price</TableHead>
                     <TableHead className="text-right">Total Price</TableHead>
                   </TableRow>
@@ -192,7 +227,12 @@ const RevisionComparisonView: React.FC<RevisionComparisonViewProps> = ({ compari
                   {addedItems.map(item => (
                     <TableRow key={item.id} className="bg-green-50/50 hover:bg-green-50/70">
                       <TableCell>{item.description}</TableCell>
+                      <TableCell className="capitalize">{item.item_type}</TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.cost || 0)}</TableCell>
+                      <TableCell className="text-right">
+                        {item.markup_percentage !== null ? `${item.markup_percentage}%` : '-'}
+                      </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(item.unit_price)}
                       </TableCell>
@@ -221,7 +261,10 @@ const RevisionComparisonView: React.FC<RevisionComparisonViewProps> = ({ compari
                 <TableHeader>
                   <TableRow>
                     <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Cost (USD)</TableHead>
+                    <TableHead className="text-right">Markup %</TableHead>
                     <TableHead className="text-right">Unit Price</TableHead>
                     <TableHead className="text-right">Total Price</TableHead>
                   </TableRow>
@@ -230,7 +273,14 @@ const RevisionComparisonView: React.FC<RevisionComparisonViewProps> = ({ compari
                   {removedItems.map(item => (
                     <TableRow key={item.id} className="bg-red-50/50 hover:bg-red-50/70">
                       <TableCell className="line-through">{item.description}</TableCell>
+                      <TableCell className="line-through capitalize">{item.item_type}</TableCell>
                       <TableCell className="text-right line-through">{item.quantity}</TableCell>
+                      <TableCell className="text-right line-through">
+                        {formatCurrency(item.cost || 0)}
+                      </TableCell>
+                      <TableCell className="text-right line-through">
+                        {item.markup_percentage !== null ? `${item.markup_percentage}%` : '-'}
+                      </TableCell>
                       <TableCell className="text-right line-through">
                         {formatCurrency(item.unit_price)}
                       </TableCell>

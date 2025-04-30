@@ -345,7 +345,28 @@ const EstimateRevisionsTab: React.FC<EstimateRevisionsTabProps> = ({
     setIsComparing(true);
     setComparisonResult(null); // Clear previous results
     try {
-      const result = await compareEstimateRevisions(revAId, revBId);
+      // Ensure A is older and B is newer before calling the comparison service
+      const revisionA = sortedRevisions.find(r => r.id === revAId);
+      const revisionB = sortedRevisions.find(r => r.id === revBId);
+
+      if (!revisionA || !revisionB) {
+        throw new Error('Could not find selected revisions for comparison.');
+      }
+
+      let olderRevisionId: string;
+      let newerRevisionId: string;
+
+      if (revisionA.version < revisionB.version) {
+        olderRevisionId = revAId;
+        newerRevisionId = revBId;
+      } else {
+        olderRevisionId = revBId;
+        newerRevisionId = revAId;
+        console.log('[Compare Trigger] Swapping revision order: A was newer than B.'); // Log if order needs swapping
+      }
+
+      // Pass the correctly ordered IDs to the service function
+      const result = await compareEstimateRevisions(olderRevisionId, newerRevisionId);
       if (result) {
         setComparisonResult(result);
         setShowComparisonDialog(true); // Open dialog on successful comparison

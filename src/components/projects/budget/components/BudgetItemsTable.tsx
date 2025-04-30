@@ -13,13 +13,29 @@ import { Edit, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Database } from '@/integrations/supabase/types';
 
-type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
+// Update type definition to match ProjectBudget.tsx
+type BudgetItemWithDetails = Database['public']['Tables']['project_budget_items']['Row'] & {
+  quantity?: number | null;
+  base_cost?: number | null;
+  selling_unit_price?: number | null;
+  markup_percentage?: number | null;
+  markup_amount?: number | null;
+  selling_total_price?: number | null;
+  gross_margin_percentage?: number | null;
+  gross_margin_amount?: number | null;
+  notes?: string | null;
+  cost_code_id?: string | null;
+  category_id?: string | null;
+  vendors?: { vendorname: string | null } | null;
+  subcontractors?: { subname: string | null } | null;
+  document_id?: string | null;
+};
 
 interface BudgetItemsTableProps {
-  items: BudgetItem[];
-  onEditItem: (item: BudgetItem) => void;
-  onDeleteItem: (item: BudgetItem) => void;
-  onRowClick: (item: BudgetItem) => void;
+  items: BudgetItemWithDetails[]; // Use updated type
+  onEditItem: (item: BudgetItemWithDetails) => void; // Use updated type
+  onDeleteItem: (item: BudgetItemWithDetails) => void; // Use updated type
+  onRowClick: (item: BudgetItemWithDetails) => void; // Use updated type
 }
 
 const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
@@ -36,11 +52,14 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
     );
   }
 
-  // Calculate Totals for Footer
-  const totalEstAmount = items.reduce((sum, item) => sum + (item.estimated_amount || 0), 0);
-  const totalActualAmount = items.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
-  const totalEstCost = items.reduce((sum, item) => sum + (item.estimated_cost || 0), 0);
-  const totalVariance = totalEstCost - totalActualAmount; // Assuming actual_amount tracks COST
+  // Calculate Totals for Footer using newly available direct fields
+  const totalSellingPrice = items.reduce((sum, item) => sum + (item.selling_total_price || 0), 0);
+  const totalBaseCost = items.reduce(
+    (sum, item) => sum + (item.base_cost || 0) * (item.quantity || 1),
+    0
+  );
+  const totalActualCost = items.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
+  const totalCostVariance = totalBaseCost - totalActualCost;
 
   return (
     <div className="rounded-md border">
@@ -49,19 +68,26 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
           <TableRow>
             <TableHead>Category</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead className="text-right">Est. Amount</TableHead>
-            <TableHead className="text-right">Est. Cost</TableHead>
+            <TableHead className="text-right">Qty</TableHead>
+            <TableHead className="text-right">Unit Cost</TableHead>
+            <TableHead className="text-right">Unit Price</TableHead>
+            <TableHead className="text-right">Total Est. Cost</TableHead>
+            <TableHead className="text-right">Total Est. Price</TableHead>
             <TableHead className="text-right">Actual Cost</TableHead>
-            <TableHead className="text-right">Variance</TableHead>
+            <TableHead className="text-right">Cost Variance</TableHead>
             <TableHead className="w-[80px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {items.map(item => {
-            const estAmount = item.estimated_amount || 0;
-            const estCost = item.estimated_cost || 0;
-            const actualCost = item.actual_amount || 0;
-            const variance = estCost - actualCost;
+            // Use direct fields from the item
+            const quantity = item.quantity || 1;
+            const baseUnitCost = item.base_cost || 0;
+            const sellingUnitPrice = item.selling_unit_price || 0;
+            const totalEstCost = baseUnitCost * quantity;
+            const totalEstSellingPrice = item.selling_total_price || sellingUnitPrice * quantity;
+            const actualCost = item.actual_amount || 0; // Assuming actual_amount is actual COST
+            const costVariance = totalEstCost - actualCost;
             const isContingency = item.is_contingency;
 
             return (
@@ -72,13 +98,16 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
               >
                 <TableCell className="font-medium">{item.category || 'Uncat.'}</TableCell>
                 <TableCell>{item.description || '-'}</TableCell>
-                <TableCell className="text-right">{formatCurrency(estAmount)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(estCost)}</TableCell>
+                <TableCell className="text-right">{quantity}</TableCell>
+                <TableCell className="text-right">{formatCurrency(baseUnitCost)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(sellingUnitPrice)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(totalEstCost)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(totalEstSellingPrice)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(actualCost)}</TableCell>
                 <TableCell
-                  className={`text-right ${variance < 0 ? 'text-red-600' : 'text-green-600'}`}
+                  className={`text-right ${costVariance < 0 ? 'text-red-600' : 'text-green-600'}`}
                 >
-                  {formatCurrency(variance)}
+                  {formatCurrency(costVariance)}
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end space-x-1">
@@ -91,7 +120,6 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
                         onEditItem(item);
                       }}
                     >
-                      {' '}
                       <Edit className="h-3 w-3" />
                     </Button>
                     <Button
@@ -103,7 +131,6 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
                         onDeleteItem(item);
                       }}
                     >
-                      {' '}
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -114,17 +141,16 @@ const BudgetItemsTable: React.FC<BudgetItemsTableProps> = ({
         </TableBody>
         <TableFooter className="bg-muted/50 font-medium">
           <TableRow>
-            <TableCell colSpan={2}>Totals</TableCell>
-            <TableCell className="text-right">{formatCurrency(totalEstAmount)}</TableCell>
-            <TableCell className="text-right">{formatCurrency(totalEstCost)}</TableCell>
-            <TableCell className="text-right">{formatCurrency(totalActualAmount)}</TableCell>
+            <TableCell colSpan={5}>Totals</TableCell>
+            <TableCell className="text-right">{formatCurrency(totalBaseCost)}</TableCell>
+            <TableCell className="text-right">{formatCurrency(totalSellingPrice)}</TableCell>
+            <TableCell className="text-right">{formatCurrency(totalActualCost)}</TableCell>
             <TableCell
-              className={`text-right ${totalVariance < 0 ? 'text-red-600' : 'text-green-600'}`}
+              className={`text-right ${totalCostVariance < 0 ? 'text-red-600' : 'text-green-600'}`}
             >
-              {formatCurrency(totalVariance)}
+              {formatCurrency(totalCostVariance)}
             </TableCell>
             <TableCell />
-            {/* Actions column footer */}
           </TableRow>
         </TableFooter>
       </Table>

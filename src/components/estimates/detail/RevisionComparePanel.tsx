@@ -146,10 +146,11 @@ const RevisionComparePanel: React.FC<RevisionComparePanelProps> = ({ estimateId 
                     {formatCurrency(comparisonData.currentRevision.amount || 0)}
                   </div>
                   <div
-                    className={`text-sm ${comparisonData.totalDifference > 0 ? 'text-green-600' : 'text-red-600'}`}
+                    className={`text-sm ${comparisonData.totalDifference >= 0 ? 'text-green-600' : 'text-red-600'}`}
                   >
                     {comparisonData.totalDifference > 0 ? '+' : ''}
                     {formatCurrency(comparisonData.totalDifference)} (
+                    {comparisonData.percentageChange >= 0 ? '+' : ''}
                     {comparisonData.percentageChange.toFixed(1)}%)
                   </div>
                 </div>

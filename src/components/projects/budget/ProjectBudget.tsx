@@ -37,11 +37,24 @@ type Project = Database['public']['Tables']['projects']['Row'];
 type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'];
 type Expense = Database['public']['Tables']['expenses']['Row'];
 
-// Type definitions now need to potentially include joined names AND document_id
+// Type definitions: Define a more detailed type for budget items
+// Explicitly list all fields expected after the backend change
 type BudgetItemWithDetails = BudgetItem & {
-  document_id?: string | null; // Add document_id
-  vendors: { vendorname: string | null } | null;
-  subcontractors: { subname: string | null } | null;
+  quantity: number; // Now directly available
+  base_cost: number; // Now directly available
+  selling_unit_price: number; // Now directly available
+  markup_percentage: number; // Now directly available
+  markup_amount: number; // Now directly available
+  selling_total_price: number; // Now directly available
+  gross_margin_percentage: number; // Now directly available
+  gross_margin_amount: number; // Now directly available
+  notes?: string | null; // Included notes
+  cost_code_id?: string | null; // If available
+  category_id?: string | null; // If available
+  // Keep joined vendor/sub data
+  vendors?: { vendorname: string | null } | null;
+  subcontractors?: { subname: string | null } | null;
+  document_id?: string | null; // Already included
 };
 
 interface ProjectBudgetProps {
@@ -68,25 +81,31 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
   } = useQuery({
     queryKey: ['project-budget-summary', projectId],
     queryFn: async () => {
+      // Define the explicit columns to select for budget items
+      const budgetItemColumns = `
+        id, project_id, category, description, quantity,
+        base_cost, selling_unit_price, markup_percentage, markup_amount,
+        selling_total_price, gross_margin_percentage, gross_margin_amount,
+        estimated_amount, actual_amount, estimate_item_origin_id,
+        vendor_id, subcontractor_id,
+        created_at, updated_at, document_id,
+        vendors ( vendorname ),
+        subcontractors ( subname )
+      `;
+
       const [projectResult, budgetItemsResult] = await Promise.all([
         supabase
           .from('projects')
-          .select('projectid, projectname, total_budget, current_expenses, budget_status')
+          .select(
+            'projectid, projectname, total_budget, current_expenses, budget_status, original_base_cost, original_selling_price, original_contingency_amount' // Select new summary fields
+          )
           .eq('projectid', projectId)
           .single(),
         supabase
           .from('project_budget_items')
-          .select(
-            `
-            *,
-            document_id,
-            vendors ( vendorname ),
-            subcontractors ( subname )
-          `
-          )
+          .select(budgetItemColumns) // Use the explicit column list
           .eq('project_id', projectId)
-          .order('category')
-          .order('description'),
+          .order('created_at'), // Order by creation or description? Using created_at for now
       ]);
 
       if (projectResult.error) throw projectResult.error;
@@ -96,7 +115,7 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
 
       return {
         project: projectResult.data as Project,
-        budgetItems: (budgetItemsResult.data || []) as BudgetItemWithDetails[],
+        budgetItems: (budgetItemsResult.data || []) as BudgetItemWithDetails[], // Cast to the more detailed type
       };
     },
     meta: {
@@ -287,6 +306,8 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
 
       <BudgetOverview
         totalBudget={projectData?.total_budget || 0}
+        originalSellingPrice={projectData?.original_selling_price || 0}
+        originalContingency={projectData?.original_contingency_amount || 0}
         currentExpenses={projectData?.current_expenses || 0}
         budgetStatus={projectData?.budget_status || 'not_set'}
       />
@@ -306,7 +327,7 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
         </CardHeader>
         <CardContent>
           <BudgetItemsTable
-            items={budgetItemsData as BudgetItem[]}
+            items={budgetItemsData}
             onEditItem={handleEditBudgetItem}
             onDeleteItem={openDeleteConfirmation}
             onRowClick={handleBudgetItemRowClick}
@@ -388,7 +409,7 @@ const ProjectBudget: React.FC<ProjectBudgetProps> = ({ projectId }) => {
 
       {isBudgetItemDetailModalOpen && (
         <BudgetItemDetailModal
-          item={selectedBudgetItemDetail}
+          item={selectedBudgetItemDetail as BudgetItemWithDetails | null}
           isOpen={isBudgetItemDetailModalOpen}
           onClose={handleCloseBudgetItemDetailModal}
           onViewDocument={handleViewDocument}

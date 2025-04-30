@@ -20,15 +20,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EstimateRowProps {
   estimate: EstimateType;
   onRefreshEstimates?: () => void;
+  onViewEstimate: (estimate: EstimateType) => void;
 }
 
 const EstimateRow: React.FC<EstimateRowProps> = ({
   estimate,
   onRefreshEstimates,
+  onViewEstimate,
 }): React.ReactElement | null => {
   const navigate = useNavigate();
 
@@ -437,6 +440,12 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
     },
   ];
 
+  // Check if estimate object or estimate.id is missing
+  if (!estimate || !estimate.id) {
+    console.error('[EstimateRow] Attempting to render row with invalid estimate data:', estimate);
+    return null; // Return null if data is fundamentally invalid
+  }
+
   return (
     <>
       <TableRow
@@ -451,7 +460,9 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
               className="text-primary hover:underline"
               onClick={e => e.stopPropagation()}
             >
-              {estimate.id.substring(0, 8)}
+              {estimate.id.startsWith('EST-')
+                ? estimate.id
+                : `EST-${estimate.id.substring(0, 6)}...`}
             </Link>
           ) : (
             'N/A'
@@ -460,7 +471,18 @@ const EstimateRow: React.FC<EstimateRowProps> = ({
         <TableCell>{estimate.client || 'No Client'}</TableCell>
         <TableCell>{estimate.project || 'No Project'}</TableCell>
         <TableCell>{formatDate(estimate.latestRevisionDate || estimate.date)}</TableCell>
-        <TableCell>{formatCurrency(estimate.amount)}</TableCell>
+        <TableCell>
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <span className="cursor-help">{formatCurrency(estimate.amount)}</span>
+              </TooltipTrigger>
+              <TooltipContent side="top" align="center">
+                <p>Total amount from the latest revision.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </TableCell>
         <TableCell>
           <StatusBadge status={estimate.status as StatusType} />
         </TableCell>

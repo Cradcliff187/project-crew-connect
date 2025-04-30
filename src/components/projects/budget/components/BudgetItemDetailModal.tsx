@@ -13,14 +13,25 @@ import { Database } from '@/integrations/supabase/types';
 import { formatCurrency } from '@/lib/utils';
 import { FileText } from 'lucide-react';
 
-type BudgetItem = Database['public']['Tables']['project_budget_items']['Row'] & {
-  document_id?: string | null;
+type BudgetItemWithDetails = Database['public']['Tables']['project_budget_items']['Row'] & {
+  quantity?: number | null;
+  base_cost?: number | null;
+  selling_unit_price?: number | null;
+  markup_percentage?: number | null;
+  markup_amount?: number | null;
+  selling_total_price?: number | null;
+  gross_margin_percentage?: number | null;
+  gross_margin_amount?: number | null;
+  notes?: string | null;
+  cost_code_id?: string | null;
+  category_id?: string | null;
   vendors?: { vendorname: string | null } | null;
   subcontractors?: { subname: string | null } | null;
+  document_id?: string | null;
 };
 
 interface BudgetItemDetailModalProps {
-  item: BudgetItem | null;
+  item: BudgetItemWithDetails | null;
   isOpen: boolean;
   onClose: () => void;
   onViewDocument: (documentId: string) => void;
@@ -42,14 +53,19 @@ const BudgetItemDetailModal: React.FC<BudgetItemDetailModalProps> = ({
     }
   };
 
-  const estAmount = item.estimated_amount || 0;
-  const estCost = item.estimated_cost || 0;
-  const actualCost = item.actual_amount || 0; // actual_amount likely tracks actual cost here
-  const variance = estCost - actualCost;
+  const quantity = item.quantity || 1;
+  const baseUnitCost = item.base_cost || 0;
+  const sellingUnitPrice = item.selling_unit_price || 0;
+  const markupPercentage = item.markup_percentage || 0;
+  const estTotalCost = baseUnitCost * quantity;
+  const estTotalSellingPrice = item.selling_total_price || sellingUnitPrice * quantity;
+  const estGrossMarginAmount = item.gross_margin_amount || estTotalSellingPrice - estTotalCost;
+
+  const actualCost = item.actual_amount || 0;
+  const costVariance = estTotalCost - actualCost;
 
   const vendorName = item.vendors?.vendorname;
   const subcontractorName = item.subcontractors?.subname;
-  // @ts-ignore - Access document_id, ignoring potential type error from outdated types
   const documentId = item.document_id;
 
   return (
@@ -68,22 +84,18 @@ const BudgetItemDetailModal: React.FC<BudgetItemDetailModalProps> = ({
             <span className="text-muted-foreground self-start">Description:</span>
             <span className="font-medium whitespace-pre-wrap">{item.description || 'N/A'}</span>
 
-            {/* Display Vendor if available */}
             {vendorName && (
               <>
                 <span className="text-muted-foreground">Vendor:</span>
                 <span className="font-medium">{vendorName}</span>
               </>
             )}
-
-            {/* Display Subcontractor if available */}
             {subcontractorName && (
               <>
                 <span className="text-muted-foreground">Subcontractor:</span>
                 <span className="font-medium">{subcontractorName}</span>
               </>
             )}
-
             {item.is_contingency && (
               <>
                 <span className="text-muted-foreground">Type:</span>
@@ -92,27 +104,65 @@ const BudgetItemDetailModal: React.FC<BudgetItemDetailModalProps> = ({
                 </Badge>
               </>
             )}
+            {item.notes && (
+              <>
+                <span className="text-muted-foreground self-start">Notes:</span>
+                <span className="whitespace-pre-wrap">{item.notes}</span>
+              </>
+            )}
           </div>
 
           {/* --- Financial Details Section --- */}
           <>
             <hr />
+            <div className="grid grid-cols-4 items-center gap-x-2 gap-y-2 text-sm">
+              <span className="text-muted-foreground col-span-1 text-right">Quantity:</span>
+              <span className="font-medium col-span-1">{quantity}</span>
+              <span className="text-muted-foreground col-span-1 text-right">Unit Cost:</span>
+              <span className="font-medium col-span-1">{formatCurrency(baseUnitCost)}</span>
+
+              <span className="text-muted-foreground col-span-1 text-right">Markup %:</span>
+              <span className="font-medium col-span-1">{markupPercentage.toFixed(1)}%</span>
+              <span className="text-muted-foreground col-span-1 text-right">Unit Price:</span>
+              <span className="font-medium col-span-1">{formatCurrency(sellingUnitPrice)}</span>
+
+              <span className="text-muted-foreground col-span-1 text-right font-semibold">
+                Total Est Cost:
+              </span>
+              <span className="font-semibold col-span-1">{formatCurrency(estTotalCost)}</span>
+              <span className="text-muted-foreground col-span-1 text-right font-semibold">
+                Total Est Price:
+              </span>
+              <span className="font-semibold col-span-1">
+                {formatCurrency(estTotalSellingPrice)}
+              </span>
+
+              <span className="text-muted-foreground col-span-1 text-right">Est GM Amt:</span>
+              <span className="font-medium col-span-1">{formatCurrency(estGrossMarginAmount)}</span>
+              <span className="text-muted-foreground col-span-1 text-right">Est GM %:</span>
+              <span className="font-medium col-span-1">
+                {item.gross_margin_percentage
+                  ? `${item.gross_margin_percentage.toFixed(1)}%`
+                  : 'N/A'}
+              </span>
+            </div>
+          </>
+
+          {/* --- Actuals & Variance Section --- */}
+          <>
+            <hr />
             <div className="grid grid-cols-[max-content_1fr] items-center gap-x-4 gap-y-2 text-sm">
-              <span className="text-muted-foreground">Est. Amount:</span>
-              <span className="font-semibold">{formatCurrency(estAmount)}</span>
-
-              <span className="text-muted-foreground">Est. Cost:</span>
-              <span className="font-semibold">{formatCurrency(estCost)}</span>
-
               <span className="text-muted-foreground">Actual Cost:</span>
               <span className="font-semibold">{formatCurrency(actualCost)}</span>
 
               <span className="text-muted-foreground">Cost Variance:</span>
-              <span className={`font-semibold ${variance < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {formatCurrency(variance)}
-                {variance !== 0 && (
+              <span
+                className={`font-semibold ${costVariance < 0 ? 'text-red-600' : 'text-green-600'}`}
+              >
+                {formatCurrency(costVariance)}
+                {costVariance !== 0 && (
                   <span className="text-xs text-muted-foreground ml-1">
-                    ({variance > 0 ? 'Under' : 'Over'} Budget)
+                    ({costVariance > 0 ? 'Under' : 'Over'} Budget)
                   </span>
                 )}
               </span>

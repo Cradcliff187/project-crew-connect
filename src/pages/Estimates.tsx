@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/layout/PageTransition';
 import EstimatesTable, { EstimateType } from '@/components/estimates/EstimatesTable';
 import EstimatesHeader from '@/components/estimates/EstimatesHeader';
-import { useEstimates } from '@/components/estimates/hooks/useEstimates';
+import { useEstimates } from '@/components/estimates/hooks/useEstimates.tsx';
 import { StatusType } from '@/types/common';
 import { formatDate } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
 
 /**
  * Estimates page component for listing and managing estimates
@@ -18,23 +17,21 @@ const Estimates = () => {
 
   const { estimates, loading, error, fetchEstimates } = useEstimates();
 
-  // Refresh estimates when component mounts or is revisited
-  useEffect(() => {
-    fetchEstimates();
-  }, []);
-
   const handleViewEstimate = (estimate: EstimateType) => {
     navigate(`/estimates/${estimate.id}`);
   };
 
+  console.log(
+    '[Estimates Page] Rendering with searchQuery:',
+    searchQuery,
+    'Estimates count:',
+    estimates.length
+  );
+
   return (
     <PageTransition>
       <div className="flex flex-col min-h-full">
-        <EstimatesHeader
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onEstimateAdded={fetchEstimates}
-        />
+        <EstimatesHeader searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
         <div className="mt-6">
           <EstimatesTable

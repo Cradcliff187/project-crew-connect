@@ -3,11 +3,12 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EstimateFormValues, EstimateItem } from '../schemas/estimateFormSchema';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Interface for items being processed, extending the named EstimateItem type
-interface ProcessingItem extends EstimateItem {
-  // No need to redefine temp_item_id as it's now in the base EstimateItem type
-}
+// interface ProcessingItem extends EstimateItem {
+//   // No need to redefine temp_item_id as it's now in the base EstimateItem type
+// }
 
 // Keep track of active submissions to prevent duplicates
 const activeSubmissions = new Set();
@@ -15,6 +16,7 @@ const activeSubmissions = new Set();
 export const useEstimateSubmit = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const submitEstimate = async (
     data: EstimateFormValues,
@@ -94,6 +96,9 @@ export const useEstimateSubmit = () => {
         customerCity = data.newCustomer.city || null;
         customerState = data.newCustomer.state || null;
         customerZip = data.newCustomer.zip || null;
+
+        // Invalidate customer list query if new customer was added
+        queryClient.invalidateQueries({ queryKey: ['customers'] });
       } else if (data.customer) {
         console.log('Using existing customer with ID:', data.customer);
         customerId = data.customer;
@@ -177,17 +182,19 @@ export const useEstimateSubmit = () => {
       // Create the line items
       console.log('Creating line items for estimate');
       // Keep track of temporary IDs and item data
-      const itemsWithTempIds: ProcessingItem[] = data.items;
+      // Assuming EstimateFormValues validation ensures items array is valid EstimateItem[] by submission time
+      const itemsWithTempIds = data.items as EstimateItem[]; // Cast here
       const lineItemsToInsert = itemsWithTempIds.map(item => {
         // Exclude temp_item_id from the object sent to DB
         const { temp_item_id, ...dbItem } = item;
 
         console.log('Processing line item:', dbItem);
-        const cost = parseFloat(dbItem.cost) || 0;
-        const markup_percentage = parseFloat(dbItem.markup_percentage) || 0;
+        // Now we can assume dbItem fields exist based on EstimateItem type
+        const cost = parseFloat(dbItem.cost) || 0; // Removed ?? fallback, relying on cast
+        const markup_percentage = parseFloat(dbItem.markup_percentage) || 0; // Removed ?? fallback
         const markup_amount = cost * (markup_percentage / 100);
-        const unit_price = cost + markup_amount;
-        const quantity = parseFloat(dbItem.quantity || '1') || 1;
+        const unit_price = cost + markup_amount; // unit_price still seems calculated, not directly from item?
+        const quantity = parseFloat(dbItem.quantity) || 1; // Removed ?? fallback
         const total_price = unit_price * quantity;
         const gross_margin = markup_amount * quantity;
         const gross_margin_percentage = cost > 0 ? (markup_amount / cost) * 100 : 0;
@@ -195,7 +202,7 @@ export const useEstimateSubmit = () => {
         return {
           estimate_id: estimateId,
           revision_id: revisionId,
-          description: dbItem.description,
+          description: dbItem.description, // Removed fallback
           item_type: dbItem.item_type,
           cost: cost,
           markup_percentage: markup_percentage,
@@ -207,7 +214,7 @@ export const useEstimateSubmit = () => {
           gross_margin_percentage: gross_margin_percentage,
           vendor_id: dbItem.vendor_id || null,
           subcontractor_id: dbItem.subcontractor_id || null,
-          document_id: dbItem.document_id || null, // Include document_id attached to item
+          document_id: dbItem.document_id || null,
         };
       });
 
@@ -335,6 +342,10 @@ export const useEstimateSubmit = () => {
       }
 
       console.log('Estimate creation completed successfully');
+
+      // --- Invalidate estimates query ---
+      await queryClient.invalidateQueries({ queryKey: ['estimates'] });
+      console.log('Invalidated estimates query');
 
       // Send email if status is 'sent'
       if (status === 'sent') {

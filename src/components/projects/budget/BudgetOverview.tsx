@@ -5,12 +5,16 @@ import { AlertCircle, CheckCircle2, DollarSign, PieChart, TrendingUp } from 'luc
 
 interface BudgetOverviewProps {
   totalBudget: number;
+  originalSellingPrice: number;
+  originalContingency: number;
   currentExpenses: number;
   budgetStatus: string;
 }
 
 const BudgetOverview: React.FC<BudgetOverviewProps> = ({
   totalBudget,
+  originalSellingPrice,
+  originalContingency,
   currentExpenses,
   budgetStatus,
 }) => {
@@ -82,6 +86,10 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             <DollarSign className="h-5 w-5 mr-2 text-[#0485ea]" />
             <span className="text-2xl font-bold">{formatCurrency(totalBudget)}</span>
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            (Items: {formatCurrency(originalSellingPrice)} + Contingency:{' '}
+            {formatCurrency(originalContingency || 0)})
+          </p>
         </CardContent>
       </Card>
 
