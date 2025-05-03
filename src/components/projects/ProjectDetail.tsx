@@ -38,6 +38,7 @@ import ProjectHeader from '@/components/projects/detail/ProjectHeader';
 import ProjectInfoCard from '@/components/projects/detail/ProjectInfoCard';
 import ProjectClientCard from '@/components/projects/detail/ProjectClientCard';
 import FinancialSummaryTab from '@/components/projects/detail/tabs/FinancialSummaryTab';
+import ProjectOverviewTab from '@/components/projects/detail/tabs/ProjectOverviewTab';
 import ExpenseFormDialog from '@/components/projects/budget/ExpenseFormDialog';
 import ChangeOrderDialog from '@/components/changeOrders/ChangeOrderDialog';
 import EnhancedDocumentUpload from '@/components/documents/EnhancedDocumentUpload';
@@ -364,12 +365,25 @@ const ProjectDetail = () => {
                 </CardContent>
               </Card>
 
-              <Tabs defaultValue="progress">
+              <Tabs defaultValue="overview">
                 <TabsList className="mb-4">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="progress">Progress</TabsTrigger>
                   <TabsTrigger value="milestones">Tasks & Milestones</TabsTrigger>
                   <TabsTrigger value="budget">Budget</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="overview">
+                  <ProjectOverviewTab
+                    project={project}
+                    customerName={getCustomerName()}
+                    customerId={getCustomerId()}
+                    onEditClick={() => navigate(`/projects/${project.projectid}/edit`)}
+                    onAddItemClick={() => {
+                      // TODO: Implement Add functionality
+                    }}
+                  />
+                </TabsContent>
 
                 <TabsContent value="progress">
                   <ProjectProgress projectId={project.projectid} />
