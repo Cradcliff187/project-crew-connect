@@ -14,6 +14,9 @@ import {
 import { EstimateFormValues } from '../../schemas/estimateFormSchema';
 import { Loader2, Info, MapPin, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import React, { useRef, useEffect } from 'react';
+import { usePlacesAutocomplete, PlaceDetails } from '@/hooks/usePlacesAutocomplete';
+import { parseAddressComponents, getFullStreetAddress } from '@/utils/addressUtils';
 
 interface BasicInfoStepProps {
   customerTab: 'existing' | 'new';
@@ -41,6 +44,7 @@ const BasicInfoStep = ({
 }: BasicInfoStepProps) => {
   const form = useFormContext<EstimateFormValues>();
   const showSiteLocation = form.watch('showSiteLocation');
+  const { setValue, watch } = form;
 
   // Find the currently selected customer to display their address
   const selectedCustomerId = form.watch('customer');
@@ -50,6 +54,110 @@ const BasicInfoStep = ({
     : null;
 
   const hasCustomerAddress = !!customerAddress && customerAddress.length > 0;
+
+  // --- Customer Address Autocomplete ---
+  const initialCustomerAddress = useRef(watch('newCustomer.address') || '');
+
+  const {
+    inputValue: customerAddressInputValue,
+    suggestions: customerAddressSuggestions,
+    loading: customerAddressLoading,
+    error: customerAddressError,
+    handleInputChange: handleCustomerAddressChange,
+    handleSelectSuggestion: handleCustomerAddressSelect,
+    clearSuggestions: clearCustomerSuggestions,
+    setInputValueManual: setCustomerInputValue,
+  } = usePlacesAutocomplete({
+    initialValue: initialCustomerAddress.current,
+    onSelect: details => {
+      if (details) {
+        console.log('Estimate BasicInfoStep - Customer Address Details:', details);
+        const parsed = parseAddressComponents(details.address_components);
+        const fullStreet = getFullStreetAddress(parsed);
+
+        // Update customer address fields
+        setValue('newCustomer.address', details.formatted_address || fullStreet, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue('newCustomer.city', parsed.city, { shouldValidate: true, shouldDirty: true });
+        setValue('newCustomer.state', parsed.state, { shouldValidate: true, shouldDirty: true });
+        setValue('newCustomer.zip', parsed.postalCode, { shouldValidate: true, shouldDirty: true });
+      } else {
+        console.error('Estimate BasicInfoStep: Failed to get customer address details');
+        // Clear fields on error
+        setValue('newCustomer.city', '', { shouldValidate: true, shouldDirty: true });
+        setValue('newCustomer.state', '', { shouldValidate: true, shouldDirty: true });
+        setValue('newCustomer.zip', '', { shouldValidate: true, shouldDirty: true });
+      }
+    },
+  });
+
+  // Handle customer address input change
+  const handleCustomerAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleCustomerAddressChange(e);
+    setValue('newCustomer.address', e.target.value, { shouldDirty: true });
+  };
+
+  // Keep customer address input synchronized
+  const currentCustomerAddressValue = watch('newCustomer.address');
+  useEffect(() => {
+    if (currentCustomerAddressValue !== customerAddressInputValue) {
+      setCustomerInputValue(currentCustomerAddressValue || '');
+    }
+  }, [currentCustomerAddressValue, customerAddressInputValue, setCustomerInputValue]);
+
+  // --- Site Location Autocomplete ---
+  const initialSiteAddress = useRef(watch('location.address') || '');
+
+  const {
+    inputValue: siteAddressInputValue,
+    suggestions: siteAddressSuggestions,
+    loading: siteAddressLoading,
+    error: siteAddressError,
+    handleInputChange: handleSiteAddressChange,
+    handleSelectSuggestion: handleSiteAddressSelect,
+    clearSuggestions: clearSiteSuggestions,
+    setInputValueManual: setSiteInputValue,
+  } = usePlacesAutocomplete({
+    initialValue: initialSiteAddress.current,
+    onSelect: details => {
+      if (details) {
+        console.log('Estimate BasicInfoStep - Site Location Details:', details);
+        const parsed = parseAddressComponents(details.address_components);
+        const fullStreet = getFullStreetAddress(parsed);
+
+        // Update site location fields
+        setValue('location.address', details.formatted_address || fullStreet, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue('location.city', parsed.city, { shouldValidate: true, shouldDirty: true });
+        setValue('location.state', parsed.state, { shouldValidate: true, shouldDirty: true });
+        setValue('location.zip', parsed.postalCode, { shouldValidate: true, shouldDirty: true });
+      } else {
+        console.error('Estimate BasicInfoStep: Failed to get site location details');
+        // Clear fields on error
+        setValue('location.city', '', { shouldValidate: true, shouldDirty: true });
+        setValue('location.state', '', { shouldValidate: true, shouldDirty: true });
+        setValue('location.zip', '', { shouldValidate: true, shouldDirty: true });
+      }
+    },
+  });
+
+  // Handle site address input change
+  const handleSiteAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleSiteAddressChange(e);
+    setValue('location.address', e.target.value, { shouldDirty: true });
+  };
+
+  // Keep site address input synchronized
+  const currentSiteAddressValue = watch('location.address');
+  useEffect(() => {
+    if (showSiteLocation && currentSiteAddressValue !== siteAddressInputValue) {
+      setSiteInputValue(currentSiteAddressValue || '');
+    }
+  }, [currentSiteAddressValue, siteAddressInputValue, setSiteInputValue, showSiteLocation]);
 
   return (
     <div className="space-y-6 overflow-visible pb-10">
@@ -233,15 +341,45 @@ const BasicInfoStep = ({
                   <MapPin className="h-4 w-4 text-blue-500" />
                   Customer Primary Address
                 </h4>
+                {/* Customer Address field with Autocomplete */}
                 <FormField
                   control={form.control}
                   name="newCustomer.address"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="relative">
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter address" {...field} />
+                        <Input
+                          placeholder="Start typing address..."
+                          {...field}
+                          value={customerAddressInputValue}
+                          onChange={handleCustomerAddressInputChange}
+                          onBlur={() => setTimeout(clearCustomerSuggestions, 150)}
+                        />
                       </FormControl>
+                      {customerAddressLoading && (
+                        <div className="text-sm text-muted-foreground absolute top-full left-0 mt-1 z-10">
+                          Loading...
+                        </div>
+                      )}
+                      {customerAddressError && (
+                        <div className="text-sm text-red-600 absolute top-full left-0 mt-1 z-10">
+                          {customerAddressError}
+                        </div>
+                      )}
+                      {customerAddressSuggestions.length > 0 && (
+                        <ul className="absolute z-10 w-full bg-background border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                          {customerAddressSuggestions.map(suggestion => (
+                            <li
+                              key={suggestion.place_id}
+                              className="px-3 py-2 cursor-pointer hover:bg-accent"
+                              onMouseDown={() => handleCustomerAddressSelect(suggestion.place_id)}
+                            >
+                              {suggestion.description}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -255,7 +393,7 @@ const BasicInfoStep = ({
                       <FormItem className="col-span-2">
                         <FormLabel>City</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter city" {...field} />
+                          <Input placeholder="City" {...field} readOnly />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -269,7 +407,7 @@ const BasicInfoStep = ({
                       <FormItem>
                         <FormLabel>State</FormLabel>
                         <FormControl>
-                          <Input placeholder="State" {...field} />
+                          <Input placeholder="State" {...field} readOnly />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -283,7 +421,7 @@ const BasicInfoStep = ({
                       <FormItem>
                         <FormLabel>ZIP</FormLabel>
                         <FormControl>
-                          <Input placeholder="ZIP code" {...field} />
+                          <Input placeholder="ZIP code" {...field} readOnly />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -378,19 +516,45 @@ const BasicInfoStep = ({
                 </AlertDescription>
               </Alert>
 
+              {/* Site Location Address with Autocomplete */}
               <FormField
                 control={form.control}
                 name="location.address"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="relative">
                     <FormLabel>Site Address</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter job site address"
+                        placeholder="Start typing job site address..."
                         {...field}
-                        value={field.value || ''}
+                        value={siteAddressInputValue}
+                        onChange={handleSiteAddressInputChange}
+                        onBlur={() => setTimeout(clearSiteSuggestions, 150)}
                       />
                     </FormControl>
+                    {siteAddressLoading && (
+                      <div className="text-sm text-muted-foreground absolute top-full left-0 mt-1 z-10">
+                        Loading...
+                      </div>
+                    )}
+                    {siteAddressError && (
+                      <div className="text-sm text-red-600 absolute top-full left-0 mt-1 z-10">
+                        {siteAddressError}
+                      </div>
+                    )}
+                    {siteAddressSuggestions.length > 0 && (
+                      <ul className="absolute z-10 w-full bg-background border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                        {siteAddressSuggestions.map(suggestion => (
+                          <li
+                            key={suggestion.place_id}
+                            className="px-3 py-2 cursor-pointer hover:bg-accent"
+                            onMouseDown={() => handleSiteAddressSelect(suggestion.place_id)}
+                          >
+                            {suggestion.description}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -404,7 +568,7 @@ const BasicInfoStep = ({
                     <FormItem className="col-span-2">
                       <FormLabel>City</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter city" {...field} value={field.value || ''} />
+                        <Input placeholder="City" {...field} readOnly />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -418,7 +582,7 @@ const BasicInfoStep = ({
                     <FormItem>
                       <FormLabel>State</FormLabel>
                       <FormControl>
-                        <Input placeholder="State" {...field} value={field.value || ''} />
+                        <Input placeholder="State" {...field} readOnly />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -432,7 +596,7 @@ const BasicInfoStep = ({
                     <FormItem>
                       <FormLabel>ZIP</FormLabel>
                       <FormControl>
-                        <Input placeholder="ZIP code" {...field} value={field.value || ''} />
+                        <Input placeholder="ZIP code" {...field} readOnly />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
