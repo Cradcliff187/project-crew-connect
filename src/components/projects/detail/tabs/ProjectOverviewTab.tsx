@@ -149,10 +149,6 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
             <Pencil className="h-4 w-4 mr-1" />
             Edit
           </Button>
-          <Button size="sm" onClick={onAddItemClick}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add
-          </Button>
           <Button variant="ghost" size="icon">
             <MoreVertical className="h-5 w-5" />
           </Button>
