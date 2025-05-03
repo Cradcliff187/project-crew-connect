@@ -21,6 +21,9 @@ import { UseFormReturn, Controller } from 'react-hook-form';
 import { WorkOrderFormValues } from './WorkOrderFormSchema';
 import CreateLocationToggle from './fields/CreateLocationToggle';
 import { ChevronRight, Loader2, Save } from 'lucide-react';
+import React from 'react';
+import { usePlacesAutocomplete, PlaceDetails } from '@/hooks/usePlacesAutocomplete';
+import { parseAddressComponents, getFullStreetAddress } from '@/utils/addressUtils';
 
 // Define the steps in the work order creation process
 export const WORK_ORDER_STEPS = [
@@ -310,6 +313,78 @@ export const LocationFields = ({
   formData: FormData;
   useCustomAddress: boolean;
 }) => {
+  // --- Autocomplete Hook Setup (for custom address) ---
+  const { setValue, watch } = form;
+  const initialCustomAddress = React.useRef(form.getValues('address') || ''); // Get initial value if available
+
+  const {
+    inputValue: autocompleteInputValue,
+    suggestions,
+    loading: autocompleteLoading,
+    error: autocompleteError,
+    handleInputChange: handleAutocompleteInputChange,
+    handleSelectSuggestion,
+    clearSuggestions,
+    setInputValueManual,
+  } = usePlacesAutocomplete({
+    initialValue: initialCustomAddress.current,
+    onSelect: details => {
+      if (details && useCustomAddress) {
+        // Only update if custom address is active
+        console.log('WorkOrder LocationFields Place Details Received:', details);
+        const parsed = parseAddressComponents(details.address_components);
+        const fullStreet = getFullStreetAddress(parsed);
+
+        // Update react-hook-form fields
+        setValue('address', details.formatted_address || fullStreet, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue('city', parsed.city, { shouldValidate: true, shouldDirty: true });
+        setValue('state', parsed.state, { shouldValidate: true, shouldDirty: true });
+        setValue('zip', parsed.postalCode, { shouldValidate: true, shouldDirty: true });
+      } else if (useCustomAddress) {
+        console.error('WorkOrder LocationFields: Failed to get place details.');
+        // Optionally clear related fields if details fetch fails
+        setValue('city', '', { shouldValidate: true, shouldDirty: true });
+        setValue('state', '', { shouldValidate: true, shouldDirty: true });
+        setValue('zip', '', { shouldValidate: true, shouldDirty: true });
+      }
+    },
+  });
+
+  // Handle address input change for both hook and react-hook-form
+  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleAutocompleteInputChange(e); // Update hook's internal state
+    setValue('address', e.target.value, { shouldDirty: true }); // Update RHF state
+  };
+
+  // Handle selecting a suggestion
+  const handleSuggestionClick = (placeId: string) => {
+    handleSelectSuggestion(placeId); // Trigger details fetch via hook
+  };
+
+  // Sync hook input value if form value changes externally (e.g., reset, toggle)
+  const currentAddressValue = watch('address');
+  React.useEffect(() => {
+    // Only sync if custom address is active and the value differs
+    if (useCustomAddress && currentAddressValue !== autocompleteInputValue) {
+      setInputValueManual(currentAddressValue || '');
+    }
+    // If switching away from custom address, clear the hook's input/suggestions
+    if (!useCustomAddress && autocompleteInputValue) {
+      setInputValueManual('');
+      clearSuggestions();
+    }
+  }, [
+    useCustomAddress,
+    currentAddressValue,
+    autocompleteInputValue,
+    setInputValueManual,
+    clearSuggestions,
+  ]);
+  // --- End Autocomplete Hook Setup ---
+
   return (
     <>
       <FormField
@@ -376,11 +451,41 @@ export const LocationFields = ({
             control={form.control}
             name="address"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="relative">
                 <FormLabel>Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="123 Main St" {...field} />
+                  <Input
+                    placeholder="Start typing address..."
+                    {...field}
+                    value={autocompleteInputValue}
+                    onChange={handleAddressInputChange}
+                    onBlur={() => setTimeout(clearSuggestions, 150)}
+                    disabled={!useCustomAddress}
+                  />
                 </FormControl>
+                {useCustomAddress && autocompleteLoading && (
+                  <div className="text-sm text-muted-foreground absolute top-full left-0 mt-1">
+                    Loading...
+                  </div>
+                )}
+                {useCustomAddress && autocompleteError && (
+                  <div className="text-sm text-red-600 absolute top-full left-0 mt-1">
+                    {autocompleteError}
+                  </div>
+                )}
+                {useCustomAddress && suggestions.length > 0 && (
+                  <ul className="absolute z-10 w-full bg-background border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                    {suggestions.map(suggestion => (
+                      <li
+                        key={suggestion.place_id}
+                        className="px-3 py-2 cursor-pointer hover:bg-accent"
+                        onMouseDown={() => handleSuggestionClick(suggestion.place_id)}
+                      >
+                        {suggestion.description}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -394,7 +499,7 @@ export const LocationFields = ({
                 <FormItem>
                   <FormLabel>City</FormLabel>
                   <FormControl>
-                    <Input placeholder="City" {...field} />
+                    <Input placeholder="City" {...field} readOnly disabled={!useCustomAddress} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -408,7 +513,7 @@ export const LocationFields = ({
                 <FormItem>
                   <FormLabel>State</FormLabel>
                   <FormControl>
-                    <Input placeholder="State" {...field} />
+                    <Input placeholder="State" {...field} readOnly disabled={!useCustomAddress} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -422,7 +527,7 @@ export const LocationFields = ({
                 <FormItem>
                   <FormLabel>ZIP</FormLabel>
                   <FormControl>
-                    <Input placeholder="ZIP" {...field} />
+                    <Input placeholder="ZIP" {...field} readOnly disabled={!useCustomAddress} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

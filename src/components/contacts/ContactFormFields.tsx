@@ -15,6 +15,7 @@ import { ContactFormData } from '@/pages/Contacts';
 import { useFormContext } from 'react-hook-form';
 import { Contact } from '@/pages/Contacts';
 import { StatusType } from '@/types/common';
+import { usePlacesAutocomplete, PlaceDetails } from '@/hooks/usePlacesAutocomplete';
 
 interface ContactFormFieldsProps {
   form: UseFormReturn<any>;
@@ -29,9 +30,48 @@ const ContactFormFields = ({
   getStatusOptions,
   handleTypeChange,
 }: ContactFormFieldsProps) => {
-  const { watch } = useFormContext<Contact>();
+  const { watch, setValue } = useFormContext<Contact>();
 
   const currentStatus = watch('status');
+
+  const initialAddressValue = React.useRef(form.getValues('address') || '');
+
+  const {
+    inputValue: autocompleteInputValue,
+    suggestions,
+    loading: autocompleteLoading,
+    error: autocompleteError,
+    handleInputChange: handleAutocompleteInputChange,
+    handleSelectSuggestion,
+    clearSuggestions,
+    setInputValueManual,
+  } = usePlacesAutocomplete({
+    initialValue: initialAddressValue.current,
+    onSelect: details => {
+      if (details) {
+        console.log('Contact Form Place Details Received:', details);
+        setValue('address', details.formatted_address, { shouldValidate: true, shouldDirty: true });
+      } else {
+        console.error('Contact Form: Failed to get place details.');
+      }
+    },
+  });
+
+  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleAutocompleteInputChange(e);
+    setValue('address', e.target.value, { shouldDirty: true });
+  };
+
+  const handleSuggestionClick = (placeId: string) => {
+    handleSelectSuggestion(placeId);
+  };
+
+  const currentAddressValue = watch('address');
+  React.useEffect(() => {
+    if (currentAddressValue !== autocompleteInputValue) {
+      setInputValueManual(currentAddressValue || '');
+    }
+  }, [currentAddressValue, autocompleteInputValue, setInputValueManual]);
 
   return (
     <div className="space-y-6">
@@ -239,11 +279,40 @@ const ContactFormFields = ({
         control={form.control}
         name="address"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="relative">
             <FormLabel>Address</FormLabel>
             <FormControl>
-              <Input placeholder="123 Main St, Anytown, CA 12345" {...field} />
+              <Input
+                placeholder="Start typing address..."
+                {...field}
+                value={autocompleteInputValue}
+                onChange={handleAddressInputChange}
+                onBlur={() => setTimeout(clearSuggestions, 150)}
+              />
             </FormControl>
+            {autocompleteLoading && (
+              <div className="text-sm text-muted-foreground absolute top-full left-0 mt-1 z-10">
+                Loading...
+              </div>
+            )}
+            {autocompleteError && (
+              <div className="text-sm text-red-600 absolute top-full left-0 mt-1 z-10">
+                {autocompleteError}
+              </div>
+            )}
+            {suggestions.length > 0 && (
+              <ul className="absolute z-10 w-full bg-background border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                {suggestions.map(suggestion => (
+                  <li
+                    key={suggestion.place_id}
+                    className="px-3 py-2 cursor-pointer hover:bg-accent"
+                    onMouseDown={() => handleSuggestionClick(suggestion.place_id)}
+                  >
+                    {suggestion.description}
+                  </li>
+                ))}
+              </ul>
+            )}
             <FormMessage />
           </FormItem>
         )}

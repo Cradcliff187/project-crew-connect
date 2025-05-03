@@ -16,6 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
+import React from 'react';
+import { usePlacesAutocomplete, PlaceDetails } from '@/hooks/usePlacesAutocomplete';
+import { parseAddressComponents, getFullStreetAddress } from '@/utils/addressUtils';
 
 // Define vendor form data type
 export interface VendorFormData {
@@ -70,6 +73,59 @@ const VendorForm = ({ onSubmit, isSubmitting, initialData }: VendorFormProps) =>
     },
   });
 
+  const { setValue, watch } = form;
+
+  const initialAddress = React.useRef(initialData?.address || '');
+
+  const {
+    inputValue: autocompleteInputValue,
+    suggestions,
+    loading: autocompleteLoading,
+    error: autocompleteError,
+    handleInputChange: handleAutocompleteInputChange,
+    handleSelectSuggestion,
+    clearSuggestions,
+    setInputValueManual,
+  } = usePlacesAutocomplete({
+    initialValue: initialAddress.current,
+    onSelect: details => {
+      if (details) {
+        console.log('VendorForm Place Details Received:', details);
+        const parsed = parseAddressComponents(details.address_components);
+        const fullStreet = getFullStreetAddress(parsed);
+
+        setValue('address', details.formatted_address || fullStreet, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue('city', parsed.city, { shouldValidate: true, shouldDirty: true });
+        setValue('state', parsed.state, { shouldValidate: true, shouldDirty: true });
+        setValue('zip', parsed.postalCode, { shouldValidate: true, shouldDirty: true });
+      } else {
+        console.error('VendorForm: Failed to get place details.');
+        setValue('city', '', { shouldValidate: true, shouldDirty: true });
+        setValue('state', '', { shouldValidate: true, shouldDirty: true });
+        setValue('zip', '', { shouldValidate: true, shouldDirty: true });
+      }
+    },
+  });
+
+  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleAutocompleteInputChange(e);
+    setValue('address', e.target.value, { shouldDirty: true });
+  };
+
+  const handleSuggestionClick = (placeId: string) => {
+    handleSelectSuggestion(placeId);
+  };
+
+  const currentAddressValue = watch('address');
+  React.useEffect(() => {
+    if (currentAddressValue !== autocompleteInputValue) {
+      setInputValueManual(currentAddressValue || '');
+    }
+  }, [currentAddressValue, autocompleteInputValue, setInputValueManual]);
+
   return (
     <Form {...form}>
       <form id="vendor-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -120,20 +176,51 @@ const VendorForm = ({ onSubmit, isSubmitting, initialData }: VendorFormProps) =>
           />
         </div>
 
+        {/* Address Field with Autocomplete */}
         <FormField
           control={form.control}
           name="address"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="relative">
               <FormLabel>Address</FormLabel>
               <FormControl>
-                <Input placeholder="Street address" {...field} />
+                <Input
+                  placeholder="Start typing address..."
+                  {...field}
+                  value={autocompleteInputValue}
+                  onChange={handleAddressInputChange}
+                  onBlur={() => setTimeout(clearSuggestions, 150)}
+                />
               </FormControl>
+              {autocompleteLoading && (
+                <div className="text-sm text-muted-foreground absolute top-full left-0 mt-1">
+                  Loading...
+                </div>
+              )}
+              {autocompleteError && (
+                <div className="text-sm text-red-600 absolute top-full left-0 mt-1">
+                  {autocompleteError}
+                </div>
+              )}
+              {suggestions.length > 0 && (
+                <ul className="absolute z-10 w-full bg-background border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                  {suggestions.map(suggestion => (
+                    <li
+                      key={suggestion.place_id}
+                      className="px-3 py-2 cursor-pointer hover:bg-accent"
+                      onMouseDown={() => handleSuggestionClick(suggestion.place_id)}
+                    >
+                      {suggestion.description}
+                    </li>
+                  ))}
+                </ul>
+              )}
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* City, State, Zip Fields (readOnly or controlled by selection) */}
         <div
           className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-2 md:grid-cols-4 gap-4'}`}
         >
@@ -144,7 +231,7 @@ const VendorForm = ({ onSubmit, isSubmitting, initialData }: VendorFormProps) =>
               <FormItem className={isMobile ? 'col-span-2' : 'col-span-2'}>
                 <FormLabel>City</FormLabel>
                 <FormControl>
-                  <Input placeholder="City" {...field} />
+                  <Input placeholder="City" {...field} readOnly />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -158,7 +245,7 @@ const VendorForm = ({ onSubmit, isSubmitting, initialData }: VendorFormProps) =>
               <FormItem>
                 <FormLabel>State</FormLabel>
                 <FormControl>
-                  <Input placeholder="State" {...field} />
+                  <Input placeholder="State" {...field} readOnly />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -172,7 +259,7 @@ const VendorForm = ({ onSubmit, isSubmitting, initialData }: VendorFormProps) =>
               <FormItem>
                 <FormLabel>ZIP</FormLabel>
                 <FormControl>
-                  <Input placeholder="ZIP code" {...field} />
+                  <Input placeholder="ZIP code" {...field} readOnly />
                 </FormControl>
                 <FormMessage />
               </FormItem>

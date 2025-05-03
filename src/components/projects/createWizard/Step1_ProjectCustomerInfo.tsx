@@ -24,6 +24,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
 import CustomerForm from '../CustomerForm'; // Reuse CustomerForm
+import { usePlacesAutocomplete, PlaceDetails } from '@/hooks/usePlacesAutocomplete'; // Import hook
+import { parseAddressComponents, getFullStreetAddress } from '@/utils/addressUtils'; // Import utils
 
 // Define Zod schema for this step's validation
 // Based on projectFormSchema but tailored for this step
@@ -129,6 +131,84 @@ const Step1_ProjectCustomerInfo: React.FC<Step1Props> = ({
             },
     },
   });
+
+  const { setValue, watch, trigger } = form; // Get setValue, watch, trigger
+
+  // --- Autocomplete Hook Setup (for siteLocation) ---
+  const initialSiteAddress = React.useRef(formData.siteLocation?.address || '');
+
+  const {
+    inputValue: autocompleteInputValue,
+    suggestions,
+    loading: autocompleteLoading,
+    error: autocompleteError,
+    handleInputChange: handleAutocompleteInputChange,
+    handleSelectSuggestion,
+    clearSuggestions,
+    setInputValueManual,
+  } = usePlacesAutocomplete({
+    initialValue: initialSiteAddress.current,
+    onSelect: details => {
+      // Only update if custom site location is active
+      if (details && useDifferentSiteLocation) {
+        console.log('Project Step1 Site Location Details Received:', details);
+        const parsed = parseAddressComponents(details.address_components);
+        const fullStreet = getFullStreetAddress(parsed);
+
+        // Update react-hook-form fields
+        setValue('siteLocation.address', details.formatted_address || fullStreet, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setValue('siteLocation.city', parsed.city, { shouldValidate: true, shouldDirty: true });
+        setValue('siteLocation.state', parsed.state, { shouldValidate: true, shouldDirty: true });
+        setValue('siteLocation.zip', parsed.postalCode, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        // Trigger validation after setting multiple fields if needed
+        trigger(['siteLocation.city', 'siteLocation.state', 'siteLocation.zip']);
+      } else if (useDifferentSiteLocation) {
+        console.error('Project Step1: Failed to get site location details.');
+        // Optionally clear related fields if details fetch fails
+        setValue('siteLocation.city', '', { shouldValidate: true, shouldDirty: true });
+        setValue('siteLocation.state', '', { shouldValidate: true, shouldDirty: true });
+        setValue('siteLocation.zip', '', { shouldValidate: true, shouldDirty: true });
+      }
+    },
+  });
+
+  // Handle site address input change for both hook and react-hook-form
+  const handleSiteAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleAutocompleteInputChange(e); // Update hook's internal state
+    setValue('siteLocation.address', e.target.value, { shouldDirty: true }); // Update RHF state
+  };
+
+  // Handle selecting a suggestion
+  const handleSiteSuggestionClick = (placeId: string) => {
+    handleSelectSuggestion(placeId); // Trigger details fetch via hook
+  };
+
+  // Sync hook input value if form value changes externally (e.g., reset, toggle)
+  const currentSiteAddressValue = watch('siteLocation.address');
+  React.useEffect(() => {
+    // Only sync if different site location is active and the value differs
+    if (useDifferentSiteLocation && currentSiteAddressValue !== autocompleteInputValue) {
+      setInputValueManual(currentSiteAddressValue || '');
+    }
+    // If switching away from different site location, clear the hook's input/suggestions
+    if (!useDifferentSiteLocation && autocompleteInputValue) {
+      setInputValueManual('');
+      clearSuggestions();
+    }
+  }, [
+    useDifferentSiteLocation,
+    currentSiteAddressValue,
+    autocompleteInputValue,
+    setInputValueManual,
+    clearSuggestions,
+  ]);
+  // --- End Autocomplete Hook Setup ---
 
   // Fetch customers
   useEffect(() => {
@@ -273,8 +353,17 @@ const Step1_ProjectCustomerInfo: React.FC<Step1Props> = ({
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={checked => {
-                      field.onChange(checked);
-                      setUseDifferentSiteLocation(!checked);
+                      const isChecked = Boolean(checked);
+                      field.onChange(isChecked);
+                      setUseDifferentSiteLocation(!isChecked);
+                      if (isChecked) {
+                        // If same as customer, clear site location fields
+                        setValue('siteLocation.address', '');
+                        setValue('siteLocation.city', '');
+                        setValue('siteLocation.state', '');
+                        setValue('siteLocation.zip', '');
+                        setInputValueManual(''); // Clear autocomplete input too
+                      }
                     }}
                   />
                 </FormControl>
@@ -289,19 +378,54 @@ const Step1_ProjectCustomerInfo: React.FC<Step1Props> = ({
             <div className="space-y-4 pt-4 border-t mt-4">
               <p className="text-sm text-muted-foreground">Enter the site address:</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Site Address Field with Autocomplete */}
                 <FormField
                   control={form.control}
                   name="siteLocation.address"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="relative">
+                      {' '}
+                      {/* Add relative positioning */}
                       <FormLabel>Address*</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter address" {...field} />
+                        <Input
+                          placeholder="Start typing address..."
+                          {...field} // Spread RHF props
+                          value={autocompleteInputValue} // Control value via hook
+                          onChange={handleSiteAddressInputChange} // Use combined handler
+                          onBlur={() => setTimeout(clearSuggestions, 150)} // Hide suggestions
+                          disabled={!useDifferentSiteLocation} // Ensure disabled state works
+                        />
                       </FormControl>
+                      {/* Suggestions Dropdown */}
+                      {autocompleteLoading && (
+                        <div className="text-sm text-muted-foreground absolute top-full left-0 mt-1 z-10">
+                          Loading...
+                        </div>
+                      )}
+                      {autocompleteError && (
+                        <div className="text-sm text-red-600 absolute top-full left-0 mt-1 z-10">
+                          {autocompleteError}
+                        </div>
+                      )}
+                      {suggestions.length > 0 && (
+                        <ul className="absolute z-10 w-full bg-background border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                          {suggestions.map(suggestion => (
+                            <li
+                              key={suggestion.place_id}
+                              className="px-3 py-2 cursor-pointer hover:bg-accent"
+                              onMouseDown={() => handleSiteSuggestionClick(suggestion.place_id)}
+                            >
+                              {suggestion.description}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                {/* City Field */}
                 <FormField
                   control={form.control}
                   name="siteLocation.city"
@@ -309,12 +433,18 @@ const Step1_ProjectCustomerInfo: React.FC<Step1Props> = ({
                     <FormItem>
                       <FormLabel>City</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter city" {...field} />
+                        <Input
+                          placeholder="City"
+                          {...field}
+                          readOnly
+                          disabled={!useDifferentSiteLocation}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                {/* State Field */}
                 <FormField
                   control={form.control}
                   name="siteLocation.state"
@@ -322,12 +452,18 @@ const Step1_ProjectCustomerInfo: React.FC<Step1Props> = ({
                     <FormItem>
                       <FormLabel>State</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter state" {...field} />
+                        <Input
+                          placeholder="State"
+                          {...field}
+                          readOnly
+                          disabled={!useDifferentSiteLocation}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                {/* Zip Field */}
                 <FormField
                   control={form.control}
                   name="siteLocation.zip"
@@ -335,7 +471,12 @@ const Step1_ProjectCustomerInfo: React.FC<Step1Props> = ({
                     <FormItem>
                       <FormLabel>Zip Code</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter zip code" {...field} />
+                        <Input
+                          placeholder="Zip Code"
+                          {...field}
+                          readOnly
+                          disabled={!useDifferentSiteLocation}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
