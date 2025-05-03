@@ -47,10 +47,30 @@ The hook relies on two backend endpoints defined in `server/server.js`:
 
 The `usePlacesAutocomplete` hook has been integrated into the following components:
 
-1.  `src/components/projects/createWizard/Step1_ProjectCustomerInfo.tsx` (Handles `siteLocation.*` fields)
-2.  `src/components/vendors/VendorForm.tsx` (Handles `address`, `city`, `state`, `zip` fields)
-3.  `src/components/workOrders/dialog/components.tsx` (Handles `address`, `city`, `state`, `zip` fields within `LocationFields` when custom address is used)
-4.  `src/components/contacts/ContactFormFields.tsx` (Handles the single `address` field)
+### Initial Implementations (Phase 1)
+
+1. `src/components/projects/createWizard/Step1_ProjectCustomerInfo.tsx` - Handles site location fields (address, city, state, zip) with conditional display based on a checkbox.
+2. `src/components/vendors/VendorForm.tsx` - Fully implements autocomplete for vendor address fields.
+3. `src/components/workOrders/dialog/components.tsx` - Implements autocomplete in LocationFields when custom address is used.
+4. `src/components/contacts/ContactFormFields.tsx` - Updated to properly handle address, city, state, and zip fields.
+
+### Extended Implementations (Phase 2)
+
+5. `src/components/subcontractors/form/BasicInfoSection.tsx` - Integrated autocomplete for subcontractor address information.
+6. `src/components/projects/CustomerForm.tsx` - Added autocomplete for new customer address fields in project forms.
+7. `src/components/estimates/components/CustomerFormFields.tsx` - Implemented autocomplete for customer address fields in estimates.
+8. `src/components/workOrders/dialog/fields/CustomLocationFields.tsx` - Added autocomplete support for custom location fields.
+9. `src/components/workOrders/dialog/components/steps/LocationStep.tsx` - Integrated autocomplete with conditional rendering based on location type selection.
+
+## Usage Patterns
+
+There are several common patterns in the implementation:
+
+1. **Split Fields Pattern** - Most implementations split address data into separate fields (address, city, state, zip). The autocomplete hook populates all these fields when a suggestion is selected.
+
+2. **Conditional Rendering** - Some implementations (like in WorkOrder and Project forms) show/hide the autocomplete based on toggle state (e.g., useCustomAddress).
+
+3. **Form Context Integration** - All implementations work with react-hook-form, using setValue to update form values when suggestions are selected.
 
 ## Adding Autocomplete to a New Form
 
