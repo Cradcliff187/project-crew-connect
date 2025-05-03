@@ -15,6 +15,7 @@ import { ProjectDocumentsList } from './detail';
 import ProjectProgressCard from './progress/ProjectProgressCard';
 import ChangeOrdersList from './detail/ChangeOrdersList';
 import { ProjectTimelogs } from './timelogs';
+import ProjectOverviewTab from './detail/tabs/ProjectOverviewTab';
 
 export interface ProjectDetails {
   projectid: string;
@@ -31,6 +32,10 @@ export interface ProjectDetails {
   total_budget: number | null;
   current_expenses: number | null;
   budget_status: string | null;
+  description?: string;
+  contract_value?: number;
+  start_date?: string | null;
+  target_end_date?: string | null;
 }
 
 interface ProjectDetailsProps {
@@ -47,6 +52,9 @@ const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDet
   const handleRefresh = () => {
     onStatusChange();
   };
+
+  // Project description from either description or jobdescription field
+  const description = project.description || project.jobdescription;
 
   return (
     <div className="space-y-6">
@@ -78,43 +86,21 @@ const ProjectDetails = ({ project, customerDetails, onStatusChange }: ProjectDet
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <ProjectInfoCard project={project} />
-            <ProjectClientCard
-              project={project}
-              customerName={customerDetails?.customername || project.customername}
-              customerId={customerDetails?.customerid || project.customerid}
-            />
-            <ProjectBudgetCard project={project} />
-          </div>
-
-          <Card>
-            <CardContent className="pt-6">
-              <ProjectDescription description={project.jobdescription} />
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-base font-medium mb-4">Project Summary</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This project is currently managed with status{' '}
-                    <span className="font-medium">{project.status}</span>.
-                    {project.status === 'completed'
-                      ? ' The project has been completed.'
-                      : project.status === 'active'
-                        ? ' Work is in progress.'
-                        : ' Work has not started yet.'}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            <div>
-              <ProjectProgressCard projectId={project.projectid} />
-            </div>
-          </div>
+          <ProjectOverviewTab
+            project={{
+              ...project,
+              description: description,
+              contract_value: project.contract_value || 0,
+            }}
+            customerName={customerDetails?.customername || project.customername}
+            customerId={customerDetails?.customerid || project.customerid}
+            onEditClick={() => {
+              // TODO: Implement Edit functionality when needed
+            }}
+            onAddItemClick={() => {
+              // TODO: Implement Add functionality when needed
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="budget">

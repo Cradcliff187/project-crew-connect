@@ -37,6 +37,7 @@ import { Discount } from '@/services/discountService';
 import FinancialSnapshotCard from '@/components/projects/detail/cards/FinancialSnapshotCard';
 import ProjectHealthCard from '@/components/projects/detail/cards/ProjectHealthCard';
 import UpcomingDatesCard from '@/components/projects/detail/cards/UpcomingDatesCard';
+import ProjectOverviewTab from '@/components/projects/detail/tabs/ProjectOverviewTab';
 
 // Define type aliases using generated types
 type Project = Database['public']['Tables']['projects']['Row'];
@@ -311,37 +312,22 @@ const ProjectDetail = () => {
 
           <div className="mt-4">
             <TabsContent value="overview" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="md:col-span-2 lg:col-span-1 space-y-6">
-                  <ProjectInfoCard project={project} />
-                  <ProjectClientCard
-                    customerName={customer?.customername || '-'}
-                    customerId={project.customerid}
-                  />
-                </div>
-
-                <div className="space-y-6">
-                  <FinancialSnapshotCard
-                    contractValue={overviewData.contract}
-                    budget={overviewData.budget}
-                    spent={overviewData.spent}
-                    estimatedGP={overviewData.estGP}
-                  />
-                  <ProjectHealthCard
-                    budgetStatusLabel={overviewData.budgetStatusLabel}
-                    scheduleStatusLabel={overviewData.scheduleStatusLabel}
-                    budgetVariance={overviewData.budgetVariance}
-                  />
-                </div>
-
-                <div className="space-y-6">
-                  <ProjectDescription description={project.description} />
-                  <UpcomingDatesCard
-                    startDate={project.start_date}
-                    targetEndDate={project.target_end_date}
-                  />
-                </div>
-              </div>
+              <ProjectOverviewTab
+                project={{
+                  ...project,
+                  description: project?.description || '',
+                  contract_value: project?.contract_value || 0,
+                }}
+                customerName={customer?.customername || null}
+                customerId={project?.customerid || null}
+                onEditClick={() => {
+                  // We can reuse the existing navigation logic here
+                  if (project) {
+                    navigate(`/projects/${project.projectid}/edit`);
+                  }
+                }}
+                onAddItemClick={handleAddExpenseClick}
+              />
             </TabsContent>
 
             <TabsContent value="financials" className="mt-0">
