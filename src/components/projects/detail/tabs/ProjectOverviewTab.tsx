@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Plus, MoreVertical, Calendar, DollarSign, Activity, User } from 'lucide-react';
+import { Pencil, Calendar, DollarSign, Activity, User } from 'lucide-react';
 import StatusBadge from '@/components/common/status/StatusBadge';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import TimelineDisplay, { TimelinePoint } from '@/components/ui/TimelineDisplay';
@@ -144,13 +144,10 @@ const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div>
           <Button variant="outline" size="sm" onClick={onEditClick}>
             <Pencil className="h-4 w-4 mr-1" />
             Edit
-          </Button>
-          <Button variant="ghost" size="icon">
-            <MoreVertical className="h-5 w-5" />
           </Button>
         </div>
       </div>
