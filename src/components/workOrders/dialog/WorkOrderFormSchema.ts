@@ -12,6 +12,10 @@ export const workOrderFormSchema = z.object({
   due_by_date: z.date().optional(),
   time_estimate: z.number().positive().optional(),
 
+  // Calendar Integration
+  calendar_sync_enabled: z.boolean().default(false),
+  calendar_event_id: z.string().optional(),
+
   // Location Fields
   customer_id: z.string().optional(),
   location_id: z.string().optional(),

@@ -26,3 +26,6 @@ dist-ssr
 # Server specific
 server/node_modules/
 server/.env
+
+# Cursor MCP configuration (contains sensitive credentials)
+.cursor/mcp.json

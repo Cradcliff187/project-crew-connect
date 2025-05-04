@@ -1,14 +1,10 @@
 {
   "mcpServers": {
     "supabase": {
-      "command": "cmd",
+      "command": "powershell.exe",
       "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@supabase/mcp-server-supabase@latest",
-        "--access-token",
-        "sbp_390d6a50eb879c8d69348ab355a0faebdfabe76c"
+        "-Command",
+        "$env:SUPABASE_ACCESS_TOKEN='sbp_18171bf03685c61e46bfa10badc41577d3a95bfa'; npx -y @supabase/mcp-server-supabase@latest"
       ]
     }
   }

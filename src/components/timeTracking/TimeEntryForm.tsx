@@ -11,6 +11,8 @@ import { Employee, getEmployeeFullName } from '@/types/common';
 import { Label } from '@/components/ui/label';
 import { adaptEmployeesFromDatabase } from '@/utils/employeeAdapter';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { CalendarIntegrationToggle } from '@/components/common/CalendarIntegrationToggle';
 
 interface TimeEntryFormProps {
   initialValues?: Partial<TimeEntry>;
@@ -41,6 +43,11 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
   );
   const [timeError, setTimeError] = useState('');
   const [internalEmployees, setInternalEmployees] = useState<Employee[]>([]);
+  const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(
+    initialValues?.calendar_sync_enabled || false
+  );
+
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -91,11 +98,14 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
       hours_worked: hoursWorked,
       notes: notes,
       employee_id: employeeId === 'none' ? null : employeeId,
+      calendar_sync_enabled: calendarSyncEnabled,
     };
     await onSubmit(formData);
   };
 
   const employeesToUse = employees.length > 0 ? employees : internalEmployees;
+  const selectedEmployee = employeesToUse.find(e => e.id === employeeId);
+  const employeeName = selectedEmployee ? getEmployeeFullName(selectedEmployee) : 'Time Entry';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -130,6 +140,18 @@ const TimeEntryForm: React.FC<TimeEntryFormProps> = ({
             onChange={e => setNotes(e.target.value)}
           />
         </div>
+
+        {/* Google Calendar Integration */}
+        <CalendarIntegrationToggle
+          value={calendarSyncEnabled}
+          onChange={setCalendarSyncEnabled}
+          disabled={!workDate || !!timeError}
+          disabledReason={
+            timeError ? 'A valid time range is required for calendar integration.' : ''
+          }
+          description="Add this time entry to your Google Calendar"
+          entityType="time_entry"
+        />
 
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>

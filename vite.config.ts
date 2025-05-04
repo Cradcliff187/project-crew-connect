@@ -12,10 +12,23 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+        secure: false,
+        cookieDomainRewrite: 'localhost',
+        cookiePathRewrite: '/',
+      },
+      '/auth': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        cookieDomainRewrite: 'localhost',
+        cookiePathRewrite: '/',
       },
     },
   },
-  plugins: [react(), mode === 'development' && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    // mode === 'development' && componentTagger() // Temporarily disable lovable-tagger
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

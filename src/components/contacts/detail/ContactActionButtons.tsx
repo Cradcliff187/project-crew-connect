@@ -13,6 +13,8 @@ import { getStatusOptions } from './util/statusTransitions';
 import TypeTransitionDialog from './TypeTransitionDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import ActionMenu, { ActionGroup } from '@/components/ui/action-menu';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import InteractionsSection from './InteractionsSection';
 
 interface ContactActionButtonsProps {
   contact: any;
@@ -26,6 +28,7 @@ const ContactActionButtons = ({
   onSchedule = () => {},
 }: ContactActionButtonsProps) => {
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const statusOptions = getStatusOptions(contact.type, contact.status);
@@ -47,6 +50,13 @@ const ContactActionButtons = ({
     console.log(`Changing contact type to ${newType}`);
   };
 
+  const handleScheduleClick = () => {
+    console.log('Schedule meeting');
+    setScheduleDialogOpen(true);
+    // Call any provided callback
+    onSchedule();
+  };
+
   // Main action groups for desktop view
   const getContactActionItems = (): ActionGroup[] => {
     return [
@@ -60,7 +70,7 @@ const ContactActionButtons = ({
           {
             label: 'Schedule',
             icon: <CalendarIcon className="h-4 w-4" />,
-            onClick: onSchedule,
+            onClick: handleScheduleClick,
           },
         ],
       },
@@ -98,7 +108,7 @@ const ContactActionButtons = ({
             Change Type
           </Button>
 
-          <Button size="sm" variant="outline" onClick={onSchedule}>
+          <Button size="sm" variant="outline" onClick={handleScheduleClick}>
             <CalendarIcon className="h-4 w-4 mr-1" />
             Schedule
           </Button>
@@ -136,6 +146,17 @@ const ContactActionButtons = ({
         onTypeChange={handleTypeChange}
         onSuccess={handleTypeTransitionSuccess}
       />
+
+      {/* Schedule Meeting Dialog */}
+      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogTitle>Schedule Meeting with {contact.full_name || contact.name}</DialogTitle>
+          <InteractionsSection
+            contact={contact}
+            onInteractionAdded={() => setScheduleDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

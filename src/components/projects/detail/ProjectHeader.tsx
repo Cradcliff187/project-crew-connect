@@ -7,17 +7,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PlusCircle, Plus, FilePlus, FileText, Edit } from 'lucide-react';
+import { PlusCircle, Plus, FilePlus, FileText, Edit, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import StatusBadge from '@/components/common/status/StatusBadge';
 
 // Define a simpler Project type for this component
 type Project = {
   projectid: string;
   projectname?: string | null;
+  status?: string;
 };
 
 interface ProjectHeaderProps {
   project: Project; // Use the simpler type
+  customerName?: string | null;
+  customerId?: string | null;
   onAddExpenseClick: () => void;
   onAddChangeOrderClick: () => void;
   onAddDocumentClick: () => void;
@@ -25,6 +29,8 @@ interface ProjectHeaderProps {
 
 const ProjectHeader: React.FC<ProjectHeaderProps> = ({
   project,
+  customerName,
+  customerId,
   onAddExpenseClick,
   onAddChangeOrderClick,
   onAddDocumentClick,
@@ -38,15 +44,24 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({
   return (
     <div className="flex items-center justify-between w-full">
       <div>
-        <h3 className="text-lg font-semibold">{project.projectname}</h3>
-        <p className="text-sm text-muted-foreground">Project ID: {project.projectid}</p>
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold">{project.projectname}</h2>
+          <StatusBadge status={project.status || 'PENDING'} />
+        </div>
+        <div className="flex items-center gap-4 mt-1">
+          <p className="text-sm text-muted-foreground">Project ID: {project.projectid}</p>
+
+          {customerName && (
+            <div className="flex items-center gap-1">
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-sm font-medium">{customerName}</span>
+              {customerId && <span className="text-xs text-muted-foreground">({customerId})</span>}
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
-        {' '}
-        {/* Wrap buttons in a div for layout */}
         <Button size="sm" variant="outline" onClick={handleEditClick}>
-          {' '}
-          {/* Add Edit button */}
           <Edit className="h-4 w-4 mr-2" />
           Edit
         </Button>

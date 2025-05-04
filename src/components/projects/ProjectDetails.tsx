@@ -10,7 +10,7 @@ import ProjectBudgetCard from './detail/ProjectBudgetCard';
 import ProjectDescription from './detail/ProjectDescription';
 import ProjectStatusControl from './detail/ProjectStatusControl';
 import ProjectBudget from './budget/ProjectBudget';
-import ProjectMilestones from './detail/ProjectMilestones';
+import ProjectMilestones from './milestones/ProjectMilestones';
 import { ProjectDocumentsList } from './detail';
 import ProjectProgressCard from './progress/ProjectProgressCard';
 import ChangeOrdersList from './detail/ChangeOrdersList';

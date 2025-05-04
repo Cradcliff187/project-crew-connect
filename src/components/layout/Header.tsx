@@ -1,15 +1,51 @@
-import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { Bell, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const Header = () => {
   const location = useLocation();
+  const { projectId } = useParams<{ projectId: string }>();
+  const [projectName, setProjectName] = useState<string | null>(null);
+
+  // Fetch project data if we're on a project detail page
+  useEffect(() => {
+    const fetchProjectName = async () => {
+      if (projectId) {
+        const { data } = await supabase
+          .from('projects')
+          .select('projectname')
+          .eq('projectid', projectId)
+          .single();
+
+        if (data) {
+          setProjectName(data.projectname);
+        }
+      } else {
+        setProjectName(null);
+      }
+    };
+
+    fetchProjectName();
+  }, [projectId]);
 
   // Extract the page title from the pathname
   const getPageTitle = () => {
+    if (projectName && projectId) {
+      return (
+        <div className="flex items-center">
+          <span>Projects</span>
+          <span className="mx-2 text-muted-foreground">/</span>
+          <span className="font-semibold">{projectName}</span>
+          <span className="ml-2 text-sm text-muted-foreground">ID: {projectId}</span>
+        </div>
+      );
+    }
+
     const path = location.pathname;
     if (path === '/') return 'Dashboard';
     return path

@@ -1,114 +1,94 @@
-# Welcome to your Lovable project
+# AKC Revisions Project
 
-## Project info
+This repository contains the AKC Revisions application built with React, TypeScript, and Vite. It uses Supabase for database functionality and Google APIs for calendar integration.
 
-**URL**: https://lovable.dev/projects/af57cde4-ad57-433e-815c-c17780578b75
+## Quick Start: Development Environment
 
-## Recent Changes
+**Important: This application requires running both frontend and backend servers simultaneously.**
 
-### Vendor/Subcontractor Selection Fix - April 25, 2025
+```bash
+# Terminal 1: Start the backend server
+cd server
+node server.js
 
-We've resolved an issue with the vendor and subcontractor selection dropdowns in document upload forms. The fix addresses:
-
-- Selection not registering properly when clicking on items in the dropdown
-- Event propagation issues causing form submission or mishandled selections
-- Missing explicit button types causing unintended form submissions
-- Added event stopPropagation to prevent clicks from bubbling up to parent elements
-
-Components affected:
-
-- `VendorSearchCombobox.tsx`
-- `VendorSelectDialog.tsx`
-- `StandardizedDocumentUpload.tsx`
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/af57cde4-ad57-433e-815c-c17780578b75) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Terminal 2: Start the frontend server
+# (from project root)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The frontend will run on port 8081 (Vite) and the backend on port 3000 (Express).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Complete Development Setup
 
-**Use GitHub Codespaces**
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start both servers:
+   - Backend server (provides API and Google integration)
+   - Frontend server (provides UI)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+For detailed setup instructions, see [Development Environment Setup](./docs/development_setup.md).
 
-## What technologies are used for this project?
+## Project Structure
 
-This project is built with .
+The project follows a standard React + Vite structure with TypeScript:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- `src/` - Main source code
+  - `components/` - React components
+  - `hooks/` - Custom React hooks
+  - `pages/` - Page components
+  - `integrations/` - Third-party service integrations
+  - `utils/` - Utility functions
+- `server/` - Express.js backend server
+  - `google-api-helpers/` - Google API integration helpers
+- `db/` - Database scripts and migrations
+- `public/` - Static assets
+- `docs/` - Documentation
 
-## How can I deploy this project?
+## Database (Supabase) Integration
 
-Simply open [Lovable](https://lovable.dev/projects/af57cde4-ad57-433e-815c-c17780578b75) and click on Share -> Publish.
+### Connection Methods
 
-## Database Structure
+This project uses Supabase as the backend database. There are two ways to connect:
 
-This project uses a structured approach to database management, with all database-related files organized in the `db` directory:
+1. **Direct API Access** - For application code:
+   ```typescript
+   import { supabase } from '@/integrations/supabase/client';
+   ```
 
-- `/db/migrations` - Sequentially numbered migration files to apply changes to the database
-- `/db/functions` - Production-ready database function definitions
-- `/db/scripts` - Utility scripts for database maintenance and validation
-- `/db/tests` - Test scripts for database functionality
-- `/db/archive` - Historical versions of database objects for reference
+### Database Operations
 
-### Key Database Functions
+We have standardized database utilities in `src/integrations/supabase/utils.ts` for:
 
-- `convert_estimate_to_project` - Converts an estimate to a project with all associated data
+- SQL execution (`executeSql`)
+- Table verification (`tableExists`)
+- Column verification (`columnsExist`)
 
-### Applying Migrations
+### Migrations
 
-You can apply database migrations by running:
+Database migrations are stored in `db/migrations/` and can be applied using:
 
-```sh
-# Install dependencies
-npm install
-
-# Run the migration script
-node db/scripts/apply-migrations.js
+```bash
+node db/scripts/migration-runner.cjs db/migrations/your_migration.sql
 ```
 
-For more detailed information, see the [Database Documentation](./db/README.md).
+For detailed Supabase integration documentation, see:
 
-## I want to use a custom domain - is that possible?
+- `docs/supabase_guide_for_agents.md`
+- `docs/supabase_connection.md`
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## Google Calendar Integration
+
+The application integrates with Google Calendar for project scheduling. You'll need to:
+
+1. Configure Google OAuth credentials
+2. Set the proper redirect URIs to match your development environment
+3. Use the Settings > Google Calendar page to connect your account
+
+See the [Development Environment Setup](./docs/development_setup.md) document for more details on configuring Google integration.
+
+## License
+
+Private repository. All rights reserved.

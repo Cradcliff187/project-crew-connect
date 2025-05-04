@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+export type MilestoneStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
+export type MilestonePriority = 'low' | 'medium' | 'high' | 'urgent';
+export type AssigneeType = 'employee' | 'vendor' | 'subcontractor';
+
 export interface ProjectMilestone {
   id: string;
   projectid: string;
@@ -11,6 +15,14 @@ export interface ProjectMilestone {
   is_completed: boolean;
   created_at: string;
   updated_at: string;
+  calendar_sync_enabled?: boolean;
+  calendar_event_id?: string | null;
+  assignee_type?: AssigneeType | null;
+  assignee_id?: string | null;
+  start_date?: string | null;
+  priority?: MilestonePriority;
+  status?: MilestoneStatus;
+  estimated_hours?: number | null;
 }
 
 export const useMilestones = (projectId: string) => {
@@ -40,7 +52,9 @@ export const useMilestones = (projectId: string) => {
   const addMilestone = async (
     title: string,
     description: string | null,
-    dueDate: Date | undefined
+    dueDate: Date | undefined,
+    calendarSyncEnabled: boolean = false,
+    additionalFields?: Partial<ProjectMilestone>
   ) => {
     try {
       const { data, error } = await supabase
@@ -51,6 +65,13 @@ export const useMilestones = (projectId: string) => {
           description: description || null,
           due_date: dueDate ? dueDate.toISOString() : null,
           is_completed: false,
+          calendar_sync_enabled: calendarSyncEnabled,
+          ...(additionalFields || {}),
+          status: additionalFields?.status || 'not_started',
+          priority: additionalFields?.priority || 'medium',
+          ...(additionalFields?.start_date && typeof additionalFields.start_date !== 'string'
+            ? { start_date: (additionalFields.start_date as Date).toISOString() }
+            : {}),
         })
         .select();
 
@@ -59,61 +80,82 @@ export const useMilestones = (projectId: string) => {
       setMilestones([...milestones, data[0] as ProjectMilestone]);
 
       toast({
-        title: 'Milestone added',
-        description: 'A new milestone has been added to the project.',
+        title: 'Task added',
+        description: 'A new task has been added to the project.',
       });
 
-      return true;
+      return data[0] as ProjectMilestone;
     } catch (error: any) {
       toast({
-        title: 'Error saving milestone',
+        title: 'Error saving task',
         description: error.message,
         variant: 'destructive',
       });
-      return false;
+      return null;
     }
   };
 
   const updateMilestone = async (
-    id: string,
-    title: string,
-    description: string | null,
-    dueDate: Date | undefined
+    idOrMilestone: string | ProjectMilestone,
+    titleOrUpdates?: string,
+    description?: string | null,
+    dueDate?: Date | undefined,
+    calendarSyncEnabled?: boolean,
+    additionalFields?: Partial<ProjectMilestone>
   ) => {
     try {
-      const { error } = await supabase
-        .from('project_milestones')
-        .update({
-          title,
+      // Handle either id string or full milestone object
+      let id: string;
+      let updates: Partial<ProjectMilestone>;
+
+      if (typeof idOrMilestone === 'string') {
+        // Old method signature with separate parameters
+        id = idOrMilestone;
+        updates = {
+          title: titleOrUpdates as string,
           description: description || null,
           due_date: dueDate ? dueDate.toISOString() : null,
-        })
-        .eq('id', id);
+          ...additionalFields,
+        };
+
+        // Only include calendar fields if explicitly provided
+        if (calendarSyncEnabled !== undefined) {
+          updates.calendar_sync_enabled = calendarSyncEnabled;
+        }
+
+        // Convert start_date to ISO string if it's a Date object
+        if (updates.start_date && typeof updates.start_date !== 'string') {
+          updates.start_date = (updates.start_date as Date).toISOString();
+        }
+      } else {
+        // New method signature with milestone object
+        id = idOrMilestone.id;
+        updates = idOrMilestone;
+
+        // Convert Date objects to strings if needed
+        if (updates.due_date && typeof updates.due_date !== 'string') {
+          updates.due_date = (updates.due_date as Date).toISOString();
+        }
+        if (updates.start_date && typeof updates.start_date !== 'string') {
+          updates.start_date = (updates.start_date as Date).toISOString();
+        }
+      }
+
+      const { error } = await supabase.from('project_milestones').update(updates).eq('id', id);
 
       if (error) throw error;
 
-      setMilestones(
-        milestones.map(m =>
-          m.id === id
-            ? {
-                ...m,
-                title,
-                description: description || null,
-                due_date: dueDate ? dueDate.toISOString() : null,
-              }
-            : m
-        )
-      );
+      setMilestones(milestones.map(m => (m.id === id ? { ...m, ...updates } : m)));
 
       toast({
-        title: 'Milestone updated',
-        description: 'The milestone has been updated successfully.',
+        title: 'Task updated',
+        description: 'The task has been updated successfully.',
       });
 
       return true;
     } catch (error: any) {
       toast({
-        title: 'Error updating milestone',
+        title: 'Error updating task',
         description: error.message,
         variant: 'destructive',
       });
@@ -150,21 +192,36 @@ export const useMilestones = (projectId: string) => {
 
   const toggleMilestoneComplete = async (id: string, currentStatus: boolean) => {
     try {
+      // Update both is_completed and status fields
+      const newIsCompleted = !currentStatus;
+      const newStatus: MilestoneStatus = newIsCompleted ? 'completed' : 'not_started';
+
       const { error } = await supabase
         .from('project_milestones')
-        .update({ is_completed: !currentStatus })
+        .update({
+          is_completed: newIsCompleted,
+          status: newStatus,
+        })
         .eq('id', id);
 
       if (error) throw error;
 
       setMilestones(
-        milestones.map(m => (m.id === id ? { ...m, is_completed: !currentStatus } : m))
+        milestones.map(m =>
+          m.id === id
+            ? {
+                ...m,
+                is_completed: newIsCompleted,
+                status: newStatus,
+              }
+            : m
+        )
       );
 
       return true;
     } catch (error: any) {
       toast({
-        title: 'Error updating milestone',
+        title: 'Error updating task',
         description: error.message,
         variant: 'destructive',
       });

@@ -21,6 +21,8 @@ export interface TimeEntry {
   employee_rate?: number | null;
   project_budget_item_id?: string | null;
   entity_name?: string;
+  calendar_sync_enabled?: boolean;
+  calendar_event_id?: string | null;
 }
 
 export interface TimeEntryFormData {
@@ -33,6 +35,21 @@ export interface TimeEntryFormData {
   endTime: string;
   notes: string;
   hasReceipt: boolean;
+  calendarSyncEnabled?: boolean;
+}
+
+export interface TimeEntryFormValues {
+  entityType: 'work_order' | 'project';
+  entityId: string;
+  workDate: Date;
+  startTime: string;
+  endTime: string;
+  hoursWorked: number;
+  notes?: string;
+  employeeId?: string;
+  hasReceipts: boolean;
+  calendar_sync_enabled?: boolean;
+  calendar_event_id?: string;
 }
 
 export interface TimeEntryFilter {
